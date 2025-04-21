@@ -19,7 +19,6 @@ import { withLoad } from './features/load/withLoad';
 import { withTrack } from './features/track/withTrack';
 import { DotUveViewParams, ShellProps, TranslateProps, UVEState } from './models';
 
-import { DotPageApiResponse } from '../services/dot-page-api.service';
 import { UVE_FEATURE_FLAGS } from '../shared/consts';
 import { UVE_STATUS } from '../shared/enums';
 import { getErrorPayload, normalizeQueryParams, sanitizeURL } from '../utils';
@@ -40,7 +39,9 @@ const initialState: UVEState = {
 };
 
 export const UVEStore = signalStore(
-    { protectedState: false }, // TODO: remove when the unit tests are fixed
+    // To Remove this we need to update the @ngrx/signals package to the latest version
+    // Testing utils were added: https://ngrx.io/guide/signals/signal-store/testing#unprotected
+    { protectedState: false },
     withState<UVEState>(initialState),
     withEditor(),
     withComputed(
@@ -163,12 +164,6 @@ export const UVEStore = signalStore(
             setUveStatus(status: UVE_STATUS) {
                 patchState(store, {
                     status
-                });
-            },
-            updatePageResponse(pageAPIResponse: DotPageApiResponse) {
-                patchState(store, {
-                    status: UVE_STATUS.LOADED,
-                    pageAPIResponse
                 });
             },
             patchViewParams(viewParams: Partial<DotUveViewParams>) {

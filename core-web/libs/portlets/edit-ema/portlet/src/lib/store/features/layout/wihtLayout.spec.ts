@@ -6,13 +6,13 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { withLayout } from './withLayout';
 
-import { DotPageApiParams } from '../../../services/dot-page-api.service';
+import { UVEPageParams } from '../../../services/dot-page-api.service';
 import { UVE_STATUS } from '../../../shared/enums';
 import { MOCK_RESPONSE_HEADLESS } from '../../../shared/mocks';
 import { mapContainerStructureToDotContainerMap } from '../../../utils';
 import { UVEState } from '../../models';
 
-const emptyParams = {} as DotPageApiParams;
+const emptyParams = {} as UVEPageParams;
 
 const initialState: UVEState = {
     isEnterprise: false,
@@ -23,10 +23,7 @@ const initialState: UVEState = {
     errorCode: null,
     pageParams: emptyParams,
     status: UVE_STATUS.LOADING,
-    isTraditionalPage: true,
-    canEditPage: false,
-    pageIsLocked: true,
-    isClientReady: false
+    isTraditionalPage: true
 };
 
 export const uveStoreMock = signalStore(withState<UVEState>(initialState), withLayout());

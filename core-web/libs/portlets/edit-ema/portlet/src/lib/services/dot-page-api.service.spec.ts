@@ -17,12 +17,10 @@ describe('DotPageApiService', () => {
     describe('with clientHost', () => {
         it('should send a GET request with JSON  to retrieve page data', () => {
             spectator.service
-                .get({
-                    url: 'test-url',
+                .get('test-url', {
                     mode: UVE_MODE.EDIT,
-                    language_id: 'en',
-                    [PERSONA_KEY]: 'modes.persona.no.persona',
-                    clientHost: 'some-host'
+                    languageId: 'en',
+                    personaId: 'modes.persona.no.persona'
                 })
                 .subscribe();
 
@@ -36,11 +34,10 @@ describe('DotPageApiService', () => {
     describe('without clientHost', () => {
         it('should send a GET request with RENDER and EDIT MODE to retrieve page data', () => {
             spectator.service
-                .get({
-                    url: 'test-url',
+                .get('test-url', {
                     mode: UVE_MODE.EDIT,
-                    language_id: 'en',
-                    [PERSONA_KEY]: 'modes.persona.no.persona'
+                    languageId: 'en',
+                    personaId: 'modes.persona.no.persona'
                 })
                 .subscribe();
 
@@ -57,9 +54,7 @@ describe('DotPageApiService', () => {
                 pageContainers: [],
                 pageId: 'test',
                 params: {
-                    url: 'test-url',
-                    language_id: 'en',
-                    [PERSONA_KEY]: 'modes.persona.no.persona'
+                    variantName: 'DEFAULT'
                 }
             })
             .subscribe();
@@ -73,9 +68,6 @@ describe('DotPageApiService', () => {
                 pageContainers: [],
                 pageId: 'test',
                 params: {
-                    url: 'test-url',
-                    language_id: 'en',
-                    [PERSONA_KEY]: 'modes.persona.no.persona',
                     variantName: 'i-have-the-high-ground'
                 }
             })
@@ -89,11 +81,10 @@ describe('DotPageApiService', () => {
 
     it('should remove all starting and trailing slashes in the url', () => {
         spectator.service
-            .get({
-                url: '///test-url',
+            .get('///test-url', {
                 mode: UVE_MODE.EDIT,
-                language_id: 'en',
-                [PERSONA_KEY]: 'modes.persona.no.persona'
+                languageId: 'en',
+                personaId: 'modes.persona.no.persona'
             })
             .subscribe();
 
@@ -105,11 +96,10 @@ describe('DotPageApiService', () => {
 
     it('should mantain final trailing slash in the url', () => {
         spectator.service
-            .get({
-                url: '///my-folder///',
+            .get('///my-folder///', {
                 mode: UVE_MODE.EDIT,
-                language_id: 'en',
-                [PERSONA_KEY]: 'modes.persona.no.persona'
+                languageId: 'en',
+                personaId: 'modes.persona.no.persona'
             })
             .subscribe();
 
@@ -142,13 +132,15 @@ describe('DotPageApiService', () => {
         };
 
         it('should request the page in the right `UVE_MODE` based on the `mode`', () => {
-            spectator.service.get({ ...BASE_PARAMS, mode: UVE_MODE.EDIT }).subscribe();
+            spectator.service.get('test-url', { ...BASE_PARAMS, mode: UVE_MODE.EDIT }).subscribe();
             spectator.expectOne(`${BASE_URL}&mode=${UVE_MODE.EDIT}`, HttpMethod.GET);
 
-            spectator.service.get({ ...BASE_PARAMS, mode: UVE_MODE.PREVIEW }).subscribe();
+            spectator.service
+                .get('test-url', { ...BASE_PARAMS, mode: UVE_MODE.PREVIEW })
+                .subscribe();
             spectator.expectOne(`${BASE_URL}&mode=${UVE_MODE.PREVIEW}`, HttpMethod.GET);
 
-            spectator.service.get({ ...BASE_PARAMS, mode: UVE_MODE.LIVE }).subscribe();
+            spectator.service.get('test-url', { ...BASE_PARAMS, mode: UVE_MODE.LIVE }).subscribe();
             spectator.expectOne(`${BASE_URL}&mode=${UVE_MODE.LIVE}`, HttpMethod.GET);
         });
     });
@@ -156,10 +148,9 @@ describe('DotPageApiService', () => {
     describe('preview', () => {
         it("should request page in preview mode if 'mode' is 'preview'", () => {
             spectator.service
-                .get({
-                    url: 'test-url',
-                    language_id: 'en',
-                    [PERSONA_KEY]: 'modes.persona.no.persona',
+                .get('test-url', {
+                    languageId: 'en',
+                    personaId: 'modes.persona.no.persona',
                     mode: UVE_MODE.PREVIEW
                 })
                 .subscribe();
@@ -174,10 +165,9 @@ describe('DotPageApiService', () => {
     describe('live', () => {
         it("should request page in live mode if 'mode' is 'live'", () => {
             spectator.service
-                .get({
-                    url: 'test-url',
-                    language_id: 'en',
-                    [PERSONA_KEY]: 'modes.persona.no.persona',
+                .get('test-url', {
+                    languageId: 'en',
+                    personaId: 'modes.persona.no.persona',
                     mode: UVE_MODE.LIVE
                 })
                 .subscribe();
@@ -189,39 +179,39 @@ describe('DotPageApiService', () => {
         });
     });
 
-    describe('getClientPage', () => {
-        const baseParams = {
-            url: '///test-url',
-            mode: UVE_MODE.EDIT,
-            language_id: 'en',
-            [PERSONA_KEY]: 'modes.persona.no.persona'
-        };
+    // describe('getClientPage', () => {
+    //     const baseParams = {
+    //         url: '///test-url',
+    //         mode: UVE_MODE.EDIT,
+    //         language_id: 'en',
+    //         [PERSONA_KEY]: 'modes.persona.no.persona'
+    //     };
 
-        it('should get the page using graphql if the client send a query', () => {
-            const query = 'query { ... }';
-            spectator.service.getClientPage(baseParams, { query }).subscribe();
+    //     it('should get the page using graphql if the client send a query', () => {
+    //         const query = 'query { ... }';
+    //         spectator.service.getClientPage(baseParams, { query }).subscribe();
 
-            const { request } = spectator.expectOne('/api/v1/graphql', HttpMethod.POST);
-            const requestHeaders = request.headers;
+    //         const { request } = spectator.expectOne('/api/v1/graphql', HttpMethod.POST);
+    //         const requestHeaders = request.headers;
 
-            expect(request.body).toEqual({ query });
-            expect(requestHeaders.get('dotcachettl')).toBe('0');
-            expect(requestHeaders.get('Content-Type')).toEqual('application/json');
-        });
+    //         expect(request.body).toEqual({ query });
+    //         expect(requestHeaders.get('dotcachettl')).toBe('0');
+    //         expect(requestHeaders.get('Content-Type')).toEqual('application/json');
+    //     });
 
-        it('should get the page using the page api if the client does not send a query', () => {
-            spectator.service
-                .getClientPage(baseParams, {
-                    params: {
-                        depth: '1'
-                    }
-                })
-                .subscribe();
+    //     it('should get the page using the page api if the client does not send a query', () => {
+    //         spectator.service
+    //             .getClientPage(baseParams, {
+    //                 params: {
+    //                     depth: '1'
+    //                 }
+    //             })
+    //             .subscribe();
 
-            spectator.expectOne(
-                '/api/v1/page/render/test-url?depth=1&mode=EDIT_MODE&language_id=en&com.dotmarketing.persona.id=modes.persona.no.persona',
-                HttpMethod.GET
-            );
-        });
-    });
+    //         spectator.expectOne(
+    //             '/api/v1/page/render/test-url?depth=1&mode=EDIT_MODE&language_id=en&com.dotmarketing.persona.id=modes.persona.no.persona',
+    //             HttpMethod.GET
+    //         );
+    //     });
+    // });
 });

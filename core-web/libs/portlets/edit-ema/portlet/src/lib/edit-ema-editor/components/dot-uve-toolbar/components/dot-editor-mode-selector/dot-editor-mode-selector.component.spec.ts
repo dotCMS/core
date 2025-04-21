@@ -42,7 +42,8 @@ describe('DotEditorModeSelectorComponent', () => {
         $hasLiveVersion: signal(mockStoreState.hasLiveVersion),
         clearDeviceAndSocialMedia: jest.fn(),
         loadPageAsset: jest.fn(),
-        trackUVEModeChange: jest.fn()
+        trackUVEModeChange: jest.fn(),
+        reloadCurrentPage: jest.fn()
     };
 
     const createComponent = createComponentFactory({
@@ -104,11 +105,19 @@ describe('DotEditorModeSelectorComponent', () => {
         });
 
         it('should clear device and social media when switching to EDIT mode', () => {
+            mockStore.pageParams.set({
+                ...pageParams,
+                mode: UVE_MODE.PREVIEW
+            });
+
+            spectator.detectChanges();
             component.onModeChange(UVE_MODE.EDIT);
             expect(mockStore.clearDeviceAndSocialMedia).toHaveBeenCalled();
-            expect(mockStore.loadPageAsset).toHaveBeenCalledWith({
-                mode: UVE_MODE.EDIT,
-                publishDate: undefined
+            expect(mockStore.reloadCurrentPage).toHaveBeenCalledWith({
+                params: {
+                    mode: UVE_MODE.EDIT,
+                    publishDate: undefined
+                }
             });
         });
 
@@ -118,9 +127,11 @@ describe('DotEditorModeSelectorComponent', () => {
             jest.setSystemTime(now);
 
             component.onModeChange(UVE_MODE.LIVE);
-            expect(mockStore.loadPageAsset).toHaveBeenCalledWith({
-                mode: UVE_MODE.LIVE,
-                publishDate: undefined
+            expect(mockStore.reloadCurrentPage).toHaveBeenCalledWith({
+                params: {
+                    mode: UVE_MODE.LIVE,
+                    publishDate: undefined
+                }
             });
 
             jest.useRealTimers();
@@ -141,9 +152,11 @@ describe('DotEditorModeSelectorComponent', () => {
 
             spectator.detectChanges();
 
-            expect(mockStore.loadPageAsset).toHaveBeenCalledWith({
-                mode: UVE_MODE.PREVIEW,
-                publishDate: undefined
+            expect(mockStore.reloadCurrentPage).toHaveBeenCalledWith({
+                params: {
+                    mode: UVE_MODE.PREVIEW,
+                    publishDate: undefined
+                }
             });
         });
     });
@@ -180,9 +193,11 @@ describe('DotEditorModeSelectorComponent', () => {
             const previewMenuItem = menuItems[1]; // Preview is second item
             spectator.click(previewMenuItem);
 
-            expect(mockStore.loadPageAsset).toHaveBeenCalledWith({
-                mode: UVE_MODE.PREVIEW,
-                publishDate: undefined
+            expect(mockStore.reloadCurrentPage).toHaveBeenCalledWith({
+                params: {
+                    mode: UVE_MODE.PREVIEW,
+                    publishDate: undefined
+                }
             });
         });
 

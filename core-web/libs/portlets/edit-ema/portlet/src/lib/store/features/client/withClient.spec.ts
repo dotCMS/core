@@ -6,25 +6,20 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { withClient } from './withClient';
 
-import { DotPageApiParams } from '../../../services/dot-page-api.service';
+import { UVEPageParams } from '../../../services/dot-page-api.service';
 import { UVE_STATUS } from '../../../shared/enums';
 import { UVEState } from '../../models';
-
-const emptyParams = {} as DotPageApiParams;
 
 const initialState: UVEState = {
     isEnterprise: false,
     languages: [],
     pageAPIResponse: null,
+    pageParams: {} as UVEPageParams,
     currentUser: null,
     experiment: null,
     errorCode: null,
-    pageParams: emptyParams,
     status: UVE_STATUS.LOADING,
-    isTraditionalPage: true,
-    canEditPage: false,
-    pageIsLocked: true,
-    isClientReady: false
+    isTraditionalPage: true
 };
 
 export const uveStoreMock = signalStore(withState<UVEState>(initialState), withClient());

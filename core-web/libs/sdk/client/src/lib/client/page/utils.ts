@@ -1,7 +1,6 @@
-import { BackendPageParams, PageRequestParams } from './page-api';
+import { PageRequestParams } from './page-api';
 
 import { ErrorMessages } from '../models';
-import { DotCMSBasicGraphQLPage, DotCMSGraphQLError } from '../models/types';
 
 const DEFAULT_PAGE_CONTENTLETS_CONTENT = `
           publishDate
@@ -252,46 +251,6 @@ export async function fetchGraphQL({
     return await response.json();
 }
 
-// =============== TEST UTILS ===============
-// IF YOU ARE READING THIS IN THE PR, REMEMBER TO CLEAN UP THESE UTILS
-export function mapToBackendParams(params: PageRequestParams): BackendPageParams {
-    const backendParams = {
-        hostId: params.siteId,
-        mode: params.mode,
-        language_id: params.languageId ? String(params.languageId) : undefined,
-        'com.dotmarketing.persona.id': params.personaId,
-        fireRules: params.fireRules ? String(params.fireRules) : undefined,
-        depth: params.depth ? String(params.depth) : undefined,
-        publishDate: params.publishDate
-    };
-
-    // Remove undefined values
-    return Object.fromEntries(
-        Object.entries(backendParams).filter(([_, value]) => value !== undefined)
-    );
-}
-
-export function buildGraphQLRequestBody(url: string, options: GraphQLPageOptions) {
-    const { languageId = '1', mode = 'LIVE', graphql = {} } = options || {};
-    const { page, content = {}, variables, fragments } = graphql;
-
-    const contentQuery = buildQuery(content);
-    const completeQuery = buildPageQuery({
-        page,
-        fragments,
-        additionalQueries: contentQuery
-    });
-
-    const requestVariables = {
-        url,
-        mode,
-        languageId,
-        ...variables
-    };
-
-    return { query: completeQuery, variables: requestVariables };
-}
-
 export interface GraphQLPageOptions extends PageRequestParams {
     graphql: {
         page?: string;
@@ -299,17 +258,4 @@ export interface GraphQLPageOptions extends PageRequestParams {
         variables?: Record<string, string>;
         fragments?: string[];
     };
-}
-
-/**
- * Represents the complete response from a GraphQL page query
- *
- * @template TContent - The type of the content data
- * @template TNav - The type of the navigation data
- */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export interface DotCMSGraphQLPageResponse<TContent = Record<string, any>> {
-    page: DotCMSBasicGraphQLPage;
-    content?: TContent;
-    errors?: DotCMSGraphQLError;
 }

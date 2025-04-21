@@ -120,16 +120,13 @@ export class DotEmaShellComponent implements OnInit {
         const baseClientHost = data?.uveConfig?.url;
 
         const cleanedParams = normalizeQueryParams(params, baseClientHost);
-
         this.#updateLocation(cleanedParams);
     });
 
     ngOnInit(): void {
         const params = this.#getPageParams();
         const viewParams = this.#getViewParams(params.mode);
-
         this.uveStore.patchViewParams(viewParams);
-
         this.uveStore.loadPageAsset({ url: params.url, params: params as UVEPageParams });
 
         // We need to skip one because it's the initial value
@@ -374,7 +371,6 @@ export class DotEmaShellComponent implements OnInit {
             case NG_CUSTOM_EVENTS.SAVE_PAGE: {
                 const { shouldReloadPage, contentletIdentifier } = detail.payload ?? {};
                 const pageIdentifier = this.uveStore.pageAPIResponse().page.identifier;
-
                 // Add this: reloadURLContentMapPage
                 // if (shouldReloadPage) {
                 //     this.reloadURLContentMapPage(contentletIdentifier);

@@ -376,14 +376,6 @@ export function createFullURL(params: UVEPageParams, siteId?: string): string {
     const clientHost = urlParams.get('clientHost') ?? window.location.origin;
     const url = urlParams.get('url') ?? window.location.pathname;
 
-    if (paramsCopy.graphql) {
-        delete paramsCopy.graphql;
-    }
-
-    if (paramsCopy.rawQuery) {
-        delete paramsCopy.rawQuery;
-    }
-
     const searchParams = new URLSearchParams(paramsCopy as Record<string, string>);
 
     const pureURL = new URL(`${url}?${searchParams.toString()}`, clientHost);

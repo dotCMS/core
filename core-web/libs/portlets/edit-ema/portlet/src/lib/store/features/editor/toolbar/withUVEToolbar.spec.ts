@@ -12,17 +12,15 @@ import { UVE_MODE } from '@dotcms/uve/types';
 import { withUVEToolbar } from './withUVEToolbar';
 
 import { DotPageApiService } from '../../../../services/dot-page-api.service';
-import { DEFAULT_PERSONA, PERSONA_KEY } from '../../../../shared/consts';
+import { DEFAULT_PERSONA } from '../../../../shared/consts';
 import { UVE_STATUS } from '../../../../shared/enums';
 import { MOCK_RESPONSE_HEADLESS, mockCurrentUser } from '../../../../shared/mocks';
 import { Orientation, UVEState } from '../../../models';
 
 const pageParams = {
-    url: 'test-url',
-    language_id: '1',
-    [PERSONA_KEY]: 'dot:persona',
-    variantName: 'DEFAULT',
-    clientHost: 'http://localhost:3000'
+    languageId: '1',
+    personaId: 'dot:persona',
+    variantName: 'DEFAULT'
 };
 
 const initialState: UVEState = {
@@ -35,9 +33,6 @@ const initialState: UVEState = {
     pageParams,
     status: UVE_STATUS.LOADED,
     isTraditionalPage: false,
-    canEditPage: true,
-    pageIsLocked: true,
-    isClientReady: false,
     viewParams: {
         orientation: undefined,
         seo: undefined,
@@ -50,6 +45,18 @@ export const uveStoreMock = signalStore(
     withState<UVEState>(initialState),
     withUVEToolbar()
 );
+
+const BASIC_OPTIONS = {
+    allowedDevURLs: ['http://localhost:3000']
+};
+
+const UVE_CONFIG_MOCK = (options) => {
+    return {
+        uveConfig: {
+            options
+        }
+    };
+};
 
 describe('withEditor', () => {
     let spectator: SpectatorService<InstanceType<typeof uveStoreMock>>;
@@ -72,6 +79,17 @@ describe('withEditor', () => {
                     },
                     save: jest.fn()
                 }
+            },
+            {
+                provide: ActivatedRoute,
+                useValue: {
+                    snapshot: {
+                        queryParams: {
+                            clientHost: 'http://localhost:3000'
+                        },
+                        data: UVE_CONFIG_MOCK(BASIC_OPTIONS)
+                    }
+                }
             }
         ]
     });
@@ -84,10 +102,6 @@ describe('withEditor', () => {
     describe('Computed', () => {
         it('should return the right API URL', () => {
             const params = { ...pageParams };
-
-            // Delete the url from the params to test the function
-            delete params.url;
-            delete params.clientHost;
 
             const queryParams = new URLSearchParams(params).toString();
             const expectURL = `/api/v1/page/json/test-url?${queryParams}`;

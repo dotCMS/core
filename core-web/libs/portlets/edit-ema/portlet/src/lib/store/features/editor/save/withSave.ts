@@ -52,7 +52,7 @@ export function withSave() {
                                         })
                                         .pipe(
                                             tapResponse(
-                                                ({ pageAPIResponse }) => {
+                                                (pageAPIResponse) => {
                                                     patchState(store, {
                                                         status: UVE_STATUS.LOADED,
                                                         pageAPIResponse: pageAPIResponse

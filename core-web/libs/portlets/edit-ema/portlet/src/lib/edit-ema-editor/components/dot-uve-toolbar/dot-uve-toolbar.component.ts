@@ -203,9 +203,11 @@ export class DotUveToolbarComponent {
     onPersonaSelected(persona: DotPersona & { pageId: string }) {
         const existPersona =
             persona.identifier === DEFAULT_PERSONA.identifier || persona.personalized;
+        const params = { personaId: persona.identifier };
+        const url = this.#store.pageAPIResponse()?.page.pageURI;
 
         if (existPersona) {
-            this.#store.reloadCurrentPage({ params: { personaId: persona.identifier } });
+            this.#store.loadPageAsset({ url, params });
 
             return;
         }
@@ -225,9 +227,7 @@ export class DotUveToolbarComponent {
             accept: () => {
                 this.#personalizeService.personalized(persona.pageId, persona.keyTag).subscribe({
                     next: () => {
-                        this.#store.reloadCurrentPage({
-                            params: { personaId: persona.identifier }
-                        });
+                        this.#store.loadPageAsset({ url, params });
                         this.$personaSelector().fetchPersonas();
                     },
                     error: () => {

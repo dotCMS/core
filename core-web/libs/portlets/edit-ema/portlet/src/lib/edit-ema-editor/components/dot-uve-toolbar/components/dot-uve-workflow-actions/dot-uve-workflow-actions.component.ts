@@ -154,7 +154,6 @@ export class DotUveWorkflowActionsComponent {
 
         const url = getPageURI(pageAsset);
         const language_id = pageAsset.languageId?.toString();
-
         const urlChanged = !compareUrlPaths(url, pageURL);
         const languageChanged = language_id != currentParams.languageId;
 

@@ -8,7 +8,7 @@ import { FeaturedFlags } from '@dotcms/dotcms-models';
 
 import { withFlags } from './withFlags';
 
-import { DotPageApiParams } from '../../../services/dot-page-api.service';
+import { UVEPageParams } from '../../../services/dot-page-api.service';
 import { UVE_STATUS } from '../../../shared/enums';
 import { UVEState } from '../../models';
 
@@ -19,12 +19,9 @@ const initialState: UVEState = {
     currentUser: null,
     experiment: null,
     errorCode: null,
-    pageParams: {} as DotPageApiParams,
+    pageParams: {} as UVEPageParams,
     status: UVE_STATUS.LOADING,
-    isTraditionalPage: true,
-    canEditPage: false,
-    pageIsLocked: true,
-    isClientReady: false
+    isTraditionalPage: true
 };
 
 const MOCK_UVE_FEATURE_FLAGS = [FeaturedFlags.FEATURE_FLAG_UVE_PREVIEW_MODE];

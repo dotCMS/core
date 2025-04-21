@@ -65,15 +65,15 @@ export function withLoad() {
                                 pageParams
                             });
                         }),
-                        switchMap(({ url, pageParams }) =>
-                            dotPageApiService.get(url, pageParams).pipe(
-                                tap(({ pageAPIResponse }) => {
+                        switchMap(({ url, pageParams }) => {
+                            return dotPageApiService.get(url, pageParams).pipe(
+                                tap((pageAPIResponse) => {
                                     patchState(store, {
                                         pageAPIResponse,
                                         isClientReady: store.isTraditionalPage()
                                     });
                                 }),
-                                switchMap(({ pageAPIResponse }) => {
+                                switchMap((pageAPIResponse) => {
                                     const { vanityUrl, page, runningExperimentId } =
                                         pageAPIResponse;
                                     if (!isForwardOrPage(vanityUrl)) {
@@ -113,8 +113,8 @@ export function withLoad() {
 
                                     return EMPTY;
                                 })
-                            )
-                        )
+                            );
+                        })
                     )
                 ),
                 /**
@@ -140,10 +140,10 @@ export function withLoad() {
                             return dotPageApiService
                                 .get('/', { ...store.pageParams(), ...params })
                                 .pipe(
-                                    tap(({ pageAPIResponse }) => {
+                                    tap((pageAPIResponse) => {
                                         patchState(store, { pageAPIResponse, isClientReady });
                                     }),
-                                    switchMap(({ pageAPIResponse }) => {
+                                    switchMap((pageAPIResponse) => {
                                         return dotLanguagesService.getLanguagesUsedPage(
                                             pageAPIResponse.page.identifier
                                         );

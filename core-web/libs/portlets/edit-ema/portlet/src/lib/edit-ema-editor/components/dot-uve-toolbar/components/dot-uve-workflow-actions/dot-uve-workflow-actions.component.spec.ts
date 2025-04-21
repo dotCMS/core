@@ -83,7 +83,7 @@ const messageServiceMock = new MockDotMessageService({
 
 const pageParams = {
     url: 'test-url',
-    language_id: '1'
+    languageId: '1'
 };
 
 const uveStoreMock = {
@@ -203,7 +203,9 @@ describe('DotUveWorkflowActionsComponent', () => {
 
             expect(spySetWorkflowActionLoading).toHaveBeenCalledWith(true);
             expect(spyLoadPageAsset).toHaveBeenCalledWith({
-                language_id: dotcmsContentletMock.languageId.toString(),
+                params: {
+                    languageId: dotcmsContentletMock.languageId.toString()
+                },
                 url: '/'
             });
             expect(spyMessage).toHaveBeenCalledTimes(2);
@@ -224,13 +226,15 @@ describe('DotUveWorkflowActionsComponent', () => {
             });
         });
 
-        it('should fire workflow actions and reloadPage', () => {
+        it('should fire workflow actions and reloadPage if the URL did not change', () => {
             const spySetWorkflowActionLoading = jest.spyOn(store, 'setWorkflowActionLoading');
             const spyReloadCurrentPage = jest.spyOn(store, 'reloadCurrentPage');
             const dotWorkflowActionsComponent = spectator.query(DotWorkflowActionsComponent);
             const spy = jest
                 .spyOn(dotWorkflowActionsFireService, 'fireTo')
-                .mockReturnValue(of({ ...dotcmsContentletMock, ...pageParams }));
+                .mockReturnValue(
+                    of({ ...dotcmsContentletMock, pageURI: MOCK_RESPONSE_VTL.page.pageURI })
+                );
 
             dotWorkflowActionsComponent.actionFired.emit({
                 ...mockWorkflowsActions[0],

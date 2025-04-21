@@ -39,7 +39,7 @@ import { EditEmaPersonaSelectorComponent } from './components/edit-ema-persona-s
 import { DotUveToolbarComponent } from './dot-uve-toolbar.component';
 
 import { DotPageApiService } from '../../../services/dot-page-api.service';
-import { DEFAULT_DEVICES, DEFAULT_PERSONA, PERSONA_KEY } from '../../../shared/consts';
+import { DEFAULT_DEVICES, DEFAULT_PERSONA } from '../../../shared/consts';
 import {
     HEADLESS_BASE_QUERY_PARAMS,
     MOCK_RESPONSE_HEADLESS,
@@ -49,7 +49,6 @@ import { UVEStore } from '../../../store/dot-uve.store';
 import {
     getFullPageURL,
     createFavoritePagesURL,
-    createFullURL,
     sanitizeURL,
     convertLocalTimeToUTC
 } from '../../../utils';
@@ -72,7 +71,7 @@ const bookmarksUrl = createFavoritePagesURL({
 const baseUVEToolbarState = {
     editor: {
         bookmarksUrl,
-        copyUrl: createFullURL(params, pageAPIResponse?.site.identifier),
+        copyUrl: 'http://localhost:3000/test-url',
         apiUrl: `${'http://localhost'}${pageAPI}`
     },
     preview: null,
@@ -398,6 +397,13 @@ describe('DotUveToolbarComponent', () => {
                 button = spectator.debugElement.query(
                     By.css('[data-testId="uve-toolbar-copy-url"]')
                 );
+                baseUVEState.pageAPIResponse.set({
+                    ...MOCK_RESPONSE_VTL,
+                    page: {
+                        ...MOCK_RESPONSE_VTL.page,
+                        pageURI: 'test-url'
+                    }
+                });
             });
 
             it('should have attrs', () => {
@@ -481,7 +487,8 @@ describe('DotUveToolbarComponent', () => {
                 spectator.detectChanges();
 
                 expect(spyloadPageAsset).toHaveBeenCalledWith({
-                    [PERSONA_KEY]: '123'
+                    url: 'test-url',
+                    params: { personaId: '123' }
                 });
             });
 
@@ -551,12 +558,12 @@ describe('DotUveToolbarComponent', () => {
                 expect(spectator.query(byTestId('uve-toolbar-language-selector'))).toBeTruthy();
             });
 
-            it('should call loadPageAsset when language is selected and exists that page translated', () => {
-                const spyLoadPageAsset = jest.spyOn(baseUVEState, 'loadPageAsset');
+            it('should call reloadCurrentPage when language is selected and exists that page translated', () => {
+                const spyReloadCurrentPage = jest.spyOn(baseUVEState, 'reloadCurrentPage');
 
                 spectator.triggerEventHandler(EditEmaLanguageSelectorComponent, 'selected', 1);
 
-                expect(spyLoadPageAsset).toHaveBeenCalled();
+                expect(spyReloadCurrentPage).toHaveBeenCalled();
             });
 
             it('should call confirmationService.confirm when language is selected and does not exist that page translated', () => {
@@ -724,8 +731,8 @@ describe('DotUveToolbarComponent', () => {
                 );
             });
 
-            it('should load page on date when date is selected', () => {
-                const spyLoadPageAsset = jest.spyOn(baseUVEState, 'loadPageAsset');
+            it('should reload page on date when date is selected', () => {
+                const spyReloadCurrentPage = jest.spyOn(baseUVEState, 'reloadCurrentPage');
 
                 const calendar = spectator.debugElement.query(
                     By.css('[data-testId="uve-toolbar-calendar"]')
@@ -735,9 +742,11 @@ describe('DotUveToolbarComponent', () => {
 
                 spectator.triggerEventHandler(calendar, 'ngModelChange', date);
 
-                expect(spyLoadPageAsset).toHaveBeenCalledWith({
-                    mode: UVE_MODE.LIVE,
-                    publishDate: convertLocalTimeToUTC(date)
+                expect(spyReloadCurrentPage).toHaveBeenCalledWith({
+                    params: {
+                        mode: UVE_MODE.LIVE,
+                        publishDate: convertLocalTimeToUTC(date)
+                    }
                 });
             });
 
@@ -761,14 +770,16 @@ describe('DotUveToolbarComponent', () => {
             });
 
             it('should fetch date when clicking on today button', () => {
-                const spyLoadPageAsset = jest.spyOn(baseUVEState, 'loadPageAsset');
+                const spyReloadCurrentPage = jest.spyOn(baseUVEState, 'reloadCurrentPage');
                 const calendar = spectator.query(byTestId('uve-toolbar-calendar-today-button'));
 
                 calendar.dispatchEvent(new Event('click'));
 
-                expect(spyLoadPageAsset).toHaveBeenCalledWith({
-                    mode: UVE_MODE.LIVE,
-                    publishDate: expect.any(String)
+                expect(spyReloadCurrentPage).toHaveBeenCalledWith({
+                    params: {
+                        mode: UVE_MODE.LIVE,
+                        publishDate: expect.any(String)
+                    }
                 });
             });
 

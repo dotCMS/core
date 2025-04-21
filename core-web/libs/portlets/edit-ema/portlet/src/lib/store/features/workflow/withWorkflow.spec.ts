@@ -8,16 +8,14 @@ import { mockWorkflowsActions } from '@dotcms/utils-testing';
 
 import { withWorkflow } from './withWorkflow';
 
-import { DotPageApiParams } from '../../../services/dot-page-api.service';
-import { PERSONA_KEY } from '../../../shared/consts';
+import { UVEPageParams } from '../../../services/dot-page-api.service';
 import { UVE_STATUS } from '../../../shared/enums';
 import { MOCK_RESPONSE_HEADLESS } from '../../../shared/mocks';
 import { UVEState } from '../../models';
 
-const pageParams: DotPageApiParams = {
-    url: 'new-url',
-    language_id: '1',
-    [PERSONA_KEY]: '2'
+const pageParams: UVEPageParams = {
+    languageId: '1',
+    personaId: '2'
 };
 
 const initialState: UVEState = {
@@ -29,10 +27,7 @@ const initialState: UVEState = {
     errorCode: null,
     pageParams,
     status: UVE_STATUS.LOADING,
-    isTraditionalPage: true,
-    canEditPage: false,
-    pageIsLocked: true,
-    isClientReady: false
+    isTraditionalPage: true
 };
 
 export const uveStoreMock = signalStore(withState<UVEState>(initialState), withWorkflow());
@@ -67,14 +62,6 @@ describe('withLoad', () => {
 
     describe('withMethods', () => {
         describe('getWorkflowActions', () => {
-            it('should call get workflow actions using store page inode', () => {
-                const spyWorkflowActions = jest.spyOn(dotWorkflowsActionsService, 'getByInode');
-                store.getWorkflowActions();
-                expect(store.workflowLoading()).toBe(false);
-                expect(store.workflowActions()).toEqual(mockWorkflowsActions);
-                expect(spyWorkflowActions).toHaveBeenCalledWith(MOCK_RESPONSE_HEADLESS.page.inode);
-            });
-
             it('should call get workflow actions using the provided inode', () => {
                 const spyWorkflowActions = jest.spyOn(dotWorkflowsActionsService, 'getByInode');
                 store.getWorkflowActions('123');

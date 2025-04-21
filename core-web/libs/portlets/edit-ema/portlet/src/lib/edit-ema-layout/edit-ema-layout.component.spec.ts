@@ -66,6 +66,18 @@ const PAGE_RESPONSE = {
     }
 };
 
+const BASIC_OPTIONS = {
+    allowedDevURLs: ['http://localhost:3000']
+};
+
+const UVE_CONFIG_MOCK = (options) => {
+    return {
+        uveConfig: {
+            options
+        }
+    };
+};
+
 // Gridstack has some issues with importing (esm/cjs), Jest need to process it to work using the transformIgnorePatterns, but that takes a lot of time
 // So we mock it to avoid that
 jest.mock('gridstack', () => ({
@@ -97,6 +109,17 @@ describe('EditEmaLayoutComponent', () => {
             mockProvider(DotContentTypeService),
             mockProvider(CoreWebService),
             {
+                provide: ActivatedRoute,
+                useValue: {
+                    snapshot: {
+                        queryParams: {
+                            clientHost: 'http://localhost:3000'
+                        },
+                        data: UVE_CONFIG_MOCK(BASIC_OPTIONS)
+                    }
+                }
+            },
+            {
                 provide: DotAnalyticsTrackerService,
                 useValue: {
                     track: jest.fn()
@@ -106,8 +129,8 @@ describe('EditEmaLayoutComponent', () => {
                 save: jest.fn(() => of(PAGE_RESPONSE))
             }),
             mockProvider(DotPageApiService, {
-                get: jest.fn(() => of(PAGE_RESPONSE)),
-                getClientPage: jest.fn(() => of(PAGE_RESPONSE))
+                get: jest.fn(() => of(PAGE_RESPONSE))
+                // getClientPage: jest.fn(() => of(PAGE_RESPONSE))
             }),
             mockProvider(DotWorkflowsActionsService, {
                 getByInode: jest.fn(() => of([]))

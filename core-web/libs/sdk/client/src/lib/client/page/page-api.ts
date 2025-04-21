@@ -1,10 +1,4 @@
-import {
-    buildPageQuery,
-    buildQuery,
-    fetchGraphQL,
-    mapResponseData,
-    mapToBackendParams
-} from './utils';
+import { buildPageQuery, buildQuery, fetchGraphQL, mapResponseData } from './utils';
 
 import { graphqlToPageEntity } from '../../utils';
 import { DotCMSClientConfig, RequestOptions } from '../client';
@@ -246,13 +240,12 @@ export class PageClient {
      * });
      * ```
      */
-    async #getPageFromAPI(path: string, params: PageRequestParams = {}): Promise<DotCMSPageAsset> {
+    async #getPageFromAPI(path: string, params?: PageRequestParams): Promise<DotCMSPageAsset> {
         if (!path) {
             throw new Error("The 'path' parameter is required for the Page API");
         }
 
-        const siteId = params?.siteId || this.siteId;
-        const normalizedParams = mapToBackendParams({ ...params, siteId });
+        const normalizedParams = this.#mapToBackendParams(params || {});
         const queryParams = new URLSearchParams(normalizedParams).toString();
 
         // If the path starts with a slash, remove it to avoid double slashes in the final URL
@@ -344,8 +337,9 @@ export class PageClient {
             languageId,
             ...variables
         };
-        const requestBody = JSON.stringify({ query: completeQuery, variables: requestVariables });
+
         const requestHeaders = this.requestOptions.headers as Record<string, string>;
+        const requestBody = JSON.stringify({ query: completeQuery, variables: requestVariables });
 
         try {
             const { data, errors } = await fetchGraphQL({
@@ -383,5 +377,43 @@ export class PageClient {
 
             throw errorMessage;
         }
+    }
+
+    /**
+     * Maps public API parameters to private API parameters.
+     *
+     * @param {PageRequestParams} params - The public API parameters
+     * @returns {BackendPageParams} The private API parameters
+     * @private
+     * @example
+     * ```typescript
+     * // Internal usage
+     * const backendParams = this.mapToBackendParams({
+     *   siteId: 'demo.dotcms.com',
+     *   languageId: 1,
+     *   mode: 'LIVE'
+     * });
+     * // Returns: {
+     *   hostId: 'demo.dotcms.com',
+     *   language_id: '1',
+     *   mode: 'LIVE'
+     * }
+     * ```
+     */
+    #mapToBackendParams(params: PageRequestParams): BackendPageParams {
+        const backendParams = {
+            hostId: params.siteId || this.siteId,
+            mode: params.mode,
+            language_id: params.languageId ? String(params.languageId) : undefined,
+            'com.dotmarketing.persona.id': params.personaId,
+            fireRules: params.fireRules ? String(params.fireRules) : undefined,
+            depth: params.depth ? String(params.depth) : undefined,
+            publishDate: params.publishDate
+        };
+
+        // Remove undefined values
+        return Object.fromEntries(
+            Object.entries(backendParams).filter(([_, value]) => value !== undefined)
+        );
     }
 }
