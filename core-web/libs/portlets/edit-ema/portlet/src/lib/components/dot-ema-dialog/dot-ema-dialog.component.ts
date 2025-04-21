@@ -65,6 +65,10 @@ export class DotEmaDialogComponent {
     protected readonly ds = this.dialogService.state;
     protected readonly dialogStatus = DialogStatus;
 
+    protected get iframeWindow() {
+        return this.iframe.nativeElement.contentWindow;
+    }
+
     /**
      * Handle workflow event
      *
@@ -102,7 +106,7 @@ export class DotEmaDialogComponent {
      * @memberof DotEmaDialogComponent
      */
     private reloadIframe() {
-        this.iframe.nativeElement.contentWindow.location.reload();
+        this.iframeWindow.location.reload();
     }
 
     /**
@@ -119,7 +123,7 @@ export class DotEmaDialogComponent {
         whenFinished?: () => void
     ) {
         this.ngZone.run(() => {
-            this.iframe.nativeElement.contentWindow?.[callback]?.(...args);
+            this.iframeWindow?.[callback]?.(...args);
             whenFinished?.();
         });
     }
@@ -145,11 +149,7 @@ export class DotEmaDialogComponent {
         this.dialogService.setStatus(this.dialogStatus.INIT);
         // This event is destroyed when you close the dialog
 
-        fromEvent(
-            // The events are getting sended to the document
-            this.iframe.nativeElement.contentWindow.document,
-            'ng-event'
-        )
+        fromEvent(this.iframeWindow.document, 'ng-event')
             .pipe(takeUntilDestroyed(this.destroyRef$))
             .subscribe((event: CustomEvent) => {
                 this.emitAction(event);

@@ -62,7 +62,7 @@ import {
 } from './components/ema-page-dropzone/types';
 
 import { DotBlockEditorSidebarComponent } from '../components/dot-block-editor-sidebar/dot-block-editor-sidebar.component';
-import { DotEditorDialogService } from '../components/dot-ema-dialog/services/dot-ema-dialog.service';
+import { DotEditorDialogService } from '../components/dot-ema-dialog/services/dot-editor-dialog.service';
 import { DotPageApiService } from '../services/dot-page-api.service';
 import { InlineEditService } from '../services/inline-edit/inline-edit.service';
 import { IFRAME_SCROLL_ZONE } from '../shared/consts';
