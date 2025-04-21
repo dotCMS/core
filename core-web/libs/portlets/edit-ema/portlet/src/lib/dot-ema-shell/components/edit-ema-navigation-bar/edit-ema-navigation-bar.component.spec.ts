@@ -8,12 +8,28 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { EditEmaNavigationBarComponent } from './edit-ema-navigation-bar.component';
 
+import { UVEStore } from '../../../store/dot-uve.store';
+
 const messages = {
     'editema.editor.navbar.content': 'Content',
     'editema.editor.navbar.layout': 'Layout',
     'editema.editor.navbar.rules': 'Rules',
     'editema.editor.navbar.experiments': 'Experiments',
     'editema.editor.navbar.action': 'Action'
+};
+
+const store = {
+    paletteOpen: () => false,
+    setPaletteOpen: jest.fn(),
+    $editorProps: () => ({
+        palette: {
+            paletteClass: 'palette-class'
+        }
+    }),
+    pageParams: () => ({
+        language_id: '3',
+        personaId: '123'
+    })
 };
 
 const messageServiceMock = new MockDotMessageService(messages);
@@ -24,7 +40,10 @@ describe('EditEmaNavigationBarComponent', () => {
     const createComponent = createRoutingFactory({
         component: EditEmaNavigationBarComponent,
         stubsEnabled: false,
-        providers: [{ provide: DotMessageService, useValue: messageServiceMock }],
+        providers: [
+            { provide: DotMessageService, useValue: messageServiceMock },
+            { provide: UVEStore, useValue: store }
+        ],
         routes: [
             {
                 path: 'content',
@@ -102,6 +121,21 @@ describe('EditEmaNavigationBarComponent', () => {
                 expect(links[4].getAttribute('ng-reflect-router-link')).toBeNull();
             });
 
+            it('should apply correct query params when clicked', () => {
+                // Get expected values from store
+                const expectedParams = store.pageParams();
+
+                // Simulate a click on the first navigation item (Content)
+                const contentLink = spectator.query(byText('Content'));
+                spectator.click(contentLink);
+
+                // Check that router has the expected query params
+                // Note: In the test environment, the path may not change as expected,
+                // but we can still verify the query params are correctly applied
+                expect(spectator.router.url).toContain(`language_id=${expectedParams.language_id}`);
+                expect(spectator.router.url).toContain(`personaId=${expectedParams.personaId}`);
+            });
+
             it("should be a button if action is defined on last item 'Action'", () => {
                 const actionLink = spectator.query('button[data-testId="nav-bar-item"]');
 
@@ -160,6 +194,24 @@ describe('EditEmaNavigationBarComponent', () => {
                         './assets/edit-ema/assets/images/experiments.svg.svg#assets/images/experiments.svg'
                     );
                 });
+            });
+        });
+
+        describe('Palette', () => {
+            it('should have button to toggle palette at the first item', () => {
+                const contentButton = spectator.query('.edit-ema-nav-bar__item-container');
+
+                const button = contentButton.querySelector('button');
+
+                expect(button).not.toBeNull();
+            });
+
+            it('should call the setPaletteOpen method when clicking the button', () => {
+                const button = spectator.query(byTestId('toggle-palette'));
+
+                spectator.click(button);
+
+                expect(store.setPaletteOpen).toHaveBeenCalled();
             });
         });
     });

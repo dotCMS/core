@@ -132,6 +132,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
   private static final long serialVersionUID = 1L;
   public static final String HAS_TITLE_IMAGE_KEY = "hasTitleImage";
   public static final String VARIANT_ID = "variantId";
+  public static final String VARIANT = "variant";
   public static final String STRUCTURE_INODE_KEY = "stInode";
   public static final String STRUCTURE_NAME_KEY = "stName";
   public static final String CONTENT_TYPE_KEY = "contentType";

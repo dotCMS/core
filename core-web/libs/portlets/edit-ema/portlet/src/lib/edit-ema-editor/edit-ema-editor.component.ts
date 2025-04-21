@@ -160,6 +160,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     readonly $editorContentStyles = this.uveStore.$editorContentStyles;
     readonly ogTagsResults$ = toObservable(this.uveStore.ogTagsResults);
 
+    readonly $paletteOpen = this.uveStore.paletteOpen;
     readonly UVE_STATUS = UVE_STATUS;
 
     get contentWindow(): Window {

@@ -5,9 +5,29 @@
     grid-template-rows: min-content 1fr;
     height: 100%;
 
-    // Only set two columns if the palette is present
-    &:has(dot-edit-ema-palette) {
-        grid-template-columns: 1fr 15.5rem;
+    // Default state (no palette)
+    grid-template-columns: 1fr;
+
+    &:has(.toggle-palette-placeholder) {
+        grid-template-columns: 1fr 2rem min-content;
+    }
+}
+
+// To generate the space for the palette toggle button
+.toggle-palette-placeholder {
+    width: 2rem;
+    height: 0;
+}
+
+dot-edit-ema-palette {
+    transition: all $basic-speed ease-in-out;
+
+    &.closed {
+        width: 0;
+    }
+
+    &.open {
+        width: 15.5rem;
     }
 }
 

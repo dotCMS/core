@@ -1,0 +1,8 @@
+<div class="dot-wysiwyg-monaco__container">
+    <ngx-monaco-editor
+        (init)="onEditorInit($event)"
+        [options]="$monacoOptions()"
+        #editorRef
+        data-testId="code-editor"
+        [formControlName]="$field().variable" />
+</div>

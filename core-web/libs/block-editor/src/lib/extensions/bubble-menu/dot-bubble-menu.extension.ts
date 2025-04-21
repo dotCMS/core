@@ -1,7 +1,7 @@
 import { PluginKey } from 'prosemirror-state';
 import { Props } from 'tippy.js';
 
-import { ViewContainerRef } from '@angular/core';
+import { Injector, ViewContainerRef } from '@angular/core';
 
 import BubbleMenu, { BubbleMenuOptions } from '@tiptap/extension-bubble-menu';
 
@@ -10,6 +10,7 @@ import { DotBubbleMenuPlugin } from './plugins/dot-bubble-menu.plugin';
 import { shouldShowBubbleMenu } from './utils/index';
 
 import { SuggestionsComponent } from '../../shared';
+import { DotContentTypeService, DotMessageService } from '@dotcms/data-access';
 
 const defaultTippyOptions: Partial<Props> = {
     duration: 500,
@@ -21,10 +22,14 @@ const defaultTippyOptions: Partial<Props> = {
 
 export const BUBBLE_MENU_PLUGIN_KEY = new PluginKey('bubble-menu');
 
-export function DotBubbleMenuExtension(viewContainerRef: ViewContainerRef) {
+export function DotBubbleMenuExtension(injector: Injector, viewContainerRef: ViewContainerRef) {
     // Create Instance Component
     const bubbleMenuComponent = viewContainerRef.createComponent(BubbleMenuComponent);
     const bubbleMenuElement = bubbleMenuComponent.location.nativeElement;
+
+    //Services
+    const dotContentTypeService = injector.get(DotContentTypeService);
+    const messageService = injector.get(DotMessageService);
 
     // Create ChangeTo Component Instance
     const changeToComponent = viewContainerRef.createComponent(SuggestionsComponent);
@@ -61,7 +66,9 @@ export function DotBubbleMenuExtension(viewContainerRef: ViewContainerRef) {
                     pluginKey: BUBBLE_MENU_PLUGIN_KEY,
                     editor: this.editor,
                     element: bubbleMenuElement,
-                    changeToElement: changeToElement
+                    changeToElement: changeToElement,
+                    dotContentTypeService,
+                    messageService
                 })
             ];
         }

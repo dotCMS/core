@@ -56,7 +56,15 @@
                 "extractCss": false,
                 "minify": true,
                 "declaration": false,
-                "generatePackageJson": false
+                "generatePackageJson": false,
+                "esbuildOptions": {
+                    "banner": {
+                        "js": "(function(){"
+                    },
+                    "footer": {
+                        "js": "})();"
+                    }
+                }
             }
         }
     }

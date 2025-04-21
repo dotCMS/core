@@ -101,7 +101,10 @@ export function withLoad() {
                                 tap(({ pageAsset }) =>
                                     store.getWorkflowActions(pageAsset.page.inode)
                                 ),
-                                catchError(({ status: errorStatus }: HttpErrorResponse) => {
+                                catchError((err: HttpErrorResponse) => {
+                                    const errorStatus = err.status;
+                                    console.error('Error UVEStore', err);
+
                                     patchState(store, {
                                         errorCode: errorStatus,
                                         status: UVE_STATUS.ERROR
@@ -121,7 +124,10 @@ export function withLoad() {
                                             pageAsset.page.identifier
                                         )
                                     }).pipe(
-                                        catchError(({ status: errorStatus }: HttpErrorResponse) => {
+                                        catchError((err: HttpErrorResponse) => {
+                                            const errorStatus = err.status;
+                                            console.error('Error UVEStore', err);
+
                                             patchState(store, {
                                                 errorCode: errorStatus,
                                                 status: UVE_STATUS.ERROR
@@ -190,7 +196,10 @@ export function withLoad() {
                                             )
                                         });
                                     }),
-                                    catchError(({ status: errorStatus }: HttpErrorResponse) => {
+                                    catchError((err: HttpErrorResponse) => {
+                                        const errorStatus = err.status;
+                                        console.error('Error UVEStore', err);
+
                                         patchState(store, {
                                             errorCode: errorStatus,
                                             status: UVE_STATUS.ERROR
