@@ -1,7 +1,7 @@
 <p-dialog
-    [visible]="ds.status !== dialogStatus.IDLE"
+    [visible]="ds().status !== dialogStatus.IDLE"
     [style]="{ height: '90vh', width: '90vw' }"
-    [header]="ds.header"
+    [header]="ds().header"
     [draggable]="false"
     [resizable]="false"
     [maximizable]="true"
@@ -10,28 +10,28 @@
     data-testId="dialog"
     styleClass="edit-ema-dialog"
     (visibleChange)="onHide()">
-    @switch (ds.type) {
+    @switch (ds().type) {
         @case ('form') {
             <dot-ema-form-selector
                 (selected)="onFormSelected($event)"
                 data-testId="form-selector" />
         }
         @case ('content') {
-            @if (ds.url) {
+            @if (ds().url) {
                 <iframe
                     (load)="onIframeLoad()"
                     [style]="{
                         border: 'none',
-                        height: ds.status !== dialogStatus.INIT ? '0' : null
+                        height: ds().status !== dialogStatus.INIT ? '0' : null
                     }"
-                    [src]="ds.url | safeUrl"
+                    [src]="ds().url | safeUrl"
                     #iframe
                     title="dialog"
                     data-testId="dialog-iframe"
                     width="100%"
                     height="100%"></iframe>
             }
-            @if (ds.status === dialogStatus.LOADING) {
+            @if (ds().status === dialogStatus.LOADING) {
                 <dot-spinner class="absolute top-50" data-testId="spinner"></dot-spinner>
             }
         }

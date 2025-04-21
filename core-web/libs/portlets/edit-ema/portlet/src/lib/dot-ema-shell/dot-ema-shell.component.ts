@@ -33,7 +33,7 @@ import { UVE_MODE } from '@dotcms/uve/types';
 import { EditEmaNavigationBarComponent } from './components/edit-ema-navigation-bar/edit-ema-navigation-bar.component';
 
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
-import { DotEditorDialogService } from '../components/dot-ema-dialog/services/dot-ema-dialog.service';
+import { DotEditorDialogService } from '../components/dot-ema-dialog/services/dot-editor-dialog.service';
 import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
 import { DotPageApiService, UVEPageParams } from '../services/dot-page-api.service';
 import { NG_CUSTOM_EVENTS, UVE_STATUS } from '../shared/enums';

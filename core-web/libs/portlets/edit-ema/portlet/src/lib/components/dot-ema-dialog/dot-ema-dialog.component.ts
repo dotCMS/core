@@ -25,7 +25,7 @@ import { DotCMSWorkflowActionEvent, DotContentCompareEvent } from '@dotcms/dotcm
 import { DotContentCompareModule } from '@dotcms/portlets/dot-ema/ui';
 import { DotSpinnerModule, SafeUrlPipe } from '@dotcms/ui';
 
-import { DotEditorDialogService } from './services/dot-ema-dialog.service';
+import { DotEditorDialogService } from './services/dot-editor-dialog.service';
 
 import { DotEmaWorkflowActionsService } from '../../services/dot-ema-workflow-actions/dot-ema-workflow-actions.service';
 import { DialogStatus, NG_CUSTOM_EVENTS } from '../../shared/enums';
@@ -55,19 +55,15 @@ export class DotEmaDialogComponent {
     $compareData = signal<DotContentCompareEvent | null>(null);
     $compareDataExists = computed(() => !!this.$compareData());
 
+    private readonly ngZone = inject(NgZone);
     private readonly destroyRef$ = inject(DestroyRef);
     private readonly dialogService = inject(DotEditorDialogService);
     private readonly workflowActions = inject(DotEmaWorkflowActionsService);
-    private readonly ngZone = inject(NgZone);
     private readonly dotMessageService = inject(DotMessageService);
     private readonly messageService = inject(MessageService);
 
-    protected readonly dialogState = this.dialogService.state;
+    protected readonly ds = this.dialogService.state;
     protected readonly dialogStatus = DialogStatus;
-
-    protected get ds() {
-        return this.dialogState();
-    }
 
     /**
      * Handle workflow event
@@ -157,7 +153,6 @@ export class DotEmaDialogComponent {
             .pipe(takeUntilDestroyed(this.destroyRef$))
             .subscribe((event: CustomEvent) => {
                 this.emitAction(event);
-
                 switch (event.detail.name) {
                     case NG_CUSTOM_EVENTS.DIALOG_CLOSED: {
                         this.dialogService.resetDialog();
@@ -174,14 +169,14 @@ export class DotEmaDialogComponent {
 
                     case NG_CUSTOM_EVENTS.EDIT_CONTENTLET_UPDATED: {
                         // The edit content emits this for savings when translating a page and does not emit anything when changing the content
-                        if (this.dialogState().form.isTranslation) {
+                        if (!this.ds().form.isTranslation) {
+                            this.dialogService.setDirty();
+                        } else {
                             this.dialogService.setSaved();
 
                             if (event.detail.payload.isMoveAction) {
                                 this.reloadIframe();
                             }
-                        } else {
-                            this.dialogService.setDirty();
                         }
 
                         break;
@@ -246,7 +241,7 @@ export class DotEmaDialogComponent {
     }
 
     private emitAction(event: CustomEvent) {
-        const dialogState = this.dialogState();
+        const dialogState = this.ds();
         const { actionPayload, form, clientAction } = dialogState;
 
         const dialogAction: DialogAction = { event, actionPayload, form, clientAction };

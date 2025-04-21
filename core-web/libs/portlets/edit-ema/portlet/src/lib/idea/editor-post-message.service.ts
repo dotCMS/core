@@ -19,7 +19,7 @@ import { DotCMSContentlet, DotTreeNode } from '@dotcms/dotcms-models';
 import { DotCopyContentModalService } from '@dotcms/ui';
 import { __DOTCMS_UVE_EVENT__ } from '@dotcms/uve/internal';
 
-import { DotEditorDialogService } from '../components/dot-ema-dialog/services/dot-ema-dialog.service';
+import { DotEditorDialogService } from '../components/dot-ema-dialog/services/dot-editor-dialog.service';
 import { DotPageApiService } from '../services/dot-page-api.service';
 import { InlineEditService } from '../services/inline-edit/inline-edit.service';
 import { DEFAULT_PERSONA } from '../shared/consts';
