@@ -77,6 +77,7 @@ import {
     DotPersonalizeServiceMock,
     MockDotHttpErrorManagerService
 } from '@dotcms/utils-testing';
+import { UVE_MODE } from '@dotcms/uve/types';
 
 import { DotUvePageVersionNotFoundComponent } from './components/dot-uve-page-version-not-found/dot-uve-page-version-not-found.component';
 import { DotEmaRunningExperimentComponent } from './components/dot-uve-toolbar/components/dot-ema-running-experiment/dot-ema-running-experiment.component';
@@ -405,6 +406,7 @@ describe('EditEmaEditorComponent', () => {
                 clientHost: 'http://localhost:3000',
                 url: 'index',
                 language_id: '1',
+                mode: UVE_MODE.EDIT,
                 [PERSONA_KEY]: DEFAULT_PERSONA.identifier
             });
 
@@ -2624,7 +2626,7 @@ describe('EditEmaEditorComponent', () => {
                     const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
 
                     expect(iframe.nativeElement.src).toBe(
-                        'http://localhost:3000/index?language_id=1'
+                        'http://localhost:3000/index?language_id=1&mode=EDIT_MODE'
                     );
                 });
 

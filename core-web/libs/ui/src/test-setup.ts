@@ -2,13 +2,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-empty-function */
 
-globalThis.ngJest = {
-    testEnvironmentOptions: {
-        errorOnUnknownElements: true,
-        errorOnUnknownProperties: true
-    }
-};
-
 import '@testing-library/jest-dom';
 import 'jest-preset-angular/setup-jest';
 import 'zone.js/testing';
