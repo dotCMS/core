@@ -1,7 +1,7 @@
+import { workspaceRoot } from '@nx/devkit';
 import { nxE2EPreset } from '@nx/playwright/preset';
 import { defineConfig, devices } from '@playwright/test';
-
-import { workspaceRoot } from '@nx/devkit';
+import * as dotenv from 'dotenv';
 
 // For CI, you may want to set BASE_URL to the deployed application.
 const baseURL = process.env['E2E_BASE_URL'] || 'http://localhost:4200';
@@ -11,7 +11,7 @@ const reuseExistingServer = process.env['E2E_REUSE_EXISTING_SERVER'] === 'false'
  * Read environment variables from file.
  * https://github.com/motdotla/dotenv
  */
-require('dotenv').config();
+dotenv.config();
 
 /**
  * See https://playwright.dev/docs/test-configuration.
