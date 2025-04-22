@@ -45,28 +45,23 @@ export function withSave() {
 
                             return dotPageApiService.save(payload).pipe(
                                 switchMap(() =>
-                                    dotPageApiService
-                                        .getClientPage(
-                                            store.pageParams(),
-                                            store.clientRequestProps()
-                                        )
-                                        .pipe(
-                                            tapResponse(
-                                                (pageAPIResponse: DotPageApiResponse) => {
-                                                    patchState(store, {
-                                                        status: UVE_STATUS.LOADED,
-                                                        pageAPIResponse: pageAPIResponse
-                                                    });
-                                                },
-                                                (e) => {
-                                                    console.error(e);
+                                    dotPageApiService.get(store.pageParams()).pipe(
+                                        tapResponse(
+                                            (pageAPIResponse: DotPageApiResponse) => {
+                                                patchState(store, {
+                                                    status: UVE_STATUS.LOADED,
+                                                    pageAPIResponse: pageAPIResponse
+                                                });
+                                            },
+                                            (e) => {
+                                                console.error(e);
 
-                                                    patchState(store, {
-                                                        status: UVE_STATUS.ERROR
-                                                    });
-                                                }
-                                            )
+                                                patchState(store, {
+                                                    status: UVE_STATUS.ERROR
+                                                });
+                                            }
                                         )
+                                    )
                                 ),
                                 catchError((e) => {
                                     console.error(e);

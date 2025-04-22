@@ -259,11 +259,11 @@ describe('DotEmaShellComponent', () => {
             {
                 provide: DotPageApiService,
                 useValue: {
-                    get({ language_id }) {
+                    get({ language_id = 1 }) {
                         return PAGE_RESPONSE_BY_LANGUAGE_ID[language_id] || of({});
                     },
-                    getClientPage({ language_id }, _clientConfig) {
-                        return PAGE_RESPONSE_BY_LANGUAGE_ID[language_id] || of({});
+                    getGraphQLPage() {
+                        return of({});
                     },
                     save() {
                         return of({});

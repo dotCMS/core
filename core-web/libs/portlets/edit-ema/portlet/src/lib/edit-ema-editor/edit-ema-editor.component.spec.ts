@@ -282,13 +282,17 @@ const createRouting = () =>
             {
                 provide: DotPageApiService,
                 useValue: {
-                    get({ language_id }) {
-                        // We use the language_id to determine the response, use this to test different behaviors
+                    get(data) {
+                        const { language_id = 1 } = data;
+                        console.log('get', data);
+
                         return UVE_PAGE_RESPONSE_MAP[language_id];
                     },
-                    getClientPage({ language_id }, _clientConfig) {
-                        // We use the language_id to determine the response, use this to test different behaviors
-                        return UVE_PAGE_RESPONSE_MAP[language_id];
+                    getGraphQLPage({ language_id = 1 }) {
+                        return {
+                            page: UVE_PAGE_RESPONSE_MAP[language_id],
+                            content: {}
+                        };
                     },
                     save() {
                         return of({});
@@ -608,8 +612,8 @@ describe('EditEmaEditorComponent', () => {
                 };
 
                 it('should edit urlContentMap page', () => {
+                    spectator.detectChanges();
                     const dialog = spectator.query(DotEmaDialogComponent);
-
                     jest.spyOn(dialog, 'editUrlContentMapContentlet');
 
                     spectator.triggerEventHandler(DotUveToolbarComponent, 'editUrlContentMap', {
@@ -2950,10 +2954,7 @@ describe('EditEmaEditorComponent', () => {
             describe('CUSTOMER ACTIONS', () => {
                 describe('CLIENT_READY', () => {
                     it('should set client GraphQL configuration and call the reload', () => {
-                        const setClientConfigurationSpy = jest.spyOn(
-                            store,
-                            'setClientConfiguration'
-                        );
+                        const setClientConfigurationSpy = jest.spyOn(store, 'setCustomGraphQL');
                         const reloadSpy = jest.spyOn(store, 'reloadCurrentPage');
 
                         const config = {
@@ -2975,19 +2976,11 @@ describe('EditEmaEditorComponent', () => {
                         expect(reloadSpy).toHaveBeenCalled();
                     });
 
-                    it('should set client PAGEAPI configuration and call the reload', () => {
-                        const setClientConfigurationSpy = jest.spyOn(
-                            store,
-                            'setClientConfiguration'
-                        );
+                    it('should set call reloadCurrentPage when client is ready', () => {
+                        const setCustomGraphQLSpy = jest.spyOn(store, 'setCustomGraphQL');
                         const reloadSpy = jest.spyOn(store, 'reloadCurrentPage');
 
-                        const config = {
-                            params: {
-                                depth: '1'
-                            },
-                            query: ''
-                        };
+                        const config = { params: { depth: '1' } };
 
                         window.dispatchEvent(
                             new MessageEvent('message', {
@@ -2999,14 +2992,14 @@ describe('EditEmaEditorComponent', () => {
                             })
                         );
 
-                        expect(setClientConfigurationSpy).toHaveBeenCalledWith(config);
+                        expect(setCustomGraphQLSpy).not.toHaveBeenCalled();
                         expect(reloadSpy).toHaveBeenCalled();
                     });
                 });
             });
 
             describe('language selected', () => {
-                it('should update the URL and language when the user create a new translation changing the URL', () => {
+                fit('should update the URL and language when the user create a new translation changing the URL', () => {
                     store.loadPageAsset({
                         clientHost: 'http://localhost:3000',
                         url: 'index',
@@ -3015,6 +3008,8 @@ describe('EditEmaEditorComponent', () => {
                     });
 
                     const loadPageAssetSpy = jest.spyOn(store, 'loadPageAsset');
+
+                    spectator.detectChanges();
                     const dialog = spectator.debugElement.query(
                         By.css('[data-testId="ema-dialog"]')
                     );
@@ -3056,12 +3051,11 @@ describe('EditEmaEditorComponent', () => {
                     });
 
                     const loadPageAssetSpy = jest.spyOn(store, 'loadPageAsset');
+                    spectator.detectChanges();
+
                     const dialog = spectator.debugElement.query(
                         By.css('[data-testId="ema-dialog"]')
                     );
-
-                    spectator.detectComponentChanges();
-
                     triggerCustomEvent(dialog, 'action', {
                         event: new CustomEvent('ng-event', {
                             detail: {

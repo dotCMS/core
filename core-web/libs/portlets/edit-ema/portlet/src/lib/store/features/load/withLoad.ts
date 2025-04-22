@@ -67,8 +67,8 @@ export function withLoad() {
                                 pageParams
                             });
                         }),
-                        switchMap((pageParams) =>
-                            dotPageApiService.get(pageParams).pipe(
+                        switchMap((pageParams) => {
+                            return dotPageApiService.get(pageParams).pipe(
                                 tap((pageAPIResponse) => {
                                     const isTraditionalPage = !pageParams.clientHost;
                                     const isClientReady = isTraditionalPage;
@@ -120,8 +120,8 @@ export function withLoad() {
 
                                     return EMPTY;
                                 })
-                            )
-                        )
+                            );
+                        })
                     )
                 ),
                 /**
@@ -131,44 +131,61 @@ export function withLoad() {
                  * @param {Partial<DotPageApiParams>} params - The parameters used to fetch the page asset.
                  * @memberof DotEmaShellComponent
                  */
-                reloadCurrentPage: rxMethod<Pick<UVEState, 'isClientReady'> | void>(
+                reloadCurrentPage: rxMethod<Partial<DotPageAssetParams> | void>(
                     pipe(
                         tap(() => {
                             patchState(store, {
                                 status: UVE_STATUS.LOADING
                             });
                         }),
-                        switchMap((partialState: Pick<UVEState, 'isClientReady'>) => {
-                            return dotPageApiService
-                                .getClientPage(store.pageParams(), store.clientRequestProps())
-                                .pipe(
-                                    tap((pageAPIResponse) => {
-                                        const isClientReady = partialState?.isClientReady ?? true;
-                                        patchState(store, { pageAPIResponse, isClientReady });
-                                    }),
-                                    switchMap((pageAPIResponse) => {
-                                        return dotLanguagesService.getLanguagesUsedPage(
-                                            pageAPIResponse.page.identifier
-                                        );
-                                    }),
-                                    tap((languages) => {
-                                        patchState(store, {
-                                            languages,
-                                            status: UVE_STATUS.LOADED
-                                        });
-                                    }),
-                                    catchError((err: HttpErrorResponse) => {
-                                        const errorStatus = err.status;
-                                        console.error('Error UVEStore', err);
+                        map((params) => {
+                            if (!store.pageParams()) {
+                                return params as DotPageAssetParams;
+                            }
 
-                                        patchState(store, {
-                                            errorCode: errorStatus,
-                                            status: UVE_STATUS.ERROR
-                                        });
+                            return {
+                                ...store.pageParams(),
+                                ...params
+                            };
+                        }),
+                        switchMap((params: DotPageAssetParams) => {
+                            const pageRequest = !store.graphql()
+                                ? dotPageApiService.get(params)
+                                : dotPageApiService.getGraphQLPage(store.$graphql()).pipe(
+                                      map((response) => {
+                                          store.setGraphqlResponse(response);
 
-                                        return EMPTY;
-                                    })
-                                );
+                                          return response.page;
+                                      })
+                                  );
+
+                            return pageRequest.pipe(
+                                tap((pageAPIResponse) => {
+                                    patchState(store, { pageAPIResponse });
+                                }),
+                                switchMap((pageAPIResponse) => {
+                                    return dotLanguagesService.getLanguagesUsedPage(
+                                        pageAPIResponse.page.identifier
+                                    );
+                                }),
+                                tap((languages) => {
+                                    patchState(store, {
+                                        languages,
+                                        status: UVE_STATUS.LOADED
+                                    });
+                                }),
+                                catchError((err: HttpErrorResponse) => {
+                                    const errorStatus = err.status;
+                                    console.error('Error UVEStore', err);
+
+                                    patchState(store, {
+                                        errorCode: errorStatus,
+                                        status: UVE_STATUS.ERROR
+                                    });
+
+                                    return EMPTY;
+                                })
+                            );
                         })
                     )
                 )

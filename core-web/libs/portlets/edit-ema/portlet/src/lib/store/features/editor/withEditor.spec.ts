@@ -129,8 +129,8 @@ describe('withEditor', () => {
 
                     // It's impossible to get a VTL when we are in Headless
                     // but I just want to check the state is being patched
-                    const getClientPageSpy = jest
-                        .spyOn(dotPageApiService, 'getClientPage')
+                    const getPage = jest
+                        .spyOn(dotPageApiService, 'get')
                         .mockImplementation(() => of(MOCK_RESPONSE_VTL));
 
                     const payload = {
@@ -143,10 +143,7 @@ describe('withEditor', () => {
 
                     expect(saveSpy).toHaveBeenCalledWith(payload);
 
-                    expect(getClientPageSpy).toHaveBeenCalledWith(
-                        store.pageParams(),
-                        store.clientRequestProps()
-                    );
+                    expect(getPage).toHaveBeenCalledWith(store.pageParams());
 
                     expect(store.status()).toBe(UVE_STATUS.LOADED);
                     expect(store.pageAPIResponse()).toEqual(MOCK_RESPONSE_VTL);
