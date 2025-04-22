@@ -79,6 +79,7 @@ runs:
       with:
         path: ~/.sdkman/candidates/java/${{ steps.get-requested-version.outputs.requested_version }}
         key: ${{ runner.os }}-${{ env.ARCHITECTURE }}-sdkman-java-${{ steps.get-requested-version.outputs.requested_version }}
+        lookup-only: true
 
     - name: Restore Cache GraalVM SDK
       id: restore-cache-graalvm
