@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, model } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, model, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { ButtonModule } from 'primeng/button';
@@ -56,9 +56,6 @@ import { DotEditContentSidebarComponent } from '../dot-edit-content-sidebar/dot-
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotEditContentLayoutComponent {
-closeBetaMessage() {
-throw new Error('Method not implemented.');
-}
     /**
      * The store instance.
      *
@@ -66,6 +63,14 @@ throw new Error('Method not implemented.');
      * @memberof EditContentLayoutComponent
      */
     readonly $store: InstanceType<typeof DotEditContentStore> = inject(DotEditContentStore);
+
+    /**
+     * Whether the beta message should be shown.
+     *
+     * @type {boolean}
+     * @memberof EditContentLayoutComponent
+     */
+    readonly $showBetaMessage = signal(true);
 
     /**
      * Whether the select workflow dialog should be shown.
@@ -92,5 +97,14 @@ throw new Error('Method not implemented.');
      */
     onFormChange(value: FormValues) {
         this.$store.onFormChange(value);
+    }
+
+    /**
+     * Closes the beta message.
+     *
+     * @memberof EditContentLayoutComponent
+     */
+    closeBetaMessage() {
+        this.$showBetaMessage.set(false);
     }
 }

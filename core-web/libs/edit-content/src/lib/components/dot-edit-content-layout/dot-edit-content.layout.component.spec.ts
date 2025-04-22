@@ -5,7 +5,7 @@ import {
     Spectator,
     SpyObject
 } from '@ngneat/spectator/jest';
-import { MockComponent, MockModule } from 'ng-mocks';
+import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
@@ -36,6 +36,9 @@ import {
 
 import { DotEditContentLayoutComponent } from './dot-edit-content.layout.component';
 
+import { DotMessageService } from '@dotcms/data-access';
+import { DotMessagePipe } from '@dotcms/ui';
+import { ButtonModule } from 'primeng/button';
 import { DotEditContentService } from '../../services/dot-edit-content.service';
 import { DotEditContentStore } from '../../store/edit-content.store';
 import { MOCK_CONTENTLET_1_TAB } from '../../utils/edit-content.mock';
@@ -58,9 +61,11 @@ describe('EditContentLayoutComponent', () => {
     const createComponent = createComponentFactory({
         component: DotEditContentLayoutComponent,
         imports: [
-            MockModule(MessagesModule),
+            MessagesModule,
+            ButtonModule,
             MockComponent(DotEditContentFormComponent),
-            MockComponent(DotEditContentSidebarComponent)
+            MockComponent(DotEditContentSidebarComponent),
+            DotMessagePipe
         ],
         componentProviders: [
             DotEditContentStore,
@@ -100,7 +105,8 @@ describe('EditContentLayoutComponent', () => {
                 events: of()
             }),
             provideHttpClient(),
-            provideHttpClientTesting()
+            provideHttpClientTesting(),
+            mockProvider(DotMessageService)
         ]
     });
 
@@ -157,6 +163,60 @@ describe('EditContentLayoutComponent', () => {
             expect(spectator.query(ConfirmDialog)).toBeTruthy();
         }));
 
+        describe('Beta Message', () => {
+            beforeEach(fakeAsync(() => {
+                dotContentTypeService.getContentType.mockReturnValue(of(CONTENT_TYPE_MOCK));
+                workflowActionsService.getDefaultActions.mockReturnValue(
+                    of(MOCK_SINGLE_WORKFLOW_ACTIONS)
+                );
+                store.initializeNewContent('contentTypeName');
+                spectator.detectChanges();
+                tick();
+            }));
+
+            it('should show beta message by default', fakeAsync(() => {
+                spectator.detectChanges();
+                tick();
+                expect(spectator.query(byTestId('edit-content-layout__beta-message'))).toBeTruthy();
+                expect(
+                    spectator.query(byTestId('edit-content-layout__beta-message-content'))
+                ).toBeTruthy();
+                expect(
+                    spectator.query(byTestId('edit-content-layout__beta-message-link'))
+                ).toBeTruthy();
+                expect(
+                    spectator.query(byTestId('edit-content-layout__beta-message-close-button'))
+                ).toBeTruthy();
+            }));
+
+            it('should hide beta message when close button is clicked', fakeAsync(() => {
+                spectator.detectChanges();
+                tick();
+                console.log(spectator.debugElement.nativeElement.innerHTML);
+
+                const closeButton = spectator.query(
+                    byTestId('edit-content-layout__beta-message-close-button')
+                ) as HTMLButtonElement;
+                expect(closeButton).toBeTruthy();
+
+                closeButton.click();
+                spectator.detectChanges();
+                tick();
+
+                expect(spectator.query(byTestId('edit-content-layout__beta-message'))).toBeFalsy();
+            }));
+
+            it('should have correct link to old editor', fakeAsync(() => {
+                spectator.detectChanges();
+                tick();
+                const link = spectator.query(byTestId('beta-message-content-type'));
+                expect(link).toHaveAttribute(
+                    'ng-reflect-router-link',
+                    '/content-types-angular/edit/contentTypeName'
+                );
+            }));
+        });
+
         it('should not show top bar message when new content editor is disabled', () => {
             const CONTENT_TYPE_MOCK_NO_METADATA = {
                 ...CONTENT_TYPE_MOCK,
@@ -174,7 +234,7 @@ describe('EditContentLayoutComponent', () => {
 
             spectator.detectChanges();
             expect(store.isEnabledNewContentEditor()).toBe(false);
-            expect(spectator.query(byTestId('edit-content-layout__beta-message'))).toBeNull();
+            expect(spectator.query(byTestId('edit-content-layout__beta-message'))).toBeFalsy();
         });
     });
 
@@ -217,7 +277,7 @@ describe('EditContentLayoutComponent', () => {
             const warningMessage = spectator.query(
                 byTestId('edit-content-layout__select-workflow-warning')
             );
-            expect(warningMessage).toBeNull();
+            expect(warningMessage).toBeFalsy();
         }));
 
         it('should not show workflow warning message for existing content', fakeAsync(() => {
@@ -233,7 +293,7 @@ describe('EditContentLayoutComponent', () => {
             const warningMessage = spectator.query(
                 byTestId('edit-content-layout__select-workflow-warning')
             );
-            expect(warningMessage).toBeNull();
+            expect(warningMessage).toBeFalsy();
         }));
     });
 });

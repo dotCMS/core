@@ -16,12 +16,6 @@
     &.edit-content--with-sidebar {
         grid-template-columns: 1fr 21.875rem;
     }
-
-    ::ng-deep {
-        .p-button .p-button-icon {
-            color: $color-palette-green;
-        }
-    }
 }
 
 .edit-content-layout__topBar {

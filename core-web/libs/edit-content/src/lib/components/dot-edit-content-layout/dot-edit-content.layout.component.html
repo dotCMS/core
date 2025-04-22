@@ -4,8 +4,9 @@
     @let showSidebar = $store.isSidebarOpen();
     @let showSelectWorkflowWarning = $store.showSelectWorkflowWarning();
 
+    @let isEnabledNewContentEditor = $store.isEnabledNewContentEditor();
     <div class="edit-content-layout__topBar" data-testId="edit-content-layout__topBar">
-        @if ($store.isEnabledNewContentEditor()) {
+        @if (isEnabledNewContentEditor && $showBetaMessage()) {
             <p-messages
                 styleClass="edit-content-layout__beta-message"
                 severity="success"
@@ -13,22 +14,28 @@
                 <ng-template pTemplate>
                     <div class="flex w-full gap-1">
                         <i class="pi pi-info-circle"></i>
-                        <div class="flex align-items-center mr-auto gap-1">
+                        <div
+                            class="flex align-items-center mr-auto gap-1"
+                            data-testId="edit-content-layout__beta-message-content">
                             {{ 'edit.content.layout.back.to.old.edit.content' | dm }}
                             <a
                                 [routerLink]="'/content-types-angular/edit/' + variable"
-                                data-testId="beta-message-content-type">
+                                data-testId="edit-content-layout__beta-message-link">
                                 {{ 'edit.content.layout.back.to.old.edit.content.switch' | dm }}
                             </a>
                             {{ 'edit.content.layout.back.to.old.edit.content.subtitle' | dm }}
                         </div>
 
-                        <p-button
+                        <button
+                            type="button"
+                            pButton
                             icon="pi pi-times"
                             rounded="true"
+                            data-testId="edit-content-layout__beta-message-close-button"
+                            (click)="closeBetaMessage()"
                             severity="success"
                             text="true"
-                            size="small" />
+                            size="small"></button>
                     </div>
                 </ng-template>
             </p-messages>
