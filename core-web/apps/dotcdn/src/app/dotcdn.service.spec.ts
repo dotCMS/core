@@ -245,6 +245,10 @@ describe('DotcdnService', () => {
         jest.setSystemTime(new Date('2021-05-03'));
     });
 
+    afterEach(() => {
+        jest.useRealTimers();
+    });
+
     // Skipping because the `useFakeTimers` and `setSystemTime` is not pickinh up win GHA
     it('should return the stats', (done) => {
         const {

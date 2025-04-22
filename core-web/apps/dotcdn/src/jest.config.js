@@ -1,3 +1,5 @@
+process.env.TZ = 'America/New_York'; // Set timezone to Eastern Time
+
 module.exports = {
     displayName: 'dotcdn',
     preset: '../../jest.preset.js',
