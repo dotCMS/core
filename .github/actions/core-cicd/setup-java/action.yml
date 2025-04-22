@@ -55,32 +55,27 @@ runs:
           echo "Using provided GraalVM version: $GRAALVM_VERSION"
         fi
         echo "graalvm_version=$GRAALVM_VERSION" >> $GITHUB_OUTPUT
-    - name: Restore Cache SDKMan install
-      id: restore-cache-sdkman
-      uses: actions/cache/restore@v4
+        
+    - name: Cache SDKMan install
+      id: cache-sdkman
+      uses: actions/cache@v4
       with:
         path: ~/.sdkman
         key: ${{ runner.os }}-${{ env.ARCHITECTURE }}-sdkman-install
+        
     - name: Install SDKMan
       id: install-sdkman
-      if: ${{ steps.restore-cache-sdkman.outputs.cache-hit != 'true' }}
+      if: ${{ steps.cache-sdkman.outputs.cache-hit != 'true' }}
       shell: bash
       run: |
         if [ ! -f "$HOME/.sdkman/bin/sdkman-init.sh" ]; then
         echo "Downloading SDKMAN install"
         curl -s "https://get.sdkman.io" | bash
         fi
-    - name: Save Cache SDKMan install
-      id: save-cache-sdkman
-      if: ${{ steps.restore-cache-sdkman.outputs.cache-hit != 'true' }}
-      uses: actions/cache/save@v4
-      with:
-        path: ~/.sdkman
-        key: ${{ runner.os }}-${{ env.ARCHITECTURE }}-sdkman-install
-
+        
     - name: Restore Cache Java SDK
       id: restore-cache-java
-      uses: actions/cache/restore@v4
+      uses: actions/cache@v4
       with:
         path: ~/.sdkman/candidates/java/${{ steps.get-requested-version.outputs.requested_version }}
         key: ${{ runner.os }}-${{ env.ARCHITECTURE }}-sdkman-java-${{ steps.get-requested-version.outputs.requested_version }}
@@ -88,7 +83,7 @@ runs:
     - name: Restore Cache GraalVM SDK
       id: restore-cache-graalvm
       if: ${{ inputs.require-graalvm == 'true' }}
-      uses: actions/cache/restore@v4
+      uses: actions/cache@v4
       with:
         path: ~/.sdkman/candidates/java/${{ steps.get-requested-version.outputs.graalvm_version }}
         key: ${{ runner.os }}-${{ env.ARCHITECTURE }}-sdkman-java-${{ steps.get-requested-version.outputs.graalvm_version }}
@@ -153,7 +148,7 @@ runs:
         java -version
 
     - name: Save Cache Java SDK
-      uses: actions/cache/save@v4
+      uses: actions/cache@v4
       if: ${{ steps.restore-cache-java.outputs.cache-hit != 'true' }}
       with:
         path: ~/.sdkman/candidates/java/${{ steps.get-requested-version.outputs.requested_version }}
@@ -161,7 +156,7 @@ runs:
 
     - name: Save Cache GraalVM SDK
       if: ${{ inputs.require-graalvm == 'true' && steps.restore-cache-graalvm.outputs.cache-hit != 'true' }}
-      uses: actions/cache/save@v4
+      uses: actions/cache@v4
       with:
         path: ~/.sdkman/candidates/java/${{ steps.get-requested-version.outputs.graalvm_version }}
         key: ${{ runner.os }}-${{ env.ARCHITECTURE }}-sdkman-java-${{ steps.get-requested-version.outputs.graalvm_version }}
