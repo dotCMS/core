@@ -192,7 +192,7 @@ export enum UVEEventType {
  * Type definitions for each event's payload
  */
 export type UVEEventPayloadMap = {
-    [UVEEventType.CONTENT_CHANGES]: unknown;
+    [UVEEventType.CONTENT_CHANGES]: DotCMSEditablePage;
     [UVEEventType.PAGE_RELOAD]: undefined;
     [UVEEventType.REQUEST_BOUNDS]: DotCMSContainerBound[];
     [UVEEventType.IFRAME_SCROLL]: 'up' | 'down';

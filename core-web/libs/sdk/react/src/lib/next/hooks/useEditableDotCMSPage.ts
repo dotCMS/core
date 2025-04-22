@@ -103,7 +103,7 @@ export const useEditableDotCMSPage = (editablePage: DotCMSEditablePage): DotCMSE
         const { destroyUVESubscriptions } = initUVE(editablePage);
 
         const { unsubscribe } = createUVESubscription(UVEEventType.CONTENT_CHANGES, (payload) => {
-            setUpdatedEditablePage(payload as DotCMSEditablePage);
+            setUpdatedEditablePage(payload);
         });
 
         return () => {
