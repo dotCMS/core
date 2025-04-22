@@ -284,15 +284,14 @@ const createRouting = () =>
                 useValue: {
                     get(data) {
                         const { language_id = 1 } = data;
-                        console.log('get', data);
 
                         return UVE_PAGE_RESPONSE_MAP[language_id];
                     },
                     getGraphQLPage({ language_id = 1 }) {
-                        return {
+                        return of({
                             page: UVE_PAGE_RESPONSE_MAP[language_id],
                             content: {}
-                        };
+                        });
                     },
                     save() {
                         return of({});
@@ -603,6 +602,7 @@ describe('EditEmaEditorComponent', () => {
             });
 
             describe('edit', () => {
+                beforeEach(() => store.setIsClientReady(true));
                 const baseContentletPayload = {
                     x: 100,
                     y: 100,
@@ -632,7 +632,6 @@ describe('EditEmaEditorComponent', () => {
 
                 it('should open a dialog and save after backend emit', (done) => {
                     spectator.detectChanges();
-
                     const dialog = spectator.debugElement.query(
                         By.css('[data-testId="ema-dialog"]')
                     );
@@ -2958,8 +2957,8 @@ describe('EditEmaEditorComponent', () => {
                         const reloadSpy = jest.spyOn(store, 'reloadCurrentPage');
 
                         const config = {
-                            params: {},
-                            query: '{ query: { hello } }'
+                            query: '{ query: { hello } }',
+                            variables: undefined
                         };
 
                         window.dispatchEvent(
@@ -2972,7 +2971,7 @@ describe('EditEmaEditorComponent', () => {
                             })
                         );
 
-                        expect(setClientConfigurationSpy).toHaveBeenCalledWith(config);
+                        expect(setClientConfigurationSpy).toHaveBeenCalledWith(config, true);
                         expect(reloadSpy).toHaveBeenCalled();
                     });
 
@@ -2999,7 +2998,7 @@ describe('EditEmaEditorComponent', () => {
             });
 
             describe('language selected', () => {
-                fit('should update the URL and language when the user create a new translation changing the URL', () => {
+                it('should update the URL and language when the user create a new translation changing the URL', () => {
                     store.loadPageAsset({
                         clientHost: 'http://localhost:3000',
                         url: 'index',
