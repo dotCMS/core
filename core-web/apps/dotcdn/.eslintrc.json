@@ -24,6 +24,25 @@
                         "prefix": "dotcms",
                         "style": "kebab-case"
                     }
+                ],
+                "@nx/enforce-module-boundaries": [
+                    "error",
+                    {
+                        "allowCircularSelfDependency": true,
+                        "enforceBuildableLibDependency": true,
+                        "allow": [
+                            "@components/_common/dot-alert-confirm/dot-alert-confirm.module",
+                            "@components/_common/dot-push-publish-dialog",
+                            "@components/dot-large-message-display/dot-large-message-display.module",
+                            "@components/dot-message-display/dot-message-display.module"
+                        ],
+                        "depConstraints": [
+                            {
+                                "sourceTag": "*",
+                                "onlyDependOnLibsWithTags": ["*"]
+                            }
+                        ]
+                    }
                 ]
             }
         },

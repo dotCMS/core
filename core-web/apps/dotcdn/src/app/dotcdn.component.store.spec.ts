@@ -1,16 +1,20 @@
-import { of } from 'rxjs';
-
-import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { TestBed } from '@angular/core/testing';
-
+import { describe, expect, it, jest } from '@jest/globals';
 import {
-    CoreWebService,
-    CoreWebServiceMock,
-    SiteService,
-    SiteServiceMock
-} from '@dotcms/dotcms-js';
+    createServiceFactory,
+    mockProvider,
+    SpectatorService,
+    SpyObject
+} from '@ngneat/spectator/jest';
+import { of, throwError } from 'rxjs';
 
-import { DotCDNStats } from './app.models';
+import { HttpErrorResponse } from '@angular/common/http';
+
+import { distinctUntilChanged, map, take, toArray } from 'rxjs/operators';
+
+import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
+import { mockResponseView } from '@dotcms/utils-testing';
+
+import { ChartPeriod, DotCDNStats, Loader } from './app.models';
 import { DotCDNStore } from './dotcdn.component.store';
 import { DotCDNService } from './dotcdn.service';
 
@@ -98,93 +102,147 @@ const fakeStateViewModel = {
 };
 
 describe('DotCDNComponentStore', () => {
+    let spectator: SpectatorService<DotCDNStore>;
     let store: DotCDNStore;
+    let dotCDNService: SpyObject<DotCDNService>;
+    let dotHttpErrorManagerService: SpyObject<DotHttpErrorManagerService>;
+    let dotMessageService: SpyObject<DotMessageService>;
 
-    beforeEach(() => {
-        TestBed.configureTestingModule({
-            imports: [HttpClientTestingModule],
-            providers: [
-                DotCDNStore,
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
-                { provide: SiteService, useClass: SiteServiceMock },
-                {
-                    provide: DotCDNService,
-                    useValue: {
-                        requestStats() {
-                            return of(fakeResponseData);
-                        },
-
-                        purgeCacheAll() {
-                            return of({
-                                entity: {
-                                    'Entire Cache Purged: ': true
-                                },
-                                errors: [],
-                                i18nMessagesMap: {},
-                                messages: [],
-                                permissions: []
-                            });
-                        },
-
-                        purgeCache() {
-                            return of({
-                                entity: {
-                                    'All Urls Sent Purged: ': true
-                                },
-                                errors: [],
-                                i18nMessagesMap: {},
-                                messages: [],
-                                permissions: []
-                            });
-                        }
-                    }
-                }
-            ]
-        });
-        store = TestBed.inject(DotCDNStore);
+    const createStoreService = createServiceFactory({
+        service: DotCDNStore,
+        providers: [
+            mockProvider(DotCDNService, {
+                requestStats: jest.fn(() => of(fakeResponseData))
+            }),
+            mockProvider(DotHttpErrorManagerService),
+            mockProvider(DotMessageService)
+        ]
     });
 
-    describe('DotCDN Component Store', () => {
-        beforeEach(() => {
-            jest.restoreAllMocks();
-            jest.clearAllMocks();
-        });
+    beforeEach(() => {
+        spectator = createStoreService();
+        store = spectator.service;
+        dotCDNService = spectator.inject(DotCDNService);
+        dotHttpErrorManagerService = spectator.inject(DotHttpErrorManagerService);
+        dotMessageService = spectator.inject(DotMessageService);
+        expect(dotMessageService.init).toBeCalled();
+        expect(dotCDNService.requestStats).toHaveBeenCalledWith(ChartPeriod.Last15Days);
+    });
 
-        xit('should set chart state', (done) => {
+    // Check if the loading state is set correctly when purging cache or getting stats
+    // and that the loading state is reset after the operation is completed
+    function checkLoadingState(loaderType: Loader) {
+        const storeLoadingState$ =
+            loaderType == Loader.CHART
+                ? store.vm$.pipe(map((state) => state.isChartLoading))
+                : loaderType == Loader.PURGE_URLS
+                  ? store.vmPurgeLoaders$.pipe(map((state) => state.isPurgeUrlsLoading))
+                  : store.vmPurgeLoaders$.pipe(map((state) => state.isPurgeZoneLoading));
+        storeLoadingState$
+            .pipe(distinctUntilChanged(), take(3), toArray())
+            .subscribe((loadingStates) => {
+                expect(loadingStates).toEqual([false, true, false]);
+            });
+    }
+
+    describe('DotCDN Component Store', () => {
+        it('should set chart state', (done) => {
+            checkLoadingState(Loader.CHART);
+
+            const testPeriod = '30';
+            spectator.service.getChartStats(of(testPeriod));
+
             store.vm$.subscribe((state) => {
-                expect(state).toStrictEqual(fakeStateViewModel);
+                expect(dotCDNService.requestStats).toHaveBeenCalledWith(testPeriod);
+                expect(state).toEqual(fakeStateViewModel);
                 done();
             });
-
-            store.getChartStats('30');
         });
 
         it('should purge cdn with urls', (done) => {
             const urls = ['url1, url2'];
 
-            store.state$.subscribe((state) => {
-                expect(state.isPurgeUrlsLoading).toBe(false);
-            });
+            dotCDNService.purgeCache.mockReturnValue(
+                of({
+                    entity: {
+                        'All Urls Sent Purged: ': true
+                    },
+                    errors: [],
+                    i18nMessagesMap: {},
+                    messages: [],
+                    permissions: []
+                })
+            );
 
-            store.purgeCDNCache(urls);
+            checkLoadingState(Loader.PURGE_URLS);
 
-            store.state$.subscribe((state) => {
-                expect(state.isPurgeUrlsLoading).toBe(true);
+            spectator.service.purgeCDNCache(urls).subscribe(() => {
+                expect(dotCDNService.purgeCache).toHaveBeenCalledWith(urls);
                 done();
             });
         });
 
         it('should purge all the cache', (done) => {
-            store.state$.subscribe((state) => {
-                expect(state.isPurgeUrlsLoading).toBe(true);
-            });
+            dotCDNService.purgeCacheAll.mockReturnValue(
+                of({
+                    entity: {
+                        'Entire Cache Purged: ': true
+                    },
+                    errors: [],
+                    i18nMessagesMap: {},
+                    messages: [],
+                    permissions: []
+                })
+            );
 
-            store.purgeCDNCacheAll();
+            checkLoadingState(Loader.PURGE_PULL_ZONE);
 
-            store.state$.subscribe((state) => {
-                expect(state.isPurgeUrlsLoading).toBe(false);
-                done();
-            });
+            spectator.service.purgeCDNCacheAll();
+
+            expect(dotCDNService.purgeCacheAll).toHaveBeenCalled();
+            done();
+        });
+
+        it('should handle error when getting stats', (done) => {
+            const error500 = mockResponseView(500);
+            dotCDNService.requestStats.mockReturnValue(throwError(error500));
+
+            checkLoadingState(Loader.CHART);
+
+            spectator.service.getChartStats('30');
+
+            expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(
+                error500 as HttpErrorResponse
+            );
+            done();
+        });
+
+        it('should handle error when purging urls from cache', (done) => {
+            const error500 = mockResponseView(500);
+            dotCDNService.purgeCache.mockReturnValue(throwError(error500));
+
+            checkLoadingState(Loader.PURGE_URLS);
+
+            spectator.service.purgeCDNCache(['url1']);
+
+            expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(
+                error500 as HttpErrorResponse
+            );
+            done();
+        });
+
+        it('should handle error when purging all cache', (done) => {
+            const error500 = mockResponseView(500);
+            dotCDNService.purgeCacheAll.mockReturnValue(throwError(error500));
+
+            checkLoadingState(Loader.PURGE_PULL_ZONE);
+
+            spectator.service.purgeCDNCacheAll();
+
+            expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(
+                error500 as HttpErrorResponse
+            );
+            done();
         });
     });
 });

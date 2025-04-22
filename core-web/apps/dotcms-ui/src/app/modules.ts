@@ -21,6 +21,7 @@ import { TabViewModule } from 'primeng/tabview';
 import { ToolbarModule } from 'primeng/toolbar';
 import { TreeTableModule } from 'primeng/treetable';
 
+import { DotAlertConfirmModule } from '@components/_common/dot-alert-confirm/dot-alert-confirm.module';
 import { DotDownloadBundleDialogModule } from '@components/_common/dot-download-bundle-dialog/dot-download-bundle-dialog.module';
 import { DotPushPublishDialogModule } from '@components/_common/dot-push-publish-dialog';
 import { DotWizardModule } from '@components/_common/dot-wizard/dot-wizard.module';
@@ -49,6 +50,7 @@ export const CUSTOM_MODULES = [
     DotTextareaContentModule,
     DotWorkflowTaskDetailModule,
     DotMessageDisplayModule,
+    DotAlertConfirmModule,
     DotFieldValidationMessageComponent,
     IFrameModule,
     DotListingDataTableModule,

@@ -1,11 +1,13 @@
 import { format, subDays } from 'date-fns';
 import { Observable } from 'rxjs';
 
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 
 import { mergeMap, pluck } from 'rxjs/operators';
 
-import { CoreWebService, ResponseView, SiteService } from '@dotcms/dotcms-js';
+import { DotSiteService } from '@dotcms/data-access';
+import { ResponseView } from '@dotcms/dotcms-js';
 
 import { DotCDNStats, PurgeReturnData, PurgeUrlOptions } from './app.models';
 
@@ -14,8 +16,8 @@ import { DotCDNStats, PurgeReturnData, PurgeUrlOptions } from './app.models';
 })
 export class DotCDNService {
     constructor(
-        private coreWebService: CoreWebService,
-        private siteService: SiteService
+        private readonly http: HttpClient,
+        private readonly siteService: DotSiteService
     ) {}
 
     /**
@@ -31,9 +33,13 @@ export class DotCDNService {
             mergeMap((hostId: string) => {
                 const dateTo = format(new Date(), 'yyyy-MM-dd');
                 const dateFrom = format(subDays(new Date(), parseInt(period, 10)), 'yyyy-MM-dd');
+                const params = new HttpParams()
+                    .set('hostId', hostId)
+                    .set('dateFrom', dateFrom)
+                    .set('dateTo', dateTo);
 
-                return this.coreWebService.requestView<DotCDNStats>({
-                    url: `/api/v1/dotcdn/stats?hostId=${hostId}&dateFrom=${dateFrom}&dateTo=${dateTo}`
+                return this.http.get<ResponseView<DotCDNStats>>('/api/v1/dotcdn/stats', {
+                    params: params
                 });
             }),
             pluck('entity')
@@ -51,7 +57,7 @@ export class DotCDNService {
         return this.siteService.getCurrentSite().pipe(
             pluck('identifier'),
             mergeMap((hostId: string) => {
-                return this.purgeUrlRequest({ hostId, invalidateAll: false, urls });
+                return this.purgeUrlRequest({ urls: urls, invalidateAll: false, hostId: hostId });
             }),
             pluck('bodyJsonObject')
         );
@@ -66,7 +72,9 @@ export class DotCDNService {
     purgeCacheAll(): Observable<PurgeReturnData> {
         return this.siteService.getCurrentSite().pipe(
             pluck('identifier'),
-            mergeMap((hostId: string) => this.purgeUrlRequest({ hostId, invalidateAll: true })),
+            mergeMap((hostId: string) => {
+                return this.purgeUrlRequest({ invalidateAll: true, hostId: hostId });
+            }),
             pluck('bodyJsonObject')
         );
     }
@@ -76,13 +84,14 @@ export class DotCDNService {
         invalidateAll,
         hostId
     }: PurgeUrlOptions): Observable<ResponseView<PurgeReturnData>> {
-        return this.coreWebService.requestView<PurgeReturnData>({
-            url: `/api/v1/dotcdn`,
-            method: 'DELETE',
-            body: JSON.stringify({
-                urls,
-                invalidateAll,
-                hostId
+        return this.http.delete<ResponseView<PurgeReturnData>>(`/api/v1/dotcdn`, {
+            body: {
+                urls: urls,
+                invalidateAll: invalidateAll,
+                hostId: hostId
+            },
+            headers: new HttpHeaders({
+                'Content-Type': 'application/json'
             })
         });
     }

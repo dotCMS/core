@@ -5,6 +5,7 @@ import { BrowserModule } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterModule } from '@angular/router';
 
+import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ChartModule } from 'primeng/chart';
 import { DropdownModule } from 'primeng/dropdown';
@@ -13,6 +14,17 @@ import { InputTextareaModule } from 'primeng/inputtextarea';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TabViewModule } from 'primeng/tabview';
 
+import { DotAlertConfirmModule } from '@components/_common/dot-alert-confirm/dot-alert-confirm.module';
+import { DotPushPublishDialogModule } from '@components/_common/dot-push-publish-dialog';
+import { DotLargeMessageDisplayModule } from '@components/dot-large-message-display/dot-large-message-display.module';
+import { DotMessageDisplayModule } from '@components/dot-message-display/dot-message-display.module';
+import {
+    DotAlertConfirmService,
+    DotHttpErrorManagerService,
+    DotMessageDisplayService,
+    DotMessageService,
+    DotRouterService
+} from '@dotcms/data-access';
 import {
     CoreWebService,
     DotcmsConfigService,
@@ -53,9 +65,19 @@ const dotEventSocketURLFactory = () => {
         FormsModule,
         SkeletonModule,
         DotSpinnerModule,
-        ReactiveFormsModule
+        ReactiveFormsModule,
+        DotMessageDisplayModule,
+        DotLargeMessageDisplayModule,
+        DotPushPublishDialogModule,
+        DotAlertConfirmModule
     ],
     providers: [
+        DotHttpErrorManagerService,
+        DotAlertConfirmService,
+        DotMessageService,
+        DotRouterService,
+        ConfirmationService,
+        DotMessageDisplayService,
         CoreWebService,
         LoggerService,
         StringUtils,

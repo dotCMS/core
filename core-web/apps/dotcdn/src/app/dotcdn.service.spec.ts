@@ -1,12 +1,16 @@
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
-import { TestBed } from '@angular/core/testing';
-
+import { describe, expect, it, jest } from '@jest/globals';
 import {
-    CoreWebService,
-    CoreWebServiceMock,
-    SiteService,
-    SiteServiceMock
-} from '@dotcms/dotcms-js';
+    createHttpFactory,
+    mockProvider,
+    HttpMethod,
+    SpectatorHttp,
+    SpyObject
+} from '@ngneat/spectator/jest';
+import { of } from 'rxjs';
+
+import { take } from 'rxjs/operators';
+
+import { DotSiteService } from '@dotcms/data-access';
 
 import { DotCDNService } from './dotcdn.service';
 
@@ -217,97 +221,98 @@ const fakePurgeAllResp = {
 };
 
 describe('DotcdnService', () => {
-    let service: DotCDNService;
-    let dotSiteService: SiteService;
-    let dotCoreWebService: CoreWebService;
-    let httpMock: HttpTestingController;
+    let spectator: SpectatorHttp<DotCDNService>;
+    let dotSiteService: SpyObject<DotSiteService>;
+
+    const createService = createHttpFactory({
+        service: DotCDNService,
+        providers: [mockProvider(DotSiteService)]
+    });
 
     beforeEach(() => {
-        TestBed.configureTestingModule({
-            imports: [HttpClientTestingModule],
-            providers: [
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
-                { provide: SiteService, useClass: SiteServiceMock }
-            ]
-        });
-        service = TestBed.inject(DotCDNService);
-        dotSiteService = TestBed.inject(SiteService);
-        dotCoreWebService = TestBed.inject(CoreWebService);
-        httpMock = TestBed.inject(HttpTestingController);
-        jest.spyOn(dotSiteService, 'getCurrentSite');
-        jest.restoreAllMocks();
+        spectator = createService();
+        dotSiteService = spectator.inject(DotSiteService);
+        dotSiteService.getCurrentSite.mockReturnValue(
+            of({
+                identifier: '123-xyz-567-xxl',
+                hostname: 'test.dotcms.com',
+                type: 'primary',
+                archived: false
+            })
+        );
 
         jest.useFakeTimers();
         jest.setSystemTime(new Date('2021-05-03'));
     });
 
     // Skipping because the `useFakeTimers` and `setSystemTime` is not pickinh up win GHA
-    xit('should return the stats', (done) => {
-        jest.spyOn(dotCoreWebService, 'requestView');
-
+    it('should return the stats', (done) => {
         const {
             bodyJsonObject: { entity }
         } = fakeDotCDNViewData;
 
-        service.requestStats('30').subscribe((value) => {
-            expect(value).toStrictEqual(entity);
-            done();
-        });
+        spectator.service
+            .requestStats('30')
+            .pipe(take(1))
+            .subscribe((value) => {
+                expect(value).toStrictEqual(entity);
+                done();
+            });
 
-        const req = httpMock.expectOne(
-            `/api/v1/dotcdn/stats?hostId=123-xyz-567-xxl&dateFrom=2021-04-02&dateTo=2021-05-02`
+        const req = spectator.expectOne(
+            '/api/v1/dotcdn/stats?hostId=123-xyz-567-xxl&dateFrom=2021-04-02&dateTo=2021-05-02',
+            HttpMethod.GET
         );
-
         req.flush({ entity });
     });
 
     it('should purge cache with URLs', (done) => {
-        const requestViewSpy = jest.spyOn(dotCoreWebService, 'requestView');
-        service.purgeCache(['url1, url2']).subscribe((value) => {
-            expect(value).toStrictEqual({
-                entity: {
-                    'All Urls Sent Purged: ': true
-                },
-                errors: [],
-                i18nMessagesMap: {},
-                messages: [],
-                permissions: []
+        spectator.service
+            .purgeCache(['url1', 'url2'])
+            .pipe(take(1))
+            .subscribe((value) => {
+                expect(value).toStrictEqual({
+                    entity: {
+                        'All Urls Sent Purged: ': true
+                    },
+                    errors: [],
+                    i18nMessagesMap: {},
+                    messages: [],
+                    permissions: []
+                });
+                done();
             });
-            done();
-        });
-        const req = httpMock.expectOne('/api/v1/dotcdn');
-        expect(req.request.method).toBe('DELETE');
 
-        expect(requestViewSpy).toHaveBeenCalledWith({
-            body: '{"urls":["url1, url2"],"invalidateAll":false,"hostId":"123-xyz-567-xxl"}',
-            method: 'DELETE',
-            url: '/api/v1/dotcdn'
+        const req = spectator.expectOne('/api/v1/dotcdn', HttpMethod.DELETE);
+        expect(req.request.body).toEqual({
+            urls: ['url1', 'url2'],
+            invalidateAll: false,
+            hostId: '123-xyz-567-xxl'
         });
-
-        req.flush(fakePurgeUrlsResp.bodyJsonObject);
+        req.flush(fakePurgeUrlsResp);
     });
 
     it('should purge all cache', (done) => {
-        const requestViewSpy = jest.spyOn(dotCoreWebService, 'requestView');
-        service.purgeCacheAll().subscribe((value) => {
-            expect(value).toStrictEqual({
-                entity: { 'Entire Cache Purged: ': true },
-                errors: [],
-                i18nMessagesMap: {},
-                messages: [],
-                permissions: []
+        spectator.service
+            .purgeCacheAll()
+            .pipe(take(1))
+            .subscribe((value) => {
+                expect(value).toStrictEqual({
+                    entity: { 'Entire Cache Purged: ': true },
+                    errors: [],
+                    i18nMessagesMap: {},
+                    messages: [],
+                    permissions: []
+                });
+                done();
             });
-            done();
-        });
-        const req = httpMock.expectOne('/api/v1/dotcdn');
-        expect(req.request.method).toBe('DELETE');
 
-        expect(requestViewSpy).toHaveBeenCalledWith({
-            body: '{"urls":[],"invalidateAll":true,"hostId":"123-xyz-567-xxl"}',
-            method: 'DELETE',
-            url: '/api/v1/dotcdn'
+        const req = spectator.expectOne('/api/v1/dotcdn', HttpMethod.DELETE);
+        expect(req.request.body).toEqual({
+            urls: [],
+            invalidateAll: true,
+            hostId: '123-xyz-567-xxl'
         });
-
-        req.flush(fakePurgeAllResp.bodyJsonObject);
+        req.flush(fakePurgeAllResp);
     });
 });

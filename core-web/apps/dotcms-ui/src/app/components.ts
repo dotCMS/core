@@ -1,4 +1,3 @@
-import { DotAlertConfirmComponent } from '@components/_common/dot-alert-confirm/dot-alert-confirm';
 import { GlobalSearchComponent } from '@components/global-search/global-search';
 import { DotLogOutContainerComponent } from '@components/login/dot-logout-container-component/dot-log-out-container';
 import { DotLoginPageComponent } from '@components/login/main/dot-login-page.component';
@@ -10,6 +9,5 @@ export const COMPONENTS = [
     MainComponentLegacyComponent,
     DotLoginPageComponent,
     DotLogOutContainerComponent,
-    GlobalSearchComponent,
-    DotAlertConfirmComponent
+    GlobalSearchComponent
 ];
