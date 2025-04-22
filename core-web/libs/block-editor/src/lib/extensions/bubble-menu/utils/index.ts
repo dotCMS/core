@@ -123,16 +123,6 @@ export const isListNode = (editor): boolean => {
     return editor.isActive('bulletList') || editor.isActive('orderedList');
 };
 
-// TODO: Remove JSPRedirectFn when Edit Content JSP is removed.
-/**
- * JSPRedirectFn
- *
- * A variable that represents the function to redirect to go to a related content page.
- *
- * @global
- */
-const JSPRedirectFn = (window as any).rel_BlogblogComment_PeditRelatedContent;
-
 const textMarks: Array<BubbleMenuItem> = [
     {
         icon: 'format_bold',
@@ -293,18 +283,14 @@ export const getBubbleMenuItem = (nodeType = ''): Array<BubbleMenuItem> => {
             return imageOptions;
 
         case 'dotContent':
-            // TODO: Remove JSPRedirectFn when Edit Content JSP is removed.
-
-            if (JSPRedirectFn) {
-                return [
-                    ...dotContentOptions,
-                    {
-                        icon: 'edit',
-                        markAction: 'goToContentlet',
-                        active: false
-                    }
-                ];
-            }
+            return [
+                ...dotContentOptions,
+                {
+                    icon: 'edit',
+                    markAction: 'goToContentlet',
+                    active: false
+                }
+            ];
 
             return dotContentOptions;
 

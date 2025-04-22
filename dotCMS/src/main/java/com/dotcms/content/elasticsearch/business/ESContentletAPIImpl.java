@@ -1,11 +1,5 @@
 package com.dotcms.content.elasticsearch.business;
 
-import static com.dotcms.exception.ExceptionUtil.bubbleUpException;
-import static com.dotcms.exception.ExceptionUtil.getLocalizedMessageOrDefault;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.URL_MAP_FOR_CONTENT_KEY;
-import static com.dotmarketing.portlets.personas.business.PersonaAPI.DEFAULT_PERSONA_NAME_KEY;
-
 import com.dotcms.api.system.event.ContentletSystemEventUtil;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
@@ -190,6 +184,18 @@ import com.thoughtworks.xstream.XStream;
 import io.vavr.Lazy;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
+import org.apache.commons.beanutils.BeanUtils;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.StringUtils;
+import org.elasticsearch.action.search.SearchPhaseExecutionException;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.SearchHits;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import javax.activation.MimeType;
+import javax.servlet.http.HttpServletRequest;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -217,17 +223,12 @@ import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.activation.MimeType;
-import javax.servlet.http.HttpServletRequest;
-import org.apache.commons.beanutils.BeanUtils;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.StringUtils;
-import org.elasticsearch.action.search.SearchPhaseExecutionException;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.search.SearchHit;
-import org.elasticsearch.search.SearchHits;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+
+import static com.dotcms.exception.ExceptionUtil.bubbleUpException;
+import static com.dotcms.exception.ExceptionUtil.getLocalizedMessageOrDefault;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.URL_MAP_FOR_CONTENT_KEY;
+import static com.dotmarketing.portlets.personas.business.PersonaAPI.DEFAULT_PERSONA_NAME_KEY;
 
 /**
  * Implementation class for the {@link ContentletAPI} interface.
@@ -736,6 +737,63 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 fallback = true;  // using the fallback
                 contentletVersionInfo = APILocator.getVersionableAPI()
                         .getContentletVersionInfo(identifier, defaultLanguageId);
+            }
+
+            if (contentletVersionInfo.isEmpty()) {
+                return Optional.empty();
+            }
+
+            final Contentlet contentlet = live ?
+                    this.find(contentletVersionInfo.get().getLiveInode(), user,
+                            respectFrontendRoles) :
+                    this.find(contentletVersionInfo.get().getWorkingInode(), user,
+                            respectFrontendRoles);
+
+            if (null == contentlet) {
+                return Optional.empty();
+            }
+
+            // if we are using the fallback, and it is not allowed, return empty
+            if (fallback && tryLanguage != defaultLanguageId && !contentlet.getContentType()
+                    .languageFallback()) {
+                return Optional.empty();
+            }
+
+            return Optional.of(contentlet);
+        } catch (Exception e) {
+            throw new DotContentletStateException(
+                    "Can't find contentlet: " + identifier + " lang:" + incomingLangId + " live:"
+                            + live, e);
+        }
+    }
+
+    @CloseDBIfOpened
+    @Override
+    public Optional<Contentlet> findContentletByIdentifierOrFallback(final String identifier,
+                                                                     final boolean live,
+                                                                     final long incomingLangId, final User user,
+                                                                     final boolean respectFrontendRoles,
+                                                                     final String variantName) {
+
+        final long defaultLanguageId = this.languageAPI.getDefaultLanguage().getId();
+        final long tryLanguage = incomingLangId <= 0 ? defaultLanguageId : incomingLangId;
+        boolean fallback = false;
+
+        try {
+
+            // try the user language
+            Optional<ContentletVersionInfo> contentletVersionInfo =
+                    Objects.nonNull(variantName)?
+                            APILocator.getVersionableAPI().getContentletVersionInfo(identifier, tryLanguage, variantName):
+                            APILocator.getVersionableAPI().getContentletVersionInfo(identifier, tryLanguage);
+
+            // try the fallback if does not exists
+            if (tryLanguage != defaultLanguageId && (contentletVersionInfo.isEmpty()
+                    || (live && contentletVersionInfo.get().getLiveInode() == null))) {
+                fallback = true;  // using the fallback
+                contentletVersionInfo = Objects.nonNull(variantName)?
+                        APILocator.getVersionableAPI().getContentletVersionInfo(identifier, defaultLanguageId, variantName):
+                        APILocator.getVersionableAPI().getContentletVersionInfo(identifier, defaultLanguageId);
             }
 
             if (contentletVersionInfo.isEmpty()) {
@@ -7703,7 +7761,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     cve.addUniqueField(field);
                     hasError = true;
                     Logger.warn(this, getUniqueFieldErrorMessage(field, fieldValue,
-                            UtilMethods.isSet(e.getContentlets()) ? e.getContentlets().get(0) : "Unknown"));
+                            UtilMethods.isSet(e.getContentlets()) ? e.getContentlets().get(0) : "Unknown/New Contentlet"));
 
                     throw cve;
                 } catch (final DotDataException | DotSecurityException e) {

@@ -120,6 +120,13 @@ export class DotEditContentCustomFieldComponent implements OnDestroy, AfterViewI
     });
 
     /**
+     * The minimum height for the container based on whether the label is shown or not.
+     */
+    $minContainerHeight = computed(() => {
+        return this.$showLabel() ? '40px' : '17px';
+    });
+
+    /**
      * The form bridge to communicate with the custom field.
      */
     #formBridge: FormBridge;
@@ -251,14 +258,33 @@ export class DotEditContentCustomFieldComponent implements OnDestroy, AfterViewI
             return () => void 0;
         }
 
+        // Set iframe styles to hide scrollbars
+        iframeEl.style.overflow = 'hidden';
+        iframeEl.style.scrollbarWidth = 'none'; // Firefox
+
         const updateHeight = () => {
             try {
                 const body = iframeEl.contentWindow?.document.body;
                 if (body) {
                     body.style.margin = '0';
+
+                    // Add styles to body to hide scrollbars
+                    body.style.overflow = 'hidden';
+                    body.style.scrollbarWidth = 'none'; // Firefox
+
+                    // Get scroll height and add a small buffer to prevent internal scrolling
+                    // Without causing continuous growth
                     const height = body.scrollHeight;
                     if (height > 0) {
-                        iframeEl.style.height = `${height + 1}px`;
+                        // Add a small buffer (2px) but use a data attribute to prevent continuous growth
+                        const currentHeight = parseInt(iframeEl.dataset.lastHeight || '0', 10);
+
+                        // Only update if height has changed or initial setting
+                        if (!iframeEl.dataset.lastHeight || Math.abs(height - currentHeight) >= 2) {
+                            const newHeight = height + 2; // Small buffer to avoid scrollbar
+                            iframeEl.style.height = `${newHeight}px`;
+                            iframeEl.dataset.lastHeight = newHeight.toString();
+                        }
                     }
                 }
             } catch (error) {

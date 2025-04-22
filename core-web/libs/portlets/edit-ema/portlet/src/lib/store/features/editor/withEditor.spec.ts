@@ -14,7 +14,7 @@ import { withEditor } from './withEditor';
 
 import { DotPageApiParams, DotPageApiService } from '../../../services/dot-page-api.service';
 import { BASE_IFRAME_MEASURE_UNIT, PERSONA_KEY } from '../../../shared/consts';
-import { EDITOR_STATE, UVE_STATUS } from '../../../shared/enums';
+import { EDITOR_STATE, UVE_STATUS, PALETTE_CLASSES } from '../../../shared/enums';
 import {
     ACTION_MOCK,
     ACTION_PAYLOAD_MOCK,
@@ -42,7 +42,8 @@ const initialState: UVEState = {
         language_id: '1',
         [PERSONA_KEY]: 'dot:persona',
         variantName: 'DEFAULT',
-        clientHost: 'http://localhost:3000'
+        clientHost: 'http://localhost:3000',
+        mode: UVE_MODE.EDIT
     },
     status: UVE_STATUS.LOADED,
     isTraditionalPage: false,
@@ -102,7 +103,7 @@ describe('withEditor', () => {
                 it('should return the base info', () => {
                     expect(store.$uveToolbar()).toEqual({
                         editor: {
-                            apiUrl: '/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=dot%3Apersona&variantName=DEFAULT',
+                            apiUrl: '/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=dot%3Apersona&variantName=DEFAULT&mode=EDIT_MODE',
                             bookmarksUrl: '/test-url?host_id=123-xyz-567-xxl&language_id=1',
                             copyUrl:
                                 'http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=dot%3Apersona&variantName=DEFAULT&host_id=123-xyz-567-xxl'
@@ -214,7 +215,7 @@ describe('withEditor', () => {
         describe('$iframeURL', () => {
             it("should return the iframe's URL", () => {
                 expect(store.$iframeURL()).toBe(
-                    'http://localhost:3000/test-url?language_id=1&variantName=DEFAULT&personaId=dot%3Apersona'
+                    'http://localhost:3000/test-url?language_id=1&variantName=DEFAULT&mode=EDIT_MODE&personaId=dot%3Apersona'
                 );
             });
 
@@ -308,7 +309,8 @@ describe('withEditor', () => {
                     palette: {
                         variantId: DEFAULT_VARIANT_ID,
                         languageId: MOCK_RESPONSE_HEADLESS.viewAs.language.id,
-                        containers: MOCK_RESPONSE_HEADLESS.containers
+                        containers: MOCK_RESPONSE_HEADLESS.containers,
+                        paletteClass: PALETTE_CLASSES.OPEN
                     },
                     seoResults: null
                 });
@@ -633,6 +635,32 @@ describe('withEditor', () => {
                 store.updateEditorScrollState();
 
                 expect(store.contentletArea()).toBe(null);
+            });
+        });
+
+        describe('setPaletteOpen', () => {
+            it('should toggle the palette', () => {
+                store.setPaletteOpen(true);
+
+                expect(store.paletteOpen()).toBe(true);
+            });
+
+            it('should toggle the palette', () => {
+                store.setPaletteOpen(false);
+
+                expect(store.paletteOpen()).toBe(false);
+            });
+
+            it('should update the editorProps when the palette is open', () => {
+                store.setPaletteOpen(true);
+
+                expect(store.$editorProps().palette.paletteClass).toBe(PALETTE_CLASSES.OPEN);
+            });
+
+            it('should update the editorProps when the palette is closed', () => {
+                store.setPaletteOpen(false);
+
+                expect(store.$editorProps().palette.paletteClass).toBe(PALETTE_CLASSES.CLOSED);
             });
         });
 

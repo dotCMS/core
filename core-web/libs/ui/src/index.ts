@@ -30,6 +30,7 @@ export * from './lib/components/dot-menu/dot-menu.component';
 export * from './lib/components/dot-action-menu-button/dot-action-menu-button.component';
 export * from './lib/components/dot-ai-image-prompt/ai-image-prompt.component';
 export * from './lib/components/dot-collapse-breadcrumb/dot-collapse-breadcrumb.component';
+export * from './lib/components/dot-language-variable-selector/dot-language-variable-selector.component';
 
 // Directives
 export * from './lib/dot-field-required/dot-field-required.directive';
@@ -38,7 +39,6 @@ export * from './lib/dot-site-selector/dot-site-selector.directive';
 export * from './lib/directives/dot-autofocus/dot-autofocus.directive';
 export * from './lib/directives/dot-trim-input/dot-trim-input.directive';
 export * from './lib/dot-container-options/dot-container-options.directive';
-export * from './lib/directives/dot-select-item/dot-select-item.directive';
 export * from './lib/directives/dot-avatar/dot-avatar.directive';
 export * from './lib/directives/dot-dropdown.directive';
 export * from './lib/directives/dot-sidebar.directive';
@@ -61,7 +61,7 @@ export * from './lib/pipes/safe-url/safe-url.pipe';
 export * from './lib/pipes/dot-safe-html/dot-safe-html.pipe';
 export * from './lib/pipes/dot-diff/dot-diff.pipe';
 export * from './lib/pipes/dot-iso-code/dot-iso-code.pipe';
-
+export * from './lib/pipes/dot-highlight/dot-highlight.pipe';
 // Resolvers
 export * from './lib/resolvers/dot-portlet-have-license.resolver';
 export * from './lib/resolvers/dot-enterprise-license-resolver.service';

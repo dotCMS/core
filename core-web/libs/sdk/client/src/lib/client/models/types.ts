@@ -1,16 +1,71 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-export interface DotCMSPageAsset {
+import { Contentlet } from '../content/shared/types';
+
+/**
+ * Represents a DotCMS page asset with its associated data and configurations
+ *
+ * @template T - Type parameter for URL content mapping, defaults to unknown
+ * @interface DotCMSPageAsset
+ *
+ * @example
+ * // Using DotCMSPageAsset without urlContentMap type
+ *
+ * const basicPageAsset: DotCMSPageAsset = {
+ *   canCreateTemplate: true,
+ *   containers: {},
+ *   layout: {...},
+ *   page: {...},
+ *   site: {...},
+ *   template: {...},
+ *   ...
+ * };
+ *
+ * @example
+ * // Using DotCMSPageAsset with urlContentMap type
+ * interface SomeContentlet {
+ *   urlContentMap: {
+ *     slug: string;
+ *     category: string;
+ *   }
+ * }
+ *
+ * const pageWithUrlMap: DotCMSPageAsset<{ urlContentMap: SomeContentlet }> = {
+ *   containers: {},
+ *   layout: {...},
+ *   page: {...},
+ *   site: {...},
+ *   template: {...},
+ *   // This is the contentlet SomeContentlet type
+ *   urlContentMap: {
+ *     slug: "/blog/post-1",
+ *     category: "blog"
+ *   }
+ * };
+ */
+export interface DotCMSPageAsset<T = unknown> {
+    /** Whether a template can be created for this page */
     canCreateTemplate?: boolean;
+    /** Map of containers on the page indexed by container ID */
     containers: {
         [key: string]: DotCMSPageAssetContainer;
     };
+    /** Layout configuration for the page */
     layout: DotCMSLayout;
+    /** Page metadata and properties */
     page: DotCMSPage;
+    /** Site information */
     site: DotCMSSite;
+    /** Template configuration */
     template: DotCMSTemplate;
+    /** View configuration */
     viewAs?: DotCMSViewAs;
+    /** Vanity URL configuration if applicable */
     vanityUrl?: DotCMSVanityUrl;
+    /** Content mapping for the page URL */
+    urlContentMap?: T extends { urlContentMap: infer U } ? Contentlet<U> : Contentlet<T>;
+    /** The parameters used to fetch the page */
+    params?: Record<string, unknown>;
 }
 
 export interface DotPageAssetLayoutRow {
@@ -548,4 +603,8 @@ export interface DotCMSGraphQLPageResponse<TContent = Record<string, any>> {
     page: DotCMSBasicGraphQLPage;
     content?: TContent;
     errors?: DotCMSGraphQLError;
+    graphql: {
+        query: string;
+        variables: Record<string, unknown>;
+    };
 }

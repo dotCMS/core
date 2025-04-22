@@ -1,5 +1,7 @@
 import { MonacoEditorConstructionOptions } from '@materia-ui/ngx-monaco-editor';
 
+import { SelectItem } from 'primeng/api';
+
 import { ComponentStatus } from '@dotcms/dotcms-models';
 import { PrincipalConfiguration } from '@dotcms/ui';
 
@@ -13,9 +15,46 @@ export const FLATTENED_FIELD_TYPES = [
     FIELD_TYPES.TAG
 ];
 
-export const UNCASTED_FIELD_TYPES = [FIELD_TYPES.BLOCK_EDITOR];
+export const UNCASTED_FIELD_TYPES = [FIELD_TYPES.BLOCK_EDITOR, FIELD_TYPES.KEY_VALUE];
 
 export const TAB_FIELD_CLAZZ = 'com.dotcms.contenttype.model.field.ImmutableTabDividerField';
+
+/**
+ * Enum for representing the available languages supported in the Monaco Editor.
+ * Each enum value corresponds to a specific language identifier.
+ */
+export enum AvailableLanguageMonaco {
+    PlainText = 'plaintext',
+    Javascript = 'javascript',
+    Markdown = 'markdown',
+    Html = 'html',
+    Velocity = 'velocity'
+}
+
+/**
+ * An array of objects representing options for languages available in Monaco Editor.
+ *
+ * Each element in the array contains a label for display purposes and a corresponding value from the AvailableLanguageMonaco enumeration.
+ *
+ * The options provided include:
+ * - Html
+ * - Javascript
+ * - Markdown
+ * - Plain Text
+ *
+ * @type {SelectItem[]}
+ */
+export const MonacoLanguageOptions: SelectItem[] = [
+    { label: 'Html', value: AvailableLanguageMonaco.Html },
+    { label: 'Javascript', value: AvailableLanguageMonaco.Javascript },
+    { label: 'Markdown', value: AvailableLanguageMonaco.Markdown },
+    { label: 'Plain Text', value: AvailableLanguageMonaco.PlainText }
+];
+
+/**
+ * The default language setting for the Monaco Editor.
+ */
+export const DEFAULT_MONACO_LANGUAGE = AvailableLanguageMonaco.Html;
 
 export const DEFAULT_MONACO_CONFIG: MonacoEditorConstructionOptions = {
     theme: 'vs',
@@ -29,7 +68,7 @@ export const DEFAULT_MONACO_CONFIG: MonacoEditorConstructionOptions = {
     roundedSelection: false,
     automaticLayout: true,
     fixedOverflowWidgets: true,
-    language: 'text',
+    language: DEFAULT_MONACO_LANGUAGE,
     fontSize: 14
 };
 

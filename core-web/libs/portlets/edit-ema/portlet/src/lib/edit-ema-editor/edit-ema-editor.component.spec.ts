@@ -77,6 +77,7 @@ import {
     DotPersonalizeServiceMock,
     MockDotHttpErrorManagerService
 } from '@dotcms/utils-testing';
+import { UVE_MODE } from '@dotcms/uve/types';
 
 import { DotUvePageVersionNotFoundComponent } from './components/dot-uve-page-version-not-found/dot-uve-page-version-not-found.component';
 import { DotEmaRunningExperimentComponent } from './components/dot-uve-toolbar/components/dot-ema-running-experiment/dot-ema-running-experiment.component';
@@ -92,7 +93,7 @@ import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dial
 import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
 import { DotPageApiService } from '../services/dot-page-api.service';
 import { DEFAULT_PERSONA, HOST, PERSONA_KEY } from '../shared/consts';
-import { EDITOR_STATE, NG_CUSTOM_EVENTS, UVE_STATUS } from '../shared/enums';
+import { EDITOR_STATE, NG_CUSTOM_EVENTS, PALETTE_CLASSES, UVE_STATUS } from '../shared/enums';
 import {
     QUERY_PARAMS_MOCK,
     URL_CONTENT_MAP_MOCK,
@@ -405,6 +406,7 @@ describe('EditEmaEditorComponent', () => {
                 clientHost: 'http://localhost:3000',
                 url: 'index',
                 language_id: '1',
+                mode: UVE_MODE.EDIT,
                 [PERSONA_KEY]: DEFAULT_PERSONA.identifier
             });
 
@@ -432,6 +434,33 @@ describe('EditEmaEditorComponent', () => {
                 componentsToHide.forEach((testId) => {
                     expect(spectator.query(byTestId(testId))).toBeNull();
                 });
+            });
+
+            it('should hide palette when state changes', () => {
+                // First, make sure palette is visible by default
+                expect(spectator.query(byTestId('palette')).classList).toContain(
+                    PALETTE_CLASSES.OPEN
+                );
+
+                // Simulate Click the toggle button
+                store.setPaletteOpen(false);
+
+                spectator.detectChanges();
+
+                // Palette should now be hidden
+                expect(spectator.query(byTestId('palette')).classList).toContain(
+                    PALETTE_CLASSES.CLOSED
+                );
+            });
+
+            it('should have a placeholder for the palette toggle button', () => {
+                store.setPaletteOpen(true);
+
+                spectator.detectChanges();
+
+                const placeholder = spectator.query(byTestId('toggle-palette-placeholder'));
+
+                expect(placeholder).not.toBeNull();
             });
 
             it('should have a toolbar', () => {
@@ -2597,7 +2626,7 @@ describe('EditEmaEditorComponent', () => {
                     const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
 
                     expect(iframe.nativeElement.src).toBe(
-                        'http://localhost:3000/index?language_id=1'
+                        'http://localhost:3000/index?language_id=1&mode=EDIT_MODE'
                     );
                 });
 
