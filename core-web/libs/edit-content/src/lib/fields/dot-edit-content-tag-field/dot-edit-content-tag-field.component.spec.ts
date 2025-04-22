@@ -13,7 +13,12 @@ import { By } from '@angular/platform-browser';
 
 import { AutoComplete, AutoCompleteCompleteEvent } from 'primeng/autocomplete';
 
-import { DotEditContentTagFieldComponent } from './dot-edit-content-tag-field.component';
+import {
+    AUTO_COMPLETE_DELAY,
+    AUTO_COMPLETE_MIN_LENGTH,
+    AUTO_COMPLETE_UNIQUE,
+    DotEditContentTagFieldComponent
+} from './dot-edit-content-tag-field.component';
 
 import { DotEditContentService } from '../../services/dot-edit-content.service';
 import { TAG_FIELD_MOCK } from '../../utils/mocks';
@@ -36,9 +41,8 @@ describe('DotEditContentTagFieldComponent', () => {
     });
 
     beforeEach(() => {
-        formGroup = new FormGroup({
-            [TAG_FIELD_MOCK.variable]: new FormControl([])
-        });
+        formGroup = new FormGroup({});
+        formGroup.addControl(TAG_FIELD_MOCK.variable, new FormControl([]));
 
         formGroupDirective = new FormGroupDirective([], []);
         formGroupDirective.form = formGroup;
@@ -63,10 +67,6 @@ describe('DotEditContentTagFieldComponent', () => {
         spectator.detectChanges();
     });
 
-    it('should create component', () => {
-        expect(spectator.component).toBeTruthy();
-    });
-
     describe('Component Configuration', () => {
         it('should render autocomplete with correct attributes', () => {
             const autocomplete = spectator.query(AutoComplete);
@@ -79,17 +79,16 @@ describe('DotEditContentTagFieldComponent', () => {
             expect(autocomplete.id).toBe(`tag-id-${TAG_FIELD_MOCK.variable}`);
             expect(autocomplete.inputId).toBe(TAG_FIELD_MOCK.variable);
             expect(autocomplete.multiple).toBe(true);
-            expect(autocomplete.forceSelection).toBe(true);
-            expect(autocomplete.unique).toBe(true);
-            expect(autocomplete.minLength).toBe(2);
-            expect(autocomplete.delay).toBe(300);
+            expect(autocomplete.forceSelection).toBe(false);
+            expect(autocomplete.unique).toBe(AUTO_COMPLETE_UNIQUE);
+            expect(autocomplete.minLength).toBe(AUTO_COMPLETE_MIN_LENGTH);
+            expect(autocomplete.delay).toBe(AUTO_COMPLETE_DELAY);
         });
 
         it('should be connected to form control', () => {
-            const control = spectator.component.formControl;
-            const controlContainer = spectator.inject(ControlContainer, true);
-            expect(control).toBeDefined();
-            expect(control).toBe(controlContainer.control?.get(TAG_FIELD_MOCK.variable));
+            const control = formGroup.get(TAG_FIELD_MOCK.variable);
+            expect(spectator.component.formControl).toBeDefined();
+            expect(spectator.component.formControl).toBe(control);
         });
     });
 
@@ -109,6 +108,71 @@ describe('DotEditContentTagFieldComponent', () => {
 
             expect(service.getTags).toHaveBeenCalledWith('type');
             expect(spectator.component.$suggestions()).toEqual(expectedTags);
+        });
+
+        describe('Enter key behavior', () => {
+            let autocomplete: AutoComplete;
+            let autocompleteInput: HTMLInputElement;
+
+            beforeEach(() => {
+                autocomplete = spectator.query(AutoComplete);
+                autocompleteInput = spectator.query('input[role="combobox"]');
+            });
+
+            const simulateEnterKey = () => {
+                const enterEvent = new KeyboardEvent('keydown', {
+                    key: 'Enter',
+                    bubbles: true,
+                    cancelable: true
+                });
+                autocompleteInput.dispatchEvent(enterEvent);
+            };
+
+            it('should add new tag when Enter is pressed with non-empty value', () => {
+                const newTag = 'newTag';
+                autocompleteInput.value = newTag;
+
+                simulateEnterKey();
+                spectator.detectChanges();
+
+                expect(spectator.component.formControl?.value).toEqual([newTag]);
+                expect(autocompleteInput.value).toBe('');
+            });
+
+            it('should not add empty tag when Enter is pressed with empty value', () => {
+                autocompleteInput.value = '   ';
+
+                simulateEnterKey();
+                spectator.detectChanges();
+
+                expect(spectator.component.formControl?.value).toEqual([]);
+            });
+
+            it('should append new tag to existing tags', () => {
+                const existingTags = ['tag1', 'tag2'];
+                const newTag = 'tag3';
+                spectator.component.formControl?.setValue(existingTags);
+                autocompleteInput.value = newTag;
+
+                simulateEnterKey();
+                spectator.detectChanges();
+
+                expect(spectator.component.formControl?.value).toEqual([...existingTags, newTag]);
+                expect(autocompleteInput.value).toBe('');
+            });
+
+            it('should not add duplicate tag due to AutoComplete unique property', () => {
+                const existingTag = 'existingTag';
+                spectator.component.formControl?.setValue([existingTag]);
+                autocompleteInput.value = existingTag;
+
+                simulateEnterKey();
+                spectator.detectChanges();
+
+                expect(spectator.component.formControl?.value).toEqual([existingTag]);
+                expect(autocompleteInput.value).toBe(existingTag);
+                expect(autocomplete.unique).toBe(true);
+            });
         });
     });
 

@@ -5,24 +5,24 @@ import { ControlContainer } from '@angular/forms';
 
 import { monacoMock } from '@dotcms/utils-testing';
 
-import { DotWysiwygMonacoComponent } from './dot-wysiwyg-monaco.component';
+import { DotEditContentMonacoEditorControlComponent } from './dot-edit-content-monaco-editor-control.component';
 
-import { createFormGroupDirectiveMock } from '../../../../utils/mocks';
 import {
     DEFAULT_MONACO_LANGUAGE,
     DEFAULT_WYSIWYG_FIELD_MONACO_CONFIG
-} from '../../dot-edit-content-wysiwyg-field.constant';
-import { WYSIWYG_MOCK } from '../../mocks/dot-edit-content-wysiwyg-field.mock';
+} from '../../fields/dot-edit-content-wysiwyg-field/dot-edit-content-wysiwyg-field.constant';
+import { WYSIWYG_MOCK } from '../../fields/dot-edit-content-wysiwyg-field/mocks/dot-edit-content-wysiwyg-field.mock';
+import { createFormGroupDirectiveMock } from '../../utils/mocks';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 (global as any).monaco = monacoMock;
 
-describe('DotWysiwygMonacoComponent', () => {
-    let spectator: Spectator<DotWysiwygMonacoComponent>;
-    let component: DotWysiwygMonacoComponent;
+describe('DotEditContentMonacoEditorControlComponent', () => {
+    let spectator: Spectator<DotEditContentMonacoEditorControlComponent>;
+    let component: DotEditContentMonacoEditorControlComponent;
 
     const createComponent = createComponentFactory({
-        component: DotWysiwygMonacoComponent,
+        component: DotEditContentMonacoEditorControlComponent,
         imports: [MonacoEditorModule],
         componentViewProviders: [
             {
@@ -49,6 +49,7 @@ describe('DotWysiwygMonacoComponent', () => {
     it('should generate correct Monaco options', async () => {
         const expectedOptions = {
             ...DEFAULT_WYSIWYG_FIELD_MONACO_CONFIG,
+            theme: 'vs',
             language: 'plaintext' // due the auto detect language is plaintext
         };
 
