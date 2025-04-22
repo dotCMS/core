@@ -187,6 +187,6 @@ runs:
         platforms: ${{ inputs.docker_platforms }}
         pull: true
         push: ${{ inputs.do_deploy }}
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
+        cache-from: type=gha,scope=${{ github.workflow }}
+        cache-to: type=gha,mode=max,scope=${{ github.workflow }}
         build-args: ${{ inputs.build_args }}
