@@ -1,7 +1,7 @@
-import { DotCategory, DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotCategory, DotCMSContentlet, ContentTypeCategoryField } from '@dotcms/dotcms-models';
 
 export interface DotCategoryField {
-    field: DotCMSContentTypeField;
+    field: ContentTypeCategoryField;
     contentlet: DotCMSContentlet;
 }
 

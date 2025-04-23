@@ -1,12 +1,17 @@
-import { ChangeDetectionStrategy, Component, Input, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component,  computed,  inject, input } from '@angular/core';
 import { ControlContainer, ReactiveFormsModule } from '@angular/forms';
 
 import { CalendarModule } from 'primeng/calendar';
 
-import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { ContentTypeCalendarField } from '@dotcms/dotcms-models';
 
 import { CALENDAR_OPTIONS_PER_TYPE } from './utils';
 
+/**
+ * Calendar field component for the content edit form.
+ * Renders a PrimeNG calendar component with appropriate options based on the field type.
+ * This component maintains its parent form context through ControlContainer injection.
+ */
 @Component({
     selector: 'dot-edit-content-calendar-field',
     standalone: true,
@@ -22,7 +27,20 @@ import { CALENDAR_OPTIONS_PER_TYPE } from './utils';
     ]
 })
 export class DotEditContentCalendarFieldComponent {
-    @Input() field!: DotCMSContentTypeField;
+    /**
+     * Required input that contains the calendar field configuration.
+     * Determines the behavior and display options of the calendar.
+     */
+    $field = input.required<ContentTypeCalendarField>({ alias: 'field' });
 
-    readonly calendarOptions = CALENDAR_OPTIONS_PER_TYPE;
+    /**
+     * Computed property that determines the calendar configuration options
+     * based on the field type (date, time, or date-time).
+     * @returns The appropriate calendar options for the field type
+     */
+    $calendarOptions = computed(() => {
+        const field = this.$field();
+
+        return CALENDAR_OPTIONS_PER_TYPE[field.fieldType];
+    });
 }

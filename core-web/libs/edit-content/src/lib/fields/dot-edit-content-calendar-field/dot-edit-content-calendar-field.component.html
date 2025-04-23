@@ -1,9 +1,12 @@
+@let field = $field();
+@let calendarOptions = $calendarOptions();
+
 <p-calendar
     [formControlName]="field.variable"
-    [timeOnly]="calendarOptions[field.fieldType].timeOnly"
-    [showTime]="calendarOptions[field.fieldType].showTime"
+    [timeOnly]="calendarOptions.timeOnly"
+    [showTime]="calendarOptions.showTime"
     [id]="'calendar-id-' + field.variable"
     [inputId]="field.variable"
     [attr.data-testId]="field.variable"
     [showIcon]="true"
-    [icon]="calendarOptions[field.fieldType].icon" />
+    [icon]="calendarOptions.icon" />

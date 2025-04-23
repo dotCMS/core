@@ -84,11 +84,18 @@ export const getSingleSelectableFieldOptions = (
         );
 };
 
-// This function is used to cast the value to a correct type for the Angular Form
+/**
+ * @deprecated This function has been moved to resolution-values.utils.ts module.
+ * Resolution functions now directly handle type casting.
+ *
+ * This will be removed in a future release.
+ */
 export const getFinalCastedValue = (
     value: object | string | undefined,
     field: DotCMSContentTypeField
 ) => {
+    console.warn('getFinalCastedValue is deprecated. Use resolution functions instead.');
+
     if (CALENDAR_FIELD_TYPES.includes(field.fieldType as FIELD_TYPES)) {
         const parseResult = new Date(value as string);
 

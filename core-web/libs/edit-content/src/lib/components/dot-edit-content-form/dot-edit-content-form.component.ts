@@ -41,23 +41,19 @@ import {
 } from '@dotcms/dotcms-models';
 import { DotMessagePipe, DotWorkflowActionsComponent } from '@dotcms/ui';
 
-import { resolutionValue } from './utils';
 
 import { TabViewInsertDirective } from '../../directives/tab-view-insert/tab-view-insert.directive';
 import {
-    CALENDAR_FIELD_TYPES,
-    CONTENT_SEARCH_ROUTE,
-    FLATTENED_FIELD_TYPES
+    CONTENT_SEARCH_ROUTE
 } from '../../models/dot-edit-content-field.constant';
-import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
 import { FormValues } from '../../models/dot-edit-content-form.interface';
 import { DotWorkflowActionParams } from '../../models/dot-edit-content.model';
 import { DotEditContentStore } from '../../store/edit-content.store';
 import {
     generatePreviewUrl,
-    getFinalCastedValue,
     isFilteredType
 } from '../../utils/functions.util';
+import { resolutionValue } from '../../utils/resolution-values.utils';
 import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit-content-field.component';
 
 /**
@@ -111,7 +107,7 @@ import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit
     ]
 })
 export class DotEditContentFormComponent implements OnInit {
-    readonly $store: InstanceType<typeof DotEditContentStore> = inject(DotEditContentStore);
+    readonly $store = inject(DotEditContentStore);
     readonly #router = inject(Router);
     readonly #destroyRef = inject(DestroyRef);
     readonly #fb = inject(FormBuilder);
@@ -220,8 +216,7 @@ export class DotEditContentFormComponent implements OnInit {
      * @memberof DotEditContentFormComponent
      */
     onFormChange(value: Record<string, string>) {
-        const processedValue = this.processFormValue(value);
-        this.changeValue.emit(processedValue);
+        this.changeValue.emit(value);
     }
 
     /**
@@ -260,7 +255,7 @@ export class DotEditContentFormComponent implements OnInit {
         identifier
     }: DotWorkflowActionParams): void {
         const contentlet = {
-            ...this.processFormValue(this.form.value),
+            ...this.form.getRawValue(),
             contentType,
             languageId,
             identifier
@@ -341,48 +336,6 @@ export class DotEditContentFormComponent implements OnInit {
     }
 
     /**
-     * Processes the form value, applying specific transformations for different field types.
-     *
-     * Handles special cases:
-     * - Flattened fields: Joins array values with commas
-     * - Calendar fields: Formats dates to the required string format
-     * - Null/undefined values: Converts to empty string
-     *
-     * @private
-     * @param {Record<string, string | string[] | Date | null | undefined>} value - The raw form value
-     * @returns {FormValues} The processed form value ready for submission
-     */
-    private processFormValue(
-        value: Record<string, string | string[] | Date | null | undefined>
-    ): FormValues {
-        return Object.fromEntries(
-            Object.entries(value).map(([key, fieldValue]) => {
-                const field = this.$formFields().find((f) => f.variable === key);
-
-                if (!field) {
-                    return [key, fieldValue];
-                }
-
-                if (
-                    Array.isArray(fieldValue) &&
-                    FLATTENED_FIELD_TYPES.includes(field.fieldType as FIELD_TYPES)
-                ) {
-                    fieldValue = fieldValue.join(',');
-                } else if (
-                    fieldValue instanceof Date &&
-                    CALENDAR_FIELD_TYPES.includes(field.fieldType as FIELD_TYPES)
-                ) {
-                    fieldValue = fieldValue
-                        .toISOString()
-                        .replace(/T|\.\d{3}Z/g, (match) => (match === 'T' ? ' ' : ''));
-                }
-
-                return [key, fieldValue ?? ''];
-            })
-        );
-    }
-
-    /**
      * Creates form controls for each field in the content type.
      *
      * This method:
@@ -429,8 +382,7 @@ export class DotEditContentFormComponent implements OnInit {
      * This method:
      * 1. Gets the appropriate resolution function for the field type
      * 2. Applies the resolution function to extract the value
-     * 3. Casts the value to the correct type
-     * 4. Falls back to null if no value can be resolved
+     * 3. Falls back to null if no value can be resolved
      *
      * @private
      * @param {DotCMSContentTypeField} field - The field configuration
@@ -441,16 +393,14 @@ export class DotEditContentFormComponent implements OnInit {
         field: DotCMSContentTypeField,
         contentlet: DotCMSContentlet | null
     ): unknown {
-        const resolutionFn = resolutionValue[field.fieldType as FIELD_TYPES];
+        const resolutionFn = resolutionValue[field.fieldType];
         if (!resolutionFn) {
             console.warn(`No resolution function found for field type: ${field.fieldType}`);
 
             return null;
         }
 
-        const value = resolutionFn(contentlet, field);
-
-        return getFinalCastedValue(value, field) ?? null;
+        return contentlet ? resolutionFn(contentlet, field) : null;
     }
 
     /**

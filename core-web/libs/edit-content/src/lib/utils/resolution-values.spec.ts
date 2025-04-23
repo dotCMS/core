@@ -2,13 +2,12 @@ import {
     createFakeCategoryField,
     createFakeContentlet,
     createFakeHostFolderField,
-    createFakeLineDividerField,
     createFakeRelationshipField
 } from '@dotcms/utils-testing';
 
-import { resolutionValue } from './utils';
+import { resolutionValue } from './resolution-values.utils';
 
-import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
+import { FIELD_TYPES } from '../models/dot-edit-content-field.enum';
 
 describe('Utils', () => {
     describe('resolutionValue', () => {
@@ -104,10 +103,8 @@ describe('Utils', () => {
         // Line Divider Tests
         describe('Line Divider Resolution', () => {
             it('should always return empty string', () => {
-                const contentlet = createFakeContentlet();
-                const field = createFakeLineDividerField();
 
-                expect(resolutionValue[FIELD_TYPES.LINE_DIVIDER](contentlet, field)).toBe('');
+                expect(resolutionValue[FIELD_TYPES.LINE_DIVIDER]()).toBe('');
             });
         });
     });

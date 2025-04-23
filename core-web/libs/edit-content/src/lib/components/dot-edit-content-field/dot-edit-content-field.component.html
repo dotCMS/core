@@ -68,7 +68,7 @@
                 [attr.data-testId]="'field-' + field.variable" />
         }
     }
-    @case (calendarTypes.includes(field.fieldType) ? field.fieldType : '') {
+    @case (fieldTypes.DATE || fieldTypes.DATE_AND_TIME || fieldTypes.TIME) {
         @defer (on immediate) {
             <ng-container [ngTemplateOutlet]="labelTemplate" />
             <dot-edit-content-calendar-field
