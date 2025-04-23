@@ -460,9 +460,8 @@ export interface ContentTypeTagField extends DotCMSContentTypeBaseField {
  * Used for single-line text input
  */
 export interface ContentTypeTextField extends DotCMSContentTypeBaseField {
-    dataType: DotCMSDataTypes.TEXT;
+    dataType: DotCMSDataTypes.TEXT | DotCMSDataTypes.FLOAT | DotCMSDataTypes.INTEGER;
     fieldType: DotCMSFieldTypes.TEXT;
-    /** Regular expression for validation */
     regexCheck?: string;
     clazz: DotCMSClazzes.TEXT;
 }

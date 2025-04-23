@@ -12,7 +12,7 @@ import { ControlContainer, FormControl, ReactiveFormsModule, Validators } from '
 
 import { TreeSelect, TreeSelectModule } from 'primeng/treeselect';
 
-import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { ContentTypeHostFolderField } from '@dotcms/dotcms-models';
 
 import { HostFolderFiledStore } from './store/host-folder-field.store';
 
@@ -39,7 +39,7 @@ import { TruncatePathPipe } from '../../pipes/truncate-path.pipe';
     providers: [HostFolderFiledStore]
 })
 export class DotEditContentHostFolderFieldComponent implements OnInit {
-    $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
+    $field = input.required<ContentTypeHostFolderField>({ alias: 'field' });
     $treeSelect = viewChild<TreeSelect>(TreeSelect);
 
     readonly #controlContainer = inject(ControlContainer);
