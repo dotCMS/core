@@ -8,7 +8,7 @@ import {
     DotPageContainerStructure
 } from '@dotcms/dotcms-models';
 
-import { dotcmsContentTypeBasicMock } from './dot-content-types.mock';
+import { createFakeContentType } from './dot-content-types.mock';
 import { mockDotLanguage } from './dot-language.mock';
 
 export const mockDotPage = (): DotPage => {
@@ -28,12 +28,11 @@ export const mockDotPage = (): DotPage => {
         shortyWorking: '',
         title: 'A title',
         workingInode: '999',
-        contentType: {
-            ...dotcmsContentTypeBasicMock,
+        contentType: createFakeContentType({
             defaultType: true,
             fixed: true,
             system: true
-        },
+        }),
         fileAsset: true,
         friendlyName: '',
         host: '',

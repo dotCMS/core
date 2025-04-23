@@ -5,7 +5,11 @@ import { SelectItem } from 'primeng/api';
 import { ComponentStatus, DotCMSFieldTypes } from '@dotcms/dotcms-models';
 import { PrincipalConfiguration } from '@dotcms/ui';
 
-export const CALENDAR_FIELD_TYPES = [DotCMSFieldTypes.DATE, DotCMSFieldTypes.DATE_AND_TIME, DotCMSFieldTypes.TIME];
+export const CALENDAR_FIELD_TYPES = [
+    DotCMSFieldTypes.DATE,
+    DotCMSFieldTypes.DATE_AND_TIME,
+    DotCMSFieldTypes.TIME
+];
 
 export const TAB_FIELD_CLAZZ = 'com.dotcms.contenttype.model.field.ImmutableTabDividerField';
 

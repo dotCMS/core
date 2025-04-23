@@ -41,18 +41,12 @@ import {
 } from '@dotcms/dotcms-models';
 import { DotMessagePipe, DotWorkflowActionsComponent } from '@dotcms/ui';
 
-
 import { TabViewInsertDirective } from '../../directives/tab-view-insert/tab-view-insert.directive';
-import {
-    CONTENT_SEARCH_ROUTE
-} from '../../models/dot-edit-content-field.constant';
+import { CONTENT_SEARCH_ROUTE } from '../../models/dot-edit-content-field.constant';
 import { FormValues } from '../../models/dot-edit-content-form.interface';
 import { DotWorkflowActionParams } from '../../models/dot-edit-content.model';
 import { DotEditContentStore } from '../../store/edit-content.store';
-import {
-    generatePreviewUrl,
-    isFilteredType
-} from '../../utils/functions.util';
+import { generatePreviewUrl, isFilteredType } from '../../utils/functions.util';
 import { resolutionValue } from '../../utils/resolution-values.utils';
 import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit-content-field.component';
 

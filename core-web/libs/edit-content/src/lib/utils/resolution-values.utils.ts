@@ -1,4 +1,18 @@
-import { DotCMSContentlet, DotCMSContentTypeField, DotCMSFieldTypes, ContentTypeJSONField, ContentTypeHostFolderField, ContentTypeCategoryField, ContentTypeRelationshipField, ContentTypeDateField, ContentTypeDateTimeField, ContentTypeTimeField, ContentTypeSelectField, ContentTypeRadioField, DotCMSDataTypes } from '@dotcms/dotcms-models';
+import {
+    DotCMSContentlet,
+    DotCMSContentTypeField,
+    DotCMSFieldTypes,
+    ContentTypeJSONField,
+    ContentTypeHostFolderField,
+    ContentTypeCategoryField,
+    ContentTypeRelationshipField,
+    ContentTypeDateField,
+    ContentTypeDateTimeField,
+    ContentTypeTimeField,
+    ContentTypeSelectField,
+    ContentTypeRadioField,
+    DotCMSDataTypes
+} from '@dotcms/dotcms-models';
 import { getRelationshipFromContentlet } from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/utils';
 
 /**
@@ -13,7 +27,10 @@ export type FnResolutionValue = (
     field: DotCMSContentTypeField
 ) => unknown;
 
-const getValueResolutionFn = (contentlet: DotCMSContentlet, field: DotCMSContentTypeField): unknown => {
+const getValueResolutionFn = (
+    contentlet: DotCMSContentlet,
+    field: DotCMSContentTypeField
+): unknown => {
     const value = contentlet?.[field.variable] ?? field.defaultValue;
 
     if (value === null || value === undefined) {
@@ -40,7 +57,10 @@ const jsonResolutionFn = (contentlet: DotCMSContentlet, field: ContentTypeJSONFi
  * @param field - The field object
  * @returns The resolved host-folder path or default value
  */
-const hostFolderResolutionFn = (contentlet: DotCMSContentlet, field: ContentTypeHostFolderField): string => {
+const hostFolderResolutionFn = (
+    contentlet: DotCMSContentlet,
+    field: ContentTypeHostFolderField
+): string => {
     if (contentlet?.hostName && contentlet?.url) {
         const path = `${contentlet?.hostName}${contentlet?.url}`;
         const finalPath = path.slice(0, path.indexOf('/content'));
@@ -64,7 +84,10 @@ const hostFolderResolutionFn = (contentlet: DotCMSContentlet, field: ContentType
  * @param field - The field object
  * @returns Array of category keys or default value
  */
-const categoryResolutionFn = (contentlet: DotCMSContentlet, field: ContentTypeCategoryField): string[] => {
+const categoryResolutionFn = (
+    contentlet: DotCMSContentlet,
+    field: ContentTypeCategoryField
+): string[] => {
     const value = getValueResolutionFn(contentlet, field);
 
     if (Array.isArray(value)) {
@@ -85,7 +108,10 @@ const categoryResolutionFn = (contentlet: DotCMSContentlet, field: ContentTypeCa
  * @param field - The field object
  * @returns Array of related content identifiers
  */
-const relationshipResolutionFn = (contentlet: DotCMSContentlet, field: ContentTypeRelationshipField): string[] => {
+const relationshipResolutionFn = (
+    contentlet: DotCMSContentlet,
+    field: ContentTypeRelationshipField
+): string[] => {
     const relationship = getRelationshipFromContentlet({
         contentlet,
         variable: field.variable
@@ -103,7 +129,10 @@ const relationshipResolutionFn = (contentlet: DotCMSContentlet, field: ContentTy
  * @param field - The field object
  * @returns Properly cast Date object or null
  */
-const dateResolutionFn = (contentlet: DotCMSContentlet, field: ContentTypeDateField | ContentTypeDateTimeField | ContentTypeTimeField): Date | null => {
+const dateResolutionFn = (
+    contentlet: DotCMSContentlet,
+    field: ContentTypeDateField | ContentTypeDateTimeField | ContentTypeTimeField
+): Date | null => {
     const value = getValueResolutionFn(contentlet, field);
 
     if (!value) {
@@ -127,7 +156,10 @@ const dateResolutionFn = (contentlet: DotCMSContentlet, field: ContentTypeDateFi
  * @param field - The field object
  * @returns Array of values
  */
-const flattenedFieldResolutionFn = (contentlet: DotCMSContentlet, field: DotCMSContentTypeField): string[] => {
+const flattenedFieldResolutionFn = (
+    contentlet: DotCMSContentlet,
+    field: DotCMSContentTypeField
+): string[] => {
     const value = getValueResolutionFn(contentlet, field);
 
     if (!value) {
@@ -135,17 +167,20 @@ const flattenedFieldResolutionFn = (contentlet: DotCMSContentlet, field: DotCMSC
     }
 
     if (Array.isArray(value)) {
-        return value.map(item => item.trim());
+        return value.map((item) => item.trim());
     }
 
     if (typeof value === 'string') {
-        return value.split(',').map(item => item.trim());
+        return value.split(',').map((item) => item.trim());
     }
 
     return [];
 };
 
-const selectResolutionFn = (contentlet: DotCMSContentlet, field: ContentTypeSelectField | ContentTypeRadioField): boolean | string | number | null => {
+const selectResolutionFn = (
+    contentlet: DotCMSContentlet,
+    field: ContentTypeSelectField | ContentTypeRadioField
+): boolean | string | number | null => {
     const value = getValueResolutionFn(contentlet, field);
 
     if (value === '') {
@@ -153,9 +188,7 @@ const selectResolutionFn = (contentlet: DotCMSContentlet, field: ContentTypeSele
     }
 
     if (field.dataType === DotCMSDataTypes.BOOLEAN) {
-        return typeof value === 'boolean'
-            ? value
-            : String(value).toLowerCase().trim() === 'true';
+        return typeof value === 'boolean' ? value : String(value).toLowerCase().trim() === 'true';
     }
 
     if (field.dataType === DotCMSDataTypes.FLOAT || field.dataType === DotCMSDataTypes.INTEGER) {
@@ -200,5 +233,5 @@ export const resolutionValue: Record<DotCMSFieldTypes, FnResolutionValue> = {
     [DotCMSFieldTypes.RELATIONSHIP]: relationshipResolutionFn,
     [DotCMSFieldTypes.LINE_DIVIDER]: () => '',
     [DotCMSFieldTypes.ROW]: () => '',
-    [DotCMSFieldTypes.COLUMN]: () => '',
+    [DotCMSFieldTypes.COLUMN]: () => ''
 };

@@ -103,7 +103,6 @@ describe('Utils', () => {
         // Line Divider Tests
         describe('Line Divider Resolution', () => {
             it('should always return empty string', () => {
-
                 expect(resolutionValue[FIELD_TYPES.LINE_DIVIDER]()).toBe('');
             });
         });

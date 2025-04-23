@@ -6,7 +6,6 @@ export interface DateOptions {
     icon?: string;
 }
 
-
 export const CALENDAR_OPTIONS_PER_TYPE: Record<CalendarFieldTypes, DateOptions> = {
     [DotCMSFieldTypes.DATE_AND_TIME]: {
         showTime: true,
