@@ -5,7 +5,7 @@ import { By } from '@angular/platform-browser';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
 import { DotCopyButtonComponent, DotIconModule, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
-import { dotcmsContentTypeBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
+import { createFakeContentType, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotRelationshipTreeComponent } from './dot-relationship-tree.component';
 
@@ -13,13 +13,12 @@ const messageServiceMock = new MockDotMessageService({
     'relationship.query.title': 'Lucene Query'
 });
 
-const fakeContentType: DotCMSContentType = {
-    ...dotcmsContentTypeBasicMock,
+const fakeContentType: DotCMSContentType = createFakeContentType({
     id: '1234567890',
     name: 'ContentTypeName',
     variable: 'helloVariable',
     baseType: 'testBaseType'
-};
+});
 
 @Component({
     selector: 'dot-test-host-component',

@@ -6,7 +6,7 @@ import {
     DotCopyContentTypeDialogFormFields,
     StructureTypeView
 } from '@dotcms/dotcms-models';
-import { dotcmsContentTypeBasicMock, mockDotContentlet } from '@dotcms/utils-testing';
+import { createFakeContentType, mockDotContentlet } from '@dotcms/utils-testing';
 
 import { DotContentTypeService } from './dot-content-type.service';
 
@@ -121,8 +121,7 @@ describe('DotContentletService', () => {
 
     it('should get one content type by id or varName', (done) => {
         const id = '1';
-        const contentTypeExpected: DotCMSContentType = {
-            ...dotcmsContentTypeBasicMock,
+        const contentTypeExpected: DotCMSContentType = createFakeContentType({
             clazz: 'clazz',
             defaultType: false,
             fixed: false,
@@ -132,7 +131,7 @@ describe('DotContentletService', () => {
             name: 'content type name',
             owner: 'user',
             system: false
-        };
+        });
 
         dotContentTypeService.getContentType(id).subscribe((contentType: DotCMSContentType) => {
             expect(contentType).toBe(contentTypeExpected);
@@ -156,8 +155,7 @@ describe('DotContentletService', () => {
             icon: 'icon'
         };
 
-        const contentTypeExpected: DotCMSContentType = {
-            ...dotcmsContentTypeBasicMock,
+        const contentTypeExpected: DotCMSContentType = createFakeContentType({
             clazz: 'clacczz',
             defaultType: false,
             fixed: false,
@@ -165,7 +163,7 @@ describe('DotContentletService', () => {
             owner: 'user',
             system: false,
             ...dialogFormFields
-        };
+        });
 
         dotContentTypeService
             .saveCopyContentType(variableContentTypeToCopy, dialogFormFields)
@@ -182,22 +180,21 @@ describe('DotContentletService', () => {
     });
 
     it('should get content by types', (done) => {
-        const contenttypeA: DotCMSContentType = {
-            ...dotcmsContentTypeBasicMock,
+        const contenttypeA: DotCMSContentType = createFakeContentType({
             clazz: 'hello-class-one',
             defaultType: false,
             fixed: false,
             id: '123',
             owner: 'user',
             system: false
-        };
+        });
 
-        const contentTypeB: DotCMSContentType = {
+        const contentTypeB: DotCMSContentType = createFakeContentType({
             ...contenttypeA,
             clazz: 'hello-class-two',
             id: '456',
             owner: 'user1'
-        };
+        });
 
         dotContentTypeService
             .getByTypes('contentType', 200)

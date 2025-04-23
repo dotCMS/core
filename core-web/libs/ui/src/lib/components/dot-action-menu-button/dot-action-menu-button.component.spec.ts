@@ -7,7 +7,7 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { DotActionMenuItem } from '@dotcms/dotcms-models';
 import { DotActionMenuButtonComponent, DotMenuComponent } from '@dotcms/ui';
-import { dotcmsContentTypeBasicMock } from '@dotcms/utils-testing';
+import { createFakeBaseField, createFakeContentType } from '@dotcms/utils-testing';
 
 describe('ActionMenuButtonComponent', () => {
     let spectator: Spectator<DotActionMenuButtonComponent>;
@@ -122,8 +122,7 @@ describe('ActionMenuButtonComponent', () => {
                 }
             }
         ];
-        const mockContentType = {
-            ...dotcmsContentTypeBasicMock,
+        const mockContentType = createFakeContentType({
             clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
             id: '1234567890',
             name: 'Nuevo',
@@ -134,7 +133,7 @@ describe('ActionMenuButtonComponent', () => {
             host: null,
             owner: '123',
             system: false
-        };
+        });
 
         spectator.setInput('actions', fakeActions);
         spectator.setInput('item', mockContentType);
@@ -210,8 +209,7 @@ describe('ActionMenuButtonComponent', () => {
                 }
             }
         ];
-        const mockContentType = {
-            ...dotcmsContentTypeBasicMock,
+        const mockContentType = createFakeContentType({
             clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
             id: '1234567890',
             name: 'Nuevo',
@@ -222,7 +220,7 @@ describe('ActionMenuButtonComponent', () => {
             host: null,
             owner: '123',
             system: false
-        };
+        });
 
         spectator.setInput('actions', fakeActions);
         spectator.setInput('item', mockContentType);
@@ -259,8 +257,7 @@ describe('ActionMenuButtonComponent', () => {
         ];
 
         const fakeCommand = jest.spyOn(fakeActions[0].menuItem, 'command');
-        const mockContentType = {
-            ...dotcmsContentTypeBasicMock,
+        const mockContentType = createFakeContentType({
             clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
             id: '1234567890',
             name: 'Nuevo',
@@ -271,7 +268,7 @@ describe('ActionMenuButtonComponent', () => {
             host: null,
             owner: '123',
             system: false
-        };
+        });
         spectator.setInput('actions', fakeActions);
         spectator.setInput('item', mockContentType);
         spectator.detectChanges();
