@@ -9,7 +9,7 @@ import {
     DotPageContainer,
     DotPageContent
 } from '@dotcms/dotcms-models';
-import { CoreWebServiceMock, dotcmsContentTypeBasicMock } from '@dotcms/utils-testing';
+import { CoreWebServiceMock, createFakeContentType } from '@dotcms/utils-testing';
 
 import { DotContainerContentletService } from './dot-container-contentlet.service';
 
@@ -78,8 +78,7 @@ describe('DotContainerContentletService', () => {
             uuid: '3'
         };
 
-        const form: DotCMSContentType = {
-            ...dotcmsContentTypeBasicMock,
+        const form: DotCMSContentType = createFakeContentType({
             clazz: 'clazz',
             defaultType: true,
             fixed: true,
@@ -90,7 +89,7 @@ describe('DotContainerContentletService', () => {
             system: false,
             baseType: 'form',
             id: formId
-        };
+        });
 
         dotContainerContentletService.getFormToContainer(pageContainer, form.id).subscribe();
         httpMock.expectOne(`v1/containers/form/2?containerId=1`);

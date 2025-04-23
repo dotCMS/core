@@ -54,7 +54,7 @@ import {
 import {
     DotcmsConfigServiceMock,
     dotcmsContentletMock,
-    dotcmsContentTypeBasicMock,
+    createFakeContentType,
     DotcmsEventsServiceMock,
     DotLanguagesServiceMock,
     LoginServiceMock,
@@ -65,7 +65,8 @@ import {
     mockLanguageArray,
     DotMessageDisplayServiceMock,
     MockDotHttpErrorManagerService,
-    DotLicenseServiceMock
+    DotLicenseServiceMock,
+    createFakeContentType
 } from '@dotcms/utils-testing';
 
 import {
@@ -440,7 +441,7 @@ describe('DotPageStore', () => {
     });
 
     it('should get all Page Types value in store and show dialog', () => {
-        const expectedInputArray = [{ ...dotcmsContentTypeBasicMock, ...contentTypeDataMock[0] }];
+        const expectedInputArray = [{ ...createFakeContentType(), ...contentTypeDataMock[0] }];
         spyOn(dotPageTypesService, 'getPages').and.returnValue(
             of(expectedInputArray as unknown as DotCMSContentType[])
         );
@@ -563,7 +564,7 @@ describe('DotPageStore', () => {
     }));
 
     it('should get all Workflow actions and static actions from a contentlet', () => {
-        const expectedInputArray = [{ ...dotcmsContentTypeBasicMock, ...contentTypeDataMock[0] }];
+        const expectedInputArray = [{ ...createFakeContentType(), ...contentTypeDataMock[0] }];
         spyOn(dotWorkflowsActionsService, 'getByInode').and.returnValue(of(mockWorkflowsActions));
         spyOn(dotFavoritePageService, 'get').and.returnValue(
             of({
@@ -612,7 +613,7 @@ describe('DotPageStore', () => {
     });
 
     it('should trigger push publish dialog with the correct item identifier', (done) => {
-        const expectedInputArray = [{ ...dotcmsContentTypeBasicMock, ...contentTypeDataMock[0] }];
+        const expectedInputArray = [{ ...createFakeContentType(), ...contentTypeDataMock[0] }];
 
         const item = favoritePagesInitialTestData[0];
 

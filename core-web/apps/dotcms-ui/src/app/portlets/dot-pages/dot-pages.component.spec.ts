@@ -39,7 +39,7 @@ import {
 import { ComponentStatus, DotMessageSeverity, DotMessageType } from '@dotcms/dotcms-models';
 import {
     dotcmsContentletMock,
-    dotcmsContentTypeBasicMock,
+    createFakeContentType,
     DotcmsEventsServiceMock,
     DotMessageDisplayServiceMock,
     LoginServiceMock,
@@ -112,7 +112,7 @@ const storeMock = {
         return of({});
     },
     get pageTypes$() {
-        return of([{ ...dotcmsContentTypeBasicMock }]);
+        return of([createFakeContentType()]);
     },
     clearMenuActions: jasmine.createSpy(),
     getFavoritePages: jasmine.createSpy(),

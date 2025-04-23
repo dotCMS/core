@@ -11,7 +11,7 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { DotESContentService, PaginatorService } from '@dotcms/data-access';
 import { CoreWebService, CoreWebServiceMock } from '@dotcms/dotcms-js';
 import { ComponentStatus } from '@dotcms/dotcms-models';
-import { dotcmsContentTypeBasicMock } from '@dotcms/utils-testing';
+import { createFakeContentType } from '@dotcms/utils-testing';
 
 import { contentletProductDataMock } from './dot-palette-contentlets/dot-palette-contentlets.component.spec';
 import { DotPaletteComponent } from './dot-palette.component';
@@ -50,8 +50,7 @@ export class DotPaletteContentletsMockComponent {
     }
 }
 
-const itemMock = {
-    ...dotcmsContentTypeBasicMock,
+const itemMock = createFakeContentType({
     clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
     id: '1234567890',
     name: 'Nuevo',
@@ -62,7 +61,7 @@ const itemMock = {
     host: null,
     owner: '123',
     system: false
-};
+});
 
 @Injectable()
 class MockESPaginatorService {

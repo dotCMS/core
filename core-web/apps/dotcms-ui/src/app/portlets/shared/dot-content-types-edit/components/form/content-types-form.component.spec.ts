@@ -48,8 +48,7 @@ import {
 import { DotFieldValidationMessageComponent, DotIconModule, DotMessagePipe } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
-    dotcmsContentTypeBasicMock,
-    dotcmsContentTypeFieldBasicMock,
+    createFakeContentType,
     DotMessageDisplayServiceMock,
     DotWorkflowServiceMock,
     LoginServiceMock,

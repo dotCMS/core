@@ -1,10 +1,9 @@
 import { DotCMSContentType } from '@dotcms/dotcms-models';
-import { dotcmsContentTypeBasicMock } from '@dotcms/utils-testing';
+import { createFakeContentType } from '@dotcms/utils-testing';
 
 import { DotEditContentTypeCacheService } from './dot-edit-content-type-cache.service';
 
-const contentTypeMock: DotCMSContentType = {
-    ...dotcmsContentTypeBasicMock,
+const contentTypeMock: DotCMSContentType = createFakeContentType({
     clazz: 'clazz',
     defaultType: false,
     fixed: false,
@@ -15,7 +14,7 @@ const contentTypeMock: DotCMSContentType = {
     variable: 'banner',
     owner: 'user',
     system: true
-};
+});
 
 describe('DotEditContentTypeCacheService', () => {
     let service: DotEditContentTypeCacheService;

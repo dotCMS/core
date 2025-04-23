@@ -17,14 +17,13 @@ import { DotCMSContentType } from '@dotcms/dotcms-models';
 import { DotDialogModule, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
-    dotcmsContentTypeBasicMock,
+    createFakeContentType,
     MockDotMessageService
 } from '@dotcms/utils-testing';
 
 import { DotFormSelectorComponent } from './dot-form-selector.component';
 
-const mockContentType: DotCMSContentType = {
-    ...dotcmsContentTypeBasicMock,
+const mockContentType: DotCMSContentType = createFakeContentType({
     clazz: 'com.dotcms.contenttype.model.type.ImmutableWidgetContentType',
     defaultType: false,
     fixed: false,
@@ -33,7 +32,7 @@ const mockContentType: DotCMSContentType = {
     name: 'Hello World',
     owner: '123',
     system: false
-};
+});
 
 @Component({
     template: `

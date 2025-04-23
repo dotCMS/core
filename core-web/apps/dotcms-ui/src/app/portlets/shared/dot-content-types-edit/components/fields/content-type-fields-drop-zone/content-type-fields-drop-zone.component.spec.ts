@@ -52,12 +52,17 @@ import { DotLoadingIndicatorService } from '@dotcms/utils';
 import {
     cleanUpDialog,
     CoreWebServiceMock,
-    dotcmsContentTypeBasicMock,
-    dotcmsContentTypeFieldBasicMock,
+    createFakeContentType,
+    createFakeRowField,
+    createFakeColumnField,
     fieldsBrokenWithColumns,
     fieldsWithBreakColumn,
     FieldUtil,
-    MockDotMessageService
+    MockDotMessageService,
+    createFakeTextField,
+    createFakeBlockEditorField,
+    createFakeWYSIWYGField,
+    createFakeTabDividerField
 } from '@dotcms/utils-testing';
 
 import { ContentTypeFieldsDropZoneComponent } from '.';
@@ -72,13 +77,12 @@ import { FieldDragDropService } from '../service/index';
 
 const COLUMN_BREAK_FIELD = FieldUtil.createColumnBreak();
 
-const fakeContentType: DotCMSContentType = {
-    ...dotcmsContentTypeBasicMock,
+const fakeContentType: DotCMSContentType = createFakeContentType({
     id: '1234567890',
     name: 'ContentTypeName',
     variable: 'helloVariable',
     baseType: 'testBaseType'
-};
+});
 
 @Component({
     selector: 'dot-content-type-fields-row',
@@ -312,11 +316,9 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
     it('should emit removeFields event', () => {
         let fieldsToRemove;
 
-        const field = {
-            ...dotcmsContentTypeFieldBasicMock,
-            clazz: 'classField',
+        const field = createFakeTextField({
             name: 'nameField'
-        };
+        });
 
         comp.removeFields.subscribe((removeFields) => (fieldsToRemove = removeFields));
 
@@ -328,11 +330,9 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
         let fieldsToRemove: DotCMSContentTypeField[];
 
         const fieldRow: DotCMSContentTypeLayoutRow = FieldUtil.createFieldRow(1);
-        const field = {
-            ...dotcmsContentTypeFieldBasicMock,
-            clazz: 'classField',
+        const field = createFakeTextField({
             name: 'nameField'
-        };
+        });
         fieldRow.columns[0].fields = [field];
         fieldRow.divider.id = 'test';
 
@@ -362,11 +362,9 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
 
     it('should cancel last drag and drop operation fields', () => {
         const fieldRow1: DotCMSContentTypeLayoutRow = FieldUtil.createFieldRow(1);
-        const field = {
-            ...dotcmsContentTypeFieldBasicMock,
-            clazz: 'classField',
+        const field = createFakeTextField({
             name: 'nameField'
-        };
+        });
         fieldRow1.columns[0].fields = [field];
 
         comp.layout = [fieldRow1];
@@ -423,14 +421,12 @@ class TestHostComponent {
 // Issue ref: dotCMS/core#16772 When you DnD a field (reorder) in the same column it shows up the edit field dialog
 // https://github.com/dotCMS/core-web/pull/1085
 
-const BLOCK_EDITOR_FIELD = {
-    ...dotcmsContentTypeFieldBasicMock,
-    clazz: 'com.dotcms.contenttype.model.field.ImmutableStoryBlockField',
+const BLOCK_EDITOR_FIELD = createFakeBlockEditorField({
     id: '12',
     name: 'field 12',
     sortOrder: 12,
     contentTypeId: '12b'
-};
+});
 
 @Component({
     selector: 'dot-block-editor-settings',
@@ -570,118 +566,82 @@ describe('Load fields and drag and drop', () => {
 
         fakeFields = [
             {
-                divider: {
-                    ...dotcmsContentTypeFieldBasicMock,
+                divider: createFakeRowField({
                     name: 'field 1',
                     id: '1',
-                    clazz: 'com.dotcms.contenttype.model.field.ImmutableRowField',
                     sortOrder: 0,
                     contentTypeId: '1b'
-                },
+                }),
                 columns: [
                     {
-                        columnDivider: {
-                            ...dotcmsContentTypeFieldBasicMock,
+                        columnDivider: createFakeColumnField({
                             name: 'field 2',
                             id: '2',
-                            clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField',
                             sortOrder: 1,
                             contentTypeId: '2b'
-                        },
-                        fields: [
-                            {
-                                ...dotcmsContentTypeFieldBasicMock,
-                                clazz: 'com.dotcms.contenttype.model.field.ImmutableWysiwygField',
-                                id: '3',
-                                name: 'field 3',
-                                sortOrder: 2,
-                                contentTypeId: '3b'
-                            }
-                        ]
+                        }),
+                        fields: [createFakeWYSIWYGField()]
                     },
                     {
-                        columnDivider: {
-                            ...dotcmsContentTypeFieldBasicMock,
-                            clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField',
+                        columnDivider: createFakeColumnField({
                             id: '4',
                             name: 'field 4',
                             sortOrder: 3,
                             contentTypeId: '4b'
-                        },
+                        }),
                         fields: [
-                            {
-                                ...dotcmsContentTypeFieldBasicMock,
-                                clazz: 'text',
+                            createFakeTextField({
                                 id: '5',
                                 name: 'field 5',
                                 sortOrder: 4,
                                 contentTypeId: '5b'
-                            }
+                            })
                         ]
                     }
                 ]
             },
             {
-                divider: {
-                    ...dotcmsContentTypeFieldBasicMock,
-                    clazz: 'com.dotcms.contenttype.model.field.ImmutableTabDividerField',
+                divider: createFakeTabDividerField({
                     id: '6',
                     name: 'field 6',
                     sortOrder: 5,
                     contentTypeId: '6b'
-                }
+                })
             },
             {
-                divider: {
-                    ...dotcmsContentTypeFieldBasicMock,
-                    clazz: 'com.dotcms.contenttype.model.field.ImmutableRowField',
+                divider: createFakeRowField({
                     id: '7',
                     name: 'field 7',
                     sortOrder: 6,
                     contentTypeId: '7b'
-                },
+                }),
                 columns: [
                     {
-                        columnDivider: {
-                            ...dotcmsContentTypeFieldBasicMock,
-                            clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField',
+                        columnDivider: createFakeColumnField({
                             id: '8',
                             name: 'field 8',
                             sortOrder: 7,
                             contentTypeId: '8b'
-                        },
-                        fields: [
-                            {
-                                ...dotcmsContentTypeFieldBasicMock,
-                                clazz: 'text',
-                                id: '9',
-                                name: 'field 9',
-                                sortOrder: 8,
-                                contentTypeId: '9b'
-                            }
-                        ]
+                        }),
+                        fields: [createFakeTextField()]
                     }
                 ]
             },
             {
-                divider: {
-                    ...dotcmsContentTypeFieldBasicMock,
-                    clazz: 'com.dotcms.contenttype.model.field.ImmutableRowField',
+                divider: createFakeRowField({
                     id: '10',
                     name: 'field 10',
                     sortOrder: 10,
                     contentTypeId: '10b'
-                },
+                }),
                 columns: [
                     {
-                        columnDivider: {
-                            ...dotcmsContentTypeFieldBasicMock,
+                        columnDivider: createFakeColumnField({
                             name: 'field 11',
                             id: '11',
-                            clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField',
                             sortOrder: 11,
                             contentTypeId: '11b'
-                        },
+                        }),
                         fields: [BLOCK_EDITOR_FIELD]
                     }
                 ]
@@ -718,12 +678,11 @@ describe('Load fields and drag and drop', () => {
 
         spyOn(comp.editField, 'emit');
 
-        const fieldUpdated = {
-            ...dotcmsContentTypeFieldBasicMock,
+        const fieldUpdated = createFakeTextField({
             id: '1',
             fixed: true,
             indexed: true
-        };
+        });
 
         expect(comp.currentField).toEqual(updatedField);
 
@@ -902,9 +861,7 @@ describe('Load fields and drag and drop', () => {
     });
 
     it('should disable field variable tab', () => {
-        comp.currentField = {
-            ...dotcmsContentTypeFieldBasicMock
-        };
+        comp.currentField = createFakeTextField();
         comp.displayDialog = true;
         fixture.detectChanges();
 
@@ -913,10 +870,9 @@ describe('Load fields and drag and drop', () => {
     });
 
     it('should NOT disable field variable tab', () => {
-        comp.currentField = {
-            ...dotcmsContentTypeFieldBasicMock,
+        comp.currentField = createFakeTextField({
             id: '123'
-        };
+        });
         comp.displayDialog = true;
         fixture.detectChanges();
         const tabLinks = de.queryAll(By.css('.p-tabview-nav li'));
@@ -1095,11 +1051,7 @@ describe('Load fields and drag and drop', () => {
             fixture.detectChanges();
             const fieldBoxComponent = de.query(By.css('dot-content-type-fields-row'))
                 .componentInstance as TestContentTypeFieldsRowComponent;
-            fieldBoxComponent.editField.emit({
-                clazz: 'com.dotcms.contenttype.model.field.ImmutableWysiwygField',
-                name: 'WYSIWYG',
-                id: '3'
-            } as DotCMSContentTypeField);
+            fieldBoxComponent.editField.emit(createFakeWYSIWYGField());
             fixture.detectChanges();
 
             const BLOCK_EDITOR_SETTINGS = de.query(By.css('dot-block-editor-settings'));

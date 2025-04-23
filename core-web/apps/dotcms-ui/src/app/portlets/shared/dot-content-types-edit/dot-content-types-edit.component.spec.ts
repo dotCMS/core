@@ -36,8 +36,11 @@ import { DotDialogModule, DotIconModule } from '@dotcms/ui';
 import {
     cleanUpDialog,
     CoreWebServiceMock,
-    dotcmsContentTypeBasicMock,
-    dotcmsContentTypeFieldBasicMock,
+    createFakeColumnField,
+    createFakeContentType,
+    createFakeLineDividerField,
+    createFakeRowField,
+    createFakeTextField,
     DotMessageDisplayServiceMock,
     LoginServiceMock,
     MockDotMessageService,
@@ -262,8 +265,7 @@ describe('DotContentTypesEditComponent', () => {
             let contentTypeForm: DebugElement;
 
             beforeEach(() => {
-                mockContentType = {
-                    ...dotcmsContentTypeBasicMock,
+                mockContentType = createFakeContentType({
                     clazz: 'com.dotcms.contenttype.model.type.ImmutableWidgetContentType',
                     defaultType: false,
                     fixed: false,
@@ -271,7 +273,7 @@ describe('DotContentTypesEditComponent', () => {
                     host: null,
                     name: 'Hello World',
                     system: false
-                };
+                });
 
                 contentTypeForm = de.query(By.css('dot-content-types-form'));
             });
@@ -282,27 +284,17 @@ describe('DotContentTypesEditComponent', () => {
                     ...{ id: '123' },
                     ...{
                         fields: [
-                            {
-                                ...dotcmsContentTypeFieldBasicMock,
+                            createFakeTextField({
                                 name: 'hello world'
-                            }
+                            })
                         ],
                         layout: [
                             {
-                                divider: {
-                                    ...dotcmsContentTypeFieldBasicMock
-                                },
+                                divider: createFakeLineDividerField(),
                                 columns: [
                                     {
-                                        columnDivider: {
-                                            ...dotcmsContentTypeFieldBasicMock
-                                        },
-                                        fields: [
-                                            {
-                                                ...dotcmsContentTypeFieldBasicMock,
-                                                name: 'hello world'
-                                            }
-                                        ]
+                                        columnDivider: createFakeColumnField(),
+                                        fields: [createFakeTextField({ name: 'hello world' })]
                                     }
                                 ]
                             }
@@ -390,40 +382,31 @@ describe('DotContentTypesEditComponent', () => {
     });
 
     const currentFieldsInServer = [
-        {
-            ...dotcmsContentTypeFieldBasicMock,
+        createFakeTextField({
             name: 'fieldName',
             id: '4',
-            clazz: 'fieldClass',
             sortOrder: 1
-        },
-        {
-            ...dotcmsContentTypeFieldBasicMock,
+        }),
+        createFakeColumnField({
             name: 'field 3',
             id: '3',
-            clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField',
             sortOrder: 3
-        }
+        })
     ];
 
     const currentLayoutInServer: DotCMSContentTypeLayoutRow[] = [
         {
-            divider: {
-                ...dotcmsContentTypeFieldBasicMock
-            },
+            divider: createFakeLineDividerField(),
             columns: [
                 {
-                    columnDivider: {
-                        ...dotcmsContentTypeFieldBasicMock
-                    },
+                    columnDivider: createFakeColumnField(),
                     fields: currentFieldsInServer
                 }
             ]
         }
     ];
 
-    const fakeContentType: DotCMSContentType = {
-        ...dotcmsContentTypeBasicMock,
+    const fakeContentType: DotCMSContentType = createFakeContentType({
         baseType: 'CONTENT',
         id: '1234567890',
         clazz: 'com.dotcms.contenttype.model.type.ImmutableWidgetContentType',
@@ -437,7 +420,7 @@ describe('DotContentTypesEditComponent', () => {
         owner: 'owner',
         system: false,
         variable: 'helloVariable'
-    };
+    });
 
     const configEditMode = getConfig({
         contentType: fakeContentType
@@ -568,18 +551,14 @@ describe('DotContentTypesEditComponent', () => {
 
         it('should save fields on dropzone event', () => {
             const newFieldsAdded: DotCMSContentTypeField[] = [
-                {
-                    ...dotcmsContentTypeFieldBasicMock,
+                createFakeRowField({
                     name: 'field 1',
-                    clazz: 'com.dotcms.contenttype.model.field.ImmutableRowField',
                     sortOrder: 1
-                },
-                {
-                    ...dotcmsContentTypeFieldBasicMock,
+                }),
+                createFakeColumnField({
                     name: 'field 2',
-                    clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField',
                     sortOrder: 2
-                }
+                })
             ];
 
             const fieldsReturnByServer: DotCMSContentTypeField[] =
@@ -598,18 +577,14 @@ describe('DotContentTypesEditComponent', () => {
 
         it('should show loading when saving fields on dropzone', () => {
             const newFieldsAdded: DotCMSContentTypeField[] = [
-                {
-                    ...dotcmsContentTypeFieldBasicMock,
+                createFakeRowField({
                     name: 'field 1',
-                    clazz: 'com.dotcms.contenttype.model.field.ImmutableRowField',
                     sortOrder: 1
-                },
-                {
-                    ...dotcmsContentTypeFieldBasicMock,
+                }),
+                createFakeColumnField({
                     name: 'field 2',
-                    clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField',
                     sortOrder: 2
-                }
+                })
             ];
 
             const fieldsReturnByServer: DotCMSContentTypeField[] =
@@ -633,12 +608,10 @@ describe('DotContentTypesEditComponent', () => {
 
         it('should update fields on dropzone event when creating a new one or update', () => {
             const newFieldsAdded: DotCMSContentTypeField[] = [
-                {
-                    ...dotcmsContentTypeFieldBasicMock,
+                createFakeRowField({
                     name: 'field 1',
-                    clazz: 'com.dotcms.contenttype.model.field.ImmutableRowField',
                     sortOrder: 1
-                }
+                })
             ];
 
             const fieldsReturnByServer: DotCMSContentTypeLayoutRow[] =
@@ -675,12 +648,10 @@ describe('DotContentTypesEditComponent', () => {
             layout[0].columns[0].columnDivider.id = new Date().getMilliseconds().toString();
 
             const newRow: DotCMSContentTypeLayoutRow = {
-                divider: {
-                    ...dotcmsContentTypeFieldBasicMock,
+                divider: createFakeColumnField({
                     name: 'field 1',
-                    clazz: 'com.dotcms.contenttype.model.field.ImmutableRowField',
                     sortOrder: 1
-                }
+                })
             };
 
             layout.push(newRow);
@@ -700,20 +671,16 @@ describe('DotContentTypesEditComponent', () => {
             spyOn(dropZone.componentInstance, 'cancelLastDragAndDrop').and.callThrough();
 
             const newFieldsAdded: DotCMSContentTypeField[] = [
-                {
-                    ...dotcmsContentTypeFieldBasicMock,
+                createFakeRowField({
                     name: 'field 1',
                     id: '1',
-                    clazz: 'com.dotcms.contenttype.model.field.ImmutableRowField',
                     sortOrder: 1
-                },
-                {
-                    ...dotcmsContentTypeFieldBasicMock,
+                }),
+                createFakeColumnField({
                     name: 'field 2',
                     id: '2',
-                    clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField',
                     sortOrder: 2
-                }
+                })
             ];
 
             spyOn(dotHttpErrorManagerService, 'handle').and.callThrough();

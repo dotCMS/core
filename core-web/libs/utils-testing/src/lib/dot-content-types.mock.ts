@@ -27,7 +27,8 @@ import {
     DotCMSClazzes,
     ContentTypeTabDividerField,
     ContentTypeColumnBreakField,
-    DotCMSContentType
+    DotCMSContentType,
+    ContentTypeBlockEditorField
 } from '@dotcms/dotcms-models';
 
 export function createFakeContentType(
@@ -493,6 +494,25 @@ export function createFakeTabDividerField(
         dataType: DotCMSDataTypes.SYSTEM,
         fieldType: DotCMSFieldTypes.TAB_DIVIDER,
         fieldTypeLabel: 'Tab Divider',
+        ...overrides
+    };
+}
+
+/**
+ * Creates a fake block editor field with customizable properties
+ *
+ * @param {Partial<ContentTypeBlockEditorField>} [overrides={}] - Optional properties to override defaults
+ * @returns {ContentTypeBlockEditorField} A complete block editor field object
+ */
+export function createFakeBlockEditorField(
+    overrides: Partial<ContentTypeBlockEditorField> = {}
+): ContentTypeBlockEditorField {
+    return {
+        ...createFakeBaseField(),
+        clazz: DotCMSClazzes.BLOCK_EDITOR,
+        dataType: DotCMSDataTypes.SYSTEM,
+        fieldType: DotCMSFieldTypes.BLOCK_EDITOR,
+        fieldTypeLabel: 'Block Editor',
         ...overrides
     };
 }
