@@ -128,31 +128,11 @@ export function registerUVEEvents() {
  * This is typically called after all UVE event handlers and DOM listeners
  * have been set up successfully.
  */
-export function setClientIsReady(config: DotCMSUVEConfig = {}): void {
-    const { graphql, params } = config;
-
-    if (graphql) {
-        // Initialize the UVE with the graphql config
-        sendMessageToUVE({
-            action: DotCMSUVEAction.CLIENT_READY,
-            payload: {
-                graphql
-            }
-        });
-    } else if (params) {
-        // Initialize the UVE with the REST API config
-        sendMessageToUVE({
-            action: DotCMSUVEAction.CLIENT_READY,
-            payload: {
-                params
-            }
-        });
-    } else {
-        // Initialize the UVE with no config, traditional rendering
-        sendMessageToUVE({
-            action: DotCMSUVEAction.CLIENT_READY
-        });
-    }
+export function setClientIsReady(config?: DotCMSUVEConfig): void {
+    sendMessageToUVE({
+        action: DotCMSUVEAction.CLIENT_READY,
+        payload: config
+    });
 }
 
 /**

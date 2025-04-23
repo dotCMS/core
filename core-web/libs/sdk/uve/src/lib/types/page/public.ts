@@ -482,7 +482,6 @@ export interface DotCMSBasicGraphQLPage {
     live: boolean;
     isContentlet: boolean;
     statusIcons: string;
-
     // Language information
     conLanguage: {
         id: number;

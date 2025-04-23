@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 
+import { updateNavigation } from '@dotcms/client';
 import { getUVEState, initUVE, createUVESubscription } from '@dotcms/uve';
 import { DotCMSEditablePage, UVEEventType } from '@dotcms/uve/types';
 
@@ -100,7 +101,10 @@ export const useEditableDotCMSPage = (editablePage: DotCMSEditablePage): DotCMSE
             return;
         }
 
+        const pageURI = editablePage?.page?.pageURI ?? '/';
+
         const { destroyUVESubscriptions } = initUVE(editablePage);
+        updateNavigation(pageURI);
 
         const { unsubscribe } = createUVESubscription(UVEEventType.CONTENT_CHANGES, (payload) => {
             setUpdatedEditablePage(payload);
