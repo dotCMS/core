@@ -102,41 +102,44 @@ public class ContentImportResource {
             tags = {"Content Import"},
             requestBody = @RequestBody(
                     required = true,
-                    description = "Import parameters including the file to import and a JSON string for import settings.",
+                    description = "Multipart form data containing the CSV file and JSON import parameters.",
                     content = @Content(
-                            mediaType = "multipart/form-data",
-                            schema = @Schema(
-                                    type = "object",
-                                    requiredProperties = {"file", "form"},
-                                    implementation = ContentImportParamsSchema.class
-                            )
+                            mediaType = MediaType.MULTIPART_FORM_DATA,
+                            schema = @Schema(implementation = ContentImportParamsSchema.class),
+                            examples = @ExampleObject(name = "Import Example", summary = "Example content import request", value =
+                                    "--boundary\\n" +
+                                    "Content-Disposition: form-data; name=\\"file\\"; filename=\\"import.csv\\"\\n" +
+                                    "Content-Type: text/csv\\n\\n" +
+                                    "title,description\\n" + // Example CSV content line
+                                    "Example Title,Example Description\\n" + // Example CSV content line
+                                    "--boundary\\n" +
+                                    "Content-Disposition: form-data; name=\\"form\\"\\n" +
+                                    "Content-Type: application/json\\n\\n" +
+                                    "{\\n" +
+                                    "  \\\"contentType\\\": \\\"webPageContent\\\",\\n" +
+                                    "  \\\"language\\\": \\\"en-US\\\",\\n" +
+                                    "  \\\"workflowActionId\\\": \\\"b9d89c80-3d88-4311-8365-187323c96436\\\",\\n" + // Replace with actual valid UUID
+                                    "  \\\"fields\\\": [\\\"title\\\"],\\n" + // Example using field variable name
+                                    "  \\\"stopOnError\\\": false,\\n" +
+                                    "  \\\"commitGranularity\\\": 100\\n" +
+                                    "}\\n" +
+                                    "--boundary--")
                     )
             ),
             responses = {
                     @ApiResponse(
                             responseCode = "200",
-                            description = "Content import job created successfully",
+                            description = "Content import job successfully created and enqueued.",
                             content = @Content(
-                                    mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseEntityJobStatusView.class),
-                                    examples = @ExampleObject(value = "{\n" +
-                                            "  \"entity\": {\n" +
-                                            "    \"jobId\": \"e6d9bae8-657b-4e2f-8524-c0222db66355\",\n" +
-                                            "    \"statusUrl\": \"http://localhost:8080/api/v1/content/_import/e6d9bae8-657b-4e2f-8524-c0222db66355\"\n" +
-                                            "  },\n" +
-                                            "  \"errors\": [],\n" +
-                                            "  \"i18nMessagesMap\": {},\n" +
-                                            "  \"messages\": [],\n" +
-                                            "  \"pagination\": null,\n" +
-                                            "  \"permissions\": []\n" +
-                                            "}")
+                                    mediaType = MediaType.APPLICATION_JSON,
+                                    schema = @Schema(implementation = ResponseEntityJobStatusView.class)
                             )
                     ),
-                    @ApiResponse(responseCode = "400", description = "Bad request due to validation errors"),
-                    @ApiResponse(responseCode = "401", description = "Invalid user authentication"),
-                    @ApiResponse(responseCode = "403", description = "Forbidden due to insufficient permissions"),
-                    @ApiResponse(responseCode = "404", description = "Content type or language not found"),
-                    @ApiResponse(responseCode = "500", description = "Internal server error")
+                    @ApiResponse(responseCode = "400", description = "Bad Request: Invalid parameters or malformed request (e.g., missing file, invalid JSON in 'form', file not CSV)."),
+                    @ApiResponse(responseCode = "401", description = "Unauthorized: Invalid or missing user authentication."),
+                    @ApiResponse(responseCode = "403", description = "Forbidden: User does not have necessary permissions for content import or workflow action."),
+                    @ApiResponse(responseCode = "404", description = "Not Found: Specified Content Type or Language could not be found."),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error: An unexpected error occurred during job creation or processing.")
             }
     )
     public Response importContent(
@@ -182,45 +185,48 @@ public class ContentImportResource {
     @Operation(
             operationId = "validateContentImport",
             summary = "Validates content import from a CSV file",
-            description = "Creates and enqueues a new content import job in preview mode based on the provided parameters. The job processes a CSV file and validates the content based on the specified content type, language, and workflow action.",
+            description = "Creates and enqueues a content import job in preview mode. This validates the CSV data against the specified Content Type, language, and workflow action without actually importing content.",
             tags = {"Content Import"},
             requestBody = @RequestBody(
                     required = true,
-                    description = "Import parameters including the file to import and a JSON string for import settings.",
+                    description = "Multipart form data containing the CSV file and JSON import parameters for validation.",
                     content = @Content(
-                            mediaType = "multipart/form-data",
-                            schema = @Schema(
-                                    type = "object",
-                                    requiredProperties = {"file", "form"},
-                                    implementation = ContentImportParamsSchema.class
-                            )
+                            mediaType = MediaType.MULTIPART_FORM_DATA,
+                            schema = @Schema(implementation = ContentImportParamsSchema.class),
+                            examples = @ExampleObject(name = "Validation Example", summary = "Example content validation request", value =
+                                    "--boundary\\n" +
+                                    "Content-Disposition: form-data; name=\\"file\\"; filename=\\"validate.csv\\"\\n" +
+                                    "Content-Type: text/csv\\n\\n" +
+                                    "title,description\\n" + // Example CSV content line
+                                    "Validation Title,Validation Description\\n" + // Example CSV content line
+                                    "--boundary\\n" +
+                                    "Content-Disposition: form-data; name=\\"form\\"\\n" +
+                                    "Content-Type: application/json\\n\\n" +
+                                    "{\\n" +
+                                    "  \\\"contentType\\\": \\\"webPageContent\\\",\\n" +
+                                    "  \\\"language\\\": \\\"en-US\\\",\\\n" +
+                                    "  \\\"workflowActionId\\\": \\\"b9d89c80-3d88-4311-8365-187323c96436\\\",\\n" + // Replace with actual valid UUID
+                                    "  \\\"fields\\\": [\\\"title\\\"],\\\n" + // Example using field variable name
+                                    "  \\\"stopOnError\\\": true,\\n" + // Typically true for validation
+                                    "  \\\"commitGranularity\\\": 50\\n" +
+                                    "}\\n" +
+                                    "--boundary--")
                     )
             ),
             responses = {
                     @ApiResponse(
                             responseCode = "200",
-                            description = "Content import job in preview mode created successfully",
+                            description = "Content import validation job successfully created and enqueued.",
                             content = @Content(
-                                    mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseEntityJobStatusView.class),
-                                    examples = @ExampleObject(value = "{\n" +
-                                            "  \"entity\": {\n" +
-                                            "    \"jobId\": \"e6d9bae8-657b-4e2f-8524-c0222db66355\",\n" +
-                                            "    \"statusUrl\": \"http://localhost:8080/api/v1/_import/e6d9bae8-657b-4e2f-8524-c0222db66355\"\n" +
-                                            "  },\n" +
-                                            "  \"errors\": [],\n" +
-                                            "  \"i18nMessagesMap\": {},\n" +
-                                            "  \"messages\": [],\n" +
-                                            "  \"pagination\": null,\n" +
-                                            "  \"permissions\": []\n" +
-                                            "}")
+                                    mediaType = MediaType.APPLICATION_JSON,
+                                    schema = @Schema(implementation = ResponseEntityJobStatusView.class)
                             )
                     ),
-                    @ApiResponse(responseCode = "400", description = "Bad request due to validation errors"),
-                    @ApiResponse(responseCode = "401", description = "Invalid user authentication"),
-                    @ApiResponse(responseCode = "403", description = "Forbidden due to insufficient permissions"),
-                    @ApiResponse(responseCode = "404", description = "Content type or language not found"),
-                    @ApiResponse(responseCode = "500", description = "Internal server error")
+                    @ApiResponse(responseCode = "400", description = "Bad Request: Invalid parameters or malformed request (e.g., missing file, invalid JSON in 'form', file not CSV)."),
+                    @ApiResponse(responseCode = "401", description = "Unauthorized: Invalid or missing user authentication."),
+                    @ApiResponse(responseCode = "403", description = "Forbidden: User does not have necessary permissions for validation or workflow action."),
+                    @ApiResponse(responseCode = "404", description = "Not Found: Specified Content Type or Language could not be found."),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error: An unexpected error occurred during job creation or processing.")
             }
     )
     public Response validateContentImport(
@@ -257,31 +263,36 @@ public class ContentImportResource {
     @Operation(
             operationId = "getJobStatus",
             summary = "Retrieves the status of a content import job",
-            description = "Fetches the current status of a content import job based on the provided job ID.",
+            description = "Fetches the detailed current status of a specific content import job identified by its ID.",
             tags = {"Content Import"},
+            parameters = {
+                @Parameter(
+                    name = "jobId",
+                    in = ParameterIn.PATH,
+                    required = true,
+                    description = "The unique identifier (UUID) of the job whose status is to be retrieved.",
+                    schema = @Schema(type = "string", format = "uuid", example = "e6d9bae8-657b-4e2f-8524-c0222db66355")
+                )
+            },
             responses = {
                     @ApiResponse(
                             responseCode = "200",
-                            description = "Successfully retrieved job status",
+                            description = "Successfully retrieved job status. The entity contains detailed information about the job.",
                             content = @Content(
-                                    mediaType = "application/json",
+                                    mediaType = MediaType.APPLICATION_JSON,
                                     schema = @Schema(implementation = ResponseEntityJobView.class)
                             )
                     ),
-                    @ApiResponse(responseCode = "401", description = "Invalid user authentication"),
-                    @ApiResponse(responseCode = "403", description = "Forbidden due to insufficient permissions"),
-                    @ApiResponse(responseCode = "404", description = "Job not found"),
-                    @ApiResponse(responseCode = "500", description = "Internal server error")
+                    @ApiResponse(responseCode = "401", description = "Unauthorized: Invalid or missing user authentication."),
+                    @ApiResponse(responseCode = "403", description = "Forbidden: User does not have permissions to view the specified job."),
+                    @ApiResponse(responseCode = "404", description = "Not Found: Job with the specified ID could not be found."),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error: An unexpected error occurred while retrieving the job status.")
             }
     )
     public ResponseEntityView<JobView> getJobStatus(
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
-            @PathParam("jobId") @Parameter(
-                required = true,
-                description = "The ID of the job whose status is to be retrieved",
-                schema = @Schema(type = "string")
-            ) final String jobId)
+            @PathParam("jobId") final String jobId)
             throws DotDataException {
 
         // Initialize the WebResource and set required user information
@@ -313,31 +324,45 @@ public class ContentImportResource {
     @Operation(
             operationId = "cancelContentImportJob",
             summary = "Cancel a content import job",
-            description = "Cancel a content import job based on the provided job ID.",
+            description = "Requests cancellation of a specific content import job identified by its ID. Note that cancellation is asynchronous and may not be immediate.",
             tags = {"Content Import"},
+            parameters = {
+                    @Parameter(
+                            name = "jobId",
+                            in = ParameterIn.PATH,
+                            required = true,
+                            description = "The unique identifier (UUID) of the job to be cancelled.",
+                            schema = @Schema(type = "string", format = "uuid", example = "e6d9bae8-657b-4e2f-8524-c0222db66355")
+                    )
+            },
             responses = {
                     @ApiResponse(
                             responseCode = "200",
-                            description = "Successfully cancelled content import job",
+                            description = "Cancellation request successfully sent to the job.",
                             content = @Content(
-                                    mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseEntityStringView.class)
+                                    mediaType = MediaType.APPLICATION_JSON,
+                                    schema = @Schema(implementation = ResponseEntityStringView.class),
+                                    examples = @ExampleObject(value = "{\n" +
+                                            "  \"entity\": \"Cancellation request successfully sent to job e6d9bae8-657b-4e2f-8524-c0222db66355\",\n" +
+                                            "  \"errors\": [],\n" +
+                                            "  \"i18nMessagesMap\": {},
+" +
+                                            "  \"messages\": [],\n" +
+                                            "  \"pagination\": null,\n" +
+                                            "  \"permissions\": []\n" +
+                                            "}")
                             )
                     ),
-                    @ApiResponse(responseCode = "401", description = "Invalid user authentication"),
-                    @ApiResponse(responseCode = "403", description = "Forbidden due to insufficient permissions"),
-                    @ApiResponse(responseCode = "404", description = "Job not found"),
-                    @ApiResponse(responseCode = "500", description = "Internal server error")
+                    @ApiResponse(responseCode = "401", description = "Unauthorized: Invalid or missing user authentication."),
+                    @ApiResponse(responseCode = "403", description = "Forbidden: User does not have permissions to cancel the specified job."),
+                    @ApiResponse(responseCode = "404", description = "Not Found: Job with the specified ID could not be found or is already completed/cancelled."),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error: An unexpected error occurred while attempting to cancel the job.")
             }
     )
     public ResponseEntityView<String> cancelJob(
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
-            @PathParam("jobId") @Parameter(
-                    required = true,
-                    description = "The ID of the job whose status is to be retrieved",
-                    schema = @Schema(type = "string")
-            ) final String jobId) throws DotDataException {
+            @PathParam("jobId") final String jobId) throws DotDataException {
         // Initialize the WebResource and set required user information
         final var initDataObject = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
@@ -367,21 +392,37 @@ public class ContentImportResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(
             operationId = "getContentImportJobs",
-            summary = "Retrieves the status of a content import jobs",
-            description = "Fetches the current status of all content import jobs.",
+            summary = "Retrieves content import jobs",
+            description = "Fetches a paginated list of all content import jobs regardless of state. Results can be paginated using query parameters.",
             tags = {"Content Import"},
+            parameters = {
+                    @Parameter(
+                            name = "page",
+                            in = ParameterIn.QUERY,
+                            description = "Page number to retrieve (1-based indexing).",
+                            schema = @Schema(type = "integer", defaultValue = "1", minimum = "1"),
+                            example = "1"
+                    ),
+                    @Parameter(
+                            name = "pageSize",
+                            in = ParameterIn.QUERY,
+                            description = "Number of records per page.",
+                            schema = @Schema(type = "integer", defaultValue = "20", minimum = "1", maximum = "100"),
+                            example = "20"
+                    )
+            },
             responses = {
                     @ApiResponse(
                             responseCode = "200",
-                            description = "Successfully retrieved content import jobs status",
+                            description = "Successfully retrieved the paginated list of content import jobs.",
                             content = @Content(
-                                    mediaType = "application/json",
+                                    mediaType = MediaType.APPLICATION_JSON,
                                     schema = @Schema(implementation = ResponseEntityJobPaginatedResultView.class)
                             )
                     ),
-                    @ApiResponse(responseCode = "401", description = "Invalid user authentication"),
-                    @ApiResponse(responseCode = "403", description = "Forbidden due to insufficient permissions"),
-                    @ApiResponse(responseCode = "500", description = "Internal server error")
+                    @ApiResponse(responseCode = "401", description = "Unauthorized: Invalid or missing user authentication."),
+                    @ApiResponse(responseCode = "403", description = "Forbidden: User does not have necessary permissions to view jobs."),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error: An unexpected error occurred while retrieving jobs.")
             }
     )
     public ResponseEntityView<JobViewPaginatedResult> listJobs(
@@ -419,21 +460,37 @@ public class ContentImportResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(
             operationId = "getActiveContentImportJobs",
-            summary = "Retrieves the status of active content import jobs",
-            description = "Fetches the current status of active content import jobs.",
+            summary = "Retrieves active content import jobs",
+            description = "Fetches a paginated list of active content import jobs (jobs with state NEW, PROCESSING, or WAITING). Results can be paginated using query parameters.",
             tags = {"Content Import"},
+            parameters = {
+                    @Parameter(
+                            name = "page",
+                            in = ParameterIn.QUERY,
+                            description = "Page number to retrieve (1-based indexing).",
+                            schema = @Schema(type = "integer", defaultValue = "1", minimum = "1"),
+                            example = "1"
+                    ),
+                    @Parameter(
+                            name = "pageSize",
+                            in = ParameterIn.QUERY,
+                            description = "Number of records per page.",
+                            schema = @Schema(type = "integer", defaultValue = "20", minimum = "1", maximum = "100"),
+                            example = "20"
+                    )
+            },
             responses = {
                     @ApiResponse(
                             responseCode = "200",
-                            description = "Successfully retrieved active content import jobs status",
+                            description = "Successfully retrieved the paginated list of active content import jobs.",
                             content = @Content(
-                                    mediaType = "application/json",
+                                    mediaType = MediaType.APPLICATION_JSON,
                                     schema = @Schema(implementation = ResponseEntityJobPaginatedResultView.class)
                             )
                     ),
-                    @ApiResponse(responseCode = "401", description = "Invalid user authentication"),
-                    @ApiResponse(responseCode = "403", description = "Forbidden due to insufficient permissions"),
-                    @ApiResponse(responseCode = "500", description = "Internal server error")
+                    @ApiResponse(responseCode = "401", description = "Unauthorized: Invalid or missing user authentication."),
+                    @ApiResponse(responseCode = "403", description = "Forbidden: User does not have necessary permissions to view jobs."),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error: An unexpected error occurred while retrieving jobs.")
             }
     )
     public ResponseEntityView<JobViewPaginatedResult> activeJobs(
@@ -471,21 +528,37 @@ public class ContentImportResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(
             operationId = "getCompletedContentImportJobs",
-            summary = "Retrieves the status of completed content import jobs",
-            description = "Fetches the current status of completed content import jobs.",
+            summary = "Retrieves completed content import jobs",
+            description = "Fetches a paginated list of completed content import jobs (jobs with state COMPLETED). Results can be paginated using query parameters.",
             tags = {"Content Import"},
+            parameters = {
+                    @Parameter(
+                            name = "page",
+                            in = ParameterIn.QUERY,
+                            description = "Page number to retrieve (1-based indexing).",
+                            schema = @Schema(type = "integer", defaultValue = "1", minimum = "1"),
+                            example = "1"
+                    ),
+                    @Parameter(
+                            name = "pageSize",
+                            in = ParameterIn.QUERY,
+                            description = "Number of records per page.",
+                            schema = @Schema(type = "integer", defaultValue = "20", minimum = "1", maximum = "100"),
+                            example = "20"
+                    )
+            },
             responses = {
                     @ApiResponse(
                             responseCode = "200",
-                            description = "Successfully retrieved completed content import jobs status",
+                            description = "Successfully retrieved the paginated list of completed content import jobs.",
                             content = @Content(
-                                    mediaType = "application/json",
+                                    mediaType = MediaType.APPLICATION_JSON,
                                     schema = @Schema(implementation = ResponseEntityJobPaginatedResultView.class)
                             )
                     ),
-                    @ApiResponse(responseCode = "401", description = "Invalid user authentication"),
-                    @ApiResponse(responseCode = "403", description = "Forbidden due to insufficient permissions"),
-                    @ApiResponse(responseCode = "500", description = "Internal server error")
+                    @ApiResponse(responseCode = "401", description = "Unauthorized: Invalid or missing user authentication."),
+                    @ApiResponse(responseCode = "403", description = "Forbidden: User does not have necessary permissions to view jobs."),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error: An unexpected error occurred while retrieving jobs.")
             }
     )
     public ResponseEntityView<JobViewPaginatedResult> completedJobs(
@@ -523,21 +596,37 @@ public class ContentImportResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(
             operationId = "getCanceledContentImportJobs",
-            summary = "Retrieves the status of canceled content import jobs",
-            description = "Fetches the current status of canceled content import jobs.",
+            summary = "Retrieves canceled content import jobs",
+            description = "Fetches a paginated list of canceled content import jobs (jobs with state CANCELED). Results can be paginated using query parameters.",
             tags = {"Content Import"},
+            parameters = {
+                    @Parameter(
+                            name = "page",
+                            in = ParameterIn.QUERY,
+                            description = "Page number to retrieve (1-based indexing).",
+                            schema = @Schema(type = "integer", defaultValue = "1", minimum = "1"),
+                            example = "1"
+                    ),
+                    @Parameter(
+                            name = "pageSize",
+                            in = ParameterIn.QUERY,
+                            description = "Number of records per page.",
+                            schema = @Schema(type = "integer", defaultValue = "20", minimum = "1", maximum = "100"),
+                            example = "20"
+                    )
+            },
             responses = {
                     @ApiResponse(
                             responseCode = "200",
-                            description = "Successfully retrieved canceled content import jobs status",
+                            description = "Successfully retrieved the paginated list of canceled content import jobs.",
                             content = @Content(
-                                    mediaType = "application/json",
+                                    mediaType = MediaType.APPLICATION_JSON,
                                     schema = @Schema(implementation = ResponseEntityJobPaginatedResultView.class)
                             )
                     ),
-                    @ApiResponse(responseCode = "401", description = "Invalid user authentication"),
-                    @ApiResponse(responseCode = "403", description = "Forbidden due to insufficient permissions"),
-                    @ApiResponse(responseCode = "500", description = "Internal server error")
+                    @ApiResponse(responseCode = "401", description = "Unauthorized: Invalid or missing user authentication."),
+                    @ApiResponse(responseCode = "403", description = "Forbidden: User does not have necessary permissions to view jobs."),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error: An unexpected error occurred while retrieving jobs.")
             }
     )
     public ResponseEntityView<JobViewPaginatedResult> canceledJobs(
@@ -575,21 +664,37 @@ public class ContentImportResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(
             operationId = "getFailedContentImportJobs",
-            summary = "Retrieves the status of failed content import jobs",
-            description = "Fetches the current status of failed content import jobs.",
+            summary = "Retrieves failed content import jobs",
+            description = "Fetches a paginated list of failed content import jobs (jobs with state FAILED). Results can be paginated using query parameters.",
             tags = {"Content Import"},
+            parameters = {
+                    @Parameter(
+                            name = "page",
+                            in = ParameterIn.QUERY,
+                            description = "Page number to retrieve (1-based indexing).",
+                            schema = @Schema(type = "integer", defaultValue = "1", minimum = "1"),
+                            example = "1"
+                    ),
+                    @Parameter(
+                            name = "pageSize",
+                            in = ParameterIn.QUERY,
+                            description = "Number of records per page.",
+                            schema = @Schema(type = "integer", defaultValue = "20", minimum = "1", maximum = "100"),
+                            example = "20"
+                    )
+            },
             responses = {
                     @ApiResponse(
                             responseCode = "200",
-                            description = "Successfully retrieved failed content import jobs status",
+                            description = "Successfully retrieved the paginated list of failed content import jobs.",
                             content = @Content(
-                                    mediaType = "application/json",
+                                    mediaType = MediaType.APPLICATION_JSON,
                                     schema = @Schema(implementation = ResponseEntityJobPaginatedResultView.class)
                             )
                     ),
-                    @ApiResponse(responseCode = "401", description = "Invalid user authentication"),
-                    @ApiResponse(responseCode = "403", description = "Forbidden due to insufficient permissions"),
-                    @ApiResponse(responseCode = "500", description = "Internal server error")
+                    @ApiResponse(responseCode = "401", description = "Unauthorized: Invalid or missing user authentication."),
+                    @ApiResponse(responseCode = "403", description = "Forbidden: User does not have necessary permissions to view jobs."),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error: An unexpected error occurred while retrieving jobs.")
             }
     )
     public ResponseEntityView<JobViewPaginatedResult> failedJobs(
@@ -627,21 +732,37 @@ public class ContentImportResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(
             operationId = "getAbandonedContentImportJobs",
-            summary = "Retrieves the status of abandoned content import jobs",
-            description = "Fetches the current status of abandoned content import jobs.",
+            summary = "Retrieves abandoned content import jobs",
+            description = "Fetches a paginated list of abandoned content import jobs (jobs with state ABANDONED). Results can be paginated using query parameters.",
             tags = {"Content Import"},
+            parameters = {
+                    @Parameter(
+                            name = "page",
+                            in = ParameterIn.QUERY,
+                            description = "Page number to retrieve (1-based indexing).",
+                            schema = @Schema(type = "integer", defaultValue = "1", minimum = "1"),
+                            example = "1"
+                    ),
+                    @Parameter(
+                            name = "pageSize",
+                            in = ParameterIn.QUERY,
+                            description = "Number of records per page.",
+                            schema = @Schema(type = "integer", defaultValue = "20", minimum = "1", maximum = "100"),
+                            example = "20"
+                    )
+            },
             responses = {
                     @ApiResponse(
                             responseCode = "200",
-                            description = "Successfully retrieved abandoned content import jobs status",
+                            description = "Successfully retrieved the paginated list of abandoned content import jobs.",
                             content = @Content(
-                                    mediaType = "application/json",
+                                    mediaType = MediaType.APPLICATION_JSON,
                                     schema = @Schema(implementation = ResponseEntityJobPaginatedResultView.class)
                             )
                     ),
-                    @ApiResponse(responseCode = "401", description = "Invalid user authentication"),
-                    @ApiResponse(responseCode = "403", description = "Forbidden due to insufficient permissions"),
-                    @ApiResponse(responseCode = "500", description = "Internal server error")
+                    @ApiResponse(responseCode = "401", description = "Unauthorized: Invalid or missing user authentication."),
+                    @ApiResponse(responseCode = "403", description = "Forbidden: User does not have necessary permissions to view jobs."),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error: An unexpected error occurred while retrieving jobs.")
             }
     )
     public ResponseEntityView<JobViewPaginatedResult> abandonedJobs(
@@ -679,21 +800,37 @@ public class ContentImportResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(
             operationId = "getSuccessfulContentImportJobs",
-            summary = "Retrieves the status of successful content import jobs",
-            description = "Fetches the current status of successful content import jobs.",
+            summary = "Retrieves successful content import jobs",
+            description = "Fetches a paginated list of successful content import jobs (jobs with state COMPLETED and successful result). Results can be paginated using query parameters.",
             tags = {"Content Import"},
+            parameters = {
+                    @Parameter(
+                            name = "page",
+                            in = ParameterIn.QUERY,
+                            description = "Page number to retrieve (1-based indexing).",
+                            schema = @Schema(type = "integer", defaultValue = "1", minimum = "1"),
+                            example = "1"
+                    ),
+                    @Parameter(
+                            name = "pageSize",
+                            in = ParameterIn.QUERY,
+                            description = "Number of records per page.",
+                            schema = @Schema(type = "integer", defaultValue = "20", minimum = "1", maximum = "100"),
+                            example = "20"
+                    )
+            },
             responses = {
                     @ApiResponse(
                             responseCode = "200",
-                            description = "Successfully retrieved successful content import jobs status",
+                            description = "Successfully retrieved the paginated list of successful content import jobs.",
                             content = @Content(
-                                    mediaType = "application/json",
+                                    mediaType = MediaType.APPLICATION_JSON,
                                     schema = @Schema(implementation = ResponseEntityJobPaginatedResultView.class)
                             )
                     ),
-                    @ApiResponse(responseCode = "401", description = "Invalid user authentication"),
-                    @ApiResponse(responseCode = "403", description = "Forbidden due to insufficient permissions"),
-                    @ApiResponse(responseCode = "500", description = "Internal server error")
+                    @ApiResponse(responseCode = "401", description = "Unauthorized: Invalid or missing user authentication."),
+                    @ApiResponse(responseCode = "403", description = "Forbidden: User does not have necessary permissions to view jobs."),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error: An unexpected error occurred while retrieving jobs.")
             }
     )
     public ResponseEntityView<JobViewPaginatedResult> successfulJobs(
@@ -731,23 +868,31 @@ public class ContentImportResource {
     @SuppressWarnings("java:S1854") // jobWatcher assignment is needed for cleanup in catch blocks
     @Operation(
             operationId = "monitorContentImportJobs",
-            summary = "Monitor a specific content import job progress",
-            description = "Allows clients to monitor the progress of a specific content import job identified by its jobId. " +
-                    "The response uses Server-Sent Events (SSE) to provide real-time updates.",
+            summary = "Monitor a content import job in real-time",
+            description = "Establishes a Server-Sent Events (SSE) connection to monitor the progress of a specific content import job in real-time. This endpoint will continuously send updates as the job progresses, including status changes and completion information.",
             tags = {"Content Import"},
+            parameters = {
+                    @Parameter(
+                            name = "jobId",
+                            in = ParameterIn.PATH,
+                            required = true,
+                            description = "The unique identifier (UUID) of the job to monitor.",
+                            schema = @Schema(type = "string", format = "uuid", example = "e6d9bae8-657b-4e2f-8524-c0222db66355")
+                    )
+            },
             responses = {
                     @ApiResponse(
                             responseCode = "200",
-                            description = "Real-time job progress updates",
+                            description = "Server-Sent Events stream established successfully. Events will be sent as the job progresses.",
                             content = @Content(
-                                    mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseEntityJobPaginatedResultView.class)
+                                    mediaType = SseFeature.SERVER_SENT_EVENTS,
+                                    schema = @Schema(implementation = EventOutput.class)
                             )
                     ),
-                    @ApiResponse(responseCode = "401", description = "Invalid user authentication"),
-                    @ApiResponse(responseCode = "403", description = "Forbidden due to insufficient permissions"),
-                    @ApiResponse(responseCode = "404", description = "Job not found"),
-                    @ApiResponse(responseCode = "500", description = "Internal server error")
+                    @ApiResponse(responseCode = "401", description = "Unauthorized: Invalid or missing user authentication."),
+                    @ApiResponse(responseCode = "403", description = "Forbidden: User does not have permissions to monitor the specified job."),
+                    @ApiResponse(responseCode = "404", description = "Not Found: Job with the specified ID could not be found."),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error: An unexpected error occurred while establishing the monitoring connection.")
             }
     )
     public EventOutput monitorJob(
