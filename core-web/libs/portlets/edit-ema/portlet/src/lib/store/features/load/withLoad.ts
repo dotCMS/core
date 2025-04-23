@@ -34,6 +34,18 @@ export function withLoad() {
         withClient(),
         withWorkflow(),
         withMethods((store) => {
+            return {
+                updatePageParams: (params: Partial<DotPageAssetParams>) => {
+                    patchState(store, {
+                        pageParams: {
+                            ...store.pageParams(),
+                            ...params
+                        }
+                    });
+                }
+            };
+        }),
+        withMethods((store) => {
             const router = inject(Router);
             const dotPageApiService = inject(DotPageApiService);
             const dotLanguagesService = inject(DotLanguagesService);
@@ -176,27 +188,21 @@ export function withLoad() {
                  */
                 reloadCurrentPage: rxMethod<Partial<DotPageAssetParams> | void>(
                     pipe(
-                        tap(() => {
+                        tap((params) => {
                             patchState(store, {
                                 status: UVE_STATUS.LOADING
                             });
-                        }),
-                        map((params) => {
-                            return {
-                                ...store.pageParams(),
-                                ...params
-                            };
-                        }),
-                        tap((params) => patchState(store, { pageParams: params })),
-                        switchMap((params: DotPageAssetParams) => {
-                            const pageRequest = !store.graphql()
-                                ? dotPageApiService.get(params)
-                                : dotPageApiService.getGraphQLPage(store.graphql()).pipe(
-                                      map((response) => {
-                                          store.setGraphqlResponse(response);
 
-                                          return response.page;
-                                      })
+                            if (params) {
+                                store.updatePageParams(params);
+                            }
+                        }),
+                        switchMap(() => {
+                            const pageRequest = !store.graphql()
+                                ? dotPageApiService.get(store.pageParams())
+                                : dotPageApiService.getGraphQLPage(store.$graphqlWithParams()).pipe(
+                                      tap((response) => store.setGraphqlResponse(response)),
+                                      map((response) => response.page)
                                   );
 
                             return pageRequest.pipe(

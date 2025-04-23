@@ -222,7 +222,7 @@ export function withEditor() {
                         In the future we should have a function that updates the content, independent of the url.
                         More info: https://github.com/dotCMS/core/issues/31475
                      */
-                    const vanityURL = store.pageAPIResponse().vanityUrl?.url;
+                    const vanityURL = store.pageAPIResponse()?.vanityUrl?.url;
                     const sanitizedURL = sanitizeURL(
                         vanityURL ?? untracked(() => store.pageParams().url)
                     );

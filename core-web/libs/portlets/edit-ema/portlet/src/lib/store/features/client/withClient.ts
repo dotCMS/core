@@ -20,7 +20,7 @@ import { UVEState } from '../../models';
  * @interface ClientConfigState
  */
 export interface ClientConfigState {
-    shouldReturnFullGraphqlResponse: boolean;
+    legacyGraphqlResponse: boolean;
     isClientReady: boolean;
     graphql: {
         query: string;
@@ -36,7 +36,7 @@ const clientState: ClientConfigState = {
     graphql: null,
     graphqlResponse: null,
     isClientReady: false,
-    shouldReturnFullGraphqlResponse: false
+    legacyGraphqlResponse: false
 };
 
 /**
@@ -58,9 +58,9 @@ export function withClient() {
                 setIsClientReady: (isClientReady: boolean) => {
                     patchState(store, { isClientReady });
                 },
-                setCustomGraphQL: ({ query, variables }, shouldReturnFullGraphqlResponse) => {
+                setCustomGraphQL: ({ query, variables }, legacyGraphqlResponse) => {
                     patchState(store, {
-                        shouldReturnFullGraphqlResponse,
+                        legacyGraphqlResponse,
                         graphql: {
                             query,
                             variables
@@ -82,16 +82,18 @@ export function withClient() {
                         return null;
                     }
 
-                    if (store.shouldReturnFullGraphqlResponse()) {
-                        return {
-                            ...store.graphqlResponse(),
-                            grapql: store.graphql()
-                        };
+                    // Old customers using graphQL expect only the page.
+                    // We can remove this once we are in stable and tell the devs this won't work in new dotCMS versions.
+                    if (store.legacyGraphqlResponse()) {
+                        return store.graphqlResponse()?.page;
                     }
 
-                    return store.graphqlResponse()?.page;
+                    return {
+                        ...store.graphqlResponse(),
+                        grapql: store.graphql()
+                    };
                 }),
-                $graphql: computed(() => {
+                $graphqlWithParams: computed(() => {
                     if (!store.graphql()) {
                         return null;
                     }

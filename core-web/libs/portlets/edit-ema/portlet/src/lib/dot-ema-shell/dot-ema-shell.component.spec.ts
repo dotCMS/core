@@ -922,9 +922,9 @@ describe('DotEmaShellComponent', () => {
             });
 
             it('should trigger a store reload if the url is the same', () => {
+                spectator.detectChanges();
                 const spyReload = jest.spyOn(store, 'reloadCurrentPage');
                 const spyLocation = jest.spyOn(location, 'go');
-                spectator.detectChanges();
 
                 spectator.triggerEventHandler(
                     DotEmaDialogComponent,

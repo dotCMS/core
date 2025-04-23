@@ -18,6 +18,8 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogService } from 'primeng/dynamicdialog';
 
+import { map } from 'rxjs/operators';
+
 import { CLIENT_ACTIONS } from '@dotcms/client';
 import {
     DotAlertConfirmService,
@@ -285,7 +287,12 @@ const createRouting = () =>
                     get(data) {
                         const { language_id = 1 } = data;
 
-                        return UVE_PAGE_RESPONSE_MAP[language_id];
+                        return UVE_PAGE_RESPONSE_MAP[language_id].pipe(
+                            map((page = {}) => ({
+                                // Update page to "fake" a new page and avoid reference issues
+                                ...(page as object)
+                            }))
+                        );
                     },
                     getGraphQLPage({ language_id = 1 }) {
                         return of({
@@ -602,7 +609,9 @@ describe('EditEmaEditorComponent', () => {
             });
 
             describe('edit', () => {
-                beforeEach(() => store.setIsClientReady(true));
+                beforeEach(() => {
+                    store.setIsClientReady(true);
+                });
                 const baseContentletPayload = {
                     x: 100,
                     y: 100,

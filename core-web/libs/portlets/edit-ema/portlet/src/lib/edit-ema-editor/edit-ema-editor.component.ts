@@ -1008,15 +1008,12 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     return;
                 }
 
-                const { graphql = {}, params = {}, query: rawQuery } = devConfig || {};
-                const { query = rawQuery, variables } = graphql;
-                const shouldReturnFullGraphqlResponse = !!graphql;
+                const { graphql, params, query: rawQuery } = devConfig || {};
+                const { query = rawQuery, variables } = graphql || {};
+                const legacyGraphqlResponse = !!rawQuery;
 
                 if (query || rawQuery) {
-                    this.uveStore.setCustomGraphQL(
-                        { query, variables },
-                        shouldReturnFullGraphqlResponse
-                    );
+                    this.uveStore.setCustomGraphQL({ query, variables }, legacyGraphqlResponse);
                 }
 
                 this.uveStore.reloadCurrentPage(params);

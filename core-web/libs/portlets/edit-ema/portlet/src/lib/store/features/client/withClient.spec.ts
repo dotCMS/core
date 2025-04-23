@@ -48,7 +48,7 @@ describe('UVEStore', () => {
         expect(store.graphql()).toEqual(null);
         expect(store.graphqlResponse()).toEqual(null);
         expect(store.isClientReady()).toBe(false);
-        expect(store.shouldReturnFullGraphqlResponse()).toBe(false);
+        expect(store.legacyGraphqlResponse()).toBe(false);
     });
 
     describe('withMethods', () => {

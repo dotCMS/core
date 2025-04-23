@@ -263,7 +263,9 @@ describe('withLoad', () => {
                     true
                 );
                 store.reloadCurrentPage();
-                expect(dotPageApiService.getGraphQLPage).toHaveBeenCalledWith(store.$graphql());
+                expect(dotPageApiService.getGraphQLPage).toHaveBeenCalledWith(
+                    store.$graphqlWithParams()
+                );
             });
         });
     });
