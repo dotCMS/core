@@ -3,7 +3,7 @@ import { createUVESubscription } from '../lib/core/core.utils';
 import { computeScrollIsInBottom } from '../lib/dom/dom.utils';
 import { setBounds } from '../lib/editor/internal';
 import { initInlineEditing, sendMessageToUVE } from '../lib/editor/public';
-import { DotCMSUVEAction, UVEEventType } from '../lib/types/editor/public';
+import { DotCMSUVEAction, DotCMSUVEConfig, UVEEventType } from '../lib/types/editor/public';
 
 /**
  * Sets up scroll event handlers for the window to notify the editor about scroll events.
@@ -128,9 +128,10 @@ export function registerUVEEvents() {
  * This is typically called after all UVE event handlers and DOM listeners
  * have been set up successfully.
  */
-export function setClientIsReady(): void {
+export function setClientIsReady(config?: DotCMSUVEConfig): void {
     sendMessageToUVE({
-        action: DotCMSUVEAction.CLIENT_READY
+        action: DotCMSUVEAction.CLIENT_READY,
+        payload: config
     });
 }
 
