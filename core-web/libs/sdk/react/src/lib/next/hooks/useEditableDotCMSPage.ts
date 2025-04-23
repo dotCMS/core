@@ -104,17 +104,24 @@ export const useEditableDotCMSPage = (editablePage: DotCMSEditablePage): DotCMSE
         const pageURI = editablePage?.page?.pageURI ?? '/';
 
         const { destroyUVESubscriptions } = initUVE(editablePage);
+
+        // Update the navigation to the pageURI
         updateNavigation(pageURI);
 
+        return () => {
+            destroyUVESubscriptions();
+        };
+    }, [editablePage]);
+
+    useEffect(() => {
         const { unsubscribe } = createUVESubscription(UVEEventType.CONTENT_CHANGES, (payload) => {
             setUpdatedEditablePage(payload);
         });
 
         return () => {
-            destroyUVESubscriptions();
             unsubscribe();
         };
-    }, [editablePage]);
+    }, []);
 
     return updatedEditablePage;
 };
