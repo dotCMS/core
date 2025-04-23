@@ -92,7 +92,8 @@ import {
     getDragItemData,
     insertContentletInContainer,
     getTargetUrl,
-    shouldNavigate
+    shouldNavigate,
+    convertClientParamsToPageParams
 } from '../utils';
 
 @Component({
@@ -186,6 +187,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             this.dialog?.resetDialog();
         });
 
+        // console.log("isClientReady", isClientReady);
         if (isTraditionalPage || !isClientReady) {
             return;
         }
@@ -1004,6 +1006,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             [CLIENT_ACTIONS.CLIENT_READY]: (devConfig) => {
                 const isClientReady = this.uveStore.isClientReady();
 
+                // console.log('isClientReady', isClientReady);
                 if (isClientReady) {
                     return;
                 }
@@ -1016,7 +1019,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     this.uveStore.setCustomGraphQL({ query, variables }, legacyGraphqlResponse);
                 }
 
-                this.uveStore.reloadCurrentPage(params);
+                const pageParams = convertClientParamsToPageParams(params);
+                this.uveStore.reloadCurrentPage(pageParams);
                 this.uveStore.setIsClientReady(true);
             },
             [CLIENT_ACTIONS.EDIT_CONTENTLET]: (contentlet: DotCMSContentlet) => {
