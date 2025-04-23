@@ -1,5 +1,3 @@
-process.env.TZ = 'America/New_York'; // Set timezone to Eastern Time
-
 module.exports = {
     displayName: 'dotcdn',
     preset: '../../jest.preset.js',
@@ -14,6 +12,11 @@ module.exports = {
                     'jest-preset-angular/build/StripStylesTransformer'
                 ]
             }
+        }
+    },
+    process: {
+        env: {
+            TZ: 'EST' // Set timezone to Eastern Time
         }
     },
     coverageDirectory: '../../coverage/apps/dotcdn',

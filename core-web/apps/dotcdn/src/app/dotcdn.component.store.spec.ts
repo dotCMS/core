@@ -5,6 +5,7 @@ import {
     SpectatorService,
     SpyObject
 } from '@ngneat/spectator/jest';
+import { SpiedClass } from 'jest-mock';
 import { of, throwError } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
@@ -59,7 +60,7 @@ const fakeResponseData: DotCDNStats = {
 
 const fakeStateViewModel = {
     chartBandwidthData: {
-        labels: ['14/04', '15/04', '16/04', '17/04', '18/04', '19/04', '20/04', '21/04', '22/04'],
+        labels: ['15/04', '16/04', '17/04', '18/04', '19/04', '20/04', '21/04', '22/04', '23/04'],
         datasets: [
             {
                 label: 'Bandwidth Used',
@@ -70,7 +71,7 @@ const fakeStateViewModel = {
         ]
     },
     chartRequestsData: {
-        labels: ['14/04', '15/04', '16/04', '17/04', '18/04', '19/04', '20/04', '21/04', '22/04'],
+        labels: ['15/04', '16/04', '17/04', '18/04', '19/04', '20/04', '21/04', '22/04', '23/04'],
         datasets: [
             {
                 label: 'Requests Served',
@@ -107,6 +108,8 @@ describe('DotCDNComponentStore', () => {
     let dotCDNService: SpyObject<DotCDNService>;
     let dotHttpErrorManagerService: SpyObject<DotHttpErrorManagerService>;
     let dotMessageService: SpyObject<DotMessageService>;
+    let dateSpy: SpiedClass<DateConstructor>;
+    const PrevDateConstructor: DateConstructor = Date;
 
     const createStoreService = createServiceFactory({
         service: DotCDNStore,
@@ -127,6 +130,26 @@ describe('DotCDNComponentStore', () => {
         dotMessageService = spectator.inject(DotMessageService);
         expect(dotMessageService.init).toBeCalled();
         expect(dotCDNService.requestStats).toHaveBeenCalledWith(ChartPeriod.Last15Days);
+
+        dateSpy = jest.spyOn(global, 'Date').mockImplementation(function (
+            this: Date,
+            ...args: ConstructorParameters<typeof Date>
+        ) {
+            if (args.length === 1 && typeof args[0] === 'string') {
+                const dateString = args[0];
+                if (dateString.indexOf('T') >= 0) {
+                    return new PrevDateConstructor(dateString);
+                } else {
+                    return new PrevDateConstructor(dateString + 'T00:00:00');
+                }
+            }
+
+            return new PrevDateConstructor(...args);
+        });
+    });
+
+    afterEach(() => {
+        dateSpy.mockRestore();
     });
 
     // Check if the loading state is set correctly when purging cache or getting stats
