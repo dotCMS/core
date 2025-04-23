@@ -441,3 +441,73 @@ interface DotCMSSiteField {
     versionId: string;
     versionType: string;
 }
+
+/**
+ * Represents a basic page structure returned from GraphQL queries
+ */
+export interface DotCMSBasicGraphQLPage {
+    publishDate: string;
+    type: string;
+    httpsRequired: boolean;
+    inode: string;
+    path: string;
+    identifier: string;
+    hasTitleImage: boolean;
+    sortOrder: number;
+    extension: string;
+    canRead: boolean;
+    pageURI: string;
+    canEdit: boolean;
+    archived: boolean;
+    friendlyName: string;
+    workingInode: string;
+    url: string;
+    hasLiveVersion: boolean;
+    deleted: boolean;
+    pageUrl: string;
+    shortyWorking: string;
+    mimeType: string;
+    locked: boolean;
+    stInode: string;
+    contentType: string;
+    creationDate: string;
+    liveInode: string;
+    name: string;
+    shortyLive: string;
+    modDate: string;
+    title: string;
+    baseType: string;
+    working: boolean;
+    canLock: boolean;
+    live: boolean;
+    isContentlet: boolean;
+    statusIcons: string;
+    // Language information
+    conLanguage: {
+        id: number;
+        language: string;
+        languageCode: string;
+    };
+
+    // Template information
+    template: {
+        drawed: boolean;
+    };
+
+    // Container information
+    containers: {
+        path?: string;
+        identifier: string;
+        maxContentlets?: number;
+        containerStructures?: {
+            contentTypeVar: string;
+        }[];
+        containerContentlets?: {
+            uuid: string;
+            contentlets: DotCMSContentlet[];
+        }[];
+    };
+
+    layout: DotCMSLayout;
+    viewAs: DotCMSViewAs;
+}
