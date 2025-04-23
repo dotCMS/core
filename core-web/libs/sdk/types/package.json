@@ -1,0 +1,27 @@
+{
+    "name": "@dotcms/types",
+    "version": "0.0.1",
+    "dependencies": {},
+    "type": "commonjs",
+    "main": "./src/index.js",
+    "typings": "./src/index.d.ts",
+    "exports": {
+        "./package.json": "./package.json",
+        "./types/editor": "./src/editor.ts",
+        "./types/events": "./src/events.ts",
+        "./types/page": "./src/page.ts",
+        "./types/components": "./src/components.ts",
+        "./types/__internal__": "./src/__internal__.ts"
+    },
+    "typesVersions": {
+        "*": {
+            ".": ["./src/index.d.ts"],
+            "types": ["./src/types.d.ts"],
+            "editor": ["./src/editor.d.ts"],
+            "events": ["./src/events.d.ts"],
+            "page": ["./src/page.d.ts"],
+            "components": ["./src/components.d.ts"],
+            "__internal__": ["./src/__internal__.d.ts"]
+        }
+    }
+}

@@ -176,5 +176,10 @@
         }
     ],
     "defaultBase": "main",
-    "ignorePatterns": ["**/node_modules"]
+    "ignorePatterns": ["**/node_modules"],
+    "release": {
+        "version": {
+            "preVersionCommand": "yarn nx run-many -t build"
+        }
+    }
 }
