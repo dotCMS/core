@@ -242,7 +242,7 @@ describe('DotcdnService', () => {
         );
 
         jest.useFakeTimers();
-        jest.setSystemTime(new Date('2021-05-03'));
+        jest.setSystemTime(new Date('2021-05-03T15:00:00-05:00'));
     });
 
     afterEach(() => {
@@ -264,7 +264,7 @@ describe('DotcdnService', () => {
             });
 
         const req = spectator.expectOne(
-            '/api/v1/dotcdn/stats?hostId=123-xyz-567-xxl&dateFrom=2021-04-02&dateTo=2021-05-02',
+            '/api/v1/dotcdn/stats?hostId=123-xyz-567-xxl&dateFrom=2021-04-03&dateTo=2021-05-03',
             HttpMethod.GET
         );
         req.flush({ entity });
