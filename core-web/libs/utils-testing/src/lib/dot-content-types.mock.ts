@@ -28,7 +28,13 @@ import {
     ContentTypeTabDividerField,
     ContentTypeColumnBreakField,
     DotCMSContentType,
-    ContentTypeBlockEditorField
+    ContentTypeBlockEditorField,
+    ContentTypeMultiSelectField,
+    ContentTypeBinaryField,
+    ContentTypeCustomField,
+    ContentTypeKeyValueField,
+    ContentTypeConstantField,
+    ContentTypeHiddenField
 } from '@dotcms/dotcms-models';
 
 export function createFakeContentType(
@@ -122,7 +128,46 @@ export function createFakeCategoryField(
             keywords: faker.lorem.word(),
             sortOrder: faker.number.int()
         },
-        values: 'Twelve|12\r\nTwenty|20\r\nThirty|30',
+        ...overrides
+    };
+}
+
+/**
+ * Creates a fake constant field with customizable properties
+ *
+ * @param {Partial<ContentTypeConstantField>} [overrides={}] - Optional properties to override defaults
+ * @returns {ContentTypeConstantField} A complete constant field object
+ */
+export function createFakeConstantField(
+    overrides: Partial<ContentTypeConstantField> = {}
+): ContentTypeConstantField {
+    return {
+        ...createFakeBaseField(),
+        clazz: DotCMSClazzes.CONSTANT,
+        dataType: DotCMSDataTypes.SYSTEM,
+        fieldType: DotCMSFieldTypes.CONSTANT,
+        fieldTypeLabel: 'Constant Field',
+        values: '',
+        ...overrides
+    };
+}
+
+/**
+ * Creates a fake hidden field with customizable properties
+ *
+ * @param {Partial<ContentTypeHiddenField>} [overrides={}] - Optional properties to override defaults
+ * @returns {ContentTypeHiddenField} A complete hidden field object
+ */
+export function createFakeHiddenField(
+    overrides: Partial<ContentTypeHiddenField> = {}
+): ContentTypeHiddenField {
+    return {
+        ...createFakeBaseField(),
+        clazz: DotCMSClazzes.HIDDEN,
+        dataType: DotCMSDataTypes.SYSTEM,
+        fieldType: DotCMSFieldTypes.HIDDEN,
+        fieldTypeLabel: 'Hidden Field',
+        values: '',
         ...overrides
     };
 }
@@ -532,6 +577,85 @@ export function createFakeColumnBreakField(
         dataType: DotCMSDataTypes.SYSTEM,
         fieldType: DotCMSFieldTypes.COLUMN_BREAK,
         fieldTypeLabel: 'Column Break',
+        ...overrides
+    };
+}
+
+/**
+ * Creates a fake multi-select field with customizable properties
+ *
+ * @param {Partial<ContentTypeMultiSelectField>} [overrides={}] - Optional properties to override defaults
+ * @returns {ContentTypeMultiSelectField} A complete multi-select field object
+ */
+export function createFakeMultiSelectField(
+    overrides: Partial<ContentTypeMultiSelectField> = {}
+): ContentTypeMultiSelectField {
+    return {
+        ...createFakeBaseField(),
+        clazz: DotCMSClazzes.MULTI_SELECT,
+        dataType: DotCMSDataTypes.LONG_TEXT,
+        fieldType: DotCMSFieldTypes.MULTI_SELECT,
+        fieldTypeLabel: 'Multi Select',
+        values: 'Option A|a\r\nOption B|b\r\nOption C|c',
+        ...overrides
+    };
+}
+
+/**
+ * Creates a fake binary field with customizable properties
+ *
+ * @param {Partial<ContentTypeBinaryField>} [overrides={}] - Optional properties to override defaults
+ * @returns {ContentTypeBinaryField} A complete binary field object
+ */
+export function createFakeBinaryField(
+    overrides: Partial<ContentTypeBinaryField> = {}
+): ContentTypeBinaryField {
+    return {
+        ...createFakeBaseField(),
+        clazz: DotCMSClazzes.BINARY,
+        dataType: DotCMSDataTypes.SYSTEM,
+        fieldType: DotCMSFieldTypes.BINARY,
+        fieldTypeLabel: 'Binary Field',
+        fieldVariables: [],
+        ...overrides
+    };
+}
+
+/**
+ * Creates a fake custom field with customizable properties
+ *
+ * @param {Partial<ContentTypeCustomField>} [overrides={}] - Optional properties to override defaults
+ * @returns {ContentTypeCustomField} A complete custom field object
+ */
+export function createFakeCustomField(
+    overrides: Partial<ContentTypeCustomField> = {}
+): ContentTypeCustomField {
+    return {
+        ...createFakeBaseField(),
+        clazz: DotCMSClazzes.CUSTOM_FIELD,
+        dataType: DotCMSDataTypes.LONG_TEXT,
+        fieldType: DotCMSFieldTypes.CUSTOM_FIELD,
+        fieldTypeLabel: 'Custom Field',
+        values: faker.lorem.sentence(),
+        ...overrides
+    };
+}
+
+/**
+ * Creates a fake key/value field with customizable properties
+ *
+ * @param {Partial<ContentTypeKeyValueField>} [overrides={}] - Optional properties to override defaults
+ * @returns {ContentTypeKeyValueField} A complete key/value field object
+ */
+export function createFakeKeyValueField(
+    overrides: Partial<ContentTypeKeyValueField> = {}
+): ContentTypeKeyValueField {
+    return {
+        ...createFakeBaseField(),
+        clazz: DotCMSClazzes.KEY_VALUE,
+        dataType: DotCMSDataTypes.LONG_TEXT,
+        fieldType: DotCMSFieldTypes.KEY_VALUE,
+        fieldTypeLabel: 'Key/Value Field',
         ...overrides
     };
 }

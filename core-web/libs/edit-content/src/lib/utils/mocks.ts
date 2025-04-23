@@ -12,14 +12,42 @@ import {
     DotCMSContentType,
     DotCMSContentTypeField,
     DotCMSContentTypeLayoutRow,
+    DotCMSDataTypes,
     DotCMSTempFile,
     DotCMSWorkflowStatus,
     FeaturedFlags
 } from '@dotcms/dotcms-models';
-import { MockDotMessageService } from '@dotcms/utils-testing';
+import {
+    createFakeBinaryField,
+    createFakeBlockEditorField,
+    createFakeCategoryField,
+    createFakeCheckboxField,
+    createFakeColumnField,
+    createFakeConstantField,
+    createFakeCustomField,
+    createFakeDateField,
+    createFakeDateTimeField,
+    createFakeFileField,
+    createFakeHiddenField,
+    createFakeHostFolderField,
+    createFakeImageField,
+    createFakeJSONField,
+    createFakeKeyValueField,
+    createFakeLineDividerField,
+    createFakeMultiSelectField,
+    createFakeRadioField,
+    createFakeRelationshipField,
+    createFakeRowField,
+    createFakeSelectField,
+    createFakeTabDividerField,
+    createFakeTagField,
+    createFakeTextAreaField,
+    createFakeTextField,
+    createFakeTimeField,
+    MockDotMessageService
+} from '@dotcms/utils-testing';
 
 import { WYSIWYG_MOCK } from '../fields/dot-edit-content-wysiwyg-field/mocks/dot-edit-content-wysiwyg-field.mock';
-import { FIELD_TYPES } from '../models/dot-edit-content-field.enum';
 import { DotFormData } from '../models/dot-edit-content-form.interface';
 import {
     CustomTreeNode,
@@ -27,12 +55,7 @@ import {
 } from '../models/dot-edit-content-host-folder-field.interface';
 import { DotWorkflowState } from '../models/dot-edit-content.model';
 
-/* FIELDS MOCK BY TYPE */
-export const TEXT_FIELD_MOCK: DotCMSContentTypeField = {
-    clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
-    contentTypeId: 'd46d6404125ac27e6ab68fad09266241',
-    dataType: 'TEXT',
-    fieldType: 'Text',
+export const TEXT_FIELD_MOCK = createFakeTextField({
     fieldTypeLabel: 'Text',
     fieldVariables: [],
     fixed: false,
@@ -49,14 +72,11 @@ export const TEXT_FIELD_MOCK: DotCMSContentTypeField = {
     sortOrder: 2,
     unique: false,
     variable: 'testVariable'
-};
+});
 
-export const TEXT_AREA_FIELD_MOCK: DotCMSContentTypeField = {
-    clazz: 'com.dotcms.contenttype.model.field.ImmutableTextAreaField',
+export const TEXT_AREA_FIELD_MOCK = createFakeTextAreaField({
     contentTypeId: '61226fd915b7f025da020fc1f5856ab7',
-    dataType: 'LONG_TEXT',
     defaultValue: 'Some value',
-    fieldType: 'Textarea',
     fieldTypeLabel: 'Textarea',
     fieldVariables: [],
     fixed: false,
@@ -73,14 +93,12 @@ export const TEXT_AREA_FIELD_MOCK: DotCMSContentTypeField = {
     sortOrder: 2,
     unique: false,
     variable: 'someTextArea'
-};
+});
 
-export const SELECT_FIELD_TEXT_MOCK = {
-    clazz: 'com.dotcms.contenttype.model.field.ImmutableSelectField',
+export const SELECT_FIELD_TEXT_MOCK = createFakeSelectField({
     contentTypeId: '40e0cb1b57b3b1b7ec34191e942316d5',
-    dataType: 'TEXT',
+    dataType: DotCMSDataTypes.TEXT,
     defaultValue: '123-ad',
-    fieldType: 'Select',
     fieldTypeLabel: 'Select',
     fieldVariables: [],
     fixed: false,
@@ -99,13 +117,11 @@ export const SELECT_FIELD_TEXT_MOCK = {
     unique: false,
     values: 'Option 1|Test,1\r\nOption 2|2\r\nOption 3|3\r\n123-ad\r\nrules and weird code',
     variable: 'selectNormal'
-};
+});
 
-export const SELECT_FIELD_BOOLEAN_MOCK = {
-    clazz: 'com.dotcms.contenttype.model.field.ImmutableSelectField',
+export const SELECT_FIELD_BOOLEAN_MOCK = createFakeSelectField({
     contentTypeId: '40e0cb1b57b3b1b7ec34191e942316d5',
-    dataType: 'BOOL',
-    fieldType: 'Select',
+    dataType: DotCMSDataTypes.BOOLEAN,
     fieldTypeLabel: 'Select',
     fieldVariables: [],
     fixed: false,
@@ -124,13 +140,11 @@ export const SELECT_FIELD_BOOLEAN_MOCK = {
     unique: false,
     values: 'Truthy|true\r\nFalsy|false',
     variable: 'selectBoolean'
-};
+});
 
-export const SELECT_FIELD_FLOAT_MOCK = {
-    clazz: 'com.dotcms.contenttype.model.field.ImmutableSelectField',
+export const SELECT_FIELD_FLOAT_MOCK = createFakeSelectField({
     contentTypeId: '40e0cb1b57b3b1b7ec34191e942316d5',
-    dataType: 'FLOAT',
-    fieldType: 'Select',
+    dataType: DotCMSDataTypes.FLOAT,
     fieldTypeLabel: 'Select',
     fieldVariables: [],
     fixed: false,
@@ -149,13 +163,11 @@ export const SELECT_FIELD_FLOAT_MOCK = {
     unique: false,
     values: 'One hundred point five|100.5\r\nThree point five|10.3',
     variable: 'selectDecimal'
-};
+});
 
-export const SELECT_FIELD_INTEGER_MOCK = {
-    clazz: 'com.dotcms.contenttype.model.field.ImmutableSelectField',
+export const SELECT_FIELD_INTEGER_MOCK = createFakeSelectField({
     contentTypeId: '40e0cb1b57b3b1b7ec34191e942316d5',
-    dataType: 'INTEGER',
-    fieldType: 'Select',
+    dataType: DotCMSDataTypes.INTEGER,
     fieldTypeLabel: 'Select',
     fieldVariables: [],
     fixed: false,
@@ -174,13 +186,11 @@ export const SELECT_FIELD_INTEGER_MOCK = {
     unique: false,
     values: 'One hundred|100\r\nOne thousand|1000\r\nTen thousand|10000',
     variable: 'selectWholeNumber'
-};
+});
 
-export const RADIO_FIELD_TEXT_MOCK = {
-    clazz: 'com.dotcms.contenttype.model.field.ImmutableRadioField',
+export const RADIO_FIELD_TEXT_MOCK = createFakeRadioField({
     contentTypeId: '40e0cb1b57b3b1b7ec34191e942316d5',
-    dataType: 'TEXT',
-    fieldType: 'Radio',
+    dataType: DotCMSDataTypes.TEXT,
     fieldTypeLabel: 'Radio',
     fieldVariables: [],
     fixed: false,
@@ -199,13 +209,11 @@ export const RADIO_FIELD_TEXT_MOCK = {
     unique: false,
     values: 'One|one\r\nTwo|two',
     variable: 'radio'
-};
+});
 
-export const RADIO_FIELD_BOOLEAN_MOCK = {
-    clazz: 'com.dotcms.contenttype.model.field.ImmutableRadioField',
+export const RADIO_FIELD_BOOLEAN_MOCK = createFakeRadioField({
     contentTypeId: '40e0cb1b57b3b1b7ec34191e942316d5',
-    dataType: 'BOOL',
-    fieldType: 'Radio',
+    dataType: DotCMSDataTypes.BOOLEAN,
     fieldTypeLabel: 'Radio',
     fieldVariables: [],
     fixed: false,
@@ -224,14 +232,12 @@ export const RADIO_FIELD_BOOLEAN_MOCK = {
     unique: false,
     values: 'Falsy|false\r\nTruthy|true',
     variable: 'radioTrueFalse'
-};
+});
 
-export const RADIO_FIELD_FLOAT_MOCK = {
-    clazz: 'com.dotcms.contenttype.model.field.ImmutableRadioField',
+export const RADIO_FIELD_FLOAT_MOCK = createFakeRadioField({
     contentTypeId: '40e0cb1b57b3b1b7ec34191e942316d5',
-    dataType: 'FLOAT',
+    dataType: DotCMSDataTypes.FLOAT,
     defaultValue: '9.3',
-    fieldType: 'Radio',
     fieldTypeLabel: 'Radio',
     fieldVariables: [],
     fixed: false,
@@ -250,14 +256,12 @@ export const RADIO_FIELD_FLOAT_MOCK = {
     unique: false,
     values: 'Five point two|5.2\r\nNine point three|9.3',
     variable: 'radioDecimal'
-};
+});
 
-export const RADIO_FIELD_INTEGER_MOCK = {
-    clazz: 'com.dotcms.contenttype.model.field.ImmutableRadioField',
+export const RADIO_FIELD_INTEGER_MOCK = createFakeRadioField({
     contentTypeId: '40e0cb1b57b3b1b7ec34191e942316d5',
-    dataType: 'INTEGER',
+    dataType: DotCMSDataTypes.INTEGER,
     defaultValue: '30',
-    fieldType: 'Radio',
     fieldTypeLabel: 'Radio',
     fieldVariables: [],
     fixed: false,
@@ -276,13 +280,10 @@ export const RADIO_FIELD_INTEGER_MOCK = {
     unique: false,
     values: 'Twelve|12\r\nTwenty|20\r\nThirty|30',
     variable: 'radioWholeNumber'
-};
+});
 
-export const DATE_FIELD_MOCK: DotCMSContentTypeField = {
-    clazz: 'com.dotcms.contenttype.model.field.ImmutableDateField',
+export const DATE_FIELD_MOCK = createFakeDateField({
     contentTypeId: '4d22214338844b4aed0367933e9bf500',
-    dataType: 'DATE',
-    fieldType: 'Date',
     fieldTypeLabel: 'Date',
     fieldVariables: [],
     fixed: false,
@@ -299,14 +300,11 @@ export const DATE_FIELD_MOCK: DotCMSContentTypeField = {
     sortOrder: 2,
     unique: false,
     variable: 'date'
-};
+});
 
-export const DATE_AND_TIME_FIELD_MOCK: DotCMSContentTypeField = {
-    clazz: 'com.dotcms.contenttype.model.field.ImmutableDateTimeField',
+export const DATE_AND_TIME_FIELD_MOCK = createFakeDateTimeField({
     contentTypeId: '4d22214338844b4aed0367933e9bf500',
-    dataType: 'DATE',
     defaultValue: 'now',
-    fieldType: 'Date-and-Time',
     fieldTypeLabel: 'Date and Time',
     fieldVariables: [],
     fixed: false,
@@ -323,14 +321,11 @@ export const DATE_AND_TIME_FIELD_MOCK: DotCMSContentTypeField = {
     sortOrder: 3,
     unique: false,
     variable: 'dateAndTime'
-};
+});
 
-export const TIME_FIELD_MOCK: DotCMSContentTypeField = {
+export const TIME_FIELD_MOCK = createFakeTimeField({
     id: '1005cde03b962dd0ce7bb4c4ec97f89c',
-    clazz: 'com.dotcms.contenttype.model.field.ImmutableTimeField',
     contentTypeId: '4d22214338844b4aed0367933e9bf500',
-    dataType: 'DATE',
-    fieldType: 'Time',
     fieldTypeLabel: 'Time',
     fieldVariables: [],
     fixed: false,
@@ -346,15 +341,12 @@ export const TIME_FIELD_MOCK: DotCMSContentTypeField = {
     sortOrder: 4,
     unique: false,
     variable: 'time'
-};
+});
 
-export const TAG_FIELD_MOCK: DotCMSContentTypeField = {
+export const TAG_FIELD_MOCK = createFakeTagField({
     id: '1ba4927b83aae5b17921679053b0b5fe',
-    clazz: 'com.dotcms.contenttype.model.field.ImmutableTagField',
     contentTypeId: '61226fd915b7f025da020fc1f5856ab7',
-    dataType: 'SYSTEM',
     defaultValue: 'some, tags, separated, by, comma',
-    fieldType: 'Tag',
     fieldTypeLabel: 'Tag',
     fieldVariables: [],
     fixed: false,
@@ -370,14 +362,11 @@ export const TAG_FIELD_MOCK: DotCMSContentTypeField = {
     sortOrder: 3,
     unique: false,
     variable: 'someTag'
-};
+});
 
-export const CHECKBOX_FIELD_MOCK: DotCMSContentTypeField = {
+export const CHECKBOX_FIELD_MOCK = createFakeCheckboxField({
     id: '96909fa20a00497ce3b766b52edac0ec',
-    clazz: 'com.dotcms.contenttype.model.field.ImmutableCheckboxField',
     contentTypeId: '93ebaff75f3e3887bea73eca04588dc9',
-    dataType: 'TEXT',
-    fieldType: 'Checkbox',
     fieldTypeLabel: 'Checkbox',
     fieldVariables: [],
     fixed: false,
@@ -394,14 +383,11 @@ export const CHECKBOX_FIELD_MOCK: DotCMSContentTypeField = {
     unique: false,
     values: 'one|one\r\ntwo|two',
     variable: 'check'
-};
+});
 
-export const MULTI_SELECT_FIELD_MOCK: DotCMSContentTypeField = {
+export const MULTI_SELECT_FIELD_MOCK = createFakeMultiSelectField({
     id: '535a6de288e3fe91fad2679e8d7d966b',
-    clazz: 'com.dotcms.contenttype.model.field.ImmutableMultiSelectField',
     contentTypeId: '93ebaff75f3e3887bea73eca04588dc9',
-    dataType: 'LONG_TEXT',
-    fieldType: 'Multi-Select',
     fieldTypeLabel: 'Multi Select',
     fieldVariables: [],
     fixed: false,
@@ -418,14 +404,11 @@ export const MULTI_SELECT_FIELD_MOCK: DotCMSContentTypeField = {
     unique: false,
     values: 'one|one\r\ntwo|two',
     variable: 'multiSelect'
-};
+});
 
-export const BLOCK_EDITOR_FIELD_MOCK: DotCMSContentTypeField = {
+export const BLOCK_EDITOR_FIELD_MOCK = createFakeBlockEditorField({
     id: '71fe962eb681c5ffd6cd1623e5fc575a',
-    clazz: 'com.dotcms.contenttype.model.field.ImmutableStoryBlockField',
     contentTypeId: '799f176a-d32e-4844-a07c-1b5fcd107578',
-    dataType: 'LONG_TEXT',
-    fieldType: 'Story-Block',
     fieldTypeLabel: 'Block Editor',
     fieldVariables: [
         {
@@ -449,14 +432,11 @@ export const BLOCK_EDITOR_FIELD_MOCK: DotCMSContentTypeField = {
     sortOrder: 13,
     unique: false,
     variable: 'blogContent'
-};
+});
 
-export const BINARY_FIELD_MOCK: DotCMSContentTypeField = {
+export const BINARY_FIELD_MOCK = createFakeBinaryField({
     id: '5df3f8fc49177c195740bcdc02ec2db7',
-    clazz: 'com.dotcms.contenttype.model.field.ImmutableBinaryField',
     contentTypeId: 'd1901a41d38b6686dd5ed8f910346d7a',
-    dataType: 'SYSTEM',
-    fieldType: 'Binary',
     fieldTypeLabel: 'Binary',
     fieldVariables: [
         {
@@ -488,14 +468,11 @@ export const BINARY_FIELD_MOCK: DotCMSContentTypeField = {
     sortOrder: 2,
     unique: false,
     variable: 'binaryField'
-};
+});
 
-export const IMAGE_FIELD_MOCK: DotCMSContentTypeField = {
+export const IMAGE_FIELD_MOCK = createFakeImageField({
     id: 'fec3e11696cf9b0f99139c160a598e02',
-    clazz: 'com.dotcms.contenttype.model.field.ImmutableImageField',
     contentTypeId: 'a8f941d835e4b4f3e4e71b45add34c60',
-    dataType: 'TEXT',
-    fieldType: 'Image',
     fieldTypeLabel: 'Image',
     fieldVariables: [],
     fixed: false,
@@ -512,14 +489,11 @@ export const IMAGE_FIELD_MOCK: DotCMSContentTypeField = {
     unique: false,
     variable: 'imageField',
     hint: 'Helper label to be displayed below the field'
-};
+});
 
-export const FILE_FIELD_MOCK: DotCMSContentTypeField = {
+export const FILE_FIELD_MOCK = createFakeFileField({
     id: 'f90afb1384e04507ba03e8701f7e4000',
-    clazz: 'com.dotcms.contenttype.model.field.ImmutableFileField',
     contentTypeId: 'a8f941d835e4b4f3e4e71b45add34c60',
-    dataType: 'TEXT',
-    fieldType: 'File',
     fieldTypeLabel: 'File',
     fieldVariables: [],
     fixed: false,
@@ -536,13 +510,10 @@ export const FILE_FIELD_MOCK: DotCMSContentTypeField = {
     unique: false,
     variable: 'file1',
     hint: 'Helper label to be displayed below the field'
-};
+});
 
-export const RELATIONSHIP_FIELD_MOCK: DotCMSContentTypeField = {
-    clazz: 'com.dotcms.contenttype.model.field.ImmutableRelationshipField',
+export const RELATIONSHIP_FIELD_MOCK = createFakeRelationshipField({
     contentTypeId: 'd68af52828a53805a1716e68cd902560',
-    dataType: 'SYSTEM',
-    fieldType: 'Relationship',
     fieldTypeLabel: 'Relationships Field',
     fieldVariables: [],
     fixed: false,
@@ -566,14 +537,11 @@ export const RELATIONSHIP_FIELD_MOCK: DotCMSContentTypeField = {
     unique: false,
     variable: 'relationshipField',
     hint: 'Helper label to be displayed below the field'
-};
+});
 
-export const CUSTOM_FIELD_MOCK: DotCMSContentTypeField = {
+export const CUSTOM_FIELD_MOCK = createFakeCustomField({
     id: '64d5c84f04df900c79a94e087c6fed05',
-    clazz: 'com.dotcms.contenttype.model.field.ImmutableCustomField',
     contentTypeId: '61226fd915b7f025da020fc1f5856ab7',
-    dataType: 'LONG_TEXT',
-    fieldType: 'Custom-Field',
     fieldTypeLabel: 'Custom Field',
     fieldVariables: [],
     fixed: false,
@@ -590,14 +558,11 @@ export const CUSTOM_FIELD_MOCK: DotCMSContentTypeField = {
     unique: false,
     values: '<script>\r\nfunction searchClicked() {\r\n    console.log("Yoo")\r\n    form.get(\'select\').setValue("three");\r\n    form.get(\'title\').setValue("From Dojo!");\r\n}\r\n</script>\r\n\r\n<button dojoType="dijit.form.Button" onClick="searchClicked()" iconClass="searchIcon">Search</button>',
     variable: 'custom'
-};
+});
 
-export const JSON_FIELD_MOCK: DotCMSContentTypeField = {
+export const JSON_FIELD_MOCK = createFakeJSONField({
     id: '96909fa20a00497cd3b766b52edac0ec',
-    clazz: 'com.dotcms.contenttype.model.field.ImmutableJSONField',
     contentTypeId: '93ebaff75f3e3887bea73ecd04588dc9',
-    dataType: 'TEXT',
-    fieldType: 'JSON-Field',
     fieldTypeLabel: 'jsonField',
     fieldVariables: [],
     fixed: false,
@@ -612,17 +577,13 @@ export const JSON_FIELD_MOCK: DotCMSContentTypeField = {
     searchable: false,
     sortOrder: 1,
     unique: false,
-    values: '{ "test": "test" }',
     variable: 'json'
-};
+});
 
-export const KEY_VALUE_MOCK: DotCMSContentTypeField = {
+export const KEY_VALUE_MOCK = createFakeKeyValueField({
     id: '96909fa20a00497cd3b766b52edac0ec',
-    clazz: 'com.dotcms.contenttype.model.field.ImmutableJSONField',
     contentTypeId: '93ebaff75f3e3887bea73ecd04588dc9',
-    dataType: 'TEXT',
-    fieldType: 'Key-Value',
-    fieldTypeLabel: 'KeyValue',
+    fieldTypeLabel: 'Key/Value Field',
     fieldVariables: [],
     fixed: false,
     hint: 'A hint text',
@@ -636,16 +597,12 @@ export const KEY_VALUE_MOCK: DotCMSContentTypeField = {
     searchable: false,
     sortOrder: 1,
     unique: false,
-    values: '{ "key1": "value1" }',
     variable: 'KeyValue'
-};
+});
 
-export const HOST_FOLDER_TEXT_MOCK = {
+export const HOST_FOLDER_TEXT_MOCK = createFakeHostFolderField({
     id: 'b7c41ffd6b6bc1250f2fc85a3637471b',
-    clazz: 'com.dotcms.contenttype.model.field.ImmutableHostFolderField',
     contentTypeId: '61226fd915b7f025da020fc1f5856ab7',
-    dataType: 'SYSTEM',
-    fieldType: 'Host-Folder',
     fieldTypeLabel: 'Site or Folder',
     fieldVariables: [],
     fixed: false,
@@ -662,14 +619,11 @@ export const HOST_FOLDER_TEXT_MOCK = {
     sortOrder: 3,
     unique: false,
     variable: 'siteOrFolder'
-};
+});
 
-export const CATEGORY_MOCK: DotCMSContentTypeField = {
+export const CATEGORY_MOCK = createFakeCategoryField({
     id: '96909fa20a00497cd3b766b52edac0ec',
-    clazz: 'com.dotcms.contenttype.model.field.ImmutableWYSIWYGField',
     contentTypeId: '93ebaff75f3e3887bea73ecd04588dc9',
-    dataType: 'TEXT',
-    fieldType: 'Category',
     fieldTypeLabel: 'Category',
     fieldVariables: [],
     fixed: false,
@@ -684,16 +638,12 @@ export const CATEGORY_MOCK: DotCMSContentTypeField = {
     searchable: false,
     sortOrder: 1,
     unique: false,
-    values: '<p>HELLO</p>',
     variable: 'Category'
-};
+});
 
-export const CONSTANT_FIELD_MOCK: DotCMSContentTypeField = {
+export const CONSTANT_FIELD_MOCK = createFakeConstantField({
     id: '666817fcecef5c10cb520c1866baa411',
-    clazz: 'com.dotcms.contenttype.model.field.ImmutableConstantField',
     contentTypeId: '93ebaff75f3e3887bea73ecd04588dc9',
-    dataType: 'SYSTEM',
-    fieldType: 'Constant-Field',
     fieldTypeLabel: 'Constant Field',
     fieldVariables: [],
     fixed: false,
@@ -711,13 +661,10 @@ export const CONSTANT_FIELD_MOCK: DotCMSContentTypeField = {
     unique: false,
     values: 'constant-value',
     variable: 'constant'
-};
+});
 
-export const HIDDEN_FIELD_MOCK: DotCMSContentTypeField = {
-    clazz: 'com.dotcms.contenttype.model.field.ImmutableHiddenField',
+export const HIDDEN_FIELD_MOCK = createFakeHiddenField({
     contentTypeId: '61226fd915b7f025da020fc1f5856ab7',
-    dataType: 'SYSTEM',
-    fieldType: 'Hidden-Field',
     fieldTypeLabel: 'Hidden Field',
     fieldVariables: [],
     fixed: false,
@@ -735,13 +682,10 @@ export const HIDDEN_FIELD_MOCK: DotCMSContentTypeField = {
     unique: false,
     values: 'hidden-value',
     variable: 'hidden'
-};
+});
 
-export const LINE_DIVIDER_MOCK: DotCMSContentTypeField = {
-    clazz: 'com.dotcms.contenttype.model.field.ImmutableLineDividerField',
+export const LINE_DIVIDER_MOCK = createFakeLineDividerField({
     contentTypeId: '799f176a-d32e-4844-a07c-1b5fcd107578',
-    dataType: 'SYSTEM',
-    fieldType: 'Line_divider',
     fieldTypeLabel: 'Line Divider',
     fieldVariables: [],
     fixed: false,
@@ -758,7 +702,7 @@ export const LINE_DIVIDER_MOCK: DotCMSContentTypeField = {
     sortOrder: 27,
     unique: false,
     variable: 'openGraph'
-};
+});
 
 export const FIELDS_MOCK: DotCMSContentTypeField[] = [
     TEXT_FIELD_MOCK,
@@ -884,8 +828,6 @@ function getAllFields(data: DotCMSContentTypeLayoutRow[]) {
 
 export const DOT_MESSAGE_SERVICE_MOCK = new MockDotMessageService({});
 
-export const CALENDAR_FIELD_TYPES = [FIELD_TYPES.DATE, FIELD_TYPES.DATE_AND_TIME, FIELD_TYPES.TIME];
-
 /* LAYOUT/FORM MOCKS */
 
 // This creates a mock FormGroup from an array of fielda
@@ -893,11 +835,8 @@ export const FORM_GROUP_MOCK = new FormGroup(createFormControlObjectMock());
 
 export const LAYOUT_MOCK: DotCMSContentTypeLayoutRow[] = [
     {
-        divider: {
-            clazz: 'com.dotcms.contenttype.model.field.ImmutableRowField',
+        divider: createFakeRowField({
             contentTypeId: 'd46d6404125ac27e6ab68fad09266241',
-            dataType: 'SYSTEM',
-            fieldType: 'Row',
             fieldTypeLabel: 'Row',
             fieldVariables: [],
             fixed: false,
@@ -914,14 +853,11 @@ export const LAYOUT_MOCK: DotCMSContentTypeLayoutRow[] = [
             sortOrder: 0,
             unique: false,
             variable: 'fields0'
-        },
+        }),
         columns: [
             {
-                columnDivider: {
-                    clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField',
+                columnDivider: createFakeColumnField({
                     contentTypeId: 'd46d6404125ac27e6ab68fad09266241',
-                    dataType: 'SYSTEM',
-                    fieldType: 'Column',
                     fieldTypeLabel: 'Column',
                     fieldVariables: [],
                     fixed: false,
@@ -938,14 +874,13 @@ export const LAYOUT_MOCK: DotCMSContentTypeLayoutRow[] = [
                     sortOrder: 1,
                     unique: false,
                     variable: 'fields1'
-                },
+                }),
                 fields: [
-                    {
-                        clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
+                    createFakeTextField({
                         contentTypeId: 'd46d6404125ac27e6ab68fad09266241',
-                        dataType: 'TEXT',
+
                         defaultValue: 'Placeholder',
-                        fieldType: 'Text',
+
                         fieldTypeLabel: 'Text',
                         fieldVariables: [],
                         fixed: false,
@@ -963,12 +898,9 @@ export const LAYOUT_MOCK: DotCMSContentTypeLayoutRow[] = [
                         sortOrder: 2,
                         unique: false,
                         variable: 'name1'
-                    },
-                    {
-                        clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
+                    }),
+                    createFakeTextField({
                         contentTypeId: 'd46d6404125ac27e6ab68fad09266241',
-                        dataType: 'TEXT',
-                        fieldType: 'Text',
                         fieldTypeLabel: 'Text',
                         fieldVariables: [],
                         fixed: false,
@@ -987,15 +919,12 @@ export const LAYOUT_MOCK: DotCMSContentTypeLayoutRow[] = [
                         variable: 'text2',
                         regexCheck:
                             '^([a-zA-Z0-9]+[a-zA-Z0-9._%+-]*@(?:[a-zA-Z0-9-]+.)+[a-zA-Z]{2,4})$'
-                    }
+                    })
                 ]
             },
             {
-                columnDivider: {
-                    clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField',
+                columnDivider: createFakeColumnField({
                     contentTypeId: 'd46d6404125ac27e6ab68fad09266241',
-                    dataType: 'SYSTEM',
-                    fieldType: 'Column',
                     fieldTypeLabel: 'Column',
                     fieldVariables: [],
                     fixed: false,
@@ -1012,13 +941,10 @@ export const LAYOUT_MOCK: DotCMSContentTypeLayoutRow[] = [
                     sortOrder: 4,
                     unique: false,
                     variable: 'fields2'
-                },
+                }),
                 fields: [
-                    {
-                        clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
+                    createFakeTextField({
                         contentTypeId: 'd46d6404125ac27e6ab68fad09266241',
-                        dataType: 'TEXT',
-                        fieldType: 'Text',
                         fieldTypeLabel: 'Text',
                         fieldVariables: [],
                         fixed: false,
@@ -1036,7 +962,7 @@ export const LAYOUT_MOCK: DotCMSContentTypeLayoutRow[] = [
                         sortOrder: 5,
                         unique: false,
                         variable: 'text3'
-                    },
+                    }),
                     TAG_FIELD_MOCK,
                     DATE_FIELD_MOCK
                 ]
@@ -1046,11 +972,8 @@ export const LAYOUT_MOCK: DotCMSContentTypeLayoutRow[] = [
 ];
 
 export const TAB_SINGLE_ROW_MOCK: DotCMSContentTypeLayoutRow = {
-    divider: {
-        clazz: 'com.dotcms.contenttype.model.field.ImmutableRowField',
+    divider: createFakeRowField({
         contentTypeId: 'd46d6404125ac27e6ab68fad09266241',
-        dataType: 'SYSTEM',
-        fieldType: 'Row',
         fieldTypeLabel: 'Row',
         fieldVariables: [],
         fixed: false,
@@ -1067,16 +990,13 @@ export const TAB_SINGLE_ROW_MOCK: DotCMSContentTypeLayoutRow = {
         sortOrder: 0,
         unique: false,
         variable: 'fields0'
-    },
+    }),
     columns: []
 };
 
 export const TAB_DIVIDER_MOCK: DotCMSContentTypeLayoutRow = {
-    divider: {
-        clazz: 'com.dotcms.contenttype.model.field.ImmutableTabDividerField',
+    divider: createFakeTabDividerField({
         contentTypeId: 'd46d6404125ac27e6ab68fad09266241',
-        dataType: 'SYSTEM',
-        fieldType: 'Tab_divider',
         fieldTypeLabel: 'Tab_divider',
         fieldVariables: [],
         fixed: false,
@@ -1093,7 +1013,7 @@ export const TAB_DIVIDER_MOCK: DotCMSContentTypeLayoutRow = {
         sortOrder: 0,
         unique: false,
         variable: 'tab'
-    },
+    }),
     columns: []
 };
 
@@ -1176,11 +1096,8 @@ export const CONTENT_TYPE_MOCK: DotCMSContentType = {
     clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
     defaultType: false,
     fields: [
-        {
-            clazz: 'com.dotcms.contenttype.model.field.ImmutableRowField',
+        createFakeRowField({
             contentTypeId: 'd46d6404125ac27e6ab68fad09266241',
-            dataType: 'SYSTEM',
-            fieldType: 'Row',
             fieldTypeLabel: 'Row',
             fieldVariables: [],
             fixed: false,
@@ -1196,12 +1113,9 @@ export const CONTENT_TYPE_MOCK: DotCMSContentType = {
             sortOrder: 0,
             unique: false,
             variable: 'fields0'
-        },
-        {
-            clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField',
+        }),
+        createFakeColumnField({
             contentTypeId: 'd46d6404125ac27e6ab68fad09266241',
-            dataType: 'SYSTEM',
-            fieldType: 'Column',
             fieldTypeLabel: 'Column',
             fieldVariables: [],
             fixed: false,
@@ -1217,13 +1131,10 @@ export const CONTENT_TYPE_MOCK: DotCMSContentType = {
             sortOrder: 1,
             unique: false,
             variable: 'fields1'
-        },
-        {
-            clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
+        }),
+        createFakeTextField({
             contentTypeId: 'd46d6404125ac27e6ab68fad09266241',
-            dataType: 'TEXT',
             defaultValue: 'Placeholder',
-            fieldType: 'Text',
             fieldTypeLabel: 'Text',
             fieldVariables: [],
             fixed: false,
@@ -1240,12 +1151,10 @@ export const CONTENT_TYPE_MOCK: DotCMSContentType = {
             sortOrder: 2,
             unique: false,
             variable: 'name13'
-        },
-        {
-            clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
+        }),
+        createFakeTextField({
             contentTypeId: 'd46d6404125ac27e6ab68fad09266241',
-            dataType: 'TEXT',
-            fieldType: 'Text',
+
             fieldTypeLabel: 'Text',
             fieldVariables: [],
             fixed: false,
@@ -1261,12 +1170,9 @@ export const CONTENT_TYPE_MOCK: DotCMSContentType = {
             sortOrder: 3,
             unique: false,
             variable: 'text23'
-        },
-        {
-            clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField',
+        }),
+        createFakeColumnField({
             contentTypeId: 'd46d6404125ac27e6ab68fad09266241',
-            dataType: 'SYSTEM',
-            fieldType: 'Column',
             fieldTypeLabel: 'Column',
             fieldVariables: [],
             fixed: false,
@@ -1282,12 +1188,9 @@ export const CONTENT_TYPE_MOCK: DotCMSContentType = {
             sortOrder: 4,
             unique: false,
             variable: 'fields2'
-        },
-        {
-            clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
+        }),
+        createFakeTextField({
             contentTypeId: 'd46d6404125ac27e6ab68fad09266241',
-            dataType: 'TEXT',
-            fieldType: 'Text',
             fieldTypeLabel: 'Text',
             fieldVariables: [],
             fixed: false,
@@ -1304,7 +1207,7 @@ export const CONTENT_TYPE_MOCK: DotCMSContentType = {
             sortOrder: 5,
             unique: false,
             variable: 'text3'
-        }
+        })
     ],
     fixed: false,
     folder: 'SYSTEM_FOLDER',

@@ -265,13 +265,10 @@ export interface ContentTypeBlockEditorField extends DotCMSContentTypeBaseField 
  * Used to select categories from the category tree
  */
 export interface ContentTypeCategoryField extends DotCMSContentTypeBaseField {
-    /** Categories configuration for this field */
     categories: DotCMSContentTypeFieldCategories;
     dataType: DotCMSDataTypes.SYSTEM;
     fieldType: DotCMSFieldTypes.CATEGORY;
     clazz: DotCMSClazzes.CATEGORY;
-    /** Values configuration for this field */
-    values: string;
 }
 
 /**
@@ -282,7 +279,6 @@ export interface ContentTypeCheckboxField extends DotCMSContentTypeBaseField {
     dataType: DotCMSDataTypes.TEXT;
     fieldType: DotCMSFieldTypes.CHECKBOX;
     clazz: DotCMSClazzes.CHECKBOX;
-    /** Values configuration for this field */
     values: string;
 }
 
@@ -294,7 +290,6 @@ export interface ContentTypeConstantField extends DotCMSContentTypeBaseField {
     dataType: DotCMSDataTypes.SYSTEM;
     fieldType: DotCMSFieldTypes.CONSTANT;
     clazz: DotCMSClazzes.CONSTANT;
-    /** Values configuration for this field */
     values: string;
 }
 
@@ -306,9 +301,7 @@ export interface ContentTypeCustomField extends DotCMSContentTypeBaseField {
     dataType: DotCMSDataTypes.LONG_TEXT;
     fieldType: DotCMSFieldTypes.CUSTOM_FIELD;
     clazz: DotCMSClazzes.CUSTOM_FIELD;
-    /** Values configuration for this field */
     values: string;
-    /** Regular expression for validation */
     regexCheck?: string;
 }
 
@@ -391,7 +384,6 @@ export interface ContentTypeKeyValueField extends DotCMSContentTypeBaseField {
 export interface ContentTypeMultiSelectField extends DotCMSContentTypeBaseField {
     dataType: DotCMSDataTypes.LONG_TEXT;
     fieldType: DotCMSFieldTypes.MULTI_SELECT;
-    /** Values configuration for this field */
     values: string;
     clazz: DotCMSClazzes.MULTI_SELECT;
 }
@@ -401,9 +393,12 @@ export interface ContentTypeMultiSelectField extends DotCMSContentTypeBaseField 
  * Used for selecting a single option from a list
  */
 export interface ContentTypeRadioField extends DotCMSContentTypeBaseField {
-    dataType: DotCMSDataTypes.TEXT | DotCMSDataTypes.BOOLEAN | DotCMSDataTypes.FLOAT;
+    dataType:
+        | DotCMSDataTypes.TEXT
+        | DotCMSDataTypes.BOOLEAN
+        | DotCMSDataTypes.FLOAT
+        | DotCMSDataTypes.INTEGER;
     fieldType: DotCMSFieldTypes.RADIO;
-    /** Values configuration for this field */
     values: string;
     clazz: DotCMSClazzes.RADIO;
 }
@@ -415,16 +410,11 @@ export interface ContentTypeRadioField extends DotCMSContentTypeBaseField {
 export interface ContentTypeRelationshipField extends DotCMSContentTypeBaseField {
     dataType: DotCMSDataTypes.SYSTEM;
     fieldType: DotCMSFieldTypes.RELATIONSHIP;
-    /** Relationship configuration */
     relationships: {
-        /** Maximum number of related items */
         cardinality: number;
-        /** Whether this is the parent in the relationship */
         isParentField: boolean;
-        /** Velocity variable name */
         velocityVar: string;
     };
-    /** Whether to skip creation of the relationship */
     skipRelationshipCreation: boolean;
     clazz: DotCMSClazzes.RELATIONSHIP;
 }

@@ -11,7 +11,14 @@ export const CALENDAR_FIELD_TYPES = [
     DotCMSFieldTypes.TIME
 ];
 
-export const TAB_FIELD_CLAZZ = 'com.dotcms.contenttype.model.field.ImmutableTabDividerField';
+export const NON_FORM_CONTROL_FIELD_TYPES = [
+    DotCMSFieldTypes.ROW,
+    DotCMSFieldTypes.COLUMN,
+    DotCMSFieldTypes.TAB_DIVIDER,
+    DotCMSFieldTypes.LINE_DIVIDER,
+    DotCMSFieldTypes.CONSTANT,
+    DotCMSFieldTypes.HIDDEN
+];
 
 /**
  * Enum for representing the available languages supported in the Monaco Editor.

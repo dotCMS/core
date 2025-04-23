@@ -3,7 +3,7 @@ import { ControlContainer, FormControl, FormsModule, ReactiveFormsModule } from 
 
 import { CheckboxModule } from 'primeng/checkbox';
 
-import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { ContentTypeCheckboxField, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
 import { getSingleSelectableFieldOptions } from '../../utils/functions.util';
 @Component({
@@ -32,7 +32,7 @@ import { getSingleSelectableFieldOptions } from '../../utils/functions.util';
 export class DotEditContentCheckboxFieldComponent {
     private readonly controlContainer = inject(ControlContainer);
 
-    $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
+    $field = input.required<ContentTypeCheckboxField>({ alias: 'field' });
     $options = computed(() => {
         const field = this.$field();
 

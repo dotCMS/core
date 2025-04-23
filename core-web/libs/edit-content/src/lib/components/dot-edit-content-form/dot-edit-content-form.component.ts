@@ -36,6 +36,7 @@ import {
 import {
     DotCMSContentlet,
     DotCMSContentTypeField,
+    DotCMSFieldTypes,
     DotCMSWorkflowAction,
     DotWorkflowPayload
 } from '@dotcms/dotcms-models';
@@ -417,12 +418,19 @@ export class DotEditContentFormComponent implements OnInit {
             validators.push(Validators.required);
         }
 
-        if (field.regexCheck) {
-            try {
-                const regex = new RegExp(field.regexCheck);
-                validators.push(Validators.pattern(regex));
-            } catch (e) {
-                console.error('Invalid regex', e);
+        if (
+            field.fieldType === DotCMSFieldTypes.TEXT ||
+            field.fieldType === DotCMSFieldTypes.TEXTAREA ||
+            field.fieldType === DotCMSFieldTypes.CUSTOM_FIELD ||
+            field.fieldType === DotCMSFieldTypes.WYSIWYG
+        ) {
+            if (field?.regexCheck) {
+                try {
+                    const regex = new RegExp(field.regexCheck);
+                    validators.push(Validators.pattern(regex));
+                } catch (e) {
+                    console.error('Invalid regex', e);
+                }
             }
         }
 

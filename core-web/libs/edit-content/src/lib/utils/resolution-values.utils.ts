@@ -233,5 +233,7 @@ export const resolutionValue: Record<DotCMSFieldTypes, FnResolutionValue> = {
     [DotCMSFieldTypes.RELATIONSHIP]: relationshipResolutionFn,
     [DotCMSFieldTypes.LINE_DIVIDER]: () => '',
     [DotCMSFieldTypes.ROW]: () => '',
-    [DotCMSFieldTypes.COLUMN]: () => ''
+    [DotCMSFieldTypes.COLUMN]: () => '',
+    [DotCMSFieldTypes.TAB_DIVIDER]: () => '',
+    [DotCMSFieldTypes.COLUMN_BREAK]: () => ''
 };

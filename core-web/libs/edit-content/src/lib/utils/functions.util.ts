@@ -5,30 +5,22 @@ import {
     DotCMSContentTypeFieldVariable,
     DotCMSContentTypeLayoutRow,
     DotCMSContentTypeLayoutTab,
+    DotCMSDataTypes,
     DotLanguage,
-    UI_STORAGE_KEY
+    UI_STORAGE_KEY,
+    DotCMSClazzes
 } from '@dotcms/dotcms-models';
 import { UVE_MODE } from '@dotcms/uve/types';
 
-import {
-    CALENDAR_FIELD_TYPES,
-    FLATTENED_FIELD_TYPES,
-    TAB_FIELD_CLAZZ,
-    UNCASTED_FIELD_TYPES
-} from '../models/dot-edit-content-field.constant';
-import {
-    DotEditContentFieldSingleSelectableDataType,
-    FIELD_TYPES
-} from '../models/dot-edit-content-field.enum';
+import { NON_FORM_CONTROL_FIELD_TYPES } from '../models/dot-edit-content-field.constant';
 import { DotEditContentFieldSingleSelectableDataTypes } from '../models/dot-edit-content-field.type';
-import { NON_FORM_CONTROL_FIELD_TYPES } from '../models/dot-edit-content-form.enum';
 import { Tab } from '../models/dot-edit-content-form.interface';
 import { UIState } from '../models/dot-edit-content.model';
 
 // This function is used to cast the value to a correct type for the Angular Form if the field is a single selectable field
 export const castSingleSelectableValue = (
     value: unknown,
-    type: string
+    type: DotCMSDataTypes
 ): DotEditContentFieldSingleSelectableDataTypes | null => {
     // Early return for null/undefined/empty values
     if (value === null || value === undefined || value === '') {
@@ -36,17 +28,17 @@ export const castSingleSelectableValue = (
     }
 
     switch (type) {
-        case DotEditContentFieldSingleSelectableDataType.BOOL: {
+        case DotCMSDataTypes.BOOLEAN: {
             // For boolean type, handle both boolean and string values
             return typeof value === 'boolean'
                 ? value
                 : String(value).toLowerCase().trim() === 'true';
         }
 
-        case DotEditContentFieldSingleSelectableDataType.INTEGER:
+        case DotCMSDataTypes.INTEGER:
 
         // fallthrough
-        case DotEditContentFieldSingleSelectableDataType.FLOAT: {
+        case DotCMSDataTypes.FLOAT: {
             const num = Number(value);
 
             return isNaN(num) ? null : num;
@@ -61,7 +53,7 @@ export const castSingleSelectableValue = (
 // This function creates the model for the Components that use the Single Selectable Field, like the Select, Radio Button and Checkbox
 export const getSingleSelectableFieldOptions = (
     options: string,
-    dataType: string
+    dataType: DotCMSDataTypes
 ): { label: string; value: DotEditContentFieldSingleSelectableDataTypes }[] => {
     const lines = (options?.split('\r\n') ?? []).filter((line) => line.trim() !== '');
 
@@ -84,41 +76,6 @@ export const getSingleSelectableFieldOptions = (
         );
 };
 
-/**
- * @deprecated This function has been moved to resolution-values.utils.ts module.
- * Resolution functions now directly handle type casting.
- *
- * This will be removed in a future release.
- */
-export const getFinalCastedValue = (
-    value: object | string | undefined,
-    field: DotCMSContentTypeField
-) => {
-    console.warn('getFinalCastedValue is deprecated. Use resolution functions instead.');
-
-    if (CALENDAR_FIELD_TYPES.includes(field.fieldType as FIELD_TYPES)) {
-        const parseResult = new Date(value as string);
-
-        // When we create a field, we can set the default value to "now" so, it will cast to Invalid Date. But an undefined value can also be casted to Invalid Date.
-        // So if the getTime() method returns NaN that means the value is invalid and it's either undefined or "now". Otherwise just return the parsed date.
-        return isNaN(parseResult.getTime()) ? value && new Date() : parseResult;
-    }
-
-    if (FLATTENED_FIELD_TYPES.includes(field.fieldType as FIELD_TYPES)) {
-        return (value as string)?.split(',').map((value) => value.trim());
-    }
-
-    if (value === undefined || UNCASTED_FIELD_TYPES.includes(field.fieldType as FIELD_TYPES)) {
-        return value;
-    }
-
-    if (field.fieldType === FIELD_TYPES.JSON) {
-        return JSON.stringify(value, null, 2); // This is a workaround to avoid the Monaco Editor to show the value as a string and keep the formatting
-    }
-
-    return castSingleSelectableValue(value, field.dataType);
-};
-
 export const transformLayoutToTabs = (
     firstTabTitle: string,
     layout: DotCMSContentTypeLayoutRow[]
@@ -129,7 +86,7 @@ export const transformLayoutToTabs = (
         const lastTabIndex = acc.length - 1;
 
         // If the class indicates a tab field, create a new tab
-        if (clazz === TAB_FIELD_CLAZZ) {
+        if (clazz === DotCMSClazzes.TAB_DIVIDER) {
             acc.push({
                 title: name,
                 layout: []
@@ -259,9 +216,7 @@ export const createPaths = (path: string): string[] => {
  */
 
 export const isFilteredType = (field: DotCMSContentTypeField): boolean => {
-    return Object.values(NON_FORM_CONTROL_FIELD_TYPES).includes(
-        field.fieldType as NON_FORM_CONTROL_FIELD_TYPES
-    );
+    return NON_FORM_CONTROL_FIELD_TYPES.includes(field.fieldType);
 };
 
 /**
