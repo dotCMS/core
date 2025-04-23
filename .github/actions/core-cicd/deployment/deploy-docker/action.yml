@@ -187,6 +187,7 @@ runs:
         platforms: ${{ inputs.docker_platforms }}
         pull: true
         push: ${{ inputs.do_deploy }}
-        cache-from: type=gha,scope=${{ github.workflow }}
-        cache-to: type=gha,mode=max,scope=${{ github.workflow }}
+        load: ${{ inputs.do_deploy != 'true' }}
+        cache-from: type=registry,ref=${{ inputs.image_name }}:buildcache
+        cache-to: ${{ inputs.do_deploy == 'true' && format('type=registry,ref={0}:buildcache,mode=max', inputs.image_name) || '' }}
         build-args: ${{ inputs.build_args }}
