@@ -55,14 +55,12 @@ runs:
           echo "Using provided GraalVM version: $GRAALVM_VERSION"
         fi
         echo "graalvm_version=$GRAALVM_VERSION" >> $GITHUB_OUTPUT
-        
     - name: Restore Cache SDKMan install
       id: restore-cache-sdkman
       uses: actions/cache/restore@v4
       with:
         path: ~/.sdkman
         key: ${{ runner.os }}-${{ env.ARCHITECTURE }}-sdkman-install
-        
     - name: Install SDKMan
       id: install-sdkman
       if: ${{ steps.restore-cache-sdkman.outputs.cache-hit != 'true' }}
@@ -72,7 +70,6 @@ runs:
         echo "Downloading SDKMAN install"
         curl -s "https://get.sdkman.io" | bash
         fi
-        
     - name: Save Cache SDKMan install
       id: save-cache-sdkman
       if: ${{ steps.restore-cache-sdkman.outputs.cache-hit != 'true' }}
@@ -80,7 +77,7 @@ runs:
       with:
         path: ~/.sdkman
         key: ${{ runner.os }}-${{ env.ARCHITECTURE }}-sdkman-install
-        
+
     - name: Restore Cache Java SDK
       id: restore-cache-java
       uses: actions/cache/restore@v4
