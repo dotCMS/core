@@ -6,7 +6,7 @@ import {
     setClientIsReady
 } from '../../script/utils';
 import { DotCMSReorderMenuConfig, DotCMSUVEMessage } from '../types/editor/internal';
-import { Contentlet, DotCMSUVEAction, DotCMSUVEConfig } from '../types/editor/public';
+import { Contentlet, DotCMSUVEAction } from '../types/editor/public';
 import { DotCMSInlineEditingPayload, DotCMSInlineEditingType } from '../types/events/public';
 
 /**
@@ -103,9 +103,9 @@ export function initInlineEditing(
  * destroyUVESubscriptions();
  * ```
  */
-export function initUVE(config: DotCMSUVEConfig = {}): { destroyUVESubscriptions: () => void } {
+export function initUVE() {
     addClassToEmptyContentlets();
-    setClientIsReady(config);
+    setClientIsReady();
 
     const { subscriptions } = registerUVEEvents();
     const { destroyScrollHandler } = scrollHandler();

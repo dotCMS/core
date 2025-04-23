@@ -83,7 +83,7 @@ export const useDotcmsEditor = ({ pageContext, config }: DotcmsPageProps) => {
         }
 
         const { unsubscribe } = createUVESubscription(UVEEventType.CONTENT_CHANGES, (data) => {
-            const pageAsset = data as unknown as DotCMSPageContext['pageAsset'];
+            const pageAsset = data as DotCMSPageContext['pageAsset'];
             setState((state) => ({ ...state, pageAsset }));
         });
 

@@ -142,7 +142,7 @@ export class DotcmsLayoutComponent implements OnInit {
                 return;
             }
 
-            this.pageContextService.setPageAsset(data as unknown as DotCMSPageAsset);
+            this.pageContextService.setPageAsset(data as DotCMSPageAsset);
         });
 
         postMessageToEditor({ action: CLIENT_ACTIONS.CLIENT_READY, payload: this.editor });

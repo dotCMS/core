@@ -95,13 +95,13 @@ The @dotcms/client package is compatible with the following browsers:
 ### ES Modules
 
 ```javascript
-import { createDotCMSClient } from '@dotcms/client/next';
+import { dotCMSCreateClient } from '@dotcms/client';
 ```
 
 ### CommonJS
 
 ```javascript
-const { createDotCMSClient } = require('@dotcms/client/next');
+const { dotCMSCreateClient } = require('@dotcms/client');
 ```
 
 ### Initialization
@@ -109,7 +109,7 @@ const { createDotCMSClient } = require('@dotcms/client/next');
 First, initialize the client with your dotCMS instance details.
 
 ```javascript
-const client = createDotCMSClient({
+const client = dotCMSCreateClient({
     dotcmsUrl: 'https://your-dotcms-instance.com',
     authToken: 'your-auth-token',
     siteId: 'your-site-id'

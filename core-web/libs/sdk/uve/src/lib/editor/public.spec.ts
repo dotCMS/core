@@ -116,26 +116,6 @@ describe('UVE Public Functions', () => {
             expect(utils.registerUVEEvents).toHaveBeenCalled();
         });
 
-        it('should call setClientIsReady with empty config when no config is provided', () => {
-            const setClientIsReadySpy = jest.spyOn(utils, 'setClientIsReady');
-            initUVE();
-            expect(setClientIsReadySpy).toHaveBeenCalledWith({});
-        });
-
-        it('should call setClientIsReady with graphql config when provided', () => {
-            const setClientIsReadySpy = jest.spyOn(utils, 'setClientIsReady');
-            const config = { graphql: { query: '{ test }', variables: {} } };
-            initUVE(config);
-            expect(setClientIsReadySpy).toHaveBeenCalledWith(config);
-        });
-
-        it('should call setClientIsReady with params config when provided', () => {
-            const setClientIsReadySpy = jest.spyOn(utils, 'setClientIsReady');
-            const config = { params: { depth: '1' } };
-            initUVE(config);
-            expect(setClientIsReadySpy).toHaveBeenCalledWith(config);
-        });
-
         it('should return destroy function that unsubscribes all subscriptions', () => {
             // Create spy functions for unsubscribe
             const unsubscribeSpy1 = jest.fn();
