@@ -63,7 +63,9 @@ const GRAPHQL_RESPONSE_MOCK = {
             identifier: '31f4c794-c769-4929-9d5d-7c383408c65c'
         },
         urlContentMap: {
-            identifier: '31f4c794-c769-4929-9d5d-7c383408c74d'
+            _map: {
+                identifier: '31f4c794-c769-4929-9d5d-7c383408c74d'
+            }
         },
         viewAs: {
             mode: 'LIVE'
@@ -146,5 +148,85 @@ describe('GraphQL Parser', () => {
         const pageEntity = graphqlToPageEntity(GRAPHQL_RESPONSE_MOCK);
 
         expect(pageEntity).toEqual(MOCK_PAGE_ENTITY);
+    });
+
+    it('should transform _map properties correctly', () => {
+        const graphqlResponse = {
+            page: {
+                title: 'map-test',
+                url: '/map-test',
+                _map: {
+                    customField: 'custom value'
+                },
+                urlContentMap: {
+                    _map: {
+                        mapField: 'map value',
+                        identifier: 'test-id',
+                        someNestedField: {
+                            nestedField: 'nested value'
+                        }
+                    }
+                },
+                containers: [
+                    {
+                        path: '//test/container/',
+                        identifier: 'test-container-id',
+                        containerContentlets: [
+                            {
+                                uuid: 'test-uuid',
+                                contentlets: [
+                                    {
+                                        _map: {
+                                            identifier: 'test-contentlet-id',
+                                            contentletField: 'contentlet value'
+                                        }
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        };
+
+        const expectedResult = {
+            page: {
+                title: 'map-test',
+                url: '/map-test',
+                customField: 'custom value'
+            },
+            urlContentMap: {
+                identifier: 'test-id',
+                mapField: 'map value',
+                someNestedField: {
+                    nestedField: 'nested value'
+                }
+            },
+            containers: {
+                '//test/container/': {
+                    container: {
+                        path: '//test/container/',
+                        identifier: 'test-container-id'
+                    },
+                    containerStructures: undefined,
+                    contentlets: {
+                        'test-uuid': [
+                            {
+                                identifier: 'test-contentlet-id',
+                                contentletField: 'contentlet value'
+                            }
+                        ]
+                    }
+                }
+            }
+        };
+
+        const pageEntity = graphqlToPageEntity(graphqlResponse);
+
+        expect(pageEntity.page).toEqual(expectedResult.page);
+        expect(pageEntity.urlContentMap).toEqual(expectedResult.urlContentMap);
+        expect(pageEntity.containers['//test/container/'].contentlets['test-uuid'][0]).toEqual(
+            expectedResult.containers['//test/container/'].contentlets['test-uuid'][0]
+        );
     });
 });
