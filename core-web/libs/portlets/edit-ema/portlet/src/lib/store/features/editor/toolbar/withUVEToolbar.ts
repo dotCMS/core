@@ -142,6 +142,7 @@ export function withUVEToolbar() {
             $personaSelector: computed<PersonaSelectorProps>(() => {
                 const pageAPIResponse = store.pageAPIResponse();
 
+                // Fix the persona in graphql
                 return {
                     pageId: pageAPIResponse?.page.identifier,
                     value: pageAPIResponse?.viewAs.persona ?? DEFAULT_PERSONA

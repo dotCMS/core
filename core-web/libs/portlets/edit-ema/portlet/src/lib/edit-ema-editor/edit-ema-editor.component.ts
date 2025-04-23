@@ -180,14 +180,14 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
          * We should not depend on this `$reloadEditorContent` computed to `resetEditorProperties` or `resetDialog`
          * This depends on the `code` with each the page renders code. This reset should be done in `widthLoad` signal feature but we can't do it yet
          */
-        const { isTraditionalPage, isClientReady } = this.uveStore.$reloadEditorContent();
+        const { isTraditionalPage } = this.uveStore.$reloadEditorContent();
+        const isClientReady = untracked(() => this.uveStore.isClientReady());
 
         untracked(() => {
             this.uveStore.resetEditorProperties();
             this.dialog?.resetDialog();
         });
 
-        // console.log("isClientReady", isClientReady);
         if (isTraditionalPage || !isClientReady) {
             return;
         }

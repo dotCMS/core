@@ -177,21 +177,18 @@ describe('withEditor', () => {
                 expect(store.$reloadEditorContent()).toEqual({
                     code: MOCK_RESPONSE_HEADLESS.page.rendered,
                     isTraditionalPage: false,
-                    enableInlineEdit: true,
-                    isClientReady: false
+                    enableInlineEdit: true
                 });
             });
             it('should return the expected data for VTL', () => {
                 patchState(store, {
                     pageAPIResponse: MOCK_RESPONSE_VTL,
-                    isTraditionalPage: true,
-                    isClientReady: true
+                    isTraditionalPage: true
                 });
                 expect(store.$reloadEditorContent()).toEqual({
                     code: MOCK_RESPONSE_VTL.page.rendered,
                     isTraditionalPage: true,
-                    enableInlineEdit: true,
-                    isClientReady: true
+                    enableInlineEdit: true
                 });
             });
         });

@@ -105,7 +105,6 @@ export function withEditor() {
                 $reloadEditorContent: computed<ReloadEditorContent>(() => {
                     return {
                         code: store.pageAPIResponse()?.page?.rendered,
-                        isClientReady: untracked(() => store.isClientReady()),
                         isTraditionalPage: untracked(() => store.isTraditionalPage()),
                         enableInlineEdit:
                             store.isEditState() && untracked(() => store.isEnterprise())

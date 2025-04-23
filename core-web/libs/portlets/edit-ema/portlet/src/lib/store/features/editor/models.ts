@@ -51,7 +51,6 @@ export interface PageData {
 
 export interface ReloadEditorContent {
     isTraditionalPage: boolean;
-    isClientReady: boolean;
 }
 
 export interface EditorProps {
