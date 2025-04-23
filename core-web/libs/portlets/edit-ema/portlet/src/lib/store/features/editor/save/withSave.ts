@@ -11,7 +11,6 @@ import { DotPageApiResponse, DotPageApiService } from '../../../../services/dot-
 import { UVE_STATUS } from '../../../../shared/enums';
 import { PageContainer } from '../../../../shared/models';
 import { UVEState } from '../../../models';
-import { withClient } from '../../client/withClient';
 
 /**
  * Add methods to save the page
@@ -24,7 +23,6 @@ export function withSave() {
         {
             state: type<UVEState>()
         },
-        withClient(),
         withMethods((store) => {
             const dotPageApiService = inject(DotPageApiService);
 

@@ -182,19 +182,16 @@ export function withLoad() {
                             });
                         }),
                         map((params) => {
-                            if (!store.pageParams()) {
-                                return params as DotPageAssetParams;
-                            }
-
                             return {
                                 ...store.pageParams(),
                                 ...params
                             };
                         }),
+                        tap((params) => patchState(store, { pageParams: params })),
                         switchMap((params: DotPageAssetParams) => {
                             const pageRequest = !store.graphql()
                                 ? dotPageApiService.get(params)
-                                : dotPageApiService.getGraphQLPage(store.$graphql()).pipe(
+                                : dotPageApiService.getGraphQLPage(store.graphql()).pipe(
                                       map((response) => {
                                           store.setGraphqlResponse(response);
 

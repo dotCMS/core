@@ -45,7 +45,6 @@ import {
     getFullPageURL
 } from '../../../utils';
 import { UVEState } from '../../models';
-import { withClient } from '../client/withClient';
 
 const buildIframeURL = ({ url, params, isTraditionalPage }) => {
     if (isTraditionalPage) {
@@ -86,7 +85,6 @@ export function withEditor() {
         withState<EditorState>(initialState),
         withUVEToolbar(),
         withSave(),
-        withClient(),
         withComputed((store) => {
             return {
                 $pageData: computed<PageData>(() => {

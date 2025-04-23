@@ -28,7 +28,7 @@ export interface ClientConfigState {
     };
     graphqlResponse: {
         page: DotPageApiResponse;
-        content: Record<string, unknown>;
+        content?: Record<string, unknown>;
     };
 }
 
@@ -69,7 +69,7 @@ export function withClient() {
                     });
                 },
                 setGraphqlResponse: (graphqlResponse) => {
-                    patchState(store, graphqlResponse);
+                    patchState(store, { graphqlResponse });
                 },
                 resetClientConfiguration: () => {
                     patchState(store, { ...clientState });
@@ -86,7 +86,7 @@ export function withClient() {
                     if (store.shouldReturnFullGraphqlResponse()) {
                         return {
                             ...store.graphqlResponse(),
-                            grapql: store.graphql
+                            grapql: store.graphql()
                         };
                     }
 
