@@ -1,10 +1,10 @@
 {
 	"info": {
-		"_postman_id": "26bc79f7-0e7d-4bc0-8b01-ebc8cf282b1d",
+		"_postman_id": "d5283386-5b93-44de-99ba-b59613dc8b5a",
 		"name": "GraphQL",
 		"description": "This suite verifies that the GraphQL REST Endpoint is working as expected.\n\n[GraphQL](https://graphql.org/) is an open query language which allows you to perform real-type dynamic queries which specify exactly what data you want, and in what order. The dotCMS GraphQL content delivery API has a number of advantages over querying content via REST:\n\n- A single endpoint to query all content: `api/v1/graphql`.\n    \n- Self documenting via schema introspection.\n    \n- No over-fetching of data (e.g. unneeded fields).\n    \n- No need for multiple requests to get combined data.\n    \n- Client control over both the query and the data received.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "31066048"
+		"_exporter_id": "10041132",
 	},
 	"item": [
 		{
@@ -11847,6 +11847,437 @@
 							"});"
 						]
 					}
+				}
+			]
+		},
+		{
+			"name": "Nav",
+			"item": [
+				{
+					"name": "pre_ImportBundleWithContext",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Bundle uploaded sucessfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"",
+									"    var jsonData = pm.response.json();",
+									"    console.log(jsonData);",
+									"",
+									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"contact-us-folder.tar.gz\");",
+									"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/octet-stream",
+								"type": "text"
+							},
+							{
+								"key": "Content-Disposition",
+								"value": "attachment",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/NavResource/contact-us-folder.tar.gz"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/bundle/sync",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"bundle",
+								"sync"
+							],
+							"query": [
+								{
+									"key": "AUTH_TOKEN",
+									"value": "",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Imports a Bundle that includes:\n* HTMLPage /blog/index\n* HTMLPage /blog/destinations/costa-rica\n* Contentlet [Blog] Ecotourism in Costa Rica\n* Blog Detail Page /blog/blog-detail"
+					},
+					"response": []
+				},
+				{
+					"name": "Switch Host",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/v1/site/switch/48190c8c-42c4-46af-8d1a-0cd5db894797",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"v1",
+								"site",
+								"switch",
+								"48190c8c-42c4-46af-8d1a-0cd5db894797"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Succes Request",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Test that the response status is 200 OK",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"// Test that the response has the expected JSON structure",
+									"pm.test(\"Response has expected structure\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('data');",
+									"    pm.expect(jsonData.data).to.have.property('Navigation');",
+									"});",
+									"",
+									"// Test the main Navigation object properties",
+									"pm.test(\"Navigation has the expected properties\", function () {",
+									"    const navigation = pm.response.json().data.Navigation;",
+									"    pm.expect(navigation).to.have.property('children');",
+									"    pm.expect(navigation).to.have.property('folder');",
+									"    pm.expect(navigation).to.have.property('hash');",
+									"    pm.expect(navigation).to.have.property('host');",
+									"    pm.expect(navigation).to.have.property('href');",
+									"    pm.expect(navigation).to.have.property('languageId');",
+									"    pm.expect(navigation).to.have.property('order');",
+									"    pm.expect(navigation).to.have.property('target');",
+									"    pm.expect(navigation).to.have.property('title');",
+									"    pm.expect(navigation).to.have.property('type');",
+									"});",
+									"",
+									"// Test that the navigation title is 'Contact Us'",
+									"pm.test(\"Navigation title is 'Contact Us'\", function () {",
+									"    const navigation = pm.response.json().data.Navigation;",
+									"    pm.expect(navigation.title).to.equal('Contact Us');",
+									"});",
+									"",
+									"// Test that the navigation href is '/contact-us'",
+									"pm.test(\"Navigation href is '/contact-us'\", function () {",
+									"    const navigation = pm.response.json().data.Navigation;",
+									"    pm.expect(navigation.href).to.equal('/contact-us');",
+									"});",
+									"",
+									"// Test that folder ID is correct",
+									"pm.test(\"Navigation folder ID is correct\", function () {",
+									"    const navigation = pm.response.json().data.Navigation;",
+									"    pm.expect(navigation.folder).to.equal('9c5e78a9-62ce-48e0-99ce-6817b0f5c2f3');",
+									"});",
+									"",
+									"// Test that the children array exists and has correct length",
+									"pm.test(\"Navigation has 2 children\", function () {",
+									"    const navigation = pm.response.json().data.Navigation;",
+									"    pm.expect(navigation.children).to.be.an('array').with.lengthOf(2);",
+									"});",
+									"",
+									"// Test that the first child has the correct title and href",
+									"pm.test(\"First child has title 'Thank You' and correct href\", function () {",
+									"    const firstChild = pm.response.json().data.Navigation.children[0];",
+									"    pm.expect(firstChild.title).to.equal('Thank You');",
+									"    pm.expect(firstChild.href).to.equal('/contact-us/thank-you');",
+									"});",
+									"",
+									"// Test that the second child has the correct title and href",
+									"pm.test(\"Second child has title 'Contact Us' and correct href\", function () {",
+									"    const secondChild = pm.response.json().data.Navigation.children[1];",
+									"    pm.expect(secondChild.title).to.equal('Contact Us');",
+									"    pm.expect(secondChild.href).to.equal('/contact-us/index');",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"setTimeout(function(){}, 3000);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "query NavTest {\n  Navigation(uri:\"/contact-us\"  depth:2){\n    children{\n        title\n        href\n    }\n    code\n    folder\n    hash\n    host\n    href        \n    languageId\n    order          \n    target            \n    title                \n    type                    \n  }\n}\n",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						},
+						"description": "Check the Pagination field in a simple collection query, the collection does not have parameters."
+					},
+					"response": []
+				},
+				{
+					"name": "InvalidLanguageIdRequest",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Test that the response status is 200 (GraphQL usa 200 incluso para errores de aplicación)",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"// Test que la respuesta tiene una estructura válida con errores",
+									"pm.test(\"Response contains errors and null data for Navigation\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('errors');",
+									"    pm.expect(jsonData).to.have.property('data');",
+									"    pm.expect(jsonData.data).to.have.property('Navigation');",
+									"    pm.expect(jsonData.data.Navigation).to.be.null;",
+									"});",
+									"",
+									"// Test que tenemos exactamente un error",
+									"pm.test(\"Response has exactly one error\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.errors).to.be.an('array').with.lengthOf(1);",
+									"});",
+									"",
+									"// Test el mensaje de error",
+									"pm.test(\"Error message contains information about invalid language\", function () {",
+									"    const errorMessage = pm.response.json().errors[0].message;",
+									"    pm.expect(errorMessage).to.include('Invalid or unsupported language ID: 233');",
+									"});",
+									"",
+									"// Test la ruta del error",
+									"pm.test(\"Error path points to Navigation\", function () {",
+									"    const errorPath = pm.response.json().errors[0].path;",
+									"    pm.expect(errorPath).to.be.an('array').with.lengthOf(1);",
+									"    pm.expect(errorPath[0]).to.equal('Navigation');",
+									"});",
+									"",
+									"// Test las extensiones del error",
+									"pm.test(\"Error extensions have correct properties\", function () {",
+									"    const extensions = pm.response.json().errors[0].extensions;",
+									"    pm.expect(extensions).to.have.property('code').equal('INVALID_LANGUAGE');",
+									"    pm.expect(extensions).to.have.property('languageId').equal(233);",
+									"    pm.expect(extensions).to.have.property('status').equal(400);",
+									"    pm.expect(extensions).to.have.property('classification').equal('DataFetchingException');",
+									"});",
+									"",
+									"// Test la localización del error",
+									"pm.test(\"Error location is correct\", function () {",
+									"    const locations = pm.response.json().errors[0].locations;",
+									"    pm.expect(locations).to.be.an('array').with.lengthOf(1);",
+									"    pm.expect(locations[0]).to.have.property('line').equal(2);",
+									"    pm.expect(locations[0]).to.have.property('column').equal(3);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"setTimeout(function(){}, 3000);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "query NavTest {\n  Navigation(uri:\"/contact-us\"  depth:2 languageId:233){\n    title\n    folder\n  }\n}\n",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						},
+						"description": "Check the Pagination field in a simple collection query, the collection does not have parameters."
+					},
+					"response": []
+				},
+				{
+					"name": "Succes Request Including Lang",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Test that the response status is 200 OK",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"// Test that the response has the expected JSON structure",
+									"pm.test(\"Response has expected structure\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('data');",
+									"    pm.expect(jsonData.data).to.have.property('Navigation');",
+									"});",
+									"",
+									"// Test the main Navigation object properties",
+									"pm.test(\"Navigation has the expected properties\", function () {",
+									"    const navigation = pm.response.json().data.Navigation;",
+									"    pm.expect(navigation).to.have.property('children');",
+									"    pm.expect(navigation).to.have.property('folder');",
+									"    pm.expect(navigation).to.have.property('hash');",
+									"    pm.expect(navigation).to.have.property('host');",
+									"    pm.expect(navigation).to.have.property('href');",
+									"    pm.expect(navigation).to.have.property('languageId');",
+									"    pm.expect(navigation).to.have.property('order');",
+									"    pm.expect(navigation).to.have.property('target');",
+									"    pm.expect(navigation).to.have.property('title');",
+									"    pm.expect(navigation).to.have.property('type');",
+									"});",
+									"",
+									"// Test that the navigation title is 'Contact Us'",
+									"pm.test(\"Navigation title is 'Contact Us'\", function () {",
+									"    const navigation = pm.response.json().data.Navigation;",
+									"    pm.expect(navigation.title).to.equal('Contact Us');",
+									"});",
+									"",
+									"// Test that the navigation href is '/contact-us'",
+									"pm.test(\"Navigation href is '/contact-us'\", function () {",
+									"    const navigation = pm.response.json().data.Navigation;",
+									"    pm.expect(navigation.href).to.equal('/contact-us');",
+									"});",
+									"",
+									"// Test that folder ID is correct",
+									"pm.test(\"Navigation folder ID is correct\", function () {",
+									"    const navigation = pm.response.json().data.Navigation;",
+									"    pm.expect(navigation.folder).to.equal('9c5e78a9-62ce-48e0-99ce-6817b0f5c2f3');",
+									"});",
+									"",
+									"// Test that the children array exists and has correct length",
+									"pm.test(\"Navigation has 2 children\", function () {",
+									"    const navigation = pm.response.json().data.Navigation;",
+									"    pm.expect(navigation.children).to.be.an('array').with.lengthOf(2);",
+									"});",
+									"",
+									"// Test that the first child has the correct title and href",
+									"pm.test(\"First child has title 'Thank You' and correct href\", function () {",
+									"    const firstChild = pm.response.json().data.Navigation.children[0];",
+									"    pm.expect(firstChild.title).to.equal('Thank You');",
+									"    pm.expect(firstChild.href).to.equal('/contact-us/thank-you');",
+									"});",
+									"",
+									"// Test that the second child has the correct title and href",
+									"pm.test(\"Second child has title 'Contact Us' and correct href\", function () {",
+									"    const secondChild = pm.response.json().data.Navigation.children[1];",
+									"    pm.expect(secondChild.title).to.equal('Contact Us');",
+									"    pm.expect(secondChild.href).to.equal('/contact-us/index');",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"setTimeout(function(){}, 3000);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "query NavTest {\n  Navigation(uri:\"/contact-us\"  depth:2 languageId:1 ){\n    children{\n        title\n        href\n    }\n    code\n    folder\n    hash\n    host\n    href        \n    languageId\n    order          \n    target            \n    title                \n    type                    \n  }\n}\n",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						},
+						"description": "Check the Pagination field in a simple collection query, the collection does not have parameters."
+					},
+					"response": []
 				}
 			]
 		}

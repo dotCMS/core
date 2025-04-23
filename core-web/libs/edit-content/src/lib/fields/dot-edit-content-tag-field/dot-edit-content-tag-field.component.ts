@@ -21,8 +21,11 @@ import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
 import { DotEditContentService } from '../../services/dot-edit-content.service';
 
-const TAG_MIN_LENGTH = 2;
-const TAG_DELAY = 300;
+export const AUTO_COMPLETE_MIN_LENGTH = 2;
+
+export const AUTO_COMPLETE_DELAY = 300;
+
+export const AUTO_COMPLETE_UNIQUE = true;
 
 /**
  * Component that handles tag field input using PrimeNG's AutoComplete.
@@ -46,8 +49,9 @@ export class DotEditContentTagFieldComponent {
     #editContentService = inject(DotEditContentService);
     #controlContainer = inject(ControlContainer);
 
-    protected readonly TAG_MIN_LENGTH = TAG_MIN_LENGTH;
-    protected readonly TAG_DELAY = TAG_DELAY;
+    protected readonly AUTO_COMPLETE_MIN_LENGTH = AUTO_COMPLETE_MIN_LENGTH;
+    protected readonly AUTO_COMPLETE_DELAY = AUTO_COMPLETE_DELAY;
+    protected readonly AUTO_COMPLETE_UNIQUE = AUTO_COMPLETE_UNIQUE;
 
     /**
      * Required input that defines the field configuration
@@ -110,6 +114,29 @@ export class DotEditContentTagFieldComponent {
      */
     onSearch(event: AutoCompleteCompleteEvent): void {
         this.#searchTerms$.next(event.query);
+    }
+
+    /**
+     * Handles the Enter key press event in the tag input field.
+     * Prevents form submission and allows custom values while maintaining uniqueness.
+     *
+     * @param {Event} event - The keyboard event object
+     */
+    onEnterKey(event: Event): void {
+        event.preventDefault();
+
+        const input = event.target as HTMLInputElement;
+        const value = input.value.trim();
+
+        if (value) {
+            const currentValues = this.formControl?.value || [];
+            const isDuplicate = currentValues.includes(value);
+
+            if (!isDuplicate) {
+                this.formControl?.setValue([...currentValues, value]);
+                input.value = '';
+            }
+        }
     }
 
     /**
