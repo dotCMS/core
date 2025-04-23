@@ -60,7 +60,6 @@ export function withClient() {
                 },
                 setCustomGraphQL: ({ query, variables }, shouldReturnFullGraphqlResponse) => {
                     patchState(store, {
-                        isClientReady: true,
                         shouldReturnFullGraphqlResponse,
                         graphql: {
                             query,
