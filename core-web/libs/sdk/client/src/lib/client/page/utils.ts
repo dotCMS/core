@@ -72,6 +72,7 @@ export const buildPageQuery = ({
     friendlyName
     workingInode
     url
+    pageURI
     hasLiveVersion
     deleted
     pageUrl
