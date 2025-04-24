@@ -378,6 +378,34 @@
     }
 }
 
+#text-warning-severity {
+    background-color: transparent;
+    color: $black;
+
+    .p-button-label {
+        color: $color-palette-yellow;
+    }
+
+    .p-button-icon,
+    .pi {
+        color: $color-palette-yellow;
+    }
+
+    &:hover {
+        background-color: $color-palette-yellow-op-10;
+    }
+
+    &:active {
+        background-color: $color-palette-yellow-op-20;
+    }
+
+    &:focus {
+        background-color: transparent;
+        @include field-focus;
+        outline-color: $color-palette-yellow-op-20;
+    }
+}
+
 #button-disabled {
     background-color: $color-palette-gray-200;
     color: $color-palette-gray-500;

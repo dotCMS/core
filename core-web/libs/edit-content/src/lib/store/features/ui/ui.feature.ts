@@ -43,7 +43,12 @@ export function withUI() {
                 const uiState = store.uiState();
 
                 return initialState === 'new' ? 0 : uiState.activeSidebarTab;
-            })
+            }),
+
+            /**
+             * Computed property that returns the beta message visibility state
+             */
+            isBetaMessageVisible: computed(() => store.uiState().isBetaMessageVisible)
         })),
         withMethods((store) => ({
             /**
@@ -70,6 +75,17 @@ export function withUI() {
             },
 
             /**
+             * Toggles the beta message visibility and persists it to localStorage
+             */
+            toggleBetaMessage(): void {
+                const newState = {
+                    ...store.uiState(),
+                    isBetaMessageVisible: !store.uiState().isBetaMessageVisible
+                };
+                patchState(store, { uiState: newState });
+            },
+
+            /**
              * Sets the active sidebar tab and persists it to localStorage
              * @param tab - The tab to set as active
              */
@@ -89,6 +105,7 @@ export function withUI() {
                 effect(() => {
                     const uiState = store.uiState();
                     untracked(() => {
+                        console.log('uiState', uiState);
                         saveStoreUIState(uiState);
                     });
                 });

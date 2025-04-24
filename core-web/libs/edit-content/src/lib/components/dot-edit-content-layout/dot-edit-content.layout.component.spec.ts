@@ -129,7 +129,8 @@ describe('EditContentLayoutComponent', () => {
         jest.spyOn(utils, 'getStoredUIState').mockReturnValue({
             activeTab: 0,
             isSidebarOpen: true,
-            activeSidebarTab: 0
+            activeSidebarTab: 0,
+            isBetaMessageVisible: true
         });
     });
 
@@ -192,7 +193,6 @@ describe('EditContentLayoutComponent', () => {
             it('should hide beta message when close button is clicked', fakeAsync(() => {
                 spectator.detectChanges();
                 tick();
-                console.log(spectator.debugElement.nativeElement.innerHTML);
 
                 const closeButton = spectator.query(
                     byTestId('edit-content-layout__beta-message-close-button')

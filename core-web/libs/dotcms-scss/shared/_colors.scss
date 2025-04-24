@@ -110,9 +110,10 @@ $color-palette-yellow-op-08: rgba($color-palette-yellow, 0.8);
 $color-palette-yellow-op-10: rgba($color-palette-yellow, 0.1);
 $color-palette-yellow-op-15: rgba($color-palette-yellow, 0.15);
 $color-palette-yellow-op-20: rgba($color-palette-yellow, 0.2);
+$color-palette-yellow-op-07: rgba($color-palette-yellow, 0.07);
 
 $color-accessible-text-yellow: $color-palette-yellow-shade;
-$color-accessible-text-yellow-bg: $color-palette-yellow-op-08;
+$color-accessible-text-yellow-bg: $color-palette-yellow-tint;
 $color-alert-yellow: $color-palette-yellow;
 $color-alert-yellow-light: $color-palette-yellow-tint;
 
@@ -125,7 +126,7 @@ $color-palette-red-op-08: rgba($color-palette-red, 0.8);
 $color-palette-red-op-10: rgba($color-palette-red, 0.1);
 $color-palette-red-op-15: rgba($color-palette-red, 0.15);
 $color-palette-red-op-20: rgba($color-palette-red, 0.2);
-
+$color-palette-red-op-07: rgba($color-palette-red, 0.07);
 $color-accessible-text-red: $color-palette-red-shade;
 $color-accessible-text-red-bg: $color-palette-red-op-08;
 $color-alert-red: $color-palette-red;
@@ -187,6 +188,7 @@ $color-palette-blue-op-08: rgba($color-palette-blue, 0.8);
 $color-palette-blue-op-10: rgba($color-palette-blue, 0.1);
 $color-palette-blue-op-15: rgba($color-palette-blue, 0.15);
 $color-palette-blue-op-20: rgba($color-palette-blue, 0.2);
+$color-palette-blue-op-07: rgba($color-palette-blue, 0.07);
 
 $color-accessible-text-blue: $color-palette-blue-shade;
 $color-accessible-text-blue-bg: $color-palette-blue-op-08;

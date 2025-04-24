@@ -130,6 +130,10 @@ a.p-button.p-button-text {
     &.p-button-success {
         @extend #text-success-severity;
     }
+
+    &.p-button-warning {
+        @extend #text-warning-severity;
+    }
 }
 
 // Shared disabled styles

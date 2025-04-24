@@ -40,9 +40,15 @@
     position: relative;
     background: transparent;
     border: 1px solid transparent;
+    min-height: 38px;
+    display: flex;
+    align-content: center;
+    flex-wrap: wrap;
 
     .p-message-wrapper {
-        padding: $spacing-0 $spacing-1;
+        padding: 0 $spacing-4;
+        height: 100%;
+        width: 100%;
     }
 
     .p-message-text {
@@ -58,13 +64,9 @@
 
 /* Specific styles for each message type */
 .p-message.p-message-info {
-    background: transparent;
-    border-color: $color-palette-blue;
-    color: $black;
-
-    &::before {
-        background: $color-palette-blue;
-    }
+    background: $color-palette-blue-op-07;
+    border: none;
+    color: $color-palette-blue;
 
     .p-message-icon {
         color: $color-palette-blue;
@@ -81,28 +83,21 @@
     }
 }
 
-.p-message.p-message-warn {
-    background: transparent;
-    border-color: $color-palette-yellow;
-    color: $black;
+.p-message.p-message-warning {
+    background: $color-accessible-text-yellow-bg;
+    border: none;
+    color: $color-accessible-text-yellow;
 
-    &::before {
-        background: $color-palette-yellow;
-    }
-
-    .p-message-icon {
-        color: $color-palette-yellow;
+    .p-message-icon,
+    .p-message-text {
+        color: $color-accessible-text-yellow;
     }
 }
 
 .p-message.p-message-error {
-    background: transparent;
-    border-color: $color-palette-red;
-    color: $black;
-
-    &::before {
-        background: $color-palette-red;
-    }
+    background: $color-palette-red-op-07;
+    border: none;
+    color: $color-palette-red;
 
     .p-message-icon {
         color: $color-palette-red;

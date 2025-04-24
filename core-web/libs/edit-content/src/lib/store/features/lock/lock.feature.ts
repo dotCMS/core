@@ -46,29 +46,29 @@ export function withLock() {
              *
              * @returns string - Localized message indicating who locked the content or empty string if not locked
              */
-            lockWarningMessage: computed(() => {
-                const contentlet = store.contentlet();
-                const canUserLock = store.canLock();
-                const lockedBy = contentlet?.lockedBy;
+            lockWarningMessage: computed((): string | null => {
+                const userCanLock = store.canLock();
+                const currentUser = store.currentUser();
+                const { lockedBy } = store.contentlet();
 
-                // content is not locked.
-                if (!lockedBy) {
-                    return '';
+                const isLockedByCurrentUser = currentUser?.userId === lockedBy?.userId;
+
+                // content is not locked or locked by the current user
+                if (!lockedBy || isLockedByCurrentUser) {
+                    return null;
                 }
 
-                const currentUser = store.currentUser();
-                const isLockedByCurrentUser = currentUser.userId === lockedBy.userId;
+                const userDisplay = lockedBy.firstName + ' ' + lockedBy.lastName;
 
-                const userDisplay = isLockedByCurrentUser
-                    ? dotMessageService.get('edit.content.locked.by.you')
-                    : lockedBy.firstName + ' ' + lockedBy.lastName;
+                // If user doesn't have permission to lock, use the no permission message
+                if (!userCanLock) {
+                    return dotMessageService.get(
+                        'edit.content.locked.no.permission.user',
+                        userDisplay
+                    );
+                }
 
-                return dotMessageService.get(
-                    canUserLock
-                        ? 'edit.content.locked.toolbar.message'
-                        : 'edit.content.locked.no.permission.user',
-                    userDisplay
-                );
+                return dotMessageService.get('edit.content.locked.by.user', userDisplay);
             })
         })),
 

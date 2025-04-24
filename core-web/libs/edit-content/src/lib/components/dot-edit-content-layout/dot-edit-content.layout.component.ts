@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, model, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, model } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { ButtonModule } from 'primeng/button';
@@ -65,14 +65,6 @@ export class DotEditContentLayoutComponent {
     readonly $store: InstanceType<typeof DotEditContentStore> = inject(DotEditContentStore);
 
     /**
-     * Whether the beta message should be shown.
-     *
-     * @type {boolean}
-     * @memberof EditContentLayoutComponent
-     */
-    readonly $showBetaMessage = signal(true);
-
-    /**
      * Whether the select workflow dialog should be shown.
      *
      * @type {boolean}
@@ -104,7 +96,10 @@ export class DotEditContentLayoutComponent {
      *
      * @memberof EditContentLayoutComponent
      */
-    closeBetaMessage() {
-        this.$showBetaMessage.set(false);
+    closeMessage(message: 'betaMessage') {
+        if (message === 'betaMessage') {
+            // We need to store this in the store to persist the state
+            this.$store.toggleBetaMessage();
+        }
     }
 }
