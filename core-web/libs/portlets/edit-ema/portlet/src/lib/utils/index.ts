@@ -1,5 +1,6 @@
 import { Params } from '@angular/router';
 
+import { UVE_MODE } from '@dotcms/client';
 import { CurrentUser } from '@dotcms/dotcms-js';
 import {
     DEFAULT_VARIANT_ID,
@@ -232,7 +233,12 @@ export function createPageApiUrlWithQueryParams(
         language_id: params?.language_id ?? '1',
         'com.dotmarketing.persona.id':
             params?.['com.dotmarketing.persona.id'] ?? DEFAULT_PERSONA.identifier,
-        variantName: params?.variantName ?? DEFAULT_VARIANT_ID
+        variantName: params?.variantName ?? DEFAULT_VARIANT_ID,
+        /**
+         * We add this "mode" param to avoid issue when the UVE render a "local" application as headless
+         * More info: https://github.com/dotCMS/core/issues/31908#issuecomment-2824517688
+         * */
+        mode: params.mode ?? (params?.editorMode === UVE_MODE.PREVIEW ? 'PREVIEW' : 'EDIT_MODE')
     };
 
     // Filter out undefined values and url
