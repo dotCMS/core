@@ -49,7 +49,13 @@ export function withLock() {
             lockWarningMessage: computed((): string | null => {
                 const userCanLock = store.canLock();
                 const currentUser = store.currentUser();
-                const { lockedBy } = store.contentlet();
+                const contentlet = store.contentlet();
+
+                if (!contentlet) {
+                    return null;
+                }
+
+                const { lockedBy } = contentlet;
 
                 const isLockedByCurrentUser = currentUser?.userId === lockedBy?.userId;
 

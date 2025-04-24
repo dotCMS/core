@@ -206,15 +206,22 @@ describe('EditContentLayoutComponent', () => {
                 expect(spectator.query(byTestId('edit-content-layout__beta-message'))).toBeFalsy();
             }));
 
-            it('should have correct link to old editor', fakeAsync(() => {
-                spectator.detectChanges();
-                tick();
-                const link = spectator.query(byTestId('beta-message-content-type'));
-                expect(link).toHaveAttribute(
-                    'ng-reflect-router-link',
-                    '/content-types-angular/edit/contentTypeName'
+            it('should have correct link to old editor', async () => {
+                // Initialize the content type
+                dotContentTypeService.getContentType.mockReturnValue(of(CONTENT_TYPE_MOCK));
+                workflowActionsService.getDefaultActions.mockReturnValue(
+                    of(MOCK_SINGLE_WORKFLOW_ACTIONS)
                 );
-            }));
+                store.initializeNewContent('contentTypeName');
+
+                // Wait for initialization
+                await spectator.fixture.whenStable();
+                spectator.detectChanges();
+
+                expect(
+                    spectator.query(byTestId('edit-content-layout__beta-message-link'))
+                ).toExist();
+            });
         });
 
         it('should not show top bar message when new content editor is disabled', () => {

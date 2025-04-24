@@ -105,7 +105,6 @@ export function withUI() {
                 effect(() => {
                     const uiState = store.uiState();
                     untracked(() => {
-                        console.log('uiState', uiState);
                         saveStoreUIState(uiState);
                     });
                 });
