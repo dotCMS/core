@@ -7,7 +7,7 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { DotActionMenuItem } from '@dotcms/dotcms-models';
 import { DotActionMenuButtonComponent, DotMenuComponent } from '@dotcms/ui';
-import { createFakeBaseField, createFakeContentType } from '@dotcms/utils-testing';
+import { createFakeContentType } from '@dotcms/utils-testing';
 
 describe('ActionMenuButtonComponent', () => {
     let spectator: Spectator<DotActionMenuButtonComponent>;

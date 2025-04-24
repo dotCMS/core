@@ -1,9 +1,16 @@
 import { h } from '@stencil/core';
 
-import { ContentTypeCheckboxField, ContentTypeMultiSelectField, ContentTypeRadioField, ContentTypeSelectField, ContentTypeTextAreaField, ContentTypeTextField, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import {
+    ContentTypeCheckboxField,
+    ContentTypeMultiSelectField,
+    ContentTypeRadioField,
+    ContentTypeSelectField,
+    ContentTypeTextAreaField,
+    ContentTypeTextField,
+    DotCMSContentTypeField
+} from '@dotcms/dotcms-models';
 
 import { getFieldVariableValue, setAttributesToTag } from '.';
-
 
 export const DotFormFields = {
     Text: (field: ContentTypeTextField) => (

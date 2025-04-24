@@ -1,6 +1,6 @@
 import { DotCMSContentTypeField, DotCMSContentTypeLayoutRow } from '@dotcms/dotcms-models';
 
-export const basicField: DotCMSContentTypeField =   {
+export const basicField: DotCMSContentTypeField = {
     clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
     contentTypeId: '',
     dataType: 'TEXT',
