@@ -14,6 +14,7 @@ import { fakeAsync, tick } from '@angular/core/testing';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { MessageService } from 'primeng/api';
+import { ButtonModule } from 'primeng/button';
 import { ConfirmDialog } from 'primeng/confirmdialog';
 import { DialogService } from 'primeng/dynamicdialog';
 import { MessagesModule } from 'primeng/messages';
@@ -24,11 +25,13 @@ import {
     DotCurrentUserService,
     DotHttpErrorManagerService,
     DotLanguagesService,
+    DotMessageService,
     DotWorkflowActionsFireService,
     DotWorkflowsActionsService,
     DotWorkflowService
 } from '@dotcms/data-access';
 import { DotLanguage } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 import {
     MOCK_MULTIPLE_WORKFLOW_ACTIONS,
     MOCK_SINGLE_WORKFLOW_ACTIONS
@@ -36,9 +39,6 @@ import {
 
 import { DotEditContentLayoutComponent } from './dot-edit-content.layout.component';
 
-import { DotMessageService } from '@dotcms/data-access';
-import { DotMessagePipe } from '@dotcms/ui';
-import { ButtonModule } from 'primeng/button';
 import { DotEditContentService } from '../../services/dot-edit-content.service';
 import { DotEditContentStore } from '../../store/edit-content.store';
 import { MOCK_CONTENTLET_1_TAB } from '../../utils/edit-content.mock';
@@ -199,7 +199,7 @@ describe('EditContentLayoutComponent', () => {
                 ) as HTMLButtonElement;
                 expect(closeButton).toBeTruthy();
 
-                closeButton.click();
+                spectator.click(closeButton);
                 spectator.detectChanges();
                 tick();
 
@@ -302,5 +302,67 @@ describe('EditContentLayoutComponent', () => {
             );
             expect(warningMessage).toBeFalsy();
         }));
+
+        describe('Warning Messages', () => {
+            beforeEach(fakeAsync(() => {
+                dotContentTypeService.getContentType.mockReturnValue(of(CONTENT_TYPE_MOCK));
+                workflowActionsService.getDefaultActions.mockReturnValue(
+                    of(MOCK_SINGLE_WORKFLOW_ACTIONS)
+                );
+                store.initializeNewContent('contentTypeName');
+                spectator.detectChanges();
+                tick();
+            }));
+
+            it('should show lock warning message when lockWarningMessage signal returns a message', fakeAsync(() => {
+                const mockMessage = 'Lock warning message';
+                jest.spyOn(store, 'lockWarningMessage').mockReturnValue(mockMessage);
+                spectator.detectChanges();
+                tick();
+
+                const warningElement = spectator.query(
+                    byTestId('edit-content-layout__lock-warning')
+                );
+                const warningContent = spectator.query(
+                    byTestId('edit-content-layout__lock-warning-content')
+                );
+
+                expect(warningElement).toBeTruthy();
+                expect(warningContent).toBeTruthy();
+                expect(warningContent.innerHTML).toContain(mockMessage);
+            }));
+
+            it('should show select workflow warning when showSelectWorkflowWarning signal returns true', fakeAsync(() => {
+                jest.spyOn(store, 'showSelectWorkflowWarning').mockReturnValue(true);
+                spectator.detectChanges();
+                tick();
+
+                const warningElement = spectator.query(
+                    byTestId('edit-content-layout__select-workflow-warning')
+                );
+                const selectWorkflowLink = spectator.query(byTestId('select-workflow-link'));
+
+                expect(warningElement).toBeTruthy();
+                expect(selectWorkflowLink).toBeTruthy();
+            }));
+
+            it('should trigger selectWorkflow when clicking on workflow warning link', fakeAsync(() => {
+                jest.spyOn(store, 'showSelectWorkflowWarning').mockReturnValue(true);
+                spectator.detectChanges();
+                tick();
+
+                const selectWorkflowLink = spectator.query(byTestId('select-workflow-link'));
+                expect(selectWorkflowLink).toBeTruthy();
+
+                const event = new MouseEvent('click');
+                Object.defineProperty(event, 'preventDefault', { value: jest.fn() });
+                selectWorkflowLink.dispatchEvent(event);
+
+                expect(event.preventDefault).toHaveBeenCalled();
+
+                // Verify that the showDialog signal was set to true
+                expect(spectator.component.$showDialog()).toBe(true);
+            }));
+        });
     });
 });

@@ -53,12 +53,13 @@
         }
 
         @if (lockWarningMessage) {
-            <p-messages severity="warning">
+            <p-messages severity="warning" data-testId="edit-content-layout__lock-warning">
                 <ng-template pTemplate>
                     <div class="flex w-full gap-1">
                         <i class="pi pi-exclamation-triangle"></i>
                         <div
                             class="flex align-items-center mr-auto gap-1"
+                            data-testId="edit-content-layout__lock-warning-content"
                             [innerHTML]="lockWarningMessage"></div>
                     </div>
                 </ng-template>
