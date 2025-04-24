@@ -34,7 +34,6 @@ jobs:
       - name: Add Customer Deployed Labels
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITHUB_TOKEN_DOTCMS: ${{ secrets.GITHUB_TOKEN_DOTCMS }}
         run: |
           # Determine the release label
           if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
