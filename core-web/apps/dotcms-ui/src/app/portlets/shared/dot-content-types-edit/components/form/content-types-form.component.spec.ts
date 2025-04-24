@@ -227,7 +227,8 @@ describe('ContentTypesFormComponent', () => {
 
     it('should be invalid by default', () => {
         comp.data = createFakeContentType({
-            baseType: 'CONTENT'
+            baseType: 'CONTENT',
+            name: ''
         });
         fixture.detectChanges();
         expect(comp.form.valid).toBe(false);
@@ -459,7 +460,8 @@ describe('ContentTypesFormComponent', () => {
     it('should set value to the form', () => {
         spyOn(dotLicenseService, 'isEnterprise').and.returnValue(of(true));
 
-        const base = {
+        const mockContentType = createFakeContentType({
+            baseType: 'CONTENT',
             icon: null,
             clazz: 'clazz',
             defaultType: false,
@@ -472,29 +474,39 @@ describe('ContentTypesFormComponent', () => {
             publishDateVar: 'publishDateVar',
             system: false,
             detailPage: 'detail-page',
-            urlMapPattern: '/url/map'
-        };
-
-        comp.data = createFakeContentType({
-            ...base,
-            baseType: 'CONTENT'
+            urlMapPattern: '/url/map',
+            workflows: [
+                {
+                    ...mockWorkflows[2],
+                    creationDate: new Date(),
+                    modDate: new Date()
+                }
+            ]
         });
+
+        comp.data = mockContentType;
         comp.layout = layout;
 
         fixture.detectChanges();
 
         expect(comp.form.value).toEqual({
-            ...base,
+            defaultType: mockContentType.defaultType,
+            icon: mockContentType.icon,
+            fixed: mockContentType.fixed,
+            system: mockContentType.system,
+            clazz: mockContentType.clazz,
+            description: mockContentType.description,
+            host: mockContentType.host,
+            folder: mockContentType.folder,
+            expireDateVar: mockContentType.expireDateVar,
+            name: mockContentType.name,
+            publishDateVar: mockContentType.publishDateVar,
+            detailPage: mockContentType.detailPage,
+            urlMapPattern: mockContentType.urlMapPattern,
             systemActionMappings: {
                 NEW: ''
             },
-            workflows: [
-                {
-                    ...mockWorkflows[2],
-                    creationDate: jasmine.any(Date),
-                    modDate: jasmine.any(Date)
-                }
-            ],
+            workflows: mockContentType.workflows,
             newEditContent: false
         });
     });
@@ -699,12 +711,27 @@ describe('ContentTypesFormComponent', () => {
 
     describe('send data with valid form', () => {
         let data;
+        const mockData = createFakeContentType({
+            baseType: 'CONTENT',
+            workflows: [
+                {
+                    id: 'd61a59e1-a49c-46f2-a929-db2b4bfa88b2',
+                    creationDate: new Date(),
+                    name: 'System Workflow',
+                    description: '',
+                    archived: false,
+                    mandatory: false,
+                    defaultScheme: false,
+                    modDate: new Date(),
+                    entryActionId: null,
+                    system: true
+                }
+            ]
+        });
 
         beforeEach(() => {
             spyOn(dotLicenseService, 'isEnterprise').and.returnValue(of(true));
-            comp.data = createFakeContentType({
-                baseType: 'CONTENT'
-            });
+            comp.data = mockData;
             fixture.detectChanges();
             data = null;
             spyOn(comp, 'submitForm').and.callThrough();
@@ -716,35 +743,23 @@ describe('ContentTypesFormComponent', () => {
         it('should submit form correctly', () => {
             const metadata = {};
             metadata[FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED] = false;
+
             comp.submitForm();
 
             expect(data).toEqual({
-                icon: null,
-                clazz: '',
-                description: '',
-                host: '',
-                defaultType: false,
-                fixed: false,
-                folder: '',
+                icon: mockData.icon,
+                clazz: mockData.clazz,
+                description: mockData.description,
+                host: mockData.host,
+                defaultType: mockData.defaultType,
+                fixed: mockData.fixed,
+                folder: mockData.folder,
                 system: false,
                 name: 'A content type name',
-                workflows: [
-                    {
-                        id: 'd61a59e1-a49c-46f2-a929-db2b4bfa88b2',
-                        creationDate: jasmine.any(Date),
-                        name: 'System Workflow',
-                        description: '',
-                        archived: false,
-                        mandatory: false,
-                        defaultScheme: false,
-                        modDate: jasmine.any(Date),
-                        entryActionId: null,
-                        system: true
-                    }
-                ],
+                workflows: mockData.workflows,
                 systemActionMappings: { NEW: '' },
-                detailPage: '',
-                urlMapPattern: '',
+                detailPage: mockData.detailPage,
+                urlMapPattern: mockData.urlMapPattern,
                 metadata
             });
         });

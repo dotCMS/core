@@ -213,7 +213,7 @@ export const dotContentCompareTableDataMock: DotContentCompareTableData = {
         {
             clazz: 'com.dotcms.contenttype.model.field.ImmutableImageField',
             contentTypeId: 'f778408c6c5454a26547b633b7d803d5',
-            dataType: 'SYSTEM',
+            dataType: 'TEXT',
             fieldType: 'Image',
             fieldTypeLabel: 'Image',
             fieldVariables: [],
