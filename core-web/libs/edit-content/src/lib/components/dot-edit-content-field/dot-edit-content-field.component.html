@@ -68,7 +68,23 @@
                 [attr.data-testId]="'field-' + field.variable" />
         }
     }
-    @case (fieldTypes.DATE || fieldTypes.DATE_AND_TIME || fieldTypes.TIME) {
+    @case (fieldTypes.DATE) {
+        @defer (on immediate) {
+            <ng-container [ngTemplateOutlet]="labelTemplate" />
+            <dot-edit-content-calendar-field
+                [field]="field"
+                [attr.data-testId]="'field-' + field.variable" />
+        }
+    }
+    @case (fieldTypes.DATE_AND_TIME) {
+        @defer (on immediate) {
+            <ng-container [ngTemplateOutlet]="labelTemplate" />
+            <dot-edit-content-calendar-field
+                [field]="field"
+                [attr.data-testId]="'field-' + field.variable" />
+        }
+    }
+    @case (fieldTypes.TIME) {
         @defer (on immediate) {
             <ng-container [ngTemplateOutlet]="labelTemplate" />
             <dot-edit-content-calendar-field

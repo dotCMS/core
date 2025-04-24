@@ -1,9 +1,9 @@
 import { h } from '@stencil/core';
-import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { ContentTypeTextAreaField, ContentTypeTextField, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { getFieldVariableValue, setAttributesToTag } from '../utils';
 
 export const DotFormFields = {
-    Text: (field: DotCMSContentTypeField) => (
+    Text: (field: ContentTypeTextField) => (
         <dot-textfield
             hint={field.hint}
             label={field.name}
@@ -16,7 +16,7 @@ export const DotFormFields = {
             value={field.defaultValue}
         />
     ),
-    Textarea: (field: DotCMSContentTypeField) => (
+    Textarea: (field: ContentTypeTextAreaField) => (
         <dot-textarea
             hint={field.hint}
             label={field.name}

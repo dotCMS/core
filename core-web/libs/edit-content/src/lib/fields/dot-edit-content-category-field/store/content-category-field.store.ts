@@ -83,12 +83,12 @@ export const CategoryFieldStore = signalStore(
         /**
          * Get the root category inode.
          */
-        rootCategoryInode: computed(() => store.field().values),
+        rootCategoryInode: computed(() => store.field()?.values),
 
         /**
          * Retrieves the value of the field variable.
          */
-        fieldVariableName: computed(() => store.field().variable),
+        fieldVariableName: computed(() => store.field()?.variable),
 
         /**
          * Status of the List Component

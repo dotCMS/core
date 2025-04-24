@@ -27,6 +27,6 @@ export class DotEditContentTextFieldComponent {
     $inputTextOptions = computed(() => {
         const field = this.$field();
 
-        return INPUT_TEXT_OPTIONS[field.fieldType];
+        return INPUT_TEXT_OPTIONS[field.dataType];
     });
 }

@@ -1,11 +1,13 @@
-import { DotFormFields } from './fields';
-import { getStringFromDotKeyArray, isStringType } from '../../../utils';
 import {
     DotCMSContentTypeField,
     DotCMSContentTypeLayoutRow,
     DotCMSContentTypeLayoutColumn,
     DotCMSContentTypeFieldVariable
 } from '@dotcms/dotcms-models';
+
+import { DotFormFields } from './fields';
+
+import { getStringFromDotKeyArray, isStringType } from '../../../utils';
 
 export const DOT_ATTR_PREFIX = 'dot';
 
@@ -32,6 +34,7 @@ const pipedValuesToObject = (values: string): { [key: string]: string } => {
     return isStringType(values)
         ? values.split(',').reduce((acc, item) => {
               const [key, value] = item.split('|');
+
               return {
                   ...acc,
                   [key]: value
@@ -65,6 +68,7 @@ export function setDotAttributesToElement(element: Element, attributes: Attr[]):
  */
 export function getDotAttributesFromElement(attributes: Attr[], attrException: string[]): Attr[] {
     const exceptions = attrException.map((attr: string) => attr.toUpperCase());
+
     return attributes.filter(
         (item: Attr) => !exceptions.includes(item.name.toUpperCase()) && isDotAttribute(item.name)
     );
@@ -77,6 +81,7 @@ export function getDotAttributesFromElement(attributes: Attr[], attrException: s
  */
 export const shouldShowField = (field: DotCMSContentTypeField, fieldsToShow: string): boolean => {
     const fields2Show = fieldsToShow ? fieldsToShow.split(',') : [];
+
     return !fields2Show.length || fields2Show.includes(field.variable);
 };
 
@@ -93,6 +98,7 @@ export const getFieldVariableValue = (
     const variable = fieldVariables.filter(
         (item: DotCMSContentTypeFieldVariable) => item.key.toUpperCase() === key.toUpperCase()
     )[0];
+
     return variable && variable.value;
 };
 
@@ -103,6 +109,7 @@ export const getFieldVariableValue = (
  */
 export const getErrorMessage = (message: string): string => {
     const messageObj = JSON.parse(message);
+
     return messageObj.errors.length && messageObj.errors[0].message
         ? messageObj.errors[0].message
         : message;
@@ -131,6 +138,7 @@ const fieldParamsConversionFromBE = {
             });
             field.defaultValue = getStringFromDotKeyArray(valuesArray);
         }
+
         return DotFormFields['Key-Value'](field);
     }
 };

@@ -185,6 +185,7 @@ export interface DotCMSContentTypeBaseField {
     variable: string;
     velocityVarName?: string;
     metadata?: DotCMSContentTypeFieldMetadata;
+    values?: string;
 }
 
 // Layout Fields

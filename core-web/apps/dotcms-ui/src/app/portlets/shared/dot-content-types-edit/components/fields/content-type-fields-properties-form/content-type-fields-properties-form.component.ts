@@ -219,4 +219,12 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
             delete this.formFieldData['name'];
         }
     }
+
+    get isRelationshipField(): boolean {
+        if (this.formFieldData?.fieldType === 'Relationship' && this.formFieldData?.relationships) {
+            return true;
+        }
+
+        return false;
+    }
 }
