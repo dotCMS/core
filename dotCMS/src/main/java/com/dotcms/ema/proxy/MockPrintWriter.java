@@ -21,7 +21,6 @@ public class MockPrintWriter extends PrintWriter {
         } catch (IOException e) {
             Logger.error(MockPrintWriter.class,e);
         }
-        super.write(s);
     }
 
     @Override
@@ -31,6 +30,5 @@ public class MockPrintWriter extends PrintWriter {
         } catch (IOException e) {
             Logger.error(MockPrintWriter.class, e);
         }
-        super.println(x);
     }
 }
