@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "46bc7f39-611f-41d2-809a-46d3bd4d1887",
+		"_postman_id": "312e4d4a-e5c9-4630-b760-e9262ab655b0",
 		"name": "ContentImportResource",
 		"description": "Postman collection for testing the ContentImportResource API endpoints.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
@@ -3434,6 +3434,389 @@
 				}
 			],
 			"description": "Test the param stopOnError when passed to the endpoint we should get a report saying that not alll the records were processed"
+		},
+		{
+			"name": "Test request format validations",
+			"item": [
+				{
+					"name": "Validate empty form",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Response status is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test(\"Response body should contains the expected errors\", function () {",
+									"    const responseBody = pm.response.json();",
+									"    pm.expect(responseBody).to.be.an(\"object\").and.to.have.property(\"entity\");",
+									"    pm.expect(responseBody.entity).to.be.an(\"object\");",
+									"    pm.expect(responseBody.entity).to.have.property(\"result\").is.not.empty;",
+									"    pm.expect(responseBody.entity.result).to.have.property(\"error\").is.not.empty;",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "multipart/form-data"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/ContentImportResource/test-import-content-job-final.csv"
+								},
+								{
+									"key": "form",
+									"value": "{}",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/content/_import/_validate",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"content",
+								"_import",
+								"_validate"
+							]
+						},
+						"description": "Creates a new job in the specified queue."
+					},
+					"response": []
+				},
+				{
+					"name": "Validate empty form Copy",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Response status is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test(\"Response body should contains the expected errors\", function () {",
+									"    const responseBody = pm.response.json();",
+									"    pm.expect(responseBody).to.be.an(\"object\").and.to.have.property(\"entity\");",
+									"    pm.expect(responseBody.entity).to.be.an(\"object\");",
+									"    pm.expect(responseBody.entity).to.have.property(\"result\").is.not.empty;",
+									"    pm.expect(responseBody.entity.result).to.have.property(\"error\").is.not.empty;",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "multipart/form-data"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/ContentImportResource/test-import-content-job-final.csv"
+								},
+								{
+									"key": "form",
+									"value": "{}",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/content/_import/_validate",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"content",
+								"_import",
+								"_validate"
+							]
+						},
+						"description": "Creates a new job in the specified queue."
+					},
+					"response": []
+				},
+				{
+					"name": "Validate invalid JSON format 1",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Response status is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test(\"Response body should contains the expected errors\", function () {",
+									"    const responseBody = pm.response.json();",
+									"    pm.expect(responseBody).to.be.an(\"object\").and.to.have.property(\"entity\");",
+									"    pm.expect(responseBody.entity).to.be.an(\"object\");",
+									"    pm.expect(responseBody.entity).to.have.property(\"result\").is.not.empty;",
+									"    pm.expect(responseBody.entity.result).to.have.property(\"error\").is.not.empty;",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "multipart/form-data"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/ContentImportResource/test-import-content-job-final.csv"
+								},
+								{
+									"key": "form",
+									"value": "{",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/content/_import/_validate",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"content",
+								"_import",
+								"_validate"
+							]
+						},
+						"description": "Creates a new job in the specified queue."
+					},
+					"response": []
+				},
+				{
+					"name": "Validate invalid JSON format 2",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Response status is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test(\"Response body should contains the expected errors\", function () {",
+									"    const responseBody = pm.response.json();",
+									"    pm.expect(responseBody).to.be.an(\"object\").and.to.have.property(\"entity\");",
+									"    pm.expect(responseBody.entity).to.be.an(\"object\");",
+									"    pm.expect(responseBody.entity).to.have.property(\"result\").is.not.empty;",
+									"    pm.expect(responseBody.entity.result).to.have.property(\"error\").is.not.empty;",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "multipart/form-data"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/ContentImportResource/test-import-content-job-final.csv"
+								},
+								{
+									"key": "form",
+									"value": "}",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/content/_import/_validate",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"content",
+								"_import",
+								"_validate"
+							]
+						},
+						"description": "Creates a new job in the specified queue."
+					},
+					"response": []
+				},
+				{
+					"name": "Validate declared form but not form set",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Response status is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test(\"Response body should contains the expected errors\", function () {",
+									"    const responseBody = pm.response.json();",
+									"    pm.expect(responseBody).to.be.an(\"object\").and.to.have.property(\"entity\");",
+									"    pm.expect(responseBody.entity).to.be.an(\"object\");",
+									"    pm.expect(responseBody.entity).to.have.property(\"result\").is.not.empty;",
+									"    pm.expect(responseBody.entity.result).to.have.property(\"error\").is.not.empty;",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "multipart/form-data"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/ContentImportResource/test-import-content-job-final.csv"
+								},
+								{
+									"key": "form",
+									"value": "",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/content/_import/_validate",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"content",
+								"_import",
+								"_validate"
+							]
+						},
+						"description": "Creates a new job in the specified queue."
+					},
+					"response": []
+				},
+				{
+					"name": "Validate No file No form",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Response status is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test(\"Response body should contains the expected errors\", function () {",
+									"    const responseBody = pm.response.json();",
+									"    pm.expect(responseBody).to.be.an(\"object\").and.to.have.property(\"message\");",
+									"    pm.expect(responseBody.message).is.not.empty;",
+									"    pm.expect(responseBody.message).contains(\"[Missing start boundary]\")",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "multipart/form-data"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": []
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/content/_import/_validate",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"content",
+								"_import",
+								"_validate"
+							]
+						},
+						"description": "Creates a new job in the specified queue."
+					},
+					"response": []
+				}
+			]
 		}
 	],
 	"auth": {
