@@ -18,7 +18,8 @@ const pageParams = {
     language_id: '1',
     'com.dotmarketing.persona.id': 'dot:persona',
     variantName: 'DEFAULT',
-    clientHost: 'http://localhost:3000'
+    clientHost: 'http://localhost:3000',
+    mode: 'EDIT_MODE'
 };
 
 const initialState: UVEState = {
