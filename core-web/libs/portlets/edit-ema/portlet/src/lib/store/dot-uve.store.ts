@@ -4,10 +4,10 @@ import { computed, untracked } from '@angular/core';
 
 import { UVE_MODE } from '@dotcms/uve/types';
 
+import { withSave } from './features/editor/save/withSave';
 import { withEditor } from './features/editor/withEditor';
 import { withFlags } from './features/flags/withFlags';
 import { withLayout } from './features/layout/withLayout';
-import { withLoad } from './features/load/withLoad';
 import { withTrack } from './features/track/withTrack';
 import { DotUveViewParams, ShellProps, TranslateProps, UVEState } from './models';
 
@@ -176,7 +176,8 @@ export const UVEStore = signalStore(
             }
         };
     }),
-    withLoad(),
+    // withLoad(),
+    withSave(),
     withLayout(),
     withEditor(),
     withTrack(),
