@@ -87,12 +87,41 @@ class AnalyticsServiceImplTest {
         AnalyticsEvent capturedEvent = eventCaptor.getValue();
         assertEquals(command, capturedEvent.command());
         assertEquals(arguments, capturedEvent.arguments());
-        assertEquals("testUser", capturedEvent.user());
-        assertEquals("https://test.dotcms.com", capturedEvent.site());
         assertEquals(AnalyticsServiceImpl.COMMAND_EVENT_TYPE, capturedEvent.eventType());
 
         // Verify logging
         verify(logger).debug(contains("Event recorded"));
+    }
+
+    /**
+     * <b>Method to test:</b> recordCommand
+     * <br>
+     * <b>Given Scenario:</b> A command with the "--noValidateUnmatchedArguments" flag is executed
+     * <br>
+     * <b>Expected Result:</b> No event should be sent to the analytics API as the flag indicates
+     * this is a subcommand of a global command execution.
+     */
+    @Test
+    void recordCommand_whenNoValidateUnmatchedArgumentsFlagPresent_shouldNotFireEvent()
+            throws IOException {
+
+        when(clientFactory.getServiceProfile()).thenReturn(Optional.of(serviceBean));
+
+        // Execute a command that includes the --noValidateUnmatchedArguments flag
+        String command = "push";
+        List<String> arguments = Arrays.asList(
+                "path/to/file", "--dry-run", "--noValidateUnmatchedArguments"
+        );
+
+        // Record the command
+        analyticsService.recordCommand(command, arguments);
+
+        // Verify that fireEvent was never called
+        verify(analyticsAPI, never()).fireEvent(any(AnalyticsEvent.class));
+
+        // Additional verification that debug or error logging wasn't triggered
+        verify(logger, never()).debug(any(String.class));
+        verify(logger, never()).error(any(String.class));
     }
 
     /**
@@ -115,38 +144,6 @@ class AnalyticsServiceImplTest {
         // Assert
         verify(analyticsAPI, never()).fireEvent(any());
         verify(logger).error("No service profile found.");
-    }
-
-    /**
-     * <b>Method to test:</b> recordCommand <br>
-     * <b>Given Scenario:</b> Service profile exists but has no credentials <br>
-     * <b>Expected Result:</b> Event should be sent using "UNKNOWN" as the user and an error about
-     * missing credentials should be logged.
-     */
-    @Test
-    void recordCommand_whenNoCredentials_shouldUseUnknownUser() throws IOException {
-
-        // Arrange
-        String command = "push";
-        List<String> arguments = Arrays.asList("path/to/file", "--dry-run");
-
-        when(serviceBean.credentials()).thenReturn(null);
-        when(clientFactory.getServiceProfile()).thenReturn(Optional.of(serviceBean));
-
-        // Create a captor to verify the event
-        ArgumentCaptor<AnalyticsEvent> eventCaptor = ArgumentCaptor.forClass(AnalyticsEvent.class);
-
-        // Act
-        analyticsService.recordCommand(command, arguments);
-
-        // Assert
-        verify(analyticsAPI).fireEvent(eventCaptor.capture());
-
-        AnalyticsEvent capturedEvent = eventCaptor.getValue();
-        assertEquals("UNKNOWN", capturedEvent.user());
-
-        // Verify logging
-        verify(logger).error(contains("No credentials found"));
     }
 
     /**

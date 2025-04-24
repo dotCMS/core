@@ -25,6 +25,10 @@ const store = {
         palette: {
             paletteClass: 'palette-class'
         }
+    }),
+    pageParams: () => ({
+        language_id: '3',
+        personaId: '123'
     })
 };
 
@@ -115,6 +119,21 @@ describe('EditEmaNavigationBarComponent', () => {
                 expect(links[2].getAttribute('ng-reflect-router-link')).toBe('rules');
                 expect(links[3].getAttribute('ng-reflect-router-link')).toBe('experiments');
                 expect(links[4].getAttribute('ng-reflect-router-link')).toBeNull();
+            });
+
+            it('should apply correct query params when clicked', () => {
+                // Get expected values from store
+                const expectedParams = store.pageParams();
+
+                // Simulate a click on the first navigation item (Content)
+                const contentLink = spectator.query(byText('Content'));
+                spectator.click(contentLink);
+
+                // Check that router has the expected query params
+                // Note: In the test environment, the path may not change as expected,
+                // but we can still verify the query params are correctly applied
+                expect(spectator.router.url).toContain(`language_id=${expectedParams.language_id}`);
+                expect(spectator.router.url).toContain(`personaId=${expectedParams.personaId}`);
             });
 
             it("should be a button if action is defined on last item 'Action'", () => {

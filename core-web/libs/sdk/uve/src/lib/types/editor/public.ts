@@ -1,6 +1,7 @@
 import { ContentTypeMainFields, DotCMSContainerBound } from './internal';
 
 import { DEVELOPMENT_MODE, PRODUCTION_MODE } from '../../../internal';
+import { DotCMSBasicGraphQLPage, DotCMSPageAsset } from '../page/public';
 
 /**
  * Represents the state of the Universal Visual Editor (UVE)
@@ -191,7 +192,7 @@ export enum UVEEventType {
  * Type definitions for each event's payload
  */
 export type UVEEventPayloadMap = {
-    [UVEEventType.CONTENT_CHANGES]: unknown;
+    [UVEEventType.CONTENT_CHANGES]: DotCMSEditablePage;
     [UVEEventType.PAGE_RELOAD]: undefined;
     [UVEEventType.REQUEST_BOUNDS]: DotCMSContainerBound[];
     [UVEEventType.IFRAME_SCROLL]: 'up' | 'down';
@@ -238,4 +239,54 @@ export interface DotContentletAttributes {
     'data-dot-type': string;
     'data-dot-container': string;
     'data-dot-on-number-of-pages': string;
+}
+
+/**
+ * Represents a GraphQL error
+ * @interface DotCMSGraphQLError
+ */
+export interface DotCMSGraphQLError {
+    message: string;
+    locations: {
+        line: number;
+        column: number;
+    }[];
+    extensions: {
+        classification: string;
+    };
+}
+
+/**
+ * Represents the complete response from a GraphQL page query
+ *
+ * @template TContent - The type of the content data
+ * @template TNav - The type of the navigation data
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export interface DotCMSGraphQLPageResponse<TContent = Record<string, any>> {
+    page: DotCMSBasicGraphQLPage;
+    content?: TContent;
+    errors?: DotCMSGraphQLError;
+    graphql: {
+        query: string;
+        variables: Record<string, unknown>;
+    };
+}
+
+/**
+ * Payload for initializing the UVE
+ * @interface DotCMSEditablePage
+ */
+export type DotCMSEditablePage = DotCMSGraphQLPageResponse | DotCMSPageAsset;
+
+/**
+ * Configuration for the UVE
+ * @interface DotCMSUVEConfig
+ */
+export interface DotCMSUVEConfig {
+    graphql?: {
+        query: string;
+        variables: Record<string, unknown>;
+    };
+    params?: Record<string, unknown>;
 }

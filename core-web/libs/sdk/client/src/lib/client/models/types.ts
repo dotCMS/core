@@ -64,6 +64,8 @@ export interface DotCMSPageAsset<T = unknown> {
     vanityUrl?: DotCMSVanityUrl;
     /** Content mapping for the page URL */
     urlContentMap?: T extends { urlContentMap: infer U } ? Contentlet<U> : Contentlet<T>;
+    /** The parameters used to fetch the page */
+    params?: Record<string, unknown>;
 }
 
 export interface DotPageAssetLayoutRow {
@@ -601,4 +603,8 @@ export interface DotCMSGraphQLPageResponse<TContent = Record<string, any>> {
     page: DotCMSBasicGraphQLPage;
     content?: TContent;
     errors?: DotCMSGraphQLError;
+    graphql: {
+        query: string;
+        variables: Record<string, unknown>;
+    };
 }

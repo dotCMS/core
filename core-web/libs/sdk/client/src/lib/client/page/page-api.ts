@@ -69,7 +69,14 @@ export type BackendPageParams = {
         : K]?: StringifyParam<PageRequestParams[K]>;
 };
 
+/**
+ * The options for the GraphQL Page API.
+ * @public
+ */
 export interface GraphQLPageOptions extends PageRequestParams {
+    /**
+     * The GraphQL options for the page.
+     */
     graphql: {
         page?: string;
         content?: Record<string, string>;
@@ -245,7 +252,16 @@ export class PageClient {
             throw new Error("The 'path' parameter is required for the Page API");
         }
 
-        const normalizedParams = this.#mapToBackendParams(params || {});
+        // If the siteId is not provided, use the one from the config
+        const completedParams = {
+            ...(params ?? {}),
+            siteId: params?.siteId || this.siteId
+        };
+
+        // Map the public parameters to the one used by the API
+        const normalizedParams = this.#mapToBackendParams(completedParams || {});
+
+        // Build the query params
         const queryParams = new URLSearchParams(normalizedParams).toString();
 
         // If the path starts with a slash, remove it to avoid double slashes in the final URL
@@ -263,7 +279,10 @@ export class PageClient {
             throw error;
         }
 
-        return response.json().then((data) => data.entity);
+        return response.json().then<DotCMSPageAsset>((data) => ({
+            ...data.entity,
+            params: completedParams // We retrieve the params from the API response, to make the same fetch on UVE
+        }));
     }
 
     /**
@@ -321,7 +340,15 @@ export class PageClient {
         url: string,
         options?: GraphQLPageOptions
     ): Promise<DotCMSGraphQLPageResponse> {
-        const { languageId = '1', mode = 'LIVE', graphql = {} } = options || {};
+        const {
+            languageId = '1',
+            mode = 'LIVE',
+            siteId = this.siteId,
+            fireRules = false,
+            personaId,
+            publishDate,
+            graphql = {}
+        } = options || {};
         const { page, content = {}, variables, fragments } = graphql;
 
         const contentQuery = buildQuery(content);
@@ -331,10 +358,14 @@ export class PageClient {
             additionalQueries: contentQuery
         });
 
-        const requestVariables = {
+        const requestVariables: Record<string, unknown> = {
             url,
             mode,
             languageId,
+            personaId,
+            fireRules,
+            publishDate,
+            siteId,
             ...variables
         };
 
@@ -365,14 +396,19 @@ export class PageClient {
             return {
                 page: pageResponse,
                 content: contentResponse,
-                errors
+                graphql: {
+                    query: completeQuery,
+                    variables: requestVariables
+                }
             };
         } catch (error) {
             const errorMessage = {
                 error,
                 message: 'Failed to retrieve page data',
-                query: completeQuery,
-                variables: requestVariables
+                graphql: {
+                    query: completeQuery,
+                    variables: requestVariables
+                }
             };
 
             throw errorMessage;
@@ -402,7 +438,7 @@ export class PageClient {
      */
     #mapToBackendParams(params: PageRequestParams): BackendPageParams {
         const backendParams = {
-            hostId: params.siteId || this.siteId,
+            hostId: params.siteId,
             mode: params.mode,
             language_id: params.languageId ? String(params.languageId) : undefined,
             'com.dotmarketing.persona.id': params.personaId,

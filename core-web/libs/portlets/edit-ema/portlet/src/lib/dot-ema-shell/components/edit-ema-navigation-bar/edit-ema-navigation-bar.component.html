@@ -20,11 +20,18 @@
 
         <a
             [routerLink]="item.isDisabled ? null : item.href"
+            [queryParams]="$params()"
             [ngClass]="{ 'edit-ema-nav-bar__item--disabled': item.isDisabled }"
             [pTooltip]="item.tooltip | dm"
             class="edit-ema-nav-bar__item"
             data-testId="nav-bar-item"
             routerLinkActive="edit-ema-nav-bar__item--active"
+            [routerLinkActiveOptions]="{
+                queryParams: 'ignored',
+                matrixParams: 'ignored',
+                paths: 'exact',
+                fragment: 'ignored'
+            }"
             queryParamsHandling="merge"
             tooltipPosition="left"
             rel="noopener">
