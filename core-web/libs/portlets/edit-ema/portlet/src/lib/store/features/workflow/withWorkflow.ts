@@ -1,17 +1,10 @@
 import { tapResponse } from '@ngrx/operators';
-import {
-    patchState,
-    signalStoreFeature,
-    type,
-    withHooks,
-    withMethods,
-    withState
-} from '@ngrx/signals';
+import { patchState, signalStoreFeature, type, withMethods, withState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { pipe } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { effect, inject } from '@angular/core';
+import { inject } from '@angular/core';
 
 import { switchMap, tap } from 'rxjs/operators';
 
@@ -77,21 +70,6 @@ export function withWorkflow() {
                 ),
                 setWorkflowActionLoading: (workflowLoading: boolean) => {
                     patchState(store, { workflowLoading });
-                }
-            };
-        }),
-        withHooks((store) => {
-            return {
-                onInit: () => {
-                    effect(
-                        () => {
-                            const page = store.pageAPIResponse()?.page;
-                            if (page) {
-                                store.getWorkflowActions(page.inode);
-                            }
-                        },
-                        { allowSignalWrites: true }
-                    );
                 }
             };
         })

@@ -208,6 +208,7 @@ export function withLoad() {
                             return pageRequest.pipe(
                                 tap((pageAPIResponse) => {
                                     patchState(store, { pageAPIResponse });
+                                    store.getWorkflowActions(pageAPIResponse.page.inode);
                                 }),
                                 switchMap((pageAPIResponse) => {
                                     return dotLanguagesService.getLanguagesUsedPage(
