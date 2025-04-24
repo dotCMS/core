@@ -65,7 +65,7 @@ import {
     mockLanguageArray,
     DotMessageDisplayServiceMock,
     MockDotHttpErrorManagerService,
-    DotLicenseServiceMock,
+    DotLicenseServiceMock
 } from '@dotcms/utils-testing';
 
 import {

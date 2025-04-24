@@ -5,7 +5,7 @@ import { getTestBed, TestBed } from '@angular/core/testing';
 
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotCMSContentTypeField, DotFieldVariable } from '@dotcms/dotcms-models';
-import { CoreWebServiceMock, dotcmsContentTypeFieldBasicMock } from '@dotcms/utils-testing';
+import { CoreWebServiceMock, createFakeTextField } from '@dotcms/utils-testing';
 
 import { DotFieldVariablesService } from './dot-field-variables.service';
 
@@ -47,11 +47,10 @@ describe('DotFieldVariablesService', () => {
             ]
         };
 
-        const field: DotCMSContentTypeField = {
-            ...dotcmsContentTypeFieldBasicMock,
-            contentTypeId: '1b',
-            id: '1'
-        };
+        const field: DotCMSContentTypeField = createFakeTextField({
+            id: '1',
+            contentTypeId: '1b'
+        });
 
         dotFieldVariablesService.load(field).subscribe((variables: DotFieldVariable[]) => {
             expect(variables).toEqual(mockResponse.entity);
@@ -75,11 +74,10 @@ describe('DotFieldVariablesService', () => {
             }
         };
 
-        const field: DotCMSContentTypeField = {
-            ...dotcmsContentTypeFieldBasicMock,
-            contentTypeId: '1b',
-            id: '1'
-        };
+        const field: DotCMSContentTypeField = createFakeTextField({
+            id: '1',
+            contentTypeId: '1b'
+        });
 
         const variable: DotFieldVariable = {
             key: 'test3',
@@ -102,11 +100,10 @@ describe('DotFieldVariablesService', () => {
             entity: []
         };
 
-        const field: DotCMSContentTypeField = {
-            ...dotcmsContentTypeFieldBasicMock,
-            contentTypeId: '1b',
-            id: '1'
-        };
+        const field: DotCMSContentTypeField = createFakeTextField({
+            id: '1',
+            contentTypeId: '1b'
+        });
 
         const variable: DotFieldVariable = {
             id: 'code1',

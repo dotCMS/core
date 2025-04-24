@@ -12,9 +12,10 @@ import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentTypeField, DotCMSContentTypeLayoutRow } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 import {
-    dotcmsContentTypeFieldBasicMock,
     FieldUtil,
-    MockDotMessageService
+    MockDotMessageService,
+    createFakeImageField,
+    createFakeTextField
 } from '@dotcms/utils-testing';
 
 import { ContentTypeFieldsRowComponent } from '.';
@@ -24,24 +25,21 @@ import { FieldDragDropService } from '../service';
 const mockFieldRow: DotCMSContentTypeLayoutRow = FieldUtil.createFieldRow(2);
 
 mockFieldRow.columns[0].fields = [
-    {
-        ...dotcmsContentTypeFieldBasicMock,
-        clazz: 'text',
+    createFakeTextField({
+        id: '1',
         name: 'field-1'
-    },
-    {
-        ...dotcmsContentTypeFieldBasicMock,
-        clazz: 'image',
-        name: 'field-1'
-    }
+    }),
+    createFakeImageField({
+        id: '2',
+        name: 'field-2'
+    })
 ];
 
 mockFieldRow.columns[1].fields = [
-    {
-        ...dotcmsContentTypeFieldBasicMock,
-        clazz: 'text',
-        name: 'field-1'
-    }
+    createFakeTextField({
+        id: '3',
+        name: 'field-3'
+    })
 ];
 
 @Component({
@@ -139,11 +137,10 @@ describe('ContentTypeFieldsRowComponent', () => {
         it('should handle edit field event', () => {
             let editField;
 
-            const field = {
-                ...dotcmsContentTypeFieldBasicMock,
-                clazz: 'text',
+            const field = createFakeTextField({
+                id: '1',
                 name: 'field-1'
-            };
+            });
 
             const column = de.query(By.css('.row-columns__item'));
             const dragableItem = column.query(By.css('dot-content-type-field-dragabble-item'));

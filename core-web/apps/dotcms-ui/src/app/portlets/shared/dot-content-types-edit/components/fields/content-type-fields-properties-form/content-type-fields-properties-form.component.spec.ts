@@ -29,7 +29,6 @@ import { FieldPropertyService } from '../service';
 
 const mockDFormFieldData = {
     ...dotcmsContentTypeFieldBasicMock,
-    clazz: 'field.class',
     name: 'fieldName',
     id: '123'
 };

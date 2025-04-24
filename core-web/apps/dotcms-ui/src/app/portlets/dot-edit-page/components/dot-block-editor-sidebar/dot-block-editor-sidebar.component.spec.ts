@@ -44,6 +44,7 @@ const BLOCK_EDITOR_FIELD: DotCMSContentTypeField = {
     sortOrder: 13,
     unique: false,
     variable: 'testName',
+    forceIncludeInApi: true,
     fieldVariables: [
         {
             clazz: 'com.dotcms.contenttype.model.field.ImmutableFieldVariable',

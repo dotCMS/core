@@ -10,11 +10,11 @@ import { LoginService } from '@dotcms/dotcms-js';
 import { DotCMSContentTypeField, DotFieldVariable } from '@dotcms/dotcms-models';
 import { DotKeyValueComponent } from '@dotcms/ui';
 import {
-    dotcmsContentTypeFieldBasicMock,
     DotFieldVariablesServiceMock,
-    EMPTY_FIELD,
     LoginServiceMock,
-    mockFieldVariables
+    mockFieldVariables,
+    createFakeTextField,
+    createFakeBlockEditorField
 } from '@dotcms/utils-testing';
 
 import { DotContentTypeFieldsVariablesComponent } from './dot-content-type-fields-variables.component';
@@ -27,11 +27,10 @@ import { DotFieldVariablesService } from './services/dot-field-variables.service
     `
 })
 class TestHostComponent {
-    value: DotCMSContentTypeField = {
-        ...dotcmsContentTypeFieldBasicMock,
+    value: DotCMSContentTypeField = createFakeTextField({
         contentTypeId: 'ddf29c1e-babd-40a8-bfed-920fc9b8c77',
         id: mockFieldVariables[0].fieldId
-    };
+    });
 }
 
 describe('DotContentTypeFieldsVariablesComponent', () => {
@@ -122,10 +121,9 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
     });
 
     describe('Block Editor Field', () => {
-        const BLOCK_EDITOR_FIELD = {
-            ...EMPTY_FIELD,
+        const BLOCK_EDITOR_FIELD = createFakeBlockEditorField({
             clazz: 'com.dotcms.contenttype.model.field.ImmutableStoryBlockField'
-        };
+        });
 
         beforeEach(() => {
             fixtureHost.componentInstance.value = BLOCK_EDITOR_FIELD;

@@ -6,7 +6,7 @@ import { By } from '@angular/platform-browser';
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
-import { dotcmsContentTypeFieldBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
+import { createFakeRadioField, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DataTypePropertyComponent } from '.';
 
@@ -43,10 +43,7 @@ describe('DataTypePropertyComponent', () => {
 
         comp.group = group;
         comp.property = {
-            field: {
-                ...dotcmsContentTypeFieldBasicMock,
-                clazz: 'com.dotcms.contenttype.model.field.ImmutableRadioField'
-            },
+            field: createFakeRadioField(),
             name: 'name',
             value: 'value'
         };

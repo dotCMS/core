@@ -13,7 +13,7 @@ import { By } from '@angular/platform-browser';
 import { DotFieldHelperModule } from '@components/dot-field-helper/dot-field-helper.module';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
-import { dotcmsContentTypeFieldBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
+import { MockDotMessageService, createFakeTextField } from '@dotcms/utils-testing';
 
 import { ValuesPropertyComponent } from './index';
 
@@ -87,9 +87,10 @@ describe('ValuesPropertyComponent', () => {
         comp.property = {
             name: 'values',
             value: 'value',
-            field: {
-                ...dotcmsContentTypeFieldBasicMock
-            }
+            field: createFakeTextField({
+                id: '1',
+                name: 'field-1'
+            })
         };
         comp.helpText = 'Helper Text';
     }));
@@ -133,7 +134,7 @@ describe('ValuesPropertyComponent', () => {
     });
 
     it('should hide dot-helper except for required', () => {
-        comp.property.field.clazz = 'random';
+        comp.property.field.clazz = 'com.dotcms.contenttype.model.field.ImmutableRowField';
         fixture.detectChanges();
         const fieldHelper: DebugElement = fixture.debugElement.query(By.css('dot-field-helper'));
 

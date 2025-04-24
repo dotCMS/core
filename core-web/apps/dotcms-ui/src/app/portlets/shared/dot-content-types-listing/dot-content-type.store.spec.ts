@@ -9,7 +9,11 @@ import { RouterTestingModule } from '@angular/router/testing';
 import { DotContentTypeService, DotHttpErrorManagerService } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotCopyContentTypeDialogFormFields } from '@dotcms/dotcms-models';
-import { CoreWebServiceMock, dotcmsContentTypeBasicMock, mockResponseView } from '@dotcms/utils-testing';
+import {
+    CoreWebServiceMock,
+    dotcmsContentTypeBasicMock,
+    mockResponseView
+} from '@dotcms/utils-testing';
 import { DotContentTypeStore } from '@portlets/shared/dot-content-types-listing/dot-content-type.store';
 
 describe('DotContentTypeComponentStore', () => {

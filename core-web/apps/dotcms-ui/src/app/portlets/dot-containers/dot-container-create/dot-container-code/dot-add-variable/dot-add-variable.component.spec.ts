@@ -72,11 +72,12 @@ const mockContentTypes: DotCMSContentType = {
         {
             clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
             contentTypeId: 'ce930143870e11569f93f8a9fff5da19',
-            dataType: 'SYSTEM',
+            dataType: 'TEXT',
             fieldType: 'Text',
             fieldTypeLabel: 'Text',
             fieldVariables: [],
             fixed: false,
+            forceIncludeInApi: true,
             iDate: 1667904275000,
             id: 'fd98a0871c994d0ff1a8407a391487da',
             indexed: false,
@@ -109,7 +110,8 @@ const mockContentTypes: DotCMSContentType = {
             searchable: false,
             sortOrder: 1,
             unique: false,
-            variable: 'title'
+            variable: 'title',
+            forceIncludeInApi: true
         },
         {
             clazz: 'com.dotcms.contenttype.model.field.ImmutableImageField',
@@ -130,7 +132,8 @@ const mockContentTypes: DotCMSContentType = {
             searchable: false,
             sortOrder: 2,
             unique: false,
-            variable: 'testImage'
+            variable: 'testImage',
+            forceIncludeInApi: true
         }
     ],
     fixed: false,
@@ -160,7 +163,8 @@ const mockContentTypes: DotCMSContentType = {
                 sortOrder: 0,
                 unique: false,
                 id: '123',
-                variable: 'ffff'
+                variable: 'ffff',
+                forceIncludeInApi: true
             }
         }
     ],

@@ -183,6 +183,7 @@ export interface DotCMSContentTypeBaseField {
     sortOrder: number;
     unique: boolean;
     variable: string;
+    velocityVarName?: string;
     metadata?: DotCMSContentTypeFieldMetadata;
 }
 

@@ -34,10 +34,12 @@ import {
     ContentTypeCustomField,
     ContentTypeKeyValueField,
     ContentTypeConstantField,
-    ContentTypeHiddenField
+    ContentTypeHiddenField,
 } from '@dotcms/dotcms-models';
 
 export const dotcmsContentTypeBasicMock = createFakeContentType();
+
+export const dotcmsContentTypeFieldBasicMock = createFakeTextField();
 
 export function createFakeContentType(
     overrides: Partial<DotCMSContentType> = {}
