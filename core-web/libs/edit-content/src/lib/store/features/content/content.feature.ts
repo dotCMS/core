@@ -5,6 +5,7 @@ import { forkJoin, of, pipe } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { computed, inject } from '@angular/core';
+import { Title } from '@angular/platform-browser';
 import { Router } from '@angular/router';
 
 import { switchMap } from 'rxjs/operators';
@@ -12,6 +13,7 @@ import { switchMap } from 'rxjs/operators';
 import {
     DotContentTypeService,
     DotHttpErrorManagerService,
+    DotMessageService,
     DotRenderMode,
     DotWorkflowsActionsService,
     DotWorkflowService
@@ -22,6 +24,8 @@ import { DotEditContentService } from '../../../services/dot-edit-content.servic
 import { transformFormDataFn } from '../../../utils/functions.util';
 import { parseCurrentActions, parseWorkflows } from '../../../utils/workflows.utils';
 import { EditContentState } from '../../edit-content.store';
+
+const DEFAULT_TITLE_PLATFORM = 'dotcms.content.management.platform.title';
 
 export function withContent() {
     return signalStoreFeature(
@@ -108,7 +112,9 @@ export function withContent() {
                 workflowActionService = inject(DotWorkflowsActionsService),
                 dotHttpErrorManagerService = inject(DotHttpErrorManagerService),
                 router = inject(Router),
-                dotWorkflowService = inject(DotWorkflowService)
+                dotWorkflowService = inject(DotWorkflowService),
+                title = inject(Title),
+                dotMessageService = inject(DotMessageService)
             ) => ({
                 /**
                  * Initializes the state for creating new content of a specified type.
@@ -147,6 +153,10 @@ export function withContent() {
                                         // Parse the actions as an object with the schemeId as the key
                                         const parsedCurrentActions = parseCurrentActions(
                                             parsedSchemes[defaultSchemeId]?.actions || []
+                                        );
+
+                                        title.setTitle(
+                                            `${dotMessageService.get('New')} ${contentType.variable} - ${dotMessageService.get(DEFAULT_TITLE_PLATFORM)}`
                                         );
 
                                         patchState(store, {
@@ -241,6 +251,10 @@ export function withContent() {
                                         // If there's no scheme or step, content is considered in 'reset' state
                                         const initialContentletState =
                                             !scheme || !step ? 'reset' : 'existing';
+
+                                        title.setTitle(
+                                            `${contentlet.title} - ${dotMessageService.get(DEFAULT_TITLE_PLATFORM)}`
+                                        );
 
                                         patchState(store, {
                                             contentType,

@@ -33,17 +33,23 @@ export const graphqlToPageEntity = (graphQLPageResponse: GraphQLPageResponse) =>
     const { layout, template, containers, urlContentMap, viewAs, site, _map, ...pageAsset } = page;
     const data = (_map || {}) as Record<string, unknown>;
 
+    // To prevent type errors, we cast the urlContentMap to an object
+    const urlContentMapObject = urlContentMap as Record<string, unknown>;
+
+    // Extract the _map data from the urlContentMap object
+    const urlContentMapData = urlContentMapObject?.['_map'] as Record<string, unknown>;
+
     return {
         layout,
         template,
         viewAs,
-        urlContentMap,
         site,
         page: {
             ...data,
             ...pageAsset
         },
-        containers: parseContainers(containers as [])
+        containers: parseContainers(containers as []),
+        urlContentMap: urlContentMapData
     } as any;
 };
 

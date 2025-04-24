@@ -106,8 +106,7 @@ describe('EditEmaLayoutComponent', () => {
                 save: jest.fn(() => of(PAGE_RESPONSE))
             }),
             mockProvider(DotPageApiService, {
-                get: jest.fn(() => of(PAGE_RESPONSE)),
-                getClientPage: jest.fn(() => of(PAGE_RESPONSE))
+                get: jest.fn(() => of(PAGE_RESPONSE))
             }),
             mockProvider(DotWorkflowsActionsService, {
                 getByInode: jest.fn(() => of([]))

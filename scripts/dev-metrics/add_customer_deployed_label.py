@@ -62,7 +62,7 @@ class AddCustomerDeployedLabel(GitHubMetricsBase):
 def main():
     logger.info("Starting to add 'Customer Deployed' label to issues...")
     
-    token = os.getenv('GITHUB_TOKEN_DOTCMS')
+    token = os.getenv('GITHUB_TOKEN')
     if not token:
         raise ValueError("Please set GITHUB_TOKEN environment variable")
     

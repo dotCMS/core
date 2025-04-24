@@ -72,6 +72,7 @@ export const buildPageQuery = ({
     friendlyName
     workingInode
     url
+    pageURI
     hasLiveVersion
     deleted
     pageUrl
@@ -98,6 +99,9 @@ export const buildPageQuery = ({
     canEdit
     canLock
     canRead
+    urlContentMap {
+      _map
+    }
     conLanguage {
       id
       language
@@ -146,7 +150,24 @@ export const buildPageQuery = ({
     viewAs {
       visitor {
         persona {
+          modDate
+          inode
           name
+          identifier
+          keyTag
+          photo {
+            versionPath
+          }
+        }
+      }
+      persona {
+        modDate
+        inode
+        name
+        identifier
+        keyTag
+        photo {
+         versionPath
         }
       }
       language {
@@ -163,8 +184,8 @@ export const buildPageQuery = ({
 
   ${fragments ? fragments.join('\n\n') : ''}
 
-  query PageContent($url: String!, $languageId: String, $mode: String) {
-    page: page(url: $url, languageId: $languageId, pageMode: $mode) {
+  query PageContent($url: String!, $languageId: String, $mode: String, $personaId: String, $fireRules: Boolean, $publishDate: String, $siteId: String) {
+    page: page(url: $url, languageId: $languageId, pageMode: $mode, persona: $personaId, fireRules: $fireRules, publishDate: $publishDate, site: $siteId) {
       ...DotCMSPage
       ${page ? '...ClientPage' : ''}
     }

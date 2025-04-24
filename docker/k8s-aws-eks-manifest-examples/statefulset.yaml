@@ -102,7 +102,7 @@ spec:
                 fi; ln -s /data/shared/assets/.backup /data/local/dotsecure/backup;
         startupProbe:
           httpGet:
-            path: /api/v1/heavy
+            path: /api/v1/probes/startup
             port: 8082
           initialDelaySeconds: 30
           periodSeconds: 5
@@ -111,7 +111,7 @@ spec:
           timeoutSeconds: 1
         livenessProbe:
           httpGet:
-            path: /api/v1/light
+            path: /api/v1/probes/alive
             port: 8082
           initialDelaySeconds: 1
           periodSeconds: 30
@@ -120,7 +120,7 @@ spec:
           timeoutSeconds: 10
         readinessProbe:
           httpGet:
-            path: /api/v1/light
+            path: /api/v1/probes/alive
             port: 8082
           initialDelaySeconds: 1
           periodSeconds: 10
