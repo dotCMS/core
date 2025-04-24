@@ -8,7 +8,8 @@ import {
     DotCMSDataTypes,
     DotLanguage,
     UI_STORAGE_KEY,
-    DotCMSClazzes
+    DotCMSClazzes,
+    DotCMSDataType
 } from '@dotcms/dotcms-models';
 import { UVE_MODE } from '@dotcms/uve/types';
 
@@ -20,7 +21,7 @@ import { UIState } from '../models/dot-edit-content.model';
 // This function is used to cast the value to a correct type for the Angular Form if the field is a single selectable field
 export const castSingleSelectableValue = (
     value: unknown,
-    type: DotCMSDataTypes
+    type: DotCMSDataType
 ): DotEditContentFieldSingleSelectableDataTypes | null => {
     // Early return for null/undefined/empty values
     if (value === null || value === undefined || value === '') {
@@ -53,7 +54,7 @@ export const castSingleSelectableValue = (
 // This function creates the model for the Components that use the Single Selectable Field, like the Select, Radio Button and Checkbox
 export const getSingleSelectableFieldOptions = (
     options: string,
-    dataType: DotCMSDataTypes
+    dataType: DotCMSDataType
 ): { label: string; value: DotEditContentFieldSingleSelectableDataTypes }[] => {
     const lines = (options?.split('\r\n') ?? []).filter((line) => line.trim() !== '');
 

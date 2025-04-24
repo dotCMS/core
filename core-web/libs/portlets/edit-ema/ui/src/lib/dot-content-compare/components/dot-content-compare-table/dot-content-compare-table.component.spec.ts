@@ -185,7 +185,8 @@ export const dotContentCompareTableDataMock: DotContentCompareTableData = {
             searchable: false,
             sortOrder: 2,
             unique: false,
-            variable: 'binary'
+            variable: 'binary',
+            forceIncludeInApi: false
         },
         {
             clazz: 'com.dotcms.contenttype.model.field.ImmutableFileField',
@@ -206,12 +207,13 @@ export const dotContentCompareTableDataMock: DotContentCompareTableData = {
             searchable: false,
             sortOrder: 3,
             unique: false,
-            variable: 'file'
+            variable: 'file',
+            forceIncludeInApi: false
         },
         {
             clazz: 'com.dotcms.contenttype.model.field.ImmutableImageField',
             contentTypeId: 'f778408c6c5454a26547b633b7d803d5',
-            dataType: 'TEXT',
+            dataType: 'SYSTEM',
             fieldType: 'Image',
             fieldTypeLabel: 'Image',
             fieldVariables: [],
@@ -227,7 +229,8 @@ export const dotContentCompareTableDataMock: DotContentCompareTableData = {
             searchable: false,
             sortOrder: 4,
             unique: false,
-            variable: 'image'
+            variable: 'image',
+            forceIncludeInApi: false
         },
         {
             clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
@@ -248,7 +251,8 @@ export const dotContentCompareTableDataMock: DotContentCompareTableData = {
             searchable: false,
             sortOrder: 5,
             unique: false,
-            variable: 'text'
+            variable: 'text',
+            forceIncludeInApi: false
         },
         {
             clazz: 'com.dotcms.contenttype.model.field.ImmutableJSONField',
@@ -269,7 +273,8 @@ export const dotContentCompareTableDataMock: DotContentCompareTableData = {
             searchable: false,
             sortOrder: 2,
             unique: false,
-            variable: 'json'
+            variable: 'json',
+            forceIncludeInApi: false
         }
     ]
 };

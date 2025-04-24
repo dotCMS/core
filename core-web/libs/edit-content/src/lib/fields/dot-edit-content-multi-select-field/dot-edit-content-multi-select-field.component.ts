@@ -3,7 +3,7 @@ import { ControlContainer, ReactiveFormsModule } from '@angular/forms';
 
 import { MultiSelectModule } from 'primeng/multiselect';
 
-import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { ContentTypeMultiSelectField } from '@dotcms/dotcms-models';
 
 import { getSingleSelectableFieldOptions } from '../../utils/functions.util';
 @Component({
@@ -26,7 +26,7 @@ import { getSingleSelectableFieldOptions } from '../../utils/functions.util';
     `
 })
 export class DotEditContentMultiSelectFieldComponent {
-    $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
+    $field = input.required<ContentTypeMultiSelectField>({ alias: 'field' });
     $options = computed(() => {
         const field = this.$field();
 

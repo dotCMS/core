@@ -19,13 +19,13 @@ export enum DotCMSClazzes {
     COLUMN_BREAK = 'contenttype.column.break',
     // Content Type Fields
     BINARY = 'com.dotcms.contenttype.model.field.ImmutableBinaryField',
-    BLOCK_EDITOR = 'com.dotcms.contenttype.model.field.ImmutableBlockEditorField',
+    BLOCK_EDITOR = 'com.dotcms.contenttype.model.field.ImmutableStoryBlockField',
     CATEGORY = 'com.dotcms.contenttype.model.field.ImmutableCategoryField',
     CHECKBOX = 'com.dotcms.contenttype.model.field.ImmutableCheckboxField',
     CONSTANT = 'com.dotcms.contenttype.model.field.ImmutableConstantField',
     CUSTOM_FIELD = 'com.dotcms.contenttype.model.field.ImmutableCustomField',
     DATE = 'com.dotcms.contenttype.model.field.ImmutableDateField',
-    DATE_AND_TIME = 'com.dotcms.contenttype.model.field.ImmutableDateAndTimeField',
+    DATE_AND_TIME = 'com.dotcms.contenttype.model.field.ImmutableDateTimeField',
     FILE = 'com.dotcms.contenttype.model.field.ImmutableFileField',
     HIDDEN = 'com.dotcms.contenttype.model.field.ImmutableHiddenField',
     IMAGE = 'com.dotcms.contenttype.model.field.ImmutableImageField',
@@ -193,9 +193,9 @@ export interface DotCMSContentTypeBaseField {
  * Used to create a row in the layout grid
  */
 export interface ContentTypeRowField extends DotCMSContentTypeBaseField {
-    dataType: DotCMSDataTypes.SYSTEM;
-    fieldType: DotCMSFieldTypes.ROW;
-    clazz: DotCMSClazzes.ROW;
+    dataType: `${DotCMSDataTypes.SYSTEM}`;
+    fieldType: `${DotCMSFieldTypes.ROW}`;
+    clazz: `${DotCMSClazzes.ROW}`;
 }
 
 /**
@@ -203,9 +203,9 @@ export interface ContentTypeRowField extends DotCMSContentTypeBaseField {
  * Used to create a column within a row in the layout grid
  */
 export interface ContentTypeColumnField extends DotCMSContentTypeBaseField {
-    dataType: DotCMSDataTypes.SYSTEM;
-    fieldType: DotCMSFieldTypes.COLUMN;
-    clazz: DotCMSClazzes.COLUMN;
+    dataType: `${DotCMSDataTypes.SYSTEM}`;
+    fieldType: `${DotCMSFieldTypes.COLUMN}`;
+    clazz: `${DotCMSClazzes.COLUMN}`;
 }
 
 /**
@@ -213,9 +213,9 @@ export interface ContentTypeColumnField extends DotCMSContentTypeBaseField {
  * Used to create a horizontal line separator in the layout
  */
 export interface ContentTypeLineDividerField extends DotCMSContentTypeBaseField {
-    dataType: DotCMSDataTypes.SYSTEM;
-    fieldType: DotCMSFieldTypes.LINE_DIVIDER;
-    clazz: DotCMSClazzes.LINE_DIVIDER;
+    dataType: `${DotCMSDataTypes.SYSTEM}`;
+    fieldType: `${DotCMSFieldTypes.LINE_DIVIDER}`;
+    clazz: `${DotCMSClazzes.LINE_DIVIDER}`;
 }
 
 /**
@@ -223,9 +223,9 @@ export interface ContentTypeLineDividerField extends DotCMSContentTypeBaseField 
  * Used to create a tab in the layout
  */
 export interface ContentTypeTabDividerField extends DotCMSContentTypeBaseField {
-    dataType: DotCMSDataTypes.SYSTEM;
-    fieldType: DotCMSFieldTypes.TAB_DIVIDER;
-    clazz: DotCMSClazzes.TAB_DIVIDER;
+    dataType: `${DotCMSDataTypes.SYSTEM}`;
+    fieldType: `${DotCMSFieldTypes.TAB_DIVIDER}`;
+    clazz: `${DotCMSClazzes.TAB_DIVIDER}`;
 }
 
 /**
@@ -233,9 +233,9 @@ export interface ContentTypeTabDividerField extends DotCMSContentTypeBaseField {
  * Used to break to a new column in the layout
  */
 export interface ContentTypeColumnBreakField extends DotCMSContentTypeBaseField {
-    dataType: DotCMSDataTypes.SYSTEM;
-    fieldType: DotCMSFieldTypes.COLUMN_BREAK;
-    clazz: DotCMSClazzes.COLUMN_BREAK;
+    dataType: `${DotCMSDataTypes.SYSTEM}`;
+    fieldType: `${DotCMSFieldTypes.COLUMN_BREAK}`;
+    clazz: `${DotCMSClazzes.COLUMN_BREAK}`;
 }
 
 // Content Type Fields
@@ -245,9 +245,9 @@ export interface ContentTypeColumnBreakField extends DotCMSContentTypeBaseField 
  * Used for binary data storage
  */
 export interface ContentTypeBinaryField extends DotCMSContentTypeBaseField {
-    dataType: DotCMSDataTypes.SYSTEM;
-    fieldType: DotCMSFieldTypes.BINARY;
-    clazz: DotCMSClazzes.BINARY;
+    dataType: `${DotCMSDataTypes.SYSTEM}`;
+    fieldType: `${DotCMSFieldTypes.BINARY}`;
+    clazz: `${DotCMSClazzes.BINARY}`;
 }
 
 /**
@@ -255,9 +255,9 @@ export interface ContentTypeBinaryField extends DotCMSContentTypeBaseField {
  * Used for structured content blocks/stories
  */
 export interface ContentTypeBlockEditorField extends DotCMSContentTypeBaseField {
-    dataType: DotCMSDataTypes.SYSTEM;
-    fieldType: DotCMSFieldTypes.BLOCK_EDITOR;
-    clazz: DotCMSClazzes.BLOCK_EDITOR;
+    dataType: `${DotCMSDataTypes.LONG_TEXT}`;
+    fieldType: `${DotCMSFieldTypes.BLOCK_EDITOR}`;
+    clazz: `${DotCMSClazzes.BLOCK_EDITOR}`;
 }
 
 /**
@@ -266,9 +266,10 @@ export interface ContentTypeBlockEditorField extends DotCMSContentTypeBaseField 
  */
 export interface ContentTypeCategoryField extends DotCMSContentTypeBaseField {
     categories: DotCMSContentTypeFieldCategories;
-    dataType: DotCMSDataTypes.SYSTEM;
-    fieldType: DotCMSFieldTypes.CATEGORY;
-    clazz: DotCMSClazzes.CATEGORY;
+    dataType: `${DotCMSDataTypes.SYSTEM}`;
+    fieldType: `${DotCMSFieldTypes.CATEGORY}`;
+    clazz: `${DotCMSClazzes.CATEGORY}`;
+    values: string;
 }
 
 /**
@@ -276,9 +277,9 @@ export interface ContentTypeCategoryField extends DotCMSContentTypeBaseField {
  * Used for boolean values or multi-selection
  */
 export interface ContentTypeCheckboxField extends DotCMSContentTypeBaseField {
-    dataType: DotCMSDataTypes.TEXT;
-    fieldType: DotCMSFieldTypes.CHECKBOX;
-    clazz: DotCMSClazzes.CHECKBOX;
+    dataType: `${DotCMSDataTypes.TEXT}`;
+    fieldType: `${DotCMSFieldTypes.CHECKBOX}`;
+    clazz: `${DotCMSClazzes.CHECKBOX}`;
     values: string;
 }
 
@@ -287,9 +288,9 @@ export interface ContentTypeCheckboxField extends DotCMSContentTypeBaseField {
  * Used for fixed values that don't change
  */
 export interface ContentTypeConstantField extends DotCMSContentTypeBaseField {
-    dataType: DotCMSDataTypes.SYSTEM;
-    fieldType: DotCMSFieldTypes.CONSTANT;
-    clazz: DotCMSClazzes.CONSTANT;
+    dataType: `${DotCMSDataTypes.SYSTEM}`;
+    fieldType: `${DotCMSFieldTypes.CONSTANT}`;
+    clazz: `${DotCMSClazzes.CONSTANT}`;
     values: string;
 }
 
@@ -298,9 +299,9 @@ export interface ContentTypeConstantField extends DotCMSContentTypeBaseField {
  * Used for custom-implemented fields
  */
 export interface ContentTypeCustomField extends DotCMSContentTypeBaseField {
-    dataType: DotCMSDataTypes.LONG_TEXT;
-    fieldType: DotCMSFieldTypes.CUSTOM_FIELD;
-    clazz: DotCMSClazzes.CUSTOM_FIELD;
+    dataType: `${DotCMSDataTypes.LONG_TEXT}`;
+    fieldType: `${DotCMSFieldTypes.CUSTOM_FIELD}`;
+    clazz: `${DotCMSClazzes.CUSTOM_FIELD}`;
     values: string;
     regexCheck?: string;
 }
@@ -310,9 +311,9 @@ export interface ContentTypeCustomField extends DotCMSContentTypeBaseField {
  * Used for date values without time
  */
 export interface ContentTypeDateField extends DotCMSContentTypeBaseField {
-    dataType: DotCMSDataTypes.DATE;
-    fieldType: DotCMSFieldTypes.DATE;
-    clazz: DotCMSClazzes.DATE;
+    dataType: `${DotCMSDataTypes.DATE}`;
+    fieldType: `${DotCMSFieldTypes.DATE}`;
+    clazz: `${DotCMSClazzes.DATE}`;
 }
 
 /**
@@ -320,9 +321,9 @@ export interface ContentTypeDateField extends DotCMSContentTypeBaseField {
  * Used for datetime values
  */
 export interface ContentTypeDateTimeField extends DotCMSContentTypeBaseField {
-    dataType: DotCMSDataTypes.DATE;
-    fieldType: DotCMSFieldTypes.DATE_AND_TIME;
-    clazz: DotCMSClazzes.DATE_AND_TIME;
+    dataType: `${DotCMSDataTypes.DATE}`;
+    fieldType: `${DotCMSFieldTypes.DATE_AND_TIME}`;
+    clazz: `${DotCMSClazzes.DATE_AND_TIME}`;
 }
 
 /**
@@ -330,9 +331,9 @@ export interface ContentTypeDateTimeField extends DotCMSContentTypeBaseField {
  * Used for file uploads
  */
 export interface ContentTypeFileField extends DotCMSContentTypeBaseField {
-    dataType: DotCMSDataTypes.TEXT;
-    fieldType: DotCMSFieldTypes.FILE;
-    clazz: DotCMSClazzes.FILE;
+    dataType: `${DotCMSDataTypes.TEXT}`;
+    fieldType: `${DotCMSFieldTypes.FILE}`;
+    clazz: `${DotCMSClazzes.FILE}`;
 }
 
 /**
@@ -340,11 +341,10 @@ export interface ContentTypeFileField extends DotCMSContentTypeBaseField {
  * Used for values not shown in the UI
  */
 export interface ContentTypeHiddenField extends DotCMSContentTypeBaseField {
-    dataType: DotCMSDataTypes.SYSTEM;
-    fieldType: DotCMSFieldTypes.HIDDEN;
-    /** Values configuration for this field */
+    dataType: `${DotCMSDataTypes.SYSTEM}`;
+    fieldType: `${DotCMSFieldTypes.HIDDEN}`;
     values: string;
-    clazz: DotCMSClazzes.HIDDEN;
+    clazz: `${DotCMSClazzes.HIDDEN}`;
 }
 
 /**
@@ -352,9 +352,9 @@ export interface ContentTypeHiddenField extends DotCMSContentTypeBaseField {
  * Used for image uploads
  */
 export interface ContentTypeImageField extends DotCMSContentTypeBaseField {
-    dataType: DotCMSDataTypes.SYSTEM;
-    fieldType: DotCMSFieldTypes.IMAGE;
-    clazz: DotCMSClazzes.IMAGE;
+    dataType: `${DotCMSDataTypes.TEXT}`;
+    fieldType: `${DotCMSFieldTypes.IMAGE}`;
+    clazz: `${DotCMSClazzes.IMAGE}`;
 }
 
 /**
@@ -362,9 +362,9 @@ export interface ContentTypeImageField extends DotCMSContentTypeBaseField {
  * Used for storing JSON data
  */
 export interface ContentTypeJSONField extends DotCMSContentTypeBaseField {
-    dataType: DotCMSDataTypes.LONG_TEXT;
-    fieldType: DotCMSFieldTypes.JSON;
-    clazz: DotCMSClazzes.JSON;
+    dataType: `${DotCMSDataTypes.LONG_TEXT}`;
+    fieldType: `${DotCMSFieldTypes.JSON}`;
+    clazz: `${DotCMSClazzes.JSON}`;
 }
 
 /**
@@ -372,9 +372,9 @@ export interface ContentTypeJSONField extends DotCMSContentTypeBaseField {
  * Used for storing key-value pairs
  */
 export interface ContentTypeKeyValueField extends DotCMSContentTypeBaseField {
-    dataType: DotCMSDataTypes.LONG_TEXT;
-    fieldType: DotCMSFieldTypes.KEY_VALUE;
-    clazz: DotCMSClazzes.KEY_VALUE;
+    dataType: `${DotCMSDataTypes.LONG_TEXT}`;
+    fieldType: `${DotCMSFieldTypes.KEY_VALUE}`;
+    clazz: `${DotCMSClazzes.KEY_VALUE}`;
 }
 
 /**
@@ -382,10 +382,10 @@ export interface ContentTypeKeyValueField extends DotCMSContentTypeBaseField {
  * Used for selecting multiple options from a list
  */
 export interface ContentTypeMultiSelectField extends DotCMSContentTypeBaseField {
-    dataType: DotCMSDataTypes.LONG_TEXT;
-    fieldType: DotCMSFieldTypes.MULTI_SELECT;
+    dataType: `${DotCMSDataTypes.LONG_TEXT}`;
+    fieldType: `${DotCMSFieldTypes.MULTI_SELECT}`;
     values: string;
-    clazz: DotCMSClazzes.MULTI_SELECT;
+    clazz: `${DotCMSClazzes.MULTI_SELECT}`;
 }
 
 /**
@@ -394,13 +394,13 @@ export interface ContentTypeMultiSelectField extends DotCMSContentTypeBaseField 
  */
 export interface ContentTypeRadioField extends DotCMSContentTypeBaseField {
     dataType:
-        | DotCMSDataTypes.TEXT
-        | DotCMSDataTypes.BOOLEAN
-        | DotCMSDataTypes.FLOAT
-        | DotCMSDataTypes.INTEGER;
-    fieldType: DotCMSFieldTypes.RADIO;
+        | `${DotCMSDataTypes.TEXT}`
+        | `${DotCMSDataTypes.BOOLEAN}`
+        | `${DotCMSDataTypes.FLOAT}`
+        | `${DotCMSDataTypes.INTEGER}`;
+    fieldType: `${DotCMSFieldTypes.RADIO}`;
     values: string;
-    clazz: DotCMSClazzes.RADIO;
+    clazz: `${DotCMSClazzes.RADIO}`;
 }
 
 /**
@@ -408,15 +408,15 @@ export interface ContentTypeRadioField extends DotCMSContentTypeBaseField {
  * Used for relating content to other content
  */
 export interface ContentTypeRelationshipField extends DotCMSContentTypeBaseField {
-    dataType: DotCMSDataTypes.SYSTEM;
-    fieldType: DotCMSFieldTypes.RELATIONSHIP;
+    dataType: `${DotCMSDataTypes.SYSTEM}`;
+    fieldType: `${DotCMSFieldTypes.RELATIONSHIP}`;
     relationships: {
         cardinality: number;
         isParentField: boolean;
         velocityVar: string;
     };
     skipRelationshipCreation: boolean;
-    clazz: DotCMSClazzes.RELATIONSHIP;
+    clazz: `${DotCMSClazzes.RELATIONSHIP}`;
 }
 
 /**
@@ -425,14 +425,13 @@ export interface ContentTypeRelationshipField extends DotCMSContentTypeBaseField
  */
 export interface ContentTypeSelectField extends DotCMSContentTypeBaseField {
     dataType:
-        | DotCMSDataTypes.TEXT
-        | DotCMSDataTypes.BOOLEAN
-        | DotCMSDataTypes.FLOAT
-        | DotCMSDataTypes.INTEGER;
-    fieldType: DotCMSFieldTypes.SELECT;
-    /** Values configuration for this field */
+        | `${DotCMSDataTypes.TEXT}`
+        | `${DotCMSDataTypes.BOOLEAN}`
+        | `${DotCMSDataTypes.FLOAT}`
+        | `${DotCMSDataTypes.INTEGER}`;
+    fieldType: `${DotCMSFieldTypes.SELECT}`;
     values: string;
-    clazz: DotCMSClazzes.SELECT;
+    clazz: `${DotCMSClazzes.SELECT}`;
 }
 
 /**
@@ -440,9 +439,9 @@ export interface ContentTypeSelectField extends DotCMSContentTypeBaseField {
  * Used for selecting hosts or folders
  */
 export interface ContentTypeHostFolderField extends DotCMSContentTypeBaseField {
-    dataType: DotCMSDataTypes.SYSTEM;
-    fieldType: DotCMSFieldTypes.HOST_FOLDER;
-    clazz: DotCMSClazzes.HOST_FOLDER;
+    dataType: `${DotCMSDataTypes.SYSTEM}`;
+    fieldType: `${DotCMSFieldTypes.HOST_FOLDER}`;
+    clazz: `${DotCMSClazzes.HOST_FOLDER}`;
 }
 
 /**
@@ -450,9 +449,9 @@ export interface ContentTypeHostFolderField extends DotCMSContentTypeBaseField {
  * Used for adding tags to content
  */
 export interface ContentTypeTagField extends DotCMSContentTypeBaseField {
-    dataType: DotCMSDataTypes.SYSTEM;
-    fieldType: DotCMSFieldTypes.TAG;
-    clazz: DotCMSClazzes.TAG;
+    dataType: `${DotCMSDataTypes.SYSTEM}`;
+    fieldType: `${DotCMSFieldTypes.TAG}`;
+    clazz: `${DotCMSClazzes.TAG}`;
 }
 
 /**
@@ -460,10 +459,10 @@ export interface ContentTypeTagField extends DotCMSContentTypeBaseField {
  * Used for single-line text input
  */
 export interface ContentTypeTextField extends DotCMSContentTypeBaseField {
-    dataType: DotCMSDataTypes.TEXT | DotCMSDataTypes.FLOAT | DotCMSDataTypes.INTEGER;
-    fieldType: DotCMSFieldTypes.TEXT;
+    dataType: `${DotCMSDataTypes.TEXT}` | `${DotCMSDataTypes.FLOAT}` | `${DotCMSDataTypes.INTEGER}`;
+    fieldType: `${DotCMSFieldTypes.TEXT}`;
     regexCheck?: string;
-    clazz: DotCMSClazzes.TEXT;
+    clazz: `${DotCMSClazzes.TEXT}`;
 }
 
 /**
@@ -471,11 +470,10 @@ export interface ContentTypeTextField extends DotCMSContentTypeBaseField {
  * Used for multi-line text input
  */
 export interface ContentTypeTextAreaField extends DotCMSContentTypeBaseField {
-    dataType: DotCMSDataTypes.LONG_TEXT;
-    fieldType: DotCMSFieldTypes.TEXTAREA;
-    /** Regular expression for validation */
+    dataType: `${DotCMSDataTypes.LONG_TEXT}`;
+    fieldType: `${DotCMSFieldTypes.TEXTAREA}`;
     regexCheck?: string;
-    clazz: DotCMSClazzes.TEXTAREA;
+    clazz: `${DotCMSClazzes.TEXTAREA}`;
 }
 
 /**
@@ -483,9 +481,9 @@ export interface ContentTypeTextAreaField extends DotCMSContentTypeBaseField {
  * Used for time values without date
  */
 export interface ContentTypeTimeField extends DotCMSContentTypeBaseField {
-    dataType: DotCMSDataTypes.DATE;
-    fieldType: DotCMSFieldTypes.TIME;
-    clazz: DotCMSClazzes.TIME;
+    dataType: `${DotCMSDataTypes.DATE}`;
+    fieldType: `${DotCMSFieldTypes.TIME}`;
+    clazz: `${DotCMSClazzes.TIME}`;
 }
 
 /**
@@ -493,11 +491,10 @@ export interface ContentTypeTimeField extends DotCMSContentTypeBaseField {
  * Used for rich text editing
  */
 export interface ContentTypeWYSIWYGField extends DotCMSContentTypeBaseField {
-    dataType: DotCMSDataTypes.LONG_TEXT;
-    fieldType: DotCMSFieldTypes.WYSIWYG;
-    /** Regular expression for validation */
+    dataType: `${DotCMSDataTypes.LONG_TEXT}`;
+    fieldType: `${DotCMSFieldTypes.WYSIWYG}`;
     regexCheck?: string;
-    clazz: DotCMSClazzes.WYSIWYG;
+    clazz: `${DotCMSClazzes.WYSIWYG}`;
 }
 
 /**
@@ -559,9 +556,7 @@ export type DotCMSContentTypeField =
  * Tabs group rows and columns into separate sections
  */
 export interface DotCMSContentTypeLayoutTab {
-    /** Title of the tab */
     title: string;
-    /** Layout rows contained in this tab */
     layout: DotCMSContentTypeLayoutRow[];
 }
 
@@ -570,9 +565,7 @@ export interface DotCMSContentTypeLayoutTab {
  * Rows contain columns that hold fields
  */
 export interface DotCMSContentTypeLayoutRow {
-    /** Columns within this row */
     columns?: DotCMSContentTypeLayoutColumn[];
-    /** Divider field for this row */
     divider: DotCMSContentTypeField;
 }
 
@@ -581,9 +574,7 @@ export interface DotCMSContentTypeLayoutRow {
  * Columns contain fields and have a divider
  */
 export interface DotCMSContentTypeLayoutColumn {
-    /** Divider field for this column */
     columnDivider: DotCMSContentTypeField;
-    /** Fields within this column */
     fields: DotCMSContentTypeField[];
 }
 
@@ -592,17 +583,11 @@ export interface DotCMSContentTypeLayoutColumn {
  * Defines the configuration for a category field
  */
 export interface DotCMSContentTypeFieldCategories {
-    /** Name of the category */
     categoryName: string;
-    /** Description of the category */
     description?: string;
-    /** Unique identifier for the category */
     inode: string;
-    /** Key for the category */
     key: string;
-    /** Keywords for the category */
     keywords?: string;
-    /** Sort order of the category */
     sortOrder: number;
 }
 
@@ -611,15 +596,10 @@ export interface DotCMSContentTypeFieldCategories {
  * Field variables allow for additional configuration per field
  */
 export interface DotCMSContentTypeFieldVariable {
-    /** Java class implementation for this variable */
     clazz: string;
-    /** ID of the field this variable belongs to */
     fieldId: string;
-    /** Unique identifier for this variable */
     id: string;
-    /** Key for this variable */
     key: string;
-    /** Value for this variable */
     value: string;
 }
 
@@ -628,11 +608,8 @@ export interface DotCMSContentTypeFieldVariable {
  * Used for configuring asset selection dialogs
  */
 export interface DotCMSAssetDialogFields {
-    /** Dialog title */
     title: string;
-    /** Asset identifier */
     assetIdentifier: string;
-    /** Base type of content to filter by */
     baseType: DotCMSBaseTypesContentTypes;
 }
 
@@ -641,23 +618,14 @@ export interface DotCMSAssetDialogFields {
  * Represents the fundamental categories of content
  */
 export const enum DotCMSBaseTypesContentTypes {
-    /** Widget content type */
     WIDGET = 'WIDGET',
-    /** Standard content type */
     CONTENT = 'CONTENT',
-    /** Persona content type (for personalization) */
     PERSONA = 'PERSONA',
-    /** File asset content type */
     FILEASSET = 'FILEASSET',
-    /** HTML page content type */
     HTMLPAGE = 'HTMLPAGE',
-    /** Vanity URL content type */
     VANITY_URL = 'VANITY_URL',
-    /** Dot asset content type */
     DOTASSET = 'DOTASSET',
-    /** Form content type */
     FORM = 'FORM',
-    /** Key-value content type */
     KEY_VALUE = 'KEY_VALUE'
 }
 
@@ -666,14 +634,9 @@ export const enum DotCMSBaseTypesContentTypes {
  * Used when copying a content type
  */
 export type DotCopyContentTypeDialogFormFields = {
-    /** Name for the copied content type */
     name: string;
-    /** Variable name for the copied content type */
     variable: string;
-    /** Folder for the copied content type */
     folder: string;
-    /** Host for the copied content type */
     host: string;
-    /** Icon for the copied content type */
     icon: string;
 };

@@ -12,6 +12,7 @@ import {
     EventEmitter,
     forwardRef,
     inject,
+    input,
     Input,
     OnDestroy,
     OnInit,
@@ -35,7 +36,7 @@ import { DotAiService, DotLicenseService, DotMessageService } from '@dotcms/data
 import {
     DotCMSBaseTypesContentTypes,
     DotCMSContentlet,
-    DotCMSContentTypeField,
+    ContentTypeBinaryField,
     DotCMSContentTypeFieldVariable,
     DotCMSTempFile,
     DotGeneratedAIImage
@@ -135,14 +136,10 @@ export class DotEditContentBinaryFieldComponent
 
     value: string | null = null;
 
-    @Input({ required: true })
-    set field(contentTypeField: DotCMSContentTypeField) {
-        this.$field.set(contentTypeField);
-    }
     @Input({ required: true }) contentlet: DotCMSContentlet;
     @Input() imageEditor = false;
 
-    $field = signal<DotCMSContentTypeField>({} as DotCMSContentTypeField);
+    $field = input.required<ContentTypeBinaryField>({ alias: 'field' });
     $variable = computed(() => this.$field()?.variable);
 
     @Output() valueUpdated = new EventEmitter<{ value: string; fileName: string }>();

@@ -114,6 +114,8 @@ export function createFakeBaseField(): BaseField {
 export function createFakeCategoryField(
     overrides: Partial<ContentTypeCategoryField> = {}
 ): ContentTypeCategoryField {
+    const categoryId = faker.string.uuid();
+
     return {
         ...createFakeBaseField(),
         clazz: DotCMSClazzes.CATEGORY,
@@ -123,11 +125,12 @@ export function createFakeCategoryField(
         categories: {
             categoryName: faker.lorem.word(),
             description: faker.lorem.sentence(),
-            inode: faker.string.uuid(),
+            inode: categoryId,
             key: faker.lorem.word(),
             keywords: faker.lorem.word(),
             sortOrder: faker.number.int()
         },
+        values: categoryId,
         ...overrides
     };
 }
@@ -478,7 +481,7 @@ export function createFakeImageField(
     return {
         ...createFakeBaseField(),
         clazz: DotCMSClazzes.IMAGE,
-        dataType: DotCMSDataTypes.SYSTEM,
+        dataType: DotCMSDataTypes.TEXT,
         fieldType: DotCMSFieldTypes.IMAGE,
         fieldTypeLabel: 'Image',
         ...overrides
@@ -555,7 +558,7 @@ export function createFakeBlockEditorField(
     return {
         ...createFakeBaseField(),
         clazz: DotCMSClazzes.BLOCK_EDITOR,
-        dataType: DotCMSDataTypes.SYSTEM,
+        dataType: DotCMSDataTypes.LONG_TEXT,
         fieldType: DotCMSFieldTypes.BLOCK_EDITOR,
         fieldTypeLabel: 'Block Editor',
         ...overrides

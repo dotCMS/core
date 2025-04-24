@@ -11,7 +11,7 @@ export const CALENDAR_FIELD_TYPES = [
     DotCMSFieldTypes.TIME
 ];
 
-export const NON_FORM_CONTROL_FIELD_TYPES = [
+export const NON_FORM_CONTROL_FIELD_TYPES: string[] = [
     DotCMSFieldTypes.ROW,
     DotCMSFieldTypes.COLUMN,
     DotCMSFieldTypes.TAB_DIVIDER,

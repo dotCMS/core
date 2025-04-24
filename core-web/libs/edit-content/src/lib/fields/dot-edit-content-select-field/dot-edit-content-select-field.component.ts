@@ -3,7 +3,7 @@ import { AbstractControl, ControlContainer, ReactiveFormsModule } from '@angular
 
 import { DropdownModule } from 'primeng/dropdown';
 
-import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { ContentTypeSelectField } from '@dotcms/dotcms-models';
 
 import { DotEditContentFieldSingleSelectableDataTypes } from '../../models/dot-edit-content-field.type';
 import { getSingleSelectableFieldOptions } from '../../utils/functions.util';
@@ -29,7 +29,7 @@ import { getSingleSelectableFieldOptions } from '../../utils/functions.util';
     `
 })
 export class DotEditContentSelectFieldComponent implements OnInit {
-    $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
+    $field = input.required<ContentTypeSelectField>({ alias: 'field' });
     private readonly controlContainer = inject(ControlContainer);
 
     $options = computed(() => {

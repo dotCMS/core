@@ -136,7 +136,7 @@ describe('DotEditContentBinaryFieldComponent', () => {
                     ...BINARY_FIELD_MOCK
                 },
                 contentlet: null
-            }
+            } as unknown
         });
         store = spectator.inject(DotBinaryFieldStore, true);
         dotBinaryFieldEditImageService = spectator.inject(DotBinaryFieldEditImageService, true);
@@ -388,7 +388,7 @@ describe('DotEditContentBinaryFieldComponent', () => {
                 props: {
                     field: newField,
                     contentlet: null
-                }
+                } as unknown
             });
         });
 
@@ -443,7 +443,7 @@ describe('DotEditContentBinaryFieldComponent', () => {
                 props: {
                     field: newField,
                     contentlet: null
-                }
+                } as unknown
             });
         });
 

@@ -1,3 +1,4 @@
+import { describe } from '@jest/globals';
 import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator/jest';
 
 import { ControlContainer, FormGroupDirective } from '@angular/forms';
@@ -5,6 +6,7 @@ import { By } from '@angular/platform-browser';
 
 import { Calendar } from 'primeng/calendar';
 
+import { DotCMSFieldTypes } from '@dotcms/dotcms-models';
 import { createFakeDateField } from '@dotcms/utils-testing';
 
 import { DotEditContentCalendarFieldComponent } from './dot-edit-content-calendar-field.component';
@@ -53,13 +55,13 @@ describe('DotEditContentCalendarFieldComponent', () => {
 
     describe.each([
         {
-            fieldType: FIELD_TYPES.DATE_AND_TIME
+            fieldType: DotCMSFieldTypes.DATE_AND_TIME
         },
         {
-            fieldType: FIELD_TYPES.DATE
+            fieldType: DotCMSFieldTypes.DATE
         },
         {
-            fieldType: FIELD_TYPES.TIME
+            fieldType: DotCMSFieldTypes.TIME
         }
     ])('with fieldType as $fieldType', ({ fieldType }) => {
         let calendar: Calendar;
@@ -70,7 +72,7 @@ describe('DotEditContentCalendarFieldComponent', () => {
             spectator = createComponent({
                 props: {
                     field: { ...DATE_FIELD_MOCK, fieldType }
-                }
+                } as unknown
             });
 
             calendar = spectator.debugElement.query(

@@ -216,7 +216,8 @@ export const dotContentCompareTableDataMock: DotContentCompareTableData = {
             searchable: false,
             sortOrder: 2,
             unique: false,
-            variable: 'html'
+            variable: 'html',
+            forceIncludeInApi: false
         }
     ]
 };

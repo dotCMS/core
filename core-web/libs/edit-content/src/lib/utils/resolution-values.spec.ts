@@ -1,13 +1,13 @@
+import { DotCMSFieldTypes } from '@dotcms/dotcms-models';
 import {
     createFakeCategoryField,
     createFakeContentlet,
     createFakeHostFolderField,
+    createFakeLineDividerField,
     createFakeRelationshipField
 } from '@dotcms/utils-testing';
 
 import { resolutionValue } from './resolution-values.utils';
-
-import { FIELD_TYPES } from '../models/dot-edit-content-field.enum';
 
 describe('Utils', () => {
     describe('resolutionValue', () => {
@@ -20,7 +20,7 @@ describe('Utils', () => {
                 });
                 const field = createFakeHostFolderField({ defaultValue: '' });
 
-                expect(resolutionValue[FIELD_TYPES.HOST_FOLDER](contentlet, field)).toBe(
+                expect(resolutionValue[DotCMSFieldTypes.HOST_FOLDER](contentlet, field)).toBe(
                     'demo.dotcms.com'
                 );
             });
@@ -29,7 +29,9 @@ describe('Utils', () => {
                 const contentlet = createFakeContentlet({ hostName: null, url: null });
                 const field = createFakeHostFolderField({ defaultValue: 'default' });
 
-                expect(resolutionValue[FIELD_TYPES.HOST_FOLDER](contentlet, field)).toBe('default');
+                expect(resolutionValue[DotCMSFieldTypes.HOST_FOLDER](contentlet, field)).toBe(
+                    'default'
+                );
             });
 
             it('should return empty string when no default value and no path', () => {
@@ -39,7 +41,7 @@ describe('Utils', () => {
                 });
                 const field = createFakeHostFolderField({ defaultValue: null });
 
-                expect(resolutionValue[FIELD_TYPES.HOST_FOLDER](contentlet, field)).toBe('');
+                expect(resolutionValue[DotCMSFieldTypes.HOST_FOLDER](contentlet, field)).toBe('');
             });
         });
 
@@ -51,7 +53,7 @@ describe('Utils', () => {
                 });
                 const field = createFakeCategoryField({ variable: 'categories' });
 
-                expect(resolutionValue[FIELD_TYPES.CATEGORY](contentlet, field)).toEqual([
+                expect(resolutionValue[DotCMSFieldTypes.CATEGORY](contentlet, field)).toEqual([
                     'key1',
                     'key2'
                 ]);
@@ -61,7 +63,7 @@ describe('Utils', () => {
                 const contentlet = createFakeContentlet();
                 const field = createFakeCategoryField({ defaultValue: '[]' });
 
-                expect(resolutionValue[FIELD_TYPES.CATEGORY](contentlet, field)).toEqual('[]');
+                expect(resolutionValue[DotCMSFieldTypes.CATEGORY](contentlet, field)).toEqual('[]');
             });
 
             it('should handle non-array values gracefully', () => {
@@ -73,7 +75,7 @@ describe('Utils', () => {
                     defaultValue: null
                 });
 
-                expect(resolutionValue[FIELD_TYPES.CATEGORY](contentlet, field)).toEqual([]);
+                expect(resolutionValue[DotCMSFieldTypes.CATEGORY](contentlet, field)).toEqual([]);
             });
         });
 
@@ -85,7 +87,7 @@ describe('Utils', () => {
                 });
                 const field = createFakeRelationshipField({ variable: 'relationship' });
 
-                expect(resolutionValue[FIELD_TYPES.RELATIONSHIP](contentlet, field)).toBe(
+                expect(resolutionValue[DotCMSFieldTypes.RELATIONSHIP](contentlet, field)).toBe(
                     'id1,id2'
                 );
             });
@@ -96,14 +98,17 @@ describe('Utils', () => {
                 });
                 const field = createFakeRelationshipField({ variable: 'relationship' });
 
-                expect(resolutionValue[FIELD_TYPES.RELATIONSHIP](contentlet, field)).toBe('');
+                expect(resolutionValue[DotCMSFieldTypes.RELATIONSHIP](contentlet, field)).toBe('');
             });
         });
 
         // Line Divider Tests
         describe('Line Divider Resolution', () => {
             it('should always return empty string', () => {
-                expect(resolutionValue[FIELD_TYPES.LINE_DIVIDER]()).toBe('');
+                const contentlet = createFakeContentlet();
+                const field = createFakeLineDividerField();
+
+                expect(resolutionValue[DotCMSFieldTypes.LINE_DIVIDER](contentlet, field)).toBe('');
             });
         });
     });

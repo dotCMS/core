@@ -1,8 +1,8 @@
 import { describe, expect, it, jest } from '@jest/globals';
 
 import {
-    DotCMSContentTypeField,
     DotCMSContentTypeFieldVariable,
+    DotCMSDataTypes,
     DotLanguage,
     UI_STORAGE_KEY
 } from '@dotcms/dotcms-models';
@@ -20,11 +20,8 @@ import {
     sortLocalesTranslatedFirst,
     stringToJson
 } from './functions.util';
-import { CALENDAR_FIELD_TYPES, JSON_FIELD_MOCK, MULTIPLE_TABS_MOCK } from './mocks';
 
-import { FLATTENED_FIELD_TYPES } from '../models/dot-edit-content-field.constant';
-import { DotEditContentFieldSingleSelectableDataType } from '../models/dot-edit-content-field.enum';
-import { NON_FORM_CONTROL_FIELD_TYPES } from '../models/dot-edit-content-form.enum';
+import { NON_FORM_CONTROL_FIELD_TYPES } from '../models/dot-edit-content-field.constant';
 
 describe('Utils Functions', () => {
     const originalWarn = console.warn;
@@ -37,26 +34,25 @@ describe('Utils Functions', () => {
         console.warn = originalWarn;
     });
 
-    const { castSingleSelectableValue, getSingleSelectableFieldOptions, getFinalCastedValue } =
-        functionsUtil;
+    const { castSingleSelectableValue, getSingleSelectableFieldOptions } = functionsUtil;
 
     describe('castSingleSelectableValue', () => {
         describe('null/undefined/empty handling', () => {
             it('should return null for null value', () => {
-                expect(castSingleSelectableValue(null, '')).toBeNull();
+                expect(castSingleSelectableValue(null, DotCMSDataTypes.BOOLEAN)).toBeNull();
             });
 
             it('should return null for undefined value', () => {
-                expect(castSingleSelectableValue(undefined, '')).toBeNull();
+                expect(castSingleSelectableValue(undefined, DotCMSDataTypes.BOOLEAN)).toBeNull();
             });
 
             it('should return null for empty string', () => {
-                expect(castSingleSelectableValue('', '')).toBeNull();
+                expect(castSingleSelectableValue('', DotCMSDataTypes.BOOLEAN)).toBeNull();
             });
         });
 
         describe('Boolean', () => {
-            const type = DotEditContentFieldSingleSelectableDataType.BOOL;
+            const type = DotCMSDataTypes.BOOLEAN;
 
             it('should handle boolean true directly', () => {
                 expect(castSingleSelectableValue(true, type)).toBe(true);
@@ -101,7 +97,7 @@ describe('Utils Functions', () => {
 
         describe('Numeric', () => {
             describe('INTEGER type', () => {
-                const type = DotEditContentFieldSingleSelectableDataType.INTEGER;
+                const type = DotCMSDataTypes.INTEGER;
 
                 it('should handle number directly', () => {
                     expect(castSingleSelectableValue(42, type)).toBe(42);
@@ -129,7 +125,7 @@ describe('Utils Functions', () => {
             });
 
             describe('FLOAT type', () => {
-                const type = DotEditContentFieldSingleSelectableDataType.FLOAT;
+                const type = DotCMSDataTypes.FLOAT;
 
                 it('should handle float directly', () => {
                     expect(castSingleSelectableValue(3.14, type)).toBe(3.14);
@@ -158,28 +154,32 @@ describe('Utils Functions', () => {
         });
 
         describe('Default string handling', () => {
+            const unknownType = 'unknown' as unknown as DotCMSDataTypes;
+
             it('should convert number to string for unknown type', () => {
-                expect(castSingleSelectableValue(42, 'unknown')).toBe('42');
+                expect(castSingleSelectableValue(42, unknownType)).toBe('42');
             });
 
             it('should convert boolean to string for unknown type', () => {
-                expect(castSingleSelectableValue(true, 'unknown')).toBe('true');
+                expect(castSingleSelectableValue(true, unknownType)).toBe('true');
             });
 
             it('should handle object by converting to string', () => {
                 const obj = { test: 'value' };
-                expect(castSingleSelectableValue(obj, 'unknown')).toBe(String(obj));
+                expect(castSingleSelectableValue(obj, unknownType)).toBe(String(obj));
             });
 
             it('should return string as is for unknown type', () => {
-                expect(castSingleSelectableValue('test', 'unknown')).toBe('test');
+                expect(castSingleSelectableValue('test', unknownType)).toBe('test');
             });
         });
     });
 
     describe('getSingleSelectableFieldOptions', () => {
         it('should return an array of objects with label and value', () => {
-            expect(getSingleSelectableFieldOptions('some label|some value', 'Some type')).toEqual([
+            expect(
+                getSingleSelectableFieldOptions('some label|some value', DotCMSDataTypes.TEXT)
+            ).toEqual([
                 {
                     label: 'some label',
                     value: 'some value'
@@ -188,7 +188,7 @@ describe('Utils Functions', () => {
         });
 
         it('should return an array of objects with label and value even if value is not provided', () => {
-            expect(getSingleSelectableFieldOptions('some label', 'Some type')).toEqual([
+            expect(getSingleSelectableFieldOptions('some label', DotCMSDataTypes.TEXT)).toEqual([
                 {
                     label: 'some label',
                     value: 'some label'
@@ -197,14 +197,14 @@ describe('Utils Functions', () => {
         });
 
         it('should return an empty array if options is empty', () => {
-            expect(getSingleSelectableFieldOptions('', 'Some type')).toEqual([]);
+            expect(getSingleSelectableFieldOptions('', DotCMSDataTypes.TEXT)).toEqual([]);
         });
 
         it('should support multiline options', () => {
             expect(
                 getSingleSelectableFieldOptions(
                     'some label\r\nsome label 2\r\nsome label 3|i have value',
-                    'Some type'
+                    DotCMSDataTypes.TEXT
                 )
             ).toEqual([
                 {
@@ -226,7 +226,7 @@ describe('Utils Functions', () => {
             expect(
                 getSingleSelectableFieldOptions(
                     ' some label \r\n     some label 2 \r\n    some label 3     | i have value ',
-                    'Some type'
+                    DotCMSDataTypes.TEXT
                 )
             ).toEqual([
                 {
@@ -246,7 +246,7 @@ describe('Utils Functions', () => {
         describe.each([
             {
                 optionsString: 'some label\r\n3\r\nsome label 3|i have value\r\nfour|4',
-                dataType: DotEditContentFieldSingleSelectableDataType.INTEGER,
+                dataType: DotCMSDataTypes.INTEGER,
                 expected: [
                     {
                         label: '3',
@@ -261,7 +261,7 @@ describe('Utils Functions', () => {
             {
                 optionsString:
                     'some label\r\n3.14\r\nsome label 3|i have value\r\nfour dot five|4.5',
-                dataType: DotEditContentFieldSingleSelectableDataType.FLOAT,
+                dataType: DotCMSDataTypes.FLOAT,
                 expected: [
                     {
                         label: '3.14',
@@ -275,7 +275,7 @@ describe('Utils Functions', () => {
             },
             {
                 optionsString: 'some label\r\nfalse\r\nsome label 3|true\r\ntrue|true',
-                dataType: DotEditContentFieldSingleSelectableDataType.BOOL,
+                dataType: DotCMSDataTypes.BOOLEAN,
                 expected: [
                     {
                         label: 'some label',
@@ -305,177 +305,6 @@ describe('Utils Functions', () => {
                 });
             }
         );
-    });
-
-    describe('getFinalCastedValue', () => {
-        describe.each([...CALENDAR_FIELD_TYPES])('Calendar Fields', (fieldType) => {
-            describe(fieldType, () => {
-                it('should parse the date if the value is a valid date', () => {
-                    const value = '2021-09-01T18:00:00.000Z';
-                    const field = { fieldType } as DotCMSContentTypeField;
-
-                    expect((getFinalCastedValue(value, field) as Date).toDateString()).toEqual(
-                        new Date(value).toDateString()
-                    );
-                });
-
-                it("should return Date.now if the value is 'now'", () => {
-                    const value = 'now';
-                    const field = { fieldType } as DotCMSContentTypeField;
-
-                    expect((getFinalCastedValue(value, field) as Date).toDateString()).toEqual(
-                        new Date().toDateString()
-                    );
-                });
-
-                it('should return undefined if the value is undefined', () => {
-                    const value = undefined;
-                    const field = { fieldType } as DotCMSContentTypeField;
-
-                    expect(getFinalCastedValue(value, field)).toEqual(undefined);
-                });
-            });
-        });
-
-        describe.each([...FLATTENED_FIELD_TYPES])('Flattened Fields', (fieldType) => {
-            describe(fieldType, () => {
-                it('should return an array of the values', () => {
-                    const value = 'value1,value2,value3';
-                    const field = { fieldType } as DotCMSContentTypeField;
-
-                    expect(getFinalCastedValue(value, field)).toEqual([
-                        'value1',
-                        'value2',
-                        'value3'
-                    ]);
-                });
-
-                it('should trim the values', () => {
-                    const value = ' value1 , value2 , value3 ';
-                    const field = { fieldType } as DotCMSContentTypeField;
-
-                    expect(getFinalCastedValue(value, field)).toEqual([
-                        'value1',
-                        'value2',
-                        'value3'
-                    ]);
-                });
-
-                it('should return undefined if the value is undefined', () => {
-                    const value = undefined;
-                    const field = { fieldType } as DotCMSContentTypeField;
-
-                    expect(getFinalCastedValue(value, field)).toEqual(undefined);
-                });
-            });
-        });
-
-        describe('No special field', () => {
-            it('should call castSingleSelectableValue', () => {
-                const value = 'value1';
-                const field = {
-                    fieldType: 'something',
-                    dataType: 'something'
-                } as DotCMSContentTypeField;
-
-                const castSingleSelectableValueMock = jest.spyOn(
-                    functionsUtil,
-                    'castSingleSelectableValue'
-                );
-
-                getFinalCastedValue(value, field);
-
-                expect(castSingleSelectableValueMock).toHaveBeenCalledWith(value, field.dataType);
-            });
-        });
-
-        it('should return undefined value', () => {
-            const value = undefined;
-            const field = {
-                fieldType: 'something',
-                dataType: 'something'
-            } as DotCMSContentTypeField;
-
-            const res = getFinalCastedValue(value, field);
-            expect(res).toBeUndefined();
-        });
-
-        it('should return a JSON value', () => {
-            const value = {
-                attrs: {},
-                content: [],
-                type: 'doc'
-            };
-            const field = {
-                fieldType: 'Story-Block',
-                dataType: 'something'
-            } as DotCMSContentTypeField;
-
-            const res = getFinalCastedValue(value, field);
-            expect(res).toEqual(value);
-        });
-
-        describe('JSON Field', () => {
-            it('should return a JSON value as string keeping the format', () => {
-                const value = {
-                    value1: 'value1',
-                    value2: 'value2',
-                    value3: 'value3'
-                };
-
-                const field = {
-                    fieldType: JSON_FIELD_MOCK.fieldType
-                } as DotCMSContentTypeField;
-
-                const res = getFinalCastedValue(value, field);
-                const formattedValue = JSON.stringify(value, null, 2);
-                expect(res).toBe(formattedValue);
-            });
-        });
-
-        describe('Form Tabs', () => {
-            it('should transform layout to tabs', () => {
-                const expected = [
-                    {
-                        title: 'first tab',
-                        layout: [
-                            {
-                                divider: {
-                                    clazz: 'com.dotcms.contenttype.model.field.ImmutableRowField',
-                                    contentTypeId: 'd46d6404125ac27e6ab68fad09266241',
-                                    dataType: 'SYSTEM',
-                                    fieldType: 'Row',
-                                    fieldTypeLabel: 'Row',
-                                    fieldVariables: [],
-                                    fixed: false,
-                                    forceIncludeInApi: false,
-                                    iDate: 1697051073000,
-                                    id: 'a31ea895f80eb0a3754e4a2292e09a52',
-                                    indexed: false,
-                                    listed: false,
-                                    modDate: 1697051077000,
-                                    name: 'fields-0',
-                                    readOnly: false,
-                                    required: false,
-                                    searchable: false,
-                                    sortOrder: 0,
-                                    unique: false,
-                                    variable: 'fields0'
-                                },
-                                columns: []
-                            }
-                        ]
-                    },
-                    {
-                        title: 'New Tab',
-                        layout: []
-                    }
-                ];
-                const res = functionsUtil.transformLayoutToTabs('first tab', MULTIPLE_TABS_MOCK);
-
-                expect(res).toEqual(expected);
-            });
-        });
     });
 
     describe('isValidJson', () => {
@@ -713,7 +542,7 @@ describe('Utils Functions', () => {
             expect(filteredFields.length).toBe(MOCK_FORM_CONTROL_FIELDS.length);
 
             filteredFields.forEach((field) => {
-                const fieldType = field.fieldType as NON_FORM_CONTROL_FIELD_TYPES;
+                const fieldType = field.fieldType;
                 expect(nonFormControlFieldTypes.includes(fieldType)).toBe(false);
             });
         });

@@ -1,5 +1,4 @@
-import { ContentTypeTextField, DotCMSDataTypes } from "@dotcms/dotcms-models";
-
+import { ContentTypeTextField, DotCMSDataTypes } from '@dotcms/dotcms-models';
 
 // This is to hold the options for the input type
 export interface InputTextOptions {
@@ -9,10 +8,7 @@ export interface InputTextOptions {
 }
 
 // This is to hold the options for the input type
-export const INPUT_TEXT_OPTIONS: Record<
-    ContentTypeTextField['dataType'],
-    InputTextOptions
-> = {
+export const INPUT_TEXT_OPTIONS: Record<ContentTypeTextField['dataType'], InputTextOptions> = {
     [DotCMSDataTypes.TEXT]: {
         type: 'text',
         inputMode: 'text'

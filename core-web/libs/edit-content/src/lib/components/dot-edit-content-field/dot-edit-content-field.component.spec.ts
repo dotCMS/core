@@ -18,6 +18,7 @@ import {
     DotMessageService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
+import { DotCMSFieldTypes } from '@dotcms/dotcms-models';
 import { DotKeyValueComponent } from '@dotcms/ui';
 
 import { DotEditContentFieldComponent } from './dot-edit-content-field.component';
@@ -40,7 +41,6 @@ import { DotEditContentTagFieldComponent } from '../../fields/dot-edit-content-t
 import { DotEditContentTextAreaComponent } from '../../fields/dot-edit-content-text-area/dot-edit-content-text-area.component';
 import { DotEditContentTextFieldComponent } from '../../fields/dot-edit-content-text-field/dot-edit-content-text-field.component';
 import { DotEditContentWYSIWYGFieldComponent } from '../../fields/dot-edit-content-wysiwyg-field/dot-edit-content-wysiwyg-field.component';
-import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
 import { DotEditContentService } from '../../services/dot-edit-content.service';
 import { DotEditContentStore } from '../../store/edit-content.store';
 import {
@@ -72,13 +72,15 @@ declare module '@tiptap/core' {
 
 // This holds the mapping between the field type and the component that should be used to render it.
 // We need to hold this record here, because for some reason the references just fall to undefined.
-const FIELD_TYPES_COMPONENTS: Record<FIELD_TYPES, Type<unknown> | DotEditFieldTestBed> = {
+const FIELD_TYPES_COMPONENTS: Record<DotCMSFieldTypes, DotEditFieldTestBed> = {
     // We had to use unknown because components have different types.
-    [FIELD_TYPES.TEXT]: DotEditContentTextFieldComponent,
-    [FIELD_TYPES.RELATIONSHIP]: {
+    [DotCMSFieldTypes.TEXT]: {
+        component: DotEditContentTextFieldComponent
+    },
+    [DotCMSFieldTypes.RELATIONSHIP]: {
         component: DotEditContentRelationshipFieldComponent
     },
-    [FIELD_TYPES.FILE]: {
+    [DotCMSFieldTypes.FILE]: {
         component: DotEditContentFileFieldComponent,
         providers: [
             {
@@ -87,7 +89,7 @@ const FIELD_TYPES_COMPONENTS: Record<FIELD_TYPES, Type<unknown> | DotEditFieldTe
             }
         ]
     },
-    [FIELD_TYPES.IMAGE]: {
+    [DotCMSFieldTypes.IMAGE]: {
         component: DotEditContentFileFieldComponent,
         providers: [
             {
@@ -96,13 +98,25 @@ const FIELD_TYPES_COMPONENTS: Record<FIELD_TYPES, Type<unknown> | DotEditFieldTe
             }
         ]
     },
-    [FIELD_TYPES.TEXTAREA]: DotEditContentTextAreaComponent,
-    [FIELD_TYPES.SELECT]: DotEditContentSelectFieldComponent,
-    [FIELD_TYPES.RADIO]: DotEditContentRadioFieldComponent,
-    [FIELD_TYPES.DATE]: DotEditContentCalendarFieldComponent,
-    [FIELD_TYPES.DATE_AND_TIME]: DotEditContentCalendarFieldComponent,
-    [FIELD_TYPES.TIME]: DotEditContentCalendarFieldComponent,
-    [FIELD_TYPES.HOST_FOLDER]: {
+    [DotCMSFieldTypes.TEXTAREA]: {
+        component: DotEditContentTextAreaComponent
+    },
+    [DotCMSFieldTypes.SELECT]: {
+        component: DotEditContentSelectFieldComponent
+    },
+    [DotCMSFieldTypes.RADIO]: {
+        component: DotEditContentRadioFieldComponent
+    },
+    [DotCMSFieldTypes.DATE]: {
+        component: DotEditContentCalendarFieldComponent
+    },
+    [DotCMSFieldTypes.DATE_AND_TIME]: {
+        component: DotEditContentCalendarFieldComponent
+    },
+    [DotCMSFieldTypes.TIME]: {
+        component: DotEditContentCalendarFieldComponent
+    },
+    [DotCMSFieldTypes.HOST_FOLDER]: {
         component: DotEditContentHostFolderFieldComponent,
         providers: [
             mockProvider(DotEditContentService, {
@@ -110,19 +124,23 @@ const FIELD_TYPES_COMPONENTS: Record<FIELD_TYPES, Type<unknown> | DotEditFieldTe
             })
         ]
     },
-    [FIELD_TYPES.TAG]: {
+    [DotCMSFieldTypes.TAG]: {
         component: DotEditContentTagFieldComponent,
         providers: [{ provide: DotEditContentService, useValue: { getTags: () => of([]) } }]
     },
-    [FIELD_TYPES.CHECKBOX]: DotEditContentCheckboxFieldComponent,
-    [FIELD_TYPES.MULTI_SELECT]: DotEditContentMultiSelectFieldComponent,
-    [FIELD_TYPES.BLOCK_EDITOR]: {
+    [DotCMSFieldTypes.CHECKBOX]: {
+        component: DotEditContentCheckboxFieldComponent
+    },
+    [DotCMSFieldTypes.MULTI_SELECT]: {
+        component: DotEditContentMultiSelectFieldComponent
+    },
+    [DotCMSFieldTypes.BLOCK_EDITOR]: {
         component: DotBlockEditorComponent,
         declarations: [MockComponent(DotBlockEditorComponent)],
         imports: [BlockEditorModule],
         outsideFormControl: true
     },
-    [FIELD_TYPES.CUSTOM_FIELD]: {
+    [DotCMSFieldTypes.CUSTOM_FIELD]: {
         component: DotEditContentCustomFieldComponent,
         providers: [
             mockProvider(DotEditContentService),
@@ -134,7 +152,7 @@ const FIELD_TYPES_COMPONENTS: Record<FIELD_TYPES, Type<unknown> | DotEditFieldTe
             }
         ]
     },
-    [FIELD_TYPES.BINARY]: {
+    [DotCMSFieldTypes.BINARY]: {
         component: DotEditContentBinaryFieldComponent,
         providers: [
             {
@@ -155,16 +173,16 @@ const FIELD_TYPES_COMPONENTS: Record<FIELD_TYPES, Type<unknown> | DotEditFieldTe
         ],
         outsideFormControl: true
     },
-    [FIELD_TYPES.JSON]: {
+    [DotCMSFieldTypes.JSON]: {
         component: DotEditContentJsonFieldComponent,
         declarations: [MockComponent(DotEditContentJsonFieldComponent)]
     },
-    [FIELD_TYPES.KEY_VALUE]: {
+    [DotCMSFieldTypes.KEY_VALUE]: {
         component: DotEditContentKeyValueComponent,
         declarations: [MockComponent(DotKeyValueComponent)],
         providers: [mockProvider(DotMessageDisplayService)]
     },
-    [FIELD_TYPES.WYSIWYG]: {
+    [DotCMSFieldTypes.WYSIWYG]: {
         component: DotEditContentWYSIWYGFieldComponent,
         providers: [
             {
@@ -184,16 +202,28 @@ const FIELD_TYPES_COMPONENTS: Record<FIELD_TYPES, Type<unknown> | DotEditFieldTe
         ],
         declarations: [MockComponent(EditorComponent)]
     },
-    [FIELD_TYPES.CATEGORY]: {
+    [DotCMSFieldTypes.CATEGORY]: {
         component: DotEditContentCategoryFieldComponent
     },
-    [FIELD_TYPES.CONSTANT]: {
+    [DotCMSFieldTypes.CONSTANT]: {
         component: null // this field is not being rendered for now.
     },
-    [FIELD_TYPES.HIDDEN]: {
+    [DotCMSFieldTypes.HIDDEN]: {
         component: null // this field is not being rendered for now.
     },
-    [FIELD_TYPES.LINE_DIVIDER]: {
+    [DotCMSFieldTypes.LINE_DIVIDER]: {
+        component: null
+    },
+    [DotCMSFieldTypes.ROW]: {
+        component: null
+    },
+    [DotCMSFieldTypes.COLUMN]: {
+        component: null
+    },
+    [DotCMSFieldTypes.TAB_DIVIDER]: {
+        component: null
+    },
+    [DotCMSFieldTypes.COLUMN_BREAK]: {
         component: null
     }
 };
@@ -201,7 +231,7 @@ const FIELD_TYPES_COMPONENTS: Record<FIELD_TYPES, Type<unknown> | DotEditFieldTe
 describe('FIELD_TYPES and FIELDS_MOCK', () => {
     it('should be in sync', () => {
         expect(
-            Object.values(FIELD_TYPES).every((fieldType) =>
+            Object.values(DotCMSFieldTypes).every((fieldType) =>
                 FIELDS_MOCK.find((f) => f.fieldType === fieldType)
             )
         ).toBeTruthy();
@@ -210,9 +240,13 @@ describe('FIELD_TYPES and FIELDS_MOCK', () => {
 
 const FIELDS_TO_BE_RENDER = FIELDS_MOCK.filter(
     (field) =>
-        field.fieldType !== FIELD_TYPES.CONSTANT &&
-        field.fieldType !== FIELD_TYPES.HIDDEN &&
-        field.fieldType !== FIELD_TYPES.LINE_DIVIDER
+        field.fieldType !== DotCMSFieldTypes.CONSTANT &&
+        field.fieldType !== DotCMSFieldTypes.HIDDEN &&
+        field.fieldType !== DotCMSFieldTypes.LINE_DIVIDER &&
+        field.fieldType !== DotCMSFieldTypes.ROW &&
+        field.fieldType !== DotCMSFieldTypes.COLUMN &&
+        field.fieldType !== DotCMSFieldTypes.TAB_DIVIDER &&
+        field.fieldType !== DotCMSFieldTypes.COLUMN_BREAK
 );
 
 describe.each([...FIELDS_TO_BE_RENDER])('DotEditContentFieldComponent all fields', (fieldMock) => {
@@ -243,13 +277,13 @@ describe.each([...FIELDS_TO_BE_RENDER])('DotEditContentFieldComponent all fields
             props: {
                 field: fieldMock,
                 ...(fieldTestBed?.props || {})
-            },
+            } as unknown,
             providers: [...(fieldTestBed?.providers || [])]
         });
     });
 
     describe(`${fieldMock.fieldType} - ${fieldMock.dataType}`, () => {
-        if (fieldMock.fieldType !== FIELD_TYPES.CUSTOM_FIELD) {
+        if (fieldMock.fieldType !== DotCMSFieldTypes.CUSTOM_FIELD) {
             it('should render the label', () => {
                 spectator.detectChanges();
                 const label = spectator.query(byTestId(`label-${fieldMock.variable}`));
@@ -257,7 +291,7 @@ describe.each([...FIELDS_TO_BE_RENDER])('DotEditContentFieldComponent all fields
             });
         }
 
-        if (fieldMock.fieldType !== FIELD_TYPES.RELATIONSHIP) {
+        if (fieldMock.fieldType !== DotCMSFieldTypes.RELATIONSHIP) {
             it('should render the hint if present', () => {
                 spectator.detectChanges();
                 const hint = spectator.query(byTestId(`hint-${fieldMock.variable}`));
@@ -267,7 +301,7 @@ describe.each([...FIELDS_TO_BE_RENDER])('DotEditContentFieldComponent all fields
 
         it('should render the correct field type', () => {
             spectator.detectChanges();
-            const FIELD_TYPE = fieldTestBed.component ? fieldTestBed.component : fieldTestBed;
+            const FIELD_TYPE = fieldTestBed.component;
             const component = spectator.query(FIELD_TYPE);
 
             expect(component).toBeTruthy();
@@ -281,20 +315,6 @@ describe.each([...FIELDS_TO_BE_RENDER])('DotEditContentFieldComponent all fields
                     By.css(`[data-testId="field-${fieldMock.variable}"]`)
                 );
                 expect(field.attributes['ng-reflect-name']).toBe(fieldMock.variable);
-            });
-        }
-
-        if (fieldTestBed.props) {
-            describe('With props', () => {
-                fieldTestBed.props.forEach((prop) => {
-                    it(`should have ${prop.key} property`, () => {
-                        spectator.detectChanges();
-                        const field = spectator.debugElement.query(
-                            By.css(`[data-testId="field-${fieldMock.variable}"]`)
-                        );
-                        expect(field.componentInstance[prop.key]).toEqual(prop.valueExpected);
-                    });
-                });
             });
         }
     });

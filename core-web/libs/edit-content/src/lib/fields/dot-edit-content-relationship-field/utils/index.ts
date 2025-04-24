@@ -1,4 +1,4 @@
-import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { ContentTypeRelationshipField, DotCMSContentlet } from '@dotcms/dotcms-models';
 
 import { RELATIONSHIP_OPTIONS } from '../dot-edit-content-relationship-field.constants';
 import { RelationshipTypes } from '../models/relationship.models';
@@ -63,7 +63,7 @@ export function getRelationshipFromContentlet({
  * @returns The content type ID
  * @throws An error if the content type ID is not found
  */
-export function getContentTypeIdFromRelationship(field: DotCMSContentTypeField): string {
+export function getContentTypeIdFromRelationship(field: ContentTypeRelationshipField): string {
     if (!field?.relationships?.velocityVar) {
         throw new Error('Content type ID not found in relationship field');
     }

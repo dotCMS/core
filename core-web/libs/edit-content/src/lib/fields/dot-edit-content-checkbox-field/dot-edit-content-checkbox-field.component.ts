@@ -3,7 +3,7 @@ import { ControlContainer, FormControl, FormsModule, ReactiveFormsModule } from 
 
 import { CheckboxModule } from 'primeng/checkbox';
 
-import { ContentTypeCheckboxField, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { ContentTypeCheckboxField } from '@dotcms/dotcms-models';
 
 import { getSingleSelectableFieldOptions } from '../../utils/functions.util';
 @Component({
