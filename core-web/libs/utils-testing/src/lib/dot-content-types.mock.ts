@@ -37,6 +37,8 @@ import {
     ContentTypeHiddenField
 } from '@dotcms/dotcms-models';
 
+export const dotcmsContentTypeBasicMock = createFakeContentType();
+
 export function createFakeContentType(
     overrides: Partial<DotCMSContentType> = {}
 ): DotCMSContentType {

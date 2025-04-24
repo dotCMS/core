@@ -3,10 +3,10 @@ import { TestBed } from '@angular/core/testing';
 
 import { DotPageTypesService } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
-import { CoreWebServiceMock, createFakeContentType } from '@dotcms/utils-testing';
+import { CoreWebServiceMock, dotcmsContentTypeBasicMock } from '@dotcms/utils-testing';
 
 const fakeResponse = {
-    entity: [createFakeContentType()]
+    entity: [{ ...dotcmsContentTypeBasicMock }]
 };
 
 describe('DotPageTypesService', () => {

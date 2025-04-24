@@ -52,17 +52,17 @@ import { DotLoadingIndicatorService } from '@dotcms/utils';
 import {
     cleanUpDialog,
     CoreWebServiceMock,
-    createFakeContentType,
-    createFakeRowField,
+    createFakeBlockEditorField,
     createFakeColumnField,
+    createFakeRowField,
+    createFakeTabDividerField,
+    createFakeTextField,
+    createFakeWYSIWYGField,
+    dotcmsContentTypeBasicMock,
     fieldsBrokenWithColumns,
     fieldsWithBreakColumn,
     FieldUtil,
-    MockDotMessageService,
-    createFakeTextField,
-    createFakeBlockEditorField,
-    createFakeWYSIWYGField,
-    createFakeTabDividerField
+    MockDotMessageService
 } from '@dotcms/utils-testing';
 
 import { ContentTypeFieldsDropZoneComponent } from '.';
@@ -77,12 +77,13 @@ import { FieldDragDropService } from '../service/index';
 
 const COLUMN_BREAK_FIELD = FieldUtil.createColumnBreak();
 
-const fakeContentType: DotCMSContentType = createFakeContentType({
+const fakeContentType: DotCMSContentType = {
+    ...dotcmsContentTypeBasicMock,
     id: '1234567890',
     name: 'ContentTypeName',
     variable: 'helloVariable',
     baseType: 'testBaseType'
-});
+};
 
 @Component({
     selector: 'dot-content-type-fields-row',
@@ -330,9 +331,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
         let fieldsToRemove: DotCMSContentTypeField[];
 
         const fieldRow: DotCMSContentTypeLayoutRow = FieldUtil.createFieldRow(1);
-        const field = createFakeTextField({
-            name: 'nameField'
-        });
+        const field = createFakeTextField();
         fieldRow.columns[0].fields = [field];
         fieldRow.divider.id = 'test';
 
@@ -580,7 +579,14 @@ describe('Load fields and drag and drop', () => {
                             sortOrder: 1,
                             contentTypeId: '2b'
                         }),
-                        fields: [createFakeWYSIWYGField()]
+                        fields: [
+                            createFakeWYSIWYGField({
+                                id: '3',
+                                name: 'field 3',
+                                sortOrder: 2,
+                                contentTypeId: '3b'
+                            })
+                        ]
                     },
                     {
                         columnDivider: createFakeColumnField({
@@ -623,7 +629,14 @@ describe('Load fields and drag and drop', () => {
                             sortOrder: 7,
                             contentTypeId: '8b'
                         }),
-                        fields: [createFakeTextField()]
+                        fields: [
+                            createFakeTextField({
+                                id: '9',
+                                name: 'field 9',
+                                sortOrder: 8,
+                                contentTypeId: '9b'
+                            })
+                        ]
                     }
                 ]
             },
@@ -861,7 +874,10 @@ describe('Load fields and drag and drop', () => {
     });
 
     it('should disable field variable tab', () => {
-        comp.currentField = createFakeTextField();
+        const field = createFakeTextField({
+            id: '123'
+        });
+        comp.currentField = field;
         comp.displayDialog = true;
         fixture.detectChanges();
 
@@ -870,9 +886,10 @@ describe('Load fields and drag and drop', () => {
     });
 
     it('should NOT disable field variable tab', () => {
-        comp.currentField = createFakeTextField({
+        const field = createFakeTextField({
             id: '123'
         });
+        comp.currentField = field;
         comp.displayDialog = true;
         fixture.detectChanges();
         const tabLinks = de.queryAll(By.css('.p-tabview-nav li'));
@@ -1051,7 +1068,9 @@ describe('Load fields and drag and drop', () => {
             fixture.detectChanges();
             const fieldBoxComponent = de.query(By.css('dot-content-type-fields-row'))
                 .componentInstance as TestContentTypeFieldsRowComponent;
-            fieldBoxComponent.editField.emit(createFakeWYSIWYGField());
+
+            const mockField = createFakeWYSIWYGField();
+            fieldBoxComponent.editField.emit(mockField);
             fixture.detectChanges();
 
             const BLOCK_EDITOR_SETTINGS = de.query(By.css('dot-block-editor-settings'));

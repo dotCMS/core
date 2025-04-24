@@ -20,7 +20,7 @@ import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotContentTypeService, DotMessageService, PaginatorService } from '@dotcms/data-access';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
 import { DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
-import { createFakeContentType, MockDotMessageService } from '@dotcms/utils-testing';
+import { dotcmsContentTypeBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
 import { DotRelationshipCardinality } from '@portlets/shared/dot-content-types-edit/components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/model/dot-relationship-cardinality.model';
 import { DotRelationshipService } from '@portlets/shared/dot-content-types-edit/components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/services/dot-relationship.service';
 
@@ -39,7 +39,8 @@ const cardinalities = [
     }
 ];
 
-const contentTypeMock: DotCMSContentType = createFakeContentType({
+const contentTypeMock: DotCMSContentType = {
+    ...dotcmsContentTypeBasicMock,
     clazz: 'clazz',
     defaultType: false,
     fixed: false,
@@ -50,7 +51,7 @@ const contentTypeMock: DotCMSContentType = createFakeContentType({
     variable: 'banner',
     owner: 'user',
     system: true
-});
+};
 
 @Component({
     selector: 'dot-host-component',

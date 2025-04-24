@@ -28,14 +28,15 @@ import {
 } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
-    createFakeContentType,
+    dotcmsContentTypeBasicMock,
     MockDotMessageService
 } from '@dotcms/utils-testing';
 import { DotFormSelectorModule } from '@portlets/dot-edit-page/content/components/dot-form-selector/dot-form-selector.module';
 
 import { DotAddToMenuComponent } from './dot-add-to-menu.component';
 
-const contentTypeVar = createFakeContentType({
+const contentTypeVar = {
+    ...dotcmsContentTypeBasicMock,
     clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
     id: '1234567890',
     name: 'Nuevo',
@@ -46,7 +47,7 @@ const contentTypeVar = createFakeContentType({
     host: null,
     owner: '123',
     system: false
-});
+};
 
 @Component({
     selector: 'dot-test-host-component',

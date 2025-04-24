@@ -40,7 +40,7 @@ export enum DotCMSClazzes {
     TEXT = 'com.dotcms.contenttype.model.field.ImmutableTextField',
     TEXTAREA = 'com.dotcms.contenttype.model.field.ImmutableTextAreaField',
     TIME = 'com.dotcms.contenttype.model.field.ImmutableTimeField',
-    WYSIWYG = 'com.dotcms.contenttype.model.field.ImmutableWYSIWYGField'
+    WYSIWYG = 'com.dotcms.contenttype.model.field.ImmutableWysiwygField'
 }
 
 /**

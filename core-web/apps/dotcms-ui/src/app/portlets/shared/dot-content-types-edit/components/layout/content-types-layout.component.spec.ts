@@ -31,7 +31,7 @@ import {
 } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
-    createFakeContentType,
+    dotcmsContentTypeBasicMock,
     MockDotMessageService
 } from '@dotcms/utils-testing';
 
@@ -96,13 +96,14 @@ class FieldDragDropServiceMock {
     setBagOptions() {}
 }
 
-const fakeContentType: DotCMSContentType = createFakeContentType({
+const fakeContentType: DotCMSContentType = {
+    ...dotcmsContentTypeBasicMock,
     icon: 'testIcon',
     id: '1234567890',
     name: 'name',
     variable: 'helloVariable',
     baseType: 'testBaseType'
-});
+};
 
 describe('ContentTypesLayoutComponent', () => {
     let fixture: ComponentFixture<TestHostComponent>;

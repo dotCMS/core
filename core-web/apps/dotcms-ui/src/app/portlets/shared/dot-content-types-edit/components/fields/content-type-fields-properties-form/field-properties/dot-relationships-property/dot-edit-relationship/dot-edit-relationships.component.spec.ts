@@ -12,7 +12,7 @@ import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotMessageService, PaginatorService } from '@dotcms/data-access';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
-import { createFakeContentType, MockDotMessageService } from '@dotcms/utils-testing';
+import { dotcmsContentTypeBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
 import { DotRelationshipCardinality } from '@portlets/shared/dot-content-types-edit/components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/model/dot-relationship-cardinality.model';
 import { DotEditContentTypeCacheService } from '@portlets/shared/dot-content-types-edit/components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/services/dot-edit-content-type-cache.service';
 import { DotRelationshipService } from '@portlets/shared/dot-content-types-edit/components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/services/dot-relationship.service';
@@ -92,7 +92,8 @@ class MockRelationshipService {
 }
 
 describe('DotEditRelationshipsComponent', () => {
-    const contentTypeMock: DotCMSContentType = createFakeContentType({
+    const contentTypeMock: DotCMSContentType = {
+        ...dotcmsContentTypeBasicMock,
         clazz: 'clazz',
         defaultType: false,
         fixed: false,
@@ -102,7 +103,7 @@ describe('DotEditRelationshipsComponent', () => {
         owner: 'user',
         system: true,
         id: '1'
-    });
+    };
 
     let comp: DotEditRelationshipsComponent;
     let fixture: ComponentFixture<DotEditRelationshipsComponent>;

@@ -38,7 +38,7 @@ import {
 import { DotCMSContentType, DotCopyContentTypeDialogFormFields } from '@dotcms/dotcms-models';
 import {
     CoreWebServiceMock,
-    createFakeContentType,
+    dotcmsContentTypeBasicMock,
     MockDotMessageService,
     MockPushPublishService
 } from '@dotcms/utils-testing';
@@ -235,7 +235,8 @@ describe('DotContentTypesPortletComponent', () => {
     it('should remove the content type on click command function', () => {
         fixture.detectChanges();
 
-        const mockContentType: DotCMSContentType = createFakeContentType({
+        const mockContentType: DotCMSContentType = {
+            ...dotcmsContentTypeBasicMock,
             clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
             id: '1234567890',
             name: 'Nuevo',
@@ -246,7 +247,7 @@ describe('DotContentTypesPortletComponent', () => {
             host: null,
             owner: '123',
             system: false
-        });
+        };
 
         const dotDialogService = fixture.debugElement.injector.get(DotAlertConfirmService);
         spyOn(dotDialogService, 'confirm').and.callFake((conf) => {
@@ -307,7 +308,8 @@ describe('DotContentTypesPortletComponent', () => {
     it('should open push publish dialog', () => {
         fixture.detectChanges();
         spyOn(dotPushPublishDialogService, 'open').and.callThrough();
-        const mockContentType: DotCMSContentType = createFakeContentType({
+        const mockContentType: DotCMSContentType = {
+            ...dotcmsContentTypeBasicMock,
             clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
             id: '1234567890',
             name: 'Nuevo',
@@ -318,7 +320,7 @@ describe('DotContentTypesPortletComponent', () => {
             host: null,
             owner: '123',
             system: false
-        });
+        };
 
         expect(de.query(By.css('p-dialog'))).toBeNull();
 
@@ -333,7 +335,8 @@ describe('DotContentTypesPortletComponent', () => {
 
     it('should open add to bundle dialog', () => {
         fixture.detectChanges();
-        const mockContentType: DotCMSContentType = createFakeContentType({
+        const mockContentType: DotCMSContentType = {
+            ...dotcmsContentTypeBasicMock,
             clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
             id: '1234567890',
             name: 'Nuevo',
@@ -344,7 +347,7 @@ describe('DotContentTypesPortletComponent', () => {
             host: null,
             owner: '123',
             system: false
-        });
+        };
         expect(comp.addToBundleIdentifier).not.toBeDefined();
         expect(de.query(By.css('p-dialog'))).toBeNull();
 
@@ -357,7 +360,8 @@ describe('DotContentTypesPortletComponent', () => {
 
     it('should open Add to Menu dialog', () => {
         fixture.detectChanges();
-        const mockContentType: DotCMSContentType = createFakeContentType({
+        const mockContentType: DotCMSContentType = {
+            ...dotcmsContentTypeBasicMock,
             clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
             id: '1234567890',
             name: 'Nuevo',
@@ -368,7 +372,7 @@ describe('DotContentTypesPortletComponent', () => {
             host: null,
             owner: '123',
             system: false
-        });
+        };
         expect(comp.addToMenuContentType).not.toBeDefined();
         expect(de.query(By.css('p-dialog'))).toBeNull();
         comp.rowActions[ADD_TO_MENU_INDEX].menuItem.command(mockContentType);
@@ -410,7 +414,8 @@ describe('DotContentTypesPortletComponent', () => {
 
         fixture.detectChanges();
 
-        const mockContentType: DotCMSContentType = createFakeContentType({
+        const mockContentType: DotCMSContentType = {
+            ...dotcmsContentTypeBasicMock,
             clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
             id: '1234567890',
             name: 'Nuevo',
@@ -421,7 +426,7 @@ describe('DotContentTypesPortletComponent', () => {
             host: null,
             owner: '123',
             system: false
-        });
+        };
 
         const dotDialogService = fixture.debugElement.injector.get(DotAlertConfirmService);
         spyOn(dotDialogService, 'confirm').and.callFake((conf) => {

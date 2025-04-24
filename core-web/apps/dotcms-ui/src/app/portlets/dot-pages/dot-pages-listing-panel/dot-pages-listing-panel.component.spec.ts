@@ -26,7 +26,7 @@ import { DotAutofocusDirective, DotMessagePipe, DotRelativeDatePipe } from '@dot
 import {
     DotcmsConfigServiceMock,
     dotcmsContentletMock,
-    createFakeContentType,
+    dotcmsContentTypeBasicMock,
     MockDotMessageService
 } from '@dotcms/utils-testing';
 
@@ -109,7 +109,7 @@ describe('DotPagesListingPanelComponent', () => {
         }
 
         get pageTypes$() {
-            return of([createFakeContentType()]);
+            return of([{ ...dotcmsContentTypeBasicMock }]);
         }
 
         getPages(): void {

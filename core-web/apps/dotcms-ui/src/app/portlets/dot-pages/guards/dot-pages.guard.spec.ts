@@ -5,7 +5,7 @@ import { Component } from '@angular/core';
 import { RouterModule } from '@angular/router';
 
 import { DotContentTypeService, DotContentletService, DotRouterService } from '@dotcms/data-access';
-import { EMPTY_CONTENTLET, createFakeContentType } from '@dotcms/utils-testing';
+import { EMPTY_CONTENTLET, dotcmsContentTypeBasicMock } from '@dotcms/utils-testing';
 
 import {
     newEditContentForContentTypeGuard,
@@ -24,17 +24,19 @@ const CONTENTLET_MOCK = {
     contentType: 'Blog'
 };
 
-const CONTENT_TYPE_WITH_CONTENT_EDITOR2_ENABLED_MOCK = createFakeContentType({
+const CONTENT_TYPE_WITH_CONTENT_EDITOR2_ENABLED_MOCK = {
+    ...dotcmsContentTypeBasicMock,
     metadata: {
         CONTENT_EDITOR2_ENABLED: true
     }
-});
+};
 
-const CONTENT_TYPE_WITHOUT_CONTENT_EDITOR2_ENABLED_MOCK = createFakeContentType({
+const CONTENT_TYPE_WITHOUT_CONTENT_EDITOR2_ENABLED_MOCK = {
+    ...dotcmsContentTypeBasicMock,
     metadata: {
         CONTENT_EDITOR2_ENABLED: false
     }
-});
+};
 
 describe('Guards', () => {
     let spectator: SpectatorRouting<TestComponent>;

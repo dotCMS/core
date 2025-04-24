@@ -30,7 +30,7 @@ import {
 } from '@dotcms/dotcms-models';
 import {
     CoreWebServiceMock,
-    createFakeContentType,
+    dotcmsContentTypeBasicMock,
     mockDotLayout,
     MockDotMessageService,
     mockDotPage,
@@ -1209,7 +1209,8 @@ xdescribe('DotEditContentHtmlService', () => {
     });
 
     describe('render Form', () => {
-        const form: DotCMSContentType = createFakeContentType({
+        const form: DotCMSContentType = {
+            ...dotcmsContentTypeBasicMock,
             clazz: 'clazz',
             defaultType: true,
             fixed: true,
@@ -1221,7 +1222,7 @@ xdescribe('DotEditContentHtmlService', () => {
             baseType: 'form',
             id: '2',
             variable: 'test123'
-        });
+        };
 
         const currentContainer = {
             identifier: '123',
