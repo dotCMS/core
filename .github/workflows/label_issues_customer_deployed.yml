@@ -49,4 +49,4 @@ jobs:
           
           # Execute the Python script
           cd scripts/dev-metrics
-          python add_customer_deployed_label.py "$RELEASE_LABEL"
+          python add_customer_deployed_label.py --release-label "$RELEASE_LABEL"
