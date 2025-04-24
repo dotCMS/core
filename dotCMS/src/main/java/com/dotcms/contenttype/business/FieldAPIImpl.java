@@ -163,12 +163,14 @@ public class FieldAPIImpl implements FieldAPI {
     public Field save(final Field field, final User user, final boolean reorder)
             throws DotDataException, DotSecurityException {
 
-        validateFieldReferences(field);
+
 
         if (!UtilMethods.isSet(field.contentTypeId())) {
             Logger.error(this, "ContentTypeId needs to be set to save the Field");
             throw new DotDataValidationException("ContentTypeId needs to be set to save the Field");
         }
+
+        validateFieldReferences(field);
 
         ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
         ContentType type = contentTypeAPI.find(field.contentTypeId());
