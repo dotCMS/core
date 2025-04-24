@@ -1,5 +1,4 @@
 import { describe, expect } from '@jest/globals';
-import { SpyObject } from '@ngneat/spectator';
 import { createServiceFactory, mockProvider, SpectatorService } from '@ngneat/spectator/jest';
 import { patchState, signalStore, withState } from '@ngrx/signals';
 import { of } from 'rxjs';
@@ -65,7 +64,6 @@ export const uveStoreMock = signalStore(
 
 describe('withEditor', () => {
     let spectator: SpectatorService<InstanceType<typeof uveStoreMock>>;
-    let dotPageApiService: SpyObject<DotPageApiService>;
     let store: InstanceType<typeof uveStoreMock>;
 
     const createService = createServiceFactory({
@@ -93,7 +91,6 @@ describe('withEditor', () => {
     beforeEach(() => {
         spectator = createService();
         store = spectator.service;
-        dotPageApiService = spectator.inject(DotPageApiService);
         patchState(store, initialState);
     });
 
@@ -114,39 +111,6 @@ describe('withEditor', () => {
                         runningExperiment: null,
                         unlockButton: null
                     });
-                });
-            });
-        });
-    });
-
-    describe('withSave', () => {
-        describe('withMethods', () => {
-            describe('savePage', () => {
-                it('should perform a save and patch the state', () => {
-                    const saveSpy = jest
-                        .spyOn(dotPageApiService, 'save')
-                        .mockImplementation(() => of({}));
-
-                    // It's impossible to get a VTL when we are in Headless
-                    // but I just want to check the state is being patched
-                    const getPage = jest
-                        .spyOn(dotPageApiService, 'get')
-                        .mockImplementation(() => of(MOCK_RESPONSE_VTL));
-
-                    const payload = {
-                        pageContainers: ACTION_PAYLOAD_MOCK.pageContainers,
-                        pageId: MOCK_RESPONSE_HEADLESS.page.identifier,
-                        params: store.pageParams()
-                    };
-
-                    store.savePage(ACTION_PAYLOAD_MOCK.pageContainers);
-
-                    expect(saveSpy).toHaveBeenCalledWith(payload);
-
-                    expect(getPage).toHaveBeenCalledWith(store.pageParams());
-
-                    expect(store.status()).toBe(UVE_STATUS.LOADED);
-                    expect(store.pageAPIResponse()).toEqual(MOCK_RESPONSE_VTL);
                 });
             });
         });

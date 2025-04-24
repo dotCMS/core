@@ -19,7 +19,6 @@ import {
     PageDataContainer,
     ReloadEditorContent
 } from './models';
-import { withSave } from './save/withSave';
 import { withUVEToolbar } from './toolbar/withUVEToolbar';
 
 import {
@@ -84,7 +83,6 @@ export function withEditor() {
         },
         withState<EditorState>(initialState),
         withUVEToolbar(),
-        withSave(),
         withComputed((store) => {
             return {
                 $pageData: computed<PageData>(() => {

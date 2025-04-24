@@ -5,12 +5,13 @@ import { EMPTY, pipe } from 'rxjs';
 
 import { inject } from '@angular/core';
 
-import { catchError, switchMap, tap } from 'rxjs/operators';
+import { catchError, map, switchMap, tap } from 'rxjs/operators';
 
 import { DotPageApiResponse, DotPageApiService } from '../../../../services/dot-page-api.service';
 import { UVE_STATUS } from '../../../../shared/enums';
 import { PageContainer } from '../../../../shared/models';
 import { UVEState } from '../../../models';
+import { withLoad } from '../../load/withLoad';
 
 /**
  * Add methods to save the page
@@ -23,6 +24,7 @@ export function withSave() {
         {
             state: type<UVEState>()
         },
+        withLoad(),
         withMethods((store) => {
             const dotPageApiService = inject(DotPageApiService);
 
@@ -42,8 +44,19 @@ export function withSave() {
                             };
 
                             return dotPageApiService.save(payload).pipe(
-                                switchMap(() =>
-                                    dotPageApiService.get(store.pageParams()).pipe(
+                                switchMap(() => {
+                                    const pageRequest = !store.graphql()
+                                        ? dotPageApiService.get(store.pageParams())
+                                        : dotPageApiService
+                                              .getGraphQLPage(store.$graphqlWithParams())
+                                              .pipe(
+                                                  tap((response) =>
+                                                      store.setGraphqlResponse(response)
+                                                  ),
+                                                  map((response) => response.page)
+                                              );
+
+                                    return pageRequest.pipe(
                                         tapResponse(
                                             (pageAPIResponse: DotPageApiResponse) => {
                                                 patchState(store, {
@@ -59,8 +72,8 @@ export function withSave() {
                                                 });
                                             }
                                         )
-                                    )
-                                ),
+                                    );
+                                }),
                                 catchError((e) => {
                                     console.error(e);
                                     patchState(store, {
