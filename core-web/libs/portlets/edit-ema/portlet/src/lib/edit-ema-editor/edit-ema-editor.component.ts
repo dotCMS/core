@@ -83,7 +83,6 @@ import {
     DotPage
 } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
-import { ClientRequestProps } from '../store/features/client/withClient';
 import {
     SDK_EDITOR_SCRIPT_SOURCE,
     TEMPORAL_DRAG_ITEM,
@@ -93,7 +92,8 @@ import {
     getDragItemData,
     insertContentletInContainer,
     getTargetUrl,
-    shouldNavigate
+    shouldNavigate,
+    convertClientParamsToPageParams
 } from '../utils';
 
 @Component({
@@ -180,7 +180,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
          * We should not depend on this `$reloadEditorContent` computed to `resetEditorProperties` or `resetDialog`
          * This depends on the `code` with each the page renders code. This reset should be done in `widthLoad` signal feature but we can't do it yet
          */
-        const { isTraditionalPage, isClientReady } = this.uveStore.$reloadEditorContent();
+        const { isTraditionalPage } = this.uveStore.$reloadEditorContent();
+        const isClientReady = untracked(() => this.uveStore.isClientReady());
 
         untracked(() => {
             this.uveStore.resetEditorProperties();
@@ -731,19 +732,19 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     return;
                 }
 
-                if (clientAction === CLIENT_ACTIONS.EDIT_CONTENTLET) {
+                const graphql = this.uveStore.graphql();
+
+                if (!actionPayload || graphql) {
+                    this.uveStore.reloadCurrentPage();
+
+                    return;
+                } else if (clientAction === CLIENT_ACTIONS.EDIT_CONTENTLET) {
                     this.contentWindow?.postMessage(
                         {
                             name: __DOTCMS_UVE_EVENT__.UVE_RELOAD_PAGE
                         },
                         this.host
                     );
-                }
-
-                if (!actionPayload) {
-                    this.uveStore.reloadCurrentPage();
-
-                    return;
                 }
 
                 const { pageContainers, didInsert } = insertContentletInContainer({
@@ -1002,18 +1003,25 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     )
                     .subscribe(() => this.uveStore.reloadCurrentPage());
             },
-            [CLIENT_ACTIONS.CLIENT_READY]: (clientConfig: ClientRequestProps) => {
-                const { query, params } = clientConfig || {};
+            [CLIENT_ACTIONS.CLIENT_READY]: (devConfig) => {
                 const isClientReady = this.uveStore.isClientReady();
 
-                // Frameworks Navigation triggers the client ready event, so we need to prevent it
-                // Until we manually trigger the reload
+                // console.log('isClientReady', isClientReady);
                 if (isClientReady) {
                     return;
                 }
 
-                this.uveStore.setClientConfiguration({ query, params });
-                this.uveStore.reloadCurrentPage();
+                const { graphql, params, query: rawQuery } = devConfig || {};
+                const { query = rawQuery, variables } = graphql || {};
+                const legacyGraphqlResponse = !!rawQuery;
+
+                if (query || rawQuery) {
+                    this.uveStore.setCustomGraphQL({ query, variables }, legacyGraphqlResponse);
+                }
+
+                const pageParams = convertClientParamsToPageParams(params);
+                this.uveStore.reloadCurrentPage(pageParams);
+                this.uveStore.setIsClientReady(true);
             },
             [CLIENT_ACTIONS.EDIT_CONTENTLET]: (contentlet: DotCMSContentlet) => {
                 this.dialog.editContentlet({ ...contentlet, clientAction: action });
@@ -1051,7 +1059,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         this.iframe?.nativeElement?.contentWindow?.postMessage(
             {
                 name: __DOTCMS_UVE_EVENT__.UVE_SET_PAGE_DATA,
-                payload: this.uveStore.pageAPIResponse()
+                payload: this.#clientPayload()
             },
             this.host
         );
@@ -1454,5 +1462,18 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             this.uveStore.setOgTags(ogTags);
             this.uveStore.setOGTagResults(results);
         });
+    }
+
+    #clientPayload() {
+        const graphqlResponse = this.uveStore.$customGraphqlResponse();
+
+        if (graphqlResponse) {
+            return graphqlResponse;
+        }
+
+        return {
+            ...this.uveStore.pageAPIResponse(),
+            params: this.uveStore.pageParams()
+        };
     }
 }

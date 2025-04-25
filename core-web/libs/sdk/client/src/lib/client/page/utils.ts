@@ -72,6 +72,7 @@ export const buildPageQuery = ({
     friendlyName
     workingInode
     url
+    pageURI
     hasLiveVersion
     deleted
     pageUrl
@@ -149,7 +150,24 @@ export const buildPageQuery = ({
     viewAs {
       visitor {
         persona {
+          modDate
+          inode
           name
+          identifier
+          keyTag
+          photo {
+            versionPath
+          }
+        }
+      }
+      persona {
+        modDate
+        inode
+        name
+        identifier
+        keyTag
+        photo {
+         versionPath
         }
       }
       language {
