@@ -66,7 +66,7 @@ public final class ESMappingConstants {
     public static final String IDENTIFIER = "identifier";
     public static final String CONTENTLET_HOST = "conHost";
     public static final String CONTENTLET_HOSTNAME = "conHostName";
-    public static final String CONTENTLET_FOLER = "conFolder";
+    public static final String CONTENTLET_FOLDER = "conFolder";
     public static final String PARENT_PATH = "parentPath";
     public static final String PATH = "path";
     public static final String SHORT_ID = "shortId";
