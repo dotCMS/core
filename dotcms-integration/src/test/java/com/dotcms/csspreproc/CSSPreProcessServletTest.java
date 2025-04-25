@@ -6,7 +6,6 @@ import com.dotcms.IntegrationTestBase;
 import com.dotcms.datagen.FileAssetDataGen;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.ema.proxy.MockHttpCaptureResponse;
-import com.dotcms.ema.proxy.MockPrintWriter;
 import com.dotcms.mock.request.DotCMSMockRequestWithSession;
 import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.util.ConfigTestHelper;
@@ -21,7 +20,6 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.util.StringPool;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -131,68 +129,6 @@ public class CSSPreProcessServletTest extends IntegrationTestBase {
     }
 
     /**
-     * <ul>
-     *     <li><b>Method to Test:</b> {@link MockPrintWriter}</li>
-     *     <li><b>Given Scenario:</b> Testing that the MockPrintWriter correctly writes strings only once to the output
-     *     stream. This test verifies that the internal implementation used for handling CSS output works as expected.</li>
-     *     <li><b>Expected Result:</b> The test string should be written exactly once to the output stream.</li>
-     * </ul>
-     */
-    @Test
-    public void testMockPrintWriterWritesOnce() {
-        // Test string to write
-        final String testString = "MockPrintWriter test string";
-
-        // Create ByteArrayOutputStream to capture the output
-        final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-
-        // Write the string using MockPrintWriter
-        try (MockPrintWriter writer = new MockPrintWriter(outputStream)) {
-            writer.write(testString);
-            writer.flush();
-        }
-
-        // Get the content written to the output stream
-        final String writtenContent = outputStream.toString(StandardCharsets.UTF_8);
-
-        // Verify the test string was written exactly once
-        Assert.assertEquals("The string should be written exactly as provided", testString, writtenContent);
-        Assert.assertEquals("The string should appear exactly once", 1, countOccurrences(writtenContent, testString));
-
-        // Test with println method
-        final ByteArrayOutputStream outputStream2 = new ByteArrayOutputStream();
-        final String testString2 = "MockPrintWriter println test";
-
-        try (MockPrintWriter writer = new MockPrintWriter(outputStream2)) {
-            writer.println(testString2);
-            writer.flush();
-        }
-
-        final String writtenContent2 = new String(outputStream2.toByteArray(), StandardCharsets.UTF_8);
-        Assert.assertEquals("The string should be written exactly as provided", testString2, writtenContent2);
-        Assert.assertEquals("The string should appear exactly once", 1, countOccurrences(writtenContent2, testString2));
-    }
-
-    /**
-     * Helper method to count occurrences of a substring in a string.
-     *
-     * @param text The text to search in
-     * @param subtext The substring to search for
-     * @return The number of occurrences
-     */
-    private int countOccurrences(final String text, final String subtext) {
-        int count = 0;
-        int idx = 0;
-
-        while ((idx = text.indexOf(subtext, idx)) != -1) {
-            count++;
-            idx += subtext.length();
-        }
-
-        return count;
-    }
-
-    /**
      * Utility method used to create the SCSS files in dotCMS.
      *
      * @param testScssFilePath The location of the test SCSS file inside the integration-test project.
@@ -227,7 +163,7 @@ public class CSSPreProcessServletTest extends IntegrationTestBase {
             final MockHttpCaptureResponse mockResponse = new MockHttpCaptureResponse(new MockHttpResponse()){
                 @Override
                 public PrintWriter getWriter() {
-                    return new MockPrintWriter(getOutputStream());
+                    return new PrintWriter(getOutputStream());
                 }
             };
             final CSSPreProcessServlet servlet = new CSSPreProcessServlet();
@@ -238,7 +174,7 @@ public class CSSPreProcessServletTest extends IntegrationTestBase {
             status = mockResponse.getStatus();
         } catch (final ServletException | IOException | DotDataException | DotSecurityException e) {
             Assert.fail(String.format("An error occurred when compiling the test SCSS file '%s'. Aborting test " +
-                    "execution...", inputScssFile));
+                                              "execution...", inputScssFile));
         }
         // Assertions
         Assert.assertTrue(String.format("This is NOT the expected SCSS compiler output. cssCode [%s] expected [%s].", cssCode, expectedOutput), cssCode.startsWith(expectedOutput));
@@ -271,4 +207,5 @@ public class CSSPreProcessServletTest extends IntegrationTestBase {
         mockRequest.setRequestURI(inputScssFile.getURI());
         return mockRequest;
     }
+
 }

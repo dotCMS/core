@@ -1,14 +1,9 @@
 package com.dotcms.mock.response;
 
-import com.dotcms.business.SystemCache;
-import com.dotcms.ema.proxy.MockPrintWriter;
-import com.dotcms.repackage.org.directwebremoting.util.FakeHttpServletResponse;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -156,7 +151,7 @@ public class DotCMSMockResponse implements HttpServletResponse {
 
     @Override
     public PrintWriter getWriter() throws IOException {
-        return new MockPrintWriter(getOutputStream());
+        return new PrintWriter(getOutputStream());
     }
 
     @Override
