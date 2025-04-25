@@ -204,6 +204,7 @@ export class DotUVENgEvenHandlerService {
         const htmlPageReferer = event.detail.payload?.htmlPageReferer;
         const url = new URL(htmlPageReferer, window.location.origin); // Add base for relative URLs
         const targetUrl = getTargetUrl(url.pathname, this.uveStore.pageAPIResponse().urlContentMap);
+        // CHECK THIS PARAMETER
         const language_id = url.searchParams.get('com.dotmarketing.htmlpage.language');
 
         if (shouldNavigate(targetUrl, this.uveStore.pageParams().url)) {
