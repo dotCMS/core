@@ -143,7 +143,7 @@ export class FieldUtil {
      * @returns {boolean} True if the field is a Row field
      */
     static isRow(field: DotCMSContentTypeField): boolean {
-        return field.clazz === DotCMSClazzes.ROW;
+        return field.clazz === ROW_FIELD.clazz;
     }
 
     /**
@@ -153,7 +153,7 @@ export class FieldUtil {
      * @returns {boolean} True if the field is a Column field
      */
     static isColumn(field: DotCMSContentTypeField): boolean {
-        return field.clazz === DotCMSClazzes.COLUMN;
+        return field.clazz === COLUMN_FIELD.clazz;
     }
 
     /**
@@ -163,7 +163,7 @@ export class FieldUtil {
      * @returns {boolean} True if the field is a Tab Divider field
      */
     static isTabDivider(field: DotCMSContentTypeField): boolean {
-        return field.clazz === DotCMSClazzes.TAB_DIVIDER;
+        return field.clazz === TAB_FIELD.clazz;
     }
 
     /**
