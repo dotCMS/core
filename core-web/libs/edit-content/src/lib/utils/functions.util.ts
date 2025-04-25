@@ -8,7 +8,7 @@ import {
     DotLanguage,
     UI_STORAGE_KEY
 } from '@dotcms/dotcms-models';
-import { UVE_MODE } from '@dotcms/uve/types';
+import { UVE_MODE } from '@dotcms/types';
 
 import {
     CALENDAR_FIELD_TYPES,
