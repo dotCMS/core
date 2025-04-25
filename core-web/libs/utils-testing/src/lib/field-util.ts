@@ -2,118 +2,54 @@ import {
     DotCMSContentTypeField,
     DotCMSContentTypeLayoutRow,
     DotCMSContentTypeLayoutColumn,
-    DotCMSClazzes,
-    ContentTypeColumnField,
-    DotCMSDataTypes,
-    DotCMSFieldTypes,
-    ContentTypeRowField,
-    ContentTypeTabDividerField,
-    ContentTypeColumnBreakField
+    DotCMSClazzes
 } from '@dotcms/dotcms-models';
 
-const COLUMN_FIELD: ContentTypeColumnField = {
-    clazz: DotCMSClazzes.COLUMN,
-    dataType: DotCMSDataTypes.SYSTEM,
-    fieldType: DotCMSFieldTypes.COLUMN,
-    contentTypeId: 'contentTypeId',
-    fieldTypeLabel: 'fieldTypeLabel',
+export const EMPTY_FIELD = {
+    contentTypeId: null,
+    dataType: null,
+    fieldType: null,
+    fieldTypeLabel: null,
     fieldVariables: [],
-    fixed: false,
-    iDate: 0,
-    id: 'id',
-    indexed: false,
-    listed: false,
-    modDate: 0,
-    name: 'Column',
-    readOnly: false,
-    required: false,
-    searchable: false,
-    sortOrder: 0,
-    unique: false,
-    variable: 'variable',
-    defaultValue: 'defaultValue',
-    hint: 'hint',
-    values: 'values',
-    forceIncludeInApi: false
-};
+    fixed: null,
+    iDate: null,
+    id: null,
+    indexed: null,
+    listed: null,
+    modDate: null,
+    name: null,
+    readOnly: null,
+    required: null,
+    searchable: null,
+    sortOrder: null,
+    unique: null,
+    variable: null,
+    clazz: null,
+    defaultValue: null,
+    hint: null,
+    regexCheck: null,
+    values: null
+} as unknown as DotCMSContentTypeField;
 
-const ROW_FIELD: ContentTypeRowField = {
-    clazz: DotCMSClazzes.ROW,
-    dataType: DotCMSDataTypes.SYSTEM,
-    fieldType: DotCMSFieldTypes.ROW,
-    contentTypeId: 'contentTypeId',
-    fieldTypeLabel: 'fieldTypeLabel',
-    fieldVariables: [],
-    fixed: false,
-    iDate: 0,
-    id: 'id',
-    indexed: false,
-    listed: false,
-    modDate: 0,
-    name: 'name',
-    readOnly: false,
-    required: false,
-    searchable: false,
-    sortOrder: 0,
-    unique: false,
-    variable: 'variable',
-    defaultValue: 'defaultValue',
-    hint: 'hint',
-    values: 'values',
-    forceIncludeInApi: false
-};
+const COLUMN_FIELD = {
+    ...EMPTY_FIELD,
+    clazz: DotCMSClazzes.COLUMN
+} as unknown as DotCMSContentTypeField;
 
-const TAB_FIELD: ContentTypeTabDividerField = {
-    clazz: DotCMSClazzes.TAB_DIVIDER,
-    dataType: DotCMSDataTypes.SYSTEM,
-    fieldType: DotCMSFieldTypes.TAB_DIVIDER,
-    contentTypeId: 'contentTypeId',
-    fieldTypeLabel: 'fieldTypeLabel',
-    fieldVariables: [],
-    fixed: false,
-    iDate: 0,
-    id: 'id',
-    indexed: false,
-    listed: false,
-    modDate: 0,
-    name: 'name',
-    readOnly: false,
-    required: false,
-    searchable: false,
-    sortOrder: 0,
-    unique: false,
-    variable: 'variable',
-    defaultValue: 'defaultValue',
-    hint: 'hint',
-    values: 'values',
-    forceIncludeInApi: false
-};
+const ROW_FIELD = {
+    ...EMPTY_FIELD,
+    clazz: DotCMSClazzes.ROW
+} as unknown as DotCMSContentTypeField;
 
-const COLUMN_BREAK_FIELD: ContentTypeColumnBreakField = {
+const TAB_FIELD = {
+    ...EMPTY_FIELD,
+    clazz: DotCMSClazzes.TAB_DIVIDER
+} as unknown as DotCMSContentTypeField;
+
+const COLUMN_BREAK_FIELD = {
     clazz: DotCMSClazzes.COLUMN_BREAK,
-    dataType: DotCMSDataTypes.SYSTEM,
-    fieldType: DotCMSFieldTypes.COLUMN_BREAK,
-    contentTypeId: 'contentTypeId',
-    fieldTypeLabel: 'fieldTypeLabel',
-    fieldVariables: [],
-    fixed: false,
-    iDate: 0,
-    id: 'id',
-    indexed: false,
-    listed: false,
-    modDate: 0,
-    name: 'Column',
-    readOnly: false,
-    required: false,
-    searchable: false,
-    sortOrder: 0,
-    unique: false,
-    variable: 'variable',
-    defaultValue: 'defaultValue',
-    hint: 'hint',
-    values: 'values',
-    forceIncludeInApi: false
-};
+    name: 'Column'
+} as unknown as DotCMSContentTypeField;
 
 export class FieldUtil {
     /**

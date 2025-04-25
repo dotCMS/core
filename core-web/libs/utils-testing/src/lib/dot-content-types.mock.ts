@@ -34,12 +34,43 @@ import {
     ContentTypeCustomField,
     ContentTypeKeyValueField,
     ContentTypeConstantField,
-    ContentTypeHiddenField
+    ContentTypeHiddenField,
+    DotCMSContentTypeField
 } from '@dotcms/dotcms-models';
 
-export const dotcmsContentTypeBasicMock = createFakeContentType();
+import { EMPTY_FIELD } from './field-util';
 
-export const dotcmsContentTypeFieldBasicMock = createFakeTextField();
+export const dotcmsContentTypeBasicMock = {
+    baseType: null,
+    clazz: null,
+    defaultType: false,
+    description: null,
+    detailPage: null,
+    expireDateVar: null,
+    fields: [],
+    fixed: false,
+    folder: null,
+    host: null,
+    iDate: null,
+    id: null,
+    layout: [],
+    modDate: null,
+    multilingualable: false,
+    nEntries: null,
+    name: null,
+    owner: null,
+    publishDateVar: null,
+    system: false,
+    urlMapPattern: null,
+    variable: null,
+    versionable: false,
+    workflows: [],
+    metadata: {}
+} as unknown as DotCMSContentType;
+
+export const dotcmsContentTypeFieldBasicMock = {
+    ...EMPTY_FIELD
+} as unknown as DotCMSContentTypeField;
 
 export function createFakeContentType(
     overrides: Partial<DotCMSContentType> = {}
@@ -669,11 +700,28 @@ export function createFakeKeyValueField(
 
 export const fieldsWithBreakColumn: DotCMSContentTypeLayoutRow[] = [
     {
-        divider: createFakeTabDividerField(),
+        divider: {
+            ...dotcmsContentTypeFieldBasicMock
+        },
         columns: [
             {
-                columnDivider: createFakeColumnField(),
-                fields: [createFakeTextField(), createFakeColumnBreakField(), createFakeTextField()]
+                columnDivider: {
+                    ...dotcmsContentTypeFieldBasicMock,
+                    clazz: DotCMSClazzes.COLUMN
+                } as DotCMSContentTypeField,
+                fields: [
+                    {
+                        ...dotcmsContentTypeFieldBasicMock
+                    },
+                    {
+                        ...dotcmsContentTypeFieldBasicMock,
+                        clazz: DotCMSClazzes.COLUMN_BREAK,
+                        name: 'Column'
+                    } as DotCMSContentTypeField,
+                    {
+                        ...dotcmsContentTypeFieldBasicMock
+                    }
+                ]
             }
         ]
     }
@@ -681,15 +729,31 @@ export const fieldsWithBreakColumn: DotCMSContentTypeLayoutRow[] = [
 
 export const fieldsBrokenWithColumns: DotCMSContentTypeLayoutRow[] = [
     {
-        divider: createFakeTabDividerField(),
+        divider: {
+            ...dotcmsContentTypeFieldBasicMock
+        },
         columns: [
             {
-                columnDivider: createFakeColumnField(),
-                fields: [createFakeTextField()]
+                columnDivider: {
+                    ...dotcmsContentTypeFieldBasicMock,
+                    clazz: DotCMSClazzes.COLUMN
+                } as DotCMSContentTypeField,
+                fields: [
+                    {
+                        ...dotcmsContentTypeFieldBasicMock
+                    }
+                ]
             },
             {
-                columnDivider: createFakeColumnField(),
-                fields: [createFakeTextField()]
+                columnDivider: {
+                    ...dotcmsContentTypeFieldBasicMock,
+                    clazz: DotCMSClazzes.COLUMN
+                } as DotCMSContentTypeField,
+                fields: [
+                    {
+                        ...dotcmsContentTypeFieldBasicMock
+                    }
+                ]
             }
         ]
     }

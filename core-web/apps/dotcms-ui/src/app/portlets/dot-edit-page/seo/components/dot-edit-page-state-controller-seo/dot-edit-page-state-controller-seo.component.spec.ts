@@ -229,6 +229,7 @@ describe('DotEditPageStateControllerSeoComponent', () => {
                     { ...mockUser(), userId: '456' },
                     new DotPageRender(mockDotRenderedPage())
                 );
+
                 fixtureHost.componentInstance.pageState = pageRenderStateMocked;
                 componentHost.variant = null;
                 fixtureHost.detectChanges();

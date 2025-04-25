@@ -29,6 +29,7 @@ import { FieldPropertyService } from '../service';
 
 const mockDFormFieldData = {
     ...dotcmsContentTypeFieldBasicMock,
+    clazz: 'field.class',
     name: 'fieldName',
     id: '123'
 };
@@ -121,7 +122,7 @@ describe('ContentTypeFieldsPropertiesFormComponent', () => {
     const startHostComponent = () => {
         hostComp.mockDFormFieldData = {
             ...mockDFormFieldData
-        };
+        } as unknown as DotCMSContentTypeField;
 
         hostFixture.detectChanges();
 
@@ -169,12 +170,8 @@ describe('ContentTypeFieldsPropertiesFormComponent', () => {
         beforeEach(async () => await startHostComponent());
 
         it('should init form', () => {
-            expect(mockFieldPropertyService.getProperties).toHaveBeenCalledWith(
-                'com.dotcms.contenttype.model.field.ImmutableTextField'
-            );
-            expect(comp.form.get('clazz').value).toBe(
-                'com.dotcms.contenttype.model.field.ImmutableTextField'
-            );
+            expect(mockFieldPropertyService.getProperties).toHaveBeenCalledWith('field.class');
+            expect(comp.form.get('clazz').value).toBe('field.class');
 
             expect(comp.form.get('id').value).toBe('123');
             expect(comp.form.get('property1').value).toBe('');

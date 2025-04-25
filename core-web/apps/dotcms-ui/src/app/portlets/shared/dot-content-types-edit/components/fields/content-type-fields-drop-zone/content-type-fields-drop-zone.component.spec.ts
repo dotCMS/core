@@ -38,7 +38,6 @@ import {
     DotCMSContentType,
     DotCMSContentTypeField,
     DotCMSContentTypeLayoutRow,
-    ContentTypeBlockEditorField,
     DotDialogActions,
     DotFieldVariable
 } from '@dotcms/dotcms-models';
@@ -315,8 +314,9 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
 
         const field = {
             ...dotcmsContentTypeFieldBasicMock,
+            clazz: 'classField',
             name: 'nameField'
-        };
+        } as unknown as DotCMSContentTypeField;
 
         comp.removeFields.subscribe((removeFields) => (fieldsToRemove = removeFields));
 
@@ -330,8 +330,9 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
         const fieldRow: DotCMSContentTypeLayoutRow = FieldUtil.createFieldRow(1);
         const field = {
             ...dotcmsContentTypeFieldBasicMock,
+            clazz: 'classField',
             name: 'nameField'
-        };
+        } as unknown as DotCMSContentTypeField;
         fieldRow.columns[0].fields = [field];
         fieldRow.divider.id = 'test';
 
@@ -363,8 +364,9 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
         const fieldRow1: DotCMSContentTypeLayoutRow = FieldUtil.createFieldRow(1);
         const field = {
             ...dotcmsContentTypeFieldBasicMock,
+            clazz: 'classField',
             name: 'nameField'
-        };
+        } as unknown as DotCMSContentTypeField;
         fieldRow1.columns[0].fields = [field];
 
         comp.layout = [fieldRow1];
@@ -379,7 +381,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
         expect(comp.fieldRows[0].columns[0].fields).toEqual([field]);
     });
 
-    fit('should cancel last tab field drag and drop operation fields', () => {
+    it('should cancel last tab field drag and drop operation fields', () => {
         comp.layout = [];
         comp.fieldRows = [];
 
@@ -421,16 +423,14 @@ class TestHostComponent {
 // Issue ref: dotCMS/core#16772 When you DnD a field (reorder) in the same column it shows up the edit field dialog
 // https://github.com/dotCMS/core-web/pull/1085
 
-const BLOCK_EDITOR_FIELD: ContentTypeBlockEditorField = {
+const BLOCK_EDITOR_FIELD = {
     ...dotcmsContentTypeFieldBasicMock,
     clazz: 'com.dotcms.contenttype.model.field.ImmutableStoryBlockField',
-    dataType: 'LONG_TEXT',
-    fieldType: 'Story-Block',
     id: '12',
     name: 'field 12',
     sortOrder: 12,
     contentTypeId: '12b'
-};
+} as unknown as DotCMSContentTypeField;
 
 @Component({
     selector: 'dot-block-editor-settings',
@@ -575,11 +575,9 @@ describe('Load fields and drag and drop', () => {
                     name: 'field 1',
                     id: '1',
                     clazz: 'com.dotcms.contenttype.model.field.ImmutableRowField',
-                    dataType: 'SYSTEM',
-                    fieldType: 'Row',
                     sortOrder: 0,
                     contentTypeId: '1b'
-                },
+                } as unknown as DotCMSContentTypeField,
                 columns: [
                     {
                         columnDivider: {
@@ -587,43 +585,38 @@ describe('Load fields and drag and drop', () => {
                             name: 'field 2',
                             id: '2',
                             clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField',
-                            dataType: 'SYSTEM',
-                            fieldType: 'Column',
                             sortOrder: 1,
                             contentTypeId: '2b'
-                        },
+                        } as unknown as DotCMSContentTypeField,
                         fields: [
                             {
                                 ...dotcmsContentTypeFieldBasicMock,
                                 clazz: 'com.dotcms.contenttype.model.field.ImmutableWysiwygField',
-                                dataType: 'LONG_TEXT',
-                                fieldType: 'WYSIWYG',
                                 id: '3',
                                 name: 'field 3',
                                 sortOrder: 2,
                                 contentTypeId: '3b'
-                            }
+                            } as unknown as DotCMSContentTypeField
                         ]
                     },
                     {
                         columnDivider: {
                             ...dotcmsContentTypeFieldBasicMock,
                             clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField',
-                            dataType: 'SYSTEM',
-                            fieldType: 'Column',
                             id: '4',
                             name: 'field 4',
                             sortOrder: 3,
                             contentTypeId: '4b'
-                        },
+                        } as unknown as DotCMSContentTypeField,
                         fields: [
                             {
                                 ...dotcmsContentTypeFieldBasicMock,
+                                clazz: 'text',
                                 id: '5',
                                 name: 'field 5',
                                 sortOrder: 4,
                                 contentTypeId: '5b'
-                            }
+                            } as unknown as DotCMSContentTypeField
                         ]
                     }
                 ]
@@ -632,45 +625,40 @@ describe('Load fields and drag and drop', () => {
                 divider: {
                     ...dotcmsContentTypeFieldBasicMock,
                     clazz: 'com.dotcms.contenttype.model.field.ImmutableTabDividerField',
-                    dataType: 'SYSTEM',
-                    fieldType: 'Tab_divider',
                     id: '6',
                     name: 'field 6',
                     sortOrder: 5,
                     contentTypeId: '6b'
-                }
+                } as unknown as DotCMSContentTypeField
             },
             {
                 divider: {
                     ...dotcmsContentTypeFieldBasicMock,
                     clazz: 'com.dotcms.contenttype.model.field.ImmutableRowField',
-                    dataType: 'SYSTEM',
-                    fieldType: 'Row',
                     id: '7',
                     name: 'field 7',
                     sortOrder: 6,
                     contentTypeId: '7b'
-                },
+                } as unknown as DotCMSContentTypeField,
                 columns: [
                     {
                         columnDivider: {
                             ...dotcmsContentTypeFieldBasicMock,
                             clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField',
-                            dataType: 'SYSTEM',
-                            fieldType: 'Column',
                             id: '8',
                             name: 'field 8',
                             sortOrder: 7,
                             contentTypeId: '8b'
-                        },
+                        } as unknown as DotCMSContentTypeField,
                         fields: [
                             {
                                 ...dotcmsContentTypeFieldBasicMock,
+                                clazz: 'text',
                                 id: '9',
                                 name: 'field 9',
                                 sortOrder: 8,
                                 contentTypeId: '9b'
-                            }
+                            } as unknown as DotCMSContentTypeField
                         ]
                     }
                 ]
@@ -679,13 +667,11 @@ describe('Load fields and drag and drop', () => {
                 divider: {
                     ...dotcmsContentTypeFieldBasicMock,
                     clazz: 'com.dotcms.contenttype.model.field.ImmutableRowField',
-                    dataType: 'SYSTEM',
-                    fieldType: 'Row',
                     id: '10',
                     name: 'field 10',
                     sortOrder: 10,
                     contentTypeId: '10b'
-                },
+                } as unknown as DotCMSContentTypeField,
                 columns: [
                     {
                         columnDivider: {
@@ -693,11 +679,9 @@ describe('Load fields and drag and drop', () => {
                             name: 'field 11',
                             id: '11',
                             clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField',
-                            dataType: 'SYSTEM',
-                            fieldType: 'Column',
                             sortOrder: 11,
                             contentTypeId: '11b'
-                        },
+                        } as unknown as DotCMSContentTypeField,
                         fields: [BLOCK_EDITOR_FIELD]
                     }
                 ]
