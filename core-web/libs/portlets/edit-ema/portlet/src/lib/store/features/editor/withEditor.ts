@@ -7,9 +7,10 @@ import {
     withState
 } from '@ngrx/signals';
 
-import { computed, untracked } from '@angular/core';
+import { computed, inject, untracked } from '@angular/core';
 
 import { DotTreeNode, SeoMetaTags } from '@dotcms/dotcms-models';
+import { WINDOW } from '@dotcms/utils';
 import { UVE_MODE } from '@dotcms/uve/types';
 
 import {
@@ -45,16 +46,7 @@ import {
 } from '../../../utils';
 import { UVEState } from '../../models';
 
-const buildIframeURL = ({ url, params, isTraditionalPage }) => {
-    if (isTraditionalPage) {
-        // Force iframe reload on every page load to avoid caching issues and window dirty state
-        // We need a new reference to avoid the iframe to be cached
-        // More reference: https://github.com/dotCMS/core/issues/30981
-        return new String('');
-    }
-
-    // Remove trailing slash from host
-    const dotCMSHost = window.location.origin;
+const buildIframeURL = ({ url, params, dotCMSHost }) => {
     const host = (params.clientHost || dotCMSHost).replace(/\/$/, '');
     const pageURL = getFullPageURL({ url, params, userFriendlyParams: true });
     const iframeURL = new URL(`${host}/${pageURL}&dotCMSHost=${dotCMSHost}`);
@@ -85,6 +77,8 @@ export function withEditor() {
         withState<EditorState>(initialState),
         withUVEToolbar(),
         withComputed((store) => {
+            const dotWindow = inject(WINDOW);
+
             return {
                 $pageData: computed<PageData>(() => {
                     const pageAPIResponse = store.pageAPIResponse();
@@ -213,6 +207,15 @@ export function withEditor() {
                     };
                 }),
                 $iframeURL: computed<string | InstanceType<typeof String>>(() => {
+                    const isTraditionalPage = untracked(() => store.isTraditionalPage());
+
+                    if (isTraditionalPage) {
+                        // Force iframe reload on every page load to avoid caching issues and window dirty state
+                        // We need a new reference to avoid the iframe to be cached
+                        // More reference: https://github.com/dotCMS/core/issues/30981
+                        return new String('');
+                    }
+
                     /*
                         Here we need to import pageAPIResponse() to create the computed dependency and have it updated every time a response is received from the PageAPI.
                         This should change in future UVE improvements.
@@ -221,17 +224,15 @@ export function withEditor() {
                         More info: https://github.com/dotCMS/core/issues/31475
                      */
                     const vanityURL = store.pageAPIResponse()?.vanityUrl?.url;
-                    const sanitizedURL = sanitizeURL(
-                        vanityURL ?? untracked(() => store.pageParams().url)
-                    );
+                    const url = sanitizeURL(vanityURL ?? untracked(() => store.pageParams().url));
+                    const params = untracked(() => store.pageParams());
+                    const dotCMSHost = dotWindow?.location?.origin;
 
-                    const url = buildIframeURL({
-                        url: sanitizedURL,
-                        params: untracked(() => store.pageParams()),
-                        isTraditionalPage: untracked(() => store.isTraditionalPage())
+                    return buildIframeURL({
+                        url,
+                        params,
+                        dotCMSHost
                     });
-
-                    return url;
                 }),
                 $editorContentStyles: computed<Record<string, string>>(() => {
                     const socialMedia = store.socialMedia();

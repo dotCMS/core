@@ -6,6 +6,7 @@ import { of } from 'rxjs';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { DEFAULT_VARIANT_ID, DotDeviceListItem } from '@dotcms/dotcms-models';
+import { WINDOW } from '@dotcms/utils';
 import { mockDotDevices, seoOGTagsMock } from '@dotcms/utils-testing';
 import { UVE_MODE } from '@dotcms/uve/types';
 
@@ -84,6 +85,10 @@ describe('withEditor', () => {
                     },
                     save: jest.fn()
                 }
+            },
+            {
+                provide: WINDOW,
+                useValue: window
             }
         ]
     });

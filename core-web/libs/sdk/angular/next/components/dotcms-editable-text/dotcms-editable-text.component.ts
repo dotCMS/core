@@ -40,8 +40,7 @@ import { TINYMCE_CONFIG, DOT_EDITABLE_TEXT_FORMAT, DOT_EDITABLE_TEXT_MODE } from
         {
             provide: TINYMCE_SCRIPT_SRC,
             useFactory: () => {
-                const urlParams = new URLSearchParams(window.location.search);
-                const dotCMSHost = urlParams?.get('dotCMSHost');
+                const { dotCMSHost } = getUVEState() || {};
 
                 return `${dotCMSHost}/ext/tinymcev7/tinymce.min.js`;
             }
