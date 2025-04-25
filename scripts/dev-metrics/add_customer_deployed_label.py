@@ -1,8 +1,14 @@
 import os
 import requests
 import logging
+import argparse
 from github_metrics_base import GitHubMetricsBase
 
+# Set up logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 logger = logging.getLogger(__name__)
 
 class AddCustomerDeployedLabel(GitHubMetricsBase):
@@ -62,19 +68,28 @@ class AddCustomerDeployedLabel(GitHubMetricsBase):
 def main():
     logger.info("Starting to add 'Customer Deployed' label to issues...")
     
-    token = os.getenv('GITHUB_TOKEN_DOTCMS')
+    # Set up argument parser
+    parser = argparse.ArgumentParser(description='Add Customer Deployed label to issues with a specific release label')
+    parser.add_argument('--release-label', type=str, required=True, help='Release label (e.g., "Release: 24.03")')
+    args = parser.parse_args()
+    
+    # Confirm received arguments
+    logger.info(f"Arguments received: release_label={args.release_label}")
+    
+    token = os.getenv('GITHUB_TOKEN')
     if not token:
         raise ValueError("Please set GITHUB_TOKEN environment variable")
     
-    release_label = input("Enter the release label (e.g., 'Release: XYZ'): ").strip()
+    logger.info(f"Using release label: {args.release_label}")
     
     metrics = AddCustomerDeployedLabel(
         token=token,
         owner='dotcms',
-        repo='core'
+        repo='core',
+        team_labels=[]  # Pass an empty list since no specific team labels are needed for this functionality
     )
     
-    metrics.add_label_to_issues(release_label)
+    metrics.add_label_to_issues(args.release_label)
 
 if __name__ == "__main__":
     main() 

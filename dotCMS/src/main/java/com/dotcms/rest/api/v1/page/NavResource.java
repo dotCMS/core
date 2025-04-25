@@ -142,7 +142,7 @@ public class NavResource {
     }
 
 
-    private Map<String, Object> navToMap(final NavResult nav, final int maxDepth, final int currentDepth) throws Exception {
+    public static Map<String, Object> navToMap(final NavResult nav, final int maxDepth, final int currentDepth) throws Exception {
 
         final Map<String, Object> navMap = new HashMap<>();
         navMap.put("title", nav.getTitle());

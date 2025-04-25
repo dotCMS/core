@@ -19,7 +19,6 @@ import {
     PageDataContainer,
     ReloadEditorContent
 } from './models';
-import { withSave } from './save/withSave';
 import { withUVEToolbar } from './toolbar/withUVEToolbar';
 
 import {
@@ -45,7 +44,6 @@ import {
     getFullPageURL
 } from '../../../utils';
 import { UVEState } from '../../models';
-import { withClient } from '../client/withClient';
 
 const buildIframeURL = ({ url, params, isTraditionalPage }) => {
     if (isTraditionalPage) {
@@ -85,8 +83,6 @@ export function withEditor() {
         },
         withState<EditorState>(initialState),
         withUVEToolbar(),
-        withSave(),
-        withClient(),
         withComputed((store) => {
             return {
                 $pageData: computed<PageData>(() => {
@@ -107,7 +103,6 @@ export function withEditor() {
                 $reloadEditorContent: computed<ReloadEditorContent>(() => {
                     return {
                         code: store.pageAPIResponse()?.page?.rendered,
-                        isClientReady: store.isClientReady(),
                         isTraditionalPage: untracked(() => store.isTraditionalPage()),
                         enableInlineEdit:
                             store.isEditState() && untracked(() => store.isEnterprise())
@@ -224,7 +219,7 @@ export function withEditor() {
                         In the future we should have a function that updates the content, independent of the url.
                         More info: https://github.com/dotCMS/core/issues/31475
                      */
-                    const vanityURL = store.pageAPIResponse().vanityUrl?.url;
+                    const vanityURL = store.pageAPIResponse()?.vanityUrl?.url;
                     const sanitizedURL = sanitizeURL(
                         vanityURL ?? untracked(() => store.pageParams().url)
                     );
