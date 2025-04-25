@@ -137,6 +137,12 @@ const dateResolutionFn = (
         return isNaN(parseResult.getTime()) ? today : parseResult;
     }
 
+    if (typeof value === 'number') {
+        const date = new Date(value);
+
+        return isNaN(date.getTime()) ? null : date;
+    }
+
     return null;
 };
 

@@ -186,6 +186,19 @@ describe('Utils', () => {
                 expect(resolutionValue[DotCMSFieldTypes.DATE](contentlet, field)).toBeNull();
             });
 
+            it('should return date if the value is a number', () => {
+                const dateNumber = 1716150000000;
+                const contentlet = createFakeContentlet({
+                    dateField: dateNumber
+                });
+                const field = createFakeDateField({ variable: 'dateField' });
+
+                const result = resolutionValue[DotCMSFieldTypes.DATE](contentlet, field) as Date;
+
+                expect(result).toBeInstanceOf(Date);
+                expect(result.getTime()).toBe(dateNumber);
+            });
+
             it('should use default value when field value is missing', () => {
                 const defaultDate = '2023-01-01';
                 const contentlet = createFakeContentlet();
