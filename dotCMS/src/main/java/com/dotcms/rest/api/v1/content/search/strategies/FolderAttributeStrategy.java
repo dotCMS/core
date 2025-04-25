@@ -18,7 +18,7 @@ public class FolderAttributeStrategy implements FieldStrategy {
     public String generateQuery(final FieldContext fieldContext) {
         final String value = (String) fieldContext.fieldValue();
         final String velocityVarName = fieldContext.fieldName();
-        return "+" + velocityVarName + ":" + value + "*";
+        return new StringBuilder().append("+").append(velocityVarName).append(":").append(value).append("*").toString();
     }
 
 }
