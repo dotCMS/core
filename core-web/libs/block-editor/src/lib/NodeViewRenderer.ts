@@ -46,7 +46,7 @@ class AngularNodeView extends NodeView<
 > {
     renderer!: AngularRenderer<AngularNodeViewComponent, NodeViewProps>;
     contentDOMElement!: HTMLElement | null;
-    decorations!: readonly DecorationWithType[];
+    override decorations!: readonly DecorationWithType[];
 
     override mount() {
         const injector = this.options.injector as Injector;
