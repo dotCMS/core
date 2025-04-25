@@ -16,6 +16,11 @@
     padding: 0.35 * $dot-editor-size;
     height: 2.5 * $dot-editor-size;
 
+    @media screen and (max-width: 960px) {
+        flex-wrap: wrap;
+        height: auto;
+    }
+
     .btn-dropdown {
         background: none;
         border: none;
