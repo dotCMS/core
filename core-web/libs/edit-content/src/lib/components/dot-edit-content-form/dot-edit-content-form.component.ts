@@ -211,7 +211,8 @@ export class DotEditContentFormComponent implements OnInit {
      * @memberof DotEditContentFormComponent
      */
     onFormChange(value: Record<string, string>) {
-        this.changeValue.emit(value);
+        const processedValue = this.processFormValue(value);
+        this.changeValue.emit(processedValue);
     }
 
     /**
@@ -250,7 +251,7 @@ export class DotEditContentFormComponent implements OnInit {
         identifier
     }: DotWorkflowActionParams): void {
         const contentlet = {
-            ...this.form.getRawValue(),
+            ...this.processFormValue(this.form.getRawValue()),
             contentType,
             languageId,
             identifier
@@ -287,6 +288,52 @@ export class DotEditContentFormComponent implements OnInit {
                     this.openWizard(workflow, inode, contentlet);
                 }
             });
+    }
+
+    /**
+     * Processes the form value, applying specific transformations for different field types.
+     *
+     * Handles special cases:
+     * - Flattened fields: Joins array values with commas
+     * - Calendar fields: Formats dates to the required string format
+     * - Null/undefined values: Converts to empty string
+     *
+     * @private
+     * @param {Record<string, string | string[] | Date | null | undefined>} value - The raw form value
+     * @returns {FormValues} The processed form value ready for submission
+     */
+    private processFormValue(
+        value: Record<string, string | string[] | Date | null | undefined>
+    ): FormValues {
+        return Object.fromEntries(
+            Object.entries(value).map(([key, fieldValue]) => {
+                const field = this.$formFields().find((f) => f.variable === key);
+
+                if (!field) {
+                    return [key, fieldValue];
+                }
+
+                if (
+                    Array.isArray(fieldValue) &&
+                    (field.fieldType === DotCMSFieldTypes.MULTI_SELECT ||
+                        field.fieldType === DotCMSFieldTypes.TAG ||
+                        field.fieldType === DotCMSFieldTypes.CHECKBOX)
+                ) {
+                    fieldValue = fieldValue.join(',');
+                } else if (
+                    fieldValue instanceof Date &&
+                    (field.fieldType === DotCMSFieldTypes.DATE ||
+                        field.fieldType === DotCMSFieldTypes.DATE_AND_TIME ||
+                        field.fieldType === DotCMSFieldTypes.TIME)
+                ) {
+                    fieldValue = fieldValue
+                        .toISOString()
+                        .replace(/T|\.\d{3}Z/g, (match) => (match === 'T' ? ' ' : ''));
+                }
+
+                return [key, fieldValue ?? ''];
+            })
+        );
     }
 
     /**
@@ -395,7 +442,7 @@ export class DotEditContentFormComponent implements OnInit {
             return null;
         }
 
-        return contentlet ? resolutionFn(contentlet, field) : null;
+        return resolutionFn(contentlet, field);
     }
 
     /**

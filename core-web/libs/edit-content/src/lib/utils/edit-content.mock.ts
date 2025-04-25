@@ -19,20 +19,18 @@ import {
     DotCMSWorkflowAction,
     DotCMSWorkflowStatus
 } from '@dotcms/dotcms-models';
-import {
-    createFakeColumnField,
-    createFakeRowField,
-    createFakeTextField
-} from '@dotcms/utils-testing';
 
 export const MOCK_CONTENTTYPE_1_TAB: DotCMSContentType = {
     baseType: 'CONTENT',
     clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
     defaultType: false,
     fields: [
-        createFakeRowField({
+        {
+            clazz: 'com.dotcms.contenttype.model.field.ImmutableRowField',
             contentTypeId: '196c8d303e265143806ad19356406ae3',
+            dataType: 'SYSTEM',
             fieldContentTypeProperties: [],
+            fieldType: 'Row',
             fieldTypeLabel: 'Row',
             fieldVariables: [],
             fixed: false,
@@ -49,10 +47,13 @@ export const MOCK_CONTENTTYPE_1_TAB: DotCMSContentType = {
             sortOrder: 0,
             unique: false,
             variable: 'fields0'
-        }),
-        createFakeColumnField({
+        },
+        {
+            clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField',
             contentTypeId: '196c8d303e265143806ad19356406ae3',
+            dataType: 'SYSTEM',
             fieldContentTypeProperties: [],
+            fieldType: 'Column',
             fieldTypeLabel: 'Column',
             fieldVariables: [],
             fixed: false,
@@ -69,9 +70,12 @@ export const MOCK_CONTENTTYPE_1_TAB: DotCMSContentType = {
             sortOrder: 1,
             unique: false,
             variable: 'fields1'
-        }),
-        createFakeTextField({
+        },
+        {
+            clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
             contentTypeId: '196c8d303e265143806ad19356406ae3',
+            dataType: 'TEXT',
+            fieldType: 'Text',
             fieldTypeLabel: 'Text',
             fieldVariables: [],
             fixed: false,
@@ -88,9 +92,12 @@ export const MOCK_CONTENTTYPE_1_TAB: DotCMSContentType = {
             sortOrder: 2,
             unique: false,
             variable: 'text1'
-        }),
-        createFakeTextField({
+        },
+        {
+            clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
             contentTypeId: '196c8d303e265143806ad19356406ae3',
+            dataType: 'TEXT',
+            fieldType: 'Text',
             fieldTypeLabel: 'Text',
             fieldVariables: [],
             fixed: false,
@@ -108,10 +115,13 @@ export const MOCK_CONTENTTYPE_1_TAB: DotCMSContentType = {
             sortOrder: 3,
             unique: false,
             variable: 'text2'
-        }),
-        createFakeColumnField({
+        },
+        {
+            clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField',
             contentTypeId: '196c8d303e265143806ad19356406ae3',
+            dataType: 'SYSTEM',
             fieldContentTypeProperties: [],
+            fieldType: 'Column',
             fieldTypeLabel: 'Column',
             fieldVariables: [],
             fixed: false,
@@ -128,7 +138,7 @@ export const MOCK_CONTENTTYPE_1_TAB: DotCMSContentType = {
             sortOrder: 4,
             unique: false,
             variable: 'fields2'
-        }),
+        },
         {
             clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
             contentTypeId: '196c8d303e265143806ad19356406ae3',

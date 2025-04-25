@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
-import { ControlContainer, ReactiveFormsModule } from '@angular/forms';
+import { ControlContainer, FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 
 import { MultiSelectModule } from 'primeng/multiselect';
 
@@ -17,15 +17,12 @@ import { getSingleSelectableFieldOptions } from '../../utils/functions.util';
             useFactory: () => inject(ControlContainer, { skipSelf: true })
         }
     ],
-    template: `
-        <p-multiSelect
-            [options]="$options()"
-            [formControlName]="$field().variable"
-            optionLabel="label"
-            optionValue="value" />
-    `
+    templateUrl: './dot-edit-content-multi-select-field.html'
 })
 export class DotEditContentMultiSelectFieldComponent {
+    readonly #form = inject(ControlContainer).control as FormGroup;
+    formControl = new FormControl<string[]>([]);
+
     $field = input.required<ContentTypeMultiSelectField>({ alias: 'field' });
     $options = computed(() => {
         const field = this.$field();

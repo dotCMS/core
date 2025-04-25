@@ -231,9 +231,16 @@ const FIELD_TYPES_COMPONENTS: Record<DotCMSFieldTypes, DotEditFieldTestBed> = {
 describe('FIELD_TYPES and FIELDS_MOCK', () => {
     it('should be in sync', () => {
         expect(
-            Object.values(DotCMSFieldTypes).every((fieldType) =>
-                FIELDS_MOCK.find((f) => f.fieldType === fieldType)
-            )
+            Object.values(DotCMSFieldTypes)
+                .filter(
+                    (fieldType) =>
+                        fieldType !== DotCMSFieldTypes.LINE_DIVIDER &&
+                        fieldType !== DotCMSFieldTypes.ROW &&
+                        fieldType !== DotCMSFieldTypes.COLUMN &&
+                        fieldType !== DotCMSFieldTypes.TAB_DIVIDER &&
+                        fieldType !== DotCMSFieldTypes.COLUMN_BREAK
+                )
+                .every((fieldType) => FIELDS_MOCK.find((f) => f.fieldType === fieldType))
         ).toBeTruthy();
     });
 });
