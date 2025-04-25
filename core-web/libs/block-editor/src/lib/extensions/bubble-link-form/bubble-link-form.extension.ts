@@ -19,6 +19,8 @@ declare module '@tiptap/core' {
         bubbleLinkForm: {
             openLinkForm: ({ openOnClick }) => ReturnType;
             closeLinkForm: () => ReturnType;
+            setHighlight: () => ReturnType;
+            unsetHighlight: () => ReturnType;
         };
     }
 }
@@ -39,6 +41,18 @@ export const BubbleLinkFormExtension = (viewContainerRef: ViewContainerRef, lang
 
         addCommands() {
             return {
+                setHighlight:
+                    () =>
+                    ({ commands }) => {
+                        // Implementa la lógica de highlight aquí
+                        return true;
+                    },
+                unsetHighlight:
+                    () =>
+                    ({ commands }) => {
+                        // Implementa la lógica para remover el highlight aquí
+                        return true;
+                    },
                 openLinkForm:
                     ({ openOnClick }) =>
                     ({ chain }) => {
@@ -47,7 +61,6 @@ export const BubbleLinkFormExtension = (viewContainerRef: ViewContainerRef, lang
                             ?.setHighlight?.()
                             .command(({ tr }) => {
                                 tr.setMeta(LINK_FORM_PLUGIN_KEY, { isOpen: true, openOnClick });
-
                                 return true;
                             })
                             .freezeScroll(true)
@@ -64,7 +77,6 @@ export const BubbleLinkFormExtension = (viewContainerRef: ViewContainerRef, lang
                                     isOpen: false,
                                     openOnClick: false
                                 });
-
                                 return true;
                             })
                             .freezeScroll(false)
