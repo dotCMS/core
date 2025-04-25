@@ -1,4 +1,4 @@
-import { DotCMSContentlet, DotCMSPageAsset, DotCMSPageRendererMode } from '@dotcms/uve/types';
+import { DotCMSContentlet, DotCMSPageAsset, DotCMSPageRendererMode } from '@dotcms/types';
 
 import { ErrorMessage } from './components/ErrorMessage';
 

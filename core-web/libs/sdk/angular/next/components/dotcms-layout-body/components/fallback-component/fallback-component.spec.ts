@@ -3,7 +3,7 @@ import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 
 import { Component, Input } from '@angular/core';
 
-import { DotCMSContentlet } from '@dotcms/uve/types';
+import { DotCMSContentlet } from '@dotcms/types';
 
 import { FallbackComponent } from './fallback-component.component';
 

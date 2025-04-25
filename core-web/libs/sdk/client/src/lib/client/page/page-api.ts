@@ -1,9 +1,10 @@
+import { DotCMSPageAsset, DotCMSGraphQLPageResponse } from '@dotcms/types';
+
 import { buildPageQuery, buildQuery, fetchGraphQL, mapResponseData } from './utils';
 
 import { graphqlToPageEntity } from '../../utils';
 import { DotCMSClientConfig, RequestOptions } from '../client';
 import { ErrorMessages } from '../models';
-import { DotCMSGraphQLPageResponse, DotCMSPageAsset } from '../models/types';
 
 /**
  * The parameters for the Page API.

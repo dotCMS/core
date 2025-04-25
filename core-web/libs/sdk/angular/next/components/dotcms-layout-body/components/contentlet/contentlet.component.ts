@@ -12,8 +12,8 @@ import {
     ViewChild
 } from '@angular/core';
 
+import { DotCMSContentlet, DotContentletAttributes } from '@dotcms/types';
 import { CUSTOM_NO_COMPONENT, getDotContentletAttributes } from '@dotcms/uve/internal';
-import { DotCMSContentlet, DotContentletAttributes } from '@dotcms/uve/types';
 
 import { DynamicComponentEntity } from '../../../../models';
 import { DotCMSStore } from '../../../../store/dotcms.store';

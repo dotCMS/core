@@ -1,7 +1,7 @@
 import { useContext, useRef, useMemo } from 'react';
 
+import { DotCMSContentlet } from '@dotcms/types';
 import { CUSTOM_NO_COMPONENT, getDotContentletAttributes } from '@dotcms/uve/internal';
-import { DotCMSContentlet } from '@dotcms/uve/types';
 
 import { DotCMSPageContext } from '../../contexts/DotCMSPageContext';
 import { useCheckVisibleContent } from '../../hooks/useCheckVisibleContent';

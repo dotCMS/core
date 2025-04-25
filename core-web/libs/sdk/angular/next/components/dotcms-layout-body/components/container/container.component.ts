@@ -10,16 +10,16 @@ import {
 } from '@angular/core';
 
 import {
-    getContainersData,
-    getContentletsInContainer,
-    getDotContainerAttributes
-} from '@dotcms/uve/internal';
-import {
     DotCMSColumnContainer,
     DotCMSContentlet,
     DotContainerAttributes,
     EditableContainerData
-} from '@dotcms/uve/types';
+} from '@dotcms/types';
+import {
+    getContainersData,
+    getContentletsInContainer,
+    getDotContainerAttributes
+} from '@dotcms/uve/internal';
 
 import { ContainerNotFoundComponent } from './components/container-not-found/container-not-found.component';
 import { EmptyContainerComponent } from './components/empty-container/empty-container.component';

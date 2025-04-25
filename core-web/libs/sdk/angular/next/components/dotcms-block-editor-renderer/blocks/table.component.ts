@@ -1,7 +1,7 @@
 import { NgComponentOutlet } from '@angular/common';
 import { Component, Input } from '@angular/core';
 
-import { ContentNode } from '@dotcms/uve/types';
+import { ContentNode } from '@dotcms/types';
 
 import { DotCMSBlockEditorItemComponent } from '../item/dotcms-block-editor-item.component';
 @Component({

@@ -1,5 +1,5 @@
-import { BlockEditorState, DotCMSContainerBound } from '@dotcms/uve/internal';
-import { DotCMSUVEAction, Block } from '@dotcms/uve/types';
+import { DotCMSUVEAction, Block } from '@dotcms/types';
+import { BlockEditorState, DotCMSContainerBound } from '@dotcms/types/internal';
 
 import { sendMessageToUVE } from './public';
 

@@ -1,4 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { DotCMSContentlet } from '@dotcms/types';
+
 import {
     getDotCMSContentletsBound,
     computeScrollIsInBottom,
@@ -10,7 +12,6 @@ import {
     getColumnPositionClasses
 } from './dom.utils';
 
-import { DotCMSContentlet } from '../types/page/public';
 describe('getDotCMSContentletsBound', () => {
     const createContentlet = ({
         x,

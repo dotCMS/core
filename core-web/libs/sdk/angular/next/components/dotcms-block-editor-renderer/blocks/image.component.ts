@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, Input } from '@angular/core';
 
-import { ContentNode } from '@dotcms/uve/types';
+import { ContentNode } from '@dotcms/types';
 
 @Component({
     selector: 'dotcms-block-editor-renderer-image',

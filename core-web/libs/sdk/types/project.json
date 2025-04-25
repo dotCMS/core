@@ -19,13 +19,7 @@
             "options": {
                 "outputPath": "dist/libs/sdk/types",
                 "main": "libs/sdk/types/src/index.ts",
-                "additionalEntryPoints": [
-                    "libs/sdk/types/src/editor.ts",
-                    "libs/sdk/types/src/events.ts",
-                    "libs/sdk/types/src/page.ts",
-                    "libs/sdk/types/src/components.ts",
-                    "libs/sdk/types/src/__internal__.ts"
-                ],
+                "additionalEntryPoints": ["libs/sdk/types/src/internal.ts"],
                 "generateExportsField": true,
                 "tsConfig": "libs/sdk/types/tsconfig.lib.json",
                 "project": "libs/sdk/types/package.json",

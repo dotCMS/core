@@ -2,7 +2,7 @@
 
 import { Type } from '@angular/core';
 
-import { DotCMSPageAsset, DotCMSPageRendererMode } from '@dotcms/uve/types';
+import { DotCMSPageAsset, DotCMSPageRendererMode } from '@dotcms/types';
 
 /**
  * Represents a dynamic component entity.

@@ -1,6 +1,6 @@
 import { createContext } from 'react';
 
-import { DotCMSContentlet, DotCMSPageAsset, DotCMSPageRendererMode } from '@dotcms/uve/types';
+import { DotCMSContentlet, DotCMSPageAsset, DotCMSPageRendererMode } from '@dotcms/types';
 
 /**
  * @internal

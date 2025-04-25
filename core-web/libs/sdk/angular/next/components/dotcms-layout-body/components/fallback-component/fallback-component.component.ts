@@ -1,7 +1,7 @@
 import { AsyncPipe, NgComponentOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 
-import { DotCMSContentlet } from '@dotcms/uve/types';
+import { DotCMSContentlet } from '@dotcms/types';
 
 import { DynamicComponentEntity } from '../../../../models';
 

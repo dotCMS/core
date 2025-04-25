@@ -1,7 +1,7 @@
 import { expect, describe, it, beforeEach, jest } from '@jest/globals';
 import { Spectator, createComponentFactory } from '@ngneat/spectator/jest';
 
-import { DotCMSContentlet, EditableContainerData } from '@dotcms/uve/types';
+import { DotCMSContentlet, EditableContainerData } from '@dotcms/types';
 
 import { ContainerComponent } from './container.component';
 

@@ -1,5 +1,7 @@
 import { ContentTypeMainFields, DotCMSContainerBound } from './internal';
 
+import { DotCMSEditablePage } from '../page/public';
+
 /**
  * Development mode
  *
@@ -203,7 +205,7 @@ export enum UVEEventType {
  * Type definitions for each event's payload
  */
 export type UVEEventPayloadMap = {
-    [UVEEventType.CONTENT_CHANGES]: unknown;
+    [UVEEventType.CONTENT_CHANGES]: DotCMSEditablePage;
     [UVEEventType.PAGE_RELOAD]: undefined;
     [UVEEventType.REQUEST_BOUNDS]: DotCMSContainerBound[];
     [UVEEventType.IFRAME_SCROLL]: 'up' | 'down';
@@ -250,4 +252,16 @@ export interface DotContentletAttributes {
     'data-dot-type': string;
     'data-dot-container': string;
     'data-dot-on-number-of-pages': string;
+}
+
+/**
+ * Configuration for the UVE
+ * @interface DotCMSUVEConfig
+ */
+export interface DotCMSUVEConfig {
+    graphql?: {
+        query: string;
+        variables: Record<string, unknown>;
+    };
+    params?: Record<string, unknown>;
 }

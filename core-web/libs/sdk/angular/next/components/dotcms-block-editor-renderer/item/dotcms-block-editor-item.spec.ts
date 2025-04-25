@@ -3,8 +3,8 @@ import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 import { Component, Input } from '@angular/core';
 import { fakeAsync, tick } from '@angular/core/testing';
 
-import { Blocks } from '@dotcms/uve/internal';
-import { ContentNode } from '@dotcms/uve/types';
+import { ContentNode } from '@dotcms/types';
+import { Blocks } from '@dotcms/types/internal';
 
 import { DotCMSBlockEditorItemComponent } from './dotcms-block-editor-item.component';
 

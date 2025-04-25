@@ -1,16 +1,15 @@
-import { END_CLASS, START_CLASS } from '../../internal/constants';
-import { DotCMSContainerBound, DotCMSContentletBound } from '../types/editor/internal';
 import {
     DotContainerAttributes,
     DotContentletAttributes,
-    EditableContainerData
-} from '../types/editor/public';
-import {
+    EditableContainerData,
     DotCMSColumnContainer,
     DotCMSContentlet,
     DotCMSPageAsset,
     DotPageAssetLayoutColumn
-} from '../types/page/public';
+} from '@dotcms/types';
+import { DotCMSContainerBound, DotCMSContentletBound } from '@dotcms/types/internal';
+
+import { END_CLASS, START_CLASS } from '../../internal/constants';
 
 /**
  * Calculates the bounding information for each page element within the given containers.

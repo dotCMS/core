@@ -1,13 +1,19 @@
 import {
+    Contentlet,
+    DotCMSUVEAction,
+    DotCMSUVEConfig,
+    DotCMSInlineEditingPayload,
+    DotCMSInlineEditingType
+} from '@dotcms/types'; // '../types/editor/public';
+import { DotCMSReorderMenuConfig, DotCMSUVEMessage } from '@dotcms/types/internal'; //'../types/editor/internal';
+
+import {
     addClassToEmptyContentlets,
     listenBlockEditorInlineEvent,
     registerUVEEvents,
     scrollHandler,
     setClientIsReady
 } from '../../script/utils';
-import { DotCMSReorderMenuConfig, DotCMSUVEMessage } from '../types/editor/internal';
-import { Contentlet, DotCMSUVEAction, DotCMSUVEConfig } from '../types/editor/public';
-import { DotCMSInlineEditingPayload, DotCMSInlineEditingType } from '../types/events/public';
 
 /**
  * Post message to dotcms page editor

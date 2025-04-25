@@ -3,8 +3,8 @@ import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 
 import { Component, ElementRef, Input, Type } from '@angular/core';
 
+import { DotCMSContentlet } from '@dotcms/types';
 import { CUSTOM_NO_COMPONENT } from '@dotcms/uve/internal';
-import { DotCMSContentlet } from '@dotcms/uve/types';
 
 import { ContentletComponent } from './contentlet.component';
 

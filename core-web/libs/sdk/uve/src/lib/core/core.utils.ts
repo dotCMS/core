@@ -1,12 +1,13 @@
-import { __UVE_EVENTS__, __UVE_EVENT_ERROR_FALLBACK__ } from '../../internal/constants';
 import {
     UVE_MODE,
-    UVEEventHandler,
     UVEState,
     UVEEventSubscription,
     UVEEventType,
-    UVEEventPayloadMap
-} from '../types/editor/public';
+    UVEEventPayloadMap,
+    UVEEventHandler
+} from '@dotcms/types';
+
+import { __UVE_EVENTS__, __UVE_EVENT_ERROR_FALLBACK__ } from '../../internal/constants';
 
 /**
  * Gets the current state of the Universal Visual Editor (UVE).

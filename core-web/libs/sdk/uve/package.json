@@ -16,13 +16,11 @@
   "exports": {
     "./package.json": "./package.json",
     ".": "./src/index.ts",
-    "./types": "./src/types.ts",
     "./internal": "./src/internal.ts"
   },
   "typesVersions": {
     "*": {
       ".": ["./src/index.d.ts"],
-      "types": ["./src/types.d.ts"],
       "internal": ["./src/internal.d.ts"]
     }
   },
@@ -31,5 +29,8 @@
   "bugs": {
     "url": "https://github.com/dotCMS/core/issues"
   },
-  "homepage": "https://github.com/dotCMS/core/tree/main/core-web/libs/sdk/uve/README.md"
+  "homepage": "https://github.com/dotCMS/core/tree/main/core-web/libs/sdk/uve/README.md",
+  "peerDependencies": {
+    "@dotcms/types": "next"
+  }
 }

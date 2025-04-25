@@ -1,8 +1,8 @@
 import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 
+import { Block, UVE_MODE } from '@dotcms/types';
+import { BlockEditorState } from '@dotcms/types/internal';
 import { getUVEState } from '@dotcms/uve';
-import { BlockEditorState } from '@dotcms/uve/internal';
-import { Block, UVE_MODE } from '@dotcms/uve/types';
 
 import { DotCMSBlockEditorRendererComponent } from './dotcms-block-editor-renderer.component';
 import { DotCMSBlockEditorItemComponent } from './item/dotcms-block-editor-item.component';

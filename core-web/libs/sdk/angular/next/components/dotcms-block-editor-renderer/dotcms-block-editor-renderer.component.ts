@@ -1,8 +1,9 @@
 import { Component, Input, signal } from '@angular/core';
 
+import { UVE_MODE, Block } from '@dotcms/types';
+import { BlockEditorState } from '@dotcms/types/internal';
 import { getUVEState } from '@dotcms/uve';
-import { BlockEditorState, isValidBlocks } from '@dotcms/uve/internal';
-import { UVE_MODE, Block } from '@dotcms/uve/types';
+import { isValidBlocks } from '@dotcms/uve/internal';
 
 import { DotCMSBlockEditorItemComponent } from './item/dotcms-block-editor-item.component';
 

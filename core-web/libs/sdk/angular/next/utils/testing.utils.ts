@@ -1,4 +1,4 @@
-import { DotCMSPageAsset, DotCMSContentlet } from '@dotcms/uve/types';
+import { DotCMSPageAsset, DotCMSContentlet } from '@dotcms/types';
 
 export const PageResponseMock: DotCMSPageAsset = {
     canCreateTemplate: true,

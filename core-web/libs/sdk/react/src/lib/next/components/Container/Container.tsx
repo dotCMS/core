@@ -1,11 +1,11 @@
 import { useContext, useMemo } from 'react';
 
+import { DotCMSColumnContainer, DotCMSContentlet } from '@dotcms/types';
 import {
     getContainersData,
     getDotContainerAttributes,
     getContentletsInContainer
 } from '@dotcms/uve/internal';
-import { DotCMSColumnContainer, DotCMSContentlet } from '@dotcms/uve/types';
 
 import { ContainerNotFound, EmptyContainer } from './ContainerFallbacks';
 
