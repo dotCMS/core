@@ -2,15 +2,118 @@ import {
     DotCMSContentTypeField,
     DotCMSContentTypeLayoutRow,
     DotCMSContentTypeLayoutColumn,
-    DotCMSClazzes
+    DotCMSClazzes,
+    ContentTypeColumnField,
+    DotCMSDataTypes,
+    DotCMSFieldTypes,
+    ContentTypeRowField,
+    ContentTypeTabDividerField,
+    ContentTypeColumnBreakField
 } from '@dotcms/dotcms-models';
 
-import {
-    createFakeColumnBreakField,
-    createFakeColumnField,
-    createFakeTabDividerField,
-    createFakeRowField
-} from './dot-content-types.mock';
+const COLUMN_FIELD: ContentTypeColumnField = {
+    clazz: DotCMSClazzes.COLUMN,
+    dataType: DotCMSDataTypes.SYSTEM,
+    fieldType: DotCMSFieldTypes.COLUMN,
+    contentTypeId: 'contentTypeId',
+    fieldTypeLabel: 'fieldTypeLabel',
+    fieldVariables: [],
+    fixed: false,
+    iDate: 0,
+    id: 'id',
+    indexed: false,
+    listed: false,
+    modDate: 0,
+    name: 'Column',
+    readOnly: false,
+    required: false,
+    searchable: false,
+    sortOrder: 0,
+    unique: false,
+    variable: 'variable',
+    defaultValue: 'defaultValue',
+    hint: 'hint',
+    values: 'values',
+    forceIncludeInApi: false
+};
+
+const ROW_FIELD: ContentTypeRowField = {
+    clazz: DotCMSClazzes.ROW,
+    dataType: DotCMSDataTypes.SYSTEM,
+    fieldType: DotCMSFieldTypes.ROW,
+    contentTypeId: 'contentTypeId',
+    fieldTypeLabel: 'fieldTypeLabel',
+    fieldVariables: [],
+    fixed: false,
+    iDate: 0,
+    id: 'id',
+    indexed: false,
+    listed: false,
+    modDate: 0,
+    name: 'name',
+    readOnly: false,
+    required: false,
+    searchable: false,
+    sortOrder: 0,
+    unique: false,
+    variable: 'variable',
+    defaultValue: 'defaultValue',
+    hint: 'hint',
+    values: 'values',
+    forceIncludeInApi: false
+};
+
+const TAB_FIELD: ContentTypeTabDividerField = {
+    clazz: DotCMSClazzes.TAB_DIVIDER,
+    dataType: DotCMSDataTypes.SYSTEM,
+    fieldType: DotCMSFieldTypes.TAB_DIVIDER,
+    contentTypeId: 'contentTypeId',
+    fieldTypeLabel: 'fieldTypeLabel',
+    fieldVariables: [],
+    fixed: false,
+    iDate: 0,
+    id: 'id',
+    indexed: false,
+    listed: false,
+    modDate: 0,
+    name: 'name',
+    readOnly: false,
+    required: false,
+    searchable: false,
+    sortOrder: 0,
+    unique: false,
+    variable: 'variable',
+    defaultValue: 'defaultValue',
+    hint: 'hint',
+    values: 'values',
+    forceIncludeInApi: false
+};
+
+const COLUMN_BREAK_FIELD: ContentTypeColumnBreakField = {
+    clazz: DotCMSClazzes.COLUMN_BREAK,
+    dataType: DotCMSDataTypes.SYSTEM,
+    fieldType: DotCMSFieldTypes.COLUMN_BREAK,
+    contentTypeId: 'contentTypeId',
+    fieldTypeLabel: 'fieldTypeLabel',
+    fieldVariables: [],
+    fixed: false,
+    iDate: 0,
+    id: 'id',
+    indexed: false,
+    listed: false,
+    modDate: 0,
+    name: 'Column',
+    readOnly: false,
+    required: false,
+    searchable: false,
+    sortOrder: 0,
+    unique: false,
+    variable: 'variable',
+    defaultValue: 'defaultValue',
+    hint: 'hint',
+    values: 'values',
+    forceIncludeInApi: false
+};
 
 export class FieldUtil {
     /**
@@ -71,7 +174,7 @@ export class FieldUtil {
      */
     static createFieldRow(nColumns: number): DotCMSContentTypeLayoutRow {
         return {
-            divider: createFakeRowField(),
+            divider: { ...ROW_FIELD },
             columns: new Array(nColumns).fill(null).map(() => FieldUtil.createFieldColumn())
         };
     }
@@ -84,7 +187,7 @@ export class FieldUtil {
      */
     static createFieldColumn(fields?: DotCMSContentTypeField[]): DotCMSContentTypeLayoutColumn {
         return {
-            columnDivider: createFakeColumnField(),
+            columnDivider: { ...COLUMN_FIELD },
             fields: fields || []
         };
     }
@@ -96,7 +199,7 @@ export class FieldUtil {
      */
     static createFieldTabDivider(): DotCMSContentTypeLayoutRow {
         return {
-            divider: createFakeTabDividerField()
+            divider: { ...TAB_FIELD }
         };
     }
 
@@ -109,7 +212,7 @@ export class FieldUtil {
      * @returns {DotCMSContentTypeField[][]} Array of field arrays split by divider types
      */
     static getRows(fields: DotCMSContentTypeField[]): DotCMSContentTypeField[][] {
-        return FieldUtil.splitFieldsBy(fields, [DotCMSClazzes.ROW, DotCMSClazzes.TAB_DIVIDER]);
+        return FieldUtil.splitFieldsBy(fields, [ROW_FIELD.clazz, TAB_FIELD.clazz]);
     }
 
     /**
@@ -121,7 +224,7 @@ export class FieldUtil {
      * @returns {DotCMSContentTypeField[][]} Array of field arrays split by Column fields
      */
     static getColumns(fields: DotCMSContentTypeField[]): DotCMSContentTypeField[][] {
-        return FieldUtil.splitFieldsBy(fields, [DotCMSClazzes.COLUMN]);
+        return FieldUtil.splitFieldsBy(fields, [COLUMN_FIELD.clazz]);
     }
 
     /**
@@ -205,7 +308,7 @@ export class FieldUtil {
      * @returns {boolean} True if the field class represents a column break
      */
     static isColumnBreak(clazz: string): boolean {
-        return clazz === DotCMSClazzes.COLUMN_BREAK;
+        return clazz === COLUMN_BREAK_FIELD.clazz;
     }
 
     /**
@@ -214,6 +317,6 @@ export class FieldUtil {
      * @returns {{ clazz: string; name: string }} A column break object
      */
     static createColumnBreak(): { clazz: string; name: string } {
-        return createFakeColumnBreakField();
+        return { ...COLUMN_BREAK_FIELD };
     }
 }

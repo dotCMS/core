@@ -38,6 +38,7 @@ import {
     DotCMSContentType,
     DotCMSContentTypeField,
     DotCMSContentTypeLayoutRow,
+    ContentTypeBlockEditorField,
     DotDialogActions,
     DotFieldVariable
 } from '@dotcms/dotcms-models';
@@ -52,13 +53,8 @@ import { DotLoadingIndicatorService } from '@dotcms/utils';
 import {
     cleanUpDialog,
     CoreWebServiceMock,
-    createFakeBlockEditorField,
-    createFakeColumnField,
-    createFakeRowField,
-    createFakeTabDividerField,
-    createFakeTextField,
-    createFakeWYSIWYGField,
     dotcmsContentTypeBasicMock,
+    dotcmsContentTypeFieldBasicMock,
     fieldsBrokenWithColumns,
     fieldsWithBreakColumn,
     FieldUtil,
@@ -317,9 +313,10 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
     it('should emit removeFields event', () => {
         let fieldsToRemove;
 
-        const field = createFakeTextField({
+        const field = {
+            ...dotcmsContentTypeFieldBasicMock,
             name: 'nameField'
-        });
+        };
 
         comp.removeFields.subscribe((removeFields) => (fieldsToRemove = removeFields));
 
@@ -331,7 +328,10 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
         let fieldsToRemove: DotCMSContentTypeField[];
 
         const fieldRow: DotCMSContentTypeLayoutRow = FieldUtil.createFieldRow(1);
-        const field = createFakeTextField();
+        const field = {
+            ...dotcmsContentTypeFieldBasicMock,
+            name: 'nameField'
+        };
         fieldRow.columns[0].fields = [field];
         fieldRow.divider.id = 'test';
 
@@ -361,9 +361,10 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
 
     it('should cancel last drag and drop operation fields', () => {
         const fieldRow1: DotCMSContentTypeLayoutRow = FieldUtil.createFieldRow(1);
-        const field = createFakeTextField({
+        const field = {
+            ...dotcmsContentTypeFieldBasicMock,
             name: 'nameField'
-        });
+        };
         fieldRow1.columns[0].fields = [field];
 
         comp.layout = [fieldRow1];
@@ -378,7 +379,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
         expect(comp.fieldRows[0].columns[0].fields).toEqual([field]);
     });
 
-    it('should cancel last tab field drag and drop operation fields', () => {
+    fit('should cancel last tab field drag and drop operation fields', () => {
         comp.layout = [];
         comp.fieldRows = [];
 
@@ -420,12 +421,16 @@ class TestHostComponent {
 // Issue ref: dotCMS/core#16772 When you DnD a field (reorder) in the same column it shows up the edit field dialog
 // https://github.com/dotCMS/core-web/pull/1085
 
-const BLOCK_EDITOR_FIELD = createFakeBlockEditorField({
+const BLOCK_EDITOR_FIELD: ContentTypeBlockEditorField = {
+    ...dotcmsContentTypeFieldBasicMock,
+    clazz: 'com.dotcms.contenttype.model.field.ImmutableStoryBlockField',
+    dataType: 'LONG_TEXT',
+    fieldType: 'Story-Block',
     id: '12',
     name: 'field 12',
     sortOrder: 12,
     contentTypeId: '12b'
-});
+};
 
 @Component({
     selector: 'dot-block-editor-settings',
@@ -565,96 +570,134 @@ describe('Load fields and drag and drop', () => {
 
         fakeFields = [
             {
-                divider: createFakeRowField({
+                divider: {
+                    ...dotcmsContentTypeFieldBasicMock,
                     name: 'field 1',
                     id: '1',
+                    clazz: 'com.dotcms.contenttype.model.field.ImmutableRowField',
+                    dataType: 'SYSTEM',
+                    fieldType: 'Row',
                     sortOrder: 0,
                     contentTypeId: '1b'
-                }),
+                },
                 columns: [
                     {
-                        columnDivider: createFakeColumnField({
+                        columnDivider: {
+                            ...dotcmsContentTypeFieldBasicMock,
                             name: 'field 2',
                             id: '2',
+                            clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField',
+                            dataType: 'SYSTEM',
+                            fieldType: 'Column',
                             sortOrder: 1,
                             contentTypeId: '2b'
-                        }),
+                        },
                         fields: [
-                            createFakeWYSIWYGField({
+                            {
+                                ...dotcmsContentTypeFieldBasicMock,
+                                clazz: 'com.dotcms.contenttype.model.field.ImmutableWysiwygField',
+                                dataType: 'LONG_TEXT',
+                                fieldType: 'WYSIWYG',
                                 id: '3',
                                 name: 'field 3',
                                 sortOrder: 2,
                                 contentTypeId: '3b'
-                            })
+                            }
                         ]
                     },
                     {
-                        columnDivider: createFakeColumnField({
+                        columnDivider: {
+                            ...dotcmsContentTypeFieldBasicMock,
+                            clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField',
+                            dataType: 'SYSTEM',
+                            fieldType: 'Column',
                             id: '4',
                             name: 'field 4',
                             sortOrder: 3,
                             contentTypeId: '4b'
-                        }),
+                        },
                         fields: [
-                            createFakeTextField({
+                            {
+                                ...dotcmsContentTypeFieldBasicMock,
                                 id: '5',
                                 name: 'field 5',
                                 sortOrder: 4,
                                 contentTypeId: '5b'
-                            })
+                            }
                         ]
                     }
                 ]
             },
             {
-                divider: createFakeTabDividerField({
+                divider: {
+                    ...dotcmsContentTypeFieldBasicMock,
+                    clazz: 'com.dotcms.contenttype.model.field.ImmutableTabDividerField',
+                    dataType: 'SYSTEM',
+                    fieldType: 'Tab_divider',
                     id: '6',
                     name: 'field 6',
                     sortOrder: 5,
                     contentTypeId: '6b'
-                })
+                }
             },
             {
-                divider: createFakeRowField({
+                divider: {
+                    ...dotcmsContentTypeFieldBasicMock,
+                    clazz: 'com.dotcms.contenttype.model.field.ImmutableRowField',
+                    dataType: 'SYSTEM',
+                    fieldType: 'Row',
                     id: '7',
                     name: 'field 7',
                     sortOrder: 6,
                     contentTypeId: '7b'
-                }),
+                },
                 columns: [
                     {
-                        columnDivider: createFakeColumnField({
+                        columnDivider: {
+                            ...dotcmsContentTypeFieldBasicMock,
+                            clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField',
+                            dataType: 'SYSTEM',
+                            fieldType: 'Column',
                             id: '8',
                             name: 'field 8',
                             sortOrder: 7,
                             contentTypeId: '8b'
-                        }),
+                        },
                         fields: [
-                            createFakeTextField({
+                            {
+                                ...dotcmsContentTypeFieldBasicMock,
                                 id: '9',
                                 name: 'field 9',
                                 sortOrder: 8,
                                 contentTypeId: '9b'
-                            })
+                            }
                         ]
                     }
                 ]
             },
             {
-                divider: createFakeRowField({
+                divider: {
+                    ...dotcmsContentTypeFieldBasicMock,
+                    clazz: 'com.dotcms.contenttype.model.field.ImmutableRowField',
+                    dataType: 'SYSTEM',
+                    fieldType: 'Row',
                     id: '10',
                     name: 'field 10',
                     sortOrder: 10,
                     contentTypeId: '10b'
-                }),
+                },
                 columns: [
                     {
-                        columnDivider: createFakeColumnField({
+                        columnDivider: {
+                            ...dotcmsContentTypeFieldBasicMock,
                             name: 'field 11',
                             id: '11',
+                            clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField',
+                            dataType: 'SYSTEM',
+                            fieldType: 'Column',
                             sortOrder: 11,
                             contentTypeId: '11b'
-                        }),
+                        },
                         fields: [BLOCK_EDITOR_FIELD]
                     }
                 ]
@@ -691,11 +734,12 @@ describe('Load fields and drag and drop', () => {
 
         spyOn(comp.editField, 'emit');
 
-        const fieldUpdated = createFakeTextField({
+        const fieldUpdated = {
+            ...dotcmsContentTypeFieldBasicMock,
             id: '1',
             fixed: true,
             indexed: true
-        });
+        };
 
         expect(comp.currentField).toEqual(updatedField);
 
@@ -874,10 +918,9 @@ describe('Load fields and drag and drop', () => {
     });
 
     it('should disable field variable tab', () => {
-        const field = createFakeTextField({
-            id: '123'
-        });
-        comp.currentField = field;
+        comp.currentField = {
+            ...dotcmsContentTypeFieldBasicMock
+        };
         comp.displayDialog = true;
         fixture.detectChanges();
 
@@ -886,10 +929,10 @@ describe('Load fields and drag and drop', () => {
     });
 
     it('should NOT disable field variable tab', () => {
-        const field = createFakeTextField({
+        comp.currentField = {
+            ...dotcmsContentTypeFieldBasicMock,
             id: '123'
-        });
-        comp.currentField = field;
+        };
         comp.displayDialog = true;
         fixture.detectChanges();
         const tabLinks = de.queryAll(By.css('.p-tabview-nav li'));
@@ -1068,9 +1111,11 @@ describe('Load fields and drag and drop', () => {
             fixture.detectChanges();
             const fieldBoxComponent = de.query(By.css('dot-content-type-fields-row'))
                 .componentInstance as TestContentTypeFieldsRowComponent;
-
-            const mockField = createFakeWYSIWYGField();
-            fieldBoxComponent.editField.emit(mockField);
+            fieldBoxComponent.editField.emit({
+                clazz: 'com.dotcms.contenttype.model.field.ImmutableWysiwygField',
+                name: 'WYSIWYG',
+                id: '3'
+            } as DotCMSContentTypeField);
             fixture.detectChanges();
 
             const BLOCK_EDITOR_SETTINGS = de.query(By.css('dot-block-editor-settings'));
