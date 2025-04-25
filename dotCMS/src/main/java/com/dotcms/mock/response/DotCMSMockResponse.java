@@ -1,5 +1,6 @@
 package com.dotcms.mock.response;
 
+import com.dotcms.ema.proxy.MockPrintWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
@@ -151,7 +152,7 @@ public class DotCMSMockResponse implements HttpServletResponse {
 
     @Override
     public PrintWriter getWriter() throws IOException {
-        return new PrintWriter(getOutputStream());
+        return new MockPrintWriter(getOutputStream());
     }
 
     @Override
