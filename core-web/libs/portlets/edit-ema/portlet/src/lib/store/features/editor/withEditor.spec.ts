@@ -173,7 +173,7 @@ describe('withEditor', () => {
         describe('$iframeURL', () => {
             it("should return the iframe's URL", () => {
                 expect(store.$iframeURL()).toBe(
-                    'http://localhost:3000/test-url?language_id=1&variantName=DEFAULT&mode=EDIT_MODE&personaId=dot%3Apersona'
+                    'http://localhost:3000/test-url?language_id=1&variantName=DEFAULT&mode=EDIT_MODE&personaId=dot%3Apersona&dotCMSHost=http://localhost'
                 );
             });
 
@@ -213,7 +213,7 @@ describe('withEditor', () => {
                 });
 
                 expect(store.$iframeURL()).toBe(
-                    'http://localhost/first?language_id=1&variantName=DEFAULT&personaId=dot%3Apersona'
+                    'http://localhost/first?language_id=1&variantName=DEFAULT&personaId=dot%3Apersona&dotCMSHost=http://localhost'
                 );
             });
 
@@ -229,7 +229,9 @@ describe('withEditor', () => {
                     }
                 });
 
-                expect(store.$iframeURL()).toBe('http://localhost:3000/test-url');
+                expect(store.$iframeURL()).toBe(
+                    'http://localhost:3000/test-url&dotCMSHost=http://localhost'
+                );
             });
 
             it('should set the right iframe url when the clientHost is present with a aditional path', () => {
@@ -244,7 +246,9 @@ describe('withEditor', () => {
                     }
                 });
 
-                expect(store.$iframeURL()).toBe('http://localhost:3000/test/test-url');
+                expect(store.$iframeURL()).toBe(
+                    'http://localhost:3000/test/test-url&dotCMSHost=http://localhost'
+                );
             });
         });
 
