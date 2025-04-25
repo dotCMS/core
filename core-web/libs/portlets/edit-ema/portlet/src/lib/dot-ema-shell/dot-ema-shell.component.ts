@@ -131,7 +131,8 @@ export class DotEmaShellComponent implements OnInit {
     handleNgEvent({ event }: DialogAction) {
         switch (event.detail.name) {
             case NG_CUSTOM_EVENTS.UPDATE_WORKFLOW_ACTION: {
-                this.uveStore.getWorkflowActions();
+                const pageAPIResponse = this.uveStore.pageAPIResponse();
+                this.uveStore.getWorkflowActions(pageAPIResponse.page.inode);
                 break;
             }
 

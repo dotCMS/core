@@ -406,7 +406,7 @@ export function computeCanEditPage(
     currentUser: CurrentUser,
     experiment?: DotExperiment
 ): boolean {
-    const pageCanBeEdited = page.canEdit;
+    const pageCanBeEdited = page?.canEdit;
 
     const isLocked = computePageIsLocked(page, currentUser);
 
@@ -783,4 +783,29 @@ export const convertLocalTimeToUTC = (date: Date, includeMilliseconds = false) =
 
     // Optionally remove milliseconds
     return includeMilliseconds ? isoString : isoString.replace(/\.\d{3}Z$/, 'Z');
+};
+
+export const removeUndefinedValues = (params: DotPageAssetParams) => {
+    return Object.fromEntries(Object.entries(params).filter(([_, value]) => value !== undefined));
+};
+
+/**
+ * Convert the client params to the page params
+ *
+ * @param {*} params
+ * @return {*}
+ */
+export const convertClientParamsToPageParams = (params) => {
+    if (!params) {
+        return null;
+    }
+
+    const { personaId, languageId, ...rest } = params;
+    const pageParams = {
+        ...rest,
+        [PERSONA_KEY]: personaId,
+        language_id: languageId
+    };
+
+    return removeUndefinedValues(pageParams);
 };
