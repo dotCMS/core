@@ -17,7 +17,7 @@ import { DomSanitizer } from '@angular/platform-browser';
 
 import { getUVEState, sendMessageToUVE } from '@dotcms/uve';
 import { __DOTCMS_UVE_EVENT__ } from '@dotcms/uve/internal';
-import { DotCMSContentlet, DotCMSUVEAction } from '@dotcms/uve/types';
+import { DotCMSContentlet, DotCMSUVEAction, UVE_MODE } from '@dotcms/uve/types';
 
 import { TINYMCE_CONFIG, DOT_EDITABLE_TEXT_FORMAT, DOT_EDITABLE_TEXT_MODE } from './utils';
 
@@ -94,14 +94,6 @@ export class DotCMSEditableTextComponent implements OnInit, OnChanges {
      * @memberof DotCMSEditableTextComponent
      */
     protected init!: EditorComponent['init'];
-    /**
-     * Represents if the component is inside the editor
-     *
-     * @protected
-     * @type {boolean}
-     * @memberof DotCMSEditableTextComponent
-     */
-    protected isInsideUVE!: boolean;
 
     readonly #sanitizer = inject<DomSanitizer>(DomSanitizer);
     readonly #renderer = inject<Renderer2>(Renderer2);
@@ -115,6 +107,17 @@ export class DotCMSEditableTextComponent implements OnInit, OnChanges {
      */
     get editor() {
         return this.editorComponent?.editor;
+    }
+
+    /**
+     * Represents if the component is inside the editor
+     *
+     * @protected
+     * @type {boolean}
+     * @memberof DotCMSEditableTextComponent
+     */
+    protected get isEditMode() {
+        return getUVEState()?.mode === UVE_MODE.EDIT;
     }
 
     /**
@@ -152,9 +155,9 @@ export class DotCMSEditableTextComponent implements OnInit, OnChanges {
     }
 
     ngOnInit() {
-        this.isInsideUVE = !!getUVEState();
+        const { dotCMSHost } = getUVEState() || {};
 
-        if (!this.isInsideUVE) {
+        if (!this.isEditMode) {
             this.innerHTMLToElement();
 
             return;
@@ -162,7 +165,7 @@ export class DotCMSEditableTextComponent implements OnInit, OnChanges {
 
         this.init = {
             ...TINYMCE_CONFIG[this.mode],
-            base_url: `${this.getDotCMSHost()}/ext/tinymcev7`
+            base_url: `${dotCMSHost}/ext/tinymcev7`
         };
     }
 
@@ -263,11 +266,5 @@ export class DotCMSEditableTextComponent implements OnInit, OnChanges {
      */
     private didContentChange(editedContent: string) {
         return this.content !== editedContent;
-    }
-
-    private getDotCMSHost() {
-        const urlParams = new URLSearchParams(window.location.search);
-
-        return urlParams?.get('dotCMSHost');
     }
 }
