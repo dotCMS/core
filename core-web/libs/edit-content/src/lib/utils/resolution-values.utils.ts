@@ -43,7 +43,7 @@ const getValueResolutionFn = (
 const jsonResolutionFn = (contentlet: DotCMSContentlet, field: ContentTypeJSONField) => {
     const value = getValueResolutionFn(contentlet, field);
 
-    if (typeof value === 'object') {
+    if (value && typeof value === 'object') {
         return JSON.stringify(value, null, 2);
     }
 
