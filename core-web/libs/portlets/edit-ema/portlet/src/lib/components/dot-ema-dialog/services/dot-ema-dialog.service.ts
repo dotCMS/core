@@ -69,7 +69,7 @@ export class DotEditorDialogService {
      */
     createContentlet({ url, contentType, actionPayload }: CreateContentletAction): void {
         const completeURL = new URL(url, window.location.origin);
-        // completeURL.searchParams.set('variantName', this.uveStore.pageParams().variantName);
+        completeURL.searchParams.set('variantName', this.getVariantName());
 
         this.state.update((state) => ({
             ...state,
@@ -320,7 +320,10 @@ export class DotEditorDialogService {
         return `${LAYOUT_URL}?${queryParams.toString()}`;
     }
 
-    getVariantName(): string {
+    /**
+     * Get the variant name from the url
+     */
+    private getVariantName(): string {
         const url = new URL(window.location.href);
 
         return url.searchParams.get('variantName') || DEFAULT_VARIANT_ID;

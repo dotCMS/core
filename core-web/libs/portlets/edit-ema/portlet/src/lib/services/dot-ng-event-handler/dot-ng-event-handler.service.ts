@@ -16,10 +16,28 @@ import {
 
 import { DotEditorDialogService } from '../../components/dot-ema-dialog/services/dot-ema-dialog.service';
 import { EDITOR_STATE, NG_CUSTOM_EVENTS, UVE_STATUS } from '../../shared/enums';
-import { DialogAction } from '../../shared/models';
+import { ActionPayload, DialogAction } from '../../shared/models';
 import { UVEStore } from '../../store/dot-uve.store';
 import { insertContentletInContainer, getTargetUrl, shouldNavigate } from '../../utils';
 import { DotPageApiService } from '../dot-page-api.service';
+
+// Define interface for event detail structure
+interface EventDetail {
+    data: {
+        identifier?: string;
+        contentType?: string;
+        url?: string;
+        [key: string]: unknown;
+    };
+    name?: string;
+    payload?: {
+        htmlPageReferer?: string;
+        newContentletId?: string;
+        shouldReloadPage?: boolean;
+        contentletIdentifier?: string;
+        [key: string]: unknown;
+    };
+}
 
 @Injectable({
     providedIn: 'root'
@@ -37,163 +55,247 @@ export class DotUVENgEvenHandlerService {
     /**
      * Handles the event triggered from the dialog.
      *
-     * @param {DialogAction} event - The event object containing details about the action.
+     * @param {DialogAction} dialogAction - The event object containing details about the action.
      * @return {void}
      */
-    public handleNgEvent({ event, actionPayload, clientAction }: DialogAction) {
+    public handleNgEvent(dialogAction: DialogAction) {
+        const { event, actionPayload, clientAction } = dialogAction;
         const { detail } = event;
 
         switch (event.detail.name) {
             case NG_CUSTOM_EVENTS.UPDATE_WORKFLOW_ACTION: {
-                const pageIdentifier = this.uveStore.pageAPIResponse().page.identifier;
-                this.uveStore.getWorkflowActions(pageIdentifier);
+                this.handleUpdateWorkflowAction();
                 break;
             }
 
             case NG_CUSTOM_EVENTS.CONTENT_SEARCH_SELECT: {
-                const { pageContainers, didInsert } = insertContentletInContainer({
-                    ...actionPayload,
-                    newContentletId: detail.data.identifier
-                });
-
-                if (!didInsert) {
-                    this.handleDuplicatedContentlet();
-
-                    return;
-                }
-
-                this.uveStore.savePage(pageContainers);
+                this.handleContentSearchSelect(detail as EventDetail, actionPayload);
                 break;
             }
 
             case NG_CUSTOM_EVENTS.CREATE_CONTENTLET: {
-                this.#dialogService.createContentlet({
-                    contentType: detail.data.contentType,
-                    url: detail.data.url,
-                    actionPayload
-                });
-
-                this.#cd.detectChanges();
+                this.handleCreateContentlet(detail as EventDetail, actionPayload);
                 break;
             }
 
             case NG_CUSTOM_EVENTS.CANCEL_SAVING_MENU_ORDER: {
-                this.#dialogService.resetDialog();
-                this.#cd.detectChanges();
+                this.handleCancelSavingMenuOrder();
                 break;
             }
 
             case NG_CUSTOM_EVENTS.SAVE_MENU_ORDER: {
-                this.#messageService.add({
-                    severity: 'success',
-                    summary: this.#dotMessageService.get(
-                        'editpage.content.contentlet.menu.reorder.title'
-                    ),
-                    detail: this.#dotMessageService.get('message.menu.reordered'),
-                    life: 2000
-                });
-
-                this.uveStore.reloadCurrentPage();
-                this.#dialogService.resetDialog();
+                this.handleSaveMenuOrder();
                 break;
             }
 
             case NG_CUSTOM_EVENTS.LANGUAGE_IS_CHANGED: {
-                const htmlPageReferer = event.detail.payload?.htmlPageReferer;
-                const url = new URL(htmlPageReferer, window.location.origin); // Add base for relative URLs
-                const targetUrl = getTargetUrl(
-                    url.pathname,
-                    this.uveStore.pageAPIResponse().urlContentMap
-                );
-                const language_id = url.searchParams.get('com.dotmarketing.htmlpage.language');
-
-                if (shouldNavigate(targetUrl, this.uveStore.pageParams().url)) {
-                    // Navigate to the new URL if it's different from the current one
-                    this.uveStore.loadPageAsset({ url: targetUrl, language_id });
-
-                    return;
-                }
-
-                this.uveStore.loadPageAsset({
-                    language_id
-                });
-
+                this.handleLanguageChanged(event);
                 break;
             }
 
             case NG_CUSTOM_EVENTS.ERROR_SAVING_MENU_ORDER: {
-                this.#messageService.add({
-                    severity: 'error',
-                    summary: this.#dotMessageService.get(
-                        'editpage.content.contentlet.menu.reorder.title'
-                    ),
-                    detail: this.#dotMessageService.get(
-                        'error.menu.reorder.user_has_not_permission'
-                    ),
-                    life: 2000
-                });
-
+                this.handleErrorSavingMenuOrder();
                 break;
             }
 
             case NG_CUSTOM_EVENTS.FORM_SELECTED: {
-                const formId = detail.data.identifier;
-
-                this.#dotPageApiService
-                    .getFormIndetifier(actionPayload.container.identifier, formId)
-                    .pipe(
-                        tap(() => {
-                            this.uveStore.setUveStatus(UVE_STATUS.LOADING);
-                        }),
-                        map((newFormId: string) => {
-                            return {
-                                ...actionPayload,
-                                newContentletId: newFormId
-                            };
-                        }),
-                        catchError(() => EMPTY),
-                        take(1)
-                    )
-                    .subscribe((response) => {
-                        const { pageContainers, didInsert } = insertContentletInContainer(response);
-
-                        if (!didInsert) {
-                            this.handleDuplicatedContentlet();
-                            this.uveStore.setUveStatus(UVE_STATUS.LOADED);
-                        } else {
-                            this.uveStore.savePage(pageContainers);
-                        }
-                    });
-
+                this.handleFormSelected(detail as EventDetail, actionPayload);
                 break;
             }
 
             case NG_CUSTOM_EVENTS.SAVE_PAGE: {
-                const { shouldReloadPage, contentletIdentifier } = detail.payload ?? {};
-                const pageIdentifier = this.uveStore.pageAPIResponse().page.identifier;
-                const isGraphqlPage = !!this.uveStore.graphql();
-
-                if (shouldReloadPage) {
-                    this.reloadURLContentMapPage(contentletIdentifier);
-
-                    return;
-                }
-
-                if (clientAction === CLIENT_ACTIONS.EDIT_CONTENTLET || !isGraphqlPage) {
-                    this.notifyContentOutsidePageHasChanged();
-                }
-
-                if (contentletIdentifier === pageIdentifier || !actionPayload) {
-                    this.handleReloadPage(event);
-
-                    return;
-                }
-
-                this.handleContentSave(event, actionPayload);
-
+                this.handleSavePage(event, actionPayload, clientAction);
                 break;
             }
         }
+    }
+
+    /**
+     * Handles the update workflow action event
+     * This event is trigger in any change of the workflow action
+     * Including:
+     * - Lock
+     * - Unlock
+     * - Publish
+     * - Unpublish
+     * - Save
+     *
+     * @private
+     */
+    private handleUpdateWorkflowAction(): void {
+        // With the identifier, we always get the latest workflow actions
+        const pageIdentifier = this.uveStore.pageAPIResponse().page.identifier;
+        this.uveStore.getWorkflowActions(pageIdentifier);
+    }
+
+    /**
+     * Handles the content search select event
+     *
+     * This event is trigger when the user select a contentlet in the content search
+     * @private
+     * @param {EventDetail} detail - The event detail
+     * @param {ActionPayload} actionPayload - The action payload
+     */
+    private handleContentSearchSelect(detail: EventDetail, actionPayload: ActionPayload): void {
+        const payload = {
+            ...actionPayload,
+            newContentletId: detail.data.identifier
+        };
+
+        // If you see this, remind me to test this case in Headless and traditional pages
+        // Not sure if `this.uveStore.setUveStatus(UVE_STATUS.LOADED);` is needed here
+        this.handleContentletAdded(payload);
+    }
+
+    /**
+     * Handles the create contentlet event
+     *
+     * This event is trigger when the user create a new contentlet
+     * @private
+     * @param {EventDetail} detail - The event detail
+     * @param {ActionPayload} actionPayload - The action payload
+     */
+    private handleCreateContentlet(detail: EventDetail, actionPayload: ActionPayload): void {
+        this.#dialogService.createContentlet({
+            contentType: detail.data.contentType,
+            url: detail.data.url,
+            actionPayload
+        });
+
+        this.#cd.detectChanges();
+    }
+
+    /**
+     * Handles the cancel saving menu order event
+     *
+     * @private
+     */
+    private handleCancelSavingMenuOrder(): void {
+        this.#dialogService.resetDialog();
+        this.#cd.detectChanges();
+    }
+
+    /**
+     * Handles the save menu order event
+     *
+     * This event is trigger when the user attempt to reorder the navigation menu
+     * @private
+     */
+    private handleSaveMenuOrder(): void {
+        this.#messageService.add({
+            severity: 'success',
+            summary: this.#dotMessageService.get('editpage.content.contentlet.menu.reorder.title'),
+            detail: this.#dotMessageService.get('message.menu.reordered'),
+            life: 2000
+        });
+
+        this.uveStore.reloadCurrentPage();
+        this.#dialogService.resetDialog();
+    }
+
+    /**
+     * Handles the language changed event
+     *
+     * This event is trigger when the user change the language of the page
+     * @private
+     * @param {CustomEvent} event - The event
+     */
+    private handleLanguageChanged(event: CustomEvent): void {
+        const htmlPageReferer = event.detail.payload?.htmlPageReferer;
+        const url = new URL(htmlPageReferer, window.location.origin); // Add base for relative URLs
+        const targetUrl = getTargetUrl(url.pathname, this.uveStore.pageAPIResponse().urlContentMap);
+        const language_id = url.searchParams.get('com.dotmarketing.htmlpage.language');
+
+        if (shouldNavigate(targetUrl, this.uveStore.pageParams().url)) {
+            // Navigate to the new URL if it's different from the current one
+            this.uveStore.loadPageAsset({ url: targetUrl, language_id });
+
+            return;
+        }
+
+        this.uveStore.loadPageAsset({
+            language_id
+        });
+    }
+
+    /**
+     * Handles the error saving menu order event
+     *
+     * @private
+     */
+    private handleErrorSavingMenuOrder(): void {
+        this.#messageService.add({
+            severity: 'error',
+            summary: this.#dotMessageService.get('editpage.content.contentlet.menu.reorder.title'),
+            detail: this.#dotMessageService.get('error.menu.reorder.user_has_not_permission'),
+            life: 2000
+        });
+    }
+
+    /**
+     * Handles the form selected event
+     *
+     * @private
+     * @param {EventDetail} detail - The event detail
+     * @param {ActionPayload} actionPayload - The action payload
+     */
+    private handleFormSelected(detail: EventDetail, actionPayload: ActionPayload): void {
+        const formId = detail.data.identifier;
+
+        this.#dotPageApiService
+            .getFormIndetifier(actionPayload.container.identifier, formId)
+            .pipe(
+                tap(() => {
+                    this.uveStore.setUveStatus(UVE_STATUS.LOADING);
+                }),
+                map((newFormId: string) => {
+                    return {
+                        ...actionPayload,
+                        newContentletId: newFormId
+                    };
+                }),
+                catchError(() => EMPTY),
+                take(1)
+            )
+            .subscribe((response) => {
+                this.handleContentletAdded(response);
+            });
+    }
+
+    /**
+     * Handles the save page event
+     *
+     * @private
+     * @param {CustomEvent} event - The event
+     * @param {ActionPayload} actionPayload - The action payload
+     * @param {string} clientAction - The client action
+     */
+    private handleSavePage(
+        event: CustomEvent,
+        actionPayload: ActionPayload,
+        clientAction: string
+    ): void {
+        const { shouldReloadPage, contentletIdentifier } = event.detail.payload ?? {};
+        const pageIdentifier = this.uveStore.pageAPIResponse().page.identifier;
+        const isGraphqlPage = !!this.uveStore.graphql();
+
+        if (shouldReloadPage) {
+            this.reloadURLContentMapPage(contentletIdentifier);
+
+            return;
+        }
+
+        if (clientAction === CLIENT_ACTIONS.EDIT_CONTENTLET || !isGraphqlPage) {
+            this.notifyContentOutsidePageHasChanged();
+        }
+
+        if (contentletIdentifier === pageIdentifier || !actionPayload) {
+            this.handleReloadPage(event);
+
+            return;
+        }
+
+        this.handleContentSave(event, actionPayload);
     }
 
     /**
@@ -219,24 +321,32 @@ export class DotUVENgEvenHandlerService {
         this.uveStore.reloadCurrentPage();
     }
 
-    private handleContentSave(event: CustomEvent, actionPayload) {
+    /**
+     * Handles saving content
+     *
+     * @private
+     * @param {CustomEvent} event - The event
+     * @param {ActionPayload} actionPayload - The action payload
+     */
+    private handleContentSave(event: CustomEvent, actionPayload: ActionPayload): void {
         const newContentletId = event.detail.payload?.newContentletId ?? '';
 
-        const { pageContainers, didInsert } = insertContentletInContainer({
+        const payload = {
             ...actionPayload,
             newContentletId
-        });
+        };
 
-        if (!didInsert) {
-            this.handleDuplicatedContentlet();
-
-            return;
-        }
-
-        this.uveStore.savePage(pageContainers);
+        // If you see this, remind me to test this case in Headless and traditional pages
+        // Not sure if `this.uveStore.setUveStatus(UVE_STATUS.LOADED);` is needed here
+        this.handleContentletAdded(payload);
     }
 
-    private handleDuplicatedContentlet() {
+    /**
+     * Handles duplicated contentlet message
+     *
+     * @private
+     */
+    private handleDuplicatedContentlet(): void {
         this.#messageService.add({
             severity: 'info',
             summary: this.#dotMessageService.get('editpage.content.add.already.title'),
@@ -244,8 +354,9 @@ export class DotUVENgEvenHandlerService {
             life: 2000
         });
 
-        this.uveStore.resetEditorProperties();
         this.#dialogService.resetDialog();
+        this.uveStore.resetEditorProperties();
+        this.uveStore.setUveStatus(UVE_STATUS.LOADED);
     }
 
     /**
@@ -292,10 +403,25 @@ export class DotUVENgEvenHandlerService {
         return this.#dotHttpErrorManagerService.handle(error).pipe(map(() => null));
     }
 
-    private notifyContentOutsidePageHasChanged() {
+    /**
+     * Notify that content outside the page has changed
+     *
+     * @private
+     */
+    private notifyContentOutsidePageHasChanged(): void {
         // this.contentWindow?.postMessage(
         //     { name: __DOTCMS_UVE_EVENT__.UVE_RELOAD_PAGE },
         //     "*"
         // );
+    }
+
+    private handleContentletAdded(actionPayload: ActionPayload): void {
+        const { pageContainers, didInsert } = insertContentletInContainer(actionPayload);
+
+        if (!didInsert) {
+            this.handleDuplicatedContentlet();
+        }
+
+        this.uveStore.savePage(pageContainers);
     }
 }
