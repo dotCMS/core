@@ -98,7 +98,8 @@ describe('Utils', () => {
                 });
                 const field = createFakeRelationshipField({ variable: 'relationship' });
 
-                expect(resolutionValue[DotCMSFieldTypes.RELATIONSHIP](contentlet, field)).toBe('');
+                const result = resolutionValue[DotCMSFieldTypes.RELATIONSHIP](contentlet, field);
+                expect(result).toBe('');
             });
         });
 

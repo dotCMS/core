@@ -84,21 +84,14 @@ const hostFolderResolutionFn = (
  * @param field - The field object
  * @returns Array of category keys or default value
  */
-const categoryResolutionFn = (
-    contentlet: DotCMSContentlet,
-    field: ContentTypeCategoryField
-): string[] => {
-    const value = getValueResolutionFn(contentlet, field);
+const categoryResolutionFn = (contentlet: DotCMSContentlet, field: ContentTypeCategoryField) => {
+    const values = contentlet?.[field.variable];
 
-    if (Array.isArray(value)) {
-        return value.map((item) => Object.keys(item)[0]);
+    if (Array.isArray(values)) {
+        return values.map((item) => Object.keys(item)[0]);
     }
 
-    if (typeof value === 'string') {
-        return [value];
-    }
-
-    return [];
+    return field.defaultValue ?? [];
 };
 
 /**
@@ -111,15 +104,13 @@ const categoryResolutionFn = (
 const relationshipResolutionFn = (
     contentlet: DotCMSContentlet,
     field: ContentTypeRelationshipField
-): string[] => {
+): string => {
     const relationship = getRelationshipFromContentlet({
         contentlet,
         variable: field.variable
     });
 
-    const identifiers = relationship.map((item) => item.identifier);
-
-    return identifiers;
+    return relationship.map((item) => item.identifier).join(',');
 };
 
 /**

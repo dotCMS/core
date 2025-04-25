@@ -7,14 +7,11 @@ import { By } from '@angular/platform-browser';
 import { Calendar } from 'primeng/calendar';
 
 import { DotCMSFieldTypes } from '@dotcms/dotcms-models';
-import { createFakeDateField } from '@dotcms/utils-testing';
 
 import { DotEditContentCalendarFieldComponent } from './dot-edit-content-calendar-field.component';
 import { CALENDAR_OPTIONS_PER_TYPE } from './utils';
 
-import { createFormGroupDirectiveMock } from '../../utils/mocks';
-
-const DATE_FIELD_MOCK = createFakeDateField();
+import { DATE_FIELD_MOCK, createFormGroupDirectiveMock } from '../../utils/mocks';
 
 describe('DotEditContentCalendarFieldComponent', () => {
     let spectator: Spectator<DotEditContentCalendarFieldComponent>;
