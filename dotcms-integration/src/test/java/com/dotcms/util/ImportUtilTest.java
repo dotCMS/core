@@ -2421,11 +2421,9 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             throws DotSecurityException, DotDataException, IOException {
 
         ContentType contentType = null;
-        CsvReader csvreader;
         long time;
-        HashMap<String, List<String>> results;
+        ImportResult results;
         Reader reader;
-        String[] csvHeaders;
         com.dotcms.contenttype.model.field.Field titleField;
 
         try {
@@ -2453,22 +2451,15 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                     "testDoesNotStartWithHTTPorHTTPS" + time + ", " +
                     "testDoesNotStartWithHTTPorHTTPS" + time + ", " +
                     "test://raw.githubusercontent.com/dotCMS/core/main/dotCMS/src/main/webapp/html/images/skin/logo.gif");
-            csvreader = new CsvReader(reader);
-            csvreader.setSafetySwitch(false);
-            csvHeaders = csvreader.getHeaders();
 
-            results =
-                    ImportUtil
-                            .importFile(0L, defaultSite.getInode(), contentType.inode(),
-                                    new String[]{titleField.id()}, false, false,
-                                    user, defaultLanguage.getId(), csvHeaders, csvreader, -1,
-                                    -1, reader,
-                                    saveAsDraftAction.getId(), getHttpRequest());
+            results = importAndValidate(contentType, titleField, reader, false, 1);
 
+            final ResultData data = results.data().orElse(null);
+            assertNotNull(data);
             //Validations
-            validate(results, true, true, false);
-
-            assertEquals(3,results.get("errors").size());//one for each line
+            assertEquals(3, results.error().size()); //one for each line
+            assertEquals(0, results.warning().size());
+            assertEquals(0, data.summary().commits());
 
             final List<Contentlet> savedData = contentletAPI
                     .findByStructure(contentType.inode(), user, false, 0, 0);
