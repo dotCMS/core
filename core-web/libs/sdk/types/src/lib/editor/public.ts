@@ -25,6 +25,7 @@ export const PRODUCTION_MODE = 'production';
  * @property {string | null} experimentId - The identifier for the current A/B testing experiment
  * @property {string | null} publishDate - The scheduled publish date for content
  * @property {string | null} languageId - The identifier for the current language selection
+ * @property {string | null} dotCMSHost - The host of the dotCMS instance
  */
 export interface UVEState {
     mode: UVE_MODE;
@@ -33,6 +34,7 @@ export interface UVEState {
     experimentId: string | null;
     publishDate: string | null;
     languageId: string | null;
+    dotCMSHost: string | null;
 }
 
 /**

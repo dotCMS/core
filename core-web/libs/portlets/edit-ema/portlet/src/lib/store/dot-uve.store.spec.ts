@@ -23,6 +23,7 @@ import {
 } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 import { UVE_MODE } from '@dotcms/types';
+import { WINDOW } from '@dotcms/utils';
 import {
     MockDotMessageService,
     getRunningExperimentMock,
@@ -133,6 +134,10 @@ describe('UVEStore', () => {
                 useValue: {
                     track: jest.fn()
                 }
+            },
+            {
+                provide: WINDOW,
+                useValue: window
             }
         ]
     });

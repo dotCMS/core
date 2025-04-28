@@ -52,6 +52,7 @@ export function getUVEState(): UVEState | undefined {
     const variantName = url.searchParams.get('variantName');
     const experimentId = url.searchParams.get('experimentId');
     const publishDate = url.searchParams.get('publishDate');
+    const dotCMSHost = url.searchParams.get('dotCMSHost');
 
     if (!possibleModes.includes(mode)) {
         mode = UVE_MODE.EDIT;
@@ -63,7 +64,8 @@ export function getUVEState(): UVEState | undefined {
         persona,
         variantName,
         experimentId,
-        publishDate
+        publishDate,
+        dotCMSHost
     };
 }
 

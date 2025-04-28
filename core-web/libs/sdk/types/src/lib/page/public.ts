@@ -144,8 +144,9 @@ export interface DotCMSBasicContentlet {
     contentTypeIcon?: string;
     variant?: string;
     widgetTitle?: string;
-    onNumberOfPages?: string;
+    onNumberOfPages?: number;
     __icon__?: string;
+    [key: string]: any;
 }
 
 export interface DotcmsNavigationItem {
