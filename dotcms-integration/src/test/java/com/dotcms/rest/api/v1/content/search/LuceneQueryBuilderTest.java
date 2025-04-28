@@ -99,6 +99,7 @@ public class LuceneQueryBuilderTest extends IntegrationTestBase {
      * <ul>
      *     <li>Global Search. This is basically the top center Search field you can see in the
      *     {@code Search} portlet, and the field in the search dialog of the Relationships field.
+     *     It's worth noting the use of the {@code catchall} clause for this specific search case.
      *     </li>
      *     <li>Unpublished content.</li>
      *     <li>Locked content.</li>
