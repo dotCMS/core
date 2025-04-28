@@ -5,7 +5,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
-import javax.validation.constraints.NotNull;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * A specialized implementation of PrintWriter that directly forwards all write operations
@@ -13,6 +13,9 @@ import javax.validation.constraints.NotNull;
  *
  * This class bypasses the standard buffering and character encoding handling of
  * the traditional PrintWriter to provide direct access to the underlying stream.
+ *
+ * This implementation is thread-safe regarding the closing operation and subsequent
+ * write attempts.
  *
  * Usage example:
  * <pre>
@@ -27,8 +30,11 @@ public class MockPrintWriter extends PrintWriter {
     /** The actual output stream where data will be written */
     private final OutputStream outputStream;
 
-    /** Flag indicating whether this writer has been closed */
-    private boolean closed = false;
+    /**
+     * Flag indicating whether this writer has been closed.
+     * Using AtomicBoolean for thread safety.
+     */
+    private final AtomicBoolean closed = new AtomicBoolean(false);
 
     /**
      * Creates a new MockPrintWriter that forwards all write operations to the specified output stream.
@@ -53,7 +59,9 @@ public class MockPrintWriter extends PrintWriter {
      */
     @Override
     public void write(int c) {
-        if (closed) return;
+        if (closed.get()) {
+            return;
+        }
         try {
             outputStream.write(c);
         } catch (IOException e) {
@@ -71,7 +79,9 @@ public class MockPrintWriter extends PrintWriter {
      */
     @Override
     public void write(char[] buf, int off, int len) {
-        if (closed) return;
+        if (closed.get()) {
+            return;
+        }
         try {
             outputStream.write(new String(buf, off, len).getBytes(StandardCharsets.UTF_8));
         } catch (IOException e) {
@@ -88,8 +98,10 @@ public class MockPrintWriter extends PrintWriter {
      * @param len The number of characters to write
      */
     @Override
-    public void write(@NotNull String s, int off, int len) {
-        if (closed) return;
+    public void write(String s, int off, int len) {
+        if (closed.get()) {
+            return;
+        }
         try {
             outputStream.write(s.substring(off, off + len).getBytes(StandardCharsets.UTF_8));
         } catch (IOException e) {
@@ -104,7 +116,7 @@ public class MockPrintWriter extends PrintWriter {
      * @param buf The array of characters to write (must not be null)
      */
     @Override
-    public void write(char @NotNull [] buf) {
+    public void write(char [] buf) {
         write(buf, 0, buf.length);
     }
 
@@ -114,8 +126,10 @@ public class MockPrintWriter extends PrintWriter {
      * @param s The string to write (must not be null)
      */
     @Override
-    public void write(@NotNull String s) {
-        if (closed) return;
+    public void write(String s) {
+        if (closed.get()) {
+            return;
+        }
         try {
             outputStream.write(s.getBytes(StandardCharsets.UTF_8));
         } catch (IOException e) {
@@ -327,7 +341,9 @@ public class MockPrintWriter extends PrintWriter {
      */
     @Override
     public void flush() {
-        if (closed) return;
+        if (closed.get()) {
+            return;
+        }
         try {
             outputStream.flush();
         } catch (IOException e) {
@@ -340,12 +356,24 @@ public class MockPrintWriter extends PrintWriter {
      * Closes the stream after flushing it.
      * Once the stream has been closed, further write() or flush() invocations will have no effect.
      * Note: This method does not close the underlying outputStream as it might be used externally.
+     *
+     * This operation is thread-safe.
      */
     @Override
     public void close() {
-        if (closed) return;
-        flush();
-        closed = true;
-        // Lets not close the outputStream here as it might be used externally
+        // Only perform closing actions if this is the first call to close()
+        if (closed.compareAndSet(false, true)) {
+            flush();
+            // Lets not close the outputStream here as it might be used externally
+        }
+    }
+
+    /**
+     * Returns whether this writer has been closed.
+     *
+     * @return true if this writer is closed, false otherwise
+     */
+    public boolean isClosed() {
+        return closed.get();
     }
 }
