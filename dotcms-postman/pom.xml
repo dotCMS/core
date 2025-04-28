@@ -34,6 +34,8 @@
         <!-- Some tests e.g. in ApiToken_Resource.postman_collection currently fail unless docker external port is same as internal -->
         <tomcat.port>8080</tomcat.port>
         <docker.jacoco.skip>false</docker.jacoco.skip>
+        <!-- Force to use node v18.20.3 -->
+        <node.js.version>v18.20.3</node.js.version>
     </properties>
 
     <build>
