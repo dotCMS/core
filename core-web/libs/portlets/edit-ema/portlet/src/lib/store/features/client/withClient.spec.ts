@@ -45,10 +45,10 @@ describe('UVEStore', () => {
 
     it('should have initial state', () => {
         expect(store.isClientReady()).toBeFalsy();
-        expect(store.clientRequestProps()).toEqual({
-            params: null,
-            query: ''
-        });
+        expect(store.graphql()).toEqual(null);
+        expect(store.graphqlResponse()).toEqual(null);
+        expect(store.isClientReady()).toBe(false);
+        expect(store.legacyGraphqlResponse()).toBe(false);
     });
 
     describe('withMethods', () => {
@@ -60,32 +60,29 @@ describe('UVEStore', () => {
 
         describe('setClientConfiguration', () => {
             it('should set the client configuration', () => {
-                const clientProps = {
+                const graphql = {
                     query: 'test',
-                    params: {
+                    variables: {
                         depth: '1'
                     }
                 };
 
-                store.setClientConfiguration(clientProps);
+                store.setCustomGraphQL(graphql, true);
 
-                expect(store.clientRequestProps()).toEqual(clientProps);
+                expect(store.graphql()).toEqual(graphql);
             });
         });
 
         it('should reset the client configuration', () => {
-            const clientProps = {
+            const graphql = {
                 query: 'test',
-                params: null
+                variables: null
             };
 
-            store.setClientConfiguration(clientProps);
+            store.setCustomGraphQL(graphql, true);
             store.resetClientConfiguration();
 
-            expect(store.clientRequestProps()).toEqual({
-                query: '',
-                params: null
-            });
+            expect(store.graphql()).toEqual(null);
         });
     });
 });

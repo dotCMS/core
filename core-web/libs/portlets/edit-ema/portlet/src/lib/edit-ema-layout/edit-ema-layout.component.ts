@@ -170,7 +170,8 @@ export class EditEmaLayoutComponent implements OnInit, OnDestroy {
             summary: 'Success',
             detail: this.dotMessageService.get('dot.common.message.saved')
         });
-        this.uveStore.reloadCurrentPage({ isClientReady: false });
+        this.uveStore.reloadCurrentPage();
+        this.uveStore.setIsClientReady(false);
     }
 
     /**
