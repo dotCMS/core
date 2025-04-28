@@ -95,7 +95,7 @@ export class DotCMSEditableTextComponent implements OnInit, OnChanges {
     protected init!: EditorComponent['init'];
 
     readonly #NotDotCMSHostMessage =
-        'The `adotCMSHost` parameter is not defined. Check that the UVE is sending the correct parameters.';
+        'The `dotCMSHost` parameter is not defined. Check that the UVE is sending the correct parameters.';
 
     readonly #sanitizer = inject<DomSanitizer>(DomSanitizer);
     readonly #renderer = inject<Renderer2>(Renderer2);
