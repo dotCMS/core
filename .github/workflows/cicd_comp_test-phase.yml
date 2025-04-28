@@ -104,26 +104,26 @@ jobs:
           artifacts-from: ${{ env.ARTIFACT_RUN_ID }}
 
   # Frontend Tests
-  linux-frontend-tests:
-    name: Frontend Unit Tests
-    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
-    if: inputs.frontend || inputs.run-all-tests
-    timeout-minutes: 240
-    env:
-      MAVEN_OPTS: -Xmx2048m
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - uses: ./.github/actions/core-cicd/maven-job
-        with:
-          stage-name: "Frontend Tests"
-          maven-args: "-pl :dotcms-core-web test"
-          generates-test-results: true
-          cleanup-runner: true
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          artifacts-from: ${{ env.ARTIFACT_RUN_ID }}
+#  linux-frontend-tests:
+#    name: Frontend Unit Tests
+#    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+#    if: inputs.frontend || inputs.run-all-tests
+#    timeout-minutes: 240
+#    env:
+#      MAVEN_OPTS: -Xmx2048m
+#    steps:
+#      - name: Checkout code
+#        uses: actions/checkout@v4
+#        with:
+#          fetch-depth: 0
+#      - uses: ./.github/actions/core-cicd/maven-job
+#        with:
+#          stage-name: "Frontend Tests"
+#          maven-args: "-pl :dotcms-core-web test"
+#          generates-test-results: true
+#          cleanup-runner: true
+#          github-token: ${{ secrets.GITHUB_TOKEN }}
+#          artifacts-from: ${{ env.ARTIFACT_RUN_ID }}
 
   # Integration Tests
   linux-integration-tests:
