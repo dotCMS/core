@@ -186,6 +186,7 @@ describe('DotCMSEditableText', () => {
                     inline: true,
                     init: {
                         inline: true,
+                        licenseKey: 'gpl',
                         menubar: false,
                         plugins: '',
                         powerpaste_html_import: 'clean',
