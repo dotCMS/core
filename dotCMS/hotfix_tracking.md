@@ -35,3 +35,4 @@ This maintenance release includes the following code fixes:
 29. https://github.com/dotCMS/core/issues/31980 : #dotParse and #dotCache throw NumberFormatException when TTL argument is null #31980
 30. https://github.com/dotCMS/core/pull/31972
 31. https://github.com/dotCMS/core/issues/31804 : UVE: Content Panel Section Can No Longer Be Hidden #31804
+32. https://github.com/dotCMS/core/issues/31709 : Edit Button in Block Editor Only Visible for Blog Content Type #31709

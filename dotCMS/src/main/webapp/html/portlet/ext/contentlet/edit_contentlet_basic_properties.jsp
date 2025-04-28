@@ -356,7 +356,9 @@
 function showRelationshipReturn(){
 
     var backInode = localStorage.getItem("dotcms.relationships.relationshipReturnValue");
-    
+	if (backInode) {
+		backInode = JSON.parse(backInode);
+	}
     var myCon = "<%=contentlet.getInode()%>";
     if(myCon === ""){
     	try{
@@ -369,15 +371,13 @@ function showRelationshipReturn(){
     
     
     var referer="<%=UtilMethods.webifyString(request.getParameter("referer"))%>";
-    if(backInode ==null || backInode == undefined || backInode=='' || backInode =="null" || referer =="") {
+	if(backInode ==null || backInode == undefined || backInode=='' || backInode =="null" || (referer =="" && !backInode.blockEditorBackUrl)) {
     	localStorage.removeItem("dotcms.relationships.relationshipReturnValue")
         return;
     }
 
 
-    backInode = JSON.parse(backInode);
-
-    if(backInode.inode ==  myCon){
+	if(backInode.inode == myCon && !backInode.blockEditorBackUrl){
         localStorage.removeItem("dotcms.relationships.relationshipReturnValue")
         return;
     }
@@ -397,10 +397,13 @@ function showRelationshipReturn(){
 
     document.write(backButtonTmpl)
     var button = document.getElementById("relationshipReturnValueButton");
+	localStorage.removeItem("dotcms.relationships.relationshipReturnValue");
 
     button.addEventListener("click", function(e) {
-    	window.location.href="<%=request.getParameter("referer")%>";
-       localStorage.removeItem("dotcms.relationships.relationshipReturnValue");
+		if (backInode.blockEditorBackUrl) {
+			window.parent.location.href = backInode.blockEditorBackUrl;
+		}
+		window.location.href = "<%=request.getParameter("referer")%>";
     });
 }
 
