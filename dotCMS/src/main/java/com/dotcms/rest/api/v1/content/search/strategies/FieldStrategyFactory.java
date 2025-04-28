@@ -19,15 +19,16 @@ public class FieldStrategyFactory {
 
     static {
         // Here, we're associating each Field Handler with its corresponding Field Strategy for the
-        // System Searchable fields/attributes. It's worth noting that These are NOT actual Content
-        // Type fields per se. But, they allow users to query contents via Lucene
+        // System-Searchable fields/attributes. It's worth noting that These are NOT actual Content
+        // Type fields per se. But they allow users to query contents via Lucene
         SYSTEM_FIELD_STRATEGY_MAP.put(FieldHandlerId.CONTENT_TYPE_IDS, new ContentTypesFieldStrategy());
         SYSTEM_FIELD_STRATEGY_MAP.put(FieldHandlerId.SITE_ID, new SiteAttributeStrategy());
+        SYSTEM_FIELD_STRATEGY_MAP.put(FieldHandlerId.FOLDER_ID, new FolderAttributeStrategy());
         SYSTEM_FIELD_STRATEGY_MAP.put(FieldHandlerId.GLOBAL_SEARCH, new GlobalSearchAttributeStrategy());
         SYSTEM_FIELD_STRATEGY_MAP.put(FieldHandlerId.VARIANT, new VariantAttributeStrategy());
         SYSTEM_FIELD_STRATEGY_MAP.put(FieldHandlerId.LANGUAGE, new LanguageAttributeStrategy());
-        SYSTEM_FIELD_STRATEGY_MAP.put(FieldHandlerId.WORKFLOW_SCHEME, new WorkflowSchemeAttributeAction());
-        SYSTEM_FIELD_STRATEGY_MAP.put(FieldHandlerId.WORKFLOW_STEP, new WorkflowStepAttributeAction());
+        SYSTEM_FIELD_STRATEGY_MAP.put(FieldHandlerId.WORKFLOW_SCHEME, new WorkflowSchemeAttributeStrategy());
+        SYSTEM_FIELD_STRATEGY_MAP.put(FieldHandlerId.WORKFLOW_STEP, new WorkflowStepAttributeStrategy());
         SYSTEM_FIELD_STRATEGY_MAP.put(FieldHandlerId.ARCHIVED_CONTENT, new ArchivedContentAttributeStrategy());
         SYSTEM_FIELD_STRATEGY_MAP.put(FieldHandlerId.LOCKED_CONTENT, new LockedContentAttributeStrategy());
         SYSTEM_FIELD_STRATEGY_MAP.put(FieldHandlerId.LIVE_CONTENT, new UnpublishedContentAttributeStrategy());
