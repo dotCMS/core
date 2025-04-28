@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-export interface DotCMSPageAsset {
+export interface DotCMSPageAsset<
+    T extends { urlContentMap: unknown } = { urlContentMap: unknown }
+> {
     canCreateTemplate?: boolean;
     containers: {
         [key: string]: DotCMSPageAssetContainer;
@@ -11,6 +13,8 @@ export interface DotCMSPageAsset {
     template: DotCMSTemplate;
     viewAs?: DotCMSViewAs;
     vanityUrl?: DotCMSVanityUrl;
+    /** Content mapping for the page URL */
+    urlContentMap?: T extends { urlContentMap: infer U } ? U : T;
     params?: Record<string, unknown>;
 }
 
