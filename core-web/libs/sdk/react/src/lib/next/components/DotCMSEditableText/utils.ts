@@ -1,5 +1,9 @@
 import { IAllProps } from '@tinymce/tinymce-react';
 
+import {
+    __BASE_TINYMCE_CONFIG_WITH_NO_DEFAULT__,
+    __DEFAULT_TINYMCE_CONFIG__
+} from '@dotcms/uve/internal';
 import { DotCMSContentlet } from '@dotcms/uve/types';
 
 export type DOT_EDITABLE_TEXT_FORMAT = 'html' | 'text';
@@ -37,14 +41,8 @@ export interface DotCMSEditableTextProps {
 }
 
 const DEFAULT_TINYMCE_CONFIG: IAllProps['init'] = {
-    inline: true,
-    menubar: false,
-    powerpaste_html_import: 'clean',
-    powerpaste_word_import: 'clean',
-    suffix: '.min',
-    valid_styles: {
-        '*': 'font-size,font-family,color,text-decoration,text-align'
-    }
+    ...__DEFAULT_TINYMCE_CONFIG__,
+    licenseKey: 'gpl' // Using self-hosted license key
 };
 
 export const TINYMCE_CONFIG: {
@@ -52,31 +50,14 @@ export const TINYMCE_CONFIG: {
 } = {
     full: {
         ...DEFAULT_TINYMCE_CONFIG,
-        plugins: 'link lists autolink charmap',
-        toolbar: [
-            'styleselect undo redo | bold italic underline | forecolor backcolor | alignleft aligncenter alignright alignfull | numlist bullist outdent indent | hr charmap removeformat | link'
-        ],
-        style_formats: [
-            { title: 'Paragraph', format: 'p' },
-            { title: 'Header 1', format: 'h1' },
-            { title: 'Header 2', format: 'h2' },
-            { title: 'Header 3', format: 'h3' },
-            { title: 'Header 4', format: 'h4' },
-            { title: 'Header 5', format: 'h5' },
-            { title: 'Header 6', format: 'h6' },
-            { title: 'Pre', format: 'pre' },
-            { title: 'Code', format: 'code' }
-        ]
+        ...__BASE_TINYMCE_CONFIG_WITH_NO_DEFAULT__.full
     },
     plain: {
         ...DEFAULT_TINYMCE_CONFIG,
-        plugins: '',
-        toolbar: ''
+        ...__BASE_TINYMCE_CONFIG_WITH_NO_DEFAULT__.plain
     },
     minimal: {
         ...DEFAULT_TINYMCE_CONFIG,
-        plugins: 'link autolink',
-        toolbar: 'bold italic underline | link',
-        valid_elements: 'strong,em,span[style],a[href]'
+        ...__BASE_TINYMCE_CONFIG_WITH_NO_DEFAULT__.minimal
     }
 };
