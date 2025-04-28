@@ -6,6 +6,9 @@
     "type": "git",
     "url": "git+https://github.com/dotCMS/core.git#main"
   },
+  "dependencies": {
+    "@dotcms/types": "0.0.1"
+  },
   "keywords": [
     "dotCMS",
     "CMS",
@@ -29,8 +32,5 @@
   "bugs": {
     "url": "https://github.com/dotCMS/core/issues"
   },
-  "homepage": "https://github.com/dotCMS/core/tree/main/core-web/libs/sdk/uve/README.md",
-  "peerDependencies": {
-    "@dotcms/types": "next"
-  }
+  "homepage": "https://github.com/dotCMS/core/tree/main/core-web/libs/sdk/uve/README.md"
 }

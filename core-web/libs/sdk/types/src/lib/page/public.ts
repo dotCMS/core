@@ -60,7 +60,7 @@ export interface DotCMSPageAssetContainer {
     container: DotCMSContainer;
     containerStructures: DotCMSContainerStructure[];
     contentlets: {
-        [key: string]: DotCMSContentlet[];
+        [key: string]: DotCMSBasicContentlet[];
     };
 }
 
@@ -103,11 +103,11 @@ export interface DotCMSContainer {
     idate: number;
     new: boolean;
     acceptTypes: string;
-    contentlets: DotCMSContentlet[];
+    contentlets: DotCMSBasicContentlet[];
     parentPermissionable: DotCMSSiteParentPermissionable;
 }
 
-export interface DotCMSContentlet {
+export interface DotCMSBasicContentlet {
     archived: boolean;
     baseType: string;
     deleted?: boolean;
@@ -143,8 +143,9 @@ export interface DotCMSContentlet {
     body?: string;
     contentTypeIcon?: string;
     variant?: string;
+    widgetTitle?: string;
+    onNumberOfPages?: string;
     __icon__?: string;
-    [key: string]: any; // This is a catch-all for any other custom properties that might be on the contentlet.
 }
 
 export interface DotcmsNavigationItem {
@@ -377,6 +378,7 @@ interface DotCMSSiteStructure {
     urlMapPattern?: any;
     host: string;
     folder: string;
+    publishDate: string;
     publishDateVar?: any;
     expireDateVar?: any;
     modDate: number;
@@ -511,12 +513,15 @@ export interface DotCMSBasicGraphQLPage {
         }[];
         containerContentlets?: {
             uuid: string;
-            contentlets: DotCMSContentlet[];
+            contentlets: DotCMSBasicContentlet[];
         }[];
-    };
+    }[];
 
     layout: DotCMSLayout;
     viewAs: DotCMSViewAs;
+    urlContentMap: Record<string, unknown>;
+    site: DotCMSSite;
+    _map: Record<string, unknown>;
 }
 
 export interface DotCMSPageGraphQLContainer {
@@ -529,7 +534,7 @@ export interface DotCMSPageGraphQLContainer {
 
 export interface DotCMSPageContainerContentlets {
     uuid: string;
-    contentlets: DotCMSContentlet[];
+    contentlets: DotCMSBasicContentlet[];
 }
 
 /**

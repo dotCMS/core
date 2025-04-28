@@ -1,13 +1,16 @@
 import {
-    DotContainerAttributes,
-    DotContentletAttributes,
     EditableContainerData,
     DotCMSColumnContainer,
-    DotCMSContentlet,
+    DotCMSBasicContentlet,
     DotCMSPageAsset,
     DotPageAssetLayoutColumn
 } from '@dotcms/types';
-import { DotCMSContainerBound, DotCMSContentletBound } from '@dotcms/types/internal';
+import {
+    DotCMSContainerBound,
+    DotCMSContentletBound,
+    DotContainerAttributes,
+    DotContentletAttributes
+} from '@dotcms/types/internal';
 
 import { END_CLASS, START_CLASS } from '../../internal/constants';
 
@@ -256,12 +259,12 @@ export const getColumnPositionClasses = (column: DotPageAssetLayoutColumn) => {
  *
  *
  * Helper function that returns an object containing the dotCMS data attributes.
- * @param {DotCMSContentlet} contentlet - The contentlet to get the attributes for
+ * @param {DotCMSBasicContentlet} contentlet - The contentlet to get the attributes for
  * @param {string} container - The container to get the attributes for
  * @returns {DotContentletAttributes} The dotCMS data attributes
  */
 export function getDotContentletAttributes(
-    contentlet: DotCMSContentlet,
+    contentlet: DotCMSBasicContentlet,
     container: string
 ): DotContentletAttributes {
     return {
@@ -271,7 +274,7 @@ export function getDotContentletAttributes(
         'data-dot-inode': contentlet?.inode,
         'data-dot-type': contentlet?.contentType,
         'data-dot-container': container,
-        'data-dot-on-number-of-pages': contentlet?.['onNumberOfPages']
+        'data-dot-on-number-of-pages': contentlet?.['onNumberOfPages'] || '1'
     };
 }
 
@@ -328,7 +331,7 @@ export const getContainersData = (
  *
  * @param {DotCMSPageAsset} dotCMSPageAsset - The page asset containing all containers data
  * @param {DotCMSColumnContainer} columContainer - The container reference from the layout
- * @returns {DotCMSContentlet[]} Array of contentlets in the container
+ * @returns {DotCMSBasicContentlet[]} Array of contentlets in the container
  *
  * @example
  * const contentlets = getContentletsInContainer(pageAsset, containerRef);

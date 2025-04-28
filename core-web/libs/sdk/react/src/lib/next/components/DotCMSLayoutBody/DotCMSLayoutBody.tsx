@@ -1,4 +1,4 @@
-import { DotCMSContentlet, DotCMSPageAsset, DotCMSPageRendererMode } from '@dotcms/types';
+import { DotCMSBasicContentlet, DotCMSPageAsset, DotCMSPageRendererMode } from '@dotcms/types';
 
 import { ErrorMessage } from './components/ErrorMessage';
 
@@ -7,7 +7,7 @@ import { Row } from '../Row/Row';
 
 interface DotCMSLayoutBodyProps {
     page: DotCMSPageAsset;
-    components: Record<string, React.ComponentType<DotCMSContentlet>>;
+    components: Record<string, React.ComponentType<DotCMSBasicContentlet>>;
     mode?: DotCMSPageRendererMode;
 }
 

@@ -6,6 +6,9 @@
     "type": "git",
     "url": "git+https://github.com/dotCMS/core.git#main"
   },
+  "dependencies": {
+    "@dotcms/types": "0.0.1"
+  },
   "scripts": {
     "build": "nx run sdk-client:build:js; cd ../../../../dotCMS/src/main/webapp/html/js/editor-js; rm -rf src package.json *.esm.d.ts"
   },
@@ -31,9 +34,6 @@
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/dotCMS/core/issues"
-  },
-  "peerDependencies": {
-    "@dotcms/types": "next"
   },
   "homepage": "https://github.com/dotCMS/core/tree/main/core-web/libs/sdk/client/README.md"
 }

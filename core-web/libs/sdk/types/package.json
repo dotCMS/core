@@ -1,18 +1,22 @@
 {
     "name": "@dotcms/types",
     "version": "0.0.1",
-    "dependencies": {},
-    "type": "commonjs",
-    "main": "./src/index.js",
-    "typings": "./src/index.d.ts",
+    "keywords": [
+        "dotCMS",
+        "CMS",
+        "Content Management",
+        "UVE",
+        "Universal Visual Editor"
+      ],
     "exports": {
         "./package.json": "./package.json",
-        "./types/__internal__": "./src/internal.ts"
+        ".": "./src/index.ts",
+        "./internal": "./src/internal.ts"
     },
     "typesVersions": {
         "*": {
             ".": ["./src/index.d.ts"],
-            "__internal__": ["./src/internal.d.ts"]
+            "internal": ["./src/internal.d.ts"]
         }
     }
 }

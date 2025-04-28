@@ -1,6 +1,6 @@
 import { useContext, useMemo } from 'react';
 
-import { DotCMSColumnContainer, DotCMSContentlet } from '@dotcms/types';
+import { DotCMSBasicContentlet, DotCMSColumnContainer } from '@dotcms/types';
 import {
     getContainersData,
     getDotContainerAttributes,
@@ -67,7 +67,7 @@ export function Container({ container }: DotCMSContainerRendererProps) {
 
     return (
         <div {...dotAttributes}>
-            {contentlets.map((contentlet: DotCMSContentlet) => (
+            {contentlets.map((contentlet: DotCMSBasicContentlet) => (
                 <Contentlet
                     key={contentlet.identifier}
                     contentlet={contentlet}
