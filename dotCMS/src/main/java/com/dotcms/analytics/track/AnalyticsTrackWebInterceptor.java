@@ -109,6 +109,11 @@ public class AnalyticsTrackWebInterceptor  implements WebInterceptor, EventSubsc
         requestMatchersMap.remove(requestMatcherId);
     }
 
+    public static boolean anyMatcherBeforeRequest(final HttpServletRequest request,
+                                                  final HttpServletResponse response) {
+        return anyMatcher(request, response, RequestMatcher::runBeforeRequest).isPresent();
+    }
+
 
     @Override
     public Result intercept(final HttpServletRequest request, final HttpServletResponse response) throws IOException {
@@ -196,7 +201,7 @@ public class AnalyticsTrackWebInterceptor  implements WebInterceptor, EventSubsc
         return true;
     }
 
-    private Optional<RequestMatcher> anyMatcher(final HttpServletRequest request, final HttpServletResponse response, Predicate<? super RequestMatcher> filterRequest) {
+    private static Optional<RequestMatcher> anyMatcher(final HttpServletRequest request, final HttpServletResponse response, Predicate<? super RequestMatcher> filterRequest) {
 
         return requestMatchersMap.values().stream()
                 .filter(filterRequest)
