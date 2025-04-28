@@ -6,6 +6,8 @@ import java.io.StringWriter;
 import java.io.Writer;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
+
+import com.dotmarketing.util.Logger;
 import org.apache.velocity.context.InternalContextAdapter;
 import org.apache.velocity.exception.MethodInvocationException;
 import org.apache.velocity.exception.ParseErrorException;
@@ -40,7 +42,13 @@ public class DotCacheDirective extends Directive {
         HttpServletRequest request = (HttpServletRequest) context.get("request");
         boolean shouldCache = shouldCache(request);
         boolean refreshCache = refreshCache(request);
-        final int ttl = (Integer) node.jjtGetChild(1).value(context);
+        int ttl = 0;
+        Object ttlObj = node.jjtGetChild(1).value(context);
+        if (ttlObj instanceof Integer) {
+            ttl = (Integer) node.jjtGetChild(1).value(context);
+        } else{
+            Logger.debug(this.getClass(), "TTL value for #dotcache must be an Integer and cannot be null. Using ttl = 0");
+        }
         if (!shouldCache || ttl <= 0) {
             node.jjtGetChild(2).render(context, writer);
             return true;
