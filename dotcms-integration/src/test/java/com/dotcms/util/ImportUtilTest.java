@@ -1,6 +1,7 @@
 package com.dotcms.util;
 
 import static com.dotcms.util.CollectionsUtils.list;
+import static com.dotmarketing.util.importer.ImportLineValidationCodes.INVALID_LOCATION;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -139,7 +140,6 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
     private static final String STEP_BY_USING_ACTION1 = "StepByUsingAction1";
     private static final String STEP_BY_USING_ACTION2 = "StepByUsingAction2";
     private static final String STEP_BY_USING_ACTION3 = "StepByUsingAction3";
-
     private static final int EDIT_PERMISSION =
             PermissionAPI.PERMISSION_READ + PermissionAPI.PERMISSION_EDIT;
     private static final int PUBLISH_PERMISSION = EDIT_PERMISSION + PermissionAPI.PERMISSION_PUBLISH;
@@ -3135,6 +3135,103 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             // The implementation might perform a final commit of successfully processed rows
             // So commits should be either 0 or 1 depending on implementation
             assertTrue("Expected 0 or 1 commits, but got: " + data.summary().commits(), data.summary().commits() <= 1);
+
+        } finally {
+            try {
+                if (null != contentType) {
+                    contentTypeApi.delete(contentType);
+                }
+            } catch (Exception e) {
+                Logger.error("Error deleting content type", e);
+            }
+        }
+    }
+
+
+    /**
+     * Tests the interaction between commit granularity and stopOnError
+     * When stopOnError=true, processing should stop at the first error,
+     * Given: A content type with a required title and site field is created and a CSV file is generated with different commit granularities and errors
+     * Expected: Depending on the commit granularity and the errors, the importer should commit and rollback as expected
+     */
+    @Test
+    public void importFile_withHighGranularityAndStopOnError_shouldStopAtFirstInvalidLocationError()
+            throws DotSecurityException, DotDataException, IOException {
+
+        ContentType contentType = null;
+        Reader reader;
+        com.dotcms.contenttype.model.field.Field titleField;
+
+        try {
+            final String contentTypeName = "StopErrorTest_" + System.currentTimeMillis();
+            final String contentTypeVarName = "velocityVarNameStopError_" + System.currentTimeMillis();
+
+            // Create content type for testing
+            contentType = createTestContentType(contentTypeName, contentTypeVarName);
+            titleField = fieldAPI.byContentTypeAndVar(contentType, TITLE_FIELD_NAME);
+
+            // Make title field required
+            titleField = FieldBuilder.builder(TextField.class)
+                    .from(titleField)
+                    .required(true)
+                    .build();
+            fieldAPI.save(titleField, user);
+
+            FieldBuilder.builder(HostFolderField.class)
+                    .from(titleField)
+                    .required(true)
+                    .build();
+
+            var hostField = FieldBuilder.builder(HostFolderField.class)
+                    .name(SITE_FIELD_NAME)
+                    .variable(SITE_FIELD_NAME)
+                    .contentTypeId(contentType.id())
+                    .dataType(DataTypes.TEXT)
+                    .build();
+            fieldAPI.save(hostField, user);
+
+            // Create CSV with an error in the middle
+            String csvWithError = SITE_FIELD_NAME + ", " + TITLE_FIELD_NAME + ", " + BODY_FIELD_NAME + "\r\n" +
+                    defaultSite.getIdentifier() + ",Stop 1, Body 1\r\n" +
+                    defaultSite.getIdentifier() + "2,Stop 2, Body 2\r\n" + // Invalid host
+                    defaultSite.getIdentifier() + ",Stop 3, Body 3\r\n";
+
+            reader = createTempFile(csvWithError);
+
+            // Set commit granularity to 10, but with stopOnError=true
+            // Should stop at the first error (row 4) regardless of granularity
+            ImportResult result = importAndValidate(contentType, titleField, reader, true, 10);
+
+            // Validate results
+            List<Contentlet> savedData = contentletAPI.findByStructure(contentType.inode(), user, false, 0, 0);
+            assertNotNull(savedData);
+
+            // Should only have rows before the error (1)
+            assertEquals(1, savedData.size());
+
+            final ResultData data = result.data().orElse(null);
+            assertNotNull(data);
+
+            // With stopOnError=true, we don't do rollbacks, we just stop
+            assertEquals(0, data.summary().rollbacks());
+
+            // No commits would occur with granularity=10 if we stopped at row 4
+            // The implementation might perform a final commit of successfully processed rows
+            // So commits should be either 0 or 1 depending on implementation
+            assertTrue("Expected 0 or 1 commits, but got: " + data.summary().commits(), data.summary().commits() <= 1);
+
+            assertEquals(1, data.summary().createdContent());
+            assertEquals(1, data.summary().failedDisplay());
+            assertEquals(0, data.summary().updatedContent());
+
+            final var error = result.error().get(0);
+            assertEquals(INVALID_LOCATION.name(), error.code().orElse(null));
+            assertEquals(SITE_FIELD_NAME, error.field().orElse(null));
+
+
+            var info = result.info();
+            assertNotNull(info);
+            assertEquals("Import statistics: 1 successful imports, 1 failed rows, 1 commits, 0 rollbacks", info.get(0).message());
 
         } finally {
             try {
