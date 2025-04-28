@@ -192,7 +192,7 @@ export class DotCMSEditableTextComponent implements OnInit, OnChanges {
      * @memberof DotCMSEditableTextComponent
      */
     onMouseDown({ event }: EventObj<MouseEvent>) {
-        if (this.onNumberOfPages <= 1 || this.editorComponent.editor.hasFocus()) {
+        if (Number(this.onNumberOfPages) <= 1 || this.editorComponent.editor.hasFocus()) {
             return;
         }
 

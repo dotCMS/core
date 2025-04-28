@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 export interface DotCMSPageAsset<
-    T extends { urlContentMap: unknown } = { urlContentMap: unknown }
+    T extends { urlContentMap?: unknown } = { urlContentMap?: unknown }
 > {
     canCreateTemplate?: boolean;
     containers: {
@@ -144,7 +144,7 @@ export interface DotCMSBasicContentlet {
     contentTypeIcon?: string;
     variant?: string;
     widgetTitle?: string;
-    onNumberOfPages?: number;
+    onNumberOfPages?: string;
     __icon__?: string;
     [key: string]: any;
 }

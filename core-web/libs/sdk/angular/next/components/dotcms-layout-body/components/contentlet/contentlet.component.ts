@@ -12,7 +12,8 @@ import {
     ViewChild
 } from '@angular/core';
 
-import { DotCMSContentlet, DotContentletAttributes } from '@dotcms/types';
+import { DotCMSBasicContentlet } from '@dotcms/types';
+import { DotContentletAttributes } from '@dotcms/types/internal';
 import { CUSTOM_NO_COMPONENT, getDotContentletAttributes } from '@dotcms/uve/internal';
 
 import { DynamicComponentEntity } from '../../../../models';
@@ -47,14 +48,14 @@ import { FallbackComponent } from '../fallback-component/fallback-component.comp
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ContentletComponent implements OnChanges {
-    @Input({ required: true }) contentlet!: DotCMSContentlet;
+    @Input({ required: true }) contentlet!: DotCMSBasicContentlet;
     @Input({ required: true }) container!: string;
     @ViewChild('contentletRef') contentletRef!: ElementRef;
     @HostBinding('attr.data-dot-object') dotObject = 'contentlet';
 
     #dotCMSStore = inject(DotCMSStore);
 
-    $contentlet = signal<DotCMSContentlet | null>(null);
+    $contentlet = signal<DotCMSBasicContentlet | null>(null);
     $UserComponent = signal<DynamicComponentEntity | null>(null);
     $UserNoComponent = signal<DynamicComponentEntity | null>(null);
     $isDevMode = this.#dotCMSStore.$isDevMode;

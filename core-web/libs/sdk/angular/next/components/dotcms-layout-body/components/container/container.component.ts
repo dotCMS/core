@@ -9,12 +9,8 @@ import {
     signal
 } from '@angular/core';
 
-import {
-    DotCMSColumnContainer,
-    DotCMSContentlet,
-    DotContainerAttributes,
-    EditableContainerData
-} from '@dotcms/types';
+import { DotCMSBasicContentlet, DotCMSColumnContainer, EditableContainerData } from '@dotcms/types';
+import { DotContainerAttributes } from '@dotcms/types/internal';
 import {
     getContainersData,
     getContentletsInContainer,
@@ -61,7 +57,7 @@ export class ContainerComponent implements OnChanges {
     #dotCMSStore = inject(DotCMSStore);
 
     $containerData = signal<EditableContainerData | null>(null);
-    $contentlets = signal<DotCMSContentlet[]>([]);
+    $contentlets = signal<DotCMSBasicContentlet[]>([]);
     $isEmpty = computed(() => this.$contentlets().length === 0);
     $dotAttributes = computed<DotContainerAttributes>(() => {
         const containerData = this.$containerData();
