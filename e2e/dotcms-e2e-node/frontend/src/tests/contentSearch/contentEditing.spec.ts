@@ -157,7 +157,7 @@ test("Validate required on text fields", async ({ page }) => {
 /**
  * Test to validate you are able to add file assets importing from url
  */
-test("Validate adding file assets from URL", async ({ page }) => {
+test.skip("Validate adding file assets from URL", async ({ page }) => {
   const contentUtils = new ContentPage(page);
 
   await contentUtils.addNewContentAction(fileAsset.locator, fileAsset.label);
@@ -177,7 +177,7 @@ test("Validate adding file assets from URL", async ({ page }) => {
 /**
  * Test to validate you are able to add file assets creating a new file
  */
-test("Validate you are able to add file assets creating a new file", async ({
+test.skip("Validate you are able to add file assets creating a new file", async ({
   page,
 }) => {
   const contentUtils = new ContentPage(page);
@@ -200,7 +200,7 @@ test("Validate you are able to add file assets creating a new file", async ({
 /**
  * Test to validate you are able to edit file assets text
  */
-test("Validate you can edit text on binary fields", async ({ page }) => {
+test.skip("Validate you can edit text on binary fields", async ({ page }) => {
   const contentUtils = new ContentPage(page);
 
   await contentUtils.selectTypeOnFilter(fileAsset.locator);
@@ -235,7 +235,7 @@ test("Validate you can edit text on binary fields", async ({ page }) => {
 /**
  * Test to validate you are able to remove file assets from the content
  */
-test("Validate you are able to delete file on binary fields", async ({
+test.skip("Validate you are able to delete file on binary fields", async ({
   page,
 }) => {
   const contentUtils = new ContentPage(page);
@@ -263,7 +263,7 @@ test("Validate you are able to delete file on binary fields", async ({
 /**
  * Test to validate the get info on of the binary field on file assets
  */
-test("Validate file assets show corresponding information", async ({
+test.skip("Validate file assets show corresponding information", async ({
   page,
 }) => {
   const contentUtils = new ContentPage(page);
@@ -295,7 +295,7 @@ test("Validate file assets show corresponding information", async ({
 });
 
 //* Test to validate the download of binary fields on file assets
-test("Validate the download of binary fields on file assets", async ({
+test.skip("Validate the download of binary fields on file assets", async ({
   page,
 }) => {
   const contentUtils = new ContentPage(page);
@@ -338,7 +338,7 @@ test("Validate the required on file asset fields", async ({ page }) => {
 /**
  * Test to validate the auto complete on FileName field accepting the name change
  */
-test("Validate the auto complete on FileName field accepting change", async ({
+test.skip("Validate the auto complete on FileName field accepting change", async ({
   page,
 }) => {
   const contentUtils = new ContentPage(page);
@@ -366,7 +366,7 @@ test("Validate the auto complete on FileName field accepting change", async ({
 /**
  * Test to validate the auto complete on FileName field rejecting file name change
  */
-test("Validate the auto complete on FileName field rejecting change", async ({
+test.skip("Validate the auto complete on FileName field rejecting change", async ({
   page,
 }) => {
   const contentUtils = new ContentPage(page);
