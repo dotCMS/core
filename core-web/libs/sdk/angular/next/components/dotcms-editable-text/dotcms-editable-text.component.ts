@@ -42,7 +42,7 @@ import { TINYMCE_CONFIG, DOT_EDITABLE_TEXT_FORMAT, DOT_EDITABLE_TEXT_MODE } from
             useFactory: () => {
                 const { dotCMSHost } = getUVEState() || {};
 
-                return `${dotCMSHost}/ext/tinymcev7/tinymce.min.js`;
+                return `${dotCMSHost || ''}/ext/tinymcev7/tinymce.min.js`;
             }
         }
     ]
@@ -93,6 +93,9 @@ export class DotCMSEditableTextComponent implements OnInit, OnChanges {
      * @memberof DotCMSEditableTextComponent
      */
     protected init!: EditorComponent['init'];
+
+    readonly #NotDotCMSHostMessage =
+        'The `adotCMSHost` parameter is not defined. Check that the UVE is sending the correct parameters.';
 
     readonly #sanitizer = inject<DomSanitizer>(DomSanitizer);
     readonly #renderer = inject<Renderer2>(Renderer2);
@@ -155,9 +158,14 @@ export class DotCMSEditableTextComponent implements OnInit, OnChanges {
 
     ngOnInit() {
         const { dotCMSHost } = getUVEState() || {};
+        const initEditor = this.isEditMode && dotCMSHost;
 
-        if (!this.isEditMode) {
+        if (!initEditor) {
             this.innerHTMLToElement();
+
+            if (!dotCMSHost) {
+                console.warn(this.#NotDotCMSHostMessage);
+            }
 
             return;
         }
