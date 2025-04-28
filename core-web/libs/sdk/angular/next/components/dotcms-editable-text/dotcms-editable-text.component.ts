@@ -119,7 +119,9 @@ export class DotCMSEditableTextComponent implements OnInit, OnChanges {
      * @memberof DotCMSEditableTextComponent
      */
     protected get isEditMode() {
-        return getUVEState()?.mode === UVE_MODE.EDIT;
+        const { mode, dotCMSHost } = getUVEState() || {};
+
+        return mode === UVE_MODE.EDIT && dotCMSHost;
     }
 
     /**
@@ -158,9 +160,8 @@ export class DotCMSEditableTextComponent implements OnInit, OnChanges {
 
     ngOnInit() {
         const { dotCMSHost } = getUVEState() || {};
-        const initEditor = this.isEditMode && dotCMSHost;
 
-        if (!initEditor) {
+        if (!this.isEditMode) {
             this.innerHTMLToElement();
 
             if (!dotCMSHost) {
