@@ -29,7 +29,7 @@ import {
     EmaDragItem
 } from '../../../edit-ema-editor/components/ema-page-dropzone/types';
 import { BASE_IFRAME_MEASURE_UNIT } from '../../../shared/consts';
-import { EDITOR_STATE, UVE_STATUS } from '../../../shared/enums';
+import { EDITOR_STATE, UVE_STATUS, PALETTE_CLASSES } from '../../../shared/enums';
 import {
     ActionPayload,
     ContainerPayload,
@@ -68,7 +68,8 @@ const initialState: EditorState = {
     state: EDITOR_STATE.IDLE,
     contentletArea: null,
     dragItem: null,
-    ogTags: null
+    ogTags: null,
+    paletteOpen: true
 };
 
 /**
@@ -131,6 +132,7 @@ export function withEditor() {
                     const bounds = store.bounds();
                     const dragItem = store.dragItem();
                     const isEditState = store.isEditState();
+                    const paletteOpen = store.paletteOpen();
 
                     const isPreview = params?.editorMode === UVE_MODE.PREVIEW;
                     const isPageReady = isTraditionalPage || isClientReady || isPreview;
@@ -187,7 +189,10 @@ export function withEditor() {
                             ? {
                                   variantId: params?.variantName,
                                   containers: pageAPIResponse?.containers,
-                                  languageId: pageAPIResponse?.viewAs.language.id
+                                  languageId: pageAPIResponse?.viewAs.language.id,
+                                  paletteClass: paletteOpen
+                                      ? PALETTE_CLASSES.OPEN
+                                      : PALETTE_CLASSES.CLOSED
                               }
                             : null,
 
@@ -325,6 +330,9 @@ export function withEditor() {
                 },
                 setOgTags(ogTags: SeoMetaTags) {
                     patchState(store, { ogTags });
+                },
+                setPaletteOpen(paletteOpen: boolean) {
+                    patchState(store, { paletteOpen });
                 }
             };
         })

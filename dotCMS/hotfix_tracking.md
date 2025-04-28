@@ -34,3 +34,4 @@ This maintenance release includes the following code fixes:
 28. https://github.com/dotCMS/core/issues/31649 : Filter on checkbox field not working as expected (Content search portal and relationship filter) #31649
 29. https://github.com/dotCMS/core/issues/31980 : #dotParse and #dotCache throw NumberFormatException when TTL argument is null #31980
 30. https://github.com/dotCMS/core/pull/31972
+31. https://github.com/dotCMS/core/issues/31804 : UVE: Content Panel Section Can No Longer Be Hidden #31804
