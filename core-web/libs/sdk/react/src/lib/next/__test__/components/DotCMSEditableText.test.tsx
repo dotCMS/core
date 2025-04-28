@@ -3,22 +3,23 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import * as tinymceReact from '@tinymce/tinymce-react';
 
 import * as dotcmsClient from '@dotcms/client';
+import { CLIENT_ACTIONS } from '@dotcms/client';
+import { sendMessageToUVE, getUVEState } from '@dotcms/uve';
+import { DotCMSUVEAction, UVE_MODE } from '@dotcms/uve/types';
 
 import { DotCMSEditableText } from '../../components/DotCMSEditableText/DotCMSEditableText';
-import { dotcmsContentletMock } from '../mockPageContext';
-
-const { CLIENT_ACTIONS, postMessageToEditor } = dotcmsClient;
+import { MOCK_CONTENTLET } from '../mock';
 
 // Define mockEditor before using it in jest.mock
 const TINYMCE_EDITOR_MOCK = {
     focus: () => {
-        /* */
+        /* empty */
     },
     getContent: (_data: string) => '',
     isDirty: () => false,
     hasFocus: () => false,
     setContent: () => {
-        /* */
+        /* empty */
     }
 };
 
@@ -30,30 +31,129 @@ jest.mock('@tinymce/tinymce-react', () => ({
     })
 }));
 
-// Mock @dotcms/client module
-jest.mock('@dotcms/client', () => ({
-    ...jest.requireActual('@dotcms/client'),
-    isInsideEditor: jest.fn().mockImplementation(() => true),
-    postMessageToEditor: jest.fn(),
-    DotCmsClient: {
-        dotcmsUrl: 'http://localhost:8080'
-    }
+// Mock @dotcms/uve module
+jest.mock('@dotcms/uve', () => ({
+    ...jest.requireActual('@dotcms/uve'),
+    sendMessageToUVE: jest.fn(),
+    getUVEState: jest.fn().mockImplementation(() => ({
+        mode: 'EDIT_MODE',
+        dotCMSHost: 'http://localhost:8080',
+        languageId: null,
+        persona: null,
+        variantName: null,
+        experimentId: null,
+        publishDate: null
+    }))
 }));
 
-const mockedDotcmsClient = dotcmsClient as jest.Mocked<typeof dotcmsClient>;
 const { Editor } = tinymceReact as jest.Mocked<typeof tinymceReact>;
+const mockedGetUVEState = getUVEState as jest.MockedFunction<typeof getUVEState>;
 
 describe('DotCMSEditableText', () => {
+    let consoleErrorSpy: jest.SpyInstance;
+    let consoleWarnSpy: jest.SpyInstance;
+
+    beforeEach(() => {
+        consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {
+            /* empty */
+        });
+        consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {
+            /* empty */
+        });
+    });
+
+    afterEach(() => {
+        jest.clearAllMocks();
+        consoleErrorSpy.mockRestore();
+        consoleWarnSpy.mockRestore();
+    });
+
+    describe('Console logs', () => {
+        it('should log error when contentlet is missing', () => {
+            mockedGetUVEState.mockReturnValueOnce({
+                mode: UVE_MODE.EDIT,
+                dotCMSHost: 'http://localhost:8080',
+                languageId: null,
+                persona: null,
+                variantName: null,
+                experimentId: null,
+                publishDate: null
+            });
+            // @ts-expect-error - contentlet is required but we're testing error case
+            render(<DotCMSEditableText fieldName="title" />);
+            expect(consoleErrorSpy).toHaveBeenCalledWith(
+                'DotCMSEditableText: contentlet or fieldName is missing'
+            );
+            expect(consoleErrorSpy).toHaveBeenCalledWith(
+                'Ensure that all needed props are passed to view and edit the content'
+            );
+        });
+
+        it('should log error when fieldName is missing', () => {
+            mockedGetUVEState.mockReturnValueOnce({
+                mode: UVE_MODE.EDIT,
+                dotCMSHost: 'http://localhost:8080',
+                languageId: null,
+                persona: null,
+                variantName: null,
+                experimentId: null,
+                publishDate: null
+            });
+            // @ts-expect-error - fieldName is required but we're testing error case
+            render(<DotCMSEditableText contentlet={MOCK_CONTENTLET} />);
+            expect(consoleErrorSpy).toHaveBeenCalledWith(
+                'DotCMSEditableText: contentlet or fieldName is missing'
+            );
+            expect(consoleErrorSpy).toHaveBeenCalledWith(
+                'Ensure that all needed props are passed to view and edit the content'
+            );
+        });
+
+        it('should log warning when not in EDIT mode', () => {
+            mockedGetUVEState.mockReturnValue({
+                mode: UVE_MODE.PREVIEW,
+                languageId: null,
+                persona: null,
+                variantName: null,
+                experimentId: null,
+                publishDate: null,
+                dotCMSHost: null
+            });
+            render(<DotCMSEditableText contentlet={MOCK_CONTENTLET} fieldName="title" />);
+
+            expect(consoleWarnSpy).toHaveBeenCalledWith(
+                'DotCMSEditableText: TinyMCE is not available in the current mode'
+            );
+        });
+
+        it('should log warning when dotCMSHost is not defined', () => {
+            mockedGetUVEState.mockReturnValue({
+                mode: UVE_MODE.EDIT,
+                languageId: null,
+                persona: null,
+                variantName: null,
+                experimentId: null,
+                publishDate: null,
+                dotCMSHost: null
+            });
+            render(<DotCMSEditableText contentlet={MOCK_CONTENTLET} fieldName="title" />);
+
+            expect(consoleWarnSpy).toHaveBeenCalledWith(
+                'The `dotCMSHost` parameter is not defined. Check that the UVE is sending the correct parameters.'
+            );
+        });
+    });
+
     describe('Outside editor', () => {
         beforeEach(() => {
-            mockedDotcmsClient.isInsideEditor.mockReturnValue(false);
-            render(<DotCMSEditableText contentlet={dotcmsContentletMock} fieldName="title" />);
+            mockedGetUVEState.mockReturnValue(undefined);
+            render(<DotCMSEditableText contentlet={MOCK_CONTENTLET} fieldName="title" />);
         });
 
         it('should render the content', () => {
             const editor = screen.queryByTestId('tinymce-editor');
             expect(editor).toBeNull();
-            expect(screen.getByText(dotcmsContentletMock['title'])).not.toBeNull();
+            expect(screen.getByText(MOCK_CONTENTLET['title'])).not.toBeNull();
         });
     });
 
@@ -61,9 +161,17 @@ describe('DotCMSEditableText', () => {
         let rerenderFn: (ui: React.ReactNode) => void;
 
         beforeEach(() => {
-            mockedDotcmsClient.isInsideEditor.mockReturnValue(true);
+            mockedGetUVEState.mockReturnValue({
+                mode: UVE_MODE.EDIT,
+                dotCMSHost: 'http://localhost:8080',
+                languageId: null,
+                persona: null,
+                variantName: null,
+                experimentId: null,
+                publishDate: null
+            });
             const { rerender } = render(
-                <DotCMSEditableText contentlet={dotcmsContentletMock} fieldName="title" />
+                <DotCMSEditableText contentlet={MOCK_CONTENTLET} fieldName="title" />
             );
             rerenderFn = rerender;
         });
@@ -88,7 +196,7 @@ describe('DotCMSEditableText', () => {
                             '*': 'font-size,font-family,color,text-decoration,text-align'
                         }
                     },
-                    initialValue: dotcmsContentletMock.title,
+                    initialValue: MOCK_CONTENTLET.title,
                     onMouseDown: expect.any(Function),
                     onFocusOut: expect.any(Function),
                     onInit: expect.any(Function)
@@ -112,7 +220,7 @@ describe('DotCMSEditableText', () => {
                                 name: dotcmsClient.NOTIFY_CLIENT
                                     .UVE_COPY_CONTENTLET_INLINE_EDITING_SUCCESS,
                                 payload: {
-                                    oldInode: dotcmsContentletMock['inode'],
+                                    oldInode: MOCK_CONTENTLET['inode'],
                                     inode: '456'
                                 }
                             }
@@ -136,7 +244,7 @@ describe('DotCMSEditableText', () => {
                     bubbles: true
                 });
                 const mutiplePagesContentlet = {
-                    ...dotcmsContentletMock,
+                    ...MOCK_CONTENTLET,
                     onNumberOfPages: 2
                 };
 
@@ -154,8 +262,8 @@ describe('DotCMSEditableText', () => {
                             language: mutiplePagesContentlet.languageId
                         }
                     };
-                    expect(postMessageToEditor).toHaveBeenCalledWith({
-                        action: CLIENT_ACTIONS.COPY_CONTENTLET_INLINE_EDITING,
+                    expect(sendMessageToUVE).toHaveBeenCalledWith({
+                        action: DotCMSUVEAction.COPY_CONTENTLET_INLINE_EDITING,
                         payload
                     });
                 });
@@ -163,7 +271,7 @@ describe('DotCMSEditableText', () => {
                 it('should not postMessage the UVE if the content is in a single page', () => {
                     const editorElem = screen.getByTestId('tinymce-editor');
                     fireEvent(editorElem, event);
-                    expect(postMessageToEditor).not.toHaveBeenCalled();
+                    expect(sendMessageToUVE).not.toHaveBeenCalled();
                 });
             });
 
@@ -181,24 +289,24 @@ describe('DotCMSEditableText', () => {
                 });
 
                 it('should not postMessage the UVE if the editor is not dirty', () => {
-                    mockedDotcmsClient.isInsideEditor.mockReturnValue(false);
                     const editorElem = screen.getByTestId('tinymce-editor');
                     fireEvent(editorElem, event);
                     expect(isDirtySpy).toHaveBeenCalled();
                     expect(getContentSpy).toHaveBeenCalledWith({ format: 'text' });
-                    expect(postMessageToEditor).not.toHaveBeenCalled();
+
+                    expect(sendMessageToUVE).not.toHaveBeenCalled();
                 });
 
                 it('should not postMessage the UVE if the content did not change', () => {
                     isDirtySpy.mockReturnValue(true);
-                    getContentSpy.mockReturnValue(dotcmsContentletMock.title);
+                    getContentSpy.mockReturnValue(MOCK_CONTENTLET.title);
 
                     const editorElem = screen.getByTestId('tinymce-editor');
                     fireEvent(editorElem, event);
 
                     expect(isDirtySpy).toHaveBeenCalled();
                     expect(getContentSpy).toHaveBeenCalledWith({ format: 'text' });
-                    expect(postMessageToEditor).not.toHaveBeenCalled();
+                    expect(sendMessageToUVE).not.toHaveBeenCalled();
                 });
 
                 it('should postMessage the UVE if the content changed', () => {
@@ -213,8 +321,8 @@ describe('DotCMSEditableText', () => {
                         payload: {
                             content: 'New content',
                             dataset: {
-                                inode: dotcmsContentletMock.inode,
-                                langId: dotcmsContentletMock.languageId,
+                                inode: MOCK_CONTENTLET.inode,
+                                langId: MOCK_CONTENTLET.languageId,
                                 fieldName: 'title'
                             }
                         }
@@ -222,11 +330,9 @@ describe('DotCMSEditableText', () => {
 
                     expect(isDirtySpy).toHaveBeenCalled();
                     expect(getContentSpy).toHaveBeenCalledWith({ format: 'text' });
-                    expect(postMessageToEditor).toHaveBeenCalledWith(postMessageData);
+                    expect(sendMessageToUVE).toHaveBeenCalledWith(postMessageData);
                 });
             });
         });
     });
-
-    afterEach(() => jest.clearAllMocks()); // Clear all mocks to avoid side effects from other tests
 });

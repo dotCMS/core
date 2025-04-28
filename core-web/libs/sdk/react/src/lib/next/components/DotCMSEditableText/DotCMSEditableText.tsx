@@ -1,9 +1,9 @@
 import { Editor } from '@tinymce/tinymce-react';
 import { useEffect, useRef, useState } from 'react';
 
-import { postMessageToEditor, CLIENT_ACTIONS, DotCmsClient, NOTIFY_CLIENT } from '@dotcms/client';
-import { getUVEState } from '@dotcms/uve';
-import { UVE_MODE } from '@dotcms/uve/types';
+import { sendMessageToUVE, getUVEState } from '@dotcms/uve';
+import { __DOTCMS_UVE_EVENT__ } from '@dotcms/uve/internal';
+import { DotCMSUVEAction, UVE_MODE } from '@dotcms/uve/types';
 
 import { DotCMSEditableTextProps, TINYMCE_CONFIG } from './utils';
 
@@ -57,11 +57,21 @@ export function DotCMSEditableText({
             return;
         }
 
-        if (!isInsideEditorFn()) {
+        if (getUVEState()?.mode !== UVE_MODE.EDIT) {
+            console.warn('DotCMSEditableText: TinyMCE is not available in the current mode');
+
             return;
         }
 
-        const createURL = new URL(MCE_URL, DotCmsClient.dotcmsUrl);
+        if (!getUVEState()?.dotCMSHost) {
+            console.warn(
+                'The `dotCMSHost` parameter is not defined. Check that the UVE is sending the correct parameters.'
+            );
+
+            return;
+        }
+
+        const createURL = new URL(MCE_URL, getUVEState()?.dotCMSHost ?? '');
         setScriptSrc(createURL.toString());
 
         const content = contentlet?.[fieldName] || '';
@@ -70,13 +80,13 @@ export function DotCMSEditableText({
     }, [format, fieldName, contentlet]);
 
     useEffect(() => {
-        if (!isInsideEditorFn()) {
+        if (getUVEState()?.mode !== UVE_MODE.EDIT) {
             return;
         }
 
         const onMessage = ({ data }: MessageEvent) => {
             const { name, payload } = data;
-            if (name !== NOTIFY_CLIENT.UVE_COPY_CONTENTLET_INLINE_EDITING_SUCCESS) {
+            if (name !== __DOTCMS_UVE_EVENT__.UVE_COPY_CONTENTLET_INLINE_EDITING_SUCCESS) {
                 return;
             }
 
@@ -94,7 +104,7 @@ export function DotCMSEditableText({
         return () => {
             window.removeEventListener('message', onMessage);
         };
-    }, [contentlet.inode]);
+    }, [contentlet?.inode]);
 
     const onMouseDown = (event: MouseEvent) => {
         const { onNumberOfPages = 1 } = contentlet;
@@ -107,8 +117,8 @@ export function DotCMSEditableText({
         event.stopPropagation();
         event.preventDefault();
 
-        postMessageToEditor({
-            action: CLIENT_ACTIONS.COPY_CONTENTLET_INLINE_EDITING,
+        sendMessageToUVE({
+            action: DotCMSUVEAction.COPY_CONTENTLET_INLINE_EDITING,
             payload: {
                 dataset: {
                     inode,
@@ -127,8 +137,8 @@ export function DotCMSEditableText({
             return;
         }
 
-        postMessageToEditor({
-            action: CLIENT_ACTIONS.UPDATE_CONTENTLET_INLINE_EDITING,
+        sendMessageToUVE({
+            action: DotCMSUVEAction.UPDATE_CONTENTLET_INLINE_EDITING,
             payload: {
                 content: editedContent,
                 dataset: {
@@ -144,7 +154,7 @@ export function DotCMSEditableText({
         return content !== editedContent;
     };
 
-    if (!isInsideEditor) {
+    if (!isInsideEditor || !scriptSrc.length) {
         // We can let the user pass the Child Component and create a root to get the HTML for the editor
         return <span dangerouslySetInnerHTML={{ __html: content }} />;
     }
