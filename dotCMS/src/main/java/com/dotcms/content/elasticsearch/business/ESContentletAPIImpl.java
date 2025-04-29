@@ -4786,6 +4786,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 publish(contentlet, user, respectFrontendRoles);
             } catch (DotContentletStateException e) {
                 stateError = true;
+            } catch (Exception e){
+                Logger.debug(this.getClass(),
+                        "Unable to publish one contentlet because ",e);
+                stateError = true;
             }
         }
         if (stateError) {

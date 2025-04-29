@@ -765,15 +765,19 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     private Experiment innerStart(final Experiment persistedExperiment, final User user,
                                   final boolean generateNewRunId)
             throws DotSecurityException, DotDataException {
-
+        Logger.debug(this, "Starting experiment with id: " + persistedExperiment.id().get() +", by User: " + user.getUserId() + ", and generating new runId: " + generateNewRunId);
         final Experiment experimentToSave = generateNewRunId
                 ? Experiment.builder().from(persistedExperiment).runningIds(getRunningIds(persistedExperiment)).build()
                 : persistedExperiment;
 
         final Experiment running = save(experimentToSave, user);
+        Logger.debug(this, "Experiment with id: " + running.id().get() + " has been saved");
         cleanRunningExperimentsCache();
+        Logger.debug(this, "Running experiments cache has been cleaned");
         publishExperimentPage(running, user);
+        Logger.debug(this, "Experiment page has been published");
         publishContentOnExperimentVariants(user, running);
+        Logger.debug(this, "Experiment content has been published");
 
         SecurityLogger.logInfo(this.getClass(), () -> String.format("Experiment '%s' [%s] has been started by User" +
                 " ID '%s'", running.name(), running.id(), user.getUserId()));
@@ -809,7 +813,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                                 .toArray(String[]::new)).stream()
                 .filter((contentlet -> Try.of(contentlet::isWorking)
                         .getOrElse(false))).collect(Collectors.toList());
-
+        Logger.debug(this,"Variants That Will Be Published: " + contentByVariants);
         contentletAPI.publish(contentByVariants, user, false);
     }
 
