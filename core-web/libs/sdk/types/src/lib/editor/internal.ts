@@ -1,13 +1,6 @@
 import { DotCMSUVEAction } from './public';
 
 /**
- * @description Custom client parameters for fetching data.
- */
-export type DotCMSCustomerParams = {
-    depth: string;
-};
-
-/**
  * Configuration for reordering a menu.
  */
 export interface DotCMSReorderMenuConfig {
@@ -61,7 +54,7 @@ export interface DotCMSUVE {
  * @property {number} y - The y-coordinate of the contentlet.
  * @property {number} width - The width of the contentlet.
  * @property {number} height - The height of the contentlet.
- * @property {string} payload - The payload data of the contentlet in JSON format.
+ * @property {string} payload - The payload data of the contentlet in stringified JSON format.
  */
 export interface DotCMSContentletBound {
     x: number;

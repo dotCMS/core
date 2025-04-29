@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, Input } from '@angular/core';
 
-import { Mark } from '@dotcms/types';
+import { BlockEditorMark } from '@dotcms/types';
 
 @Component({
     selector: 'dotcms-block-editor-renderer-paragraph',
@@ -63,7 +63,7 @@ export class DotHeadingBlock {
 }
 
 interface TextBlockProps {
-    marks?: Mark[];
+    marks?: BlockEditorMark[];
     text?: string;
 }
 

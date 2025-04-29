@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, Input } from '@angular/core';
 
-import { ContentNode } from '@dotcms/types';
+import { BlockEditorNode } from '@dotcms/types';
 
 @Component({
     selector: 'dotcms-block-editor-renderer-image',
@@ -11,7 +11,7 @@ import { ContentNode } from '@dotcms/types';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotImageBlock {
-    @Input() attrs!: ContentNode['attrs'];
+    @Input() attrs!: BlockEditorNode['attrs'];
 
     protected readonly $srcURL = computed(() => this.attrs?.['src']);
 }

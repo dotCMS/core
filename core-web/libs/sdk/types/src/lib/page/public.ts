@@ -1,5 +1,20 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-
+/**
+ * Represents a DotCMS page asset with its associated components and metadata
+ *
+ * @template T - Type parameter extending an object with optional urlContentMap property
+ * @interface DotCMSPageAsset
+ * @property {boolean} [canCreateTemplate] - Indicates whether the current user has permissions to create a template from this page
+ * @property {Object.<string, DotCMSPageAssetContainer>} containers - Collection of containers present on the page, keyed by container identifier
+ * @property {DotCMSLayout} layout - Defines the structural layout of the page including rows, columns and their configurations
+ * @property {DotCMSPage} page - Contains core page information such as title, URL, metadata and other page-specific properties
+ * @property {DotCMSSite} site - Information about the site this page belongs to, including host name and identifier
+ * @property {DotCMSTemplate} template - The template applied to this page, defining its base structure and design
+ * @property {DotCMSViewAs} [viewAs] - Configuration for how the page should be rendered in different view modes (preview, edit, live)
+ * @property {DotCMSVanityUrl} [vanityUrl] - Custom URL routing configuration for this page if applicable
+ * @property {T['urlContentMap']} [urlContentMap] - Mapping of URL parameters to content, useful for dynamic pages
+ * @property {Record<string, unknown>} [params] - Additional parameters and metadata associated with the page
+ */
 export interface DotCMSPageAsset<
     T extends { urlContentMap?: unknown } = { urlContentMap?: unknown }
 > {
@@ -13,11 +28,20 @@ export interface DotCMSPageAsset<
     template: DotCMSTemplate;
     viewAs?: DotCMSViewAs;
     vanityUrl?: DotCMSVanityUrl;
-    /** Content mapping for the page URL */
     urlContentMap?: T extends { urlContentMap: infer U } ? U : T;
     params?: Record<string, unknown>;
 }
 
+/**
+ * Represents a row in a page layout asset
+ *
+ * @interface DotPageAssetLayoutRow
+ * @property {number} identifier - Unique numeric identifier for the row
+ * @property {string} [value] - Optional value associated with the row
+ * @property {string} [id] - Optional string identifier for the row
+ * @property {DotPageAssetLayoutColumn[]} columns - Array of columns contained within this row
+ * @property {string} [styleClass] - Optional CSS class name(s) to apply to the row
+ */
 export interface DotPageAssetLayoutRow {
     identifier: number;
     value?: string;
@@ -26,6 +50,22 @@ export interface DotPageAssetLayoutRow {
     styleClass?: string;
 }
 
+/**
+ * Represents a vanity URL configuration for URL redirection and forwarding
+ *
+ * @interface DotCMSVanityUrl
+ * @property {string} pattern - The URL pattern to match for this vanity URL rule
+ * @property {string} vanityUrlId - Unique identifier for this vanity URL
+ * @property {string} url - The actual URL that will be matched
+ * @property {string} siteId - The ID of the site this vanity URL belongs to
+ * @property {number} languageId - The language ID this vanity URL applies to
+ * @property {string} forwardTo - The destination URL to forward/redirect to
+ * @property {number} response - The HTTP response code to use
+ * @property {number} order - The priority order of this vanity URL rule
+ * @property {boolean} temporaryRedirect - Whether this is a temporary (302) redirect
+ * @property {boolean} permanentRedirect - Whether this is a permanent (301) redirect
+ * @property {boolean} forward - Whether to forward the request internally
+ */
 export interface DotCMSVanityUrl {
     pattern: string;
     vanityUrlId: string;
@@ -40,6 +80,18 @@ export interface DotCMSVanityUrl {
     forward: boolean;
 }
 
+/**
+ * Represents a column in a page layout asset
+ *
+ * @interface DotPageAssetLayoutColumn
+ * @property {boolean} preview - Whether the column is in preview mode
+ * @property {DotCMSColumnContainer[]} containers - Array of containers within this column
+ * @property {number} widthPercent - Width of the column as a percentage
+ * @property {number} width - Width of the column in pixels/units
+ * @property {number} leftOffset - Left offset position of the column
+ * @property {number} left - Left position of the column
+ * @property {string} [styleClass] - Optional CSS class name(s) to apply to the column
+ */
 export interface DotPageAssetLayoutColumn {
     preview: boolean;
     containers: DotCMSColumnContainer[];
@@ -50,12 +102,28 @@ export interface DotPageAssetLayoutColumn {
     styleClass?: string;
 }
 
+/**
+ * Represents a container within a column in a page layout
+ *
+ * @interface DotCMSColumnContainer
+ * @property {string} identifier - Unique identifier for the container
+ * @property {string} uuid - UUID of the current container instance
+ * @property {string[]} historyUUIDs - Array of historical UUIDs for this container's previous versions
+ */
 export interface DotCMSColumnContainer {
     identifier: string;
     uuid: string;
     historyUUIDs: string[];
 }
 
+/**
+ * Represents a container asset within a page, including its structure and content
+ *
+ * @interface DotCMSPageAssetContainer
+ * @property {DotCMSContainer} container - The container configuration and metadata
+ * @property {DotCMSContainerStructure[]} containerStructures - Array of content type structures allowed in this container
+ * @property {Object.<string, DotCMSBasicContentlet[]>} contentlets - Map of content entries in the container, keyed by UUID
+ */
 export interface DotCMSPageAssetContainer {
     container: DotCMSContainer;
     containerStructures: DotCMSContainerStructure[];
@@ -64,6 +132,51 @@ export interface DotCMSPageAssetContainer {
     };
 }
 
+/**
+ * Represents a container in DotCMS that can hold content and has various configuration options
+ *
+ * @interface DotCMSContainer
+ * @property {string} identifier - Unique identifier for the container
+ * @property {string} uuid - UUID of the container instance
+ * @property {number} iDate - Initial creation date timestamp
+ * @property {string} type - Type of the container
+ * @property {string} [owner] - Owner of the container
+ * @property {string} inode - Unique inode identifier
+ * @property {string} source - Source of the container
+ * @property {string} title - Title of the container
+ * @property {string} friendlyName - User-friendly name of the container
+ * @property {number} modDate - Last modification date timestamp
+ * @property {string} modUser - User who last modified the container
+ * @property {number} sortOrder - Sort order position
+ * @property {boolean} showOnMenu - Whether to show in navigation menus
+ * @property {string} [code] - Optional container template code
+ * @property {number} maxContentlets - Maximum number of content items allowed
+ * @property {boolean} useDiv - Whether to wrap content in div elements
+ * @property {string} [sortContentletsBy] - Field to sort contentlets by
+ * @property {string} preLoop - Code to execute before content loop
+ * @property {string} postLoop - Code to execute after content loop
+ * @property {boolean} staticify - Whether to make container static
+ * @property {string} [luceneQuery] - Optional Lucene query for filtering content
+ * @property {string} notes - Additional notes about the container
+ * @property {number} [languageId] - Language identifier
+ * @property {string} [path] - Container path
+ * @property {boolean} live - Whether container is live
+ * @property {boolean} locked - Whether container is locked
+ * @property {boolean} working - Whether container is in working state
+ * @property {boolean} deleted - Whether container is deleted
+ * @property {string} name - Name of the container
+ * @property {boolean} archived - Whether container is archived
+ * @property {string} permissionId - Permission identifier
+ * @property {string} versionId - Version identifier
+ * @property {string} versionType - Type of version
+ * @property {string} permissionType - Type of permission
+ * @property {string} categoryId - Category identifier
+ * @property {number} idate - Creation date timestamp
+ * @property {boolean} new - Whether container is new
+ * @property {string} acceptTypes - Content types accepted by container
+ * @property {DotCMSBasicContentlet[]} contentlets - Array of content items
+ * @property {DotCMSSiteParentPermissionable} parentPermissionable - Parent permission configuration
+ */
 export interface DotCMSContainer {
     identifier: string;
     uuid: string;
@@ -150,7 +263,7 @@ export interface DotCMSBasicContentlet {
 }
 
 export interface DotcmsNavigationItem {
-    code?: any;
+    code?: string;
     folder: string;
     children?: DotcmsNavigationItem[];
     host: string;
@@ -505,18 +618,7 @@ export interface DotCMSBasicGraphQLPage {
     };
 
     // Container information
-    containers: {
-        path?: string;
-        identifier: string;
-        maxContentlets?: number;
-        containerStructures?: {
-            contentTypeVar: string;
-        }[];
-        containerContentlets?: {
-            uuid: string;
-            contentlets: DotCMSBasicContentlet[];
-        }[];
-    }[];
+    containers: DotCMSPageGraphQLContainer[];
 
     layout: DotCMSLayout;
     viewAs: DotCMSViewAs;

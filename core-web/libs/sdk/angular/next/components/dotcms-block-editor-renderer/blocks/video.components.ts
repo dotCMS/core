@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, Input } from '@angular/core';
 
-import { ContentNode } from '@dotcms/types';
+import { BlockEditorNode } from '@dotcms/types';
 
 @Component({
     selector: 'dotcms-block-editor-renderer-video',
@@ -22,7 +22,7 @@ import { ContentNode } from '@dotcms/types';
     `
 })
 export class DotVideoBlock {
-    @Input() attrs!: ContentNode['attrs'];
+    @Input() attrs!: BlockEditorNode['attrs'];
 
     protected readonly $srcURL = computed(() => this.attrs?.['src']);
 

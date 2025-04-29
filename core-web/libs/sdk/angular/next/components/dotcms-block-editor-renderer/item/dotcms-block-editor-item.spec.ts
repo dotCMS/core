@@ -3,8 +3,8 @@ import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 import { Component, Input } from '@angular/core';
 import { fakeAsync, tick } from '@angular/core/testing';
 
-import { ContentNode } from '@dotcms/types';
-import { Blocks } from '@dotcms/types/internal';
+import { BlockEditorNode } from '@dotcms/types';
+import { BlockEditorDefaultBlocks } from '@dotcms/types/internal';
 
 import { DotCMSBlockEditorItemComponent } from './dotcms-block-editor-item.component';
 
@@ -22,7 +22,7 @@ import { DotVideoBlock } from '../blocks/video.components';
     template: '<div>Custom Component</div>'
 })
 export class DotCMSBlockEditorRendererCustomComponent {
-    @Input() content: ContentNode[] = [];
+    @Input() content: BlockEditorNode[] = [];
 }
 
 describe('DotCMSBlockEditorRendererBlockComponent', () => {
@@ -39,9 +39,9 @@ describe('DotCMSBlockEditorRendererBlockComponent', () => {
     describe('Block Rendering', () => {
         describe('Paragraph Block', () => {
             beforeEach(() => {
-                const content: ContentNode[] = [
+                const content: BlockEditorNode[] = [
                     {
-                        type: Blocks.PARAGRAPH,
+                        type: BlockEditorDefaultBlocks.PARAGRAPH,
                         attrs: { style: 'color: red' },
                         content: []
                     }
@@ -57,9 +57,9 @@ describe('DotCMSBlockEditorRendererBlockComponent', () => {
 
         describe('Text Block', () => {
             beforeEach(() => {
-                const content: ContentNode[] = [
+                const content: BlockEditorNode[] = [
                     {
-                        type: Blocks.TEXT,
+                        type: BlockEditorDefaultBlocks.TEXT,
                         text: 'Sample text',
                         marks: [{ type: 'bold', attrs: {} }],
                         content: []
@@ -82,9 +82,9 @@ describe('DotCMSBlockEditorRendererBlockComponent', () => {
 
         describe('Heading Block', () => {
             beforeEach(() => {
-                const content: ContentNode[] = [
+                const content: BlockEditorNode[] = [
                     {
-                        type: Blocks.HEADING,
+                        type: BlockEditorDefaultBlocks.HEADING,
                         attrs: { level: '2', style: 'font-size: 24px' },
                         content: []
                     }
@@ -105,9 +105,9 @@ describe('DotCMSBlockEditorRendererBlockComponent', () => {
 
         describe('List Blocks', () => {
             it('should render bullet list', () => {
-                const content: ContentNode[] = [
+                const content: BlockEditorNode[] = [
                     {
-                        type: Blocks.BULLET_LIST,
+                        type: BlockEditorDefaultBlocks.BULLET_LIST,
                         content: []
                     }
                 ];
@@ -118,9 +118,9 @@ describe('DotCMSBlockEditorRendererBlockComponent', () => {
             });
 
             it('should render ordered list', () => {
-                const content: ContentNode[] = [
+                const content: BlockEditorNode[] = [
                     {
-                        type: Blocks.ORDERED_LIST,
+                        type: BlockEditorDefaultBlocks.ORDERED_LIST,
                         content: []
                     }
                 ];
@@ -131,9 +131,9 @@ describe('DotCMSBlockEditorRendererBlockComponent', () => {
             });
 
             it('should render list item', () => {
-                const content: ContentNode[] = [
+                const content: BlockEditorNode[] = [
                     {
-                        type: Blocks.LIST_ITEM,
+                        type: BlockEditorDefaultBlocks.LIST_ITEM,
                         content: []
                     }
                 ];
@@ -146,9 +146,9 @@ describe('DotCMSBlockEditorRendererBlockComponent', () => {
 
         describe('Media Blocks', () => {
             it('should render image component', () => {
-                const content: ContentNode[] = [
+                const content: BlockEditorNode[] = [
                     {
-                        type: Blocks.DOT_IMAGE,
+                        type: BlockEditorDefaultBlocks.DOT_IMAGE,
                         attrs: { src: 'image.jpg' },
                         content: []
                     }
@@ -160,9 +160,9 @@ describe('DotCMSBlockEditorRendererBlockComponent', () => {
             });
 
             it('should render video component', () => {
-                const content: ContentNode[] = [
+                const content: BlockEditorNode[] = [
                     {
-                        type: Blocks.DOT_VIDEO,
+                        type: BlockEditorDefaultBlocks.DOT_VIDEO,
                         attrs: { src: 'video.mp4' },
                         content: []
                     }
@@ -176,9 +176,9 @@ describe('DotCMSBlockEditorRendererBlockComponent', () => {
 
         describe('Other Blocks', () => {
             it('should render blockquote', () => {
-                const content: ContentNode[] = [
+                const content: BlockEditorNode[] = [
                     {
-                        type: Blocks.BLOCK_QUOTE,
+                        type: BlockEditorDefaultBlocks.BLOCK_QUOTE,
                         content: []
                     }
                 ];
@@ -189,9 +189,9 @@ describe('DotCMSBlockEditorRendererBlockComponent', () => {
             });
 
             it('should render code block', () => {
-                const content: ContentNode[] = [
+                const content: BlockEditorNode[] = [
                     {
-                        type: Blocks.CODE_BLOCK,
+                        type: BlockEditorDefaultBlocks.CODE_BLOCK,
                         content: []
                     }
                 ];
@@ -202,9 +202,9 @@ describe('DotCMSBlockEditorRendererBlockComponent', () => {
             });
 
             it('should render table', () => {
-                const content: ContentNode[] = [
+                const content: BlockEditorNode[] = [
                     {
-                        type: Blocks.TABLE,
+                        type: BlockEditorDefaultBlocks.TABLE,
                         content: []
                     }
                 ];
@@ -215,9 +215,9 @@ describe('DotCMSBlockEditorRendererBlockComponent', () => {
             });
 
             it('should render contentlet', () => {
-                const content: ContentNode[] = [
+                const content: BlockEditorNode[] = [
                     {
-                        type: Blocks.DOT_CONTENT,
+                        type: BlockEditorDefaultBlocks.DOT_CONTENT,
                         attrs: { identifier: '123' },
                         content: []
                     }
@@ -231,9 +231,9 @@ describe('DotCMSBlockEditorRendererBlockComponent', () => {
 
         describe('HTML Elements', () => {
             it('should render horizontal rule', () => {
-                const content: ContentNode[] = [
+                const content: BlockEditorNode[] = [
                     {
-                        type: Blocks.HORIZONTAL_RULE,
+                        type: BlockEditorDefaultBlocks.HORIZONTAL_RULE,
                         content: []
                     }
                 ];
@@ -244,9 +244,9 @@ describe('DotCMSBlockEditorRendererBlockComponent', () => {
             });
 
             it('should render line break', () => {
-                const content: ContentNode[] = [
+                const content: BlockEditorNode[] = [
                     {
-                        type: Blocks.HARDBREAK,
+                        type: BlockEditorDefaultBlocks.HARDBREAK,
                         content: []
                     }
                 ];
@@ -260,12 +260,14 @@ describe('DotCMSBlockEditorRendererBlockComponent', () => {
         describe('Custom Renderers', () => {
             it('should use custom renderer when provided', fakeAsync(() => {
                 const customRenderers = {
-                    [Blocks.PARAGRAPH]: Promise.resolve(DotCMSBlockEditorRendererCustomComponent)
+                    [BlockEditorDefaultBlocks.PARAGRAPH]: Promise.resolve(
+                        DotCMSBlockEditorRendererCustomComponent
+                    )
                 };
 
-                const content: ContentNode[] = [
+                const content: BlockEditorNode[] = [
                     {
-                        type: Blocks.PARAGRAPH,
+                        type: BlockEditorDefaultBlocks.PARAGRAPH,
                         content: []
                     }
                 ];
@@ -285,9 +287,9 @@ describe('DotCMSBlockEditorRendererBlockComponent', () => {
             }));
 
             it('should render unknown block type message', () => {
-                const content: ContentNode[] = [
+                const content: BlockEditorNode[] = [
                     {
-                        type: 'UNKNOWN_TYPE' as unknown as Blocks,
+                        type: 'UNKNOWN_TYPE' as unknown as BlockEditorDefaultBlocks,
                         content: []
                     }
                 ];

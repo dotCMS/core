@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { DotCMSContentlet } from '@dotcms/types';
+import { DotCMSBasicContentlet } from '@dotcms/types';
 
 import {
     getDotCMSContentletsBound,
@@ -256,7 +256,7 @@ describe('getDotContentletAttributes', () => {
             inode: 'test-inode',
             contentType: 'test-type',
             onNumberOfPages: '5'
-        } as unknown as DotCMSContentlet;
+        } as unknown as DotCMSBasicContentlet;
         const container = 'test-container';
 
         const result = getDotContentletAttributes(contentlet, container);
