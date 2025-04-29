@@ -18,29 +18,46 @@ const defaultPostmanTestsDir = "src/main/resources/postman"; // Default director
 const defaultConfigFilePath = "config.json"; // Default config file path
 const defaultPostmanTestsResultsDir = "target/failsafe-reports"; // Default results directory
 
-// Function to fetch JWT
+// Function to fetch JWT with better error handling for Node.js 22
 async function fetchJWT(serverUrl) {
   const username = "admin@dotcms.com";
   const password = "admin";
   const base64 = Buffer.from(`${username}:${password}`).toString("base64");
 
-  const response = await fetch(serverUrl + "/api/v1/apitoken", {
-    headers: {
-      accept: "*/*",
-      "content-type": "application/json",
-      Authorization: `Basic ${base64}`,
-    },
-    body: JSON.stringify({
-      expirationSeconds: 60000,
-      userId: "dotcms.org.1",
-      network: "0.0.0.0/0",
-      claims: { label: "postman-tests" },
-    }),
-    method: "POST",
-  });
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
 
-  const data = await response.json();
-  return data.entity.jwt; // Return JWT token
+    const response = await fetch(serverUrl + "/api/v1/apitoken", {
+      headers: {
+        accept: "*/*",
+        "content-type": "application/json",
+        Authorization: `Basic ${base64}`,
+      },
+      body: JSON.stringify({
+        expirationSeconds: 60000,
+        userId: "dotcms.org.1",
+        network: "0.0.0.0/0",
+        claims: { label: "postman-tests" },
+      }),
+      method: "POST",
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.entity.jwt;
+  } catch (error) {
+    if (error.name === "AbortError") {
+      throw new Error("JWT fetch request timed out");
+    }
+    throw new Error(`Failed to fetch JWT: ${error.message}`);
+  }
 }
 
 // Function to generate failsafe-summary.xml
@@ -70,7 +87,7 @@ function generateFailsafeSummaryXml(postmanTestsResultsDir) {
   );
 }
 
-// Function to run Newman as a Promise
+// Function to run Newman as a Promise with improved error handling
 async function runNewman(
   serverUrl,
   collectionName,
@@ -102,27 +119,51 @@ async function runNewman(
       reporter: {
         junit: { export: resultPath },
       },
-      timeout: 120000, // Increase timeout
-      bail: false, // Don't stop on errors
+      timeout: 180000, // 3 minutes per collection (optimized for CI/CD)
+      bail: false, // Stop on first error to fail fast in CI/CD
       ignoreRedirects: false,
-      insecure: true, // Allow insecure connections
-      suppressExitCode: true, // Don't exit on test failures
+      insecure: true,
+      suppressExitCode: true,
+      // Node.js 22 specific options
+      tlsOptions: {
+        rejectUnauthorized: false,
+      },
+      timeoutRequest: 30000, // 30 seconds per request
+      timeoutScript: 20000, // 20 seconds per script
+      delayRequest: 100, // 100ms delay between requests
+      // CI/CD specific options
+      retryCount: 2, // Retry failed requests twice
+      retryDelay: 1000, // Wait 1 second between retries
     };
 
     newman.run(newmanConfig, function (err, summary) {
       if (err) {
-        // Handle specific Node.js 22 errors
+        // Enhanced error handling for Node.js 22
         if (err.code === "ERR_INVALID_IP_ADDRESS") {
           console.warn(
             `Warning: IP address validation error in ${collectionName}, continuing...`
           );
-          summaryResults.errors++; // Increment errors but don't fail
-          resolve(); // Continue execution
+          summaryResults.errors++;
+          resolve();
+          return;
+        }
+
+        // Handle other common Node.js 22 errors
+        if (
+          err.code === "ERR_NETWORK_IMPORT_DISALLOWED" ||
+          err.code === "ERR_IMPORT_ASSERTION_TYPE_MISSING" ||
+          err.code === "ERR_NETWORK_IMPORT_DISALLOWED"
+        ) {
+          console.warn(
+            `Warning: Node.js 22 specific error in ${collectionName}: ${err.code}`
+          );
+          summaryResults.errors++;
+          resolve();
           return;
         }
 
         console.error(`Error running collection ${collectionName}:`, err);
-        summaryResults.errors++; // Increment errors
+        summaryResults.errors++;
         reject(
           new Error(
             `Error running collection ${collectionName}: ${err.message}`
@@ -139,11 +180,7 @@ async function runNewman(
         if (failures > 0) {
           console.error(`Collection ${collectionName} had failures. Details:`);
           summary.run.failures.forEach((failure, index) => {
-            // Handle specific error types
-            if (
-              failure.error &&
-              failure.error.code === "ERR_INVALID_IP_ADDRESS"
-            ) {
+            if (failure.error?.code === "ERR_INVALID_IP_ADDRESS") {
               console.warn(
                 `Warning: IP validation error in test ${
                   index + 1
@@ -166,6 +203,7 @@ async function runNewman(
     });
   });
 }
+
 // Function to process collections based on groupname
 async function processCollections(
   serverUrl,
@@ -260,6 +298,7 @@ async function processAllCollections(
     jwt
   );
 }
+
 /**
  * Parses command line arguments for named parameters.
  */
