@@ -1,0 +1,439 @@
+# Release Phase Workflow
+#
+# This reusable workflow is responsible for the release process of dotCMS.
+# It handles creating a release branch, setting the release version, and
+# deploying artifacts to required destinations.
+#
+# Key features:
+# - Creates a release branch with the specified version
+# - Configures and tags the release
+# - Deploys artifacts to Maven repositories
+# - Uploads JavaDocs to S3
+# - Updates plugins with the new release version
+
+name: Release Phase
+
+on:
+  workflow_call:
+    inputs:
+      release_version:
+        description: 'Release Version (yy.mm.dd-## or yy.mm.dd_lts_v##] ##: counter)'
+        required: true
+        type: string
+      release_commit:
+        description: 'Commit Hash (default to latest commit)'
+        required: false
+        type: string
+        default: ''
+      deploy_artifact:
+        description: 'Deploy Artifact'
+        type: boolean
+        default: true
+        required: false
+      update_plugins:
+        description: 'Update Plugins'
+        type: boolean
+        default: true
+        required: false
+      upload_javadocs:
+        description: 'Upload Javadocs'
+        type: boolean
+        default: true
+        required: false
+      docker_platforms:
+        description: 'Docker platforms to build for'
+        type: string
+        default: 'linux/amd64,linux/arm64'
+        required: false
+      artifact-run-id:
+        description: 'The run ID from which to fetch artifacts'
+        type: string
+        required: false
+        default: ''
+    outputs:
+      release_version:
+        description: "The version of the release"
+        value: ${{ jobs.prepare-release.outputs.release_version }}
+      release_tag:
+        description: "The tag of the release"
+        value: ${{ jobs.prepare-release.outputs.release_tag }}
+      formatted_tags:
+        description: "The formatted tags of the Docker images"
+        value: ${{ jobs.build-push-image.outputs.formatted_tags }}
+    secrets:
+      CI_MACHINE_TOKEN:
+        required: true
+      CI_MACHINE_USER:
+        required: true
+      EE_REPO_USERNAME:
+        required: true
+      EE_REPO_PASSWORD:
+        required: true
+      AWS_ACCESS_KEY_ID:
+        required: true
+      AWS_SECRET_ACCESS_KEY:
+        required: true
+      DOCKER_USERNAME:
+        required: true
+      DOCKER_TOKEN:
+        required: true
+      GITHUB_TOKEN:
+        required: true
+
+env:
+  JVM_TEST_MAVEN_OPTS: '-e -B -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn'
+  DOCKER_BUILD_CONTEXT: /home/runner/work/_temp/core-build
+  AWS_REGION: us-east-1
+
+jobs:
+  prepare-release:
+    name: Prepare Release
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    outputs:
+      release_version: ${{ steps.set-common-vars.outputs.release_version }}
+      release_tag: ${{ steps.set-common-vars.outputs.release_tag }}
+      date: ${{ steps.set-common-vars.outputs.date }}
+    steps:
+      - name: Validate Inputs
+        run: |
+          release_version=${{ inputs.release_version }}
+          if [[ ! ${release_version} =~ ^[0-9]{2}.[0-9]{2}.[0-9]{2}(-[0-9]{1,2}|_lts_v[0-9]{1,2})$ ]]; then
+            echo 'Release version must be in the format yy.mm.dd-counter or yy.mm.dd_lts_v##'
+            exit 1
+          fi
+
+      - run: echo 'GitHub context'
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+
+      - name: Checkout core
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.CI_MACHINE_TOKEN }}
+
+      - uses: ./.github/actions/core-cicd/cleanup-runner
+
+      - name: Set Common Vars
+        id: set-common-vars
+        run: |
+          git config user.name "${{ secrets.CI_MACHINE_USER }}"
+          git config user.email "dotCMS-Machine-User@dotcms.com"
+
+          release_version=${{ inputs.release_version }}
+          release_branch=release-${release_version}
+          release_tag=v${release_version}
+          release_commit=${{ inputs.release_commit }}
+          if [[ -z "${release_commit}" ]]; then
+            release_commit=$(git log -1 --pretty=%H)
+          fi
+          release_hash=${release_commit::7}
+          is_lts=false
+          [[ ${release_version} =~ ^[0-9]{2}.[0-9]{2}.[0-9]{2}_lts_v[0-9]{1,2}$ ]] && is_lts=true
+
+          echo "release_version=${release_version}" >> $GITHUB_OUTPUT
+          echo "release_branch=${release_branch}" >> $GITHUB_OUTPUT
+          echo "release_tag=${release_tag}" >> $GITHUB_OUTPUT
+          echo "release_commit=${release_commit}" >> $GITHUB_OUTPUT
+          echo "release_hash=${release_hash}" >> $GITHUB_OUTPUT
+          echo "is_lts=${is_lts}" >> $GITHUB_OUTPUT
+          echo "date=$(/bin/date -u "+%Y-%m")" >> $GITHUB_OUTPUT
+
+      - name: Set Release Version
+        id: set-release-version
+        run: |
+          release_tag=${{ steps.set-common-vars.outputs.release_tag }}
+          if git rev-parse "${release_tag}" >/dev/null 2>&1; then 
+            echo "Tag ${release_tag} exists, removing it"
+            git push origin :refs/tags/${release_tag}
+          fi
+          
+          git reset --hard ${{ steps.set-common-vars.outputs.release_commit }}
+          release_version=${{ steps.set-common-vars.outputs.release_version }}
+          release_branch=${{ steps.set-common-vars.outputs.release_branch }}
+          
+          remote=$(git ls-remote --heads https://github.com/dotCMS/core.git ${release_branch} | wc -l | tr -d '[:space:]')
+          if [[ "${remote}" == '1' ]]; then
+            echo "Release branch ${release_branch} already exists, removing it"
+            git push origin :${release_branch}
+          fi
+          git checkout -b ${release_branch}
+          
+          # set version in .mvn/maven.config
+          echo "-Dprod=true" > .mvn/maven.config
+          echo "-Drevision=${release_version}" >> .mvn/maven.config
+          echo "-Dchangelist=" >> .mvn/maven.config
+          
+          git add .mvn/maven.config
+          
+          git status
+          git commit -a -m "🏁 Publishing release version [${release_version}]"
+          git push origin ${release_branch}
+          
+          release_commit=$(git log -1 --pretty=%H)
+          echo "release_commit=${release_commit}" >> $GITHUB_OUTPUT
+
+      - name: Download Build Artifacts
+        if: inputs.artifact-run-id != ''
+        uses: dawidd6/action-download-artifact@v6
+        with:
+          github_token: ${{ secrets.CI_MACHINE_TOKEN }}
+          workflow: cicd_6-release.yml
+          run_id: ${{ inputs.artifact-run-id }}
+          name: maven-repo
+          path: /home/runner/work/_temp/maven-repo
+
+      - name: Setup Java
+        id: setup-java
+        uses: ./.github/actions/core-cicd/setup-java
+
+      # Only build if not reusing artifacts
+      - name: Build Core
+        if: inputs.artifact-run-id == ''
+        run: |
+          mkdir -p ${DOCKER_BUILD_CONTEXT}
+          ./mvnw -ntp \
+            ${JVM_TEST_MAVEN_OPTS} \
+            -Dprod=true \
+            -Ddocker.buildArchiveOnly=${DOCKER_BUILD_CONTEXT} \
+            -DskipTests=true \
+            -DskipITs=true \
+            clean install \
+            --file pom.xml \
+            --show-version
+          rc=$?
+          if [[ $rc != 0 ]]; then
+            echo "Build failed with exit code $rc"
+            exit $rc
+          fi
+
+      - name: Setup Context
+        if: inputs.artifact-run-id == '' && success()
+        id: setup-docker-context
+        run: |
+          mkdir -p ${DOCKER_BUILD_CONTEXT}/context
+          tar -xvf ${DOCKER_BUILD_CONTEXT}/docker-build.tar -C ${DOCKER_BUILD_CONTEXT}/context
+
+      - name: Cache Maven Repository
+        if: inputs.artifact-run-id == '' && success()
+        id: cache-maven
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: maven-core-${{ steps.set-common-vars.outputs.date }}-${{ github.run_id }}
+          restore-keys: |
+            maven-core-${{ steps.set-common-vars.outputs.date }}
+
+      - name: Cache Core Output
+        if: inputs.artifact-run-id == '' && success()
+        id: cache-core-output
+        uses: actions/cache@v4
+        with:
+          path: |
+            ./dotCMS/target/classes
+            ./dotCMS/target/generated-sources
+            ./dotCMS/target/dotcms-core-${{ steps.set-common-vars.outputs.release_version }}.zip
+          key: maven-core-output-${{ steps.set-common-vars.outputs.date }}-${{ github.run_id }}
+          restore-keys: |
+            maven-core-output-${{ steps.set-common-vars.outputs.date }}
+
+      - name: Cache Node Binary
+        if: inputs.artifact-run-id == '' && success()
+        id: cache-node-binary
+        uses: actions/cache@v4
+        with:
+          path: |
+            core-web/installs
+          key: node-binary-${{ hashFiles('core-web/.nvmrc') }}
+
+      - name: Cache NPM
+        if: inputs.artifact-run-id == '' && success()
+        id: cache-npm
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.npm
+          key: npm-${{ hashFiles('core-web/package-lock.json') }}
+          restore-keys: npm-
+
+      - name: Cache Docker Context
+        if: inputs.artifact-run-id == '' && success()
+        id: cache-docker-context
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.DOCKER_BUILD_CONTEXT }}/context
+          key: docker-context-${{ steps.set-common-vars.outputs.date }}-${{ github.run_id }}
+
+      - name: Create Release
+        if: success()
+        run: |
+          curl -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            -H "Authorization: Bearer ${{ secrets.CI_MACHINE_TOKEN }}" \
+            https://api.github.com/repos/dotCMS/core/releases \
+            -d '{"tag_name": "${{ steps.set-common-vars.outputs.release_tag }}", "name": "Release ${{ steps.set-common-vars.outputs.release_version }}", "target_commitish": "${{ steps.set-release-version.outputs.release_commit }}", "draft": false, "prerelease": false, "generate_release_notes": false}'
+
+  release-process:
+    name: Release Process
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    needs: prepare-release
+    if: success()
+    steps:
+      - name: Checkout core
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare-release.outputs.release_tag }}
+
+      - uses: ./.github/actions/core-cicd/cleanup-runner
+
+      - name: Restore Maven Repository
+        id: restore-maven
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/.m2/repository
+          key: maven-core-${{ needs.prepare-release.outputs.date }}-${{ github.run_id }}
+
+      - name: Restore Core Output
+        id: restore-core-output
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            ./dotCMS/target/classes
+            ./dotCMS/target/generated-sources
+            ./dotCMS/target/dotcms-core-${{ needs.prepare-release.outputs.release_version }}.zip
+          key: maven-core-output-${{ needs.prepare-release.outputs.date }}-${{ github.run_id }}
+
+      - name: Restore Node Binary
+        id: restore-node-binary
+        uses: actions/cache/restore@v4
+        with:
+          path: core-web/installs
+          key: node-binary-${{ hashFiles('core-web/.nvmrc') }}
+
+      - name: Restore NPM
+        id: restore-npm
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/.npm
+          key: npm-${{ hashFiles('core-web/package-lock.json') }}
+
+      - name: Setup Java
+        id: setup-java
+        uses: ./.github/actions/core-cicd/setup-java
+
+      - name: maven-settings-xml-action
+        uses: whelk-io/maven-settings-xml-action@v20
+        with:
+          servers: '[{ "id": "dotcms-libs-local", "username": "${{ secrets.EE_REPO_USERNAME }}", "password": "${{ secrets.EE_REPO_PASSWORD }}" }]'
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Deploy Release
+        if: inputs.deploy_artifact
+        run: |
+          ./mvnw -ntp \
+            ${JVM_TEST_MAVEN_OPTS} \
+            -Dprod=true \
+            -DskipTests=true \
+            -DskipITs=true \
+            deploy
+
+      - name: Generate/Push Javadoc
+        if: inputs.upload_javadocs
+        run: |
+          ./mvnw -ntp \
+            ${JVM_TEST_MAVEN_OPTS} \
+            javadoc:javadoc \
+            -pl :dotcms-core
+          rc=$?
+          if [[ $rc != 0 ]]; then
+            echo "Javadoc generation failed with exit code $rc"
+            exit $rc
+          fi
+
+          site_dir=./dotCMS/target/site
+          javadoc_dir=${site_dir}/javadocs
+          s3_uri=s3://static.dotcms.com/docs/${{ needs.prepare-release.outputs.release_version }}/javadocs
+
+          mv ${site_dir}/apidocs ${javadoc_dir}
+          echo "Running: aws s3 cp ${javadoc_dir} ${s3_uri} --recursive"
+          aws s3 cp ${javadoc_dir} ${s3_uri} --recursive
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Update Plugins
+        if: inputs.update_plugins
+        run: |
+          release_version=${{ needs.prepare-release.outputs.release_version }}
+          response=$(curl -L \
+            -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.CI_MACHINE_TOKEN }}" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            https://api.github.com/repos/dotCMS/plugin-seeds/dispatches \
+            -d "{\"event_type\": \"on-plugins-release\", \"client_payload\": {\"release_version\": \"$release_version\"}}" \
+            -w "\n%{http_code}" \
+            -s)
+          http_code=$(echo "$response" | tail -n1)
+          if [ "${http_code}" != "204" ]; then
+            echo "Failed to dispatch workflow. HTTP code: $http_code"
+            echo "Response: $response"
+          fi
+
+  build-push-image:
+    name: Build/Push Image
+    needs: prepare-release
+    uses: ./.github/workflows/cicd_comp_docker-image-build.yml
+    with:
+      ref: ${{ needs.prepare-release.outputs.release_tag }}
+      docker_platforms: ${{ inputs.docker_platforms }}
+      docker_context_cache_key: docker-context-${{ needs.prepare-release.outputs.date }}-${{ github.run_id }}
+    secrets:
+      docker_io_username: ${{ secrets.DOCKER_USERNAME }}
+      docker_io_token: ${{ secrets.DOCKER_TOKEN }}
+
+  generate-sbom:
+    name: Generate SBOM
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    needs: [prepare-release, build-push-image]
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/sbom-generator
+        id: sbom-generator
+        with:
+          dotcms_version: ${{ needs.prepare-release.outputs.release_version }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 'Download all build artifacts'
+        uses: actions/download-artifact@v4
+        with:
+          path: ${{ github.workspace }}/artifacts
+          pattern: ${{ steps.sbom-generator.outputs.sbom-artifact }}
+          
+      - name: Upload SBOM Asset
+        env:
+          GITHUB_TOKEN: ${{ github.token }}  
+        run: |
+          echo "::group::Upload SBOM Asset"
+          ARTIFACT_NAME=${{ steps.sbom-generator.outputs.sbom-artifact }}
+          SBOM="./artifacts/${ARTIFACT_NAME}/${ARTIFACT_NAME}.json"
+          
+          if [ -f "${SBOM}" ]; then
+            echo "SBOM: ${SBOM}"
+            cat "${SBOM}"
+            
+            zip "${ARTIFACT_NAME}.zip" "${SBOM}"
+            gh release upload "${{ needs.prepare-release.outputs.release_tag }}" "${ARTIFACT_NAME}.zip"
+          else
+            echo "SBOM artifact not found."
+          fi
+          echo "::endgroup::" 

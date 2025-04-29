@@ -1,0 +1,62 @@
+name: 'SBOM Generator'
+description: 'Generate Software Bill of Materials (SBOM) for dotCMS'
+inputs:
+  dotcms_version:
+    description: 'The version of dotCMS'
+    required: true
+  github_token:
+    description: 'GitHub token'
+    required: true
+outputs:
+  sbom-artifact:
+    description: 'The name of the generated SBOM artifact'
+    value: ${{ steps.set-outputs.outputs.artifact-name }}
+runs:
+  using: "composite"
+  steps:
+    - name: Install Syft
+      shell: bash
+      run: |
+        curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
+
+    - name: Login to Docker Hub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKER_USERNAME || github.actor }}
+        password: ${{ secrets.DOCKER_TOKEN || inputs.github_token }}
+
+    - name: Generate SBOM
+      id: generate-sbom
+      shell: bash
+      run: |
+        VERSION="${{ inputs.dotcms_version }}"
+        SBOM_FILE="dotcms-sbom-${VERSION}.json"
+        IMAGE="dotcms/dotcms:${VERSION}"
+        
+        echo "Generating SBOM for ${IMAGE}"
+        syft "${IMAGE}" -o cyclonedx-json > "${SBOM_FILE}"
+        
+        if [ -f "${SBOM_FILE}" ]; then
+          echo "SBOM generated successfully: ${SBOM_FILE}"
+        else
+          echo "Failed to generate SBOM"
+          exit 1
+        fi
+        
+        ARTIFACT_NAME="dotcms-sbom-${VERSION}"
+        echo "artifact-name=${ARTIFACT_NAME}" >> $GITHUB_OUTPUT
+        
+        mkdir -p "${ARTIFACT_NAME}"
+        cp "${SBOM_FILE}" "${ARTIFACT_NAME}/${ARTIFACT_NAME}.json"
+
+    - name: Upload SBOM Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ steps.generate-sbom.outputs.artifact-name }}
+        path: ${{ steps.generate-sbom.outputs.artifact-name }}
+        
+    - name: Set Outputs
+      id: set-outputs
+      shell: bash
+      run: |
+        echo "artifact-name=${{ steps.generate-sbom.outputs.artifact-name }}" >> $GITHUB_OUTPUT 

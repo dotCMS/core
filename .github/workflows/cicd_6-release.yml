@@ -1,0 +1,182 @@
+# Release Workflow
+#
+# This workflow is responsible for creating and publishing dotCMS releases.
+# It follows the standard workflow pattern with initialize, build, test, deployment, release, finalize, and report phases.
+#
+# Key features:
+# - Manually triggered with configurable options
+# - Reuses artifacts from previous builds when available
+# - Follows the same pipeline structure as other workflows (PR, trunk, nightly)
+# - Handles the specific release tasks like versioning, tagging, and Docker image publishing
+# - Sends notifications upon completion
+
+name: '-6 Release Workflow'
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_version:
+        description: 'Release Version (yy.mm.dd-## or yy.mm.dd_lts_v##] ##: counter)'
+        required: true
+      release_commit:
+        description: 'Commit Hash (default to latest commit)'
+        required: false
+      reuse-previous-build:
+        description: 'Reuse artifacts from previous workflows'
+        type: boolean
+        default: true
+        required: false
+      build-on-missing-artifacts:
+        description: 'Build if artifacts are missing'
+        type: boolean
+        default: true
+        required: false
+      run-all-tests:
+        description: 'Run all tests'
+        type: boolean
+        default: true
+        required: false
+      update_github_labels:
+        description: 'Update GitHub labels'
+        type: boolean
+        default: false
+        required: false
+      notify_slack:
+        description: 'Notify Slack'
+        type: boolean
+        default: true
+        required: false
+
+# Concurrency group to manage multiple runs
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref || github.run_id }}
+  cancel-in-progress: false
+
+jobs:
+  # Initialize the release process, checking for existing artifacts
+  initialize:
+    name: Initialize
+    uses: ./.github/workflows/cicd_comp_initialize-phase.yml
+    with:
+      reuse-previous-build: ${{ inputs.reuse-previous-build }}
+      build-on-missing-artifacts: ${{ inputs.build-on-missing-artifacts }}
+      validation-level: 'full'
+
+  # Build job - only runs if no artifacts were found during initialization
+  build:
+    name: Release Build
+    needs: [ initialize ]
+    if: needs.initialize.outputs.found_artifacts == 'false'
+    uses: ./.github/workflows/cicd_comp_build-phase.yml
+    with:
+      core-build: true
+    permissions:
+      contents: read
+      packages: write
+
+  # Test job - runs comprehensive tests
+  test:
+    name: Release Test
+    needs: [ initialize, build ]
+    if: always() && !failure() && !cancelled()
+    uses: ./.github/workflows/cicd_comp_test-phase.yml
+    with:
+      run-all-tests: ${{ inputs.run-all-tests }}
+      jvm_unit_test: true
+      integration: true
+      postman: true
+      karate: true
+      frontend: true
+      cli: true
+      e2e: true
+      artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
+    secrets:
+      DOTCMS_LICENSE: ${{ secrets.DOTCMS_LICENSE }}
+    permissions:
+      contents: read
+      packages: write
+
+  # CLI Build job - builds CLI artifacts
+  build-cli:
+    name: CLI Build
+    needs: [ initialize, test ]
+    if: always() && !failure() && !cancelled()
+    uses: ./.github/workflows/cicd_comp_cli-native-build-phase.yml
+    with:
+      buildNativeImage: true
+      artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
+      branch: ${{ github.ref }}
+
+  # Release phase - handles release-specific tasks
+  release:
+    name: Release Process
+    needs: [ initialize, build, test, build-cli ]
+    if: success()
+    uses: ./.github/workflows/cicd_comp_release-phase.yml
+    with:
+      release_version: ${{ github.event.inputs.release_version }}
+      release_commit: ${{ github.event.inputs.release_commit }}
+      deploy_artifact: true
+      update_plugins: true
+      upload_javadocs: true
+      artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
+    secrets:
+      CI_MACHINE_TOKEN: ${{ secrets.CI_MACHINE_TOKEN }}
+      CI_MACHINE_USER: ${{ secrets.CI_MACHINE_USER }}
+      EE_REPO_USERNAME: ${{ secrets.EE_REPO_USERNAME }}
+      EE_REPO_PASSWORD: ${{ secrets.EE_REPO_PASSWORD }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # Update GitHub issue labels with the new release
+  release-labeling:
+    name: Release Labeling
+    needs: [ release ]
+    if: success() && github.event.inputs.update_github_labels == 'true'
+    uses: ./.github/workflows/issue_comp_release-labeling.yml
+    with:
+      new_label: 'Release : ${{ github.event.inputs.release_version }}'
+      rename_label: 'Next Release'
+    secrets:
+      CI_MACHINE_TOKEN: ${{ secrets.CI_MACHINE_TOKEN }}
+
+  # Release notification - sends Slack message for successful releases
+  notify:
+    name: Release Notification
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    needs: [ release ]
+    if: success() && github.event.inputs.notify_slack == 'true'
+    steps:
+      - name: Notify Slack
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.RELEASE_SLACK_WEBHOOK }}
+          SLACK_USERNAME: dotBot
+          SLACK_TITLE: "Important news!"
+          SLACK_MSG_AUTHOR: " "
+          MSG_MINIMAL: true
+          SLACK_FOOTER: ""
+          SLACK_ICON: https://avatars.slack-edge.com/temp/2021-12-08/2830145934625_e4e464d502865ff576e4.png
+          SLACK_MESSAGE: "<!channel> This automated script is excited to announce the release of a new version of dotCMS `${{ needs.release.outputs.release_version }}` :rocket:\n:docker: Produced images: [${{ needs.release.outputs.formatted_tags }}]"
+
+  # Finalize job - aggregates results from previous jobs
+  finalize:
+    name: Finalize
+    if: always()
+    needs: [ initialize, build, test, build-cli, release, release-labeling, notify ]
+    uses: ./.github/workflows/cicd_comp_finalize-phase.yml
+    with:
+      artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
+      needsData: ${{ toJson(needs) }}
+
+  # Report job - generates and sends the final workflow report
+  report:
+    name: Report
+    if: always()
+    needs: [ finalize ]
+    uses: ./.github/workflows/cicd_post-workflow-reporting.yml
+    secrets:
+      SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }} 
