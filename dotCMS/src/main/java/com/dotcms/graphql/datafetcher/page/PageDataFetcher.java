@@ -140,9 +140,11 @@ public class PageDataFetcher implements DataFetcher<Contentlet> {
                     .graphQLDataFetchOptions().content(pageAsset).forUser(user).build();
 
             final Contentlet out = transformer.hydrate().get(0);
+            // PageResource add this property to the map at Serializer
+            // Level that's why it is not part of the Transformers logic
             final String urlMapper = pageUrl.getPageUrlMapper();
             if(StringUtils.isSet(urlMapper)) {
-                out.getMap().put("pageURI", urlMapper);
+               out.getMap().put("pageURI", urlMapper);
             }
             return out;
 
