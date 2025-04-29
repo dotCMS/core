@@ -3,7 +3,7 @@ import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 
 import { Component, Input } from '@angular/core';
 
-import { DotCMSContentlet } from '@dotcms/types';
+import { DotCMSBasicContentlet } from '@dotcms/types';
 
 import { FallbackComponent } from './fallback-component.component';
 
@@ -15,7 +15,7 @@ import { DynamicComponentEntity } from '../../../../models';
     template: '<div data-testid="mock-component">Mock Component: {{contentlet?.contentType}}</div>'
 })
 class MockComponent {
-    @Input() contentlet!: DotCMSContentlet;
+    @Input() contentlet!: DotCMSBasicContentlet;
 }
 
 describe('FallbackComponent', () => {
@@ -32,7 +32,7 @@ describe('FallbackComponent', () => {
             props: {
                 contentlet: {
                     contentType: '' // Initialize with an empty contentType
-                } as DotCMSContentlet,
+                } as DotCMSBasicContentlet,
                 UserNoComponent: null as DynamicComponentEntity | null
             }
         });
@@ -69,7 +69,7 @@ describe('FallbackComponent', () => {
             titleImage: '',
             url: '/test',
             working: true
-        } as DotCMSContentlet;
+        } as DotCMSBasicContentlet;
 
         component.UserNoComponent = null;
 
@@ -90,7 +90,7 @@ describe('FallbackComponent', () => {
             contentType: 'testContentType',
             identifier: 'test-id',
             title: 'Test Title'
-        } as DotCMSContentlet;
+        } as DotCMSBasicContentlet;
 
         spectator.detectChanges();
 
@@ -107,7 +107,7 @@ describe('FallbackComponent', () => {
             contentType: 'testContentType',
             title: 'Test Title',
             identifier: 'test-id'
-        } as DotCMSContentlet;
+        } as DotCMSBasicContentlet;
 
         const mockComponentPromise = Promise.resolve(MockComponent) as DynamicComponentEntity;
         component.UserNoComponent = mockComponentPromise;
