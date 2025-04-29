@@ -103,7 +103,8 @@ describe('DotEditContentSidebarComponent', () => {
         jest.spyOn(utils, 'getStoredUIState').mockReturnValue({
             activeTab: 0,
             isSidebarOpen: true,
-            activeSidebarTab: 0
+            activeSidebarTab: 0,
+            isBetaMessageVisible: true
         });
 
         dotEditContentService.getReferencePages.mockReturnValue(of(1));
