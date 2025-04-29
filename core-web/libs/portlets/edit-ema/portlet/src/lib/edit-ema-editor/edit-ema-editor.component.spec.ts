@@ -2638,7 +2638,7 @@ describe('EditEmaEditorComponent', () => {
                     const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
 
                     expect(iframe.nativeElement.src).toBe(
-                        'http://localhost:3000/index?language_id=1&mode=EDIT_MODE'
+                        'http://localhost:3000/index?language_id=1&mode=EDIT_MODE&dotCMSHost=http://localhost'
                     );
                 });
 
