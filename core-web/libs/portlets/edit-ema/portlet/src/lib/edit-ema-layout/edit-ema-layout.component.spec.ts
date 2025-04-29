@@ -25,6 +25,7 @@ import {
 } from '@dotcms/data-access';
 import { CoreWebService, LoginService } from '@dotcms/dotcms-js';
 import { TemplateBuilderComponent, TemplateBuilderModule } from '@dotcms/template-builder';
+import { WINDOW } from '@dotcms/utils';
 import {
     DotExperimentsServiceMock,
     DotLanguagesServiceMock,
@@ -134,7 +135,11 @@ describe('EditEmaLayoutComponent', () => {
                     getCurrentUser: () => of({})
                 },
                 'useValue'
-            )
+            ),
+            {
+                provide: WINDOW,
+                useValue: window
+            }
         ]
     });
 

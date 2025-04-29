@@ -6,26 +6,40 @@ import { Editor } from 'tinymce';
 import { DebugElement, ElementRef, Renderer2, SecurityContext } from '@angular/core';
 import { By, DomSanitizer } from '@angular/platform-browser';
 
-import * as dotcmsClient from '@dotcms/client';
+import * as dotCMSUVE from '@dotcms/uve';
+import { __DOTCMS_UVE_EVENT__ } from '@dotcms/uve/internal';
+import { DotCMSUVEAction, UVE_MODE } from '@dotcms/uve/types';
 
 import { DotCMSEditableTextComponent } from './dotcms-editable-text.component';
 import { TINYMCE_CONFIG } from './utils';
 
 import { dotcmsContentletMock } from '../../utils/testing.utils';
 
-const { CLIENT_ACTIONS, postMessageToEditor } = dotcmsClient;
+const { sendMessageToUVE } = dotCMSUVE;
 
 // Mock @dotcms/client module
-jest.mock('@dotcms/client', () => ({
-    ...jest.requireActual('@dotcms/client'),
-    isInsideEditor: jest.fn().mockImplementation(() => true),
-    postMessageToEditor: jest.fn(),
-    DotCmsClient: {
-        dotcmsUrl: 'http://localhost:8080'
-    }
+jest.mock('@dotcms/uve', () => ({
+    ...jest.requireActual('@dotcms/uve'),
+    getUVEState: jest.fn().mockImplementation(() => {
+        return {
+            mode: UVE_MODE.EDIT,
+            dotCMSHost: 'http://localhost:8080'
+        };
+    }),
+    sendMessageToUVE: jest.fn()
 }));
 
-const mockedDotcmsClient = dotcmsClient as jest.Mocked<typeof dotcmsClient>;
+const mockedDotcmsClient = dotCMSUVE as jest.Mocked<typeof dotCMSUVE>;
+
+const BASE_UVE_STATE = {
+    mode: UVE_MODE.EDIT,
+    dotCMSHost: 'http://localhost:8080',
+    persona: 'admin',
+    variantName: 'default',
+    experimentId: '123',
+    publishDate: new Date().toISOString(),
+    languageId: 'en'
+};
 
 const TINYMCE_EDITOR_MOCK: unknown = {
     focus: jest.fn(),
@@ -94,7 +108,7 @@ describe('DotCMSEditableTextComponent', () => {
         let sanitizer: SpyObject<DomSanitizer>;
 
         beforeEach(() => {
-            jest.spyOn(mockedDotcmsClient, 'isInsideEditor').mockReturnValue(false);
+            jest.spyOn(mockedDotcmsClient, 'getUVEState').mockReturnValue(undefined);
             renderer2 = spectator.inject(Renderer2, true);
             elementRef = spectator.inject(ElementRef, true);
             sanitizer = spectator.inject(DomSanitizer, true);
@@ -131,7 +145,7 @@ describe('DotCMSEditableTextComponent', () => {
 
     describe('Inside Editor', () => {
         beforeEach(() => {
-            jest.spyOn(mockedDotcmsClient, 'isInsideEditor').mockReturnValue(true);
+            jest.spyOn(mockedDotcmsClient, 'getUVEState').mockReturnValue(BASE_UVE_STATE);
         });
 
         it('should set content with the right format when the contentlet changes', () => {
@@ -251,8 +265,7 @@ describe('DotCMSEditableTextComponent', () => {
                     window.dispatchEvent(
                         new MessageEvent('message', {
                             data: {
-                                name: dotcmsClient.NOTIFY_CLIENT
-                                    .UVE_COPY_CONTENTLET_INLINE_EDITING_SUCCESS,
+                                name: __DOTCMS_UVE_EVENT__.UVE_COPY_CONTENTLET_INLINE_EDITING_SUCCESS,
                                 payload: {
                                     oldInode: dotcmsContentletMock.inode,
                                     inode: dotcmsContentletMock.inode
@@ -311,8 +324,8 @@ describe('DotCMSEditableTextComponent', () => {
                         }
                     };
 
-                    expect(postMessageToEditor).toHaveBeenCalledWith({
-                        action: CLIENT_ACTIONS.COPY_CONTENTLET_INLINE_EDITING,
+                    expect(sendMessageToUVE).toHaveBeenCalledWith({
+                        action: DotCMSUVEAction.COPY_CONTENTLET_INLINE_EDITING,
                         payload
                     });
                     expect(event.stopPropagation).toHaveBeenCalled();
@@ -326,7 +339,7 @@ describe('DotCMSEditableTextComponent', () => {
                     });
                     spectator.detectChanges();
                     spectator.triggerEventHandler(editorDebugElement, 'onMouseDown', customEvent);
-                    expect(postMessageToEditor).not.toHaveBeenCalled();
+                    expect(sendMessageToUVE).not.toHaveBeenCalled();
                     expect(event.stopPropagation).not.toHaveBeenCalled();
                     expect(event.preventDefault).not.toHaveBeenCalled();
                 });
@@ -338,7 +351,7 @@ describe('DotCMSEditableTextComponent', () => {
 
                     spectator.detectChanges();
                     spectator.triggerEventHandler(editorDebugElement, 'onMouseDown', customEvent);
-                    expect(postMessageToEditor).not.toHaveBeenCalled();
+                    expect(sendMessageToUVE).not.toHaveBeenCalled();
                     expect(event.stopPropagation).not.toHaveBeenCalled();
                     expect(event.preventDefault).not.toHaveBeenCalled();
                     expect(hasFocusSpy).toHaveBeenCalled();
@@ -378,7 +391,7 @@ describe('DotCMSEditableTextComponent', () => {
 
                     expect(isDirtySpy).toHaveBeenCalled();
                     expect(getContentSpy).toHaveBeenCalledWith({ format: 'text' });
-                    expect(postMessageToEditor).not.toHaveBeenCalled();
+                    expect(sendMessageToUVE).not.toHaveBeenCalled();
                 });
 
                 it('should not postMessage the UVE if the content did not change', () => {
@@ -390,7 +403,7 @@ describe('DotCMSEditableTextComponent', () => {
 
                     expect(isDirtySpy).toHaveBeenCalled();
                     expect(getContentSpy).toHaveBeenCalledWith({ format: 'text' });
-                    expect(postMessageToEditor).not.toHaveBeenCalled();
+                    expect(sendMessageToUVE).not.toHaveBeenCalled();
                 });
 
                 it('should postMessage the UVE if the content changed', () => {
@@ -401,7 +414,7 @@ describe('DotCMSEditableTextComponent', () => {
                     spectator.triggerEventHandler(editorDebugElement, 'onFocusOut', customEvent);
 
                     const postMessageData = {
-                        action: CLIENT_ACTIONS.UPDATE_CONTENTLET_INLINE_EDITING,
+                        action: DotCMSUVEAction.UPDATE_CONTENTLET_INLINE_EDITING,
                         payload: {
                             content: 'New content',
                             dataset: {
@@ -414,7 +427,7 @@ describe('DotCMSEditableTextComponent', () => {
 
                     expect(isDirtySpy).toHaveBeenCalled();
                     expect(getContentSpy).toHaveBeenCalledWith({ format: 'text' });
-                    expect(postMessageToEditor).toHaveBeenCalledWith(postMessageData);
+                    expect(sendMessageToUVE).toHaveBeenCalledWith(postMessageData);
                 });
             });
         });
