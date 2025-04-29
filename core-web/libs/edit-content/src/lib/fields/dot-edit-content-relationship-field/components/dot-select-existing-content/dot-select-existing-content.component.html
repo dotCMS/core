@@ -65,6 +65,9 @@
                             <p-tableHeaderCheckbox />
                         }
                     </th>
+                    <th scope="col" class="max-w-5rem">
+                        {{ 'dot.file.relationship.dialog.table.type' | dm }}
+                    </th>
                     <th scope="col" class="max-w-12rem" [pSortableColumn]="'title'">
                         <span class="capitalize">
                             {{ 'dot.file.relationship.dialog.table.title' | dm }}
@@ -82,9 +85,9 @@
                             {{ 'dot.file.relationship.dialog.table.language' | dm }}
                         </span>
                     </th>
-                    <th scope="col" class="max-w-12rem" [pSortableColumn]="'state'">
+                    <th scope="col" class="max-w-12rem" [pSortableColumn]="'status'">
                         <span class="capitalize">
-                            {{ 'dot.file.relationship.dialog.table.state' | dm }}
+                            {{ 'dot.file.relationship.dialog.table.status' | dm }}
                         </span>
                     </th>
                     <th scope="col" class="max-w-12rem" [pSortableColumn]="'modDate'">
@@ -113,6 +116,15 @@
                         } @else {
                             <p-tableRadioButton [value]="item" />
                         }
+                    </td>
+                    <td class="max-w-5rem">
+                        <div class="container-thumbnail">
+                            <dot-contentlet-thumbnail
+                                [iconSize]="'40px'"
+                                [contentlet]="item"
+                                [playableVideo]="false"
+                                data-testId="contentlet-thumbnail" />
+                        </div>
                     </td>
                     <td class="max-w-12rem">
                         <p class="truncate-text">{{ item.title }}</p>
