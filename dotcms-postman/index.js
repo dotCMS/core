@@ -165,9 +165,15 @@ async function runNewman(
     const newmanConfig = {
       collection: require(collectionPath),
       envVar: envVars,
-      reporters: ["cli", "junit"],
+      reporters: ["cli", "junit", "progress"],
       reporter: {
         junit: { export: resultPath },
+        cli: {
+          silent: false,
+          verbose: true,
+          requestErrors: true,
+          showRequestData: true,
+        },
       },
       timeout: 2700000, // 3 minutes per collection (optimized for CI/CD)
       bail: true, // Stop on first error to fail fast in CI/CD
@@ -178,8 +184,8 @@ async function runNewman(
       tlsOptions: {
         rejectUnauthorized: false,
       },
-      timeoutRequest: 30000, // 30 seconds per request
-      timeoutScript: 2700000, // 20 seconds per script
+      timeoutRequest: 60000,
+      timeoutScript: 2700000,
     };
 
     newman.run(newmanConfig, function (err, summary) {
