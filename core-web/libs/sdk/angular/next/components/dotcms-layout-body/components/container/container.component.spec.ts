@@ -1,7 +1,7 @@
 import { expect, describe, it, beforeEach, jest } from '@jest/globals';
 import { Spectator, createComponentFactory } from '@ngneat/spectator/jest';
 
-import { DotCMSContentlet, EditableContainerData } from '@dotcms/types';
+import { DotCMSBasicContentlet, EditableContainerData } from '@dotcms/types';
 
 import { ContainerComponent } from './container.component';
 
@@ -70,8 +70,8 @@ describe('ContainerComponent', () => {
         // Set container data with contentlets
         spectator.component.$containerData.set({} as EditableContainerData);
         spectator.component.$contentlets.set([
-            { identifier: 'content-1' } as DotCMSContentlet,
-            { identifier: 'content-2' } as DotCMSContentlet
+            { identifier: 'content-1' } as DotCMSBasicContentlet,
+            { identifier: 'content-2' } as DotCMSBasicContentlet
         ]);
         spectator.detectChanges();
 
