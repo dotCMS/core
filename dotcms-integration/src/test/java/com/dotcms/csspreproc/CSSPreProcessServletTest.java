@@ -1,5 +1,7 @@
 package com.dotcms.csspreproc;
 
+import static org.mockito.Mockito.when;
+
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.datagen.FileAssetDataGen;
 import com.dotcms.datagen.FolderDataGen;
@@ -19,24 +21,20 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.util.StringPool;
+import java.io.File;
+import java.io.IOException;
 import java.io.PrintWriter;
-import java.io.StringWriter;
+import java.nio.charset.StandardCharsets;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import org.apache.http.HttpStatus;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.Mockito;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-import java.io.File;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-
-import static org.mockito.Mockito.when;
 
 /**
  * Verifies that the Dart SASS Compiler behaves correctly.
@@ -100,7 +98,7 @@ public class CSSPreProcessServletTest extends IntegrationTestBase {
      */
     @Test
     public void testCompileValidScssFile() {
-        executeTest(inputSimpleScssFile, VALID_SCSS_FILE_RESPONSE);
+        executeTest(inputSimpleScssFile, VALID_SCSS_FILE_RESPONSE, false);
     }
 
     /**
@@ -114,7 +112,7 @@ public class CSSPreProcessServletTest extends IntegrationTestBase {
      */
     @Test
     public void testCompileScssFileWithImport() {
-        executeTest(inputScssFileWithImports, SCSS_FILE_WITH_IMPORT_RESPONSE);
+        executeTest(inputScssFileWithImports, SCSS_FILE_WITH_IMPORT_RESPONSE, false);
     }
 
     /**
@@ -128,7 +126,7 @@ public class CSSPreProcessServletTest extends IntegrationTestBase {
      */
     @Test
     public void testCompileInvalidScssFile() {
-        executeTest(inputInvalidScssFile, INVALID_SCSS_FILE_RESPONSE);
+        executeTest(inputInvalidScssFile, INVALID_SCSS_FILE_RESPONSE, true);
     }
 
     /**
@@ -157,7 +155,7 @@ public class CSSPreProcessServletTest extends IntegrationTestBase {
      * @param inputScssFile  The SCSS file that will be compiled.
      * @param expectedOutput The expected CSS output, or part of the error message if the SCSS is expected to fail.
      */
-    private void executeTest(final FileAsset inputScssFile, final String expectedOutput) {
+    private void executeTest(final FileAsset inputScssFile, final String expectedOutput, final boolean isError) {
         String cssCode = StringPool.BLANK;
         int status = 0;
         try {
@@ -179,8 +177,17 @@ public class CSSPreProcessServletTest extends IntegrationTestBase {
             Assert.fail(String.format("An error occurred when compiling the test SCSS file '%s'. Aborting test " +
                                               "execution...", inputScssFile));
         }
+        if (isError) {
+            // The SCSS file is expected to fail, so we need to check that the error message is part of the response
+            Assert.assertTrue(String.format("The SCSS file '%s' was expected to fail but it didn't. The output was: %s",
+                    inputScssFile.getName(), cssCode), cssCode.contains("Error:")
+            );
+        } else {
+            Assert.assertTrue(String.format("This is NOT the expected SCSS compiler output. cssCode [%s] expected [%s].",
+                    cssCode, expectedOutput), CssComparator.areSemanticallyEqual(cssCode, expectedOutput));
+        }
         // Assertions
-        Assert.assertTrue(String.format("This is NOT the expected SCSS compiler output. cssCode [%s] expected [%s].", cssCode, expectedOutput), cssCode.startsWith(expectedOutput));
+
         Assert.assertNotEquals("The SCSS file could not be found.", HttpStatus.SC_NOT_FOUND, status);
         Assert.assertNotEquals("The SCSS file could not be read by the specified dotCMS user.",
                 HttpStatus.SC_FORBIDDEN, status);
@@ -199,7 +206,7 @@ public class CSSPreProcessServletTest extends IntegrationTestBase {
      * @throws DotSecurityException The specified User doesn't have the required permissions to perform this operation.
      * @throws IOException          Servlet output and/or writer objects failed.
      */
-    private HttpServletRequest hydrateMockedRequest(final FileAsset inputScssFile) throws DotDataException, DotSecurityException, IOException {
+    private HttpServletRequest hydrateMockedRequest(final FileAsset inputScssFile) throws DotDataException, DotSecurityException {
         final HttpSession mockSession = Mockito.mock(HttpSession.class);
         when(mockSession.getAttribute(WebKeys.CMS_SELECTED_HOST_ID)).thenReturn(defaultSiteId);
         final DotCMSMockRequestWithSession mockRequest = new DotCMSMockRequestWithSession(mockSession, false);
