@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.contenttype.model.field.Field;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import org.quartz.CronTrigger;
@@ -880,6 +881,43 @@ public class QuartzUtils {
 			return false;
 		}
 
+	}
+
+	/**
+	 *  Checks if the CleanUpFieldReferencesJob is running for a field with the same name, if so, throws an exception
+	 * */
+	public static void validateFieldReferences(Field field) throws DotDataException{
+		try {
+
+			List<JobExecutionContext> currentlyExecutingJobs = new ArrayList<>();
+			currentlyExecutingJobs.addAll(QuartzUtils.getScheduler().getCurrentlyExecutingJobs());
+
+			JobDetail existingJobDetail = QuartzUtils.getScheduler().getJobDetail("CleanUpFieldReferencesJob", "CleanUpFieldReferencesJob_Group");
+
+			if (existingJobDetail != null) {
+				for (JobExecutionContext jec : currentlyExecutingJobs) {
+
+					final JobDetail runningJobDetail = jec.getJobDetail();
+					//if there is a CleanUpFieldReferencesJob running
+					if (existingJobDetail.equals(runningJobDetail) || isSameJob(existingJobDetail, runningJobDetail)) {
+						JobDataMap jobDataMap = runningJobDetail.getJobDataMap();
+						Map<String, Map<String,Object>> jobDetail = (Map<String, Map<String, Object>>) jobDataMap.get("trigger_job_detail");
+						//checks on the running jobs if there is any job with a field with the same name
+						boolean doesFieldExists =  jobDetail.values()
+								.stream()
+								.filter(value -> value.get("field") != null)
+								.map(filteredField -> ((Field) filteredField.get("field")).name())
+								.anyMatch(fieldName -> fieldName.equals(field.name()));
+
+						if (doesFieldExists) {
+							throw new DotDataException("Field variable '" + field.name() + "' cannot be recreated while the CleanUpFieldReferencesJob is running. Please wait until finish");
+						}
+					}
+				}
+			}
+		} catch (SchedulerException e){
+			throw new DotDataException(e);
+		}
 	}
 
 

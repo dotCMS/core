@@ -75,7 +75,6 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.quartz.DotJob;
 import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.quartz.job.CleanUpFieldReferencesJob;
 import com.dotmarketing.util.ActivityLogger;
@@ -92,18 +91,12 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
 import org.apache.commons.lang.StringUtils;
-import org.quartz.JobDataMap;
-import org.quartz.JobDetail;
-import org.quartz.JobExecutionContext;
-import org.quartz.SchedulerException;
 
 import java.net.ConnectException;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.UNIQUE_PER_SITE_FIELD_VARIABLE_NAME;
 import static com.dotcms.util.CollectionsUtils.list;
-import static com.dotmarketing.quartz.QuartzUtils.isSameJob;
 import static com.liferay.util.StringPool.BLANK;
 
 
@@ -170,7 +163,7 @@ public class FieldAPIImpl implements FieldAPI {
             throw new DotDataValidationException("ContentTypeId needs to be set to save the Field");
         }
 
-        validateFieldReferences(field);
+        QuartzUtils.validateFieldReferences(field);
 
         ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
         ContentType type = contentTypeAPI.find(field.contentTypeId());
@@ -253,42 +246,7 @@ public class FieldAPIImpl implements FieldAPI {
 
         return result;
     }
-    /**
-     *  Checks if the CleanUpFieldReferencesJob is running for a field with the same name, if so, throws an exception
-     * */
-    public void validateFieldReferences(Field field) throws DotDataException{
-        try {
 
-            List<JobExecutionContext> currentlyExecutingJobs = new ArrayList<>();
-            currentlyExecutingJobs.addAll(QuartzUtils.getScheduler().getCurrentlyExecutingJobs());
-
-            JobDetail existingJobDetail = QuartzUtils.getScheduler().getJobDetail("CleanUpFieldReferencesJob", "CleanUpFieldReferencesJob_Group");
-
-            if (existingJobDetail != null) {
-                for (JobExecutionContext jec : currentlyExecutingJobs) {
-
-                    final JobDetail runningJobDetail = jec.getJobDetail();
-                    //if there is a CleanUpFieldReferencesJob running
-                    if (existingJobDetail.equals(runningJobDetail) || isSameJob(existingJobDetail, runningJobDetail)) {
-                        JobDataMap jobDataMap = runningJobDetail.getJobDataMap();
-                        Map<String, Map<String,Object>> jobDetail = (Map<String, Map<String, Object>>) jobDataMap.get("trigger_job_detail");
-                        //checks on the running jobs if there is any job with a field with the same name
-                        boolean doesFieldExists =  jobDetail.values()
-                                .stream()
-                                .filter(value -> value.get("field") != null)
-                                .map(filteredField -> ((Field) filteredField.get("field")).name())
-                                .anyMatch(fieldName -> fieldName.equals(field.name()));
-
-                        if (doesFieldExists) {
-                            throw new DotDataException("Field variable '" + field.name() + "' cannot be recreated while the CleanUpFieldReferencesJob is running. Please wait until finish");
-                        }
-                    }
-                }
-            }
-        } catch (SchedulerException e){
-            throw new DotDataException(e);
-        }
-    }
 
     /**
      * Processes relationships for the given field. If the field is a {@link RelationshipField}, it
