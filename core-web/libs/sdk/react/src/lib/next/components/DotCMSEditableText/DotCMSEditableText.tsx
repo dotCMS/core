@@ -2,12 +2,10 @@ import { Editor } from '@tinymce/tinymce-react';
 import { useEffect, useRef, useState } from 'react';
 
 import { sendMessageToUVE, getUVEState } from '@dotcms/uve';
-import { __DOTCMS_UVE_EVENT__ } from '@dotcms/uve/internal';
+import { __DOTCMS_UVE_EVENT__, __TINYMCE_PATH_ON_DOTCMS__ } from '@dotcms/uve/internal';
 import { DotCMSUVEAction, UVE_MODE } from '@dotcms/uve/types';
 
 import { DotCMSEditableTextProps, TINYMCE_CONFIG } from './utils';
-
-const MCE_URL = '/ext/tinymcev7/tinymce.min.js';
 
 /**
  * Allows inline edit content pulled from dotCMS API using TinyMCE editor
@@ -71,7 +69,7 @@ export function DotCMSEditableText({
             return;
         }
 
-        const createURL = new URL(MCE_URL, getUVEState()?.dotCMSHost ?? '');
+        const createURL = new URL(__TINYMCE_PATH_ON_DOTCMS__, getUVEState()?.dotCMSHost ?? '');
         setScriptSrc(createURL.toString());
 
         const content = contentlet?.[fieldName] || '';

@@ -47,3 +47,10 @@ export const __BASE_TINYMCE_CONFIG_WITH_NO_DEFAULT__ = {
         valid_elements: 'strong,em,span[style],a[href]'
     }
 };
+
+/**
+ * TinyMCE path
+ *
+ * @internal
+ */
+export const __TINYMCE_PATH_ON_DOTCMS__ = '/ext/tinymcev7/tinymce.min.js';

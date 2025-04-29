@@ -16,7 +16,7 @@ import {
 import { DomSanitizer } from '@angular/platform-browser';
 
 import { getUVEState, sendMessageToUVE } from '@dotcms/uve';
-import { __DOTCMS_UVE_EVENT__ } from '@dotcms/uve/internal';
+import { __DOTCMS_UVE_EVENT__, __TINYMCE_PATH_ON_DOTCMS__ } from '@dotcms/uve/internal';
 import { DotCMSContentlet, DotCMSUVEAction, UVE_MODE } from '@dotcms/uve/types';
 
 import { TINYMCE_CONFIG, DOT_EDITABLE_TEXT_FORMAT, DOT_EDITABLE_TEXT_MODE } from './utils';
@@ -42,7 +42,7 @@ import { TINYMCE_CONFIG, DOT_EDITABLE_TEXT_FORMAT, DOT_EDITABLE_TEXT_MODE } from
             useFactory: () => {
                 const { dotCMSHost } = getUVEState() || {};
 
-                return `${dotCMSHost || ''}/ext/tinymcev7/tinymce.min.js`;
+                return `${dotCMSHost || ''}${__TINYMCE_PATH_ON_DOTCMS__}`;
             }
         }
     ]
