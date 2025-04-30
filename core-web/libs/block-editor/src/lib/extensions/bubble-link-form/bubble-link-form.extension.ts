@@ -41,18 +41,6 @@ export const BubbleLinkFormExtension = (viewContainerRef: ViewContainerRef, lang
 
         addCommands() {
             return {
-                setHighlight:
-                    () =>
-                    ({ commands }) => {
-                        // Implementa la lógica de highlight aquí
-                        return true;
-                    },
-                unsetHighlight:
-                    () =>
-                    ({ commands }) => {
-                        // Implementa la lógica para remover el highlight aquí
-                        return true;
-                    },
                 openLinkForm:
                     ({ openOnClick }) =>
                     ({ chain }) => {
