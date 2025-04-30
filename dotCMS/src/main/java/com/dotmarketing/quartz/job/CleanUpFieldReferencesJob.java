@@ -1,5 +1,6 @@
 package com.dotmarketing.quartz.job;
 
+import com.dotcms.api.system.event.message.SystemMessageEventUtil;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
@@ -53,10 +54,10 @@ public class CleanUpFieldReferencesJob extends DotStatefulJob {
         final JobDataMap jobDataMap = jobContext.getJobDetail().getJobDataMap();
 
         if (jobDataMap.containsKey(EXECUTION_DATA)) {
-          //This bit is here to continue to support the integration-tests
+            //This bit is here to continue to support the integration-tests
             executionData = (Map<String, Serializable>) jobDataMap.get(EXECUTION_DATA);
         } else {
-          //But the `executionData` must be grabbed frm the persisted job detail. Through the trigger name.
+            //But the `executionData` must be grabbed frm the persisted job detail. Through the trigger name.
             final Trigger trigger = jobContext.getTrigger();
             executionData = getExecutionData(trigger, CleanUpFieldReferencesJob.class);
         }
@@ -103,6 +104,7 @@ public class CleanUpFieldReferencesJob extends DotStatefulJob {
             Logger.error(CleanUpFieldReferencesJob.class,
                     "Error cleaning up field references. Field velocity var: " + field.variable(), e);
         }
+        SystemMessageEventUtil.getInstance().pushSimpleTextEvent("CleanUpFieldReferencesJob finished for field: " + field.variable(), user.getUserId());
         Logger.info(CleanUpFieldReferencesJob.class,String.format("CleanUpFieldReferencesJob ::: finished for field `%s`.",field.variable()));
 
     }
