@@ -51,6 +51,7 @@ public class OSGIUtil {
 
     private static final String WEB_INF_FOLDER = "/WEB-INF";
     private static final String FELIX_BASE_DIR = "felix.base.dir";
+    private static final String FELIX_UPLOAD_DIR = "felix.upload.dir";
     private static final String FELIX_FILEINSTALL_DIR = "felix.fileinstall.dir";
     private static final String FELIX_UNDEPLOYED_DIR = "felix.undeployed.dir";
     private static final String FELIX_FRAMEWORK_STORAGE = org.osgi.framework.Constants.FRAMEWORK_STORAGE;
