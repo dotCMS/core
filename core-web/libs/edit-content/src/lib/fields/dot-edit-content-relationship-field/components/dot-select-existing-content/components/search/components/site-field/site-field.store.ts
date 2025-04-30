@@ -54,7 +54,7 @@ export const SiteFieldStore = signalStore(
             const node = nodeSelected();
 
             if (node?.data?.id) {
-                return node.data.id;
+                return `${node.data.type}:${node?.data?.id}`;
             }
 
             return null;

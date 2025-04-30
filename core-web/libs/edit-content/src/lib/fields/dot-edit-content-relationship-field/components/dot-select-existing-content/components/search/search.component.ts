@@ -71,7 +71,7 @@ export class SearchComponent {
         query: [''],
         systemSearchableFields: this.#formBuilder.nonNullable.group({
             languageId: [-1],
-            siteId: ['']
+            siteOrFolderId: ['']
         })
     });
 
@@ -92,25 +92,62 @@ export class SearchComponent {
      */
     doSearch() {
         this.$overlayPanel().hide();
+        const values = this.getValues();
+        this.onSearch.emit(values);
+    }
+
+    /**
+     * Gets the search parameters from the form.
+     * If the siteOrFolderId is a folder, it returns the values with the folderId.
+     * If the siteOrFolderId is a site, it returns the values with the siteId.
+     * Otherwise, it returns the values as is.
+     */
+    /**
+     * Gets the search parameters from the form.
+     *
+     * @returns {SearchParams} The formatted search parameters with proper site or folder ID mapping
+     */
+    getValues(): SearchParams {
         const values = this.form.getRawValue();
-        // Filter out values that are -1 or empty strings
-        const filteredValues = Object.entries(values.systemSearchableFields).reduce(
-            (acc, [key, val]) => {
-                // Skip values that are -1 or empty strings
-                if (val !== -1 && val !== '') {
-                    acc[key] = val;
-                }
+        const systemSearchableFields  = values.systemSearchableFields;
+        const { siteOrFolderId, ...otherFields } = systemSearchableFields;
 
-                return acc;
-            },
-            {}
-        );
+        // If no site or folder ID is selected, return filtered values
+        if (!siteOrFolderId) {
+            return {
+                query: values.query || '',
+                systemSearchableFields: this.filterEmptyValues(otherFields)
+            };
+        }
 
-        // Prepare the search parameters
-        const searchParams: SearchParams = {
-            query: values.query,
-            systemSearchableFields: filteredValues
+        // Parse the type and ID from the siteOrFolderId string
+        const [type, id] = siteOrFolderId.split(':');
+
+        // Create the appropriate field based on the type
+        const fieldKey = type === 'folder' ? 'folderId' : 'siteId';
+
+        return {
+            query: values.query || '',
+            systemSearchableFields: {
+                ...this.filterEmptyValues(otherFields),
+                [fieldKey]: id
+            }
         };
-        this.onSearch.emit(searchParams);
+    }
+
+    /**
+     * Filters out empty values or -1 from an object
+     *
+     * @param values - Object containing form values
+     * @returns Object with only valid values
+     */
+    private filterEmptyValues(values: Record<string, unknown>): Record<string, unknown> {
+        return Object.entries(values).reduce((acc, [key, val]) => {
+            if (val !== -1 && val !== '' && val != null) {
+                acc[key] = val;
+            }
+
+            return acc;
+        }, {} as Record<string, unknown>);
     }
 }
