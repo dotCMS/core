@@ -23,7 +23,6 @@ import {
     postMessageToEditor
 } from '@dotcms/client';
 
-
 import { TINYMCE_CONFIG, DOT_EDITABLE_TEXT_FORMAT, DOT_EDITABLE_TEXT_MODE } from './utils';
 
 import { DotCMSContentlet } from '../../models';
