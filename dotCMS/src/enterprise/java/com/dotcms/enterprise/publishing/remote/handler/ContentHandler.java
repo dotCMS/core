@@ -14,6 +14,7 @@ import com.dotcms.content.elasticsearch.util.ESUtils;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.enterprise.publishing.remote.bundler.ContentBundler;
@@ -105,6 +106,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.UNIQUE_PER_SITE_FIELD_VARIABLE_NAME;
 import static com.dotcms.contenttype.model.type.PageContentType.PAGE_FRIENDLY_NAME_FIELD_VAR;
 import static com.dotcms.publishing.FilterDescriptor.RELATIONSHIPS_KEY;
 import static com.liferay.util.StringPool.BLANK;
@@ -1019,6 +1021,9 @@ public class ContentHandler implements IHandler {
 				luceneQuery.append(" +languageId:").append(remoteLocalLanguages.getRight());
 				luceneQuery.append(" +(");
 				for (final Field uniqueField : uniqueFields) {
+					if (getUniquePerSiteConfig(uniqueField)){
+						luceneQuery.append(" +conHost:" + content.getHost());
+					}
 					final String fieldValue = content.get(uniqueField.getVelocityVarName()).toString();
 					luceneQuery.append(content.getContentType().variable()).append(".")
 							.append(uniqueField.getVelocityVarName()).append(ESUtils.SHA_256)
@@ -1385,5 +1390,14 @@ public class ContentHandler implements IHandler {
            fileMetadataAPI.setMetadata(contentlet, binariesMetadata);
         }
     }
+
+	private boolean getUniquePerSiteConfig(final Field field) {
+		return getUniquePerSiteConfig(LegacyFieldTransformer.from(field));
+	}
+
+	private boolean getUniquePerSiteConfig(final com.dotcms.contenttype.model.field.Field field) {
+		return field.fieldVariableValue(UNIQUE_PER_SITE_FIELD_VARIABLE_NAME)
+				.map(value -> Boolean.valueOf(value)).orElse(false);
+	}
 
 }
