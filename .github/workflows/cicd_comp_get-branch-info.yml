@@ -1,0 +1,168 @@
+# Branch Information Component Workflow
+#
+# This reusable workflow is responsible for extracting version information from a specified branch.
+# It reads the .mvn/maven.config file from the branch to determine the version.
+#
+# Key features:
+# - Can be used for any branch type (release, nightly, qa, etc.)
+# - Extracts version information from .mvn/maven.config
+# - Returns branch name and version for use in parent workflows
+# - Flexible inputs to support different branch types
+# - Extracts and exposes complete Maven versioning information
+# - Determines standard environment name for consistent deployment
+#
+# Usage example:
+# ```yaml
+# get-branch-info:
+#   uses: ./.github/workflows/cicd_comp_get-branch-info.yml
+#   with:
+#     branch_name: release-23.01.01
+#     prefix: "release"  # Used for output naming
+# ```
+
+name: Branch Info Component
+
+on:
+  workflow_call:
+    inputs:
+      branch_name:
+        description: 'Branch name to extract info from (required for workflow_dispatch, otherwise uses triggering branch)'
+        required: false
+        type: string
+      prefix:
+        description: 'Prefix for outputs (e.g., "release", "nightly", "qa")'
+        required: true
+        type: string
+      environment_override:
+        description: 'Override the determined environment name'
+        required: false
+        type: string
+        default: ''
+    outputs:
+      branch_name:
+        description: 'The branch name'
+        value: ${{ jobs.get-branch-info.outputs.branch_name }}
+      branch_version:
+        description: 'The version extracted from the branch'
+        value: ${{ jobs.get-branch-info.outputs.branch_version }}
+      docker_tag:
+        description: 'The Docker tag to use for images'
+        value: ${{ jobs.get-branch-info.outputs.docker_tag }}
+      github_tag:
+        description: 'The tag to use for GitHub releases'
+        value: ${{ jobs.get-branch-info.outputs.github_tag }}
+      maven_revision:
+        description: 'The Maven revision property'
+        value: ${{ jobs.get-branch-info.outputs.maven_revision }}
+      maven_changelist:
+        description: 'The Maven changelist property'
+        value: ${{ jobs.get-branch-info.outputs.maven_changelist }}
+      environment:
+        description: 'The standardized environment name for deployment (nightly, release, qa, trunk)'
+        value: ${{ jobs.get-branch-info.outputs.environment }}
+
+jobs:
+  get-branch-info:
+    name: Get Branch Info
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    outputs:
+      branch_name: ${{ steps.set-branch.outputs.branch_name }}
+      branch_version: ${{ steps.extract-version.outputs.branch_version }}
+      docker_tag: ${{ steps.generate-tags.outputs.docker_tag }}
+      github_tag: ${{ steps.generate-tags.outputs.github_tag }}
+      maven_revision: ${{ steps.extract-version.outputs.maven_revision }}
+      maven_changelist: ${{ steps.extract-version.outputs.maven_changelist }}
+      environment: ${{ steps.determine-environment.outputs.environment }}
+    steps:
+      - name: Set Branch
+        id: set-branch
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" && -n "${{ inputs.branch_name }}" ]]; then
+            echo "branch_name=${{ inputs.branch_name }}" >> $GITHUB_OUTPUT
+          else
+            # Extract branch name from ref
+            echo "branch_name=${GITHUB_REF#refs/heads/}" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.set-branch.outputs.branch_name }}
+          fetch-depth: 1
+      
+      - name: Extract Version from Config
+        id: extract-version
+        run: |
+          if [ ! -f ".mvn/maven.config" ]; then
+            echo "Error: .mvn/maven.config file not found in branch ${{ steps.set-branch.outputs.branch_name }}"
+            exit 1
+          fi
+          
+          # Extract Maven properties from maven.config
+          maven_revision=$(grep -oP '(?<=-Drevision=)[^\s]+' .mvn/maven.config)
+          maven_changelist=$(grep -oP '(?<=-Dchangelist=)[^\s]*' .mvn/maven.config || echo "")
+          
+          if [ -z "$maven_revision" ]; then
+            echo "Error: Could not extract version from .mvn/maven.config"
+            exit 1
+          fi
+          
+          # Form the complete version
+          if [ -n "$maven_changelist" ]; then
+            branch_version="${maven_revision}${maven_changelist}"
+          else
+            branch_version="${maven_revision}"
+          fi
+          
+          echo "Maven revision: ${maven_revision}"
+          echo "Maven changelist: ${maven_changelist}"
+          echo "Branch version: ${branch_version}"
+          
+          echo "branch_version=${branch_version}" >> $GITHUB_OUTPUT
+          echo "maven_revision=${maven_revision}" >> $GITHUB_OUTPUT
+          echo "maven_changelist=${maven_changelist}" >> $GITHUB_OUTPUT
+
+      - name: Generate Tags
+        id: generate-tags
+        run: |
+          # Get the version from previous step
+          branch_version="${{ steps.extract-version.outputs.branch_version }}"
+          
+          # Docker tags should not contain special characters other than . and -
+          # Convert any special characters to -
+          docker_tag=$(echo "$branch_version" | sed 's/[^a-zA-Z0-9.-]/-/g')
+          
+          # GitHub tags usually have 'v' prefix for version tags
+          github_tag="v$branch_version"
+          
+          echo "Docker tag: ${docker_tag}"
+          echo "GitHub tag: ${github_tag}"
+          
+          echo "docker_tag=${docker_tag}" >> $GITHUB_OUTPUT
+          echo "github_tag=${github_tag}" >> $GITHUB_OUTPUT
+
+      - name: Determine Environment
+        id: determine-environment
+        run: |
+          if [[ -n "${{ inputs.environment_override }}" ]]; then
+            # Use the environment override if provided
+            environment="${{ inputs.environment_override }}"
+          else
+            # Use the prefix as the standard environment name
+            environment="${{ inputs.prefix }}"
+          fi
+          
+          echo "Determined environment: ${environment}"
+          echo "environment=${environment}" >> $GITHUB_OUTPUT
+
+      - name: Output Summary
+        run: |
+          echo "::group::Branch Information"
+          echo "Branch: ${{ steps.set-branch.outputs.branch_name }}"
+          echo "Version: ${{ steps.extract-version.outputs.branch_version }}"
+          echo "Maven Revision: ${{ steps.extract-version.outputs.maven_revision }}"
+          echo "Maven Changelist: ${{ steps.extract-version.outputs.maven_changelist }}"
+          echo "Docker Tag: ${{ steps.generate-tags.outputs.docker_tag }}"
+          echo "GitHub Tag: ${{ steps.generate-tags.outputs.github_tag }}"
+          echo "Environment: ${{ steps.determine-environment.outputs.environment }}"
+          echo "::endgroup::" 

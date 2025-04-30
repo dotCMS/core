@@ -1,0 +1,29 @@
+name: '-4 Create Nightly Branch'
+
+on:
+  schedule:
+    - cron: "0 3 * * *" # every night at 3:00 AM (before the nightly build)
+  workflow_dispatch:
+    inputs:
+      source_commit:
+        description: 'Commit Hash (default to latest commit)'
+        required: false
+        type: string
+        default: ''
+
+jobs:
+  create-nightly-branch:
+    name: Create Nightly Branch
+    uses: ./.github/workflows/cicd_comp_create-branch.yml
+    with:
+      branch_prefix: 'nightly'
+      source_commit: ${{ inputs.source_commit }}
+      commit_message_template: 'Preparing nightly version [{version}]'
+      commit_emoji: '🌙'
+      auto_generate_version: true
+      version_prefix: 'NIGHTLY-'
+      version_date_format: '%Y%m%d'
+      branch_name_pattern: '{prefix}-{version}'
+    secrets:
+      CI_MACHINE_TOKEN: ${{ secrets.CI_MACHINE_TOKEN }}
+      CI_MACHINE_USER: ${{ secrets.CI_MACHINE_USER }} 

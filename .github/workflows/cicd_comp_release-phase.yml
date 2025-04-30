@@ -50,6 +50,31 @@ on:
         type: string
         required: false
         default: ''
+      environment:
+        description: 'The standard environment name (release, nightly, qa, trunk)'
+        required: false
+        type: string
+        default: 'release'
+      docker_tag:
+        description: 'The Docker tag to use (defaults to release version)'
+        required: false
+        type: string
+        default: ''
+      maven_revision:
+        description: 'The Maven revision property'
+        required: false
+        type: string
+        default: ''
+      maven_changelist:
+        description: 'The Maven changelist property'
+        required: false
+        type: string
+        default: ''
+      docker_registry:
+        description: 'Docker registry to push images to (dockerhub or ghcr)'
+        type: string
+        default: 'dockerhub'
+        required: false
     outputs:
       release_version:
         description: "The version of the release"
@@ -93,6 +118,10 @@ jobs:
       release_version: ${{ steps.set-common-vars.outputs.release_version }}
       release_tag: ${{ steps.set-common-vars.outputs.release_tag }}
       date: ${{ steps.set-common-vars.outputs.date }}
+      environment: ${{ inputs.environment }}
+      docker_tag: ${{ inputs.docker_tag || steps.set-common-vars.outputs.release_version }}
+      maven_revision: ${{ inputs.maven_revision || steps.set-common-vars.outputs.release_version }}
+      maven_changelist: ${{ inputs.maven_changelist || '' }}
     steps:
       - name: Validate Inputs
         run: |
@@ -395,9 +424,15 @@ jobs:
       ref: ${{ needs.prepare-release.outputs.release_tag }}
       docker_platforms: ${{ inputs.docker_platforms }}
       docker_context_cache_key: docker-context-${{ needs.prepare-release.outputs.date }}-${{ github.run_id }}
+      environment: ${{ needs.prepare-release.outputs.environment }}
+      docker_tag: ${{ needs.prepare-release.outputs.docker_tag }}
+      maven_revision: ${{ needs.prepare-release.outputs.maven_revision }}
+      maven_changelist: ${{ needs.prepare-release.outputs.maven_changelist }}
+      docker_registry: ${{ inputs.docker_registry }}
     secrets:
       docker_io_username: ${{ secrets.DOCKER_USERNAME }}
       docker_io_token: ${{ secrets.DOCKER_TOKEN }}
+      github_token: ${{ secrets.GITHUB_TOKEN }}
 
   generate-sbom:
     name: Generate SBOM

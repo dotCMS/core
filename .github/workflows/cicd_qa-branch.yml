@@ -1,25 +1,24 @@
-# Nightly Build-Test-Deploy Workflow
+# QA Build-Test-Deploy Workflow
 #
-# This workflow is triggered when a nightly branch is pushed or manually via workflow_dispatch.
-# It orchestrates a comprehensive nightly build, test, and deployment process.
+# This workflow is triggered when a qa branch is pushed or manually via workflow_dispatch.
+# It orchestrates a comprehensive QA build, test, and deployment process.
 #
 # Key features:
-# - Triggers automatically when a nightly branch is pushed
-# - Gets version information from .mvn/maven.config in the nightly branch
+# - Triggers automatically when a qa branch is pushed
+# - Gets version information from .mvn/maven.config in the qa branch
 # - Uses standardized environment name throughout the workflow
 # - Manual trigger option with configurable inputs
 # - Comprehensive process including build, tests, CLI artifact building, and deployment
-# - Optional NPM package publishing
-# - Deployment to the nightly environment
+# - Deployment to the qa environment
 # - Final reporting of the workflow status
 
-name: '-4 Nightly Workflow'
+name: 'QA Workflow'
 
 on:
   workflow_dispatch:
     inputs:
-      nightly_branch:
-        description: 'Nightly branch name'
+      qa_branch:
+        description: 'QA branch name'
         required: true
         type: string
       reuse-previous-build:
@@ -32,11 +31,6 @@ on:
         type: boolean
         default: true
         required: false
-      publish-npm-cli:
-        type: boolean
-        description: 'Publish the NPM package on the registry'
-        default: false
-        required: false
       run-all-tests:
         description: 'Run all tests'
         type: boolean
@@ -44,7 +38,7 @@ on:
         required: false
   push:
     branches:
-      - 'nightly-**'
+      - 'qa-**'
 
 # Concurrency group to manage multiple runs
 concurrency:
@@ -52,15 +46,15 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  # Get nightly information from branch
+  # Get QA information from branch
   get-branch-info:
-    name: Get Nightly Info
+    name: Get QA Info
     uses: ./.github/workflows/cicd_comp_get-branch-info.yml
     with:
-      branch_name: ${{ inputs.nightly_branch }}
-      prefix: "nightly"
+      branch_name: ${{ inputs.qa_branch }}
+      prefix: "qa"
 
-  # Initialize the nightly build process
+  # Initialize the QA build process
   initialize:
     name: Initialize
     needs: [get-branch-info]
@@ -68,10 +62,11 @@ jobs:
     with:
       reuse-previous-build: ${{ inputs.reuse-previous-build || false }}
       build-on-missing-artifacts: ${{ inputs.build-on-missing-artifacts || false }}
+      validation-level: 'full'
 
   # Build job - only runs if no artifacts were found during initialization
   build:
-    name: Nightly Build
+    name: QA Build
     needs: [get-branch-info, initialize]
     if: needs.initialize.outputs.found_artifacts == 'false'
     uses: ./.github/workflows/cicd_comp_build-phase.yml
@@ -82,14 +77,21 @@ jobs:
       contents: read
       packages: write
 
-  # Test job - runs all tests by default
+  # Test job - runs comprehensive tests
   test:
-    name: Nightly Test
+    name: QA Test
     needs: [get-branch-info, initialize, build]
     if: always() && !failure() && !cancelled()
     uses: ./.github/workflows/cicd_comp_test-phase.yml
     with:
       run-all-tests: ${{ inputs.run-all-tests || true }}
+      jvm_unit_test: true
+      integration: true
+      postman: true
+      karate: true
+      frontend: true
+      cli: true
+      e2e: true
       artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
     secrets:
       DOTCMS_LICENSE: ${{ secrets.DOTCMS_LICENSE }}
@@ -99,7 +101,7 @@ jobs:
 
   # CLI Build job - builds CLI artifacts
   build-cli:
-    name: Nightly CLI Build
+    name: QA CLI Build
     needs: [get-branch-info, initialize, test]
     if: always() && !failure() && !cancelled()
     uses: ./.github/workflows/cicd_comp_cli-native-build-phase.yml
@@ -109,9 +111,9 @@ jobs:
       artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
       version: ${{ needs.get-branch-info.outputs.branch_version }}
 
-  # Deployment job - deploys to the nightly environment
+  # Deployment job - deploys to the qa environment
   deployment:
-    name: Nightly Deployment
+    name: QA Deployment
     needs: [get-branch-info, initialize, build-cli, test]
     if: always() && !failure() && !cancelled()
     uses: ./.github/workflows/cicd_comp_deployment-phase.yml
@@ -119,7 +121,6 @@ jobs:
       artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
       environment: ${{ needs.get-branch-info.outputs.environment }}
       deploy-dev-image: true
-      publish-npm-cli: ${{ ( github.event_name == 'workflow_dispatch' && inputs.publish-npm-cli == true ) || github.event_name == 'push' }}
       reuse-previous-build: ${{ inputs.reuse-previous-build || false }}
       docker_tag: ${{ needs.get-branch-info.outputs.docker_tag }}
       maven_revision: ${{ needs.get-branch-info.outputs.maven_revision }}
@@ -130,7 +131,6 @@ jobs:
       EE_REPO_USERNAME: ${{ secrets.EE_REPO_USERNAME }}
       EE_REPO_PASSWORD: ${{ secrets.EE_REPO_PASSWORD }}
       SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-      NPM_ORG_TOKEN: ${{ secrets.NPM_ORG_TOKEN }}
       DEV_REQUEST_TOKEN: ${{ secrets.DEV_REQUEST_TOKEN }}
 
   # Finalize job - aggregates results from previous jobs
@@ -150,4 +150,4 @@ jobs:
     needs: [finalize]
     uses: ./.github/workflows/cicd_post-workflow-reporting.yml
     secrets:
-      SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+      SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }} 

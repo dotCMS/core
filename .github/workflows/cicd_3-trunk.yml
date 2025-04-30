@@ -1,49 +1,56 @@
-# Trunk Checks Workflow
+# Trunk Workflow
 #
-# This workflow is triggered on pushes to the main branch or manually via workflow_dispatch.
-# It orchestrates a comprehensive set of checks, builds, tests, and deployments for the trunk (main) branch.
+# This workflow is responsible for the trunk build and test process.
 #
 # Key features:
-# - Triggered on push to main or manual dispatch
-# - Configurable options for reusing previous builds and running all tests
-# - Comprehensive checks including build, tests, code analysis, and CLI artifact building
-# - Deployment to the trunk environment
-# - Final reporting of the workflow status
+# - Can be triggered manually or automatically when changes are pushed to main
+# - Uses standardized environment name throughout the workflow
+# - Builds and tests the codebase
+# - Deploys artifacts to the trunk environment
 
 name: '-3 Trunk Workflow'
 
 on:
-  push:
-    branches:
-      - main
-      - master
   workflow_dispatch:
     inputs:
       reuse-previous-build:
-        description: 'Indicates if the workflow should reuse the previous build'
+        description: 'Reuse artifacts from previous workflows'
+        type: boolean
+        default: false
+        required: false
+      build-on-missing-artifacts:
+        description: 'Build if artifacts are missing'
         type: boolean
         default: true
-      build-on-missing-artifacts:
-        type: boolean
-        description: 'Indicates if the workflow should build on missing artifacts'
-        default: false
+        required: false
       run-all-tests:
         description: 'Run all tests'
         type: boolean
         default: false
-      publish-npm-sdk-libs:
-        description: 'Publish NPM SDKs'
-        type: boolean
-        default: false
-      disable-semgrep:
-        description: 'Disable Semgrep job'
-        type: boolean
-        default: false
+        required: false
+  push:
+    branches:
+      - 'main'
+    paths-ignore:
+      - '.github/ISSUE_TEMPLATE/**'
+      - 'README.md'
+      - '.gitignore'
+      - 'LICENSE'
+      - '**.md'
+      - 'docs/**'
 
 jobs:
+  # Get trunk information
+  get-branch-info:
+    name: Get Trunk Info
+    uses: ./.github/workflows/cicd_comp_get-branch-info.yml
+    with:
+      prefix: "trunk"
+
   # Initialize the trunk check process
   initialize:
     name: Initialize
+    needs: [get-branch-info]
     uses: ./.github/workflows/cicd_comp_initialize-phase.yml
     with:
       reuse-previous-build: ${{ inputs.reuse-previous-build || github.event_name != 'workflow_dispatch' }}
@@ -54,9 +61,12 @@ jobs:
   # Build job - only runs if no artifacts were found during initialization
   build:
     name: Trunk Build
-    needs: [ initialize ]
+    needs: [get-branch-info, initialize]
     if: needs.initialize.outputs.found_artifacts == 'false'
     uses: ./.github/workflows/cicd_comp_build-phase.yml
+    with:
+      core-build: true
+      version: ${{ needs.get-branch-info.outputs.branch_version }}
     permissions:
       contents: read
       packages: write
@@ -64,7 +74,7 @@ jobs:
   # Test job - runs various tests
   test:
     name: Trunk Test
-    needs: [ initialize,build ]
+    needs: [get-branch-info, initialize, build]
     if: always() && !failure() && !cancelled()
     uses: ./.github/workflows/cicd_comp_test-phase.yml
     with:
@@ -78,7 +88,7 @@ jobs:
 
   semgrep:
     name: Trunk Semgrep
-    needs: [ initialize, test ]
+    needs: [get-branch-info, initialize, test]
     if: always() && !failure() && !cancelled() && vars.DISABLE_SEMGREP != 'true'
     uses: ./.github/workflows/cicd_comp_semgrep-phase.yml
     with:
@@ -89,36 +99,42 @@ jobs:
   # CLI Build job - builds CLI artifacts
   build-cli:
     name: CLI Build
-    needs: [ initialize,test ]
+    needs: [get-branch-info, initialize, test]
     if: always() && !failure() && !cancelled()
     uses: ./.github/workflows/cicd_comp_cli-native-build-phase.yml
     with:
       buildNativeImage: true
       artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
       branch: ${{ github.ref }}
+      version: ${{ needs.get-branch-info.outputs.branch_version }}
 
   # Deployment job - deploys to the trunk environment
   deployment:
-    needs: [ initialize,build-cli,test ]
-    if: always() && !failure() && !cancelled()
+    name: Trunk Deployment
+    needs: [get-branch-info, initialize, build-cli, test]
+    if: always() && !failure() && !cancelled() && github.event_name == 'push'
     uses: ./.github/workflows/cicd_comp_deployment-phase.yml
     with:
       artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
-      publish-npm-sdk-libs: ${{ needs.initialize.outputs.sdk_libs != 'false' && github.event_name != 'workflow_dispatch' }}
-      environment: trunk
+      environment: ${{ needs.get-branch-info.outputs.environment }}
+      deploy-dev-image: true
+      docker_tag: ${{ needs.get-branch-info.outputs.docker_tag }}
+      maven_revision: ${{ needs.get-branch-info.outputs.maven_revision }}
+      maven_changelist: ${{ needs.get-branch-info.outputs.maven_changelist }}
     secrets:
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
       DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
       EE_REPO_USERNAME: ${{ secrets.EE_REPO_USERNAME }}
       EE_REPO_PASSWORD: ${{ secrets.EE_REPO_PASSWORD }}
-      NPM_ORG_TOKEN: ${{ secrets.NPM_ORG_TOKEN }}
       SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+      NPM_ORG_TOKEN: ${{ secrets.NPM_ORG_TOKEN }}
+      DEV_REQUEST_TOKEN: ${{ secrets.DEV_REQUEST_TOKEN }}
 
   # Finalize job - aggregates results from previous jobs
   finalize:
     name: Finalize
     if: always()
-    needs: [ initialize, build, build-cli, test, semgrep, deployment]
+    needs: [get-branch-info, initialize, build, test, semgrep, build-cli, deployment]
     uses: ./.github/workflows/cicd_comp_finalize-phase.yml
     with:
       artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
@@ -127,8 +143,8 @@ jobs:
   # Report job - generates and sends the final workflow report
   report:
     name: Report
-    if: always()
-    needs: [ finalize ]
+    if: always() && github.event_name == 'push'
+    needs: [finalize]
     uses: ./.github/workflows/cicd_post-workflow-reporting.yml
     secrets:
       SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}

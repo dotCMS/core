@@ -45,6 +45,69 @@ on:
         default: true
 
 jobs:
+  # Lint GitHub Workflows
+  lint-workflows:
+    name: Lint GitHub Workflows
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    if: inputs.run-pr-checks
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        if: inputs.ref == ''
+        with:
+          fetch-depth: 0
+      - name: Checkout code with ref ${{ inputs.ref }}
+        if: inputs.ref != ''
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+          fetch-depth: 0
+
+      - name: Setup actionlint
+        shell: bash
+        run: |
+          # Get the latest version or use a specific version if needed
+          ACTIONLINT_VERSION=$(curl -s https://api.github.com/repos/rhysd/actionlint/releases/latest | jq -r '.tag_name')
+          echo "Installing actionlint version ${ACTIONLINT_VERSION}"
+          bash <(curl https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash) ${ACTIONLINT_VERSION}
+          echo "$(pwd)/actionlint" >> $GITHUB_PATH
+
+      - name: Lint GitHub workflows
+        id: actionlint
+        shell: bash
+        run: |
+          echo "::group::Linting GitHub workflows and actions"
+          # Create output directory for linting results
+          mkdir -p linting-results
+          
+          # Run actionlint on all workflow files
+          # Capture both stdout and exit code
+          set +e
+          actionlint -color -format '{{range $err := .}}::error file={{$err.Filepath}},line={{$err.Line}},col={{$err.Column}}::{{$err.Message}}%0A```%0A{{$err.Snippet}}%0A```%0A{{end}}' > linting-results/actionlint-output.txt
+          ACTIONLINT_EXIT_CODE=$?
+          set -e
+          
+          # Output the results
+          cat linting-results/actionlint-output.txt
+          
+          echo "Total issues found: $(grep -c '::error' linting-results/actionlint-output.txt || echo 0)"
+          echo "::endgroup::"
+          
+          # Generate summary for GitHub Actions UI
+          echo "## GitHub Workflow Lint Results" >> $GITHUB_STEP_SUMMARY
+          echo "- Files checked: $(find .github/workflows -name '*.yml' | wc -l)" >> $GITHUB_STEP_SUMMARY
+          echo "- Issues found: $(grep -c '::error' linting-results/actionlint-output.txt || echo 0)" >> $GITHUB_STEP_SUMMARY
+          
+          exit $ACTIONLINT_EXIT_CODE
+
+      - name: Upload lint results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: workflow-lint-results
+          path: linting-results/
+          retention-days: 7
+
   # Initial JDK Build
   # This job performs a basic build and install with Maven without running tests.
   # It provides a local Maven repo for subsequent steps.

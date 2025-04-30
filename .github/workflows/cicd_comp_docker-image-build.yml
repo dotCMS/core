@@ -33,6 +33,31 @@ on:
         required: false
         type: boolean
         default: true
+      environment:
+        description: 'The standard environment name (release, nightly, qa, trunk)'
+        required: false
+        type: string
+        default: 'release'
+      docker_tag:
+        description: 'The Docker tag to use (defaults to extracted version)'
+        required: false
+        type: string
+        default: ''
+      maven_revision:
+        description: 'The Maven revision property'
+        required: false
+        type: string
+        default: ''
+      maven_changelist:
+        description: 'The Maven changelist property'
+        required: false
+        type: string
+        default: ''
+      docker_registry:
+        description: 'Docker registry to push images to (dockerhub or ghcr)'
+        required: false
+        type: string
+        default: 'dockerhub'
     outputs:
       formatted_tags:
         description: "The formatted tags of the Docker images"
@@ -42,6 +67,8 @@ on:
         required: true
       docker_io_token:
         required: true
+      github_token:
+        required: false
 
 env:
   DOCKER_BUILD_CONTEXT: /home/runner/work/_temp/core-build
@@ -81,6 +108,12 @@ jobs:
           fi
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
           echo "Image version: ${VERSION}"
+          
+          # Log environment and Maven information
+          echo "Environment: ${{ inputs.environment }}"
+          echo "Docker tag: ${{ inputs.docker_tag || steps.extract-version.outputs.version }}"
+          echo "Maven revision: ${{ inputs.maven_revision }}"
+          echo "Maven changelist: ${{ inputs.maven_changelist }}"
 
       # Set up Docker Buildx
       - name: Set up Docker Buildx
@@ -90,20 +123,29 @@ jobs:
 
       # Log in to Docker Hub
       - name: Login to Docker Hub
-        if: inputs.push_images
+        if: inputs.push_images && inputs.docker_registry == 'dockerhub'
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.docker_io_username }}
           password: ${{ secrets.docker_io_token }}
+          
+      # Log in to GitHub Container Registry
+      - name: Login to GitHub Container Registry
+        if: inputs.push_images && inputs.docker_registry == 'ghcr'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.github_token }}
 
-      # Configure Docker metadata
+      # Configure Docker metadata with appropriate registry
       - name: Docker meta
         id: docker-metadata
         uses: docker/metadata-action@v5
         with:
-          images: dotcms/dotcms
+          images: ${{ inputs.docker_registry == 'ghcr' && 'ghcr.io/dotcms/dotcms' || 'dotcms/dotcms' }}
           tags: |
-            type=raw,value=${{ steps.extract-version.outputs.version }}
+            type=raw,value=${{ inputs.docker_tag || steps.extract-version.outputs.version }}
             type=raw,value=latest
 
       # Build and push Docker image

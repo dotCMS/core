@@ -38,6 +38,21 @@ on:
       publish-npm-sdk-libs:
         default: false
         type: boolean        
+      docker_tag:
+        description: 'The Docker tag to use (defaults to environment name)'
+        required: false
+        type: string
+        default: ''
+      maven_revision:
+        description: 'The Maven revision property'
+        required: false
+        type: string
+        default: ''
+      maven_changelist:
+        description: 'The Maven changelist property'
+        required: false
+        type: string
+        default: ''
     secrets:
       DOCKER_USERNAME:
         required: false

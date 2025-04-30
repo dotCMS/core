@@ -1,0 +1,31 @@
+name: '-6 Create Release Branch'
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_version:
+        description: 'Release Version (yy.mm.dd-## or yy.mm.dd_lts_v##] ##: counter)'
+        required: true
+        type: string
+      release_commit:
+        description: 'Commit Hash (default to latest commit)'
+        required: false
+        type: string
+        default: ''
+
+jobs:
+  create-release-branch:
+    name: Create Release Branch
+    uses: ./.github/workflows/cicd_comp_create-branch.yml
+    with:
+      branch_prefix: 'release'
+      version: ${{ inputs.release_version }}
+      source_commit: ${{ inputs.release_commit }}
+      version_validation_pattern: '^[0-9]{2}.[0-9]{2}.[0-9]{2}(-[0-9]{1,2}|_lts_v[0-9]{1,2})$'
+      version_validation_message: 'Release version must be in the format yy.mm.dd-counter or yy.mm.dd_lts_v##'
+      commit_message_template: 'Preparing release version [{version}]'
+      commit_emoji: '🏁'
+      branch_name_pattern: '{prefix}-{version}'
+    secrets:
+      CI_MACHINE_TOKEN: ${{ secrets.CI_MACHINE_TOKEN }}
+      CI_MACHINE_USER: ${{ secrets.CI_MACHINE_USER }} 

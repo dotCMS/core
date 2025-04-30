@@ -1,0 +1,93 @@
+name: 'Create QA Branch'
+
+on:
+  workflow_dispatch:
+    inputs:
+      qa_version:
+        description: 'QA Version (e.g., QA-yyyymmdd)'
+        required: true
+        type: string
+      source_commit:
+        description: 'Commit Hash (default to latest commit)'
+        required: false
+        type: string
+        default: ''
+
+jobs:
+  create-qa-branch:
+    name: Create QA Branch
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    outputs:
+      qa_version: ${{ steps.set-common-vars.outputs.qa_version }}
+      qa_branch: ${{ steps.set-common-vars.outputs.qa_branch }}
+      source_commit: ${{ steps.set-qa-version.outputs.source_commit }}
+    steps:
+      - name: Validate Inputs
+        run: |
+          qa_version=${{ inputs.qa_version }}
+          if [[ ! ${qa_version} =~ ^QA-[0-9]{8}$ ]]; then
+            echo 'QA version must be in the format QA-YYYYMMDD'
+            exit 1
+          fi
+
+      - name: Checkout core
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.CI_MACHINE_TOKEN }}
+
+      - name: Set Common Vars
+        id: set-common-vars
+        run: |
+          git config user.name "${{ secrets.CI_MACHINE_USER }}"
+          git config user.email "dotCMS-Machine-User@dotcms.com"
+
+          qa_version=${{ inputs.qa_version }}
+          qa_branch=qa-${qa_version#QA-}
+          source_commit=${{ inputs.source_commit }}
+          if [[ -z "${source_commit}" ]]; then
+            source_commit=$(git log -1 --pretty=%H)
+          fi
+
+          echo "qa_version=${qa_version}" >> $GITHUB_OUTPUT
+          echo "qa_branch=${qa_branch}" >> $GITHUB_OUTPUT
+          echo "source_commit=${source_commit}" >> $GITHUB_OUTPUT
+
+      - name: Set QA Version
+        id: set-qa-version
+        run: |
+          qa_branch=${{ steps.set-common-vars.outputs.qa_branch }}
+          
+          remote=$(git ls-remote --heads https://github.com/dotCMS/core.git ${qa_branch} | wc -l | tr -d '[:space:]')
+          if [[ "${remote}" == '1' ]]; then
+            echo "QA branch ${qa_branch} already exists, removing it"
+            git push origin :${qa_branch}
+          fi
+          
+          git reset --hard ${{ steps.set-common-vars.outputs.source_commit }}
+          git checkout -b ${qa_branch}
+          
+          # Create .mvn directory if it doesn't exist
+          mkdir -p .mvn
+          
+          # Set version in .mvn/maven.config
+          echo "-Dprod=true" > .mvn/maven.config
+          echo "-Drevision=${{ steps.set-common-vars.outputs.qa_version }}" >> .mvn/maven.config
+          echo "-Dchangelist=" >> .mvn/maven.config
+          
+          git add .mvn/maven.config
+          
+          git status
+          git commit -a -m "🧪 Preparing QA version [${{ steps.set-common-vars.outputs.qa_version }}]"
+          git push origin ${qa_branch}
+          
+          source_commit=$(git log -1 --pretty=%H)
+          echo "source_commit=${source_commit}" >> $GITHUB_OUTPUT
+
+      - name: Output Summary
+        run: |
+          echo "::group::QA Branch Created"
+          echo "QA Version: ${{ steps.set-common-vars.outputs.qa_version }}"
+          echo "QA Branch: ${{ steps.set-common-vars.outputs.qa_branch }}"
+          echo "Source Commit: ${{ steps.set-qa-version.outputs.source_commit }}"
+          echo "::endgroup::" 

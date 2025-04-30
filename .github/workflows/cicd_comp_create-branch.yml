@@ -1,0 +1,200 @@
+# Branch Creation Component Workflow
+#
+# This reusable workflow is responsible for creating special branches
+# with proper version setting in the Maven configuration.
+#
+# Key features:
+# - Creates a branch with the specified version
+# - Sets up Maven configuration with the specified version
+# - Works for any branch type with customizable naming patterns
+# - Automatically validates version formats
+# - Returns branch and version information for use in parent workflows
+
+name: Branch Creation Component
+
+on:
+  workflow_call:
+    inputs:
+      branch_prefix:
+        description: 'Prefix for the branch name (e.g., "release", "nightly", "qa")'
+        required: true
+        type: string
+      version:
+        description: 'Version string'
+        required: false
+        type: string
+        default: ''
+      source_commit:
+        description: 'Commit Hash (default to latest commit)'
+        required: false
+        type: string
+        default: ''
+      version_validation_pattern:
+        description: 'Regex pattern to validate version format'
+        required: false
+        type: string
+        default: ''
+      version_validation_message:
+        description: 'Message to display if version validation fails'
+        required: false
+        type: string
+        default: 'Version format is invalid'
+      commit_message_template:
+        description: 'Template for commit message, use {version} as placeholder'
+        required: false
+        type: string
+        default: 'Preparing version [{version}]'
+      commit_emoji:
+        description: 'Emoji to prefix the commit message'
+        required: false
+        type: string
+        default: ''
+      branch_name_pattern:
+        description: 'Pattern for branch name, use {prefix} and {version} as placeholders'
+        required: false
+        type: string
+        default: '{prefix}-{version}'
+      auto_generate_version:
+        description: 'Whether to auto-generate a version if not provided (using current date)'
+        required: false
+        type: boolean
+        default: false
+      version_date_format:
+        description: 'Date format to use for auto-generated versions'
+        required: false
+        type: string
+        default: '%Y%m%d'
+      version_prefix:
+        description: 'Prefix for auto-generated versions'
+        required: false
+        type: string
+        default: ''
+    outputs:
+      branch_name:
+        description: 'Name of the created branch'
+        value: ${{ jobs.create-branch.outputs.branch_name }}
+      version:
+        description: 'Version set in the branch'
+        value: ${{ jobs.create-branch.outputs.version }}
+      source_commit:
+        description: 'Commit hash used as base'
+        value: ${{ jobs.create-branch.outputs.source_commit }}
+    secrets:
+      CI_MACHINE_TOKEN:
+        required: true
+      CI_MACHINE_USER:
+        required: true
+
+jobs:
+  create-branch:
+    name: Create Branch
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    outputs:
+      branch_name: ${{ steps.set-common-vars.outputs.branch_name }}
+      version: ${{ steps.set-common-vars.outputs.version }}
+      source_commit: ${{ steps.set-branch-version.outputs.source_commit }}
+    steps:
+      - name: Validate Inputs
+        id: validate-inputs
+        run: |
+          # Generate version if not provided and auto-generate is enabled
+          if [[ -z "${{ inputs.version }}" && "${{ inputs.auto_generate_version }}" == "true" ]]; then
+            # Format date based on provided format
+            current_date=$(date "+${{ inputs.version_date_format }}")
+            GENERATED_VERSION="${{ inputs.version_prefix }}${current_date}"
+            echo "GENERATED_VERSION=${GENERATED_VERSION}" >> $GITHUB_ENV
+          elif [[ -z "${{ inputs.version }}" ]]; then
+            echo "Error: Version must be provided when auto_generate_version is false"
+            exit 1
+          else
+            echo "GENERATED_VERSION=${{ inputs.version }}" >> $GITHUB_ENV
+          fi
+          
+          # Validate version format if pattern is provided
+          if [[ -n "${{ inputs.version_validation_pattern }}" && -n "${{ inputs.version }}" ]]; then
+            if [[ ! "${{ inputs.version }}" =~ ${{ inputs.version_validation_pattern }} ]]; then
+              echo "Error: ${{ inputs.version_validation_message }}"
+              exit 1
+            fi
+          fi
+
+      - name: Checkout core
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.CI_MACHINE_TOKEN }}
+
+      - name: Set Common Variables
+        id: set-common-vars
+        run: |
+          git config user.name "${{ secrets.CI_MACHINE_USER }}"
+          git config user.email "dotCMS-Machine-User@dotcms.com"
+
+          # Set version from generated or provided version
+          VERSION="${GENERATED_VERSION}"
+          
+          # Format branch name according to pattern
+          BRANCH_NAME="${{ inputs.branch_name_pattern }}"
+          BRANCH_NAME="${BRANCH_NAME/\{prefix\}/${{ inputs.branch_prefix }}}"
+          BRANCH_NAME="${BRANCH_NAME/\{version\}/${VERSION}}"
+          
+          SOURCE_COMMIT=${{ inputs.source_commit }}
+          if [[ -z "${SOURCE_COMMIT}" ]]; then
+            SOURCE_COMMIT=$(git log -1 --pretty=%H)
+          fi
+
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "branch_name=${BRANCH_NAME}" >> $GITHUB_OUTPUT
+          echo "source_commit=${SOURCE_COMMIT}" >> $GITHUB_OUTPUT
+
+      - name: Set Branch Version
+        id: set-branch-version
+        run: |
+          BRANCH_NAME=${{ steps.set-common-vars.outputs.branch_name }}
+          
+          # Check if branch already exists and remove it if needed
+          remote=$(git ls-remote --heads https://github.com/dotCMS/core.git ${BRANCH_NAME} | wc -l | tr -d '[:space:]')
+          if [[ "${remote}" == '1' ]]; then
+            echo "${BRANCH_NAME} branch already exists, removing it"
+            git push origin :${BRANCH_NAME}
+          fi
+          
+          # Create new branch from source commit
+          git reset --hard ${{ steps.set-common-vars.outputs.source_commit }}
+          git checkout -b ${BRANCH_NAME}
+          
+          # Create .mvn directory if it doesn't exist
+          mkdir -p .mvn
+          
+          # Set version in .mvn/maven.config
+          echo "-Dprod=true" > .mvn/maven.config
+          echo "-Drevision=${{ steps.set-common-vars.outputs.version }}" >> .mvn/maven.config
+          echo "-Dchangelist=" >> .mvn/maven.config
+          
+          git add .mvn/maven.config
+          
+          # Format commit message from template
+          COMMIT_MESSAGE="${{ inputs.commit_message_template }}"
+          COMMIT_MESSAGE="${COMMIT_MESSAGE/\{version\}/${{ steps.set-common-vars.outputs.version }}}"
+          
+          # Add emoji if provided
+          if [[ -n "${{ inputs.commit_emoji }}" ]]; then
+            COMMIT_MESSAGE="${{ inputs.commit_emoji }} ${COMMIT_MESSAGE}"
+          fi
+          
+          git status
+          git commit -a -m "${COMMIT_MESSAGE}"
+          git push origin ${BRANCH_NAME}
+          
+          # Get the new commit hash
+          SOURCE_COMMIT=$(git log -1 --pretty=%H)
+          echo "source_commit=${SOURCE_COMMIT}" >> $GITHUB_OUTPUT
+
+      - name: Output Summary
+        run: |
+          echo "::group::Branch Created"
+          echo "Branch Prefix: ${{ inputs.branch_prefix }}"
+          echo "Version: ${{ steps.set-common-vars.outputs.version }}"
+          echo "Branch Name: ${{ steps.set-common-vars.outputs.branch_name }}"
+          echo "Source Commit: ${{ steps.set-branch-version.outputs.source_commit }}"
+          echo "::endgroup::" 

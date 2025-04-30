@@ -4,7 +4,9 @@
 # It follows the standard workflow pattern with initialize, build, test, deployment, release, finalize, and report phases.
 #
 # Key features:
-# - Manually triggered with configurable options
+# - Can be triggered manually or automatically when a release branch is pushed
+# - Gets version information from .mvn/maven.config in the release branch
+# - Uses standardized environment name throughout the workflow
 # - Reuses artifacts from previous builds when available
 # - Follows the same pipeline structure as other workflows (PR, trunk, nightly)
 # - Handles the specific release tasks like versioning, tagging, and Docker image publishing
@@ -15,12 +17,10 @@ name: '-6 Release Workflow'
 on:
   workflow_dispatch:
     inputs:
-      release_version:
-        description: 'Release Version (yy.mm.dd-## or yy.mm.dd_lts_v##] ##: counter)'
+      release_branch:
+        description: 'Release branch name'
         required: true
-      release_commit:
-        description: 'Commit Hash (default to latest commit)'
-        required: false
+        type: string
       reuse-previous-build:
         description: 'Reuse artifacts from previous workflows'
         type: boolean
@@ -46,6 +46,17 @@ on:
         type: boolean
         default: true
         required: false
+      docker_registry:
+        description: 'Docker registry to push images to (dockerhub or ghcr)'
+        type: choice
+        default: 'dockerhub'
+        options:
+          - 'dockerhub'
+          - 'ghcr'
+        required: false
+  push:
+    branches:
+      - 'release-**'
 
 # Concurrency group to manage multiple runs
 concurrency:
@@ -53,9 +64,80 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # Get release information from branch
+  get-release-info:
+    name: Get Release Info
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    outputs:
+      release_version: ${{ steps.extract-version.outputs.release_version }}
+      environment: ${{ steps.set-vars.outputs.environment }}
+      docker_tag: ${{ steps.set-vars.outputs.docker_tag }}
+      maven_revision: ${{ steps.set-vars.outputs.maven_revision }}
+      maven_changelist: ${{ steps.set-vars.outputs.maven_changelist }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.release_branch }}
+
+      - name: Extract version from config
+        id: extract-version
+        run: |
+          if [ -f .mvn/maven.config ]; then
+            echo "Found .mvn/maven.config, extracting version"
+            REVISION=$(grep -oP "(?<=-Drevision=)[^\s]+" .mvn/maven.config || echo "1.0.0-SNAPSHOT")
+            CHANGELIST=$(grep -oP "(?<=-Dchangelist=)[^\s]+" .mvn/maven.config || echo "")
+            
+            if [ -n "$CHANGELIST" ]; then
+              VERSION="${REVISION}${CHANGELIST}"
+            else
+              VERSION="${REVISION}"
+            fi
+          else
+            echo "No .mvn/maven.config found, using default version"
+            VERSION="1.0.0-SNAPSHOT"
+          fi
+          
+          echo "release_version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "Using release version: ${VERSION}"
+      
+      - name: Set additional variables
+        id: set-vars
+        run: |
+          # Set environment based on version pattern
+          if [[ "${{ steps.extract-version.outputs.release_version }}" == *-SNAPSHOT ]]; then
+            echo "environment=trunk" >> $GITHUB_OUTPUT
+          elif [[ "${{ steps.extract-version.outputs.release_version }}" == *_lts_v* ]]; then
+            echo "environment=lts" >> $GITHUB_OUTPUT
+          else
+            echo "environment=release" >> $GITHUB_OUTPUT
+          fi
+          
+          # Set docker_tag (same as release_version if not specified)
+          echo "docker_tag=${{ steps.extract-version.outputs.release_version }}" >> $GITHUB_OUTPUT
+          
+          # Extract maven_revision and maven_changelist if they exist
+          if [ -f .mvn/maven.config ]; then
+            REVISION=$(grep -oP "(?<=-Drevision=)[^\s]+" .mvn/maven.config || echo "${{ steps.extract-version.outputs.release_version }}")
+            CHANGELIST=$(grep -oP "(?<=-Dchangelist=)[^\s]+" .mvn/maven.config || echo "")
+          else
+            # Default values if .mvn/maven.config doesn't exist
+            if [[ "${{ steps.extract-version.outputs.release_version }}" == *-SNAPSHOT ]]; then
+              REVISION=$(echo "${{ steps.extract-version.outputs.release_version }}" | sed 's/-SNAPSHOT//')
+              CHANGELIST="-SNAPSHOT"
+            else
+              REVISION="${{ steps.extract-version.outputs.release_version }}"
+              CHANGELIST=""
+            fi
+          fi
+          
+          echo "maven_revision=${REVISION}" >> $GITHUB_OUTPUT
+          echo "maven_changelist=${CHANGELIST}" >> $GITHUB_OUTPUT
+
   # Initialize the release process, checking for existing artifacts
   initialize:
     name: Initialize
+    needs: [get-release-info]
     uses: ./.github/workflows/cicd_comp_initialize-phase.yml
     with:
       reuse-previous-build: ${{ inputs.reuse-previous-build }}
@@ -65,11 +147,12 @@ jobs:
   # Build job - only runs if no artifacts were found during initialization
   build:
     name: Release Build
-    needs: [ initialize ]
+    needs: [ get-release-info, initialize ]
     if: needs.initialize.outputs.found_artifacts == 'false'
     uses: ./.github/workflows/cicd_comp_build-phase.yml
     with:
       core-build: true
+      version: ${{ needs.get-release-info.outputs.release_version }}
     permissions:
       contents: read
       packages: write
@@ -77,7 +160,7 @@ jobs:
   # Test job - runs comprehensive tests
   test:
     name: Release Test
-    needs: [ initialize, build ]
+    needs: [ get-release-info, initialize, build ]
     if: always() && !failure() && !cancelled()
     uses: ./.github/workflows/cicd_comp_test-phase.yml
     with:
@@ -99,27 +182,33 @@ jobs:
   # CLI Build job - builds CLI artifacts
   build-cli:
     name: CLI Build
-    needs: [ initialize, test ]
+    needs: [ get-release-info, initialize, test ]
     if: always() && !failure() && !cancelled()
     uses: ./.github/workflows/cicd_comp_cli-native-build-phase.yml
     with:
       buildNativeImage: true
       artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
       branch: ${{ github.ref }}
+      version: ${{ needs.get-release-info.outputs.release_version }}
 
   # Release phase - handles release-specific tasks
   release:
     name: Release Process
-    needs: [ initialize, build, test, build-cli ]
+    needs: [ get-release-info, initialize, build, test, build-cli ]
     if: success()
     uses: ./.github/workflows/cicd_comp_release-phase.yml
     with:
-      release_version: ${{ github.event.inputs.release_version }}
-      release_commit: ${{ github.event.inputs.release_commit }}
+      release_version: ${{ needs.get-release-info.outputs.release_version }}
+      release_commit: ''
       deploy_artifact: true
       update_plugins: true
       upload_javadocs: true
       artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
+      environment: ${{ needs.get-release-info.outputs.environment }}
+      docker_tag: ${{ needs.get-release-info.outputs.docker_tag }}
+      maven_revision: ${{ needs.get-release-info.outputs.maven_revision }}
+      maven_changelist: ${{ needs.get-release-info.outputs.maven_changelist }}
+      docker_registry: ${{ inputs.docker_registry || 'dockerhub' }}
     secrets:
       CI_MACHINE_TOKEN: ${{ secrets.CI_MACHINE_TOKEN }}
       CI_MACHINE_USER: ${{ secrets.CI_MACHINE_USER }}
@@ -134,11 +223,11 @@ jobs:
   # Update GitHub issue labels with the new release
   release-labeling:
     name: Release Labeling
-    needs: [ release ]
-    if: success() && github.event.inputs.update_github_labels == 'true'
+    needs: [ get-release-info, release ]
+    if: success() && inputs.update_github_labels == 'true'
     uses: ./.github/workflows/issue_comp_release-labeling.yml
     with:
-      new_label: 'Release : ${{ github.event.inputs.release_version }}'
+      new_label: 'Release : ${{ needs.get-release-info.outputs.release_version }}'
       rename_label: 'Next Release'
     secrets:
       CI_MACHINE_TOKEN: ${{ secrets.CI_MACHINE_TOKEN }}
@@ -147,8 +236,8 @@ jobs:
   notify:
     name: Release Notification
     runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
-    needs: [ release ]
-    if: success() && github.event.inputs.notify_slack == 'true'
+    needs: [ get-release-info, release ]
+    if: success() && (inputs.notify_slack == 'true' || github.event_name == 'push')
     steps:
       - name: Notify Slack
         uses: rtCamp/action-slack-notify@v2
@@ -160,13 +249,13 @@ jobs:
           MSG_MINIMAL: true
           SLACK_FOOTER: ""
           SLACK_ICON: https://avatars.slack-edge.com/temp/2021-12-08/2830145934625_e4e464d502865ff576e4.png
-          SLACK_MESSAGE: "<!channel> This automated script is excited to announce the release of a new version of dotCMS `${{ needs.release.outputs.release_version }}` :rocket:\n:docker: Produced images: [${{ needs.release.outputs.formatted_tags }}]"
+          SLACK_MESSAGE: "<!channel> This automated script is excited to announce the release of a new version of dotCMS `${{ needs.get-release-info.outputs.release_version }}` :rocket:\n:docker: Produced images: [${{ needs.release.outputs.formatted_tags }}]"
 
   # Finalize job - aggregates results from previous jobs
   finalize:
     name: Finalize
     if: always()
-    needs: [ initialize, build, test, build-cli, release, release-labeling, notify ]
+    needs: [ get-release-info, initialize, build, test, build-cli, release, release-labeling, notify ]
     uses: ./.github/workflows/cicd_comp_finalize-phase.yml
     with:
       artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
