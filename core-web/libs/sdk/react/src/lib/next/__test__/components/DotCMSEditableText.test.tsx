@@ -81,10 +81,9 @@ describe('DotCMSEditableText', () => {
             });
             // @ts-expect-error - contentlet is required but we're testing error case
             render(<DotCMSEditableText fieldName="title" />);
+
             expect(consoleErrorSpy).toHaveBeenCalledWith(
-                'DotCMSEditableText: contentlet or fieldName is missing'
-            );
-            expect(consoleErrorSpy).toHaveBeenCalledWith(
+                'DotCMSEditableText: contentlet or fieldName is missing',
                 'Ensure that all needed props are passed to view and edit the content'
             );
         });
@@ -102,9 +101,7 @@ describe('DotCMSEditableText', () => {
             // @ts-expect-error - fieldName is required but we're testing error case
             render(<DotCMSEditableText contentlet={MOCK_CONTENTLET} />);
             expect(consoleErrorSpy).toHaveBeenCalledWith(
-                'DotCMSEditableText: contentlet or fieldName is missing'
-            );
-            expect(consoleErrorSpy).toHaveBeenCalledWith(
+                'DotCMSEditableText: contentlet or fieldName is missing',
                 'Ensure that all needed props are passed to view and edit the content'
             );
         });

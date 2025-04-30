@@ -42,26 +42,30 @@ export function DotCMSEditableText({
 }: Readonly<DotCMSEditableTextProps>): JSX.Element {
     const editorRef = useRef<Editor['editor'] | null>(null);
     const [scriptSrc, setScriptSrc] = useState('');
-    const [isInsideEditor, setIsInsideEditor] = useState(false);
+    const [initEditor, setInitEditor] = useState(false);
     const [content, setContent] = useState(contentlet?.[fieldName] || '');
 
     useEffect(() => {
-        setIsInsideEditor(getUVEState()?.mode === UVE_MODE.EDIT);
+        const state = getUVEState();
+
+        setInitEditor(state?.mode === UVE_MODE.EDIT && !!state?.dotCMSHost?.length);
 
         if (!contentlet || !fieldName) {
-            console.error('DotCMSEditableText: contentlet or fieldName is missing');
-            console.error('Ensure that all needed props are passed to view and edit the content');
+            console.error(
+                'DotCMSEditableText: contentlet or fieldName is missing',
+                'Ensure that all needed props are passed to view and edit the content'
+            );
 
             return;
         }
 
-        if (getUVEState()?.mode !== UVE_MODE.EDIT) {
+        if (state && state.mode !== UVE_MODE.EDIT) {
             console.warn('DotCMSEditableText: TinyMCE is not available in the current mode');
 
             return;
         }
 
-        if (!getUVEState()?.dotCMSHost) {
+        if (!state?.dotCMSHost) {
             console.warn(
                 'The `dotCMSHost` parameter is not defined. Check that the UVE is sending the correct parameters.'
             );
@@ -69,7 +73,7 @@ export function DotCMSEditableText({
             return;
         }
 
-        const createURL = new URL(__TINYMCE_PATH_ON_DOTCMS__, getUVEState()?.dotCMSHost ?? '');
+        const createURL = new URL(__TINYMCE_PATH_ON_DOTCMS__, state.dotCMSHost);
         setScriptSrc(createURL.toString());
 
         const content = contentlet?.[fieldName] || '';
@@ -152,7 +156,7 @@ export function DotCMSEditableText({
         return content !== editedContent;
     };
 
-    if (!isInsideEditor || !scriptSrc.length) {
+    if (!initEditor) {
         // We can let the user pass the Child Component and create a root to get the HTML for the editor
         return <span dangerouslySetInnerHTML={{ __html: content }} />;
     }
