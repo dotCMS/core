@@ -31,6 +31,10 @@
     "collections": ["GraphQLTests"]
   },
   {
+    "name": "page",
+    "collections": ["PagesResourceTests"]
+  },
+  {
     "name": "pp",
     "collections": [
       "PublishQueueResource",
@@ -51,6 +55,7 @@
     "name": "default-split",
     "collections": [
       "ApiToken_Resource.postman_collection",
+      "ContentImportResource.postman_collection",
       "Manifest_Download_End_Point.postman_collection",
       "Osgi.postman_collection",
       "Page_Version_with_different_Templates.postman_collection",
