@@ -6,8 +6,8 @@
     "type": "git",
     "url": "git+https://github.com/dotCMS/core.git#main"
   },
-  "dependencies": {
-    "@dotcms/types": "0.0.1"
+  "devDependencies": {
+    "@dotcms/types": "next"
   },
   "keywords": [
     "dotCMS",

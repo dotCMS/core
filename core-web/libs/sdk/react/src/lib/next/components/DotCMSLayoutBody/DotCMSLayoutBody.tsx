@@ -5,9 +5,12 @@ import { ErrorMessage } from './components/ErrorMessage';
 import { DotCMSPageContext } from '../../contexts/DotCMSPageContext';
 import { Row } from '../Row/Row';
 
-interface DotCMSLayoutBodyProps {
+interface DotCMSLayoutBodyProps<TContentlet extends DotCMSBasicContentlet = DotCMSBasicContentlet> {
     page: DotCMSPageAsset;
-    components: Record<string, React.ComponentType<DotCMSBasicContentlet>>;
+    components: {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        [key: string]: React.ComponentType<TContentlet> | React.ComponentType<any>;
+    };
     mode?: DotCMSPageRendererMode;
 }
 
