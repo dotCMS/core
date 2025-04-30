@@ -165,7 +165,7 @@ async function runNewman(
     const newmanConfig = {
       collection: require(collectionPath),
       envVar: envVars,
-      reporters: ["cli", "junit", "progress"],
+      reporters: ["junit", "cli"],
       reporter: {
         junit: { export: resultPath },
         cli: {
