@@ -22,9 +22,11 @@ import {
     NOTIFY_CLIENT,
     postMessageToEditor
 } from '@dotcms/client';
-import { DotCMSBasicContentlet } from '@dotcms/types';
+
 
 import { TINYMCE_CONFIG, DOT_EDITABLE_TEXT_FORMAT, DOT_EDITABLE_TEXT_MODE } from './utils';
+
+import { DotCMSContentlet } from '../../models';
 
 /**
  * @deprecated This component is deprecated and will be removed in future versions.
@@ -83,7 +85,7 @@ export class DotEditableTextComponent implements OnInit, OnChanges {
      * @type {DotCMSContentlet}
      * @memberof DotEditableTextComponent
      */
-    @Input() contentlet!: DotCMSBasicContentlet;
+    @Input() contentlet!: DotCMSContentlet;
 
     /**
      * Represents the content of the `contentlet` that can be edited
