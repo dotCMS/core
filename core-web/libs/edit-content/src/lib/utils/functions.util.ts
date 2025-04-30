@@ -335,10 +335,12 @@ export const getStoredUIState = (): UIState => {
         console.warn('Error reading UI state from sessionStorage:', e);
     }
 
+    // Default values
     return {
         activeTab: 0,
         isSidebarOpen: true,
-        activeSidebarTab: 0
+        activeSidebarTab: 0,
+        isBetaMessageVisible: true
     };
 };
 

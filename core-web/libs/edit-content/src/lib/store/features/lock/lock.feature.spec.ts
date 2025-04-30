@@ -56,12 +56,11 @@ describe('LockFeature', () => {
 
         dotMessageService.get.mockImplementation((key, ...args) => {
             if (key === 'edit.content.locked.by.you') return 'You';
-            if (key === 'edit.content.locked.toolbar.message')
-                return `Content is locked by ${args[0]}`;
+            if (key === 'edit.content.locked.by.user') return `Content is locked by ${args[0]}`;
             if (key === 'edit.content.locked.no.permission.user')
                 return `Content is locked by ${args[0]}. You don't have permissions to unlock this content.`;
-            if (key === 'edit.content.locked.no.permission') {
-                return 'You dont have permissions to unlock this content.';
+            if (key === 'edit.content.locked.no.permission.user') {
+                return `Content is locked by ${args[0]}. You don't have permissions to unlock this content.`;
             }
 
             return key;
@@ -96,7 +95,7 @@ describe('LockFeature', () => {
 
             store.updateCanLock(true);
 
-            expect(store.lockWarningMessage()).toBe('Content is locked by You');
+            expect(store.lockWarningMessage()).toBe(null);
         });
 
         it('should generate correct lock warning message when dont have lock permissions but the content is locked by other user', () => {
@@ -132,7 +131,7 @@ describe('LockFeature', () => {
         it('should return empty message when content is not locked', () => {
             store.updateCanLock(true);
             store.updateContent({ locked: false });
-            expect(store.lockWarningMessage()).toBe('');
+            expect(store.lockWarningMessage()).toBe(null);
         });
     });
 
