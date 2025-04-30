@@ -11876,7 +11876,7 @@
                   "if (requestcounter <= 10) {",
                   "    ",
                   "    console.log(\"Calling AddMergeContentlet again #: \" + requestcounter)",
-                  "    postman.setNextRequest(\"AddMergeContentlet\");",
+                  "    pm.execution.setNextRequest(\"AddMergeContentlet\");",
                   "}",
                   "",
                   "",

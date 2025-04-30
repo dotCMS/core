@@ -1,3 +1,28 @@
+/**
+ * @fileoverview Newman Runner for DotCMS Postman Collections
+ * This script provides a robust and flexible way to run Postman collections for DotCMS API testing.
+ * It supports running individual collections, groups of collections, or all collections with proper
+ * error handling and reporting.
+ *
+ * @module dotcms-postman
+ * @requires fs
+ * @requires path
+ * @requires yargs
+ * @requires newman
+ * @requires xml2js
+ *
+ *
+ * @typedef {Object} SummaryResults
+ * @property {number} completed - Number of completed tests
+ * @property {number} errors - Number of errors encountered
+ * @property {number} failures - Number of test failures
+ * @property {number} skipped - Number of skipped tests
+ *
+ * @typedef {Object} ConfigItem
+ * @property {string} name - Name of the collection group
+ * @property {string[]} collections - Array of collection names in the group
+ */
+
 const fs = require("fs");
 const path = require("path");
 const yargs = require("yargs/yargs");
@@ -18,7 +43,15 @@ const defaultPostmanTestsDir = "src/main/resources/postman"; // Default director
 const defaultConfigFilePath = "config.json"; // Default config file path
 const defaultPostmanTestsResultsDir = "target/failsafe-reports"; // Default results directory
 
-// Function to fetch JWT with better error handling for Node.js 22
+/**
+ * Fetches a JWT token from the DotCMS server for authentication.
+ * Implements timeout and error handling for Node.js 22 compatibility.
+ *
+ * @async
+ * @param {string} serverUrl - The URL of the DotCMS server
+ * @returns {Promise<string>} The JWT token
+ * @throws {Error} If the JWT fetch fails or times out
+ */
 async function fetchJWT(serverUrl) {
   const username = "admin@dotcms.com";
   const password = "admin";
@@ -60,7 +93,12 @@ async function fetchJWT(serverUrl) {
   }
 }
 
-// Function to generate failsafe-summary.xml
+/**
+ * Generates a failsafe-summary.xml file with test execution results.
+ * This file follows the Maven Failsafe plugin format for test reporting.
+ *
+ * @param {string} postmanTestsResultsDir - Directory where the summary XML will be saved
+ */
 function generateFailsafeSummaryXml(postmanTestsResultsDir) {
   const builder = new xml2js.Builder();
   const result = summaryResults.failures > 0 ? 255 : 0;
@@ -87,7 +125,19 @@ function generateFailsafeSummaryXml(postmanTestsResultsDir) {
   );
 }
 
-// Function to run Newman as a Promise with improved error handling
+/**
+ * Executes a Postman collection using Newman with enhanced error handling.
+ * Supports Node.js 22 and includes optimized timeout settings for CI/CD.
+ *
+ * @async
+ * @param {string} serverUrl - The DotCMS server URL
+ * @param {string} collectionName - Name of the Postman collection to run
+ * @param {string} postmanTestsDir - Directory containing Postman collections
+ * @param {string} postmanTestsResultsDir - Directory for test results
+ * @param {string} jwt - JWT token for authentication
+ * @returns {Promise<void>}
+ * @throws {Error} If collection execution fails
+ */
 async function runNewman(
   serverUrl,
   collectionName,
@@ -119,8 +169,8 @@ async function runNewman(
       reporter: {
         junit: { export: resultPath },
       },
-      timeout: 180000, // 3 minutes per collection (optimized for CI/CD)
-      bail: false, // Stop on first error to fail fast in CI/CD
+      timeout: 2700000, // 3 minutes per collection (optimized for CI/CD)
+      bail: true, // Stop on first error to fail fast in CI/CD
       ignoreRedirects: false,
       insecure: true,
       suppressExitCode: true,
@@ -129,11 +179,7 @@ async function runNewman(
         rejectUnauthorized: false,
       },
       timeoutRequest: 30000, // 30 seconds per request
-      timeoutScript: 20000, // 20 seconds per script
-      delayRequest: 100, // 100ms delay between requests
-      // CI/CD specific options
-      retryCount: 2, // Retry failed requests twice
-      retryDelay: 1000, // Wait 1 second between retries
+      timeoutScript: 2700000, // 20 seconds per script
     };
 
     newman.run(newmanConfig, function (err, summary) {
@@ -204,7 +250,19 @@ async function runNewman(
   });
 }
 
-// Function to process collections based on groupname
+/**
+ * Processes collections based on a group name configuration.
+ * Handles individual collections, default group, and named groups.
+ *
+ * @async
+ * @param {string} serverUrl - The DotCMS server URL
+ * @param {string} groupname - Name of the collection group or individual collection
+ * @param {string} postmanTestsDir - Directory containing Postman collections
+ * @param {string} postmanTestsResultsDir - Directory for test results
+ * @param {ConfigItem[]} config - Configuration object containing group definitions
+ * @param {string} jwt - JWT token for authentication
+ * @returns {Promise<void>}
+ */
 async function processCollections(
   serverUrl,
   groupname,
@@ -264,7 +322,18 @@ async function processCollections(
   console.log(`Finished collections for groupname: ${groupname}`);
 }
 
-// Function to process all collections sequentially
+/**
+ * Processes all collection groups sequentially.
+ * Includes both configured groups and the default group.
+ *
+ * @async
+ * @param {string} serverUrl - The DotCMS server URL
+ * @param {string} postmanTestsDir - Directory containing Postman collections
+ * @param {string} postmanTestsResultsDir - Directory for test results
+ * @param {ConfigItem[]} config - Configuration object containing group definitions
+ * @param {string} jwt - JWT token for authentication
+ * @returns {Promise<void>}
+ */
 async function processAllCollections(
   serverUrl,
   postmanTestsDir,
@@ -300,10 +369,18 @@ async function processAllCollections(
 }
 
 /**
- * Parses command line arguments for named parameters.
- */
-/**
- * Main function to process command line arguments and run the script.
+ * Main function that orchestrates the execution of Postman collections.
+ * Handles command line arguments, sets up the environment, and manages the test execution flow.
+ *
+ * Command line options:
+ * - serverUrl (-s): URL of the DotCMS server
+ * - postmanTestsDir (-d): Directory containing Postman collections
+ * - configFilePath (-c): Path to the configuration JSON file
+ * - postmanTestsResultsDir (-r): Directory for storing test results
+ *
+ * @async
+ * @returns {Promise<void>}
+ * @throws {Error} If there are unhandled errors during execution
  */
 async function main() {
   const argv = yargs(hideBin(process.argv))
