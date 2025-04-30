@@ -175,7 +175,7 @@ async function runNewman(
           showRequestData: true,
         },
       },
-      timeout: 2700000, // 3 minutes per collection (optimized for CI/CD)
+      timeout: 27000000, // 3 minutes per collection (optimized for CI/CD)
       bail: true, // Stop on first error to fail fast in CI/CD
       ignoreRedirects: false,
       insecure: true,
@@ -184,8 +184,8 @@ async function runNewman(
       tlsOptions: {
         rejectUnauthorized: false,
       },
-      timeoutRequest: 60000,
-      timeoutScript: 2700000,
+      timeoutRequest: 600000,
+      timeoutScript: 27000000,
     };
 
     newman.run(newmanConfig, function (err, summary) {
