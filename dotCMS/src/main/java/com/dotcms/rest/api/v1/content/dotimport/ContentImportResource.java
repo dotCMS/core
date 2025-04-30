@@ -19,6 +19,7 @@ import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -108,12 +109,12 @@ public class ContentImportResource {
                             schema = @Schema(implementation = ContentImportParamsSchema.class),
                             examples = @ExampleObject(name = "Import Example", summary = "Example content import request", value =
                                     "--boundary\\n" +
-                                    "Content-Disposition: form-data; name=\\"file\\"; filename=\\"import.csv\\"\\n" +
+                                    "Content-Disposition: form-data; name=\"file\"; filename=\"import.csv\"\\n" +
                                     "Content-Type: text/csv\\n\\n" +
                                     "title,description\\n" + // Example CSV content line
                                     "Example Title,Example Description\\n" + // Example CSV content line
                                     "--boundary\\n" +
-                                    "Content-Disposition: form-data; name=\\"form\\"\\n" +
+                                    "Content-Disposition: form-data; name=\"form\"\\n" +
                                     "Content-Type: application/json\\n\\n" +
                                     "{\\n" +
                                     "  \\\"contentType\\\": \\\"webPageContent\\\",\\n" +
@@ -195,12 +196,12 @@ public class ContentImportResource {
                             schema = @Schema(implementation = ContentImportParamsSchema.class),
                             examples = @ExampleObject(name = "Validation Example", summary = "Example content validation request", value =
                                     "--boundary\\n" +
-                                    "Content-Disposition: form-data; name=\\"file\\"; filename=\\"validate.csv\\"\\n" +
+                                    "Content-Disposition: form-data; name=\"file\"; filename=\"validate.csv\"\\n" +
                                     "Content-Type: text/csv\\n\\n" +
                                     "title,description\\n" + // Example CSV content line
                                     "Validation Title,Validation Description\\n" + // Example CSV content line
                                     "--boundary\\n" +
-                                    "Content-Disposition: form-data; name=\\"form\\"\\n" +
+                                    "Content-Disposition: form-data; name=\"form\"\\n" +
                                     "Content-Type: application/json\\n\\n" +
                                     "{\\n" +
                                     "  \\\"contentType\\\": \\\"webPageContent\\\",\\n" +
@@ -219,7 +220,18 @@ public class ContentImportResource {
                             description = "Content import validation job successfully created and enqueued.",
                             content = @Content(
                                     mediaType = MediaType.APPLICATION_JSON,
-                                    schema = @Schema(implementation = ResponseEntityJobStatusView.class)
+                                    schema = @Schema(implementation = ResponseEntityJobStatusView.class),
+                                    examples = @ExampleObject(value = "{\n" +
+                                            "  \"entity\": {\n" +
+                                            "    \"jobId\": \"e6d9bae8-657b-4e2f-8524-c0222db66355\",\n" +
+                                            "    \"statusUrl\": \"http://localhost:8080/api/v1/_import/e6d9bae8-657b-4e2f-8524-c0222db66355\"\n" +
+                                            "  },\n" +
+                                            "  \"errors\": [],\n" +
+                                            "  \"i18nMessagesMap\": {},\n" +
+                                            "  \"messages\": [],\n" +
+                                            "  \"pagination\": null,\n" +
+                                            "  \"permissions\": []\n" +
+                                            "}")
                             )
                     ),
                     @ApiResponse(responseCode = "400", description = "Bad Request: Invalid parameters or malformed request (e.g., missing file, invalid JSON in 'form', file not CSV)."),
@@ -292,7 +304,11 @@ public class ContentImportResource {
     public ResponseEntityView<JobView> getJobStatus(
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
-            @PathParam("jobId") final String jobId)
+            @PathParam("jobId") @Parameter(
+                required = true,
+                description = "The ID of the job whose status is to be retrieved",
+                schema = @Schema(type = "string")
+            ) final String jobId)
             throws DotDataException {
 
         // Initialize the WebResource and set required user information
@@ -345,8 +361,7 @@ public class ContentImportResource {
                                     examples = @ExampleObject(value = "{\n" +
                                             "  \"entity\": \"Cancellation request successfully sent to job e6d9bae8-657b-4e2f-8524-c0222db66355\",\n" +
                                             "  \"errors\": [],\n" +
-                                            "  \"i18nMessagesMap\": {},
-" +
+                                            "  \"i18nMessagesMap\": {}," +
                                             "  \"messages\": [],\n" +
                                             "  \"pagination\": null,\n" +
                                             "  \"permissions\": []\n" +
@@ -362,7 +377,11 @@ public class ContentImportResource {
     public ResponseEntityView<String> cancelJob(
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
-            @PathParam("jobId") final String jobId) throws DotDataException {
+            @PathParam("jobId") @Parameter(
+                    required = true,
+                    description = "The ID of the job whose status is to be retrieved",
+                    schema = @Schema(type = "string")
+            ) final String jobId) throws DotDataException {
         // Initialize the WebResource and set required user information
         final var initDataObject = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
