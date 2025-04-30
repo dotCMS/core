@@ -12,7 +12,10 @@ public enum FieldHandlerId {
 
     GLOBAL_SEARCH("globalSearch"),
     CONTENT_TYPE_IDS("contentTypeIds"),
+    // Even though the same field in the UI is used to select the Site or the Folder, they are
+    // separate handlers here because Lucene uses a different search term for each of them
     SITE_ID("siteId"),
+    FOLDER_ID("folderId"),
     TEXT("text"),
     BINARY("binary"),
     DATE_TIME("dateTime"),

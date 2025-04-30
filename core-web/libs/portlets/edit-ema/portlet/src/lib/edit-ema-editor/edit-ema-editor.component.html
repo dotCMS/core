@@ -51,7 +51,7 @@
                 data-testId="progress-bar"
                 mode="indeterminate" />
         }
-        @if ($editorProps().contentletTools; as contentletTools) {
+        @if ($editorProps()?.contentletTools; as contentletTools) {
             <dot-ema-contentlet-tools
                 (edit)="handleEditContentlet($event)"
                 (editVTL)="handleEditVTL($event)"

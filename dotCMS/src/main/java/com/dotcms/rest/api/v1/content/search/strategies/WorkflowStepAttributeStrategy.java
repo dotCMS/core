@@ -13,7 +13,7 @@ import com.dotcms.rest.api.v1.content.search.handlers.FieldContext;
  * @author Jose Castro
  * @since Jan 31st, 2025
  */
-public class WorkflowStepAttributeAction implements FieldStrategy {
+public class WorkflowStepAttributeStrategy implements FieldStrategy {
 
     @Override
     public String generateQuery(final FieldContext fieldContext) {

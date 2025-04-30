@@ -1,6 +1,7 @@
 package com.dotcms.util;
 
 import static com.dotcms.util.CollectionsUtils.list;
+import static com.dotmarketing.util.importer.ImportLineValidationCodes.INVALID_LOCATION;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -23,20 +24,14 @@ import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
-import com.dotcms.datagen.ContentTypeDataGen;
-import com.dotcms.datagen.ContentletDataGen;
-import com.dotcms.datagen.FieldDataGen;
-import com.dotcms.datagen.FolderDataGen;
-import com.dotcms.datagen.SiteDataGen;
-import com.dotcms.datagen.TemplateDataGen;
-import com.dotcms.datagen.TestDataUtils;
-import com.dotcms.datagen.TestUserUtils;
+import com.dotcms.datagen.*;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
 import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.repackage.com.csvreader.CsvReader;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
+import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
@@ -145,7 +140,6 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
     private static final String STEP_BY_USING_ACTION1 = "StepByUsingAction1";
     private static final String STEP_BY_USING_ACTION2 = "StepByUsingAction2";
     private static final String STEP_BY_USING_ACTION3 = "StepByUsingAction3";
-
     private static final int EDIT_PERMISSION =
             PermissionAPI.PERMISSION_READ + PermissionAPI.PERMISSION_EDIT;
     private static final int PUBLISH_PERMISSION = EDIT_PERMISSION + PermissionAPI.PERMISSION_PUBLISH;
@@ -2427,11 +2421,9 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             throws DotSecurityException, DotDataException, IOException {
 
         ContentType contentType = null;
-        CsvReader csvreader;
         long time;
-        HashMap<String, List<String>> results;
+        ImportResult results;
         Reader reader;
-        String[] csvHeaders;
         com.dotcms.contenttype.model.field.Field titleField;
 
         try {
@@ -2459,22 +2451,15 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                     "testDoesNotStartWithHTTPorHTTPS" + time + ", " +
                     "testDoesNotStartWithHTTPorHTTPS" + time + ", " +
                     "test://raw.githubusercontent.com/dotCMS/core/main/dotCMS/src/main/webapp/html/images/skin/logo.gif");
-            csvreader = new CsvReader(reader);
-            csvreader.setSafetySwitch(false);
-            csvHeaders = csvreader.getHeaders();
 
-            results =
-                    ImportUtil
-                            .importFile(0L, defaultSite.getInode(), contentType.inode(),
-                                    new String[]{titleField.id()}, false, false,
-                                    user, defaultLanguage.getId(), csvHeaders, csvreader, -1,
-                                    -1, reader,
-                                    saveAsDraftAction.getId(), getHttpRequest());
+            results = importAndValidate(contentType, titleField, reader, false, 1);
 
+            final ResultData data = results.data().orElse(null);
+            assertNotNull(data);
             //Validations
-            validate(results, true, true, false);
-
-            assertEquals(3,results.get("errors").size());//one for each line
+            assertEquals(3, results.error().size()); //one for each line
+            assertEquals(0, results.warning().size());
+            assertEquals(0, data.summary().commits());
 
             final List<Contentlet> savedData = contentletAPI
                     .findByStructure(contentType.inode(), user, false, 0, 0);
@@ -2685,6 +2670,94 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             try {
                 if (null != contentType) {
                     contentTypeApi.delete(contentType);
+                }
+            } catch (Exception e) {
+                Logger.error("Error deleting content type", e);
+            }
+        }
+    }
+    /**
+     * Method to test: This test tries the {@link ImportUtil#importFile}
+     * Given Scenario: A parent content type related to a child content type that has two versions in two different languages
+     * ExpectedResult: The importer should return without errors, so content will be ready to be imported.
+     */
+    @Test
+    public void importPreviewRelationshipLanguageTest() throws DotDataException, DotSecurityException, IOException {
+        //Creates content types
+        ContentType parentContentType = null;
+        ContentType childContentType  = null;
+
+        HashMap<String, List<String>> results;
+        CsvReader csvreader;
+        Reader reader;
+        String[] csvHeaders;
+        final int cardinality = RELATIONSHIP_CARDINALITY.ONE_TO_MANY.ordinal();
+
+        final Language language_1 = new LanguageDataGen().nextPersisted();
+        final Language language_2 = new LanguageDataGen().nextPersisted();
+
+        try {
+            final Relationship relationship;
+            parentContentType = createTestContentType("parentContentType", "parentContentType" + new Date().getTime());
+            childContentType = createTestContentType("childContentType", "childContentType" + new Date().getTime());
+
+
+            com.dotcms.contenttype.model.field.Field field = FieldBuilder.builder(RelationshipField.class).name("testRelationship")
+                    .variable("testRelationship")
+                    .contentTypeId(parentContentType.id()).values(String.valueOf(cardinality))
+                    .relationType(childContentType.variable()).build();
+
+            field = fieldAPI.save(field, user);
+            relationship = relationshipAPI.byTypeValue(
+                    parentContentType.variable() + StringPool.PERIOD + field.variable());
+
+
+            //Creates child contentlet
+            final Contentlet childContentlet = new ContentletDataGen(childContentType.id())
+                    .languageId(language_1.getId())
+                    .setProperty(TITLE_FIELD_NAME, "child contentlet")
+                    .setProperty(BODY_FIELD_NAME, "child contentlet").nextPersisted();
+
+            ContentletDataGen.createNewVersion(childContentlet, VariantAPI.DEFAULT_VARIANT, language_2, null);
+
+            //Creates parent contentlet
+            Contentlet parentContentlet = new ContentletDataGen(parentContentType.id())
+                    .languageId(language_1.getId())
+                    .setProperty(TITLE_FIELD_NAME, "parent contentlet")
+                    .setProperty(BODY_FIELD_NAME, "parent contentlet").next();
+
+            parentContentlet = contentletAPI.checkin(parentContentlet,
+                    Map.of(relationship, list(childContentlet)),
+                    user, false);
+
+            reader = createTempFile(
+                    "identifier, languageCode, countryCode, " + TITLE_FIELD_NAME + ", " + BODY_FIELD_NAME
+                            + "\r\n"
+                            + parentContentlet.getIdentifier() + ",en, US, Test1_edited, " + "\r\n" );
+            csvreader = new CsvReader(reader);
+            csvreader.setSafetySwitch(false);
+            csvHeaders = csvreader.getHeaders();
+
+            int languageCodeHeaderColumn = 0;
+            int countryCodeHeaderColumn = 1;
+
+
+            results = ImportUtil.importFile(0L, defaultSite.getInode(), parentContentType.inode(),
+                    new String[]{}, true, true, user, language_1.getId(), csvHeaders,
+                    csvreader, languageCodeHeaderColumn, countryCodeHeaderColumn, reader,
+                    schemeStepActionResult1.getAction().getId(),getHttpRequest());
+
+            validate(results, true, false, true);
+
+            assertEquals(results.get("errors").size(), 0);
+        }finally {
+            try {
+                if (parentContentType != null) {
+                    contentTypeApi.delete(parentContentType);
+                }
+
+                if (childContentType != null) {
+                    contentTypeApi.delete(childContentType);
                 }
             } catch (Exception e) {
                 Logger.error("Error deleting content type", e);
@@ -3053,6 +3126,103 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             // The implementation might perform a final commit of successfully processed rows
             // So commits should be either 0 or 1 depending on implementation
             assertTrue("Expected 0 or 1 commits, but got: " + data.summary().commits(), data.summary().commits() <= 1);
+
+        } finally {
+            try {
+                if (null != contentType) {
+                    contentTypeApi.delete(contentType);
+                }
+            } catch (Exception e) {
+                Logger.error("Error deleting content type", e);
+            }
+        }
+    }
+
+
+    /**
+     * Tests the interaction between commit granularity and stopOnError
+     * When stopOnError=true, processing should stop at the first error,
+     * Given: A content type with a required title and site field is created and a CSV file is generated with different commit granularities and errors
+     * Expected: Depending on the commit granularity and the errors, the importer should commit and rollback as expected
+     */
+    @Test
+    public void importFile_withHighGranularityAndStopOnError_shouldStopAtFirstInvalidLocationError()
+            throws DotSecurityException, DotDataException, IOException {
+
+        ContentType contentType = null;
+        Reader reader;
+        com.dotcms.contenttype.model.field.Field titleField;
+
+        try {
+            final String contentTypeName = "StopErrorTest_" + System.currentTimeMillis();
+            final String contentTypeVarName = "velocityVarNameStopError_" + System.currentTimeMillis();
+
+            // Create content type for testing
+            contentType = createTestContentType(contentTypeName, contentTypeVarName);
+            titleField = fieldAPI.byContentTypeAndVar(contentType, TITLE_FIELD_NAME);
+
+            // Make title field required
+            titleField = FieldBuilder.builder(TextField.class)
+                    .from(titleField)
+                    .required(true)
+                    .build();
+            fieldAPI.save(titleField, user);
+
+            FieldBuilder.builder(HostFolderField.class)
+                    .from(titleField)
+                    .required(true)
+                    .build();
+
+            var hostField = FieldBuilder.builder(HostFolderField.class)
+                    .name(SITE_FIELD_NAME)
+                    .variable(SITE_FIELD_NAME)
+                    .contentTypeId(contentType.id())
+                    .dataType(DataTypes.TEXT)
+                    .build();
+            fieldAPI.save(hostField, user);
+
+            // Create CSV with an error in the middle
+            String csvWithError = SITE_FIELD_NAME + ", " + TITLE_FIELD_NAME + ", " + BODY_FIELD_NAME + "\r\n" +
+                    defaultSite.getIdentifier() + ",Stop 1, Body 1\r\n" +
+                    defaultSite.getIdentifier() + "2,Stop 2, Body 2\r\n" + // Invalid host
+                    defaultSite.getIdentifier() + ",Stop 3, Body 3\r\n";
+
+            reader = createTempFile(csvWithError);
+
+            // Set commit granularity to 10, but with stopOnError=true
+            // Should stop at the first error (row 4) regardless of granularity
+            ImportResult result = importAndValidate(contentType, titleField, reader, true, 10);
+
+            // Validate results
+            List<Contentlet> savedData = contentletAPI.findByStructure(contentType.inode(), user, false, 0, 0);
+            assertNotNull(savedData);
+
+            // Should only have rows before the error (1)
+            assertEquals(1, savedData.size());
+
+            final ResultData data = result.data().orElse(null);
+            assertNotNull(data);
+
+            // With stopOnError=true, we don't do rollbacks, we just stop
+            assertEquals(0, data.summary().rollbacks());
+
+            // No commits would occur with granularity=10 if we stopped at row 4
+            // The implementation might perform a final commit of successfully processed rows
+            // So commits should be either 0 or 1 depending on implementation
+            assertTrue("Expected 0 or 1 commits, but got: " + data.summary().commits(), data.summary().commits() <= 1);
+
+            assertEquals(1, data.summary().createdContent());
+            assertEquals(1, data.summary().failedDisplay());
+            assertEquals(0, data.summary().updatedContent());
+
+            final var error = result.error().get(0);
+            assertEquals(INVALID_LOCATION.name(), error.code().orElse(null));
+            assertEquals(SITE_FIELD_NAME, error.field().orElse(null));
+
+
+            var info = result.info();
+            assertNotNull(info);
+            assertEquals("Import statistics: 1 successful imports, 1 failed rows, 1 commits, 0 rollbacks", info.get(0).message());
 
         } finally {
             try {

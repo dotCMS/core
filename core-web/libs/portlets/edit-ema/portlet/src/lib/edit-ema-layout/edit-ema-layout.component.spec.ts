@@ -25,6 +25,7 @@ import {
 } from '@dotcms/data-access';
 import { CoreWebService, LoginService } from '@dotcms/dotcms-js';
 import { TemplateBuilderComponent, TemplateBuilderModule } from '@dotcms/template-builder';
+import { WINDOW } from '@dotcms/utils';
 import {
     DotExperimentsServiceMock,
     DotLanguagesServiceMock,
@@ -106,8 +107,7 @@ describe('EditEmaLayoutComponent', () => {
                 save: jest.fn(() => of(PAGE_RESPONSE))
             }),
             mockProvider(DotPageApiService, {
-                get: jest.fn(() => of(PAGE_RESPONSE)),
-                getClientPage: jest.fn(() => of(PAGE_RESPONSE))
+                get: jest.fn(() => of(PAGE_RESPONSE))
             }),
             mockProvider(DotWorkflowsActionsService, {
                 getByInode: jest.fn(() => of([]))
@@ -135,7 +135,11 @@ describe('EditEmaLayoutComponent', () => {
                     getCurrentUser: () => of({})
                 },
                 'useValue'
-            )
+            ),
+            {
+                provide: WINDOW,
+                useValue: window
+            }
         ]
     });
 

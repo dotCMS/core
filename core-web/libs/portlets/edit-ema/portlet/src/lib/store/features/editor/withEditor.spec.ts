@@ -1,5 +1,4 @@
 import { describe, expect } from '@jest/globals';
-import { SpyObject } from '@ngneat/spectator';
 import { createServiceFactory, mockProvider, SpectatorService } from '@ngneat/spectator/jest';
 import { patchState, signalStore, withState } from '@ngrx/signals';
 import { of } from 'rxjs';
@@ -7,6 +6,7 @@ import { of } from 'rxjs';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { DEFAULT_VARIANT_ID, DotDeviceListItem } from '@dotcms/dotcms-models';
+import { WINDOW } from '@dotcms/utils';
 import { mockDotDevices, seoOGTagsMock } from '@dotcms/utils-testing';
 import { UVE_MODE } from '@dotcms/uve/types';
 
@@ -65,7 +65,6 @@ export const uveStoreMock = signalStore(
 
 describe('withEditor', () => {
     let spectator: SpectatorService<InstanceType<typeof uveStoreMock>>;
-    let dotPageApiService: SpyObject<DotPageApiService>;
     let store: InstanceType<typeof uveStoreMock>;
 
     const createService = createServiceFactory({
@@ -86,6 +85,10 @@ describe('withEditor', () => {
                     },
                     save: jest.fn()
                 }
+            },
+            {
+                provide: WINDOW,
+                useValue: window
             }
         ]
     });
@@ -93,7 +96,6 @@ describe('withEditor', () => {
     beforeEach(() => {
         spectator = createService();
         store = spectator.service;
-        dotPageApiService = spectator.inject(DotPageApiService);
         patchState(store, initialState);
     });
 
@@ -114,42 +116,6 @@ describe('withEditor', () => {
                         runningExperiment: null,
                         unlockButton: null
                     });
-                });
-            });
-        });
-    });
-
-    describe('withSave', () => {
-        describe('withMethods', () => {
-            describe('savePage', () => {
-                it('should perform a save and patch the state', () => {
-                    const saveSpy = jest
-                        .spyOn(dotPageApiService, 'save')
-                        .mockImplementation(() => of({}));
-
-                    // It's impossible to get a VTL when we are in Headless
-                    // but I just want to check the state is being patched
-                    const getClientPageSpy = jest
-                        .spyOn(dotPageApiService, 'getClientPage')
-                        .mockImplementation(() => of(MOCK_RESPONSE_VTL));
-
-                    const payload = {
-                        pageContainers: ACTION_PAYLOAD_MOCK.pageContainers,
-                        pageId: MOCK_RESPONSE_HEADLESS.page.identifier,
-                        params: store.pageParams()
-                    };
-
-                    store.savePage(ACTION_PAYLOAD_MOCK.pageContainers);
-
-                    expect(saveSpy).toHaveBeenCalledWith(payload);
-
-                    expect(getClientPageSpy).toHaveBeenCalledWith(
-                        store.pageParams(),
-                        store.clientRequestProps()
-                    );
-
-                    expect(store.status()).toBe(UVE_STATUS.LOADED);
-                    expect(store.pageAPIResponse()).toEqual(MOCK_RESPONSE_VTL);
                 });
             });
         });
@@ -180,21 +146,18 @@ describe('withEditor', () => {
                 expect(store.$reloadEditorContent()).toEqual({
                     code: MOCK_RESPONSE_HEADLESS.page.rendered,
                     isTraditionalPage: false,
-                    enableInlineEdit: true,
-                    isClientReady: false
+                    enableInlineEdit: true
                 });
             });
             it('should return the expected data for VTL', () => {
                 patchState(store, {
                     pageAPIResponse: MOCK_RESPONSE_VTL,
-                    isTraditionalPage: true,
-                    isClientReady: true
+                    isTraditionalPage: true
                 });
                 expect(store.$reloadEditorContent()).toEqual({
                     code: MOCK_RESPONSE_VTL.page.rendered,
                     isTraditionalPage: true,
-                    enableInlineEdit: true,
-                    isClientReady: true
+                    enableInlineEdit: true
                 });
             });
         });
@@ -215,7 +178,7 @@ describe('withEditor', () => {
         describe('$iframeURL', () => {
             it("should return the iframe's URL", () => {
                 expect(store.$iframeURL()).toBe(
-                    'http://localhost:3000/test-url?language_id=1&variantName=DEFAULT&mode=EDIT_MODE&personaId=dot%3Apersona'
+                    'http://localhost:3000/test-url?language_id=1&variantName=DEFAULT&mode=EDIT_MODE&personaId=dot%3Apersona&dotCMSHost=http://localhost'
                 );
             });
 
@@ -255,7 +218,7 @@ describe('withEditor', () => {
                 });
 
                 expect(store.$iframeURL()).toBe(
-                    'http://localhost/first?language_id=1&variantName=DEFAULT&personaId=dot%3Apersona'
+                    'http://localhost/first?language_id=1&variantName=DEFAULT&personaId=dot%3Apersona&dotCMSHost=http://localhost'
                 );
             });
 
@@ -271,7 +234,9 @@ describe('withEditor', () => {
                     }
                 });
 
-                expect(store.$iframeURL()).toBe('http://localhost:3000/test-url');
+                expect(store.$iframeURL()).toBe(
+                    'http://localhost:3000/test-url&dotCMSHost=http://localhost'
+                );
             });
 
             it('should set the right iframe url when the clientHost is present with a aditional path', () => {
@@ -286,7 +251,9 @@ describe('withEditor', () => {
                     }
                 });
 
-                expect(store.$iframeURL()).toBe('http://localhost:3000/test/test-url');
+                expect(store.$iframeURL()).toBe(
+                    'http://localhost:3000/test/test-url&dotCMSHost=http://localhost'
+                );
             });
         });
 
