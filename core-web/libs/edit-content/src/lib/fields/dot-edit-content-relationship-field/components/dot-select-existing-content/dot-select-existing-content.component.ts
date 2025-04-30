@@ -1,5 +1,13 @@
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, model, OnInit, effect } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    inject,
+    model,
+    OnInit,
+    effect,
+    CUSTOM_ELEMENTS_SCHEMA
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
@@ -55,7 +63,8 @@ type DialogData = {
     ],
     templateUrl: './dot-select-existing-content.component.html',
     styleUrls: ['./dot-select-existing-content.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })
 export class DotSelectExistingContentComponent implements OnInit {
     /**

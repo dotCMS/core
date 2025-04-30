@@ -180,6 +180,13 @@ $dot-table-cell-height: 1.25rem;
                     padding-right: $spacing-3;
                 }
 
+                .container-thumbnail {
+                    width: 100%;
+                    max-height: 3rem;
+                    overflow: hidden;
+                    position: relative;
+                }
+
                 .p-row-toggler,
                 .p-row-editor-init,
                 .p-row-editor-save,
