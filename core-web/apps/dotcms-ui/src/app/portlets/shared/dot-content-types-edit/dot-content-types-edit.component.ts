@@ -96,9 +96,11 @@ export class DotContentTypesEditComponent implements OnInit, OnDestroy {
             }
         ];
 
-        if (!this.isEditMode()) {
-            this.startFormDialog();
-        }
+        this.route.queryParams.pipe(takeUntil(this.destroy$)).subscribe((params) => {
+            if (params['open-config'] === 'true' || !this.isEditMode()) {
+                this.startFormDialog();
+            }
+        });
 
         this.dialogCloseable = this.isEditMode();
 
@@ -118,6 +120,12 @@ export class DotContentTypesEditComponent implements OnInit, OnDestroy {
     onDialogHide(): void {
         if (!this.isEditMode()) {
             this.dotRouterService.gotoPortlet(`/${this.dotRouterService.currentPortlet.id}`);
+        } else {
+            this.router.navigate([], {
+                relativeTo: this.route,
+                queryParams: { 'open-config': null },
+                queryParamsHandling: 'merge'
+            });
         }
     }
 
