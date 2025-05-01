@@ -83,6 +83,7 @@ export class DotContentTypesEditComponent implements OnInit, OnDestroy {
                 this.data = contentType;
                 this.dotEditContentTypeCacheService.set(contentType);
                 this.layout = contentType.layout;
+                this.checkAndOpenFormDialog();
             });
 
         this.contentTypeActions = [
@@ -96,14 +97,7 @@ export class DotContentTypesEditComponent implements OnInit, OnDestroy {
             }
         ];
 
-        this.route.queryParams.pipe(takeUntil(this.destroy$)).subscribe((params) => {
-            if (params['open-config'] === 'true' || !this.isEditMode()) {
-                this.startFormDialog();
-            }
-        });
-
         this.dialogCloseable = this.isEditMode();
-
         this.setTemplateInfo();
     }
 
@@ -378,5 +372,24 @@ export class DotContentTypesEditComponent implements OnInit, OnDestroy {
 
     private getWorkflowsIds(workflows: DotCMSWorkflow[]): string[] {
         return workflows.map((workflow: DotCMSWorkflow) => workflow.id);
+    }
+
+    /**
+     * Checks conditions to open the form dialog
+     * @private
+     * @memberof DotContentTypesEditComponent
+     */
+    private checkAndOpenFormDialog(): void {
+        // Subscribe to query params only if we're in edit mode
+        if (this.isEditMode()) {
+            this.route.queryParams.pipe(take(1)).subscribe((params) => {
+                if (params['open-config'] === 'true') {
+                    this.startFormDialog();
+                }
+            });
+        } else {
+            // Always open form dialog in create mode
+            this.startFormDialog();
+        }
     }
 }
