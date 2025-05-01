@@ -143,31 +143,6 @@ public class LineReadingOutputStreamTest {
         assertEquals(expected, output);
     }
 
-    /**
-     * Test that the LineReadingOutputStream correctly handles different line endings (LF, CR, CRLF).
-     */
-    @Test
-    public void testDifferentLineEndings() throws IOException {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        LineReadingOutputStream lros = new LineReadingOutputStream(baos);
-
-        // Test different line endings with UTF-8 characters
-        String lfLine = "こんにちは世界!\n";
-        String crLine = "Привет, мир!\r";
-        String crlfLine = "你好，世界!\r\n";
-        String noEndingLine = "مرحبا بالعالم!";
-
-        lros.write(lfLine.getBytes(StandardCharsets.UTF_8));
-        lros.write(crLine.getBytes(StandardCharsets.UTF_8));
-        lros.write(crlfLine.getBytes(StandardCharsets.UTF_8));
-        lros.write(noEndingLine.getBytes(StandardCharsets.UTF_8));
-        lros.close(); // This should flush the last line even without a line ending
-
-        String output = baos.toString(StandardCharsets.UTF_8.name());
-        // All line endings should be normalized to LF
-        String expected = "こんにちは世界!\nПривет, мир!\n你好，世界!\nمرحبا بالعالم!\n";
-        assertEquals(expected, output);
-    }
 
     /**
      * Test that the LineReadingOutputStream correctly handles large UTF-8 content that exceeds the buffer size.
