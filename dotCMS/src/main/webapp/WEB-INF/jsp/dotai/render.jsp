@@ -268,10 +268,10 @@
                                         onclick="doBuildIndexWithDebounceBtn()">
                                     Build Index&nbsp; &nbsp <i>&rarr;</i>
                                 </button>
-            </div>
-            </td>
-            </tr>
-            </table>
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
 
 
             <button  class="button dijit dijitReset dijitInline dijitButton"
