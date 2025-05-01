@@ -180,9 +180,9 @@ $color-alert-purple: $color-palette-purple;
 $color-alert-purple-light: $color-palette-purple-tint;
 
 // Blue sass variables
-$color-palette-blue-shade: $color-palette-primary-600;
-$color-palette-blue: #18186d; // TODO: Fix this, used the Figma color
-$color-palette-blue-tint: rgba(219, 234, 254, 0.7); // TODO: Fix this, used the Figma color
+$color-palette-blue-shade: #18186d;
+$color-palette-blue: #1243e3;
+$color-palette-blue-tint: #dbeafe;
 
 $color-palette-blue-op-08: rgba($color-palette-blue, 0.8);
 $color-palette-blue-op-10: rgba($color-palette-blue, 0.1);

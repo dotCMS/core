@@ -447,10 +447,6 @@ describe('DotContentTypesEditComponent', () => {
         variable: 'helloVariable'
     };
 
-    const configEditMode = getConfig({
-        contentType: fakeContentType
-    });
-
     describe('edit mode', () => {
         let fieldService: FieldService;
         let queryParams: Subject<any>;
@@ -884,7 +880,7 @@ describe('DotContentTypesEditComponent', () => {
             });
         });
 
-        fdescribe('checkAndOpenFormDialog', () => {
+        describe('checkAndOpenFormDialog', () => {
             beforeEach(() => {
                 spyOn(comp, 'startFormDialog').and.callThrough();
             });

@@ -66,10 +66,10 @@
 .p-message.p-message-info {
     background: $color-palette-blue-tint;
     border: none;
-    color: $color-palette-blue;
+    color: $color-palette-blue-shade;
 
     .p-message-icon {
-        color: $color-palette-blue;
+        color: $color-palette-blue-shade;
     }
 }
 
