@@ -56,7 +56,7 @@
                                 Content index to search:
                             </th>
                             <td>
-                                <select name="indexName" id="indexNameChat" style="min-width:400px;">
+                                <select name="indexName" id="indexNameChat" style="min-width:300px;">
                                     <option disabled="true" placeholder="Select an Index">Select an Index</option>
                                 </select>
                             </td>
@@ -128,7 +128,7 @@
                                 Model:
                             </th>
                             <td>
-                                <select name="model" id="modelName" style="min-width:400px;">
+                                <select name="model" id="modelName" style="min-width:300px;">
                                     <option disabled="true" placeholder="Select a Model">Select a Model</option>
                                 </select>
                             </td>
@@ -355,15 +355,46 @@
                     </tr>
                     <tr>
                         <th>
+                            Model:
+                        </th>
+                        <td>
+                            <select name="imageModel" id="imageModelSelector" onchange="doImageModelSelection()" style="min-width:300px;">
+
+                            </select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>
                             Size:
                         </th>
                         <td>
-                            <select name="size" style="min-width:400px;">
-                                <option value="1024x1024">1024x1024 (Square)</option>
-                                <option value="1024x1792">1024x1792 (Vertical)</option>
-                                <option value="1792x1024" selected>1792x1024 (Horizontal)</option>
-
-
+                            <select name="imageSize" id="imageSizeSelector" style="min-width:300px;">
+                                <option value="landscape" selected>Landscape</option>
+                                <option value="square">Square</option>
+                                <option value="portrait">Portrait</option>
+                            </select>
+                        </td>
+                    </tr>
+                    <tr id="imageModerationTr">
+                        <th>
+                            Moderation:
+                        </th>
+                        <td>
+                            <select name="imageModeration" id="imageModerationSelector" style="min-width:300px;">
+                                <option value="auto">auto</option>
+                                <option value="low">low</option>
+                            </select>
+                        </td>
+                    </tr>
+                    <tr id="imageBackgroundTr">
+                        <th>
+                            Image Background:
+                        </th>
+                        <td>
+                            <select name="imageBackground" id="imageBackgroundSelector" style="min-width:300px;">
+                                <option value="auto">auto</option>
+                                <option value="opaque">opaque</option>
+                                <option value="transparent">transparent</option>
                             </select>
                         </td>
                     </tr>

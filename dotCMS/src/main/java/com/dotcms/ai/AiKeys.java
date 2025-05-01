@@ -16,6 +16,7 @@ public class AiKeys {
     public static final String SIZE = "size";
     public static final String TYPE = "type";
     public static final String URL = "url";
+    public static final String BASE64_JSON = "b64_json";
     public static final String IMAGE = "image";
     public static final String EMBEDDING = "embedding";
     public static final String EMBEDDINGS = "embeddings";

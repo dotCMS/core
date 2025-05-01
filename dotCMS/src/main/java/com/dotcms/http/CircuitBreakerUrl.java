@@ -14,6 +14,7 @@ import com.google.common.collect.ImmutableMap;
 import com.liferay.util.StringPool;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
+import java.nio.charset.StandardCharsets;
 import net.jodah.failsafe.CircuitBreaker;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.FailsafeException;
@@ -50,6 +51,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.function.Function;
 import java.util.stream.Stream;
+import org.apache.http.util.EntityUtils;
 
 /**
  * Defaults to GET requests with 2000 timeout
@@ -91,6 +93,7 @@ public class CircuitBreakerUrl {
     private final Function<Integer, Exception> overrideException;
     private final boolean raiseFailsafe;
 
+
     public static final Response<String> EMPTY_RESPONSE = new Response<>(StringPool.BLANK, 0, new Header[] {});
 
     public enum Method {
@@ -109,7 +112,7 @@ public class CircuitBreakerUrl {
     public CircuitBreakerUrl(final String proxyUrl, final long timeoutMs) {
         this(proxyUrl, timeoutMs, CircuitBreakerPool.getBreaker(proxyUrl + timeoutMs), false);
     }
-    
+
     /**
      * Pass in a pre-constructed circuit breaker
      * Timeout value in MS
@@ -147,7 +150,7 @@ public class CircuitBreakerUrl {
                              final String rawData) {
         this(proxyUrl, timeoutMs, circuitBreaker, request, params, headers,  verbose, rawData, false, true, null, false);
     }
-    
+
     @VisibleForTesting
     public CircuitBreakerUrl(final String proxyUrl,
                              final long timeoutMs,
@@ -180,7 +183,7 @@ public class CircuitBreakerUrl {
             if(this.rawData!=null) {
               try {
                 final String contentType = this.rawData.trim().charAt(0)=='{' ? "application/json" : this.rawData.trim().startsWith("<") ? "application/xml" : "application/x-www-form-urlencoded";
-                
+
                 final StringEntity postingString = new StringEntity(rawData, ContentType.create(contentType, "UTF-8"));
                 if(request instanceof HttpEntityEnclosingRequestBase) {
                   ((HttpEntityEnclosingRequestBase)request).setEntity(postingString);
@@ -254,7 +257,7 @@ public class CircuitBreakerUrl {
             }
 
             Failsafe.with(circuitBreaker)
-                    .onSuccess(connection -> { 
+                    .onSuccess(connection -> {
                         if(verbose) Logger.info(this, "success to " + this.proxyUrl);
                     })
                     .onFailure(failure -> Logger.warn(this, "Connection attempts failed " + failure.getMessage()))
@@ -267,7 +270,7 @@ public class CircuitBreakerUrl {
                         try (final CloseableHttpClient httpclient = HttpClientBuilder.create()
                                 .setMaxConnTotal(circuitBreakerMaxConnTotal.get())
                                 .setDefaultRequestConfig(config).build()) {
-                            
+
                             if(IPUtils.isIpPrivateSubnet(this.request.getURI().getHost()) && !allowAccessToPrivateSubnets.get()){
                                 throw new DotRuntimeException("Remote HttpRequests cannot access private subnets.  Set ALLOW_ACCESS_TO_PRIVATE_SUBNETS=true to allow");
                             }
@@ -279,8 +282,27 @@ public class CircuitBreakerUrl {
                                 copyHeaders(innerResponse, response);
 
                                 this.response = innerResponse.getStatusLine().getStatusCode();
+                                // log errors
+                                if(this.response>=400){
+                                    String errorResponse  = EntityUtils.toString(innerResponse.getEntity(), StandardCharsets.UTF_8);
+                                    out.write(errorResponse.getBytes(StandardCharsets.UTF_8));
+                                    Logger.warn(this.getClass(), "Error " + this.response + " from " + this.proxyUrl + " : " + errorResponse);
 
-                                IOUtils.copy(innerResponse.getEntity().getContent(), out);
+                                }else {
+                                    // Check if the content type indicates it's a text-based response
+                                    Header contentTypeHeader = innerResponse.getFirstHeader("Content-Type");
+                                    if (contentTypeHeader != null &&
+                                        (contentTypeHeader.getValue().contains("text/") ||
+                                         contentTypeHeader.getValue().contains("application/json") ||
+                                         contentTypeHeader.getValue().contains("application/javascript"))) {
+                                        // For text-based content, ensure proper UTF-8 encoding
+                                        String responseText = EntityUtils.toString(innerResponse.getEntity(), StandardCharsets.UTF_8);
+                                        out.write(responseText.getBytes(StandardCharsets.UTF_8));
+                                    } else {
+                                        // For binary content, use direct stream copy
+                                        IOUtils.copy(innerResponse.getEntity().getContent(), out);
+                                    }
+                                }
                             } catch (IOException ex) {
                                 Logger.error(
                                     this,
@@ -288,7 +310,7 @@ public class CircuitBreakerUrl {
                                     ex);
                                 throw ex;
                             }
-                            
+
                             // throw an error if the request is bad
                             if ((isError() || isRedirectWhenDisallowed()) && throwWhenError) {
                                 throw Optional

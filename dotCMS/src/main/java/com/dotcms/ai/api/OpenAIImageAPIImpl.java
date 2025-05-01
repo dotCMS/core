@@ -24,10 +24,12 @@ import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
 
+import java.util.Base64;
 import javax.servlet.http.HttpServletRequest;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import org.apache.commons.io.FileUtils;
 
 public class OpenAIImageAPIImpl implements ImageAPI {
 
@@ -79,17 +81,46 @@ public class OpenAIImageAPIImpl implements ImageAPI {
         }
     }
 
+
     @Override
     public JSONObject sendRawRequest(final String prompt) {
         return sendRequest(new JSONObject(prompt));
     }
 
+
+    private boolean allowedModel(final String requestedModel) {
+        if(config.getImageModel().getModels().isEmpty()){
+            return true;
+        }
+        if(UtilMethods.isEmpty(requestedModel)){
+            return false;
+        }
+        return config.getImageModel().getModels().stream().anyMatch(m -> m.getName().equals(requestedModel));
+    }
+
     @Override
     public JSONObject sendRequest(final AIImageRequestDTO dto) {
         JSONObject jsonRequest = new JSONObject();
-        jsonRequest.put(AiKeys.MODEL, config.getImageModel().getCurrentModel());
+        if(!allowedModel(dto.getModel())){
+            throw new DotRuntimeException("Model not allowed:" + dto.getModel());
+        }
+        jsonRequest.put(AiKeys.MODEL, dto.getModel());
         jsonRequest.put(AiKeys.PROMPT, dto.getPrompt());
         jsonRequest.put(AiKeys.SIZE, dto.getSize());
+        if(dto.quality!=null && dto.quality>0){
+            jsonRequest.put("quality", dto.quality);
+        }
+        if(UtilMethods.isSet(dto.imageFormat)){
+            jsonRequest.put("image_format", dto.imageFormat);
+        }
+        if(UtilMethods.isSet(dto.background)){
+            jsonRequest.put("background", dto.background);
+        }
+        if(UtilMethods.isSet(dto.moderation)){
+            jsonRequest.put("moderation", dto.moderation);
+        }
+
+
         return sendRequest(jsonRequest);
     }
 
@@ -100,18 +131,28 @@ public class OpenAIImageAPIImpl implements ImageAPI {
 
     private JSONObject createTempFile(final JSONObject imageResponse) {
         final String url = imageResponse.optString(AiKeys.URL);
-        if (UtilMethods.isEmpty(() -> url)) {
-            Logger.warn(this.getClass(), "imageResponse does not include URL:" + imageResponse);
-            throw new DotRuntimeException("Image Response does not include URL:" + imageResponse);
+        final String base64Json= imageResponse.optString(AiKeys.BASE64_JSON);
+
+
+
+        if (UtilMethods.isEmpty(() -> url) && UtilMethods.isEmpty(() -> base64Json)) {
+            Logger.warn(this.getClass(), "imageResponse does not include URL or Base64 image:" + imageResponse);
+            throw new DotRuntimeException("Image Response does not include URL or Base64 image:" + imageResponse);
         }
 
         try {
             final String fileName = generateFileName(imageResponse.getString(AiKeys.ORIGINAL_PROMPT));
-            imageResponse.put("tempFileName", fileName);
+            DotTempFile tmpFile ;
+            if(UtilMethods.isSet(() -> base64Json)) {
+                tmpFile = tempFileApi.createEmptyTempFile(fileName, getRequest());
+                FileUtils.writeByteArrayToFile(tmpFile.file, Base64.getDecoder().decode(base64Json));
+            }else{
+                tmpFile = tempFileApi.createTempFileFromUrl(fileName, getRequest(), new URL(url), 20);
+            }
 
-            final DotTempFile file = tempFileApi.createTempFileFromUrl(fileName, getRequest(), new URL(url), 20);
-            imageResponse.put(AiKeys.RESPONSE, file.id);
-            imageResponse.put("tempFile", file.file.getAbsolutePath());
+
+            imageResponse.put(AiKeys.RESPONSE, tmpFile.id);
+            imageResponse.put("tempFile", tmpFile.file.getAbsolutePath());
 
             return imageResponse;
         } catch (Exception e) {

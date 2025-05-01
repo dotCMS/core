@@ -40,6 +40,11 @@ const refreshIndexes = async () => {
 };
 
 
+
+
+
+
+
 const refreshConfigs = async () => {
     dotAiState.config = {};
 
@@ -295,12 +300,50 @@ const tab3 = () => {
 
 };
 
+
+
+
+
 const tab2 = () => {
 
     displayImagePrompts()
     document.getElementById("imagePrompt").value = (preferences().imageQuery) ? preferences().imageQuery : "" ;
-
+    fillImageModels();
+    doImageModelSelection ()
 };
+
+const hasGPTmage  =() =>{
+
+    return (dotAiState && dotAiState.config["imageModelNames"].indexOf("gpt-image-1")>-1);
+
+}
+
+
+const fillImageModels = () =>{
+
+    const selector = document.getElementById("imageModelSelector");
+    if(selector.options.length>0){
+        return;
+    }
+    const models = dotAiState.config["imageModelNames"].split(',').map(item=>item.trim());
+    for (i = 0; i < models.length; i++) {
+        const newOption = document.createElement("option");
+        newOption.value = models[i];
+        newOption.text = models[i];
+        selector.appendChild(newOption);
+    }
+
+}
+
+const doImageModelSelection = () => {
+    const dali = document.getElementById("imageModelSelector").value.indexOf("dall-e") >-1;
+    document.getElementById("imageModerationTr").style.visibility= dali ? "collapse": "visible";
+    document.getElementById("imageBackgroundTr").style.visibility= dali ? "collapse": "visible";
+
+
+}
+
+
 
 const tab4 = () => {
 
@@ -480,14 +523,37 @@ const doImageJson = () => {
     }, 300);
 }
 
+const supportedImageSizes = {
+    "dall-e-3": {
+        "landscape": "1792x1024",
+        "portrait": "1024x1792",
+        "square": "1024x1024"
+    },
+    "gpt-image-1": {
+        "landscape": "1536x1024",
+        "portrait": "1024x1536",
+        "square": "1024x1024"
+    }
+}
+
+
+
+
+
+
+
+
 const doImageJsonDebounced = async () => {
-    const formDataRaw = new FormData(document.getElementById("imageForm"))
 
-    const formData = Object.fromEntries(Array.from(formDataRaw.keys()).map(key => [key, formDataRaw.getAll(key).length > 1 ? formDataRaw.getAll(key) : formDataRaw.get(key)]))
+    const formData = {}
+    formData.model = document.getElementById("imageModelSelector").value;
+    formData.prompt = document.getElementById("imagePrompt").value;
+    formData.size = supportedImageSizes[formData.model][document.getElementById("imageSizeSelector").value]
+    if(formData.model.indexOf("gpt")>-1){
+        formData.moderation = document.getElementById("imageModerationSelector").value;
+        formData.background = document.getElementById("imageBackgroundSelector").value;
+    }
 
-    const prompt = document.getElementById("imagePrompt").value;
-
-    formData.prompt = prompt;
 
     if (formData.prompt == undefined || formData.prompt.trim().length == 0) {
         alert("please enter a prompt");
@@ -495,7 +561,6 @@ const doImageJsonDebounced = async () => {
         document.getElementById("loaderImage").style.display = "none";
         return;
     }
-
 
 
     const prefs = preferences();
@@ -511,7 +576,13 @@ const doImageJsonDebounced = async () => {
         }
     });
 
-
+    if(!response.ok){
+        const errorText = await response.text();
+        alert("error:" + errorText);
+        document.getElementById("submitImage").style.display = "";
+        document.getElementById("loaderImage").style.display = "none";
+        return;
+    }
 
 
 
@@ -520,8 +591,12 @@ const doImageJsonDebounced = async () => {
         const temp =  json.response;
         const width = formData.size.split("x")[0];
         const height = formData.size.split("x")[1];
+        if(json.b64_json !== undefined && json.b64_json.length>10){
+            json.b64_json = "...."
+
+        }
         const jsonString=JSON.stringify(json, 2);
-        const rewrittenPrompt = json.revised_prompt;
+        const rewrittenPrompt = json.revised_prompt || json.originalPrompt;
         const imageTemplate =`
             <div style="width:100%;max-width:800px;position:relative;text-align:center;border:1px solid silver;padding:1rem;">
                 <a href="/dA/${temp}/asset.png" target="_blank">
@@ -536,7 +611,7 @@ const doImageJsonDebounced = async () => {
                     <div id="imageSavedMessage">&nbsp;</div>
                 </div>
                 <div style="border:1px solid silver;padding:1rem;margin:auto;text-align: left">
-                    <b>OpenAI Prompt (Rewritten):</b> <br>
+                    <b>OpenAI Prompt:</b> <br>
                     ${rewrittenPrompt}
                 </div>
                 <div style="border:1px solid silver;padding:1rem;margin:auto;text-align: left">

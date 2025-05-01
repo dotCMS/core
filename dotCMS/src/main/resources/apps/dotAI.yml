@@ -64,7 +64,7 @@ params:
     hint: "Enable completion model used to generate OpenAI API response."
     required: false
   imageModelNames:
-    value: "dall-e-3"
+    value: "dall-e-3,gpt-image-1"
     hidden: false
     type: "STRING"
     label: "Image Model Names"
@@ -77,32 +77,6 @@ params:
     label: "Image Prompt"
     hint: "Aspect ratio to use for image."
     required: false
-  imageSize:
-    hidden: false
-    type: "SELECT"
-    label: "Image size"
-    hint: "Image size to generate"
-    required: true
-    value:
-      - label: "1792x1024 (Blog Image 3:2)"
-        value: "1792x1024"
-        selected: true
-      - label: "1024x1792 (Blog Image Vertical 2:3)"
-        value: "1024x1792"
-      - label: "1024x1024 (Large Square 1:1)"
-        value: "1024x1024"
-      - label: "1280x720 (Hero Image 16:9)"
-        value: "1280x720"
-      - label: "1200x630 (Image 3:2)"
-        value: "1200x630"
-      - label: "630x1200 (Image Vertical 2:3)"
-        value: "630x1200"
-      - label: "512x512 (Medium Square 1:1)"
-        value: "512x512"
-      - label: "1920x1080 (Background 16:9)"
-        value: "1920x1080"
-      - label: "256x256 (Small Square 1:1)"
-        value: "256x256"
   imageModelTokensPerMinute:
     value: "0"
     hidden: false

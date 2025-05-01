@@ -14,6 +14,10 @@ public class AIImageRequestDTO {
     private final int numberOfImages;
     private final String size;
     private final String model;
+    public final String moderation;
+    public final String imageFormat;
+    public final String background;
+    public final Integer quality;
 
 
     public AIImageRequestDTO(final Builder builder) {
@@ -21,6 +25,12 @@ public class AIImageRequestDTO {
         this.model = builder.model;
         this.prompt = builder.prompt;
         this.size = builder.size;
+        this.background = builder.background;
+        this.imageFormat = builder.imageFormat;
+        this.moderation = builder.moderation;
+        this.quality=builder.quality;
+
+
     }
 
     public String getSize() {
@@ -49,6 +59,14 @@ public class AIImageRequestDTO {
         private String size = appConfig.getImageSize();
         @JsonSetter(nulls = Nulls.SKIP)
         private String model = appConfig.getImageModel().getCurrentModel();
+        @JsonSetter(nulls = Nulls.SKIP)
+        private  String moderation;
+        @JsonSetter(nulls = Nulls.SKIP)
+        private  String imageFormat;
+        @JsonSetter(nulls = Nulls.SKIP)
+        private  String background;
+        @JsonSetter(nulls = Nulls.SKIP)
+        private  Integer quality;
 
         public AIImageRequestDTO build() {
             return new AIImageRequestDTO(this);
@@ -73,6 +91,29 @@ public class AIImageRequestDTO {
             this.size = size;
             return this;
         }
+
+        public Builder moderation(String moderation) {
+            this.moderation = moderation;
+            return this;
+        }
+
+        public Builder background(String background) {
+            this.background = background;
+            return this;
+        }
+
+
+        public Builder quality(Integer quality) {
+            this.quality = quality;
+            return this;
+        }
+
+        public Builder imageFormat(String imageFormat) {
+            this.imageFormat = imageFormat;
+            return this;
+        }
+
+
     }
 
 }
