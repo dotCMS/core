@@ -4,7 +4,7 @@ import * as tinymceReact from '@tinymce/tinymce-react';
 
 import * as dotcmsClient from '@dotcms/client';
 import { CLIENT_ACTIONS } from '@dotcms/client';
-import { DotCMSUVEAction, UVE_MODE } from '@dotcms/types';
+import { DotCMSBasicContentlet, DotCMSUVEAction, UVE_MODE } from '@dotcms/types';
 import { sendMessageToUVE, getUVEState } from '@dotcms/uve';
 
 import { DotCMSEditableText } from '../../components/DotCMSEditableText/DotCMSEditableText';
@@ -241,9 +241,9 @@ describe('DotCMSEditableText', () => {
                 const event = new MouseEvent('mousedown', {
                     bubbles: true
                 });
-                const mutiplePagesContentlet = {
+                const mutiplePagesContentlet: DotCMSBasicContentlet = {
                     ...MOCK_CONTENTLET,
-                    onNumberOfPages: 2
+                    onNumberOfPages: '2'
                 };
 
                 it('should postMessage the UVE if the content is in multiple pages', () => {

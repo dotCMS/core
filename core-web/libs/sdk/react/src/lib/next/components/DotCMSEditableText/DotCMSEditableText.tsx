@@ -113,7 +113,7 @@ export function DotCMSEditableText({
         const { onNumberOfPages = 1 } = contentlet;
         const { inode, languageId: language } = contentlet;
 
-        if (onNumberOfPages <= 1 || editorRef.current?.hasFocus()) {
+        if (Number(onNumberOfPages) <= 1 || editorRef.current?.hasFocus()) {
             return;
         }
 
