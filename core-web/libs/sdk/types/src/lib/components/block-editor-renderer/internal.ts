@@ -4,7 +4,7 @@
  * @export
  * @enum {string}
  */
-export enum Blocks {
+export enum BlockEditorDefaultBlocks {
     /** Represents a paragraph block */
     PARAGRAPH = 'paragraph',
     /** Represents a heading block */

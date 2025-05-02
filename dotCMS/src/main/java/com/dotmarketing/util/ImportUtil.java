@@ -110,6 +110,7 @@ import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.juli.logging.Log;
 
 /**
  * Provides utility methods to import content into dotCMS. The data source is a
@@ -1931,21 +1932,8 @@ public class ImportUtil {
                 fieldResult.messages().forEach(results::addValidationMessage);
 
             } catch (Exception e) {
-
-                if (e instanceof ImportLineException) {
-                    results.addValidationMessage(((ImportLineException) e).toValidationMessage());
-                } else {
-
-                    var exceptionMessage = e.getMessage();
-                    if (!UtilMethods.isSet(exceptionMessage)) {
-                        exceptionMessage = e.toString();
-                    }
-
-                    results.addError(exceptionMessage, field.getVelocityVarName(), value);
-                }
-
-                results.setIgnoreLine(true);
-                return results.build();
+                Logger.debug(ImportUtil.class, "Error processing field, line number: " + lineNumber, e);
+                throw e;
             }
         }
 

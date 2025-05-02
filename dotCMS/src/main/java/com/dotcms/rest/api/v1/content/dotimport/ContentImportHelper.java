@@ -28,9 +28,12 @@ import com.dotmarketing.util.importer.model.AbstractImportResult.OperationType;
 import com.dotmarketing.util.importer.model.AbstractValidationMessage.ValidationMessageType;
 import com.dotmarketing.util.importer.model.ImportResult;
 import com.dotmarketing.util.importer.model.ValidationMessage;
+import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.io.JsonEOFException;
 import com.fasterxml.jackson.databind.exc.ValueInstantiationException;
 import com.liferay.portal.model.User;
+import io.vavr.control.Try;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
@@ -69,7 +72,9 @@ public class ContentImportHelper {
             JobValidationException.class,
             ValidationException.class,
             com.dotcms.rest.exception.ValidationException.class,
-            ValueInstantiationException.class
+            ValueInstantiationException.class,
+            JsonEOFException.class,
+            JsonParseException.class
     );
 
     /**
@@ -301,19 +306,19 @@ public class ContentImportHelper {
      * @param user    The user initiating the import.
      * @param request The HTTP request associated with the import operation.
      * @return A map containing the job parameters for error handling.
-     * @throws IOException If there is an error processing JSON data.
      */
     private Map<String, Object> createJobParametersOnError(
             final String command,
             final ContentImportParams params,
             final User user,
-            final HttpServletRequest request) throws IOException {
+            final HttpServletRequest request) {
 
         final var jsonForm = params.getJsonForm();
 
         final Map<String, Object> jobParameters;
         if (null != jsonForm) {
-            jobParameters = JsonUtil.getJsonFromString(jsonForm);
+            jobParameters = Try.of(() -> JsonUtil.getJsonFromString(jsonForm))
+                    .getOrElse(new HashMap<>());
         } else {
             jobParameters = new HashMap<>();
         }
@@ -456,14 +461,13 @@ public class ContentImportHelper {
      * @param request   The HTTP servlet request
      * @param exception The exception containing the validation error message
      * @return A Response object with BAD_REQUEST status and job error details
-     * @throws JsonProcessingException If there is an error processing the job parameters
      */
     Response responseForValidationException(
             final String command,
             final ContentImportParams params,
             final User user,
             final HttpServletRequest request,
-            final Exception exception) throws IOException {
+            final Exception exception) {
 
         final Map<String, Object> jobParameters = createJobParametersOnError(
                 command, params, user, request

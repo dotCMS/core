@@ -6,8 +6,8 @@ import { of } from 'rxjs';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { DEFAULT_VARIANT_ID, DEFAULT_VARIANT_NAME } from '@dotcms/dotcms-models';
+import { UVE_MODE } from '@dotcms/types';
 import { getRunningExperimentMock, mockDotDevices } from '@dotcms/utils-testing';
-import { UVE_MODE } from '@dotcms/uve/types';
 
 import { withUVEToolbar } from './withUVEToolbar';
 

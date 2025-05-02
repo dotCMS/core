@@ -1,8 +1,8 @@
 import { AsyncPipe, NgComponentOutlet, NgTemplateOutlet } from '@angular/common';
 import { Component, Input } from '@angular/core';
 
-import { Blocks } from '@dotcms/uve/internal';
-import { ContentNode } from '@dotcms/uve/types';
+import { BlockEditorNode } from '@dotcms/types';
+import { BlockEditorDefaultBlocks } from '@dotcms/types/internal';
 
 import { DotCodeBlock, DotBlockQuote } from '../blocks/code.component';
 import { DotContentletBlock } from '../blocks/contentlet.component';
@@ -37,8 +37,8 @@ import { CustomRenderer } from '../dotcms-block-editor-renderer.component';
     ]
 })
 export class DotCMSBlockEditorItemComponent {
-    @Input() content: ContentNode[] | undefined;
+    @Input() content: BlockEditorNode[] | undefined;
     @Input() customRenderers: CustomRenderer | undefined;
 
-    BLOCKS = Blocks;
+    BLOCKS = BlockEditorDefaultBlocks;
 }

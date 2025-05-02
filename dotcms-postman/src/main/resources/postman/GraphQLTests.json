@@ -5,6 +5,7 @@
 		"description": "This suite verifies that the GraphQL REST Endpoint is working as expected.\n\n[GraphQL](https://graphql.org/) is an open query language which allows you to perform real-type dynamic queries which specify exactly what data you want, and in what order. The dotCMS GraphQL content delivery API has a number of advantages over querying content via REST:\n\n- A single endpoint to query all content: `api/v1/graphql`.\n    \n- Self documenting via schema introspection.\n    \n- No over-fetching of data (e.g. unneeded fields).\n    \n- No need for multiple requests to get combined data.\n    \n- Client control over both the query and the data received.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "10041132",
+		"_collection_link": "https://speeding-firefly-555540.postman.co/workspace/dot-graphQL~9b6080f8-c830-4540-b9f7-2bc0a8b1ab58/collection/10041132-d5283386-5b93-44de-99ba-b59613dc8b5a?action=share&source=collection_link&creator=10041132"
 	},
 	"item": [
 		{
@@ -1812,7 +1813,6 @@
 									"listen": "test",
 									"script": {
 										"exec": [
-											"",
 											"let checker = (arr, target) => target.every(v => arr.includes(v));",
 											"",
 											"pm.test(\"Status code is 200\", function () {",
@@ -1821,18 +1821,21 @@
 											"",
 											"pm.test(\"'Page' includes all properties\", function () {",
 											"    var jsonData = pm.response.json();",
-											"    var urlmappedContent = jsonData.data.page.urlContentMap;",
-											"",
+											"    var page = jsonData.data.page;",
+											"    var urlmappedContent = page.urlContentMap;",
+											"    ",
+											"    // Validate properties 'page'",
+											"    pm.expect(page.url, 'FAILED:[page.url]').equal(\"/store/product-detail\");",
+											"    pm.expect(page.pageURI, 'FAILED:[page.pageURI]').equal(\"/store/products/eagles-nest-outfitters-doublenest-hammock-patriot\");",
+											"    ",
+											"    // Validate 'urlContentMap' properties",
 											"    pm.expect(urlmappedContent.title, 'FAILED:[urlmappedContent.title]').equal(\"Eagles Nest Outfitters DoubleNest Hammock Patriot\");",
 											"    pm.expect(urlmappedContent.identifier, 'FAILED:[urlmappedContent.identifier]').equal(\"46e52dc2-e72a-4641-8925-026abf2adccd\");",
 											"    pm.expect(urlmappedContent.urlMap, 'FAILED:[urlmappedContent.urlMap]').equal(\"/store/products/eagles-nest-outfitters-doublenest-hammock-patriot\");",
 											"    pm.expect(urlmappedContent.contentType, 'FAILED:[urlmappedContent.contentType]').equal(\"Product\");",
 											"    pm.expect(urlmappedContent.productNumber, 'FAILED:[urlmappedContent.productNumber]').equal(\"9315054521506-1280000\");",
-											"",
 											"    pm.expect(urlmappedContent.image.idPath, 'FAILED:[urlmappedContent.image.idPath]').equal(\"/dA/46e52dc2e7/image/hammock-1.jpg?language_id=1\");",
-											"",
-											"});",
-											""
+											"});"
 										],
 										"type": "text/javascript",
 										"packages": {}
@@ -1872,7 +1875,7 @@
 								"body": {
 									"mode": "graphql",
 									"graphql": {
-										"query": "{\n  page(url: \"/store/products/eagles-nest-outfitters-doublenest-hammock-patriot\") {\n    title\n    urlContentMap {\n      ... on Product {\n        title\n        tags\n        urlTitle\n        identifier\n        urlMap\n        contentType\n        productNumber\n        image {\n          idPath\n        }\n      }\n    }\n  }\n}\n",
+										"query": "{\n  page(url: \"/store/products/eagles-nest-outfitters-doublenest-hammock-patriot\") {\n    title\n    url\n     pageURI\n    urlContentMap {\n      ... on Product {\n        title\n        tags\n        urlTitle\n        identifier\n        urlMap\n        contentType\n        productNumber\n        image {\n          idPath\n        }\n      }\n    }\n  }\n}\n",
 										"variables": ""
 									}
 								},

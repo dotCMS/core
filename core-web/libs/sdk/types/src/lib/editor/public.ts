@@ -1,7 +1,20 @@
-import { ContentTypeMainFields, DotCMSContainerBound } from './internal';
+import { DotCMSContainerBound } from './internal';
 
-import { DEVELOPMENT_MODE, PRODUCTION_MODE } from '../../../internal';
-import { DotCMSBasicGraphQLPage, DotCMSPageAsset } from '../page/public';
+import { DotCMSBasicContentlet, DotCMSEditablePage } from '../page/public';
+
+/**
+ * Development mode
+ *
+ * @internal
+ */
+export const DEVELOPMENT_MODE = 'development';
+
+/**
+ * Production mode
+ *
+ * @internal
+ */
+export const PRODUCTION_MODE = 'production';
 
 /**
  * Represents the state of the Universal Visual Editor (UVE)
@@ -51,7 +64,7 @@ export enum UVE_MODE {
  * @callback UVEEventHandler
  * @param {unknown} eventData - The event data
  */
-export type UVEEventHandler = (eventData?: unknown) => void;
+export type UVEEventHandler<T = unknown> = (eventData?: T) => void;
 
 /**
  * Unsubscribe function for UVE events
@@ -75,16 +88,6 @@ export type UVEEventSubscription = {
  * @typedef {function} UVEEventSubscriber
  */
 export type UVEEventSubscriber = (callback: UVEEventHandler) => UVEEventSubscription;
-
-//TODO: Recheck this after changes
-/**
- * Configuration type for DotCMS Editor
- * @typedef {Object} DotCMSEditoConfig
- * @property {Object} [params] - Parameters for Page API configuration
- * @property {number} [params.depth] - The depth level for fetching page data
- * @property {string} [query] - GraphQL query string for data fetching
- */
-export type DotCMSEditorConfig = { params: { depth: number } } | { query: string };
 
 /**
  * Actions send to the dotcms editor
@@ -157,7 +160,7 @@ export enum DotCMSUVEAction {
  *
  * @template T - The custom fields of the content type.
  */
-export type Contentlet<T> = T & ContentTypeMainFields;
+export type Contentlet<T> = T & DotCMSBasicContentlet;
 
 /**
  * Available events in the Universal Visual Editor
@@ -214,72 +217,6 @@ export interface EditableContainerData {
     maxContentlets: number;
     variantId?: string;
 }
-
-/**
- *
- * Interface representing the data attributes of a DotCMS container.
- * @interface DotContainerAttributes
- */
-export interface DotContainerAttributes {
-    'data-dot-object': string;
-    'data-dot-accept-types': string;
-    'data-dot-identifier': string;
-    'data-max-contentlets': string;
-    'data-dot-uuid': string;
-}
-
-/**
- *
- * Interface representing the data attributes of a DotCMS contentlet.
- * @interface DotContentletAttributes
- */
-export interface DotContentletAttributes {
-    'data-dot-identifier': string;
-    'data-dot-basetype': string;
-    'data-dot-title': string;
-    'data-dot-inode': string;
-    'data-dot-type': string;
-    'data-dot-container': string;
-    'data-dot-on-number-of-pages': string;
-}
-
-/**
- * Represents a GraphQL error
- * @interface DotCMSGraphQLError
- */
-export interface DotCMSGraphQLError {
-    message: string;
-    locations: {
-        line: number;
-        column: number;
-    }[];
-    extensions: {
-        classification: string;
-    };
-}
-
-/**
- * Represents the complete response from a GraphQL page query
- *
- * @template TContent - The type of the content data
- * @template TNav - The type of the navigation data
- */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export interface DotCMSGraphQLPageResponse<TContent = Record<string, any>> {
-    page: DotCMSBasicGraphQLPage;
-    content?: TContent;
-    errors?: DotCMSGraphQLError;
-    graphql: {
-        query: string;
-        variables: Record<string, unknown>;
-    };
-}
-
-/**
- * Payload for initializing the UVE
- * @interface DotCMSEditablePage
- */
-export type DotCMSEditablePage = DotCMSGraphQLPageResponse | DotCMSPageAsset;
 
 /**
  * Configuration for the UVE

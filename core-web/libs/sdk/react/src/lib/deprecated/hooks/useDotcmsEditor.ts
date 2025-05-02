@@ -8,8 +8,8 @@ import {
     postMessageToEditor,
     updateNavigation
 } from '@dotcms/client';
+import { UVEEventType } from '@dotcms/types';
 import { createUVESubscription } from '@dotcms/uve';
-import { UVEEventType } from '@dotcms/uve/types';
 
 import { DotcmsPageProps } from '../components/DotcmsLayout/DotcmsLayout';
 import { DotCMSPageContext } from '../models';

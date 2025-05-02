@@ -1,4 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { DotCMSGraphQLPageResponse } from '@dotcms/types';
+
 import { GraphQLPageOptions, PageClient } from './page-api';
 import * as utils from './utils';
 
@@ -198,9 +200,10 @@ describe('PageClient', () => {
                 baseURL: 'https://demo.dotcms.com'
             });
 
-            // const pageResponse = graphqlToPageEntity(mockGraphQLResponse |  );
             expect(result).toEqual({
-                page: graphqlToPageEntity(mockGraphQLResponse.data),
+                page: graphqlToPageEntity(
+                    mockGraphQLResponse.data as unknown as DotCMSGraphQLPageResponse
+                ),
                 content: { content: mockGraphQLResponse.data.testContent },
                 graphql: {
                     query: expect.any(String),

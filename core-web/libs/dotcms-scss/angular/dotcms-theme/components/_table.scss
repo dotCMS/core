@@ -143,10 +143,6 @@ $dot-table-cell-height: 1.25rem;
             cursor: pointer;
             overflow-wrap: anywhere;
 
-            &:hover {
-                background-color: $color-palette-primary-200;
-            }
-
             > td {
                 text-align: left;
                 border-bottom: 1px solid $color-palette-gray-300;
@@ -282,19 +278,6 @@ $dot-table-cell-height: 1.25rem;
         .p-datatable-loading-icon {
             font-size: $icon-xl;
             color: $color-palette-secondary;
-        }
-
-        &.p-datatable-hoverable-rows {
-            .p-datatable-tbody > tr:not(.p-highlight):hover {
-                background: $color-palette-primary-100;
-                color: $text-color-hover;
-                transition: background-color ease-in $basic-speed;
-            }
-
-            .p-datatable-tbody > tr.disabled-row:hover {
-                background: $color-palette-gray-200;
-                color: $color-palette-gray-700;
-            }
         }
 
         &.p-datatable-gridlines {

@@ -21,6 +21,7 @@
             [rows]="pagination.rowsPerPage"
             (onPage)="store.setOffset($event)"
             [scrollable]="true"
+            [rowHover]="false"
             styleClass="dotTable p-datatable-existing-content w-full">
             <ng-template pTemplate="caption">
                 <div class="flex justify-content-between align-items-center w-full">
