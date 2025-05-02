@@ -8,7 +8,6 @@ import com.dotcms.rendering.velocity.services.PageRenderUtil;
 import com.dotcms.rendering.velocity.servlet.VelocityModeHandler;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
 import com.dotcms.util.TimeMachineUtil;
-import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
@@ -23,6 +22,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.hostvariable.model.HostVariable;
 import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRaw;
 import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRenderedBuilder;
+import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetNotFoundException;
 import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRenderedAPI;
 import com.dotmarketing.portlets.htmlpageasset.business.render.VanityURLView;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
@@ -36,16 +36,15 @@ import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
-import java.util.Date;
-import org.apache.velocity.context.Context;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import org.apache.velocity.context.Context;
 
 /**
  * This class will be in charge of building the Metadata object for an HTML Page.
@@ -163,8 +162,9 @@ public class HTMLPageAssetRenderedBuilder {
         final PageRenderUtil pageRenderUtil = new PageRenderUtil(
                 this.htmlPageAsset, user, mode, language.getId(), this.site);
 
-        final Optional<Contentlet> urlContentletOpt = this.findUrlContentlet (request);
-
+        // Here we get the URL contentlet, if it exists.
+        // If it exists, we check if the page is live or not.
+        final Optional<Contentlet> urlContentletOpt = getUrlContentlet(mode);
         if (!rendered) {
             final Collection<? extends ContainerRaw> containers =  pageRenderUtil.getContainersRaw();
             final PageView.Builder pageViewBuilder = new PageView.Builder().site(site).template(template).containers(containers)
@@ -203,6 +203,25 @@ public class HTMLPageAssetRenderedBuilder {
 
             return pageViewBuilder.build();
         }
+    }
+
+    /**
+     * Returns the URL contentlet if it exists. If the page is in live mode and the contentlet is not live, an exception is thrown.
+     * @param mode The {@link PageMode} used to get the HTML Page metadata.
+     * @return An {@link Optional} containing the URL contentlet if it exists, otherwise an empty {@link Optional}.
+     * @throws DotDataException An error occurred when accessing the data source.
+     * @throws DotSecurityException The user does not have the specified permissions to perform this action.
+     */
+    private Optional<Contentlet> getUrlContentlet(PageMode mode)
+            throws DotDataException, DotSecurityException {
+        final Optional<Contentlet> urlContentletOpt = this.findUrlContentlet (request);
+        if (urlContentletOpt.isPresent()) {
+            final Contentlet contentlet = urlContentletOpt.get();
+            if(PageMode.LIVE == mode && !contentlet.isLive() ) {
+                throw new HTMLPageAssetNotFoundException(pageUrlMapper);
+            }
+        }
+        return urlContentletOpt;
     }
 
     private Optional<Contentlet> findUrlContentlet(final HttpServletRequest request)
