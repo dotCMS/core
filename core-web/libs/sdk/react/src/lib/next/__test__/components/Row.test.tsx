@@ -1,7 +1,7 @@
 import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
 
-import { DotPageAssetLayoutRow } from '@dotcms/uve/types';
+import { DotPageAssetLayoutRow } from '@dotcms/types';
 
 import { Row } from '../../components/Row/Row';
 import { MOCK_COLUMN } from '../mock';

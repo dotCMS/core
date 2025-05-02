@@ -1,7 +1,7 @@
 import { AsyncPipe, NgComponentOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 
-import { DotCMSContentlet } from '@dotcms/uve/types';
+import { DotCMSBasicContentlet } from '@dotcms/types';
 
 import { DynamicComponentEntity } from '../../../../models';
 
@@ -28,5 +28,5 @@ import { DynamicComponentEntity } from '../../../../models';
 })
 export class FallbackComponent {
     @Input() UserNoComponent: DynamicComponentEntity | null = null;
-    @Input() contentlet!: DotCMSContentlet;
+    @Input() contentlet!: DotCMSBasicContentlet;
 }

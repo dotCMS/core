@@ -1,7 +1,7 @@
 import { Directive, Input, ViewContainerRef, TemplateRef, inject } from '@angular/core';
 
+import { UVE_MODE, UVEState } from '@dotcms/types';
 import { getUVEState } from '@dotcms/uve';
-import { UVE_MODE, UVEState } from '@dotcms/uve/types';
 
 /**
  * Directive to show a template when the UVE is in a specific mode.

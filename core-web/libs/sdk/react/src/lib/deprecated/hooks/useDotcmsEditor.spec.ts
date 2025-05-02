@@ -1,8 +1,8 @@
 import { renderHook } from '@testing-library/react-hooks';
 
 import * as sdkClient from '@dotcms/client';
+import { UVE_MODE, UVEState, UVEEventSubscription } from '@dotcms/types';
 import * as sdkUVE from '@dotcms/uve';
-import { UVE_MODE, UVEState, UVESubscription } from '@dotcms/uve/types';
 
 import { useDotcmsEditor } from './useDotcmsEditor';
 
@@ -36,7 +36,7 @@ jest.mock('@dotcms/uve', () => ({
 describe('useDotcmsEditor', () => {
     let isInsideEditorSpy: jest.SpyInstance<boolean>;
     let getUVEStateSpy: jest.SpyInstance<UVEState | undefined>;
-    let createUVESubscriptionSpy: jest.SpyInstance<UVESubscription>;
+    let createUVESubscriptionSpy: jest.SpyInstance<UVEEventSubscription>;
     let initEditorSpy: jest.SpyInstance<void>;
     let destroyEditorSpy: jest.SpyInstance<void>;
 

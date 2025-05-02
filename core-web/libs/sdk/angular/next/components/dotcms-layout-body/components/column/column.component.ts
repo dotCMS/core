@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, HostBinding, Input, OnChanges } from '@angular/core';
 
+import { DotPageAssetLayoutColumn } from '@dotcms/types';
 import { combineClasses, getColumnPositionClasses } from '@dotcms/uve/internal';
-import { DotPageAssetLayoutColumn } from '@dotcms/uve/types';
 
 import { ContainerComponent } from '../container/container.component';
 /**

@@ -6,6 +6,9 @@
     "type": "git",
     "url": "git+https://github.com/dotCMS/core.git#main"
   },
+  "devDependencies": {
+    "@dotcms/types": "next"
+  },
   "keywords": [
     "dotCMS",
     "CMS",
@@ -16,13 +19,11 @@
   "exports": {
     "./package.json": "./package.json",
     ".": "./src/index.ts",
-    "./types": "./src/types.ts",
     "./internal": "./src/internal.ts"
   },
   "typesVersions": {
     "*": {
       ".": ["./src/index.d.ts"],
-      "types": ["./src/types.d.ts"],
       "internal": ["./src/internal.d.ts"]
     }
   },

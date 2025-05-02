@@ -1,5 +1,5 @@
-import { BlockEditorState, DotCMSContainerBound } from '@dotcms/uve/internal';
-import { DotCMSUVEAction, Block } from '@dotcms/uve/types';
+import { DotCMSUVEAction, BlockEditorContent } from '@dotcms/types';
+import { BlockEditorState, DotCMSContainerBound } from '@dotcms/types/internal';
 
 import { sendMessageToUVE } from './public';
 
@@ -29,7 +29,7 @@ export function setBounds(bounds: DotCMSContainerBound[]): void {
  * @property {boolean} BlockEditorState.isValid - Whether the blocks structure is valid
  * @property {string | null} BlockEditorState.error - Error message if invalid, null if valid
  */
-export const isValidBlocks = (blocks: Block): BlockEditorState => {
+export const isValidBlocks = (blocks: BlockEditorContent): BlockEditorState => {
     if (!blocks) {
         return {
             error: `Error: Blocks object is not defined`
