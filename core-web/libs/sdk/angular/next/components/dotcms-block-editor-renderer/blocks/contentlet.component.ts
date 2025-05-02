@@ -1,7 +1,7 @@
 import { AsyncPipe, NgComponentOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, Input } from '@angular/core';
 
-import { Contentlet, ContentNode } from '@dotcms/uve/types';
+import { Contentlet, BlockEditorNode } from '@dotcms/types';
 
 import { DynamicComponentEntity } from '../../../models';
 import { CustomRenderer } from '../dotcms-block-editor-renderer.component';
@@ -31,7 +31,7 @@ export class DotDefaultContentBlock {
 })
 export class DotContentletBlock {
     @Input() customRenderers: CustomRenderer | undefined;
-    @Input() attrs: ContentNode['attrs'];
+    @Input() attrs: BlockEditorNode['attrs'];
 
     contentComponent: DynamicComponentEntity | undefined;
 

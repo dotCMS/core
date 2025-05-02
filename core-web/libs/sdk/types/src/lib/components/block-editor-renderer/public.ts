@@ -4,7 +4,7 @@
  * @export
  * @interface Mark
  */
-export interface Mark {
+export interface BlockEditorMark {
     type: string;
     attrs: Record<string, string>;
 }
@@ -13,18 +13,18 @@ export interface Mark {
  * Represents a Content Node used by the Block Editor
  *
  * @export
- * @interface ContentNode
+ * @interface BlockEditorNode
  */
-export interface ContentNode {
+export interface BlockEditorNode {
     /** The type of content node */
     type: string;
     /** Child content nodes */
-    content?: ContentNode[];
+    content?: BlockEditorNode[];
     /** Optional attributes for the node */
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     attrs?: Record<string, any>;
     /** Optional marks applied to text content */
-    marks?: Mark[];
+    marks?: BlockEditorMark[];
     /** Optional text content */
     text?: string;
 }
@@ -33,9 +33,9 @@ export interface ContentNode {
  * Represents a Block in the Block Editor
  *
  * @export
- * @interface Block
+ * @interface BlockEditorContent
  */
-export interface Block {
-    content?: ContentNode[];
+export interface BlockEditorContent {
+    content?: BlockEditorNode[];
     type: string;
 }

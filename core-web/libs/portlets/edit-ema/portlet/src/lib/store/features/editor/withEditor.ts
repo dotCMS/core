@@ -10,8 +10,8 @@ import {
 import { computed, inject, untracked } from '@angular/core';
 
 import { DotTreeNode, SeoMetaTags } from '@dotcms/dotcms-models';
+import { UVE_MODE } from '@dotcms/types';
 import { WINDOW } from '@dotcms/utils';
-import { UVE_MODE } from '@dotcms/uve/types';
 
 import {
     EditorProps,

@@ -10,6 +10,9 @@
     "@tinymce/tinymce-angular": "^8.0.0",
     "rxjs": ">=7.0.0"
   },
+  "devDependencies": {
+    "@dotcms/types": "next"
+  },
   "description": "Official Angular Components library to render a dotCMS page.",
   "repository": {
     "type": "git",

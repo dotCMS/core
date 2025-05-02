@@ -7,9 +7,9 @@ jest.mock('@dotcms/uve', () => ({
     getUVEState: jest.fn()
 }));
 
+import { DotCMSPageAsset, UVE_MODE } from '@dotcms/types';
 import { getUVEState } from '@dotcms/uve';
 import { DEVELOPMENT_MODE, PRODUCTION_MODE } from '@dotcms/uve/internal';
-import { DotCMSPageAsset, UVE_MODE } from '@dotcms/uve/types';
 
 import { DotCMSStore, EMPTY_DOTCMS_PAGE_STORE } from './dotcms.store';
 

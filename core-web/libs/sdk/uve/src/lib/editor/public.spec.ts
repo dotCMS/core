@@ -1,9 +1,9 @@
-import { DotCMSReorderMenuConfig } from '@dotcms/uve/internal';
+import { Contentlet, DotCMSUVEAction } from '@dotcms/types';
+import { DotCMSReorderMenuConfig } from '@dotcms/types/internal';
 
 import { sendMessageToUVE, editContentlet, reorderMenu, initUVE } from './public';
 
 import * as utils from '../../script/utils';
-import { Contentlet, DotCMSUVEAction } from '../types/editor/public';
 
 describe('UVE Public Functions', () => {
     let postMessageSpy: jest.SpyInstance;
