@@ -6,9 +6,9 @@ import { of } from 'rxjs';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { DEFAULT_VARIANT_ID, DotDeviceListItem } from '@dotcms/dotcms-models';
+import { UVE_MODE } from '@dotcms/types';
 import { WINDOW } from '@dotcms/utils';
 import { mockDotDevices, seoOGTagsMock } from '@dotcms/utils-testing';
-import { UVE_MODE } from '@dotcms/uve/types';
 
 import { withEditor } from './withEditor';
 

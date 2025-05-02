@@ -15,9 +15,10 @@ import {
 } from '@angular/core';
 import { DomSanitizer } from '@angular/platform-browser';
 
+import { DotCMSBasicContentlet, DotCMSUVEAction, UVE_MODE } from '@dotcms/types';
+import { __DOTCMS_UVE_EVENT__ } from '@dotcms/types/internal';
 import { getUVEState, sendMessageToUVE } from '@dotcms/uve';
-import { __DOTCMS_UVE_EVENT__, __TINYMCE_PATH_ON_DOTCMS__ } from '@dotcms/uve/internal';
-import { DotCMSContentlet, DotCMSUVEAction, UVE_MODE } from '@dotcms/uve/types';
+import { __TINYMCE_PATH_ON_DOTCMS__ } from '@dotcms/uve/internal';
 
 import { TINYMCE_CONFIG, DOT_EDITABLE_TEXT_FORMAT, DOT_EDITABLE_TEXT_MODE } from './utils';
 
@@ -70,7 +71,7 @@ export class DotCMSEditableTextComponent implements OnInit, OnChanges {
      * @type {DotCMSContentlet}
      * @memberof DotCMSEditableTextComponent
      */
-    @Input() contentlet!: DotCMSContentlet;
+    @Input() contentlet!: DotCMSBasicContentlet;
     /**
      * Represents the field name of the `contentlet` that can be edited
      *
@@ -192,7 +193,7 @@ export class DotCMSEditableTextComponent implements OnInit, OnChanges {
      * @memberof DotCMSEditableTextComponent
      */
     onMouseDown({ event }: EventObj<MouseEvent>) {
-        if (this.onNumberOfPages <= 1 || this.editorComponent.editor.hasFocus()) {
+        if (Number(this.onNumberOfPages) <= 1 || this.editorComponent.editor.hasFocus()) {
             return;
         }
 

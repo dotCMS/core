@@ -3,8 +3,8 @@ import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 
 import { Component, ElementRef, Input, Type } from '@angular/core';
 
+import { DotCMSBasicContentlet } from '@dotcms/types';
 import { CUSTOM_NO_COMPONENT } from '@dotcms/uve/internal';
-import { DotCMSContentlet } from '@dotcms/uve/types';
 
 import { ContentletComponent } from './contentlet.component';
 
@@ -17,7 +17,7 @@ import { FallbackComponent } from '../fallback-component/fallback-component.comp
     template: '<div>Mock Component</div>'
 })
 class MockComponent {
-    @Input() contentlet: DotCMSContentlet | undefined;
+    @Input() contentlet: DotCMSBasicContentlet | undefined;
 }
 
 describe('ContentletComponent', () => {
@@ -25,13 +25,13 @@ describe('ContentletComponent', () => {
     let component: ContentletComponent;
     let dotcmsStore: jest.Mocked<DotCMSStore>;
 
-    const mockContentlet: DotCMSContentlet = {
+    const mockContentlet: DotCMSBasicContentlet = {
         identifier: 'test-contentlet-id',
         inode: 'test-inode',
         contentType: 'test-content-type',
         title: 'Test Contentlet',
         baseType: 'test-basetype'
-    } as DotCMSContentlet;
+    } as DotCMSBasicContentlet;
 
     // Create proper DynamicComponentEntity objects (Promise<Type<any>>)
     const mockComponentsStore = {

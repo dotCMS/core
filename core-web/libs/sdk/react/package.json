@@ -8,6 +8,9 @@
     "@dotcms/uve": "next",
     "@tinymce/tinymce-react": "^6.0.0"
   },
+  "devDependencies": {
+    "@dotcms/types": "next"
+  },
   "description": "Official React Components library to render a dotCMS page.",
   "repository": {
     "type": "git",

@@ -1,4 +1,4 @@
-import { DotCMSPageAsset, DotCMSContentlet } from '@dotcms/uve/types';
+import { DotCMSPageAsset, DotCMSBasicContentlet } from '@dotcms/types';
 
 export const PageResponseMock: DotCMSPageAsset = {
     canCreateTemplate: true,
@@ -69,7 +69,7 @@ export const PageResponseMock: DotCMSPageAsset = {
                         hasTitleImage: true,
                         sortOrder: 0,
                         modUser: 'dotcms.org.1',
-                        onNumberOfPages: 3
+                        onNumberOfPages: '3'
                     }
                 ]
             },
@@ -189,7 +189,7 @@ export const PageResponseMock: DotCMSPageAsset = {
                         hasTitleImage: true,
                         sortOrder: 0,
                         modUser: 'dotcms.org.1',
-                        onNumberOfPages: 1
+                        onNumberOfPages: '1'
                     }
                 ]
             },
@@ -638,7 +638,7 @@ export const PageResponseOneRowMock: DotCMSPageAsset = {
     }
 };
 
-export const dotcmsContentletMock: DotCMSContentlet = {
+export const dotcmsContentletMock: DotCMSBasicContentlet = {
     archived: false,
     baseType: '',
     contentType: '',

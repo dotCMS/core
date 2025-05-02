@@ -1,9 +1,10 @@
+import { DotCMSPageAsset, DotCMSGraphQLPageResponse } from '@dotcms/types';
+
 import { buildPageQuery, buildQuery, fetchGraphQL, mapResponseData } from './utils';
 
 import { graphqlToPageEntity } from '../../utils';
 import { DotCMSClientConfig, RequestOptions } from '../client';
 import { ErrorMessages } from '../models';
-import { DotCMSGraphQLPageResponse, DotCMSPageAsset } from '../models/types';
 
 /**
  * The parameters for the Page API.
@@ -192,21 +193,27 @@ export class PageClient {
      *      });
      *```
      */
-    get(url: string, options?: PageRequestParams): Promise<DotCMSPageAsset>;
-    get(url: string, options?: GraphQLPageOptions): Promise<DotCMSGraphQLPageResponse>;
-    get(
+    get<T extends DotCMSPageAsset | DotCMSGraphQLPageResponse = DotCMSPageAsset>(
+        url: string,
+        options?: PageRequestParams
+    ): Promise<T>;
+    get<T extends DotCMSPageAsset | DotCMSGraphQLPageResponse = DotCMSGraphQLPageResponse>(
+        url: string,
+        options?: GraphQLPageOptions
+    ): Promise<T>;
+    get<T extends DotCMSPageAsset | DotCMSGraphQLPageResponse>(
         url: string,
         options?: PageRequestParams | GraphQLPageOptions
-    ): Promise<DotCMSPageAsset | DotCMSGraphQLPageResponse> {
+    ): Promise<T> {
         if (!options) {
-            return this.#getPageFromAPI(url);
+            return this.#getPageFromAPI(url) as Promise<T>;
         }
 
         if (this.#isGraphQLRequest(options)) {
-            return this.#getPageFromGraphQL(url, options);
+            return this.#getPageFromGraphQL(url, options) as Promise<T>;
         }
 
-        return this.#getPageFromAPI(url, options);
+        return this.#getPageFromAPI(url, options) as Promise<T>;
     }
 
     /**

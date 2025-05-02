@@ -1,8 +1,8 @@
 import { renderHook } from '@testing-library/react-hooks';
 
 import * as sdkClient from '@dotcms/client';
+import { UVE_MODE, UVEState, UVEEventSubscription } from '@dotcms/types';
 import * as sdkUVE from '@dotcms/uve';
-import { UVE_MODE, UVEState, UVEEventSubscription } from '@dotcms/uve/types';
 
 import { useDotcmsEditor } from './useDotcmsEditor';
 

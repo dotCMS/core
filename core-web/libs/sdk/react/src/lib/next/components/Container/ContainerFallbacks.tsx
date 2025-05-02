@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 
+import { DotContainerAttributes } from '@dotcms/types/internal';
 import { EMPTY_CONTAINER_STYLE_REACT } from '@dotcms/uve/internal';
-import { DotContainerAttributes } from '@dotcms/uve/types';
 
 import { useIsDevMode } from '../../hooks/useIsDevMode';
 

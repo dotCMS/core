@@ -1,8 +1,8 @@
 import { renderHook } from '@testing-library/react';
 
+import { UVE_MODE } from '@dotcms/types';
 import { getUVEState } from '@dotcms/uve';
 import { DEVELOPMENT_MODE, PRODUCTION_MODE } from '@dotcms/uve/internal';
-import { UVE_MODE } from '@dotcms/uve/types';
 
 import { DotCMSPageContext } from '../../contexts/DotCMSPageContext';
 import { useIsDevMode } from '../../hooks/useIsDevMode';

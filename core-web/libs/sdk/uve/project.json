@@ -25,10 +25,7 @@
             "outputs": ["{options.outputPath}"],
             "options": {
                 "main": "libs/sdk/uve/src/index.ts",
-                "additionalEntryPoints": [
-                    "libs/sdk/uve/src/types.ts",
-                    "libs/sdk/uve/src/internal.ts"
-                ],
+                "additionalEntryPoints": ["libs/sdk/uve/src/internal.ts"],
                 "generateExportsField": true,
                 "outputPath": "dist/libs/sdk/uve",
                 "tsConfig": "libs/sdk/uve/tsconfig.lib.json",
