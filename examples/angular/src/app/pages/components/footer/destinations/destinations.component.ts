@@ -5,9 +5,8 @@ import {
   signal,
 } from '@angular/core';
 
-import { GenericContentlet } from '../..';
 import { ContentletsWrapperComponent } from '../../../../shared/contentlets-wrapper/contentlets.component';
-import { Contentlet, DotCMSURLContentMap } from '@dotcms/types';
+import { DotCMSURLContentMap } from '@dotcms/types';
 import { DotCmsClient } from '@dotcms/client';
 import { DOTCMS_CLIENT_TOKEN } from '../../../../app.config';
 

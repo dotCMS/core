@@ -13,9 +13,8 @@ import { NavigationComponent } from "../components/navigation/navigation.compone
 import { LoadingComponent } from "../components/loading/loading.component";
 import { ErrorComponent } from "../components/error/error.component";
 import { FooterComponent } from "../components/footer/footer.component";
-import { Block } from '@angular/compiler';
 import { BlogPostComponent } from './blog-post/blog-post.component';
-import { Contentlet, DotCMSPageAsset } from '@dotcms/types';
+import { DotCMSPageAsset } from '@dotcms/types';
 
 
 export type PageError = {
