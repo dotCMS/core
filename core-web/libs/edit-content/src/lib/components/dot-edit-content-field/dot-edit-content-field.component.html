@@ -107,6 +107,7 @@
             <ng-container [ngTemplateOutlet]="labelTemplate" />
             <dot-edit-content-custom-field
                 [field]="field"
+                [inode]="contentlet?.inode"
                 [contentType]="contentType"
                 [attr.data-testId]="'field-' + field.variable" />
         }
