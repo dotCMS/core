@@ -1,9 +1,10 @@
 import { Editor } from '@tinymce/tinymce-react';
 import { useEffect, useRef, useState } from 'react';
 
+import { DotCMSUVEAction, UVE_MODE } from '@dotcms/types';
+import { __DOTCMS_UVE_EVENT__ } from '@dotcms/types/internal';
 import { sendMessageToUVE, getUVEState } from '@dotcms/uve';
-import { __DOTCMS_UVE_EVENT__, __TINYMCE_PATH_ON_DOTCMS__ } from '@dotcms/uve/internal';
-import { DotCMSUVEAction, UVE_MODE } from '@dotcms/uve/types';
+import { __TINYMCE_PATH_ON_DOTCMS__ } from '@dotcms/uve/internal';
 
 import { DotCMSEditableTextProps, TINYMCE_CONFIG } from './utils';
 

@@ -4,8 +4,8 @@ import * as tinymceReact from '@tinymce/tinymce-react';
 
 import * as dotcmsClient from '@dotcms/client';
 import { CLIENT_ACTIONS } from '@dotcms/client';
+import { DotCMSUVEAction, UVE_MODE } from '@dotcms/types';
 import { sendMessageToUVE, getUVEState } from '@dotcms/uve';
-import { DotCMSUVEAction, UVE_MODE } from '@dotcms/uve/types';
 
 import { DotCMSEditableText } from '../../components/DotCMSEditableText/DotCMSEditableText';
 import { MOCK_CONTENTLET } from '../mock';

@@ -1,4 +1,9 @@
-import { DotCMSColumnContainer, DotCMSPageAsset, DotPageAssetLayoutColumn } from '@dotcms/types';
+import {
+    DotCMSColumnContainer,
+    DotCMSPageAsset,
+    DotPageAssetLayoutColumn,
+    DotCMSBasicContentlet
+} from '@dotcms/types';
 
 export const MOCK_COLUMN: DotPageAssetLayoutColumn = {
     left: 0,
@@ -59,7 +64,7 @@ export const MOCK_CONTAINER_DATA = {
     maxContentlets: 10
 };
 
-export const MOCK_CONTENTLET: DotCMSContentlet = {
+export const MOCK_CONTENTLET: DotCMSBasicContentlet = {
     archived: false,
     baseType: '',
     contentType: '',
