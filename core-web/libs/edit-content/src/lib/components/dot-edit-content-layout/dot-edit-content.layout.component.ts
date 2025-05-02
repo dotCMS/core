@@ -90,4 +90,16 @@ export class DotEditContentLayoutComponent {
     onFormChange(value: FormValues) {
         this.$store.onFormChange(value);
     }
+
+    /**
+     * Closes the beta message.
+     *
+     * @memberof EditContentLayoutComponent
+     */
+    closeMessage(message: 'betaMessage') {
+        if (message === 'betaMessage') {
+            // We need to store this in the store to persist the state
+            this.$store.toggleBetaMessage();
+        }
+    }
 }

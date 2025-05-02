@@ -46,7 +46,7 @@ describe('RelationshipFieldService', () => {
     });
 
     describe('getColumns', () => {
-        it('should map fields to columns', (done) => {
+        it('should map fields to columns excluding title, language and modDate', () => {
             const mockFields = [
                 {
                     variable: 'field1',
@@ -55,6 +55,18 @@ describe('RelationshipFieldService', () => {
                 {
                     variable: 'description',
                     name: 'Description'
+                },
+                {
+                    variable: 'titleField',
+                    name: 'Title'
+                },
+                {
+                    variable: 'languageField',
+                    name: 'Language'
+                },
+                {
+                    variable: 'modDateField',
+                    name: 'ModDate'
                 }
             ] as DotCMSContentTypeField[];
 
@@ -62,10 +74,11 @@ describe('RelationshipFieldService', () => {
 
             const contentTypeId = '123';
 
-            const expectedColumns = mockFields.map((field) => ({
-                field: field.variable,
-                header: field.name
-            }));
+            // Only fields not in EXCLUDED_COLUMNS should be included
+            const expectedColumns = [
+                { field: 'field1', header: 'Field 1' },
+                { field: 'description', header: 'Description' }
+            ];
 
             spectator.service.getColumns(contentTypeId).subscribe((columns) => {
                 expect(dotFieldService.getFields).toHaveBeenCalledWith(
@@ -73,7 +86,42 @@ describe('RelationshipFieldService', () => {
                     'SHOW_IN_LIST'
                 );
                 expect(columns).toEqual(expectedColumns);
-                done();
+            });
+        });
+
+        it('should handle case-insensitive exclusion of reserved columns', () => {
+            const mockFields = [
+                {
+                    variable: 'field1',
+                    name: 'Field 1'
+                },
+                {
+                    variable: 'titleField',
+                    name: 'TITLE' // uppercase
+                },
+                {
+                    variable: 'languageField',
+                    name: 'Language' // mixed case
+                },
+                {
+                    variable: 'modDateField',
+                    name: 'moddate' // lowercase
+                }
+            ] as DotCMSContentTypeField[];
+
+            dotFieldService.getFields.mockReturnValue(of(mockFields));
+
+            const contentTypeId = '123';
+
+            // Only non-excluded fields should be included, regardless of case
+            const expectedColumns = [{ field: 'field1', header: 'Field 1' }];
+
+            spectator.service.getColumns(contentTypeId).subscribe((columns) => {
+                expect(dotFieldService.getFields).toHaveBeenCalledWith(
+                    contentTypeId,
+                    'SHOW_IN_LIST'
+                );
+                expect(columns).toEqual(expectedColumns);
             });
         });
 
@@ -92,14 +140,25 @@ describe('RelationshipFieldService', () => {
             });
         });
 
-        it('should handle fields with missing properties', (done) => {
+        it('should filter out fields with missing variable or name', (done) => {
             const mockFields = [
                 {
                     variable: 'field1',
                     name: 'Field 1'
                 },
                 {
-                    variable: 'description' // missing name
+                    variable: 'field2' // missing name
+                },
+                {
+                    name: 'Field 3' // missing variable
+                },
+                {
+                    variable: null,
+                    name: 'Field 4'
+                },
+                {
+                    variable: 'field5',
+                    name: null
                 }
             ] as DotCMSContentTypeField[];
 
