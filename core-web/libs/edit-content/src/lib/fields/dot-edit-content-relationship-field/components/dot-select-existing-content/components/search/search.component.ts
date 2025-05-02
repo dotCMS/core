@@ -109,7 +109,7 @@ export class SearchComponent {
      */
     getValues(): SearchParams {
         const values = this.form.getRawValue();
-        const systemSearchableFields  = values.systemSearchableFields;
+        const systemSearchableFields = values.systemSearchableFields;
         const { siteOrFolderId, ...otherFields } = systemSearchableFields;
 
         // If no site or folder ID is selected, return filtered values
@@ -142,12 +142,15 @@ export class SearchComponent {
      * @returns Object with only valid values
      */
     private filterEmptyValues(values: Record<string, unknown>): Record<string, unknown> {
-        return Object.entries(values).reduce((acc, [key, val]) => {
-            if (val !== -1 && val !== '' && val != null) {
-                acc[key] = val;
-            }
+        return Object.entries(values).reduce(
+            (acc, [key, val]) => {
+                if (val !== -1 && val !== '' && val != null) {
+                    acc[key] = val;
+                }
 
-            return acc;
-        }, {} as Record<string, unknown>);
+                return acc;
+            },
+            {} as Record<string, unknown>
+        );
     }
 }
