@@ -3,7 +3,7 @@ import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
 import React from 'react';
 
-import { DotCMSContentlet } from '@dotcms/uve/types';
+import { DotCMSContentlet } from '@dotcms/types';
 
 import { FallbackComponent } from '../../components/FallbackComponent/FallbackComponent';
 import * as useIsDevModeHook from '../../hooks/useIsDevMode';
