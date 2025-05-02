@@ -180,15 +180,15 @@ $color-alert-purple: $color-palette-purple;
 $color-alert-purple-light: $color-palette-purple-tint;
 
 // Blue sass variables
-$color-palette-blue-shade: $color-palette-primary-600;
-$color-palette-blue: $color-palette-primary-500;
-$color-palette-blue-tint: $color-palette-primary-200;
+$color-palette-blue-shade: #18186d;
+$color-palette-blue: #1243e3;
+$color-palette-blue-tint: #dbeafe;
 
 $color-palette-blue-op-08: rgba($color-palette-blue, 0.8);
 $color-palette-blue-op-10: rgba($color-palette-blue, 0.1);
 $color-palette-blue-op-15: rgba($color-palette-blue, 0.15);
 $color-palette-blue-op-20: rgba($color-palette-blue, 0.2);
-$color-palette-blue-op-07: rgba($color-palette-blue, 0.07);
+$color-palette-blue-op-70: rgba($color-palette-blue, 0.7);
 
 $color-accessible-text-blue: $color-palette-blue-shade;
 $color-accessible-text-blue-bg: $color-palette-blue-op-08;
