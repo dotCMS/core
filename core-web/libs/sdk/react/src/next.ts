@@ -5,3 +5,5 @@ export { DotCMSShow } from './lib/next/components/DotCMSShow/DotCMSShow';
 export { useDotCMSShowWhen } from './lib/next/hooks/useDotCMSShowWhen';
 
 export { useEditableDotCMSPage } from './lib/next/hooks/useEditableDotCMSPage';
+
+export { DotCMSEditableText } from './lib/next/components/DotCMSEditableText/DotCMSEditableText';

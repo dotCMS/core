@@ -11,8 +11,10 @@ import { mockPageContext } from '../mocks/mockPageContext';
 
 jest.mock('@dotcms/client', () => ({
     ...jest.requireActual('@dotcms/client'),
-    isInsideEditor: () => true,
+    isInsideEditor: jest.fn().mockReturnValue(true),
     postMessageToEditor: jest.fn(),
+    initEditor: jest.fn(),
+    destroyEditor: jest.fn(),
     DotCmsClient: {
         instance: {
             editor: {
@@ -26,7 +28,15 @@ jest.mock('@dotcms/client', () => ({
 
 jest.mock('@dotcms/uve', () => ({
     ...jest.requireActual('@dotcms/uve'),
-    getUVEState: jest.fn(),
+    getUVEState: jest.fn().mockReturnValue({
+        mode: 'EDIT_MODE',
+        persona: null,
+        variantName: null,
+        experimentId: null,
+        publishDate: null,
+        languageId: null,
+        dotCMSHost: null
+    }),
     createUVESubscription: jest.fn().mockReturnValue({
         event: 'changes',
         unsubscribe: jest.fn()
@@ -42,9 +52,9 @@ describe('useDotcmsEditor', () => {
 
     beforeEach(() => {
         isInsideEditorSpy = jest.spyOn(sdkClient, 'isInsideEditor');
-        getUVEStateSpy = jest.spyOn(sdkUVE, 'getUVEState');
         initEditorSpy = jest.spyOn(sdkClient, 'initEditor');
         destroyEditorSpy = jest.spyOn(sdkClient, 'destroyEditor');
+        getUVEStateSpy = jest.spyOn(sdkUVE, 'getUVEState');
         createUVESubscriptionSpy = jest.spyOn(sdkUVE, 'createUVESubscription');
     });
 
@@ -77,7 +87,8 @@ describe('useDotcmsEditor', () => {
                 variantName: null,
                 experimentId: null,
                 publishDate: null,
-                languageId: null
+                languageId: null,
+                dotCMSHost: null
             });
 
             renderHook(() =>
@@ -92,6 +103,15 @@ describe('useDotcmsEditor', () => {
 
         it('should call destroyEditor on unmount when inside editor', () => {
             isInsideEditorSpy.mockReturnValueOnce(true);
+            getUVEStateSpy.mockReturnValueOnce({
+                mode: UVE_MODE.EDIT,
+                persona: null,
+                variantName: null,
+                experimentId: null,
+                publishDate: null,
+                languageId: null,
+                dotCMSHost: null
+            });
 
             const { unmount } = renderHook(() =>
                 useDotcmsEditor({
@@ -124,7 +144,8 @@ describe('useDotcmsEditor', () => {
                     variantName: null,
                     experimentId: null,
                     publishDate: null,
-                    languageId: null
+                    languageId: null,
+                    dotCMSHost: null
                 });
             });
 
@@ -206,7 +227,8 @@ describe('useDotcmsEditor', () => {
                     variantName: null,
                     experimentId: null,
                     publishDate: null,
-                    languageId: null
+                    languageId: null,
+                    dotCMSHost: null
                 });
             });
 
