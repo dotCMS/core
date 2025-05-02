@@ -58,6 +58,10 @@ export class DotEditContentCustomFieldComponent implements OnDestroy, AfterViewI
      */
     $contentType = input<string>(null, { alias: 'contentType' });
     /**
+     * The inode of the content to render the field for.
+     */
+    $inode = input<string>(null, { alias: 'inode' });
+    /**
      * The iframe element to render the custom field in.
      */
     iframe = viewChild<ElementRef<HTMLIFrameElement>>('iframe');
@@ -86,6 +90,7 @@ export class DotEditContentCustomFieldComponent implements OnDestroy, AfterViewI
     $src = computed(() => {
         const field = this.$field();
         const contentType = this.$contentType();
+        const inode = this.$inode() || '';
 
         if (!field || !contentType) {
             return '';
@@ -93,7 +98,8 @@ export class DotEditContentCustomFieldComponent implements OnDestroy, AfterViewI
 
         const params = new URLSearchParams({
             variable: contentType,
-            field: field.variable
+            field: field.variable,
+            inode
         });
 
         return `/html/legacy_custom_field/legacy-custom-field.jsp?${params}`;
