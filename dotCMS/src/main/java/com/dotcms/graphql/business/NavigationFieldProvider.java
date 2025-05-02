@@ -29,7 +29,7 @@ public enum NavigationFieldProvider implements GraphQLFieldsProvider {
     public Collection<GraphQLFieldDefinition> getFields() throws DotDataException {
         final GraphQLOutputType outputType = (GraphQLOutputType)NavigationTypeProvider.INSTANCE.getTypes().iterator().next();
         return Set.of(newFieldDefinition()
-                .name("Navigation")
+                .name("DotNavigationAPI")
                 .argument(GraphQLArgument.newArgument()
                         .name("uri")
                         .type(new GraphQLNonNull(GraphQLString))

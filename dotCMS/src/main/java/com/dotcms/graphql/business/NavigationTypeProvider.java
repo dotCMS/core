@@ -31,7 +31,7 @@ public enum NavigationTypeProvider implements GraphQLTypesProvider {
         final Map<String, GraphQLOutputType> fields = new HashMap<>();
         // Using GraphQLTypeReference to create a recursive structure
         // This allows children to have the same structure as their parent
-        fields.put("children", GraphQLList.list(new GraphQLTypeReference("Navigation")));
+        fields.put("children", GraphQLList.list(new GraphQLTypeReference("DotNavigationAPI")));
         fields.put("code", GraphQLString);
         fields.put("folder", GraphQLString);
         fields.put("hash", GraphQLInt);
@@ -47,7 +47,7 @@ public enum NavigationTypeProvider implements GraphQLTypesProvider {
 
     final Map<String, GraphQLOutputType> navigationFields = createNavigationFields();
 
-    final GraphQLObjectType navigationType = createObjectType("Navigation", navigationFields, null);
+    final GraphQLObjectType navigationType = createObjectType("DotNavigationAPI", navigationFields, null);
 
     /**
      * Returns the GraphQL type for Navigation.
@@ -55,7 +55,7 @@ public enum NavigationTypeProvider implements GraphQLTypesProvider {
      */
     @Override
     public Collection<? extends GraphQLType> getTypes() {
-        Logger.debug(this, ()->"Creating Navigation types");
+        Logger.debug(this, ()->"Creating DotNavigationAPI types");
         return List.of(navigationType);
     }
 }
