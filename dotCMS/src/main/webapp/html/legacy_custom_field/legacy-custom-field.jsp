@@ -265,7 +265,7 @@
         ContentType contentType = contentTypeAPI.find(contentTypeVarName);
 
         // GET CURRENT CONTENTLET OBJECT
-        String inode = request.getParameter("inode") != null ? request.getParameter("inode") : "a1f8eb76-b866-4194-8def-3749a49507a8";
+        String inode = request.getParameter("inode") != null ? request.getParameter("inode") : null;
         ContentletAPI conAPI = APILocator.getContentletAPI();
         Contentlet contentlet =  (inode!=null) ? conAPI.find(inode,user,false) : new Contentlet();
         String contentletObj = "{}";
