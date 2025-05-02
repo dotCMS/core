@@ -327,6 +327,9 @@
                                     valueDescriptor.set.apply(this, [value]);
                                     // EMIT THE CHANGE EVENT TO ANGULAR
                                     console.log(`CHANGING INPUT ${variable} TO: ${value}`);
+                                    if(DotCustomFieldApi ) {
+                                        DotCustomFieldApi.set(variable, value);
+                                    }
                                 }
                             });
                             
