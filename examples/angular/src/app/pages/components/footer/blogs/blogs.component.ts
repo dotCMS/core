@@ -7,8 +7,7 @@ import {
 import { DotCmsClient } from '@dotcms/client';
 import { ContentletsWrapperComponent } from '../../../../shared/contentlets-wrapper/contentlets.component';
 import { DOTCMS_CLIENT_TOKEN } from '../../../../app.config';
-import { GenericContentlet } from '../..';
-import { Contentlet } from '@dotcms/uve/types';
+import { BlogContentlet } from '../../../services/page.service';
 
 @Component({
   selector: 'app-blogs',
@@ -24,11 +23,11 @@ import { Contentlet } from '@dotcms/uve/types';
 export class BlogsComponent implements OnInit {
   private readonly client = inject<DotCmsClient>(DOTCMS_CLIENT_TOKEN);
 
-  readonly blogs = signal<Contentlet<GenericContentlet>[]>([]);
+  readonly blogs = signal<BlogContentlet[]>([]);
 
   ngOnInit(): void {
     this.client.content
-      .getCollection<GenericContentlet>('Blog')
+      .getCollection<BlogContentlet>('Blog')
       .limit(3)
       .sortBy([
         {

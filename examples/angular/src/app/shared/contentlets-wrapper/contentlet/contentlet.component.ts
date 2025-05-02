@@ -3,7 +3,8 @@ import { Component, input } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { GenericContentlet } from '../../../pages/components';
 import { getUVEState } from '@dotcms/uve';
-import { UVE_MODE, Contentlet } from '@dotcms/uve/types';
+import { UVE_MODE, Contentlet, DotCMSURLContentMap } from '@dotcms/types';
+import { BlogContentlet } from '../../../pages/services/page.service';
 /**
  * Local component for rendering a single contentlet outside the DotCmsLayout.
  * This is useful when you want to render a contentlet in a different context than the DotCmsLayout, like in a modal, sidebar, footer, etc.
@@ -35,7 +36,7 @@ import { UVE_MODE, Contentlet } from '@dotcms/uve/types';
     `
 })
 export class ContentletComponent {
-    contentlet = input.required<Contentlet<GenericContentlet>>();
+    contentlet = input.required<Contentlet<DotCMSURLContentMap>>();
 
     protected readonly isEditing = getUVEState()?.mode === UVE_MODE.EDIT;
 }
