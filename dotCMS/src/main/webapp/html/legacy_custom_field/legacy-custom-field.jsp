@@ -13,7 +13,13 @@
 <%@page import="com.liferay.portal.util.ReleaseInfo"%>
 <%@page import="com.dotmarketing.cms.factories.PublicCompanyFactory"%>
 <%@page import="com.liferay.portal.model.*" %>
-
+<%@ page import="com.fasterxml.jackson.databind.ObjectMapper" %>
+<%@ page import="com.fasterxml.jackson.datatype.jdk8.Jdk8Module" %>
+<%@ page import="com.dotcms.rest.api.v1.DotObjectMapperProvider" %>
+<%@page import="com.dotmarketing.portlets.contentlet.business.ContentletAPI"%>
+<%@ page import="com.dotmarketing.util.Logger" %>
+<%@ page import="java.util.HashMap" %>
+<%@ page import="java.util.Map" %>
 
 <%@page import="com.dotmarketing.util.Config"%>
 <%
@@ -104,6 +110,7 @@
 
     dojo.require("dotcms.dijit.image.ImageEditor");
     dojo.require("dotcms.dojo.data.UsersReadStore");
+    dojo.require("dijit.form.TextBox");
 
     dojo.addOnLoad(function () {
         dojo.global.DWRUtil = dwr.util;
@@ -249,16 +256,34 @@
 <%
     String contentTypeVarName = request.getParameter("variable");
     String fieldName = request.getParameter("field");
+    // Use DotObjectMapperProvider to get properly configured ObjectMapper
+    ObjectMapper mapper = DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
 
     if (null != contentTypeVarName && null != fieldName) {
 
         ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
-
         ContentType contentType = contentTypeAPI.find(contentTypeVarName);
+
+        // GET CURRENT CONTENTLET OBJECT
+        String inode = request.getParameter("inode") != null ? request.getParameter("inode") : "a1f8eb76-b866-4194-8def-3749a49507a8";
+        ContentletAPI conAPI = APILocator.getContentletAPI();
+        Contentlet contentlet =  (inode!=null) ? conAPI.find(inode,user,false) : new Contentlet();
+        String contentletObj = "{}";
+
+        if(contentlet != null){
+            try{
+                Map con = contentlet.getMap();
+                contentletObj = mapper.writeValueAsString(con);
+            } catch(Exception e){
+                Logger.error("legacy-custom-field.jsp", "Error serializing contentlet: " + e.getMessage(), e);
+            }
+        }
 
         if (null != contentType) {
 
             Field field = contentType.fieldMap().get(fieldName);
+            String fieldJson = mapper.writeValueAsString(contentType.fieldMap());
+
             System.out.println(field);
             if (null != field) {
                
@@ -269,7 +294,7 @@
 
                 if(UtilMethods.isSet(textValue)){
                     org.apache.velocity.context.Context velocityContext =  com.dotmarketing.util.web.VelocityWebUtil.getVelocityContext(request,response);
-                    // set the velocity variable for use in the code (if it has not already been set
+                    // set the velocity variable for use in the code (if it has not already been set)
                     if(!UtilMethods.isSet(velocityContext.get(field.variable()))){
                         if(UtilMethods.isSet(value)){
                             velocityContext.put(field.variable(), value);
@@ -284,6 +309,69 @@
                     <body id="legacy-custom-field-body">
                         <%= HTMLString %>
                     </body>
+                    <script>
+                        // GET THE FIELDS MAP AND THE CONTENTLET VALUE
+                        const fields = Object.values(<%= fieldJson %>);
+                        const contentlet = <%= contentletObj %>;
+                        const bodyElement = document.querySelector('body');
+
+                        // Function to add get/set interceptors to input elements
+                        // This will cover programmatic changes to the value from dojo/dijit and manual HTML setValue
+                        const addGetInterceptor = (input, variable) => {
+                            const valueDescriptor = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value');
+                            Object.defineProperty(input, 'value', {
+                                get: function() {
+                                    return valueDescriptor.get.apply(this);
+                                },
+                                set: function(value) {
+                                    valueDescriptor.set.apply(this, [value]);
+                                    // EMIT THE CHANGE EVENT TO ANGULAR
+                                    console.log(`CHANGING INPUT ${variable} TO: ${value}`);
+                                }
+                            });
+                            
+                            return input;
+                        };
+                        
+                        const createHiddenInput = (variable, value) => {
+                            const input = document.createElement('input');
+                            input.setAttribute('type', 'hidden');
+                            input.setAttribute('name', variable);
+                            input.setAttribute('id', variable);
+                            input.setAttribute('dojoType', 'dijit.form.TextBox');
+                            input.setAttribute('value', value);
+                            bodyElement.appendChild(input);
+                        }
+
+                        fields.forEach(({ variable }) => {
+                            createHiddenInput(variable, contentlet[variable] || "");
+                        });
+
+                        // Wait until dojo is loaded
+                        dojo.addOnLoad(function () {
+                            dojo.global.DWRUtil = dwr.util;
+                            dojo.global.DWREngine = dwr.engine;
+                            dwr.engine.setErrorHandler(DWRErrorHandler);
+                            dwr.engine.setWarningHandler(DWRErrorHandler);
+
+                            DotCustomFieldApi.ready(() => {
+                                console.log(DotCustomFieldApi);
+
+                                fields.forEach(({ variable }) => {
+                                    const dojoInput = dojo.byId(variable);
+                                    if(dojoInput){
+                                        addGetInterceptor(dojoInput, variable);
+                                    }
+                                    // Listen for changes from parent
+                                    DotCustomFieldApi.onChangeField(variable, (value) => { 
+                                        const dijiInput = dijit.byId(variable);
+                                        console.log(`RECEIVING CHANGE FROM ANGULAR: ${variable} - ${value}`);
+                                        dijiInput.setValue(value);
+                                    });
+                                });
+                            });
+                        });
+                    </script>
 <%
             }
         }
