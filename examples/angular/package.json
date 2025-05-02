@@ -21,6 +21,7 @@
         "@dotcms/angular": "next",
         "@dotcms/client": "next",
         "@dotcms/uve": "next",
+        "@dotcms/types": "next",
         "rxjs": "~7.8.0",
         "tslib": "^2.3.0",
         "zone.js": "~0.14.2"
