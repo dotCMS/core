@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, Input, OnChanges, signal } from '@angular/core';
 
+import { DotPageAssetLayoutRow } from '@dotcms/types';
 import { combineClasses } from '@dotcms/uve/internal';
-import { DotPageAssetLayoutRow } from '@dotcms/uve/types';
 
 import { ColumnComponent } from '../column/column.component';
 

@@ -11,7 +11,7 @@ import {
     DotCMSClazzes,
     DotCMSDataType
 } from '@dotcms/dotcms-models';
-import { UVE_MODE } from '@dotcms/uve/types';
+import { UVE_MODE } from '@dotcms/types';
 
 import { NON_FORM_CONTROL_FIELD_TYPES } from '../models/dot-edit-content-field.constant';
 import { DotEditContentFieldSingleSelectableDataTypes } from '../models/dot-edit-content-field.type';

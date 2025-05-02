@@ -1,8 +1,8 @@
 import { renderHook, act } from '@testing-library/react-hooks';
 
 import { updateNavigation } from '@dotcms/client';
+import { DotCMSEditablePage, UVEEventType } from '@dotcms/types';
 import { getUVEState, initUVE, createUVESubscription } from '@dotcms/uve';
-import { DotCMSEditablePage, UVEEventType } from '@dotcms/uve/types';
 
 import { useEditableDotCMSPage } from '../../hooks/useEditableDotCMSPage';
 

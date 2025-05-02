@@ -1,7 +1,7 @@
 import { renderHook } from '@testing-library/react-hooks';
 
+import { UVE_MODE } from '@dotcms/types';
 import { getUVEState } from '@dotcms/uve';
-import { UVE_MODE } from '@dotcms/uve/types';
 
 import { useDotCMSShowWhen } from '../../hooks/useDotCMSShowWhen';
 

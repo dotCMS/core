@@ -1,4 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { DotCMSBasicContentlet } from '@dotcms/types';
+
 import {
     getDotCMSContentletsBound,
     computeScrollIsInBottom,
@@ -10,7 +12,6 @@ import {
     getColumnPositionClasses
 } from './dom.utils';
 
-import { DotCMSContentlet } from '../types/page/public';
 describe('getDotCMSContentletsBound', () => {
     const createContentlet = ({
         x,
@@ -255,7 +256,7 @@ describe('getDotContentletAttributes', () => {
             inode: 'test-inode',
             contentType: 'test-type',
             onNumberOfPages: '5'
-        } as unknown as DotCMSContentlet;
+        } as unknown as DotCMSBasicContentlet;
         const container = 'test-container';
 
         const result = getDotContentletAttributes(contentlet, container);

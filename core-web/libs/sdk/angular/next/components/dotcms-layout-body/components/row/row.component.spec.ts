@@ -1,6 +1,8 @@
 import { expect } from '@jest/globals';
 import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator/jest';
 
+import { DotPageAssetLayoutColumn } from '@dotcms/types';
+
 import { RowComponent } from './row.component';
 
 describe('RowComponent', () => {
@@ -33,7 +35,7 @@ describe('RowComponent', () => {
         const mockColumns = [
             { containers: [], leftOffset: 0, width: 12 },
             { containers: [], leftOffset: 0, width: 12 }
-        ];
+        ] as unknown as DotPageAssetLayoutColumn[];
 
         spectator.setInput({
             row: {

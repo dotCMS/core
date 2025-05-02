@@ -1,13 +1,6 @@
 import { DotCMSUVEAction } from './public';
 
 /**
- * @description Custom client parameters for fetching data.
- */
-export type DotCMSCustomerParams = {
-    depth: string;
-};
-
-/**
  * Configuration for reordering a menu.
  */
 export interface DotCMSReorderMenuConfig {
@@ -51,43 +44,6 @@ export interface DotCMSUVE {
 }
 
 /**
- * Main fields of a Contentlet (Inherited from the Content Type).
- */
-export interface ContentTypeMainFields {
-    hostName: string;
-    modDate: string;
-    publishDate: string;
-    title: string;
-    baseType: string;
-    inode: string;
-    archived: boolean;
-    ownerName: string;
-    host: string;
-    working: boolean;
-    locked: boolean;
-    stInode: string;
-    contentType: string;
-    live: boolean;
-    owner: string;
-    identifier: string;
-    publishUserName: string;
-    publishUser: string;
-    languageId: number;
-    creationDate: string;
-    url: string;
-    titleImage: string;
-    modUserName: string;
-    hasLiveVersion: boolean;
-    folder: string;
-    hasTitleImage: boolean;
-    sortOrder: number;
-    modUser: string;
-    __icon__: string;
-    contentTypeIcon: string;
-    variant: string;
-}
-
-/**
  * Bound information for a contentlet.
  *
  * @interface ContentletBound
@@ -98,7 +54,7 @@ export interface ContentTypeMainFields {
  * @property {number} y - The y-coordinate of the contentlet.
  * @property {number} width - The width of the contentlet.
  * @property {number} height - The height of the contentlet.
- * @property {string} payload - The payload data of the contentlet in JSON format.
+ * @property {string} payload - The payload data of the contentlet in stringified JSON format.
  */
 export interface DotCMSContentletBound {
     x: number;
@@ -126,4 +82,32 @@ export interface DotCMSContainerBound {
     height: number;
     payload: string;
     contentlets: DotCMSContentletBound[];
+}
+
+/**
+ *
+ * Interface representing the data attributes of a DotCMS container.
+ * @interface DotContainerAttributes
+ */
+export interface DotContainerAttributes {
+    'data-dot-object': string;
+    'data-dot-accept-types': string;
+    'data-dot-identifier': string;
+    'data-max-contentlets': string;
+    'data-dot-uuid': string;
+}
+
+/**
+ *
+ * Interface representing the data attributes of a DotCMS contentlet.
+ * @interface DotContentletAttributes
+ */
+export interface DotContentletAttributes {
+    'data-dot-identifier': string;
+    'data-dot-basetype': string;
+    'data-dot-title': string;
+    'data-dot-inode': string;
+    'data-dot-type': string;
+    'data-dot-container': string;
+    'data-dot-on-number-of-pages': string;
 }
