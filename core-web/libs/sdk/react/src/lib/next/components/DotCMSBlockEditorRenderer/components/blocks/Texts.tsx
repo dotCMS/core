@@ -1,7 +1,12 @@
-import { BlockEditorMark } from '@dotcms/types';
+import { BlockEditorMark, BlockEditorNode } from '@dotcms/types';
 
 interface MarkProps extends BlockEditorMark {
     children: React.ReactNode;
+}
+
+interface TextComponentProp {
+    children: React.ReactNode;
+    node: BlockEditorNode;
 }
 
 interface TextNodeProps {
@@ -44,7 +49,9 @@ export const Underline = ({ children }: MarkProps) => <u>{children}</u>;
  * @param attrs - The style attributes for the paragraph.
  * @returns The rendered paragraph element.
  */
-export const Paragraph = ({ children, attrs }: MarkProps) => {
+export const Paragraph = ({ children, node }: TextComponentProp) => {
+    const attrs = node?.attrs || {};
+
     return <p style={attrs}>{children}</p>;
 };
 
@@ -66,8 +73,9 @@ export const Link = ({ children, attrs }: MarkProps) => {
  * @param attrs - The attributes for the heading.
  * @returns The rendered heading element.
  */
-export const Heading = ({ children, attrs }: MarkProps) => {
-    const level = attrs?.level || 1;
+export const Heading = ({ children, node }: TextComponentProp) => {
+    const attrs = node?.attrs || {};
+    const level = attrs.level || 1;
     const Tag = `h${level}` as keyof JSX.IntrinsicElements;
 
     return <Tag>{children}</Tag>;

@@ -17,7 +17,7 @@ interface DotCMSVideoProps {
  * @param props - The properties for the video component.
  * @returns The rendered video component.
  */
-export const DotCMSVideo = (node: BlockEditorNode) => {
+export const DotCMSVideo = ({ node }: { node: BlockEditorNode }) => {
     const { data, src, mimeType, width, height } = node.attrs as DotCMSVideoProps;
 
     // Fix this path

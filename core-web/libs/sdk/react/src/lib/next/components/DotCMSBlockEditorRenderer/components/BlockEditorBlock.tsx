@@ -41,7 +41,7 @@ export const BlockEditorBlock = ({ content, customRenderers }: BlockEditorBlockP
         switch (node.type) {
             case BlockEditorDefaultBlocks.PARAGRAPH:
                 return (
-                    <Paragraph key={`${node.type}-${index}`} {...node}>
+                    <Paragraph key={`${node.type}-${index}`} node={node}>
                         <BlockEditorBlock
                             content={node.content}
                             customRenderers={customRenderers}
@@ -51,7 +51,7 @@ export const BlockEditorBlock = ({ content, customRenderers }: BlockEditorBlockP
 
             case BlockEditorDefaultBlocks.HEADING:
                 return (
-                    <Heading key={`${node.type}-${index}`} {...node}>
+                    <Heading key={`${node.type}-${index}`} node={node}>
                         <BlockEditorBlock
                             content={node.content}
                             customRenderers={customRenderers}
@@ -119,10 +119,10 @@ export const BlockEditorBlock = ({ content, customRenderers }: BlockEditorBlockP
                 return <hr key={`${node.type}-${index}`} />;
 
             case BlockEditorDefaultBlocks.DOT_IMAGE:
-                return <DotCMSImage key={`${node.type}-${index}`} {...node} />;
+                return <DotCMSImage key={`${node.type}-${index}`} node={node} />;
 
             case BlockEditorDefaultBlocks.DOT_VIDEO:
-                return <DotCMSVideo key={`${node.type}-${index}`} {...node} />;
+                return <DotCMSVideo key={`${node.type}-${index}`} node={node} />;
 
             case BlockEditorDefaultBlocks.TABLE:
                 return (

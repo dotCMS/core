@@ -14,7 +14,7 @@ interface DotCMSImageProps {
  * @param node - The node for the DotCMSImage component.
  * @returns The rendered image component.
  */
-export const DotCMSImage = (node: BlockEditorNode) => {
+export const DotCMSImage = ({ node }: { node: BlockEditorNode }) => {
     const { data, src, alt } = node.attrs as DotCMSImageProps;
     // Fix this path
     const srcUrl = data?.identifier ? `${''}${src}` : src;
