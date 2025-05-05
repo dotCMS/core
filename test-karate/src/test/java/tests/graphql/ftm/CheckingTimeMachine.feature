@@ -15,6 +15,7 @@ Feature: Test Time Machine functionality
     * def URL_CONTENT_MAP_TITLE_V1 = 'url-content-map-test-1-v1'
     * def URL_CONTENT_MAP_TITLE_V2 = 'url-content-map-test-1-v2'
 
+    * callonce read('classpath:common/utils.feature')
     * callonce read('classpath:graphql/ftm/setup.feature')
 
   @smoke @positive @ftm
@@ -169,7 +170,10 @@ Feature: Test Time Machine functionality
   Scenario: Test Time Machine functionality in UrlContentMap when a publish date is provided expect urlContentMap
   title to match rendered one.
 
-    Given url baseUrl + '/api/v1/page/render/'+urlMapContentPieceOneUrl+'?language_id=1&mode=LIVE&publishDate='+formattedFutureDateTime
+    * def fullUrl = baseUrl + '/api/v1/page/render/'+urlMapContentPieceOneUrl+'?language_id=1&mode=LIVE&publishDate='+formattedFutureDateTime
+    * def cleanedUrl = cleanUrl(fullUrl)
+    * karate.log('cleanedUrl:', cleanedUrl)
+    Given url cleanedUrl
     And headers commonHeaders
     When method GET
     Then status 200
