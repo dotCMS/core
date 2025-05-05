@@ -20,7 +20,7 @@
         @if (isEnabledNewContentEditor && showBetaMessage) {
             <p-messages
                 styleClass="edit-content-layout__beta-message"
-                severity="success"
+                severity="info"
                 data-testId="edit-content-layout__beta-message">
                 <ng-template pTemplate>
                     <div class="flex w-full gap-1">
@@ -31,6 +31,9 @@
                             {{ 'edit.content.layout.back.to.old.edit.content' | dm }}
                             <a
                                 [routerLink]="['/content-types-angular/edit', variable]"
+                                [queryParams]="{
+                                    'open-config': 'true'
+                                }"
                                 data-testId="edit-content-layout__beta-message-link">
                                 {{ 'edit.content.layout.back.to.old.edit.content.switch' | dm }}
                             </a>
@@ -44,7 +47,7 @@
                             rounded="true"
                             data-testId="edit-content-layout__beta-message-close-button"
                             (click)="closeMessage('betaMessage')"
-                            severity="success"
+                            severity="info"
                             text="true"
                             size="small"></button>
                     </div>
