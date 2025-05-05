@@ -224,6 +224,36 @@ public class StaticPushPublishBundleGeneratorTest extends IntegrationTestBase {
 
     }
 
+    @Test
+    public void Test_Static_Publish_Bundle_Generate1()
+            throws Exception {
+
+        Contentlet contentlet = null;
+
+        Logger.info(StaticPushPublishBundleGeneratorTest.class, "Testing FileAssetBundler");
+        contentlet = FileAssetDataGen.createFileAsset(folder, "example", ".PNG");
+        ContentletDataGen.publish(contentlet);
+
+
+        final String contentletIdentifier = contentlet.getIdentifier();
+
+        final User systemUser = APILocator.getUserAPI().getSystemUser();
+
+        //Create bundle with DefaultFilter
+        final Bundle bundleWithDefaultFilter = createBundle(
+                "TestBundle" + System.currentTimeMillis(), false, defaultFilterKey);
+        //Add assets to the bundle
+
+        final List<String> identifiers = ImmutableList.of(contentletIdentifier);
+        final PublisherAPI publisherAPI = PublisherAPI.getInstance();
+        publisherAPI.saveBundleAssets(identifiers, bundleWithDefaultFilter.getId(), systemUser);
+
+
+        generateBundle(systemUser, bundleWithDefaultFilter.getId(), FileAssetBundler.class, null, null);
+
+
+    }
+
     private static BundlerStatus generateBundle(final User user, final String bundleId, Class<? extends IBundler> bundleGenerator, final String includePatterns, final String excludePatterns) throws Exception{
         final PushPublisherConfig publisherConfig = new PushPublisherConfig();
         final PublisherAPI publisherAPI = PublisherAPI.getInstance();
