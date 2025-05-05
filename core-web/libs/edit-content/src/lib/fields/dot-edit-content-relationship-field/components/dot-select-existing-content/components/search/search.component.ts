@@ -117,6 +117,13 @@ export class SearchComponent {
             };
         }
 
+        if (!siteOrFolderId.includes(':')) {
+            return {
+                query: values.query || '',
+                systemSearchableFields: this.filterEmptyValues(otherFields)
+            };
+        }
+
         // Parse the type and ID from the siteOrFolderId string
         const [type, id] = siteOrFolderId.split(':');
 
