@@ -42,13 +42,6 @@ export interface PageRequestParams {
      * The variant name of the page you want to retrieve.
      */
     variantName?: string;
-}
-
-/**
- * The options for the GraphQL Page API.
- * @public
- */
-export interface GraphQLPageOptions extends PageRequestParams {
     /**
      * The GraphQL options for the page.
      */

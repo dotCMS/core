@@ -1,7 +1,7 @@
 import {
     DotCMSClientConfig,
     DotCMSGraphQLPageResponse,
-    GraphQLPageOptions,
+    PageRequestParams,
     RequestOptions
 } from '@dotcms/types';
 
@@ -109,10 +109,7 @@ export class PageClient {
      *```
      */
 
-    get<T extends DotCMSGraphQLPageResponse>(
-        url: string,
-        options?: GraphQLPageOptions
-    ): Promise<T> {
+    get<T extends DotCMSGraphQLPageResponse>(url: string, options?: PageRequestParams): Promise<T> {
         return this.#getPageFromGraphQL(url, options) as Promise<T>;
     }
 
@@ -169,7 +166,7 @@ export class PageClient {
      */
     async #getPageFromGraphQL(
         url: string,
-        options?: GraphQLPageOptions
+        options?: PageRequestParams
     ): Promise<DotCMSGraphQLPageResponse> {
         const {
             languageId = '1',

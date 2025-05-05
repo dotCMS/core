@@ -2,7 +2,7 @@
 import {
     DotCMSClientConfig,
     DotCMSGraphQLPageResponse,
-    GraphQLPageOptions,
+    PageRequestParams,
     RequestOptions
 } from '@dotcms/types';
 
@@ -70,7 +70,7 @@ describe('PageClient', () => {
         it('should fetch page using GraphQL when query option is provided', async () => {
             const pageClient = new PageClient(validConfig, requestOptions);
 
-            const graphQLOptions: GraphQLPageOptions = {
+            const graphQLOptions: PageRequestParams = {
                 graphql: {
                     page: 'fragment PageFields on Page { title url }',
                     content: { content: 'query Content { items { title } }' }
