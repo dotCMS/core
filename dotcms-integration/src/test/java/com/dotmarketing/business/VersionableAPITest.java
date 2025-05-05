@@ -1,5 +1,6 @@
 package com.dotmarketing.business;
 
+import com.dotcms.concurrent.Debouncer;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContainerDataGen;
 import com.dotcms.datagen.ContentTypeDataGen;
@@ -14,6 +15,7 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.variant.VariantAPI;
 import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.common.reindex.ReindexQueueFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -29,16 +31,22 @@ import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Config;
 import com.liferay.portal.model.User;
 
+import java.lang.reflect.Field;
+import java.util.Date;
 import java.util.List;
 import java.util.Random;
 
 import graphql.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.mockito.Mockito;
 
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 
 /**
  * Created by Erick Gonzalez
@@ -47,7 +55,8 @@ public class VersionableAPITest {
 	
 	private static User user;
 	private static Host host;
-	
+	private static Debouncer mockDebouncer;
+
 	@BeforeClass
     public static void prepare() throws Exception {
         //Setting web app environment
@@ -55,6 +64,12 @@ public class VersionableAPITest {
         
         user = APILocator.getUserAPI().getSystemUser();
         host = APILocator.getHostAPI().findDefaultHost(user, false);
+
+		// mock the Debouncer
+		mockDebouncer = Mockito.mock(Debouncer.class);
+		Field f = VersionableAPIImpl.class.getDeclaredField("debouncer");
+		f.setAccessible(true);
+		f.set(APILocator.getVersionableAPI(), mockDebouncer);
 	}
 	
 	private HTMLPageAsset createHTMLPage() throws Exception{
@@ -585,5 +600,61 @@ public class VersionableAPITest {
 		Assert.assertFalse(myContentletIt.isWorking());
 
 		Assert.assertTrue(APILocator.getVersionableAPI().hasWorkingVersionInAnyOtherLanguage(myContentletIt, languageIt.getId()));
+	}
+
+	@Test
+	public void whenSysPublishDateInFuture_thenReturnsTrueAndDebounces() {
+		ContentType ct = mock(ContentType.class);
+		when(ct.publishDateVar()).thenReturn("anyField");
+
+		Identifier id = mock(Identifier.class);
+		Date future = new Date(System.currentTimeMillis() + 10_000);
+		when(id.getSysPublishDate()).thenReturn(future);
+
+		assertTrue(APILocator.getVersionableAPI().notifyIfFuturePublishDate(ct, id, "admin"));
+		verify(mockDebouncer).debounce(
+				eq("contentPublishDateErroradmin"),
+				any(Runnable.class),
+				eq(5000L),
+				eq(TimeUnit.MILLISECONDS)
+		);
+	}
+
+	@Test
+	public void whenSysPublishDateInPast_thenReturnsFalseAndNoDebounce() {
+		ContentType ct = mock(ContentType.class);
+		when(ct.publishDateVar()).thenReturn("anyField");
+
+		Identifier id = mock(Identifier.class);
+		Date past = new Date(System.currentTimeMillis() - 10_000);
+		when(id.getSysPublishDate()).thenReturn(past);
+
+		assertFalse(APILocator.getVersionableAPI().notifyIfFuturePublishDate(ct, id, "admin"));
+		verifyNoInteractions(mockDebouncer);
+	}
+
+	@Test
+	public void whenNoPublishDateVar_thenReturnsFalseAndNoDebounce() {
+		ContentType ct = mock(ContentType.class);
+		when(ct.publishDateVar()).thenReturn(null);
+
+		Identifier id = mock(Identifier.class);
+		when(id.getSysPublishDate())
+				.thenReturn(new Date(System.currentTimeMillis() + 10_000));
+
+		assertFalse(APILocator.getVersionableAPI().notifyIfFuturePublishDate(ct, id, "admin"));
+		verifyNoInteractions(mockDebouncer);
+	}
+
+	@Test
+	public void whenNoSysPublishDate_thenReturnsFalseAndNoDebounce() {
+		ContentType ct = mock(ContentType.class);
+		when(ct.publishDateVar()).thenReturn("anyField");
+
+		Identifier id = mock(Identifier.class);
+		when(id.getSysPublishDate()).thenReturn(null);
+
+		assertFalse(APILocator.getVersionableAPI().notifyIfFuturePublishDate(ct, id, "admin"));
+		verifyNoInteractions(mockDebouncer);
 	}
 }
