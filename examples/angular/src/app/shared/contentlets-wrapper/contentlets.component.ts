@@ -2,7 +2,8 @@ import { Component, input } from '@angular/core';
 import { GenericContentlet } from '../../pages/components';
 import { DatePipe, NgOptimizedImage } from '@angular/common';
 import { ContentletComponent } from './contentlet/contentlet.component';
-import { Contentlet } from '@dotcms/uve/types';
+import { Contentlet, DotCMSURLContentMap } from '@dotcms/types';
+import { BlogContentlet } from '../../pages/services/page.service';
 
 
 /**
@@ -26,7 +27,7 @@ import { Contentlet } from '@dotcms/uve/types';
           <img
             [ngSrc]="contentlet.image"
             [fill]="true"
-            [alt]="contentlet.urlTitle ?? contentlet.title"
+            [alt]="contentlet['urlTitle'] ?? contentlet.title"
             [loaderParams]="{ languageId: contentlet.languageId || 1 }"
             class="object-cover"
           />
@@ -48,5 +49,5 @@ import { Contentlet } from '@dotcms/uve/types';
   </ul> `,
 })
 export class ContentletsWrapperComponent {
-  contentlets = input.required<Contentlet<GenericContentlet>[]>();
+  contentlets = input.required<Contentlet<DotCMSURLContentMap>[]>();
 }

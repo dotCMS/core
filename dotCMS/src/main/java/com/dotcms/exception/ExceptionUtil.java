@@ -49,6 +49,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
+import org.jvnet.mimepull.MIMEParsingException;
 
 import static com.dotmarketing.portlets.contentlet.business.DotContentletValidationException.VALIDATION_FAILED_BADTYPE;
 import static com.dotmarketing.portlets.contentlet.business.DotContentletValidationException.VALIDATION_FAILED_BAD_CARDINALITY;
@@ -93,6 +94,11 @@ public class ExceptionUtil {
             .of(
                     NotFoundInDbException.class,
                     DoesNotExistException.class
+            );
+
+    public static final Set<Class<? extends Throwable>> MALFORMED_MULTIPART_EXCEPTIONS = ImmutableSet
+            .of(
+                    MIMEParsingException.class
             );
 
     public static final Set<Class<? extends Throwable>> BAD_REQUEST_EXCEPTIONS = ImmutableSet

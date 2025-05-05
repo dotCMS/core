@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 
 import { updateNavigation } from '@dotcms/client';
+import { DotCMSEditablePage, UVEEventType } from '@dotcms/types';
 import { getUVEState, initUVE, createUVESubscription } from '@dotcms/uve';
-import { DotCMSEditablePage, UVEEventType } from '@dotcms/uve/types';
 
 /**
  * Custom hook to manage the editable state of a DotCMS page.

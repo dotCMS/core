@@ -1,3 +1,5 @@
+import { UVE_MODE } from '@dotcms/types';
+
 import {
     addClassToEmptyContentlets,
     listenBlockEditorInlineEvent,
@@ -8,7 +10,6 @@ import {
 
 import { createUVESubscription, getUVEState } from '../lib/core/core.utils';
 import { editContentlet, reorderMenu } from '../lib/editor/public';
-import { UVE_MODE } from '../lib/types/editor/public';
 
 declare global {
     interface Window {

@@ -5,9 +5,8 @@ import {
   signal,
 } from '@angular/core';
 
-import { GenericContentlet } from '../..';
 import { ContentletsWrapperComponent } from '../../../../shared/contentlets-wrapper/contentlets.component';
-import { Contentlet } from '@dotcms/uve/types';
+import { DotCMSURLContentMap } from '@dotcms/types';
 import { DotCmsClient } from '@dotcms/client';
 import { DOTCMS_CLIENT_TOKEN } from '../../../../app.config';
 
@@ -26,11 +25,11 @@ import { DOTCMS_CLIENT_TOKEN } from '../../../../app.config';
 export class DestinationsComponent implements OnInit {
   private readonly client = inject<DotCmsClient>(DOTCMS_CLIENT_TOKEN);
 
-  readonly destinations = signal<Contentlet<GenericContentlet>[]>([]);
+  readonly destinations = signal<DotCMSURLContentMap[]>([]);
 
   ngOnInit() {
     this.client.content
-      .getCollection<GenericContentlet>('Destination')
+      .getCollection<DotCMSURLContentMap>('Destination')
       .limit(3)
       .sortBy([
         {

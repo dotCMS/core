@@ -2,7 +2,7 @@ import { Params } from '@angular/router';
 
 import { CurrentUser } from '@dotcms/dotcms-js';
 import { DotDevice, DotExperiment, DotExperimentStatus } from '@dotcms/dotcms-models';
-import { UVE_MODE } from '@dotcms/uve/types';
+import { UVE_MODE } from '@dotcms/types';
 
 import {
     deleteContentletFromContainer,

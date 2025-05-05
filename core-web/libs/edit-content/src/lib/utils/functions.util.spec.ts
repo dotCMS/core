@@ -640,7 +640,8 @@ describe('Utils Functions', () => {
                 expect(state).toEqual({
                     activeTab: 0,
                     isSidebarOpen: true,
-                    activeSidebarTab: 0
+                    activeSidebarTab: 0,
+                    isBetaMessageVisible: true
                 });
             });
 
@@ -648,7 +649,8 @@ describe('Utils Functions', () => {
                 const mockState = {
                     activeTab: 2,
                     isSidebarOpen: false,
-                    activeSidebarTab: 1
+                    activeSidebarTab: 1,
+                    isBetaMessageVisible: true
                 };
                 sessionStorage.setItem(UI_STORAGE_KEY, JSON.stringify(mockState));
 
@@ -663,7 +665,8 @@ describe('Utils Functions', () => {
                 expect(state).toEqual({
                     activeTab: 0,
                     isSidebarOpen: true,
-                    activeSidebarTab: 0
+                    activeSidebarTab: 0,
+                    isBetaMessageVisible: true
                 });
                 expect(console.warn).toHaveBeenCalledWith(
                     'Error reading UI state from sessionStorage:',
@@ -686,7 +689,8 @@ describe('Utils Functions', () => {
                 expect(state).toEqual({
                     activeTab: 0,
                     isSidebarOpen: true,
-                    activeSidebarTab: 0
+                    activeSidebarTab: 0,
+                    isBetaMessageVisible: true
                 });
                 expect(console.warn).toHaveBeenCalledWith(
                     'Error reading UI state from sessionStorage:',

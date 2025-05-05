@@ -1,11 +1,11 @@
 import { useContext, useMemo } from 'react';
 
+import { DotCMSBasicContentlet, DotCMSColumnContainer } from '@dotcms/types';
 import {
     getContainersData,
     getDotContainerAttributes,
     getContentletsInContainer
 } from '@dotcms/uve/internal';
-import { DotCMSColumnContainer, DotCMSContentlet } from '@dotcms/uve/types';
 
 import { ContainerNotFound, EmptyContainer } from './ContainerFallbacks';
 
@@ -67,7 +67,7 @@ export function Container({ container }: DotCMSContainerRendererProps) {
 
     return (
         <div {...dotAttributes}>
-            {contentlets.map((contentlet: DotCMSContentlet) => (
+            {contentlets.map((contentlet: DotCMSBasicContentlet) => (
                 <Contentlet
                     key={contentlet.identifier}
                     contentlet={contentlet}

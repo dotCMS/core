@@ -14,7 +14,6 @@
 @let isContentLocked = $store.isContentLocked();
 @let canLock = $store.canLock();
 @let lockSwitchLabel = $store.lockSwitchLabel();
-@let lockWarningMessage = $store.lockWarningMessage();
 @let tabs = $tabs();
 
 <!-- TODO: Handle the error, no form -->
@@ -50,16 +49,6 @@
         <!-- Template for the tab tabPanel -->
         <ng-template #tabPanelTemplate let-tab="tab">
             <div class="dot-edit-content-form__layout">
-                @if (lockWarningMessage) {
-                    <p-messages severity="info" styleClass="mb-3" [@fadeIn]>
-                        <ng-template pTemplate>
-                            <div class="flex gap-2 justify-content-start">
-                                <i class="pi pi-info-circle"></i>
-                                <span [innerHTML]="lockWarningMessage"></span>
-                            </div>
-                        </ng-template>
-                    </p-messages>
-                }
                 @for (row of tab.layout; track row) {
                     <div class="dot-edit-content-form__layout-row" data-testId="row">
                         @for (column of row.columns; track column) {
@@ -120,8 +109,8 @@
             @if ($showPreviewLink()) {
                 <button
                     pButton
-                    icon="pi pi-external-link"
                     class="p-button-link p-button-md"
+                    text="true"
                     data-testId="preview-button"
                     (click)="showPreview()">
                     {{ 'edit.content.preview-link' | dm }}

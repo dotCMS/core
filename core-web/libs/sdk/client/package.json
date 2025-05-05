@@ -6,6 +6,9 @@
     "type": "git",
     "url": "git+https://github.com/dotCMS/core.git#main"
   },
+  "devDependencies": {
+    "@dotcms/types": "next"
+  },
   "scripts": {
     "build": "nx run sdk-client:build:js; cd ../../../../dotCMS/src/main/webapp/html/js/editor-js; rm -rf src package.json *.esm.d.ts"
   },
@@ -19,14 +22,12 @@
   "exports": {
     "./package.json": "./package.json",
     ".": "./src/index.ts",
-    "./next": "./src/next.ts",
-    "./types": "./src/types.ts"
+    "./next": "./src/next.ts"
   },
   "typesVersions": {
     "*": {
       ".": ["./src/index.d.ts"],
-      "next": ["./src/next.d.ts"],
-      "types": ["./src/types.d.ts"]
+      "next": ["./src/next.d.ts"]
     }
   },
   "author": "dotcms <dev@dotcms.com>",
