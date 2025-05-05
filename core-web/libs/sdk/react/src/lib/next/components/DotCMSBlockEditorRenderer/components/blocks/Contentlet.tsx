@@ -28,8 +28,16 @@ export const DotContent = ({ customRenderers, node }: DotContentProps) => {
     const contentType = data.contentType || 'Unknown Content Type';
     const Component = customRenderers[contentType];
 
+    // In dev mode, show a helpful message for unknown content types
     if (isDevMode && !Component) {
         return <div>Unknown ContentType: {contentType}</div>;
+    }
+
+    // In production, use default component if no matching component found
+    if (!Component) {
+        console.error('DotContent: No matching component found for content type', contentType);
+
+        return null;
     }
 
     return <Component {...node} />;

@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 
-// import { initInlineEditing } from '@dotcms/client';
 import { BlockEditorContent } from '@dotcms/types';
 import { BlockEditorState } from '@dotcms/types/internal';
 import { isValidBlocks } from '@dotcms/uve/internal';
