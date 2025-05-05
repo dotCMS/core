@@ -8224,9 +8224,43 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 ? contentlet.getIdentifier() :
                 "Unknown/New");
         final ContentType contentType = contentlet.getContentType();
+        final List<Relationship> relationships = APILocator.getRelationshipAPI()
+                .byContentType(contentType);
         final DotContentletValidationException cve = new DotContentletValidationException(
                 "Contentlet [" +
                         contentletId + "] has invalid/missing relationships");
+
+
+        // Check if any required relationships are missing from contentRelationships
+        for (final Relationship rel : relationships) {
+            Logger.info(this, "Validating relationship [" + rel + "]"
+                + " for content type[" + contentType.id() + "]");
+            List<Boolean> checkIfContentIsParent = new ArrayList<>();
+            if (rel.isChildRequired() && Objects.equals(contentType.id(), rel.getParentStructureInode())) {
+                checkIfContentIsParent.add(true);
+            }
+            if (rel.isParentRequired() && Objects.equals(contentType.id(), rel.getChildStructureInode())) {
+                checkIfContentIsParent.add(false);
+            }
+
+            for (final boolean checkParent : checkIfContentIsParent) {
+                boolean foundInRelationships = contentRelationships != null
+                        && contentRelationships.getRelationshipsRecords() != null
+                        && contentRelationships.getRelationshipsRecords().stream()
+                            .anyMatch(records ->
+                                    checkParent == records.isHasParent() &&
+                                    records.getRelationship().getInode().equals(rel.getInode()));
+
+                if (!foundInRelationships) {
+                    hasError = true;
+                    Logger.error(this, "Required " +
+                            (checkParent ? "child" : "parent" )  +
+                            " relationship [" + rel.getRelationTypeValue() +
+                            "] is not present for contentlet [" + contentletId + "]");
+                    cve.addRequiredRelationship(rel, new ArrayList<>());
+                }
+            }
+        }
 
         if (null != contentRelationships) {
             final List<ContentletRelationshipRecords> records = contentRelationships.getRelationshipsRecords();
