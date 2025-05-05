@@ -93,3 +93,25 @@ export interface DotCMSClientConfig {
      */
     requestOptions?: RequestOptions;
 }
+
+/**
+ * The parameters for the Navigation API.
+ * @public
+ */
+export interface DotCMSNavigationRequestParams {
+    /**
+     * The depth of the folder tree to return.
+     * @example
+     * `1` returns only the element specified in the path.
+     * `2` returns the element specified in the path, and if that element is a folder, returns all direct children of that folder.
+     * `3` returns all children and grandchildren of the element specified in the path.
+     */
+    depth?: number;
+
+    /**
+     * The language ID of content to return.
+     * @example
+     * `1` (or unspecified) returns content in the default language of the site.
+     */
+    languageId?: number;
+}
