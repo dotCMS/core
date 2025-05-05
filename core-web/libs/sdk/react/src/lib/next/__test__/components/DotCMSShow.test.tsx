@@ -1,8 +1,8 @@
 import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
 
+import { UVE_MODE } from '@dotcms/types';
 import * as dotcmsUVE from '@dotcms/uve';
-import { UVE_MODE } from '@dotcms/uve/types';
 
 import { DotCMSShow } from '../../components/DotCMSShow/DotCMSShow';
 

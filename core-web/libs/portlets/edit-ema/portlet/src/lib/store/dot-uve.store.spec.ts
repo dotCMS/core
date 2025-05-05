@@ -22,6 +22,7 @@ import {
     DotWorkflowsActionsService
 } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
+import { UVE_MODE } from '@dotcms/types';
 import { WINDOW } from '@dotcms/utils';
 import {
     MockDotMessageService,
@@ -32,7 +33,6 @@ import {
     CurrentUserDataMock,
     mockLanguageArray
 } from '@dotcms/utils-testing';
-import { UVE_MODE } from '@dotcms/uve/types';
 
 import { UVEStore } from './dot-uve.store';
 import { Orientation } from './models';

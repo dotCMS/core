@@ -19,8 +19,8 @@ import {
     postMessageToEditor,
     updateNavigation
 } from '@dotcms/client';
+import { UVEEventSubscription, UVEEventType } from '@dotcms/types';
 import { createUVESubscription } from '@dotcms/uve';
-import { UVEEventSubscription, UVEEventType } from '@dotcms/uve/types';
 
 import { DotCMSPageComponent } from '../../models';
 import { DotCMSPageAsset } from '../../models/dotcms.model';

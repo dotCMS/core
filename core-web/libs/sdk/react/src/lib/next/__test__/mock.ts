@@ -1,8 +1,9 @@
 import {
     DotCMSColumnContainer,
     DotCMSPageAsset,
-    DotPageAssetLayoutColumn
-} from '@dotcms/uve/types';
+    DotPageAssetLayoutColumn,
+    DotCMSBasicContentlet
+} from '@dotcms/types';
 
 export const MOCK_COLUMN: DotPageAssetLayoutColumn = {
     left: 0,
@@ -61,4 +62,29 @@ export const MOCK_CONTAINER_DATA = {
     identifier: 'test-container-id',
     acceptTypes: 'test-accept-types',
     maxContentlets: 10
+};
+
+export const MOCK_CONTENTLET: DotCMSBasicContentlet = {
+    archived: false,
+    baseType: '',
+    contentType: '',
+    folder: '',
+    hasTitleImage: false,
+    host: '',
+    hostName: '',
+    identifier: '',
+    inode: '',
+    languageId: 1,
+    live: false,
+    locked: false,
+    modDate: '',
+    modUser: '',
+    modUserName: '',
+    owner: '',
+    sortOrder: 1,
+    stInode: '',
+    title: 'This is my editable title',
+    titleImage: '',
+    url: '',
+    working: false
 };

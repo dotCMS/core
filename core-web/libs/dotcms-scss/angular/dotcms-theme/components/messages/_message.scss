@@ -37,25 +37,18 @@
 /* Base styles for regular messages */
 .p-message {
     margin: 0;
-    border-radius: $border-radius-md;
     position: relative;
-    background: transparent !important;
+    background: transparent;
     border: 1px solid transparent;
-
-    /* Wider left border */
-    &::before {
-        content: "";
-        position: absolute;
-        left: 0;
-        top: 0;
-        height: 100%;
-        width: 9px;
-        border-radius: $border-radius-md 0 0 $border-radius-md;
-    }
+    min-height: 38px;
+    display: flex;
+    align-content: center;
+    flex-wrap: wrap;
 
     .p-message-wrapper {
-        padding: $spacing-2 $spacing-4;
-        justify-content: center;
+        padding: 0 $spacing-4;
+        height: 100%;
+        width: 100%;
     }
 
     .p-message-text {
@@ -71,55 +64,40 @@
 
 /* Specific styles for each message type */
 .p-message.p-message-info {
-    background: transparent;
-    border-color: $color-palette-blue;
-    color: $black;
-
-    &::before {
-        background: $color-palette-blue;
-    }
+    background: $color-palette-blue-tint;
+    border: none;
+    color: $color-palette-blue-shade;
 
     .p-message-icon {
-        color: $color-palette-blue;
+        color: $color-palette-blue-shade;
     }
 }
 
 .p-message.p-message-success {
-    background: transparent;
-    border-color: $color-palette-green;
-    color: $black;
-
-    &::before {
-        background: $color-palette-green;
-    }
+    background: $color-palette-green-op-07;
+    border: none;
+    color: $color-palette-green;
 
     .p-message-icon {
         color: $color-palette-green;
     }
 }
 
-.p-message.p-message-warn {
-    background: transparent;
-    border-color: $color-palette-yellow;
-    color: $black;
+.p-message.p-message-warning {
+    background: $color-accessible-text-yellow-bg;
+    border: none;
+    color: $color-accessible-text-yellow;
 
-    &::before {
-        background: $color-palette-yellow;
-    }
-
-    .p-message-icon {
-        color: $color-palette-yellow;
+    .p-message-icon,
+    .p-message-text {
+        color: $color-accessible-text-yellow;
     }
 }
 
 .p-message.p-message-error {
-    background: transparent;
-    border-color: $color-palette-red;
-    color: $black;
-
-    &::before {
-        background: $color-palette-red;
-    }
+    background: $color-palette-red-op-07;
+    border: none;
+    color: $color-palette-red;
 
     .p-message-icon {
         color: $color-palette-red;

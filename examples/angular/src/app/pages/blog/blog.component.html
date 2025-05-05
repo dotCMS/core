@@ -14,7 +14,7 @@
             } @else if (vm.status === 'error' && vm.error) {
             <app-error [$error]="vm.error" />
             } @else if (vm.status === 'success' && vm.page) {
-                <app-blog-post [post]="$any(vm.page.urlContentMap!)" />
+                <app-blog-post [post]="vm.page.urlContentMap" />
             } @else {
             <!-- Add a fallback for unexpected states -->
             <p>Unexpected state encountered.</p>

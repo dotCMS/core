@@ -1,11 +1,12 @@
-import { __DOTCMS_UVE_EVENT__ } from '../internal';
+import { UVEEventHandler, UVEEventType } from '@dotcms/types';
+import { __DOTCMS_UVE_EVENT__ } from '@dotcms/types/internal';
+
 import {
     findDotCMSElement,
     findDotCMSVTLData,
     getClosestDotCMSContainerData,
     getDotCMSPageBounds
 } from '../lib/dom/dom.utils';
-import { UVEEventHandler, UVEEventType } from '../types';
 
 /**
  * Subscribes to content changes in the UVE editor

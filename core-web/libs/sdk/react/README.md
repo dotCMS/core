@@ -201,7 +201,7 @@ A custom hook that handles the communication with the Universal View Editor (UVE
 import { useEffect, useState } from 'react';
 
 import { getUVEState, sendMessageToEditor, createUVESubscription} from '@dotcms/uve';
-import { DotCMSUVEAction, UVEEventType} from '@dotcms/uve/types';
+import { DotCMSUVEAction, UVEEventType} from '@dotcms/types';
 
 export const usePageAsset = (currentPageAsset) => {
     const [pageAsset, setPageAsset] = useState(null);
