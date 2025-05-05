@@ -8233,9 +8233,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         // Check if any required relationships are missing from contentRelationships
         for (final Relationship rel : relationships) {
-            Logger.info(this, "Validating relationship [" + rel + "]"
-                + " for content type[" + contentType.id() + "]");
-            List<Boolean> checkIfContentIsParent = new ArrayList<>();
+            final List<Boolean> checkIfContentIsParent = new ArrayList<>();
             if (rel.isChildRequired() && Objects.equals(contentType.id(), rel.getParentStructureInode())) {
                 checkIfContentIsParent.add(true);
             }
@@ -8244,7 +8242,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
 
             for (final boolean checkParent : checkIfContentIsParent) {
-                boolean foundInRelationships = contentRelationships != null
+                final boolean foundInRelationships = contentRelationships != null
                         && contentRelationships.getRelationshipsRecords() != null
                         && contentRelationships.getRelationshipsRecords().stream()
                             .anyMatch(records ->
