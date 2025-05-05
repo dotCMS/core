@@ -273,7 +273,9 @@ public interface FileAssetAPI {
 	 */
 	public String getRealAssetPath(String inode);
 
-	String getRealAssetPath(String inode, String fileName); 
+	String getRealAssetPath(String inode, String fileName);
+
+	String getRealAssetPathIgnoreExtensionCase(String inode, String fileName);
 	
 	/**
      * This method returns the relative path for assets

@@ -371,7 +371,7 @@ public class FileAssetBundler implements IBundler {
 		else {
 		    //only write if changed
 			if(!output.exists(filePath) || output.lastModified(filePath) != cal.getTimeInMillis()){
-				File oldAsset = new File(APILocator.getFileAssetAPI().getRealAssetPath(fileAssetWrapper.getAsset().getInode(), fileAssetWrapper.getAsset().getUnderlyingFileName()));
+				File oldAsset = new File(APILocator.getFileAssetAPI().getRealAssetPathIgnoreExtensionCase(fileAssetWrapper.getAsset().getInode(), fileAssetWrapper.getAsset().getUnderlyingFileName()));
 				if(output.exists(filePath)) {
 					output.delete(filePath);
 				}

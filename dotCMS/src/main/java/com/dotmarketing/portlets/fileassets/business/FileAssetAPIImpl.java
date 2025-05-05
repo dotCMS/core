@@ -639,6 +639,13 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 
     }
 
+	@Override
+	public String getRealAssetPathIgnoreExtensionCase(String inode, String fileName) {
+		String extension = UtilMethods.getFileExtensionIgnoreCase(fileName);
+		String fileNameWOExtenstion  =  UtilMethods.getFileName(fileName);
+		return getRealAssetPath(inode, fileNameWOExtenstion, extension);
+	}
+
 	/**
 	 * This method returns the relative path for assets
      *

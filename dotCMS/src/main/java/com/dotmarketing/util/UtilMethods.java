@@ -1061,6 +1061,19 @@ public class UtilMethods {
         }
     }
 
+    public static String getFileExtensionIgnoreCase(String x){
+        String r = "";
+        try {
+            if (x.lastIndexOf(".") != -1) {
+                return x.substring(x.lastIndexOf(".") + 1);
+            } else {
+                return r;
+            }
+        } catch (Exception e) {
+            return "ukn";
+        }
+    }
+
     public static String getFileName(String x) {
         try {
             if (x.lastIndexOf("/") > -1 || x.lastIndexOf("\\") > -1) {
