@@ -9,6 +9,7 @@ import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -25,11 +26,15 @@ import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.mockito.MockedStatic;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 public class SaveContentActionletTest extends BaseWorkflowIntegrationTest {
 
@@ -41,6 +46,8 @@ public class SaveContentActionletTest extends BaseWorkflowIntegrationTest {
     private static Contentlet                   contentlet             = null;
     private static Contentlet                   contentlet2            = null;
 
+    private static MockedStatic<APILocator> mockedAPILocator;
+    private static VersionableAPI             spyVersionableAPI;
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -50,6 +57,12 @@ public class SaveContentActionletTest extends BaseWorkflowIntegrationTest {
         SaveContentActionletTest.workflowAPI              = APILocator.getWorkflowAPI();
         final ContentTypeAPI contentTypeAPI               = APILocator.getContentTypeAPI(APILocator.systemUser());
         SaveContentActionletTest.contentletAPI            = APILocator.getContentletAPI();
+
+        spyVersionableAPI = spy(APILocator.getVersionableAPI());
+        // open a static-mock for APILocator, defaulting to real methods
+        mockedAPILocator = mockStatic(APILocator.class, CALLS_REAL_METHODS);
+        // stub only getVersionableAPI() to return our spy
+        mockedAPILocator.when(APILocator::getVersionableAPI).thenReturn(spyVersionableAPI);
 
         // creates the scheme and actions
         SaveContentActionletTest.schemeStepActionResult   = SaveContentActionletTest.createSchemeStepActionActionlet
@@ -251,5 +264,13 @@ public class SaveContentActionletTest extends BaseWorkflowIntegrationTest {
         Assert.assertFalse  (contentlet3.getInode().equals(firstInode));
         Assert.assertEquals ("Test Save 2",      contentlet3.getStringProperty("title"));
         Assert.assertEquals ("Test Save Text 2", contentlet3.getStringProperty("txt"));
+
+        // verify that notifyIfFuturePublishDate was invoked
+        verify(spyVersionableAPI, times(1))
+                .notifyIfFuturePublishDate(
+                        eq(SaveContentActionletTest.type2),   // the ContentType with a publishDateVar
+                        any(com.dotmarketing.beans.Identifier.class),
+                        anyString()
+                );
     }
 }
