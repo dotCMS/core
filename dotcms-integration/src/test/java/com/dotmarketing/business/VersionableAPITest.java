@@ -55,7 +55,6 @@ public class VersionableAPITest {
 	
 	private static User user;
 	private static Host host;
-	private static Debouncer mockDebouncer;
 
 	@BeforeClass
     public static void prepare() throws Exception {
@@ -64,12 +63,6 @@ public class VersionableAPITest {
         
         user = APILocator.getUserAPI().getSystemUser();
         host = APILocator.getHostAPI().findDefaultHost(user, false);
-
-		// mock the Debouncer
-		mockDebouncer = Mockito.mock(Debouncer.class);
-		Field f = VersionableAPIImpl.class.getDeclaredField("debouncer");
-		f.setAccessible(true);
-		f.set(APILocator.getVersionableAPI(), mockDebouncer);
 	}
 	
 	private HTMLPageAsset createHTMLPage() throws Exception{
@@ -602,16 +595,26 @@ public class VersionableAPITest {
 		Assert.assertTrue(APILocator.getVersionableAPI().hasWorkingVersionInAnyOtherLanguage(myContentletIt, languageIt.getId()));
 	}
 
+	private static Debouncer getDebouncer() throws NoSuchFieldException, IllegalAccessException {
+		Debouncer mockDebouncer = Mockito.mock(Debouncer.class);
+		Field f = VersionableAPIImpl.class.getDeclaredField("debouncer");
+		f.setAccessible(true);
+		f.set(APILocator.getVersionableAPI(), mockDebouncer);
+		return mockDebouncer;
+	}
+
 	@Test
-	public void whenSysPublishDateInFuture_thenReturnsTrueAndDebounces() {
-		ContentType ct = mock(ContentType.class);
-		when(ct.publishDateVar()).thenReturn("anyField");
+	public void whenSysPublishDateInFuture_thenReturnsTrueAndDebounces() throws NoSuchFieldException, IllegalAccessException {
+		// mock the Debouncer
+		Debouncer mockDebouncer = getDebouncer();
+		ContentType contentType = mock(ContentType.class);
+		when(contentType.publishDateVar()).thenReturn("anyField");
 
-		Identifier id = mock(Identifier.class);
+		Identifier identifier = mock(Identifier.class);
 		Date future = new Date(System.currentTimeMillis() + 10_000);
-		when(id.getSysPublishDate()).thenReturn(future);
+		when(identifier.getSysPublishDate()).thenReturn(future);
 
-		assertTrue(APILocator.getVersionableAPI().notifyIfFuturePublishDate(ct, id, "admin"));
+		assertTrue(APILocator.getVersionableAPI().notifyIfFuturePublishDate(contentType, identifier, "admin"));
 		verify(mockDebouncer).debounce(
 				eq("contentPublishDateErroradmin"),
 				any(Runnable.class),
@@ -621,40 +624,46 @@ public class VersionableAPITest {
 	}
 
 	@Test
-	public void whenSysPublishDateInPast_thenReturnsFalseAndNoDebounce() {
-		ContentType ct = mock(ContentType.class);
-		when(ct.publishDateVar()).thenReturn("anyField");
+	public void whenSysPublishDateInPast_thenReturnsFalseAndNoDebounce() throws NoSuchFieldException, IllegalAccessException {
+		// mock the Debouncer
+		Debouncer mockDebouncer = getDebouncer();
+		ContentType contentType = mock(ContentType.class);
+		when(contentType.publishDateVar()).thenReturn("anyField");
 
-		Identifier id = mock(Identifier.class);
+		Identifier identifier = mock(Identifier.class);
 		Date past = new Date(System.currentTimeMillis() - 10_000);
-		when(id.getSysPublishDate()).thenReturn(past);
+		when(identifier.getSysPublishDate()).thenReturn(past);
 
-		assertFalse(APILocator.getVersionableAPI().notifyIfFuturePublishDate(ct, id, "admin"));
+		assertFalse(APILocator.getVersionableAPI().notifyIfFuturePublishDate(contentType, identifier, "admin"));
 		verifyNoInteractions(mockDebouncer);
 	}
 
 	@Test
-	public void whenNoPublishDateVar_thenReturnsFalseAndNoDebounce() {
+	public void whenNoPublishDateVar_thenReturnsFalseAndNoDebounce() throws NoSuchFieldException, IllegalAccessException {
+		// mock the Debouncer
+		Debouncer mockDebouncer = getDebouncer();
 		ContentType ct = mock(ContentType.class);
 		when(ct.publishDateVar()).thenReturn(null);
 
-		Identifier id = mock(Identifier.class);
-		when(id.getSysPublishDate())
+		Identifier identifier = mock(Identifier.class);
+		when(identifier.getSysPublishDate())
 				.thenReturn(new Date(System.currentTimeMillis() + 10_000));
 
-		assertFalse(APILocator.getVersionableAPI().notifyIfFuturePublishDate(ct, id, "admin"));
+		assertFalse(APILocator.getVersionableAPI().notifyIfFuturePublishDate(ct, identifier, "admin"));
 		verifyNoInteractions(mockDebouncer);
 	}
 
 	@Test
-	public void whenNoSysPublishDate_thenReturnsFalseAndNoDebounce() {
+	public void whenNoSysPublishDate_thenReturnsFalseAndNoDebounce() throws NoSuchFieldException, IllegalAccessException {
+		// mock the Debouncer
+		Debouncer mockDebouncer = getDebouncer();
 		ContentType ct = mock(ContentType.class);
 		when(ct.publishDateVar()).thenReturn("anyField");
 
-		Identifier id = mock(Identifier.class);
-		when(id.getSysPublishDate()).thenReturn(null);
+		Identifier identifier = mock(Identifier.class);
+		when(identifier.getSysPublishDate()).thenReturn(null);
 
-		assertFalse(APILocator.getVersionableAPI().notifyIfFuturePublishDate(ct, id, "admin"));
+		assertFalse(APILocator.getVersionableAPI().notifyIfFuturePublishDate(ct, identifier, "admin"));
 		verifyNoInteractions(mockDebouncer);
 	}
 }
