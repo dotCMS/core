@@ -18,6 +18,8 @@ import { Column } from '../models/column.model';
 
 type LanguagesMap = Record<number, DotLanguage>;
 
+const EXCLUDED_COLUMNS = ['title', 'language', 'modDate'];
+
 export type RelationshipFieldQueryParams = DotContentSearchParams & {
     contentTypeId: string;
 };
@@ -169,9 +171,22 @@ export class RelationshipFieldService {
      * @param columns The columns to build
      * @returns Array of Column
      */
+    /**
+     * Builds the columns for the relationship field table
+     * Filters out the 'title' column as it's handled separately
+     * and ensures only valid columns with both variable and name are included
+     *
+     * @param columns The content type fields to convert to table columns
+     * @returns Array of Column objects for the data table
+     */
     #buildColumns(columns: DotCMSContentTypeField[]): Column[] {
         return columns
-            .filter((column) => column.variable && column.name)
+            .filter(
+                (column) =>
+                    column.variable &&
+                    column.name &&
+                    !EXCLUDED_COLUMNS.includes(column.name.toLowerCase())
+            )
             .map((column) => ({
                 field: column.variable,
                 header: column.name

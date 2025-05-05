@@ -1,3 +1,5 @@
+import { UVEEventHandler, UVEEventSubscriber, UVEEventType } from '@dotcms/types';
+
 import {
     onContentChanges,
     onContentletHovered,
@@ -5,8 +7,6 @@ import {
     onPageReload,
     onRequestBounds
 } from './events';
-
-import { UVEEventHandler, UVEEventSubscriber, UVEEventType } from '../lib/types/editor/public';
 
 /**
  * Events that can be subscribed to in the UVE

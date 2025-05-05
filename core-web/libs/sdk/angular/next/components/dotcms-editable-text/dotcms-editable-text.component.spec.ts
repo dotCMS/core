@@ -6,9 +6,9 @@ import { Editor } from 'tinymce';
 import { DebugElement, ElementRef, Renderer2, SecurityContext } from '@angular/core';
 import { By, DomSanitizer } from '@angular/platform-browser';
 
+import { DotCMSUVEAction, UVE_MODE } from '@dotcms/types';
+import { __DOTCMS_UVE_EVENT__ } from '@dotcms/types/internal';
 import * as dotCMSUVE from '@dotcms/uve';
-import { __DOTCMS_UVE_EVENT__ } from '@dotcms/uve/internal';
-import { DotCMSUVEAction, UVE_MODE } from '@dotcms/uve/types';
 
 import { DotCMSEditableTextComponent } from './dotcms-editable-text.component';
 import { TINYMCE_CONFIG } from './utils';

@@ -22,7 +22,7 @@
                 height: auto;
             }
             .p-datatable-tbody > tr > td:first-child:has(p-tableCheckbox) + td {
-                padding: 0 $spacing-1;
+                padding: $spacing-0 $spacing-1;
             }
         }
     }

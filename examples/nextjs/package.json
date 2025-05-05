@@ -12,6 +12,7 @@
         "@dotcms/client": "next",
         "@dotcms/experiments": "next",
         "@dotcms/react": "next",
+        "@dotcms/types": "next",
         "@dotcms/uve": "next",
         "next": "^14.2.16",
         "react": "^18",

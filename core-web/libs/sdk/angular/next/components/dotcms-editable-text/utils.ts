@@ -1,19 +1,17 @@
 import { EditorComponent } from '@tinymce/tinymce-angular';
 
+import {
+    __BASE_TINYMCE_CONFIG_WITH_NO_DEFAULT__,
+    __DEFAULT_TINYMCE_CONFIG__
+} from '@dotcms/uve/internal';
+
 export type DOT_EDITABLE_TEXT_MODE = 'minimal' | 'full' | 'plain';
 
 export type DOT_EDITABLE_TEXT_FORMAT = 'html' | 'text';
 
 const DEFAULT_TINYMCE_CONFIG: EditorComponent['init'] = {
-    menubar: false,
-    inline: true,
-    valid_styles: {
-        '*': 'font-size,font-family,color,text-decoration,text-align'
-    },
-    powerpaste_word_import: 'clean',
-    powerpaste_html_import: 'clean',
-    suffix: '.min', // Suffix to use when loading resources
-    license_key: 'gpl'
+    ...__DEFAULT_TINYMCE_CONFIG__,
+    license_key: 'gpl' // Using self-hosted license key
 };
 
 export const TINYMCE_CONFIG: {
@@ -21,31 +19,14 @@ export const TINYMCE_CONFIG: {
 } = {
     minimal: {
         ...DEFAULT_TINYMCE_CONFIG,
-        plugins: 'link autolink',
-        toolbar: 'bold italic underline | link',
-        valid_elements: 'strong,em,span[style],a[href]'
+        ...__BASE_TINYMCE_CONFIG_WITH_NO_DEFAULT__.minimal
     },
     full: {
         ...DEFAULT_TINYMCE_CONFIG,
-        plugins: 'link lists autolink charmap',
-        style_formats: [
-            { title: 'Paragraph', format: 'p' },
-            { title: 'Header 1', format: 'h1' },
-            { title: 'Header 2', format: 'h2' },
-            { title: 'Header 3', format: 'h3' },
-            { title: 'Header 4', format: 'h4' },
-            { title: 'Header 5', format: 'h5' },
-            { title: 'Header 6', format: 'h6' },
-            { title: 'Pre', format: 'pre' },
-            { title: 'Code', format: 'code' }
-        ],
-        toolbar: [
-            'styleselect undo redo | bold italic underline | forecolor backcolor | alignleft aligncenter alignright alignfull | numlist bullist outdent indent | hr charmap removeformat | link'
-        ]
+        ...__BASE_TINYMCE_CONFIG_WITH_NO_DEFAULT__.full
     },
     plain: {
         ...DEFAULT_TINYMCE_CONFIG,
-        plugins: '',
-        toolbar: ''
+        ...__BASE_TINYMCE_CONFIG_WITH_NO_DEFAULT__.plain
     }
 };

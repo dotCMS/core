@@ -2,7 +2,7 @@ import { patchState, signalStore, withComputed, withMethods, withState } from '@
 
 import { computed, untracked } from '@angular/core';
 
-import { UVE_MODE } from '@dotcms/uve/types';
+import { UVE_MODE } from '@dotcms/types';
 
 import { withSave } from './features/editor/save/withSave';
 import { withEditor } from './features/editor/withEditor';

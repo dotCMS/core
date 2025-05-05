@@ -1,10 +1,10 @@
 import { useMemo, type FC } from "react";
-import type { DotCMSContentlet } from "@dotcms/types";
+import type { DotCMSBasicContentlet } from "@dotcms/types";
 import { getUVEState } from "@dotcms/uve";
-import { UVE_MODE } from "@dotcms/uve/types";
+import { UVE_MODE } from "@dotcms/types";
 
 export type ContentletProps = {
-  contentlet: DotCMSContentlet;
+  contentlet: DotCMSBasicContentlet;
   children: React.ReactNode;
 };
 
