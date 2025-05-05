@@ -1,4 +1,6 @@
-import { createDotCMSClient, DotCMSClientConfig, RequestOptions } from './client';
+import { DotCMSClientConfig, RequestOptions } from '@dotcms/types';
+
+import { createDotCMSClient } from './client';
 import { Content } from './content/content-api';
 import { NavigationClient } from './navigation/navigation-api';
 import { PageClient } from './page/page-api';

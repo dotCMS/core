@@ -1,90 +1,13 @@
-import { DotCMSPageAsset, DotCMSGraphQLPageResponse } from '@dotcms/types';
+import {
+    DotCMSClientConfig,
+    DotCMSGraphQLPageResponse,
+    GraphQLPageOptions,
+    RequestOptions
+} from '@dotcms/types';
 
 import { buildPageQuery, buildQuery, fetchGraphQL, mapResponseData } from './utils';
 
 import { graphqlToPageEntity } from '../../utils';
-import { DotCMSClientConfig, RequestOptions } from '../client';
-import { ErrorMessages } from '../models';
-
-/**
- * The parameters for the Page API.
- * @public
- */
-export interface PageRequestParams {
-    /**
-     * The id of the site you want to interact with. Defaults to the one from the config if not provided.
-     */
-    siteId?: string;
-
-    /**
-     * The mode of the page you want to retrieve. Defaults to the site's default mode if not provided.
-     */
-    mode?: 'EDIT_MODE' | 'PREVIEW_MODE' | 'LIVE';
-
-    /**
-     * The language id of the page you want to retrieve. Defaults to the site's default language if not provided.
-     */
-    languageId?: number | string;
-
-    /**
-     * The id of the persona for which you want to retrieve the page.
-     */
-    personaId?: string;
-
-    /**
-     * Whether to fire the rules set on the page.
-     */
-    fireRules?: boolean | string;
-
-    /**
-     * Allows access to related content via the Relationship fields of contentlets on a Page; 0 (default).
-     */
-    depth?: 0 | 1 | 2 | 3 | '0' | '1' | '2' | '3';
-
-    /**
-     * The publish date of the page you want to retrieve.
-     */
-    publishDate?: string;
-
-    /**
-     * The variant name of the page you want to retrieve.
-     */
-    variantName?: string;
-}
-
-type StringifyParam<T> = T extends string | number | boolean ? string : never;
-
-type PageToBackendParamsMapping = {
-    siteId: 'hostId';
-    languageId: 'language_id';
-    personaId: 'com.dotmarketing.persona.id';
-};
-
-/**
- * The private parameters for the Page API.
- * @internal
- */
-export type BackendPageParams = {
-    [K in keyof PageRequestParams as K extends keyof PageToBackendParamsMapping
-        ? PageToBackendParamsMapping[K]
-        : K]?: StringifyParam<PageRequestParams[K]>;
-};
-
-/**
- * The options for the GraphQL Page API.
- * @public
- */
-export interface GraphQLPageOptions extends PageRequestParams {
-    /**
-     * The GraphQL options for the page.
-     */
-    graphql: {
-        page?: string;
-        content?: Record<string, string>;
-        variables?: Record<string, string>;
-        fragments?: string[];
-    };
-}
 
 /**
  * Client for interacting with the DotCMS Page API.
@@ -137,20 +60,12 @@ export class PageClient {
     }
 
     /**
-     * Retrieves a page from DotCMS using either REST API or GraphQL.
-     * This method is polymorphic and can handle both REST API and GraphQL requests based on the options provided.
+     * Retrieves a page from DotCMS using GraphQL.
      *
      * @param {string} url - The URL of the page to retrieve
-     * @param {PageRequestParams | GraphQLPageOptions} [options] - Options for the request
-     * @returns {Promise<DotCMSPageAsset | DotCMSGraphQLPageResponse>} A Promise that resolves to the page data
+     * @param {GraphQLPageOptions} [options] - Options for the request
+     * @returns {Promise<DotCMSGraphQLPageResponse>} A Promise that resolves to the page data
      *
-     * @example Using REST API with options
-     * ```typescript
-     * const page = await pageClient.get('/about-us', {
-     *   mode: 'PREVIEW_MODE',
-     *   languageId: 1,
-     *   siteId: 'demo.dotcms.com'
-     * });
      * ```
      *
      * @example Using GraphQL
@@ -193,103 +108,12 @@ export class PageClient {
      *      });
      *```
      */
-    get<T extends DotCMSPageAsset | DotCMSGraphQLPageResponse = DotCMSPageAsset>(
-        url: string,
-        options?: PageRequestParams
-    ): Promise<T>;
-    get<T extends DotCMSPageAsset | DotCMSGraphQLPageResponse = DotCMSGraphQLPageResponse>(
+
+    get<T extends DotCMSGraphQLPageResponse>(
         url: string,
         options?: GraphQLPageOptions
-    ): Promise<T>;
-    get<T extends DotCMSPageAsset | DotCMSGraphQLPageResponse>(
-        url: string,
-        options?: PageRequestParams | GraphQLPageOptions
     ): Promise<T> {
-        if (!options) {
-            return this.#getPageFromAPI(url) as Promise<T>;
-        }
-
-        if (this.#isGraphQLRequest(options)) {
-            return this.#getPageFromGraphQL(url, options) as Promise<T>;
-        }
-
-        return this.#getPageFromAPI(url, options) as Promise<T>;
-    }
-
-    /**
-     * Determines if the provided options object is for a GraphQL request.
-     *
-     * @param {PageRequestParams | GraphQLPageOptions} options - The options object to check
-     * @returns {boolean} True if the options are for a GraphQL request, false otherwise
-     * @internal
-     */
-    #isGraphQLRequest(
-        options: PageRequestParams | GraphQLPageOptions
-    ): options is GraphQLPageOptions {
-        return 'graphql' in options;
-    }
-
-    /**
-     * Retrieves all the elements of a Page in your dotCMS system in JSON format.
-     *
-     * @param {string} path - The path of the page to retrieve
-     * @param {PageRequestParams} params - The options for the Page API call
-     * @returns {Promise<unknown>} A Promise that resolves to the page data
-     * @throws {Error} Throws an error if the path parameter is missing or if the fetch request fails
-     * @example
-     * ```typescript
-     * // Get a page with default parameters
-     * const homePage = await pageClient.get('/');
-     *
-     * // Get a page with specific language and mode
-     * const aboutPage = await pageClient.get('/about-us', {
-     *   languageId: 2,
-     *   mode: 'PREVIEW_MODE'
-     * });
-     *
-     * // Get a page with persona targeting
-     * const productPage = await pageClient.get('/products', {
-     *   personaId: 'persona-123',
-     *   depth: 2
-     * });
-     * ```
-     */
-    async #getPageFromAPI(path: string, params?: PageRequestParams): Promise<DotCMSPageAsset> {
-        if (!path) {
-            throw new Error("The 'path' parameter is required for the Page API");
-        }
-
-        // If the siteId is not provided, use the one from the config
-        const completedParams = {
-            ...(params ?? {}),
-            siteId: params?.siteId || this.siteId
-        };
-
-        // Map the public parameters to the one used by the API
-        const normalizedParams = this.#mapToBackendParams(completedParams || {});
-
-        // Build the query params
-        const queryParams = new URLSearchParams(normalizedParams).toString();
-
-        // If the path starts with a slash, remove it to avoid double slashes in the final URL
-        // Because the page path is part of api url path
-        const pagePath = path.startsWith('/') ? path.slice(1) : path;
-        const url = `${this.dotcmsUrl}/api/v1/page/json/${pagePath}?${queryParams}`;
-        const response = await fetch(url, this.requestOptions);
-
-        if (!response.ok) {
-            const error = {
-                status: response.status,
-                message: ErrorMessages[response.status] || response.statusText
-            };
-
-            throw error;
-        }
-
-        return response.json().then<DotCMSPageAsset>((data) => ({
-            ...data.entity,
-            params: completedParams // We retrieve the params from the API response, to make the same fetch on UVE
-        }));
+        return this.#getPageFromGraphQL(url, options) as Promise<T>;
     }
 
     /**
@@ -420,43 +244,5 @@ export class PageClient {
 
             throw errorMessage;
         }
-    }
-
-    /**
-     * Maps public API parameters to private API parameters.
-     *
-     * @param {PageRequestParams} params - The public API parameters
-     * @returns {BackendPageParams} The private API parameters
-     * @private
-     * @example
-     * ```typescript
-     * // Internal usage
-     * const backendParams = this.mapToBackendParams({
-     *   siteId: 'demo.dotcms.com',
-     *   languageId: 1,
-     *   mode: 'LIVE'
-     * });
-     * // Returns: {
-     *   hostId: 'demo.dotcms.com',
-     *   language_id: '1',
-     *   mode: 'LIVE'
-     * }
-     * ```
-     */
-    #mapToBackendParams(params: PageRequestParams): BackendPageParams {
-        const backendParams = {
-            hostId: params.siteId,
-            mode: params.mode,
-            language_id: params.languageId ? String(params.languageId) : undefined,
-            'com.dotmarketing.persona.id': params.personaId,
-            fireRules: params.fireRules ? String(params.fireRules) : undefined,
-            depth: params.depth ? String(params.depth) : undefined,
-            publishDate: params.publishDate
-        };
-
-        // Remove undefined values
-        return Object.fromEntries(
-            Object.entries(backendParams).filter(([_, value]) => value !== undefined)
-        );
     }
 }

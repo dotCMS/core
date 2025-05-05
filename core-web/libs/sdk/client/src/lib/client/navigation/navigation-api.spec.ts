@@ -1,6 +1,6 @@
-import { NavigationClient } from './navigation-api';
+import { DotCMSClientConfig, RequestOptions } from '@dotcms/types';
 
-import { DotCMSClientConfig, RequestOptions } from '../client';
+import { NavigationClient } from './navigation-api';
 
 describe('NavigationClient', () => {
     const mockFetch = jest.fn();

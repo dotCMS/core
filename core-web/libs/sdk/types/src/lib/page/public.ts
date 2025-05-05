@@ -1185,4 +1185,4 @@ export interface DotCMSGraphQLPageResponse<TContent = Record<string, any>> {
  * Payload for initializing the UVE
  * @interface DotCMSEditablePage
  */
-export type DotCMSEditablePage = DotCMSGraphQLPageResponse | DotCMSPageAsset;
+export type DotCMSEditablePage = DotCMSGraphQLPageResponse;

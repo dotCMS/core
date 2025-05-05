@@ -1,4 +1,4 @@
-import { DotCMSClientConfig, RequestOptions } from '../client';
+import { DotCMSClientConfig, RequestOptions } from '@dotcms/types';
 
 interface NavRequestParams {
     /**
