@@ -4798,7 +4798,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
                     .nextPersisted();
 
             // Create a parent contentlet without the required relationship
-            Contentlet parentContentlet = new ContentletDataGen(parentContentType)
+            final Contentlet parentContentlet = new ContentletDataGen(parentContentType)
                     .next(); // Don't persist yet
             parentContentlet.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
 
