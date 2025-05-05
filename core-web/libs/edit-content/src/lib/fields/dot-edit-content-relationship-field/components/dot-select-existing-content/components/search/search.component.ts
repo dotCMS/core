@@ -101,9 +101,6 @@ export class SearchComponent {
      * If the siteOrFolderId is a folder, it returns the values with the folderId.
      * If the siteOrFolderId is a site, it returns the values with the siteId.
      * Otherwise, it returns the values as is.
-     */
-    /**
-     * Gets the search parameters from the form.
      *
      * @returns {SearchParams} The formatted search parameters with proper site or folder ID mapping
      */
