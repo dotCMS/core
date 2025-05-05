@@ -263,4 +263,9 @@ public class GraphqlAPIImpl implements GraphqlAPI {
                 .type(list(InterfaceType.CONTENTLET.getType()))
                 .dataFetcher(new ContentletDataFetcher()));
     }
+
+    @VisibleForTesting
+    Set<GraphQLTypesProvider> getRegisteredTypesProviders() {
+        return java.util.Collections.unmodifiableSet(typesProviders);
+    }
 }

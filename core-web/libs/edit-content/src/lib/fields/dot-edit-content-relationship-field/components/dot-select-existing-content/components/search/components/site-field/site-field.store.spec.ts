@@ -98,11 +98,7 @@ describe('SiteFieldStore', () => {
             expect(store.status()).toBe(ComponentStatus.LOADED);
         }));
 
-        it('should return null for valueToSave when no node is selected', () => {
-            expect(store.valueToSave()).toBeNull();
-        });
-
-        it('should return correct id for valueToSave when node is selected', () => {
+        it('should return correct value for valueToSave when node is selected (type: folder)', () => {
             const mockNode: TreeNodeSelectItem = {
                 originalEvent: createFakeEvent('click'),
                 node: {
@@ -119,7 +115,46 @@ describe('SiteFieldStore', () => {
                 }
             };
             store.chooseNode(mockNode);
-            expect(store.valueToSave()).toBe('123');
+            expect(store.valueToSave()).toBe('folder:123');
+        });
+
+        it('should return correct value for valueToSave when node is selected (type: site)', () => {
+            const mockNode: TreeNodeSelectItem = {
+                originalEvent: createFakeEvent('click'),
+                node: {
+                    label: 'Test Node',
+                    data: {
+                        id: '456',
+                        hostname: 'test.com',
+                        path: '',
+                        type: 'site'
+                    },
+                    icon: 'pi pi-globe',
+                    leaf: true,
+                    children: []
+                }
+            };
+            store.chooseNode(mockNode);
+            expect(store.valueToSave()).toBe('site:456');
+        });
+
+        it('should return null for valueToSave when no node is selected', () => {
+            expect(store.valueToSave()).toBeNull();
+        });
+
+        it('should return null for valueToSave when node data is missing', () => {
+            const mockNode: TreeNodeSelectItem = {
+                originalEvent: createFakeEvent('click'),
+                node: {
+                    label: 'Invalid Node',
+                    data: null,
+                    icon: 'pi pi-folder',
+                    leaf: true,
+                    children: []
+                }
+            };
+            store.chooseNode(mockNode);
+            expect(store.valueToSave()).toBeNull();
         });
     });
 
