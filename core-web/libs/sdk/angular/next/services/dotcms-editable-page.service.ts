@@ -46,12 +46,15 @@ export class DotCMSEditablePageService {
      * const page = await client.page.get('/');
      *
      * // Listen for changes
-     * this.editablePageService.listenEditablePage(page).subscribe(updatedPage => {
+     * const subscription = this.editablePageService.listen(page).subscribe(updatedPage => {
      *   if (updatedPage) {
      *     // Handle updated page data
      *     console.log('Page updated:', updatedPage);
      *   }
      * });
+     *
+     * // When done listening, unsubscribe
+     * subscription.unsubscribe();
      * ```
      *
      * @param pageAsset Optional initial page data
