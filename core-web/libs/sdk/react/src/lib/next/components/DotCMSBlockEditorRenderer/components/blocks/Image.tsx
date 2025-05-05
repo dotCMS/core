@@ -1,9 +1,6 @@
 import { BlockEditorNode } from '@dotcms/types';
 
 interface DotCMSImageProps {
-    data: {
-        identifier: string;
-    };
     src: string;
     alt: string;
 }
@@ -15,9 +12,7 @@ interface DotCMSImageProps {
  * @returns The rendered image component.
  */
 export const DotCMSImage = ({ node }: { node: BlockEditorNode }) => {
-    const { data, src, alt } = node.attrs as DotCMSImageProps;
-    // Fix this path
-    const srcUrl = data?.identifier ? `${''}${src}` : src;
+    const { src, alt } = node.attrs as DotCMSImageProps;
 
-    return <img alt={alt} src={srcUrl} />;
+    return <img alt={alt} src={src} />;
 };
