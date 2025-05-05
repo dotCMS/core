@@ -12,6 +12,7 @@ import com.dotcms.business.WrapInTransaction;
 import com.dotcms.cdi.CDIUtils;
 import com.dotcms.concurrent.Debouncer;
 import com.dotcms.contenttype.business.uniquefields.UniqueFieldValidationStrategyResolver;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.VersionInfo;
@@ -526,17 +527,11 @@ public class VersionableAPIImpl implements VersionableAPI {
                     contentlet.getIdentifier(), contentlet.getLanguageId(), contentlet.getVariantId());
 
             //Get the structure for this contentlet
-            final Structure structure = CacheLocator.getContentTypeCache().getStructureByInode( contentlet.getStructureInode() );
-
-            if ( UtilMethods.isSet( structure.getPublishDateVar() ) ) {//Verify if the structure have a Publish Date Field set
-                if ( UtilMethods.isSet( identifier.getSysPublishDate() ) && identifier.getSysPublishDate().after( new Date() ) ) {
-                    final Runnable futurePublishDateRunnable = ()->
-                    {futurePublishDateMessage(versionable.getModUser());};
-                    debouncer.debounce("contentPublishDateError"+versionable.getModUser(),futurePublishDateRunnable,5000,TimeUnit.MILLISECONDS);
-                    return;
-                }
+            final ContentType contentType = contentlet.getContentType();
+            if (notifyIfFuturePublishDate(contentType, identifier, versionable.getModUser())) {
+                return;
             }
-            if ( UtilMethods.isSet( structure.getExpireDateVar() ) ) {//Verify if the structure have a Expire Date Field set
+            if ( UtilMethods.isSet( contentType.expireDateVar() ) ) {//Verify if the structure have a Expire Date Field set
                 if ( UtilMethods.isSet( identifier.getSysExpireDate() ) && identifier.getSysExpireDate().before( new Date() ) ) {
                     throw new ExpiredContentletPublishStateException( contentlet );
                 }
@@ -557,6 +552,32 @@ public class VersionableAPIImpl implements VersionableAPI {
             info.setLiveInode( versionable.getInode() );
             this.versionableFactory.saveVersionInfo( info, true );
         }
+    }
+
+    /**
+     * Checks whether the given versionable has a publish date set in the future and, if so,
+     * sends a user notification message indicating that the content cannot be published yet.
+     *
+     * <p>This method verifies that the contentType defines a publish date field and that the
+     * identifier's publish date is later than the current time. If both conditions are met,
+     * a success-type system message is sent to the user, and {@code true} is returned.</p>
+     *
+     * @param contentType   the contentType, used to determine if a publish date field exists
+     * @param identifier  the identifier containing publish date metadata
+     * @param modUser the user who last modified the version
+     * @return {@code true} if a future publish date was detected and a message was sent;
+     *         {@code false} otherwise
+     */
+    public boolean notifyIfFuturePublishDate(final ContentType contentType, final Identifier identifier, final String modUser) {
+        if (UtilMethods.isSet(contentType.publishDateVar()) &&
+                UtilMethods.isSet(identifier.getSysPublishDate()) &&
+                identifier.getSysPublishDate().after(new Date())) {
+
+            final Runnable futurePublishDateRunnable = () -> futurePublishDateMessage(modUser);
+            debouncer.debounce("contentPublishDateError" + modUser, futurePublishDateRunnable, 5000, TimeUnit.MILLISECONDS);
+            return true;
+        }
+        return false;
     }
 
     /**
