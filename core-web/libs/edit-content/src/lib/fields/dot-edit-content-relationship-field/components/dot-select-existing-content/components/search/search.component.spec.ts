@@ -111,7 +111,7 @@ describe('SearchComponent', () => {
                 query: '',
                 systemSearchableFields: {
                     languageId: -1,
-                    siteId: ''
+                    siteOrFolderId: ''
                 }
             });
         });
@@ -120,7 +120,7 @@ describe('SearchComponent', () => {
             expect(component.form.get('query')).toBeTruthy();
             expect(component.form.get('systemSearchableFields')).toBeTruthy();
             expect(component.form.get('systemSearchableFields').get('languageId')).toBeTruthy();
-            expect(component.form.get('systemSearchableFields').get('siteId')).toBeTruthy();
+            expect(component.form.get('systemSearchableFields').get('siteOrFolderId')).toBeTruthy();
         });
     });
 
@@ -131,7 +131,7 @@ describe('SearchComponent', () => {
                 query: 'test query',
                 systemSearchableFields: {
                     languageId: 1,
-                    siteId: 'site1'
+                    siteOrFolderId: 'site:site1'
                 }
             });
         });
@@ -144,7 +144,7 @@ describe('SearchComponent', () => {
                 query: '',
                 systemSearchableFields: {
                     languageId: -1,
-                    siteId: ''
+                    siteOrFolderId: ''
                 }
             });
         });
@@ -159,7 +159,7 @@ describe('SearchComponent', () => {
     });
 
     describe('doSearch', () => {
-        it('should emit form values and hide overlay panel', () => {
+        it('should emit form values and hide overlay panel (site)', () => {
             const searchParams: SearchParams = {
                 query: 'test search',
                 systemSearchableFields: {
@@ -171,7 +171,38 @@ describe('SearchComponent', () => {
             const hideSpy = jest.spyOn(component.$overlayPanel(), 'hide');
             const searchSpy = jest.spyOn(component.onSearch, 'emit');
 
-            component.form.patchValue(searchParams);
+            component.form.patchValue({
+                query: 'test search',
+                systemSearchableFields: {
+                    languageId: 2,
+                    siteOrFolderId: 'site:site123'
+                }
+            });
+            component.doSearch();
+
+            expect(hideSpy).toHaveBeenCalled();
+            expect(searchSpy).toHaveBeenCalledWith(searchParams);
+        });
+
+        it('should emit form values and hide overlay panel (folder)', () => {
+            const searchParams: SearchParams = {
+                query: 'test search',
+                systemSearchableFields: {
+                    languageId: 2,
+                    folderId: 'folder123'
+                }
+            };
+
+            const hideSpy = jest.spyOn(component.$overlayPanel(), 'hide');
+            const searchSpy = jest.spyOn(component.onSearch, 'emit');
+
+            component.form.patchValue({
+                query: 'test search',
+                systemSearchableFields: {
+                    languageId: 2,
+                    siteOrFolderId: 'folder:folder123'
+                }
+            });
             component.doSearch();
 
             expect(hideSpy).toHaveBeenCalled();
@@ -214,14 +245,14 @@ describe('SearchComponent', () => {
             expect(component.form.get('query').value).toBe('test query');
         });
 
-        it('should trigger search when search button is clicked', () => {
+        it('should trigger search when search button is clicked (site)', () => {
             const searchSpy = jest.spyOn(component.onSearch, 'emit');
 
             component.form.patchValue({
                 query: 'test search',
                 systemSearchableFields: {
                     languageId: 1,
-                    siteId: 'site123'
+                    siteOrFolderId: 'site:site123'
                 }
             });
 
@@ -242,12 +273,40 @@ describe('SearchComponent', () => {
             });
         });
 
+        it('should trigger search when search button is clicked (folder)', () => {
+            const searchSpy = jest.spyOn(component.onSearch, 'emit');
+
+            component.form.patchValue({
+                query: 'test search',
+                systemSearchableFields: {
+                    languageId: 1,
+                    siteOrFolderId: 'folder:folder123'
+                }
+            });
+
+            const openFiltersButton = spectator.query(
+                'p-button[data-testid="open-filters-button"] button'
+            );
+            spectator.click(openFiltersButton);
+
+            const searchButton = spectator.query('p-button[data-testid="search-button"] button');
+            spectator.click(searchButton);
+
+            expect(searchSpy).toHaveBeenCalledWith({
+                query: 'test search',
+                systemSearchableFields: {
+                    languageId: 1,
+                    folderId: 'folder123'
+                }
+            });
+        });
+
         it('should clear form when clear button is clicked', () => {
             component.form.patchValue({
                 query: 'test query',
                 systemSearchableFields: {
                     languageId: 1,
-                    siteId: 'site123'
+                    siteOrFolderId: 'site:site123'
                 }
             });
 
@@ -263,7 +322,7 @@ describe('SearchComponent', () => {
                 query: '',
                 systemSearchableFields: {
                     languageId: -1,
-                    siteId: ''
+                    siteOrFolderId: ''
                 }
             });
         });
