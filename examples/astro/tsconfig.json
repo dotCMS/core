@@ -11,8 +11,7 @@
       "@react/shared/*": ["src/react/shared/*"],
       "@react/hooks/*": ["src/react/hooks/*"],
       "@react/contentTypes/*": ["src/react/content-types/*"],
-      "@react/layout/*": ["src/react/layout/*"],
-      "@dotcms/types": ["src/types/index.ts"]
+      "@react/layout/*": ["src/react/layout/*"]
     }
   }
 }
