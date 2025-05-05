@@ -58,7 +58,7 @@ describe('DotCMSEditablePageService', () => {
         it('should initialize UVE and setup subscriptions', () => {
             (getUVEState as jest.Mock).mockReturnValue(true);
 
-            const result = service.listenEditablePage(mockPageAsset);
+            const result = service.listen(mockPageAsset);
 
             expect(initUVE).toHaveBeenCalledWith(mockPageAsset);
             expect(updateNavigation).toHaveBeenCalledWith('/test-page');
@@ -73,7 +73,7 @@ describe('DotCMSEditablePageService', () => {
             (getUVEState as jest.Mock).mockReturnValue(false);
             let result: DotCMSEditablePage | null = null;
 
-            service.listenEditablePage(mockPageAsset).subscribe((res) => {
+            service.listen(mockPageAsset).subscribe((res) => {
                 result = res;
             });
 
@@ -96,7 +96,7 @@ describe('DotCMSEditablePageService', () => {
 
             const emittedValues: Array<DotCMSEditablePage | null> = [];
 
-            service.listenEditablePage(mockPageAsset).subscribe((value) => {
+            service.listen(mockPageAsset).subscribe((value) => {
                 emittedValues.push(value);
             });
 
@@ -107,32 +107,10 @@ describe('DotCMSEditablePageService', () => {
         });
 
         it('should handle undefined page asset', () => {
-            service.listenEditablePage();
+            service.listen();
 
             expect(initUVE).toHaveBeenCalled();
             expect(updateNavigation).toHaveBeenCalledWith('/');
-        });
-    });
-
-    describe('unsubscribeEditablePage', () => {
-        it('should call unsubscribe and reset the page asset', () => {
-            service.listenEditablePage(mockPageAsset);
-            let finalValue: DotCMSEditablePage | null = mockPageAsset;
-
-            const subscription = service.listenEditablePage().subscribe((value) => {
-                finalValue = value;
-            });
-
-            service.unsubscribeEditablePage();
-
-            expect(unsubscribeMock).toHaveBeenCalled();
-            expect(finalValue).toBeNull();
-
-            subscription.unsubscribe();
-        });
-
-        it('should handle being called without prior listen', () => {
-            expect(() => service.unsubscribeEditablePage()).not.toThrow();
         });
     });
 });

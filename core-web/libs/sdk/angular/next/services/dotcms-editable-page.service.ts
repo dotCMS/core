@@ -2,8 +2,10 @@ import { Observable, of, Subject } from 'rxjs';
 
 import { Injectable } from '@angular/core';
 
+import { finalize } from 'rxjs/operators';
+
 import { updateNavigation } from '@dotcms/client';
-import { UVEEventType, DotCMSEditablePage, UVEUnsubscribeFunction } from '@dotcms/types';
+import { UVEEventType, DotCMSEditablePage } from '@dotcms/types';
 import { createUVESubscription, getUVEState, initUVE } from '@dotcms/uve';
 
 @Injectable({
@@ -27,15 +29,6 @@ export class DotCMSEditablePageService {
      * @type {Observable<DotCMSEditablePage | null>}
      */
     #pageAsset$ = this.#pageAssetSubject.asObservable();
-
-    /**
-     * Holds the unsubscribe function for the UVE subscription.
-     * Used to clean up subscriptions when the service is destroyed.
-     *
-     * @private
-     * @type {UVEUnsubscribeFunction | null}
-     */
-    #uveUnsubscribe: UVEUnsubscribeFunction | null = null;
 
     /**
      * Listens for changes to an editable page and returns an Observable that emits the updated page data.
@@ -64,7 +57,7 @@ export class DotCMSEditablePageService {
      * @param pageAsset Optional initial page data
      * @returns Observable that emits the updated page data or null
      */
-    listenEditablePage(pageAsset?: DotCMSEditablePage): Observable<DotCMSEditablePage | null> {
+    listen(pageAsset?: DotCMSEditablePage): Observable<DotCMSEditablePage | null> {
         if (!getUVEState()) {
             return of(pageAsset || null);
         }
@@ -74,9 +67,13 @@ export class DotCMSEditablePageService {
         initUVE(pageAsset);
         updateNavigation(pageURI);
 
-        this.#uveUnsubscribe = this.#listenUVEChanges();
+        const unsubscribeUVEChanges = this.#listenUVEChanges();
 
-        return this.#pageAsset$;
+        return this.#pageAsset$.pipe(
+            finalize(() => {
+                unsubscribeUVEChanges();
+            })
+        );
     }
 
     /**
@@ -92,35 +89,5 @@ export class DotCMSEditablePageService {
         });
 
         return unsubscribe;
-    }
-
-    /**
-     * Unsubscribes from the editable page changes and cleans up resources.
-     * Call this method when you no longer need to listen for page updates.
-     *
-     * @example
-     * ```ts
-     * // Import the service
-     * import { DotCMSEditablePageService } from '@dotcms/angular';
-     *
-     * // Inject the service
-     * constructor(private editablePageService: DotCMSEditablePageService) {}
-     *
-     * // Start listening for changes
-     * const subscription = this.editablePageService.listenEditablePage(page).subscribe(...);
-     *
-     * // When done listening, unsubscribe
-     * ngOnDestroy() {
-     *   this.editablePageService.unsubscribeEditablePage();
-     * }
-     * ```
-     */
-    unsubscribeEditablePage() {
-        if (this.#uveUnsubscribe) {
-            this.#uveUnsubscribe();
-            this.#uveUnsubscribe = null;
-        }
-
-        this.#pageAssetSubject.next(null);
     }
 }
