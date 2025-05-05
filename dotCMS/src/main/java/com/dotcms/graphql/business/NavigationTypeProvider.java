@@ -1,5 +1,6 @@
 package com.dotcms.graphql.business;
 
+import static com.dotcms.graphql.business.NavigationFieldProvider.DOT_NAVIGATION;
 import static com.dotcms.graphql.util.TypeUtil.createObjectType;
 import static graphql.Scalars.GraphQLInt;
 import static graphql.Scalars.GraphQLString;
@@ -31,7 +32,7 @@ public enum NavigationTypeProvider implements GraphQLTypesProvider {
         final Map<String, GraphQLOutputType> fields = new HashMap<>();
         // Using GraphQLTypeReference to create a recursive structure
         // This allows children to have the same structure as their parent
-        fields.put("children", GraphQLList.list(new GraphQLTypeReference("DotNavigationAPI")));
+        fields.put("children", GraphQLList.list(new GraphQLTypeReference(DOT_NAVIGATION)));
         fields.put("code", GraphQLString);
         fields.put("folder", GraphQLString);
         fields.put("hash", GraphQLInt);
@@ -47,7 +48,7 @@ public enum NavigationTypeProvider implements GraphQLTypesProvider {
 
     final Map<String, GraphQLOutputType> navigationFields = createNavigationFields();
 
-    final GraphQLObjectType navigationType = createObjectType("DotNavigationAPI", navigationFields, null);
+    final GraphQLObjectType navigationType = createObjectType(DOT_NAVIGATION, navigationFields, null);
 
     /**
      * Returns the GraphQL type for Navigation.

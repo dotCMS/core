@@ -20,6 +20,8 @@ public enum NavigationFieldProvider implements GraphQLFieldsProvider {
 
     INSTANCE;
 
+    public static final String DOT_NAVIGATION = "DotNavigation";
+
     /**
      * Creates the GraphQL field for Navigation.
      * @return a collection of GraphQLFieldDefinition representing Navigation
@@ -29,7 +31,7 @@ public enum NavigationFieldProvider implements GraphQLFieldsProvider {
     public Collection<GraphQLFieldDefinition> getFields() throws DotDataException {
         final GraphQLOutputType outputType = (GraphQLOutputType)NavigationTypeProvider.INSTANCE.getTypes().iterator().next();
         return Set.of(newFieldDefinition()
-                .name("DotNavigationAPI")
+                .name(DOT_NAVIGATION)
                 .argument(GraphQLArgument.newArgument()
                         .name("uri")
                         .type(new GraphQLNonNull(GraphQLString))
