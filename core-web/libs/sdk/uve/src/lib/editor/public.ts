@@ -109,7 +109,7 @@ export function enableBlockEditorInline(
     fieldName: string
 ): void {
     if (!contentlet?.[fieldName]) {
-        console.error(`Contentlet ${contentlet.identifier} does not have field ${fieldName}`);
+        console.error(`Contentlet ${contentlet?.identifier} does not have field ${fieldName}`);
 
         return;
     }
