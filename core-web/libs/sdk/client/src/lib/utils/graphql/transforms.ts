@@ -2,9 +2,9 @@
 
 import {
     DotCMSBasicContentlet,
-    DotCMSGraphQLPageResponse,
     DotCMSPageContainerContentlets,
-    DotCMSPageGraphQLContainer
+    DotCMSPageGraphQLContainer,
+    DotCMSPageResponse
 } from '@dotcms/types';
 
 /**
@@ -18,7 +18,7 @@ import {
  * const pageEntity = graphqlToPageEntity(graphQLPageResponse);
  * ```
  */
-export const graphqlToPageEntity = (graphQLPageResponse: DotCMSGraphQLPageResponse) => {
+export const graphqlToPageEntity = (graphQLPageResponse: DotCMSPageResponse) => {
     const { page } = graphQLPageResponse;
 
     // If there is no page, return null
