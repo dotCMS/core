@@ -20,10 +20,11 @@
     </div>
     <div class="flex align-items-center gap-2">
         <p-inputSwitch
+            id="show-selected-switch"
             [ngModel]="store.showOnlySelected()"
-            (onChange)="store.toggleShowOnlySelected()"
+            (onChange)="store.toggleShowOnlySelected($event)"
             data-testid="show-selected-switch" />
-        <label class="text-primary-500 cursor-pointer" (click)="store.toggleShowOnlySelected()">
+        <label class="text-primary-500 cursor-pointer" for="show-selected-switch">
             {{ 'dot.file.relationship.dialog.show.selected.items' | dm }}
         </label>
     </div>

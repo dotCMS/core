@@ -76,7 +76,7 @@
             </ng-template>
             <ng-template pTemplate="emptymessage">
                 <tr>
-                    <td [colSpan]="columns.length + $staticColumns()">
+                    <td [colSpan]="columns.length + $staticColumns()" class="border-none">
                         <div class="flex justify-content-center p-6 text-base gap-2">
                             <i class="pi pi-folder-open"></i>
                             <p>{{ 'dot.file.relationship.dialog.search.empty.content' | dm }}</p>
