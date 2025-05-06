@@ -185,17 +185,17 @@ describe('ExistingContentStore', () => {
         }));
 
         it('should initialize with showOnlySelected set to false', () => {
-            expect(store.showOnlySelected()).toBe(false);
+            expect(store.isSelectedView()).toBe(false);
         });
 
         it('should toggle showOnlySelected state', () => {
             const event = { checked: true } as InputSwitchChangeEvent;
             store.toggleShowOnlySelected(event);
-            expect(store.showOnlySelected()).toBe(true);
+            expect(store.isSelectedView()).toBe(true);
 
             const event2 = { checked: false } as InputSwitchChangeEvent;
             store.toggleShowOnlySelected(event2);
-            expect(store.showOnlySelected()).toBe(false);
+            expect(store.isSelectedView()).toBe(false);
         });
 
         it('should return all data when showOnlySelected is false', () => {

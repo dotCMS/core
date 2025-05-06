@@ -21,7 +21,7 @@
     <div class="flex align-items-center gap-2">
         <p-inputSwitch
             id="show-selected-switch"
-            [ngModel]="store.showOnlySelected()"
+            [ngModel]="store.isSelectedView()"
             (onChange)="store.toggleShowOnlySelected($event)"
             data-testid="show-selected-switch" />
         <label class="text-primary-500 cursor-pointer" for="show-selected-switch">

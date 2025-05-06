@@ -110,10 +110,10 @@ export const ExistingContentStore = signalStore(
          */
         filteredData: computed(() => {
             const viewMode = state.viewMode();
-            const showOnlySelected = viewMode === ViewMode.selected;
-            const data = showOnlySelected ? state.data() : state.searchData();
+            const isSelectedView = viewMode === ViewMode.selected;
+            const data = isSelectedView ? state.data() : state.searchData();
 
-            if (showOnlySelected) {
+            if (isSelectedView) {
                 const selectionItems = state.selectionItems();
                 const isArray = Array.isArray(selectionItems);
                 const currentItemsIds = isArray
@@ -129,7 +129,7 @@ export const ExistingContentStore = signalStore(
          * Computes whether the show only selected state is true.
          * @returns {boolean} True if the show only selected state is true, false otherwise.
          */
-        showOnlySelected: computed(() => state.viewMode() === ViewMode.selected)
+        isSelectedView: computed(() => state.viewMode() === ViewMode.selected)
     })),
     withMethods((store) => {
         const relationshipFieldService = inject(RelationshipFieldService);
@@ -242,14 +242,14 @@ export const ExistingContentStore = signalStore(
              */
             toggleShowOnlySelected: (event: InputSwitchChangeEvent) => {
                 const viewMode = event.checked ? ViewMode.selected : ViewMode.all;
+                const isSelectedView = viewMode === ViewMode.selected;
 
                 patchState(store, {
                     viewMode,
                     previousPagination: { ...store.pagination() },
-                    pagination:
-                        viewMode === ViewMode.selected
-                            ? { ...paginationInitialState }
-                            : { ...store.previousPagination() }
+                    pagination: isSelectedView
+                        ? { ...paginationInitialState }
+                        : { ...store.previousPagination() }
                 });
             },
             /**
