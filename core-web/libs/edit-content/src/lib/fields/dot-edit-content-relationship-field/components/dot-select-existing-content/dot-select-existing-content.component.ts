@@ -6,7 +6,8 @@ import {
     model,
     OnInit,
     effect,
-    CUSTOM_ELEMENTS_SCHEMA
+    CUSTOM_ELEMENTS_SCHEMA,
+    signal
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
@@ -36,6 +37,8 @@ type DialogData = {
     selectionMode: SelectionMode;
     currentItemsIds: string[];
 };
+
+const STATIC_COLUMNS = 6;
 
 @Component({
     selector: 'dot-select-existing-content',
@@ -80,6 +83,12 @@ export class DotSelectExistingContentComponent implements OnInit {
      * It is used to store the selected content items.
      */
     $selectionItems = model<DotCMSContentlet[] | DotCMSContentlet | null>(null);
+
+    /**
+     * A signal that holds the static columns.
+     * It is used to store the static columns.
+     */
+    $staticColumns = signal(STATIC_COLUMNS);
 
     constructor() {
         effect(
