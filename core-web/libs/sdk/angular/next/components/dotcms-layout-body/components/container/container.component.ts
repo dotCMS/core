@@ -42,7 +42,7 @@ import { ContentletComponent } from '../../components/contentlet/contentlet.comp
             <dotcms-empty-container />
         } @else {
             @for (contentlet of $contentlets(); track contentlet.identifier) {
-                <dotcms-contentlet [contentlet]="contentlet" [container]="container.identifier" />
+                <dotcms-contentlet [contentlet]="contentlet" [containerData]="$containerData()!" />
             }
         }
     `,
