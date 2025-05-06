@@ -1,4 +1,4 @@
-import { DotCMSBasicContentlet } from '@dotcms/types';
+import { Contentlet } from '@dotcms/types';
 
 import { Equals } from '../builders/query/lucene-syntax';
 import { QueryBuilder } from '../builders/query/query';
@@ -25,13 +25,6 @@ export type SortBy = {
  * @returns {Equals} The built query.
  */
 export type BuildQuery = (qb: QueryBuilder) => Equals;
-
-/**
- * The contentlet has the main fields and the custom fields of the content type.
- *
- * @template T - The custom fields of the content type.
- */
-export type Contentlet<T> = T & DotCMSBasicContentlet;
 
 /**
  * Callback for a fulfilled promise.

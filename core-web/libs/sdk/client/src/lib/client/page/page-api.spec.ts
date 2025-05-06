@@ -72,8 +72,15 @@ describe('PageClient', () => {
 
             const graphQLOptions: PageRequestParams = {
                 graphql: {
-                    page: 'fragment PageFields on Page { title url }',
-                    content: { content: 'query Content { items { title } }' }
+                    page: `containers {
+      containerContentlets {
+        contentlets {
+         ... on Banner {
+            title
+          }
+        }
+      }
+    }`
                 },
                 languageId: '1',
                 mode: 'LIVE'
@@ -104,7 +111,17 @@ describe('PageClient', () => {
         it('should pass correct variables to GraphQL query', async () => {
             const pageClient = new PageClient(validConfig, requestOptions);
             const graphQLOptions = {
-                graphql: { page: 'fragment PageFields on Page { title }' },
+                graphql: {
+                    page: `containers {
+      containerContentlets {
+        contentlets {
+         ... on Banner {
+            title
+          }
+        }
+      }
+    }`
+                },
                 languageId: '2',
                 mode: 'PREVIEW_MODE'
             };
@@ -126,7 +143,17 @@ describe('PageClient', () => {
 
             const pageClient = new PageClient(validConfig, requestOptions);
             const graphQLOptions = {
-                graphql: { page: 'fragment PageFields on Page { title }' }
+                graphql: {
+                    page: `containers {
+      containerContentlets {
+        contentlets {
+         ... on Banner {
+            title
+          }
+        }
+      }
+    }`
+                }
             };
             try {
                 await pageClient.get('/page', graphQLOptions);
@@ -142,9 +169,16 @@ describe('PageClient', () => {
 
             const pageClient = new PageClient(validConfig, requestOptions);
             const graphQLOptions = {
-                graphql: { page: 'fragment PageFields on Page { title }' }
+                graphql: {
+                    page: `containers {
+      containerContentlets {
+        contentlets {
+         ... on Banner {
+            title
+          }
+        }`
+                }
             };
-
             try {
                 await pageClient.get('/page', graphQLOptions);
             } catch (error: any) {
@@ -155,9 +189,16 @@ describe('PageClient', () => {
         it('should use default values for languageId and mode if not provided', async () => {
             const pageClient = new PageClient(validConfig, requestOptions);
             const graphQLOptions = {
-                graphql: { page: 'fragment PageFields on Page { title }' }
+                graphql: {
+                    page: `containers {
+      containerContentlets {
+        contentlets {
+         ... on Banner {
+            title
+          }
+        }`
+                }
             };
-
             await pageClient.get('/default-page', graphQLOptions);
 
             const requestBody = JSON.parse(mockFetchGraphQL.mock.calls[0][0].body);

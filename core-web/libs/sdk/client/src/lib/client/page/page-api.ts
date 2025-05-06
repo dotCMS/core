@@ -63,10 +63,8 @@ export class PageClient {
      * Retrieves a page from DotCMS using GraphQL.
      *
      * @param {string} url - The URL of the page to retrieve
-     * @param {GraphQLPageOptions} [options] - Options for the request
+     * @param {PageRequestParams} [options] - Options for the request
      * @returns {Promise<DotCMSGraphQLPageResponse>} A Promise that resolves to the page data
-     *
-     * ```
      *
      * @example Using GraphQL
      * ```typescript
@@ -106,7 +104,7 @@ export class PageClient {
      *              ]
      *          }
      *      });
-     *```
+     * ```
      */
 
     get<T extends DotCMSGraphQLPageResponse>(url: string, options?: PageRequestParams): Promise<T> {
@@ -114,55 +112,13 @@ export class PageClient {
     }
 
     /**
-     * Retrieves a personalized page with associated content and navigation.
+     * Private implementation method that fetches page data using GraphQL.
+     * This method is used internally by the public get() method.
      *
-     * @param {Object} options - Options for the personalized page request
-     * @param {string} options.url - The URL of the page to retrieve
-     * @param {string} options.languageId - The language ID for the page content
-     * @param {string} options.mode - The rendering mode for the page
-     * @param {string} options.pageFragment - GraphQL fragment for page data
-     * @param {Record<string, string>} options.content - Content queries to include
-     * @param {Record<string, string>} options.nav - Navigation queries to include
-     * @returns {Promise<Object>} A Promise that resolves to the personalized page data with content and navigation
-     * @example
-     * ```typescript
-     * // Get a personalized page with content and navigation
-     * const personalizedPage = await pageClient.getPageFromGraphQL({
-     *   url: '/about-us',
-     *   languageId: '1',
-     *   mode: 'LIVE',
-     *   pageFragment: `
-     *     fragment PageFields on Page {
-     *       title
-     *       description
-     *       modDate
-     *     }
-     *   `,
-     *   content: {
-     *     blogs: `
-     *       search(query: "+contentType: blog", limit: 3) {
-     *         title
-     *         ...on Blog {
-     *             author {
-     *                 title
-     *             }
-     *         }
-                                }
-     *   nav: {
-     *     mainNav: `
-     *       query MainNav {
-     *         Nav(identifier: "main-nav") {
-     *           title
-     *           items {
-     *             label
-     *             url
-     *           }
-     *         }
-     *       }
-     *     `
-     *   }
-     * });
-     * ```
+     * @private
+     * @param {string} url - The URL of the page to retrieve
+     * @param {PageRequestParams} [options] - Options including languageId, mode, and GraphQL parameters
+     * @returns {Promise<DotCMSGraphQLPageResponse>} A Promise that resolves to the page data
      */
     async #getPageFromGraphQL(
         url: string,
