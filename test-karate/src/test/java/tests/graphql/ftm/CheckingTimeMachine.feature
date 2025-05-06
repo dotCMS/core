@@ -172,7 +172,6 @@ Feature: Test Time Machine functionality
 
     * def fullUrl = baseUrl + '/api/v1/page/render/'+urlMapContentPieceOneUrl+'?language_id=1&mode=LIVE&publishDate='+formattedFutureDateTime
     * def cleanedUrl = cleanUrl(fullUrl)
-    * karate.log('cleanedUrl:', cleanedUrl)
     Given url cleanedUrl
     And headers commonHeaders
     When method GET
@@ -218,3 +217,14 @@ Feature: Test Time Machine functionality
     * def contentlets = contentletsFromGraphQlResponse(response)
     * karate.log('contentlets:', contentlets)
     * match contentlets contains CONTENTLET_ONE_V2
+
+  @positive @ftm
+  Scenario: Test Time Machine functionality in UrlContentMap when mode is LIVE and a publish date is NOT provided expect 404
+  title to match rendered one.
+
+    * def fullUrl = baseUrl + '/api/v1/page/render/'+urlUnpublishedContentMap+'?language_id=1&mode=LIVE'
+    * def cleanedUrl = cleanUrl(fullUrl)
+    Given url cleanedUrl
+    And headers commonHeaders
+    When method GET
+    Then status 404
