@@ -242,5 +242,4 @@ Feature: Test Time Machine functionality
     And request graphQLRequestPayLoad
     When method post
     Then status 200
-    * karate.log('contentlets:', response)
     * match response.data.page == null
