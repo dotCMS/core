@@ -28,7 +28,9 @@ export class DotEditContentJsonFieldComponent {
     /**
      * Input field DotCMSContentTypeField
      */
-    $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
+    $field = input<DotCMSContentTypeField | null>(null, {
+        alias: 'field'
+    });
 
     /**
      * Reference to the Monaco editor component
