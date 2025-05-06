@@ -6,12 +6,12 @@ Feature: General Helpers and Functions
       function(url) {
         if (!url) return url;
 
-      // Separamos URL y parámetros
+      // Split appart URL + params
         const parts = url.split('?');
         const baseUrl = parts[0];
         const queryParams = parts.length > 1 ? parts[1] : null;
 
-      // Separamos protocolo
+      // Split apart URL + protocol
         let protocol = '';
         let restOfUrl = baseUrl;
 
@@ -23,12 +23,12 @@ Feature: General Helpers and Functions
           restOfUrl = baseUrl.substring(8);
         }
 
-      // Reemplazamos // por / repetidamente
+      // Replace // with / repeatedly
         while (restOfUrl.indexOf('//') >= 0) {
           restOfUrl = restOfUrl.replace("//", "/");
         }
-
-      // Reconstruimos la URL completa
+      
+      // Rebuild the full URL
         let cleanedUrl = protocol + restOfUrl;
         if (queryParams) {
           cleanedUrl = cleanedUrl + '?' + queryParams;
