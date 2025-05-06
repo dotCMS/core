@@ -7,11 +7,12 @@ import { monacoMock } from '@dotcms/utils-testing';
 
 import { DotEditContentMonacoEditorControlComponent } from './dot-edit-content-monaco-editor-control.component';
 
-import {
-    DEFAULT_MONACO_LANGUAGE,
-    DEFAULT_WYSIWYG_FIELD_MONACO_CONFIG
-} from '../../fields/dot-edit-content-wysiwyg-field/dot-edit-content-wysiwyg-field.constant';
 import { WYSIWYG_MOCK } from '../../fields/dot-edit-content-wysiwyg-field/mocks/dot-edit-content-wysiwyg-field.mock';
+import {
+    AvailableLanguageMonaco,
+    DEFAULT_MONACO_LANGUAGE,
+    DEFAULT_MONACO_CONFIG
+} from '../../models/dot-edit-content-field.constant';
 import { createFormGroupDirectiveMock } from '../../utils/mocks';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -48,7 +49,7 @@ describe('DotEditContentMonacoEditorControlComponent', () => {
 
     it('should generate correct Monaco options', async () => {
         const expectedOptions = {
-            ...DEFAULT_WYSIWYG_FIELD_MONACO_CONFIG,
+            ...DEFAULT_MONACO_CONFIG,
             theme: 'vs',
             language: 'plaintext' // due the auto detect language is plaintext
         };
@@ -60,6 +61,26 @@ describe('DotEditContentMonacoEditorControlComponent', () => {
         spectator.detectChanges();
 
         expect(component.$monacoOptions()).toEqual(expectedOptions);
+    });
+
+    it('should use forcedLanguage when provided', () => {
+        // Set the forced language
+        spectator.setInput('forceLanguage', AvailableLanguageMonaco.Javascript);
+
+        // Check if monaco options includes the forced language
+        const options = component.$monacoOptions();
+        expect(options.language).toBe(AvailableLanguageMonaco.Javascript);
+    });
+
+    it('should override auto-detected language when forcedLanguage is provided', () => {
+        // First test auto-detection - expecting plaintext instead of DEFAULT_MONACO_LANGUAGE
+        expect(component.$language()).toBe('plaintext');
+
+        // Now set forced language
+        spectator.setInput('forceLanguage', AvailableLanguageMonaco.Velocity);
+
+        // Verify that the monaco options uses the forced language
+        expect(component.$monacoOptions().language).toBe(AvailableLanguageMonaco.Velocity);
     });
 
     it('should parse custom props from field variables', () => {
@@ -76,7 +97,7 @@ describe('DotEditContentMonacoEditorControlComponent', () => {
         spectator.setInput('field', fieldWithVariables);
 
         const expectedOptions = {
-            ...DEFAULT_WYSIWYG_FIELD_MONACO_CONFIG,
+            ...DEFAULT_MONACO_CONFIG,
             ...customProps,
             language: 'plaintext' // due the auto detect language is plaintext
         };
