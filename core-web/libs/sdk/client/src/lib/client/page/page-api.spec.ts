@@ -80,7 +80,8 @@ describe('PageClient', () => {
           }
         }
       }
-    }`
+    }`,
+                    content: { content: 'query Content { items { title } }' }
                 },
                 languageId: '1',
                 mode: 'LIVE'
@@ -120,7 +121,8 @@ describe('PageClient', () => {
           }
         }
       }
-    }`
+    }`,
+                    content: { content: 'query Content { items { title } }' }
                 },
                 languageId: '2',
                 mode: 'PREVIEW_MODE'
@@ -152,7 +154,8 @@ describe('PageClient', () => {
           }
         }
       }
-    }`
+    }`,
+                    content: { content: 'query Content { items { title } }' }
                 }
             };
             try {
@@ -176,7 +179,8 @@ describe('PageClient', () => {
          ... on Banner {
             title
           }
-        }`
+        }`,
+                    content: { content: 'query Content { items { title } }' }
                 }
             };
             try {
@@ -196,7 +200,8 @@ describe('PageClient', () => {
          ... on Banner {
             title
           }
-        }`
+        }`,
+                    content: { content: 'query Content { items { title } }' }
                 }
             };
             await pageClient.get('/default-page', graphQLOptions);
