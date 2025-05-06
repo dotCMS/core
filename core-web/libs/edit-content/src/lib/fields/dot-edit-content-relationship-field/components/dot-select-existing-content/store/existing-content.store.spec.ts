@@ -3,6 +3,8 @@ import { Observable, of, throwError } from 'rxjs';
 
 import { TestBed, fakeAsync, tick } from '@angular/core/testing';
 
+import { InputSwitchChangeEvent } from 'primeng/inputswitch';
+
 import { delay } from 'rxjs/operators';
 
 import { ComponentStatus } from '@dotcms/dotcms-models';
@@ -187,10 +189,12 @@ describe('ExistingContentStore', () => {
         });
 
         it('should toggle showOnlySelected state', () => {
-            store.toggleShowOnlySelected();
+            const event = { checked: true } as InputSwitchChangeEvent;
+            store.toggleShowOnlySelected(event);
             expect(store.showOnlySelected()).toBe(true);
 
-            store.toggleShowOnlySelected();
+            const event2 = { checked: false } as InputSwitchChangeEvent;
+            store.toggleShowOnlySelected(event2);
             expect(store.showOnlySelected()).toBe(false);
         });
 
@@ -204,7 +208,8 @@ describe('ExistingContentStore', () => {
             store.setSelectionItems([selectedItem]);
 
             // Toggle to show only selected items
-            store.toggleShowOnlySelected();
+            const event = { checked: true } as InputSwitchChangeEvent;
+            store.toggleShowOnlySelected(event);
 
             // Should filter to show only the selected item
             expect(store.filteredData()).toEqual([selectedItem]);
@@ -216,7 +221,8 @@ describe('ExistingContentStore', () => {
                 selectionMode: 'multiple',
                 selectedItemsIds: []
             });
-            store.toggleShowOnlySelected();
+            const event = { checked: true } as InputSwitchChangeEvent;
+            store.toggleShowOnlySelected(event);
             expect(store.filteredData()).toEqual([]);
         });
 
@@ -226,7 +232,8 @@ describe('ExistingContentStore', () => {
                 selectionMode: 'multiple',
                 selectedItemsIds: [mockData.contentlets[0].inode]
             });
-            store.toggleShowOnlySelected();
+            const event = { checked: true } as InputSwitchChangeEvent;
+            store.toggleShowOnlySelected(event);
             expect(store.filteredData()).toEqual([mockData.contentlets[0]]);
         });
     });
