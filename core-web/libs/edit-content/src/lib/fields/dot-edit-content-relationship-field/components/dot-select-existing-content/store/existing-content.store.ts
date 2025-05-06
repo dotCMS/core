@@ -238,9 +238,10 @@ export const ExistingContentStore = signalStore(
                 });
             },
             /**
-             * Toggles between showing all items or only selected items.
+             * Changes the view mode between all and selected items.
+             * @param event The event containing the checked property.
              */
-            toggleShowOnlySelected: (event: InputSwitchChangeEvent) => {
+            changeViewMode: (event: InputSwitchChangeEvent) => {
                 const viewMode = event.checked ? ViewMode.selected : ViewMode.all;
                 const isSelectedView = viewMode === ViewMode.selected;
 
