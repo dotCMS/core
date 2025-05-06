@@ -104,6 +104,9 @@
         padding-top: $spacing-4;
         padding-bottom: 0;
     }
+    .p-dialog-footer {
+        padding-top: 0;
+    }
 }
 
 .p-dialog-header .p-dialog-header-icons .p-dialog-header-close {

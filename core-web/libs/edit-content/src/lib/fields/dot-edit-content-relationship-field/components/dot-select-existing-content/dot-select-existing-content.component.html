@@ -3,7 +3,7 @@
 @let pagination = store.pagination();
 @let selectionMode = store.selectionMode();
 
-<div class="flex flex-column gap-2 h-full justify-content-between">
+<div class="w-full h-full">
     @if (store.errorMessage()) {
         <div
             class="flex justify-content-center border-1 border-solid border-gray-400 p-6 border-round text-base">
@@ -16,45 +16,19 @@
             [selectionMode]="selectionMode"
             [(selection)]="$selectionItems"
             [loading]="store.isLoading()"
-            [paginator]="data.length > pagination.rowsPerPage"
+            [paginator]="true"
             [first]="pagination.offset"
             [rows]="pagination.rowsPerPage"
             (onPage)="store.setOffset($event)"
             [scrollable]="true"
             [rowHover]="false"
             [reorderableColumns]="false"
+            [showCurrentPageReport]="true"
+            currentPageReportTemplate="{first} - {last} of {totalRecords}"
+            [showPageLinks]="false"
+            [showFirstLastIcon]="false"
+            scrollHeight="34rem"
             styleClass="dotTable p-datatable-existing-content w-full">
-            <ng-template pTemplate="caption">
-                <div class="flex justify-content-between align-items-center w-full">
-                    <div class="flex align-items-center gap-2">
-                        <div class="flex-none">
-                            <dot-search
-                                (onSearch)="store.search($event)"
-                                [isLoading]="store.isLoading()" />
-                        </div>
-
-                        <div class="flex-grow-1">
-                            <p class="text-primary-500">
-                                {{
-                                    'dot.file.relationship.dialog.per.page'
-                                        | dm: [pagination.rowsPerPage.toString()]
-                                }}
-                            </p>
-                        </div>
-                    </div>
-                    <div class="flex align-items-center gap-2">
-                        <p-inputSwitch
-                            [ngModel]="store.showOnlySelected()"
-                            (onChange)="store.toggleShowOnlySelected()"
-                            data-testid="show-selected-switch" />
-                        <label
-                            class="text-primary-500 cursor-pointer"
-                            (click)="store.toggleShowOnlySelected()">
-                            {{ 'dot.file.relationship.dialog.show.selected.items' | dm }}
-                        </label>
-                    </div>
-                </div>
-            </ng-template>
             <ng-template pTemplate="header" styleClass="relative" let-columns>
                 <tr>
                     <th
@@ -102,7 +76,7 @@
             </ng-template>
             <ng-template pTemplate="emptymessage">
                 <tr>
-                    <td [colSpan]="columns.length + 5">
+                    <td [colSpan]="columns.length + 6">
                         <div class="flex justify-content-center p-6 text-base gap-2">
                             <i class="pi pi-folder-open"></i>
                             <p>{{ 'dot.file.relationship.dialog.search.empty.content' | dm }}</p>
