@@ -46,8 +46,8 @@ public class SaveContentActionletTest extends BaseWorkflowIntegrationTest {
     private static Contentlet                   contentlet             = null;
     private static Contentlet                   contentlet2            = null;
 
-    private static MockedStatic<APILocator> mockedAPILocator;
-    private static VersionableAPI             spyVersionableAPI;
+    private static MockedStatic<APILocator>     mockedAPILocator       = null;
+    private static VersionableAPI               spyVersionableAPI      = null;
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -170,6 +170,7 @@ public class SaveContentActionletTest extends BaseWorkflowIntegrationTest {
                     ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
                     contentTypeAPI.delete(SaveContentActionletTest.type2);
                 }
+                mockedAPILocator.close();
             }
         }
     } // cleanup
