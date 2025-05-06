@@ -228,3 +228,19 @@ Feature: Test Time Machine functionality
     And headers commonHeaders
     When method GET
     Then status 404
+
+  @smoke @positive @graphql @ftm
+  Scenario: Send GraphQL query to fetch page details on a unpublished UrlContentMap,
+  No publish date is sent expect 404 since the urlMap is unpublished
+    
+    * def fullUrl = baseUrl + '/'+urlUnpublishedContentMap+'?language_id=1&mode=LIVE'
+    * def cleanedUrl = cleanUrl(fullUrl)
+    * karate.log('pageUrl:', cleanedUrl)
+    * def graphQLRequestPayLoad = buildGraphQLRequestPayload (cleanedUrl)
+    Given url baseUrl + '/api/v1/graphql'
+    And headers commonHeaders
+    And request graphQLRequestPayLoad
+    When method post
+    Then status 200
+    * karate.log('contentlets:', response)
+    * match response.data.page == null
