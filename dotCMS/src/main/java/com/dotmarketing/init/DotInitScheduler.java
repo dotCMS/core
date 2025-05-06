@@ -505,7 +505,7 @@ private static void addDeleteOldSiteSearchIndicesJob (final Scheduler scheduler)
 	 * process.
 	 */
 	private static void addTelemetryMetricsStatsJob(final Scheduler scheduler) {
-		if (Config.getBooleanProperty(FeatureFlagName.FEATURE_FLAG_TELEMETRY_CORE_ENABLED, false)) {
+		if (Config.getBooleanProperty(FeatureFlagName.FEATURE_FLAG_TELEMETRY_CORE_ENABLED, true)) {
 			final String triggerName  = "trigger36";
 			final String triggerGroup = "group36";
 			final JobBuilder telemetryMetricsStatsJob = new JobBuilder()

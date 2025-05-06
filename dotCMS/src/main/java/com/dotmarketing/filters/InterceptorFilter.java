@@ -31,10 +31,10 @@ import javax.servlet.ServletException;
 public class InterceptorFilter extends AbstractWebInterceptorSupportFilter {
 
     private static final Lazy<Boolean> ENABLE_TELEMETRY_FROM_CORE = Lazy.of(() ->
-            Config.getBooleanProperty(FeatureFlagName.FEATURE_FLAG_TELEMETRY_CORE_ENABLED, false));
+            Config.getBooleanProperty(FeatureFlagName.FEATURE_FLAG_TELEMETRY_CORE_ENABLED, true));
 
     private static final Lazy<Boolean> TELEMETRY_API_METRICS_ENABLED = Lazy.of(() ->
-            Config.getBooleanProperty(FeatureFlagName.TELEMETRY_API_METRICS_ENABLED, false));
+            Config.getBooleanProperty(FeatureFlagName.TELEMETRY_API_METRICS_ENABLED, true));
 
     @Override
     public void init(final FilterConfig config) throws ServletException {

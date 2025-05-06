@@ -1,10 +1,10 @@
-# DotCMS Block Editor Renderer
+# DotCMSBlockEditorRenderer Component
 
 A standalone Angular component for rendering DotCMS Block Editor content with support for custom block renderers.
 
 ## Overview
 
-The Block Editor Renderer is designed to display content created with DotCMS's Block Editor field type. It handles various block types out of the box and allows for custom rendering of blocks through a flexible renderer system.
+The `DotCMSBlockEditorRenderer` is designed to display content created with DotCMS's Block Editor field type. It handles various block types out of the box and allows for custom rendering of blocks through a flexible renderer system.
 
 ## Basic Usage
 
@@ -21,9 +21,12 @@ The Block Editor Renderer is designed to display content created with DotCMS's B
     `
 })
 export class MyComponent {
-    blockEditorContent: Block = {...};
+    blockEditorContent: BlockEditorContent = {...};
 }
 ```
+
+Where `blockEditorContent` represents the Block Editor content structure.
+More info in the [Block Editor documentation](https://dev.dotcms.com/docs/block-editor#JSONObject)
 
 ## Default Block Types
 
@@ -103,6 +106,48 @@ export class MyComponent {
     customRenderers = customRenderers;
 }
 ```
+
+## Enabling Inline Editing
+
+To enable inline editing for a Block Editor field:
+
+```typescript
+import { DotCMSBlockEditorRendererComponent } from '@dotcms/angular';
+import { enableBlockEditorInline } from '@dotcms/uve';
+
+@Component({
+    selector: 'detail-page',
+    standalone: true,
+    imports: [DotCMSBlockEditorRendererComponent],
+    template: `
+        <div (click)="handleClick()">
+            <dotcms-block-editor-renderer
+                [blocks]="contentlet[fieldName]"
+                [fieldName]="fieldName">
+            </dotcms-block-editor-renderer>
+        </div>
+    `
+})
+export class DetailPageComponent {
+    @Input() contentlet: any;
+    fieldName = 'blogContent';
+
+    handleClick(): void {
+        enableBlockEditorInline(this.contentlet, this.fieldName);
+    }
+}
+```
+
+### Key Points for Inline Editing
+
+1. Import the `enableBlockEditorInline` function from `@dotcms/uve`
+2. Specify the `fieldName` input property on the renderer component to identify which field to edit
+3. Create a click handler method that calls `enableBlockEditorInline` with:
+   - The contentlet object containing the field
+   - The name of the field to edit
+4. Attach the click handler to a parent element using Angular's event binding `(click)`
+
+When a user clicks on the element, the Block Editor will switch to inline editing mode for the specified field.
 
 ## Block Structure
 

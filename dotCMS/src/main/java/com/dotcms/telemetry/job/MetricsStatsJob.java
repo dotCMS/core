@@ -35,7 +35,7 @@ public class MetricsStatsJob implements StatefulJob {
             metricsSnapshot = MetricStatsCollector.getStatsAndCleanUp();
             APILocator.getMetricsAPI().persistMetricsSnapshot(metricsSnapshot);
         } catch (final Throwable e) {
-            Logger.error(this, String.format("An error occurred during job execution: %s",
+            Logger.debug(this, String.format("An error occurred during job execution: %s",
                     ExceptionUtil.getErrorMessage(e)), e);
         }
     }

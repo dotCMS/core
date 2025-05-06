@@ -64,5 +64,5 @@ export default async function Home({ searchParams, params }) {
         handleVanityUrlRedirect(pageAsset?.vanityUrl);
     }
 
-    return <MyBlogPage nav={nav?.entity.children} pageAsset={pageAsset} />;
+    return <MyBlogPage nav={nav?.entity.children} initialPageAsset={pageAsset} />;
 }
