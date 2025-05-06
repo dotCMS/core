@@ -9,6 +9,22 @@
     resize: vertical;
 }
 
+.dot-json-field {
+    &__container {
+        height: 100%;
+        width: 100%;
+    }
+
+    &__controls {
+        padding: $spacing-1 0;
+    }
+
+    &__editor {
+        flex: 1;
+        height: calc(100% - 3rem);
+    }
+}
+
 dot-edit-content-monaco-editor-control {
     border-radius: $border-radius-md;
     display: block;
