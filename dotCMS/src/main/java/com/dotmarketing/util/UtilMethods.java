@@ -1050,7 +1050,7 @@ public class UtilMethods {
     }
 
     /**
-     * This method returns the extension of the file ignoring the case of the extension
+     * This method returns the extension of the file 
      * */
     public static String getFileExtension(String fileName) {
     	String result = "";
