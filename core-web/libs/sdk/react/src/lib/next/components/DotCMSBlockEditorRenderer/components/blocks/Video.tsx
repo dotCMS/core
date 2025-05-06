@@ -19,10 +19,11 @@ interface DotCMSVideoProps {
  */
 export const DotCMSVideo = ({ node }: { node: BlockEditorNode }) => {
     const { data, src, mimeType, width, height } = node.attrs as DotCMSVideoProps;
-    const poster = data?.thumbnail || 'poster-image.jpg';
+    const poster = data?.thumbnail;
+    const posterAttribute = poster ? { poster } : {};
 
     return (
-        <video controls preload="metadata" poster={poster} width={width} height={height}>
+        <video controls preload="metadata" width={width} height={height} {...posterAttribute}>
             <track default kind="captions" srcLang="en" />
             <source src={src} type={mimeType} />
             Your browser does not support the <code>video</code> element.
