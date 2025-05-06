@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { BlockEditorContent } from '@dotcms/types';
 import { BlockEditorState } from '@dotcms/types/internal';
@@ -19,8 +19,8 @@ export type CustomRenderer<T = any> = Record<string, React.FC<T>>;
 
 interface BlockEditorRendererProps {
     blocks: BlockEditorContent;
-    className?: string;
     style?: React.CSSProperties;
+    className?: string;
     customRenderers?: CustomRenderer;
 }
 
@@ -41,7 +41,6 @@ export const DotCMSBlockEditorRenderer = ({
     className,
     customRenderers
 }: BlockEditorRendererProps) => {
-    const ref = useRef<HTMLDivElement>(null);
     const [blockEditorState, setBlockEditorState] = useState<BlockEditorState>({ error: null });
     const isDevMode = useIsDevMode();
 
@@ -75,7 +74,7 @@ export const DotCMSBlockEditorRenderer = ({
     }
 
     return (
-        <div className={className} style={style} ref={ref} data-testid="dot-block-editor-container">
+        <div className={className} style={style} data-testid="dot-block-editor-container">
             <BlockEditorBlock content={blocks?.content} customRenderers={customRenderers} />
         </div>
     );
