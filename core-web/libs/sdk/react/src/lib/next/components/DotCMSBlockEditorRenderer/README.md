@@ -4,17 +4,7 @@ The `DotCMSBlockEditorRenderer` component is a React component for rendering Dot
 
 ## Overview
 
-The DotCMSBlockEditorRenderer displays structured content created with DotCMS's Block Editor field. The component handles validation of the block structure and renders the content appropriately.
-
-## Installation
-
-The DotCMSBlockEditorRenderer is included in the `@dotcms/react` SDK package:
-
-```bash
-npm install @dotcms/react
-# or
-yarn add @dotcms/react
-```
+The `DotCMSBlockEditorRenderer` is designed to display content created with DotCMS's Block Editor field type. It handles various block types out of the box and allows for custom rendering of blocks through a flexible renderer system.
 
 ## Usage
 
@@ -45,22 +35,6 @@ More info in the [Block Editor documentation](https://dev.dotcms.com/docs/block-
 | `className` | `string` | Optional CSS class name to apply to the container. |
 | `style` | `React.CSSProperties` | Optional inline styles to apply to the container. |
 
-## Block Structure
-
-The component expects blocks to follow a specific structure:
-
-```typescript
-interface BlockEditorContent {
-  type: 'doc';
-  content: BlockContent[];
-}
-
-interface BlockContent {
-  type: string;
-  content?: BlockContent[];
-  [key: string]: any;
-}
-```
 
 ## Custom Renderers
 
@@ -90,6 +64,48 @@ function ContentDisplay({ blocks }) {
   );
 }
 ```
+
+## Inline Editing
+
+The component supports inline editing for Block Editor fields when used in a DotCMS environment. This allows content editors to make changes directly on the page without going to the edit mode.
+
+### Enabling Inline Editing
+
+To enable inline editing for a Block Editor field:
+
+```jsx
+import { DotCMSBlockEditorRenderer } from '@dotcms/react/next';
+import { enableBlockEditorInline } from '@dotcms/uve';
+
+function DetailPage({ contentlet }) {
+    const fieldName = "blogContent";
+
+    const handleClick = () => {
+        enableBlockEditorInline(contentlet, fieldName);
+    };
+
+    return (
+        <div onClick={handleClick}>
+            <DotCMSBlockEditorRenderer
+                blocks={contentlet[fieldName]}
+                fieldName={fieldName}
+            />
+        </div>
+    );
+}
+export default DetailPage;
+```
+
+### Key Points for Inline Editing
+
+1. Import the `enableBlockEditorInline` function from `@dotcms/uve`
+2. Specify the `fieldName` prop on the renderer component to identify which field to edit
+3. Create a click handler that calls `enableBlockEditorInline` with:
+   - The contentlet object containing the field
+   - The name of the field to edit
+4. Attach the click handler to a parent element of the renderer
+
+When a user clicks on the element, the Block Editor will switch to inline editing mode for the specified field.
 
 ## Error Handling
 
