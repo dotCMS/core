@@ -124,7 +124,7 @@ public class UniqueFieldDataBaseUtil {
             "        SELECT structure.inode                                       AS content_type_id," +
             "               field.velocity_var_name                               AS field_var_name," +
             "               contentlet.language_id                                AS language_id," +
-            "               identifier.host_inode                                 AS host_id," +
+            "               (CASE WHEN field_variable.variable_value = 'true' THEN identifier.host_inode ELSE '' END) AS host_id," +
             "               jsonb_extract_path_text(contentlet_as_json -> 'fields', field.velocity_var_name)::jsonb ->>'value' AS field_value," +
             "               ARRAY_AGG(DISTINCT contentlet.identifier)                      AS contentlet_identifier," +
             "               (CASE WHEN COUNT(DISTINCT contentlet_version_info.variant_id) > 1 THEN 'DEFAULT' ELSE MAX(contentlet_version_info.variant_id) END) AS variant_id, " +
@@ -144,7 +144,7 @@ public class UniqueFieldDataBaseUtil {
             "        GROUP BY structure.inode," +
             "                 field.velocity_var_name," +
             "                 contentlet.language_id," +
-            "                 identifier.host_inode," +
+            "                 (CASE WHEN field_variable.variable_value = 'true' THEN identifier.host_inode ELSE '' END)," +
             "                 jsonb_extract_path_text(contentlet_as_json -> 'fields', field.velocity_var_name)::jsonb ->>'value') as data_to_populate";
 
 

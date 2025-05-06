@@ -57,7 +57,12 @@ describe('ContentletComponent', () => {
         spectator = createComponent({
             props: {
                 contentlet: mockContentlet,
-                container: 'test-container'
+                containerData: {
+                    identifier: 'test-container-id',
+                    acceptTypes: 'test-accept-types',
+                    maxContentlets: 10,
+                    uuid: 'test-uuid'
+                }
             },
             providers: [
                 {
@@ -83,6 +88,7 @@ describe('ContentletComponent', () => {
         expect(hostElement.getAttribute('data-dot-basetype')).toBeDefined();
         expect(hostElement.getAttribute('data-dot-title')).toBeDefined();
         expect(hostElement.getAttribute('data-dot-inode')).toBeDefined();
+        expect(hostElement.getAttribute('data-dot-container')).toBeDefined();
     });
 
     it('should set dot attributes in dev mode', () => {
