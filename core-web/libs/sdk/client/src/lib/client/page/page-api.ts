@@ -1,6 +1,6 @@
 import {
     DotCMSClientConfig,
-    DotCMSGraphQLPageResponse,
+    DotCMSPageResponse,
     PageRequestParams,
     RequestOptions
 } from '@dotcms/types';
@@ -64,7 +64,7 @@ export class PageClient {
      *
      * @param {string} url - The URL of the page to retrieve
      * @param {PageRequestParams} [options] - Options for the request
-     * @returns {Promise<DotCMSGraphQLPageResponse>} A Promise that resolves to the page data
+     * @returns {Promise<DotCMSPageResponse>} A Promise that resolves to the page data
      *
      * @example Using GraphQL
      * ```typescript
@@ -107,7 +107,7 @@ export class PageClient {
      * ```
      */
 
-    get<T extends DotCMSGraphQLPageResponse>(url: string, options?: PageRequestParams): Promise<T> {
+    get<T extends DotCMSPageResponse>(url: string, options?: PageRequestParams): Promise<T> {
         return this.#getPageFromGraphQL(url, options) as Promise<T>;
     }
 
@@ -118,12 +118,12 @@ export class PageClient {
      * @private
      * @param {string} url - The URL of the page to retrieve
      * @param {PageRequestParams} [options] - Options including languageId, mode, and GraphQL parameters
-     * @returns {Promise<DotCMSGraphQLPageResponse>} A Promise that resolves to the page data
+     * @returns {Promise<DotCMSPageResponse>} A Promise that resolves to the page data
      */
     async #getPageFromGraphQL(
         url: string,
         options?: PageRequestParams
-    ): Promise<DotCMSGraphQLPageResponse> {
+    ): Promise<DotCMSPageResponse> {
         const {
             languageId = '1',
             mode = 'LIVE',

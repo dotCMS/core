@@ -5,7 +5,7 @@ import { Injectable } from '@angular/core';
 import { finalize } from 'rxjs/operators';
 
 import { updateNavigation } from '@dotcms/client';
-import { UVEEventType, DotCMSEditablePage } from '@dotcms/types';
+import { UVEEventType, DotCMSPageResponse } from '@dotcms/types';
 import { createUVESubscription, getUVEState, initUVE } from '@dotcms/uve';
 
 @Injectable({
@@ -17,16 +17,16 @@ export class DotCMSEditablePageService {
      * Used internally to track changes to the page data.
      *
      * @private
-     * @type {Subject<DotCMSEditablePage | null>}
+     * @type {Subject<DotCMSPageResponse | null>}
      */
-    #pageAssetSubject = new Subject<DotCMSEditablePage | null>();
+    #pageAssetSubject = new Subject<DotCMSPageResponse | null>();
 
     /**
      * Observable stream of the page asset changes.
      * Exposes the pageAssetSubject as an Observable for subscribers.
      *
      * @private
-     * @type {Observable<DotCMSEditablePage | null>}
+     * @type {Observable<DotCMSPageResponse | null>}
      */
     #pageAsset$ = this.#pageAssetSubject.asObservable();
 
@@ -60,7 +60,7 @@ export class DotCMSEditablePageService {
      * @param pageAsset Optional initial page data
      * @returns Observable that emits the updated page data or null
      */
-    listen(pageAsset?: DotCMSEditablePage): Observable<DotCMSEditablePage | null> {
+    listen(pageAsset?: DotCMSPageResponse): Observable<DotCMSPageResponse | null> {
         if (!getUVEState()) {
             return of(pageAsset || null);
         }

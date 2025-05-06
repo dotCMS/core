@@ -1,7 +1,7 @@
 import { renderHook, act } from '@testing-library/react-hooks';
 
 import { updateNavigation } from '@dotcms/client';
-import { DotCMSEditablePage, UVEEventType } from '@dotcms/types';
+import { DotCMSPageResponse, UVEEventType } from '@dotcms/types';
 import { getUVEState, initUVE, createUVESubscription } from '@dotcms/uve';
 
 import { useEditableDotCMSPage } from '../../hooks/useEditableDotCMSPage';
@@ -26,7 +26,7 @@ describe('useEditableDotCMSPage', () => {
     const mockDestroyUVESubscriptions = jest.fn();
 
     // Use unknown as intermediate type to avoid type checking issues
-    const mockEditablePage = {
+    const mockPageResponse = {
         page: {
             pageURI: '/test-page',
             title: 'Test Page',
@@ -39,7 +39,7 @@ describe('useEditableDotCMSPage', () => {
             testContent: [{ title: 'Test Item' }]
         },
         graphql: {} // Required for DotCMSGraphQLPageResponse
-    } as unknown as DotCMSEditablePage;
+    } as unknown as DotCMSPageResponse;
 
     beforeEach(() => {
         jest.clearAllMocks();
@@ -50,24 +50,24 @@ describe('useEditableDotCMSPage', () => {
     test('should initialize with the provided editable page', () => {
         getUVEStateMock.mockReturnValue({ mode: 'EDIT' });
 
-        const { result } = renderHook(() => useEditableDotCMSPage(mockEditablePage));
+        const { result } = renderHook(() => useEditableDotCMSPage(mockPageResponse));
 
-        expect(result.current).toEqual(mockEditablePage);
+        expect(result.current).toEqual(mockPageResponse);
     });
 
     test('should initialize UVE and update navigation when UVE state exists', () => {
         getUVEStateMock.mockReturnValue({ mode: 'EDIT' });
 
-        renderHook(() => useEditableDotCMSPage(mockEditablePage));
+        renderHook(() => useEditableDotCMSPage(mockPageResponse));
 
-        expect(initUVEMock).toHaveBeenCalledWith(mockEditablePage);
+        expect(initUVEMock).toHaveBeenCalledWith(mockPageResponse);
         expect(updateNavigationMock).toHaveBeenCalledWith('/test-page');
     });
 
     test('should not initialize UVE when UVE state does not exist', () => {
         getUVEStateMock.mockReturnValue(undefined);
 
-        renderHook(() => useEditableDotCMSPage(mockEditablePage));
+        renderHook(() => useEditableDotCMSPage(mockPageResponse));
 
         expect(initUVEMock).not.toHaveBeenCalled();
         expect(updateNavigationMock).not.toHaveBeenCalled();
@@ -76,7 +76,7 @@ describe('useEditableDotCMSPage', () => {
     test('should cleanup subscriptions on unmount', () => {
         getUVEStateMock.mockReturnValue({ mode: 'EDIT' });
 
-        const { unmount } = renderHook(() => useEditableDotCMSPage(mockEditablePage));
+        const { unmount } = renderHook(() => useEditableDotCMSPage(mockPageResponse));
 
         unmount();
 
@@ -87,7 +87,7 @@ describe('useEditableDotCMSPage', () => {
     test('should update editable page when content changes are received', () => {
         getUVEStateMock.mockReturnValue({ mode: 'EDIT' });
 
-        let contentChangesCallback: (payload: DotCMSEditablePage) => void;
+        let contentChangesCallback: (payload: DotCMSPageResponse) => void;
 
         createUVESubscriptionMock.mockImplementation((eventType, callback) => {
             if (eventType === UVEEventType.CONTENT_CHANGES) {
@@ -97,7 +97,7 @@ describe('useEditableDotCMSPage', () => {
             return { unsubscribe: mockUnsubscribe };
         });
 
-        const { result } = renderHook(() => useEditableDotCMSPage(mockEditablePage));
+        const { result } = renderHook(() => useEditableDotCMSPage(mockPageResponse));
 
         const updatedPage = {
             page: {
@@ -112,7 +112,7 @@ describe('useEditableDotCMSPage', () => {
                 testContent: [{ title: 'Updated Item' }]
             },
             graphql: {} // Required for DotCMSGraphQLPageResponse
-        } as unknown as DotCMSEditablePage;
+        } as unknown as DotCMSPageResponse;
 
         act(() => {
             contentChangesCallback(updatedPage);

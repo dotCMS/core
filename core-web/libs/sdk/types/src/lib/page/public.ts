@@ -1165,13 +1165,12 @@ export interface DotCMSGraphQLError {
 }
 
 /**
- * Represents the complete response from a GraphQL page query
+ * Represents the complete response from a page query
  *
  * @template TContent - The type of the content data
- * @template TNav - The type of the navigation data
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export interface DotCMSGraphQLPageResponse<TContent = Record<string, any>> {
+export interface DotCMSPageResponse<TContent = Record<string, any>> {
     page: DotCMSBasicGraphQLPage;
     content?: TContent;
     errors?: DotCMSGraphQLError;
@@ -1180,9 +1179,3 @@ export interface DotCMSGraphQLPageResponse<TContent = Record<string, any>> {
         variables: Record<string, unknown>;
     };
 }
-
-/**
- * Payload for initializing the UVE
- * @interface DotCMSEditablePage
- */
-export type DotCMSEditablePage = DotCMSGraphQLPageResponse;

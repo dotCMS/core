@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import {
     DotCMSClientConfig,
-    DotCMSGraphQLPageResponse,
+    DotCMSPageResponse,
     PageRequestParams,
     RequestOptions
 } from '@dotcms/types';
@@ -99,7 +99,7 @@ describe('PageClient', () => {
 
             expect(result).toEqual({
                 page: graphqlToPageEntity(
-                    mockGraphQLResponse.data as unknown as DotCMSGraphQLPageResponse
+                    mockGraphQLResponse.data as unknown as DotCMSPageResponse
                 ),
                 content: { content: mockGraphQLResponse.data.testContent },
                 graphql: {
