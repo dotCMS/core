@@ -8,4 +8,7 @@ export { useEditableDotCMSPage } from './lib/next/hooks/useEditableDotCMSPage';
 
 export { DotCMSEditableText } from './lib/next/components/DotCMSEditableText/DotCMSEditableText';
 
-export { DotCMSBlockEditorRenderer } from './lib/next/components/DotCMSBlockEditorRenderer/DotCMSBlockEditorRenderer';
+export {
+    DotCMSBlockEditorRenderer,
+    BlockEditorRendererProps
+} from './lib/next/components/DotCMSBlockEditorRenderer/DotCMSBlockEditorRenderer';

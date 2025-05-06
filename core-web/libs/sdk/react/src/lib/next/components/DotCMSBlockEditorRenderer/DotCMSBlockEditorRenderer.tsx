@@ -17,7 +17,7 @@ import { useIsDevMode } from '../../hooks/useIsDevMode';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type CustomRenderer<T = any> = Record<string, React.FC<T>>;
 
-interface BlockEditorRendererProps {
+export interface BlockEditorRendererProps {
     blocks: BlockEditorContent;
     style?: React.CSSProperties;
     className?: string;
