@@ -24,6 +24,7 @@ import com.dotmarketing.portlets.links.model.LinkVersionInfo;
 import com.dotmarketing.portlets.templates.model.TemplateVersionInfo;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.index.Term;
@@ -1048,26 +1049,31 @@ public class UtilMethods {
         return sb.toString();
     }
 
-    public static String getFileExtension(String x) {
-    	String r = "";
+    /**
+     * This method returns the extension of the file ignoring the case of the extension
+     * */
+    public static String getFileExtension(String fileName) {
+    	String result = "";
         try {
-            if (x.lastIndexOf(".") != -1) {
-                return x.substring(x.lastIndexOf(".") + 1).toLowerCase();
+            if (fileName.lastIndexOf(StringPool.PERIOD) != -1) {
+                return fileName.substring(fileName.lastIndexOf(StringPool.PERIOD) + 1).toLowerCase();
             } else {
-                return r;
+                return result;
             }
         } catch (Exception e) {
             return "ukn";
         }
     }
-
-    public static String getFileExtensionIgnoreCase(String x){
-        String r = "";
+    /**
+     * This method returns the extension of the file ignoring the case of the extension
+     * */
+    public static String getFileExtensionIgnoreCase(String fileName){
+        String result = "";
         try {
-            if (x.lastIndexOf(".") != -1) {
-                return x.substring(x.lastIndexOf(".") + 1);
+            if (fileName.lastIndexOf(StringPool.PERIOD) != -1) {
+                return fileName.substring(fileName.lastIndexOf(StringPool.PERIOD) + 1);
             } else {
-                return r;
+                return result;
             }
         } catch (Exception e) {
             return "ukn";
