@@ -2,7 +2,9 @@ import { Spectator } from '@ngneat/spectator';
 import { createComponentFactory } from '@ngneat/spectator/jest';
 import { MockComponent } from 'ng-mocks';
 
-import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { ReactiveFormsModule } from '@angular/forms';
+
+import { DotLanguageVariableSelectorComponent } from '@dotcms/ui';
 
 import { DotEditContentJsonFieldComponent } from './dot-edit-content-json-field.component';
 
@@ -16,7 +18,10 @@ describe('DotEditContentJsonFieldComponent', () => {
     const createComponent = createComponentFactory({
         component: DotEditContentJsonFieldComponent,
         imports: [ReactiveFormsModule],
-        declarations: [MockComponent(DotEditContentMonacoEditorControlComponent)],
+        declarations: [
+            MockComponent(DotEditContentMonacoEditorControlComponent),
+            MockComponent(DotLanguageVariableSelectorComponent)
+        ],
         detectChanges: false
     });
 
@@ -31,6 +36,11 @@ describe('DotEditContentJsonFieldComponent', () => {
         expect(editorComponent).not.toBeNull();
     });
 
+    it('should render the DotLanguageVariableSelectorComponent', () => {
+        const selectorComponent = spectator.query(DotLanguageVariableSelectorComponent);
+        expect(selectorComponent).not.toBeNull();
+    });
+
     it('should pass the field to the editor component', () => {
         const editorComponent = spectator.query(DotEditContentMonacoEditorControlComponent);
         expect(editorComponent.$field()).toEqual(JSON_FIELD_MOCK);
@@ -39,5 +49,17 @@ describe('DotEditContentJsonFieldComponent', () => {
     it('should force the language to be JSON', () => {
         const editorComponent = spectator.query(DotEditContentMonacoEditorControlComponent);
         expect(editorComponent.$forcedLanguage()).toEqual(AvailableLanguageMonaco.Json);
+    });
+
+    it('should insert language variable when selected', () => {
+        const monacoComponent = spectator.query(DotEditContentMonacoEditorControlComponent);
+        const insertSpy = jest.spyOn(monacoComponent, 'insertContent');
+        const languageVar = '$text.get("message.key")';
+
+        // Trigger language variable selection
+        const languageSelector = spectator.query(DotLanguageVariableSelectorComponent);
+        languageSelector.onSelectLanguageVariable.emit(languageVar);
+
+        expect(insertSpy).toHaveBeenCalledWith(languageVar);
     });
 });

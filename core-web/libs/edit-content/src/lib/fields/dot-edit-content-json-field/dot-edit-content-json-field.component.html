@@ -1,1 +1,13 @@
-<dot-edit-content-monaco-editor-control [field]="$field()" [forceLanguage]="languages.Json" />
+<div class="dot-json-field__container flex flex-column gap-2">
+    <div class="dot-json-field__controls flex justify-content-end">
+        <dot-language-variable-selector
+            (onSelectLanguageVariable)="onSelectLanguageVariable($event)" />
+    </div>
+
+    <div class="dot-json-field__editor">
+        <dot-edit-content-monaco-editor-control
+            #monaco
+            [field]="$field()"
+            [forceLanguage]="languages.Json" />
+    </div>
+</div>
