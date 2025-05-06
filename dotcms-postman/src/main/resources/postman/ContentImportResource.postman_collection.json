@@ -1,10 +1,10 @@
 {
 	"info": {
-		"_postman_id": "8b4a1de3-1d5a-47e7-956b-9712c8375298",
+		"_postman_id": "c4323b76-2dcf-43ad-bce0-8ed5d5671675",
 		"name": "ContentImportResource",
 		"description": "Postman collection for testing the ContentImportResource API endpoints.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "36604690"
+		"_exporter_id": "5403727"
 	},
 	"item": [
 		{
@@ -2721,9 +2721,16 @@
 									"// Validate that the job ID in the response matches the expected job ID",
 									"pm.test(\"Job ID should be present\", function () {",
 									"    // Check if any job in the response matches the expected job ID",
-									"    const hasMatchingJob = response.entity.jobs.some(job => job.id === jobId.toString());",
-									"    pm.expect(hasMatchingJob, `Expected Job ID ${jobId} to be present`).to.be.true;",
-									"});"
+									"    var found = false;",
+									"    for (let job of response.entity.jobs) {",
+									"        if (job.id === jobId.toString()) {",
+									"            found = true;",
+									"            break;",
+									"        }",
+									"    }",
+									"    pm.expect(found).to.equal(true, \"Expected Job ID '\" + jobId + \"' was not found\");",
+									"});",
+									""
 								],
 								"type": "text/javascript",
 								"packages": {}
@@ -4606,74 +4613,6 @@
 					""
 				]
 			}
-		}
-	],
-	"variable": [
-		{
-			"key": "queueName",
-			"value": "importContentlets",
-			"type": "string"
-		},
-		{
-			"key": "jobId",
-			"value": "7a0071dd-cfb8-497e-9280-f5c08232b86f",
-			"type": "string"
-		},
-		{
-			"key": "user",
-			"value": "admin@dotCMS.com",
-			"type": "string"
-		},
-		{
-			"key": "password",
-			"value": "admin",
-			"type": "string"
-		},
-		{
-			"key": "jwt",
-			"value": ""
-		},
-		{
-			"key": "contentType",
-			"value": "TestImportJob",
-			"type": "string"
-		},
-		{
-			"key": "language",
-			"value": "1",
-			"type": "string"
-		},
-		{
-			"key": "workflowActionId",
-			"value": "b9d89c80-3d88-4311-8365-187323c96436",
-			"type": "string"
-		},
-		{
-			"key": "fields",
-			"value": "",
-			"type": "string"
-		},
-		{
-			"key": "page",
-			"value": "1",
-			"type": "string"
-		},
-		{
-			"key": "pageSize",
-			"value": "20",
-			"type": "string"
-		},
-		{
-			"key": "cancelledJobId",
-			"value": ""
-		},
-		{
-			"key": "invalidLocationJobId",
-			"value": ""
-		},
-		{
-			"key": "invalidLocationWithoutStopJobId",
-			"value": ""
 		}
 	]
 }
