@@ -246,7 +246,10 @@ export const ExistingContentStore = signalStore(
                 patchState(store, {
                     viewMode,
                     previousPagination: { ...store.pagination() },
-                    pagination: viewMode === ViewMode.selected ? { ...paginationInitialState } : { ...store.previousPagination() }
+                    pagination:
+                        viewMode === ViewMode.selected
+                            ? { ...paginationInitialState }
+                            : { ...store.previousPagination() }
                 });
             },
             /**
