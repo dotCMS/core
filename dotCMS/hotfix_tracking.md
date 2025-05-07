@@ -120,4 +120,5 @@ This maintenance release includes the following code fixes:
 114. https://github.com/dotCMS/core/issues/31649 : Filter on checkbox field not working as expected (Content search portal and relationship filter) #31649
 115. https://github.com/dotCMS/core/issues/31601 : Relate Button in a Relationship Field is not working #31601
 116. https://github.com/dotCMS/core/issues/1294 : SiteSearch viewtool method name mispelled: listSearchIncidies #1294
+117. https://github.com/dotCMS/core/issues/31933 : The "Select All Content" option is intermittently not appearing for some users across different devices and browsers #31933
 
