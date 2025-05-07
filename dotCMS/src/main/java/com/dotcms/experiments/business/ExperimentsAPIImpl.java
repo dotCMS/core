@@ -807,12 +807,42 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                                                     final Experiment runningExperiment)
             throws DotDataException, DotSecurityException {
 
-        final List<Contentlet> contentByVariants = contentletAPI.getAllContentByVariants(user, false,
-                        runningExperiment.trafficProportion().variants().stream()
-                                .map(ExperimentVariant::id).filter((id) -> !id.equals(DEFAULT_VARIANT.name()))
-                                .toArray(String[]::new)).stream()
-                .filter((contentlet -> Try.of(contentlet::isWorking)
-                        .getOrElse(false))).collect(Collectors.toList());
+//        final List<Contentlet> contentByVariants = contentletAPI.getAllContentByVariants(user, false,
+//                        runningExperiment.trafficProportion().variants().stream()
+//                                .map(ExperimentVariant::id).filter((id) -> !id.equals(DEFAULT_VARIANT.name()))
+//                                .toArray(String[]::new)).stream()
+//                .filter((contentlet -> Try.of(contentlet::isWorking)
+//                        .getOrElse(false))).collect(Collectors.toList());
+
+        List<String> variantIds = new ArrayList<>();
+        SortedSet<ExperimentVariant> variants = runningExperiment.trafficProportion().variants();
+        Logger.debug(this,"Variants: " + variants);
+        for (ExperimentVariant variant : variants) {
+            if (!variant.id().equals(DEFAULT_VARIANT.name())) {
+                variantIds.add(variant.id());
+                Logger.debug(this,"Added Variant Id: " + variant.id());
+            }
+        }
+
+            String[] variantIdArray = variantIds.toArray(new String[0]);
+
+            List<Contentlet> allVariants = contentletAPI.getAllContentByVariants(user, false, variantIdArray);
+            Logger.debug(this,"All Variants: " + allVariants);
+
+            List<Contentlet> contentByVariants = new ArrayList<>();
+            for (Contentlet contentlet : allVariants) {
+                boolean isWorking = false;
+                try {
+                    isWorking = contentlet.isWorking();
+                } catch (Exception e) {
+                    Logger.debug(this,"Error getting isWorking for contentlet: " + contentlet.getIdentifier());
+                }
+                if (isWorking) {
+                    contentByVariants.add(contentlet);
+                    Logger.debug(this,"Added Variant Id: " + contentlet.getIdentifier());
+                }
+            }
+
         Logger.debug(this,"Variants That Will Be Published: " + contentByVariants);
         contentletAPI.publish(contentByVariants, user, false);
     }
