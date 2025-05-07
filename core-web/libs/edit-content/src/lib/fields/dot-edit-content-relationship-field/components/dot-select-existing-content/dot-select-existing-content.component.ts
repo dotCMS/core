@@ -6,7 +6,8 @@ import {
     model,
     OnInit,
     effect,
-    CUSTOM_ELEMENTS_SCHEMA
+    CUSTOM_ELEMENTS_SCHEMA,
+    signal
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
@@ -17,7 +18,6 @@ import { DynamicDialogConfig } from 'primeng/dynamicdialog';
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputGroupModule } from 'primeng/inputgroup';
 import { InputIconModule } from 'primeng/inputicon';
-import { InputSwitchModule } from 'primeng/inputswitch';
 import { InputTextModule } from 'primeng/inputtext';
 import { MenuModule } from 'primeng/menu';
 import { OverlayPanelModule } from 'primeng/overlaypanel';
@@ -28,7 +28,6 @@ import { ContentletStatusPipe } from '@dotcms/edit-content/pipes/contentlet-stat
 import { LanguagePipe } from '@dotcms/edit-content/pipes/language.pipe';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { SearchComponent } from './components/search/search.component';
 import { ExistingContentStore } from './store/existing-content.store';
 
 import { SelectionMode } from '../../models/relationship.models';
@@ -38,6 +37,8 @@ type DialogData = {
     selectionMode: SelectionMode;
     currentItemsIds: string[];
 };
+
+const STATIC_COLUMNS = 6;
 
 @Component({
     selector: 'dot-select-existing-content',
@@ -53,12 +54,10 @@ type DialogData = {
         InputTextModule,
         InputGroupModule,
         OverlayPanelModule,
-        SearchComponent,
         ContentletStatusPipe,
         LanguagePipe,
         DatePipe,
         ChipModule,
-        InputSwitchModule,
         FormsModule
     ],
     templateUrl: './dot-select-existing-content.component.html',
@@ -84,6 +83,12 @@ export class DotSelectExistingContentComponent implements OnInit {
      * It is used to store the selected content items.
      */
     $selectionItems = model<DotCMSContentlet[] | DotCMSContentlet | null>(null);
+
+    /**
+     * A signal that holds the static columns.
+     * It is used to store the static columns.
+     */
+    $staticColumns = signal(STATIC_COLUMNS);
 
     constructor() {
         effect(

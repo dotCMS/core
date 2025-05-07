@@ -2,6 +2,10 @@
     ::ng-deep {
         .p-treeselect {
             width: 100%;
+            .p-treeselect-label {
+                padding: 0.4rem 0.75rem;
+                line-height: normal;
+            }
         }
     }
 }

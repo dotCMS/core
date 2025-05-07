@@ -7,6 +7,7 @@
     (onNodeExpand)="store.loadChildren($event)"
     [formControl]="siteControl"
     data-testid="site-field-search"
+    containerStyleClass="w-full h-2rem"
     [filter]="true"
     [options]="store.tree()"
     [virtualScroll]="true"
