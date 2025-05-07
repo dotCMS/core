@@ -118,3 +118,5 @@ This maintenance release includes the following code fixes:
 112. https://github.com/dotCMS/core/issues/30544 : The last role in the Roles list is partially visible #30544
 113. https://github.com/dotCMS/core/issues/31564 : Special Character & Truncated in Category Name After Creation #31564
 114. https://github.com/dotCMS/core/issues/31649 : Filter on checkbox field not working as expected (Content search portal and relationship filter) #31649
+115. https://github.com/dotCMS/core/issues/31601 : Relate Button in a Relationship Field is not working #31601
+
