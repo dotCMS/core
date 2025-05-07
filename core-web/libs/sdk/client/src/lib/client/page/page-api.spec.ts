@@ -2,7 +2,7 @@
 import {
     DotCMSClientConfig,
     DotCMSPageResponse,
-    PageRequestParams,
+    DotCMSPageRequestParams,
     RequestOptions
 } from '@dotcms/types';
 
@@ -70,7 +70,7 @@ describe('PageClient', () => {
         it('should fetch page using GraphQL when query option is provided', async () => {
             const pageClient = new PageClient(validConfig, requestOptions);
 
-            const graphQLOptions: PageRequestParams = {
+            const graphQLOptions: DotCMSPageRequestParams = {
                 graphql: {
                     page: `containers {
       containerContentlets {

@@ -1,7 +1,9 @@
 import {
     DotCMSClientConfig,
+    DotCMSComposedPageResponse,
+    DotCMSExtendedPageResponse,
     DotCMSPageResponse,
-    PageRequestParams,
+    DotCMSPageRequestParams,
     RequestOptions
 } from '@dotcms/types';
 
@@ -63,16 +65,19 @@ export class PageClient {
      * Retrieves a page from DotCMS using GraphQL.
      *
      * @param {string} url - The URL of the page to retrieve
-     * @param {PageRequestParams} [options] - Options for the request
-     * @returns {Promise<DotCMSPageResponse>} A Promise that resolves to the page data
+     * @param {DotCMSPageRequestParams} [options] - Options for the request
+     * @template T - The type of the page and content, defaults to DotCMSBasicPage and Record<string, unknown> | unknown
+     * @returns {Promise<DotCMSComposedPageResponse<T>>} A Promise that resolves to the page data
      *
      * @example Using GraphQL
      * ```typescript
-     * const page = await pageClient.get('/index', {
-     *      languageId: '1',
-     *      mode: 'LIVE',
-     *      graphql: {
-     *          page: `
+     * const page = await pageClient.get<{ page: MyPageWithBanners; content: { blogPosts: { blogTitle: string } } }>(
+     *     '/index',
+     *     {
+     *         languageId: '1',
+     *         mode: 'LIVE',
+     *         graphql: {
+     *             page: `
      *              containers {
      *                  containerContentlets {
      *                      contentlets {
@@ -107,8 +112,11 @@ export class PageClient {
      * ```
      */
 
-    get<T extends DotCMSPageResponse>(url: string, options?: PageRequestParams): Promise<T> {
-        return this.#getPageFromGraphQL(url, options) as Promise<T>;
+    get<T extends DotCMSExtendedPageResponse = DotCMSPageResponse>(
+        url: string,
+        options?: DotCMSPageRequestParams
+    ): Promise<DotCMSComposedPageResponse<T>> {
+        return this.#getPageFromGraphQL(url, options) as Promise<DotCMSComposedPageResponse<T>>;
     }
 
     /**
@@ -117,12 +125,12 @@ export class PageClient {
      *
      * @private
      * @param {string} url - The URL of the page to retrieve
-     * @param {PageRequestParams} [options] - Options including languageId, mode, and GraphQL parameters
+     * @param {DotCMSPageRequestParams} [options] - Options including languageId, mode, and GraphQL parameters
      * @returns {Promise<DotCMSPageResponse>} A Promise that resolves to the page data
      */
     async #getPageFromGraphQL(
         url: string,
-        options?: PageRequestParams
+        options?: DotCMSPageRequestParams
     ): Promise<DotCMSPageResponse> {
         const {
             languageId = '1',

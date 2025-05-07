@@ -2,7 +2,7 @@
  * The parameters for the Page API.
  * @public
  */
-export interface PageRequestParams {
+export interface DotCMSPageRequestParams {
     /**
      * The id of the site you want to interact with. Defaults to the one from the config if not provided.
      */

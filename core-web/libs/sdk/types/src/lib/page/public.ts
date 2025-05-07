@@ -1011,12 +1011,10 @@ interface DotCMSSiteField {
     versionType: string;
 }
 
-/* GraphQL Page Types */
-
 /**
- * Represents a basic page object returned from GraphQL queries
+ * Represents a basic page object
  *
- * @interface DotCMSBasicGraphQLPage
+ * @interface DotCMSBasicPage
  * @property {string} publishDate - The date the page was published
  * @property {string} type - The type of the page
  * @property {boolean} httpsRequired - Whether HTTPS is required to access the page
@@ -1066,7 +1064,7 @@ interface DotCMSSiteField {
  * @property {DotCMSSite} site - Site information
  * @property {Record<string, unknown>} _map - Additional mapping data
  */
-export interface DotCMSBasicGraphQLPage {
+export interface DotCMSBasicPage {
     publishDate: string;
     type: string;
     httpsRequired: boolean;
@@ -1117,7 +1115,7 @@ export interface DotCMSBasicGraphQLPage {
     };
 
     // Container information
-    containers: DotCMSPageGraphQLContainer[];
+    containers: DotCMSPageContainer[];
 
     layout: DotCMSLayout;
     viewAs: DotCMSViewAs;
@@ -1127,16 +1125,16 @@ export interface DotCMSBasicGraphQLPage {
 }
 
 /**
- * Represents a container in a GraphQL page response
+ * Represents a container in a page
  *
- * @interface DotCMSPageGraphQLContainer
+ * @interface DotCMSPageContainer
  * @property {string} path - The path/location of the container in the page
  * @property {string} identifier - Unique identifier for the container
  * @property {number} [maxContentlets] - Optional maximum number of content items allowed in container
  * @property {DotCMSContainerStructure[]} containerStructures - Array of content type structures allowed in container
  * @property {DotCMSPageContainerContentlets[]} containerContentlets - Array of content items in container
  */
-export interface DotCMSPageGraphQLContainer {
+export interface DotCMSPageContainer {
     path: string;
     identifier: string;
     maxContentlets?: number;
@@ -1167,15 +1165,41 @@ export interface DotCMSGraphQLError {
 /**
  * Represents the complete response from a page query
  *
- * @template TContent - The type of the content data
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export interface DotCMSPageResponse<TContent = Record<string, any>> {
-    page: DotCMSBasicGraphQLPage;
-    content?: TContent;
+export interface DotCMSPageResponse {
+    page: DotCMSBasicPage;
+    content?: Record<string, unknown> | unknown;
     errors?: DotCMSGraphQLError;
     graphql: {
         query: string;
         variables: Record<string, unknown>;
     };
 }
+
+// Pick only the page and content properties to be able to extend these properties, they are optional
+export type DotCMSExtendedPageResponse = Partial<Pick<DotCMSPageResponse, 'page' | 'content'>>;
+
+// Compose the page with the extended properties
+export type DotCMSComposedPage<T extends DotCMSExtendedPageResponse> =
+    T['page'] extends DotCMSPageResponse['page']
+        ? DotCMSPageResponse['page'] & T['page']
+        : DotCMSPageResponse['page'];
+
+// Compose the content with the extended properties
+export type DotCMSComposedContent<T extends Pick<DotCMSPageResponse, 'content'>> =
+    T['content'] extends undefined ? DotCMSPageResponse['content'] : T['content'];
+
+// Compose the page response with the extended properties
+export type DotCMSComposedPageResponse<T extends DotCMSExtendedPageResponse> = Omit<
+    DotCMSPageResponse,
+    'page' | 'content'
+> & {
+    page: DotCMSComposedPage<T>;
+    content?: DotCMSComposedContent<T>;
+};
+
+// Compose the client get response with the extended properties
+export type DotCMSClientPageGetResponse<T extends DotCMSExtendedPageResponse> = Promise<
+    DotCMSComposedPageResponse<T>
+>;

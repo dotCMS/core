@@ -3,7 +3,7 @@
 import {
     DotCMSBasicContentlet,
     DotCMSPageContainerContentlets,
-    DotCMSPageGraphQLContainer,
+    DotCMSPageContainer,
     DotCMSPageResponse
 } from '@dotcms/types';
 
@@ -55,28 +55,24 @@ export const graphqlToPageEntity = (graphQLPageResponse: DotCMSPageResponse) => 
  * @param {Array<Record<string, unknown>>} [containers=[]] - The containers array from the GraphQL response.
  * @returns {Record<string, unknown>} The parsed containers.
  */
-const parseContainers = (containers: DotCMSPageGraphQLContainer[] = []) => {
-    return containers.reduce(
-        (acc: Record<string, unknown>, container: DotCMSPageGraphQLContainer) => {
-            const { path, identifier, containerStructures, containerContentlets, ...rest } =
-                container;
+const parseContainers = (containers: DotCMSPageContainer[] = []) => {
+    return containers.reduce((acc: Record<string, unknown>, container: DotCMSPageContainer) => {
+        const { path, identifier, containerStructures, containerContentlets, ...rest } = container;
 
-            const key = (path || identifier) as string;
+        const key = (path || identifier) as string;
 
-            acc[key] = {
-                containerStructures,
-                container: {
-                    path,
-                    identifier,
-                    ...rest
-                },
-                contentlets: parseContentletsToUuidMap(containerContentlets as [])
-            };
+        acc[key] = {
+            containerStructures,
+            container: {
+                path,
+                identifier,
+                ...rest
+            },
+            contentlets: parseContentletsToUuidMap(containerContentlets as [])
+        };
 
-            return acc;
-        },
-        {}
-    );
+        return acc;
+    }, {});
 };
 
 /**
