@@ -27,6 +27,9 @@
 									"    pm.expect(jsonData.entity[0].fields.length).to.eql(8);",
 									"    pm.expect(jsonData.entity[0].fields[3].variable).to.eql('title');",
 									"    pm.collectionVariables.set(\"fields\", JSON.stringify([jsonData.entity[0].fields[3].id]))",
+									"    pm.collectionVariables.set(\"contentType\", jsonData.entity[0].variable);",
+									"    // Manually set the Workflow Action ID",
+									"    pm.collectionVariables.set(\"workflowActionId\", \"b9d89c80-3d88-4311-8365-187323c96436\");",
 									"});",
 									""
 								],
@@ -59,6 +62,50 @@
 							]
 						},
 						"description": "Given a content type payload containing field variables.\nWhen sending a POST.\nExpect that code is 200.\nExpect content type is created with the provided fields.\nExpect that new properties of content types are set (icon and sortOrder)."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Default Language ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"HTTP Status code must be successful\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"No errors were reported\", function () {",
+									"    const responseBody = pm.response.json();",
+									"    pm.expect(responseBody.errors.length).to.equal(0, \"An error occurred when retrieving the default Language\");",
+									"});",
+									"",
+									"pm.test(\"Store Default Language's ID\", function () {",
+									"    const responseBody = pm.response.json();",
+									"    pm.collectionVariables.set(\"language\", responseBody.entity.id);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v2/languages/_getdefault",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"languages",
+								"_getdefault"
+							]
+						}
 					},
 					"response": []
 				}
