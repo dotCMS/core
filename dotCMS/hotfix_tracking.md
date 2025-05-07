@@ -121,4 +121,5 @@ This maintenance release includes the following code fixes:
 115. https://github.com/dotCMS/core/issues/31601 : Relate Button in a Relationship Field is not working #31601
 116. https://github.com/dotCMS/core/issues/1294 : SiteSearch viewtool method name mispelled: listSearchIncidies #1294
 117. https://github.com/dotCMS/core/issues/31933 : The "Select All Content" option is intermittently not appearing for some users across different devices and browsers #31933
+118. https://github.com/dotCMS/core/issues/31707 : Update announcements url #31707
 
