@@ -122,4 +122,5 @@ This maintenance release includes the following code fixes:
 116. https://github.com/dotCMS/core/issues/1294 : SiteSearch viewtool method name mispelled: listSearchIncidies #1294
 117. https://github.com/dotCMS/core/issues/31933 : The "Select All Content" option is intermittently not appearing for some users across different devices and browsers #31933
 118. https://github.com/dotCMS/core/issues/31707 : Update announcements url #31707
+119. https://github.com/dotCMS/core/issues/29736 : Remove "Permissions" and "Relationships Legacy" fields from the field selections sidebar in the Content Type editor #29736
 
