@@ -3,6 +3,8 @@ import { Observable, of, throwError } from 'rxjs';
 
 import { TestBed, fakeAsync, tick } from '@angular/core/testing';
 
+import { InputSwitchChangeEvent } from 'primeng/inputswitch';
+
 import { delay } from 'rxjs/operators';
 
 import { ComponentStatus } from '@dotcms/dotcms-models';
@@ -183,15 +185,78 @@ describe('ExistingContentStore', () => {
         }));
 
         it('should initialize with showOnlySelected set to false', () => {
-            expect(store.showOnlySelected()).toBe(false);
+            expect(store.isSelectedView()).toBe(false);
+            expect(store.viewMode()).toBe('all');
+            expect(store.previousPagination()).toEqual({
+                offset: 0,
+                currentPage: 1,
+                rowsPerPage: 50,
+                totalResults: 0
+            });
         });
 
-        it('should toggle showOnlySelected state', () => {
-            store.toggleShowOnlySelected();
-            expect(store.showOnlySelected()).toBe(true);
+        it('should change the viewMode state and update previousPagination', () => {
+            // Move to page 2
+            store.nextPage();
+            expect(store.pagination().currentPage).toBe(2);
 
-            store.toggleShowOnlySelected();
-            expect(store.showOnlySelected()).toBe(false);
+            // Toggle to selected view
+            const event = { checked: true } as InputSwitchChangeEvent;
+            store.changeViewMode(event);
+            expect(store.isSelectedView()).toBe(true);
+            expect(store.viewMode()).toBe('selected');
+            // previousPagination should be page 2
+            expect(store.previousPagination()).toEqual({
+                offset: 50,
+                currentPage: 2,
+                rowsPerPage: 50,
+                totalResults: 2
+            });
+            // pagination should reset to initial
+            expect(store.pagination()).toEqual({
+                offset: 0,
+                currentPage: 1,
+                rowsPerPage: 50,
+                totalResults: 0
+            });
+        });
+
+        it('should restore previousPagination when toggling back to all view', () => {
+            // Move to page 3
+            store.setOffset({ first: 100 } as import('primeng/table').TablePageEvent);
+            expect(store.pagination().currentPage).toBe(3);
+
+            // Toggle to selected view
+            store.changeViewMode({ checked: true } as InputSwitchChangeEvent);
+            expect(store.isSelectedView()).toBe(true);
+            expect(store.pagination().currentPage).toBe(1); // reset
+
+            // Toggle back to all view
+            store.changeViewMode({ checked: false } as InputSwitchChangeEvent);
+            expect(store.isSelectedView()).toBe(false);
+            // pagination should be restored to previousPagination (page 3)
+            expect(store.pagination().currentPage).toBe(3);
+            expect(store.pagination().offset).toBe(100);
+        });
+
+        it('should allow toggling multiple times and always restore previousPagination', () => {
+            // Move to page 2
+            store.nextPage();
+            // Toggle to selected view
+            store.changeViewMode({ checked: true } as InputSwitchChangeEvent);
+            // Move to page 1 in selected view (already at 1)
+            expect(store.pagination().currentPage).toBe(1);
+            // Toggle back to all view
+            store.changeViewMode({ checked: false } as InputSwitchChangeEvent);
+            expect(store.pagination().currentPage).toBe(2);
+            // Move to page 3
+            store.setOffset({ first: 100 } as import('primeng/table').TablePageEvent);
+            // Toggle to selected view again
+            store.changeViewMode({ checked: true } as InputSwitchChangeEvent);
+            expect(store.pagination().currentPage).toBe(1);
+            // Toggle back to all view
+            store.changeViewMode({ checked: false } as InputSwitchChangeEvent);
+            expect(store.pagination().currentPage).toBe(3);
         });
 
         it('should return all data when showOnlySelected is false', () => {
@@ -204,7 +269,8 @@ describe('ExistingContentStore', () => {
             store.setSelectionItems([selectedItem]);
 
             // Toggle to show only selected items
-            store.toggleShowOnlySelected();
+            const event = { checked: true } as InputSwitchChangeEvent;
+            store.changeViewMode(event);
 
             // Should filter to show only the selected item
             expect(store.filteredData()).toEqual([selectedItem]);
@@ -216,7 +282,8 @@ describe('ExistingContentStore', () => {
                 selectionMode: 'multiple',
                 selectedItemsIds: []
             });
-            store.toggleShowOnlySelected();
+            const event = { checked: true } as InputSwitchChangeEvent;
+            store.changeViewMode(event);
             expect(store.filteredData()).toEqual([]);
         });
 
@@ -226,8 +293,31 @@ describe('ExistingContentStore', () => {
                 selectionMode: 'multiple',
                 selectedItemsIds: [mockData.contentlets[0].inode]
             });
-            store.toggleShowOnlySelected();
+            const event = { checked: true } as InputSwitchChangeEvent;
+            store.changeViewMode(event);
             expect(store.filteredData()).toEqual([mockData.contentlets[0]]);
+        });
+    });
+
+    describe('setOffset', () => {
+        it('should set the correct offset and current page in pagination', () => {
+            // Set initial pagination
+            store.nextPage(); // move to page 2
+            expect(store.pagination().currentPage).toBe(2);
+
+            // Set offset to 0 (should be page 1)
+            store.setOffset({ first: 0 } as import('primeng/table').TablePageEvent);
+            expect(store.pagination()).toEqual({
+                offset: 0,
+                currentPage: 1,
+                rowsPerPage: 50,
+                totalResults: 0
+            });
+
+            // Set offset to 100 (should be page 3)
+            store.setOffset({ first: 100 } as import('primeng/table').TablePageEvent);
+            expect(store.pagination().currentPage).toBe(3);
+            expect(store.pagination().offset).toBe(100);
         });
     });
 });

@@ -4,6 +4,7 @@ import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { DropdownModule } from 'primeng/dropdown';
 import { InputGroupModule } from 'primeng/inputgroup';
+import { InputGroupAddonModule } from 'primeng/inputgroupaddon';
 import { InputTextModule } from 'primeng/inputtext';
 import { OverlayPanel, OverlayPanelModule } from 'primeng/overlaypanel';
 
@@ -34,7 +35,8 @@ import { SiteFieldComponent } from './components/site-field/site-field.component
         DropdownModule,
         ReactiveFormsModule,
         LanguageFieldComponent,
-        SiteFieldComponent
+        SiteFieldComponent,
+        InputGroupAddonModule
     ],
     templateUrl: './search.component.html'
 })

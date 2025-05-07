@@ -14,7 +14,7 @@ import { DotImageBlock } from '../blocks/image.component';
 import { DotBulletList, DotListItem, DotOrdererList } from '../blocks/list.component';
 import { DotTableBlock } from '../blocks/table.component';
 import { DotHeadingBlock, DotParagraphBlock, DotTextBlock } from '../blocks/text.component';
-import { DotVideoBlock } from '../blocks/video.components';
+import { DotVideoBlock } from '../blocks/video.component';
 
 @Component({
     selector: 'dotcms-block-editor-renderer-custom-component',
