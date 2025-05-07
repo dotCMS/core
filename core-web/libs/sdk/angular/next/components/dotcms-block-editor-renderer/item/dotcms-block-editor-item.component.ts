@@ -10,7 +10,7 @@ import { DotImageBlock } from '../blocks/image.component';
 import { DotBulletList, DotOrdererList, DotListItem } from '../blocks/list.component';
 import { DotTableBlock } from '../blocks/table.component';
 import { DotParagraphBlock, DotTextBlock, DotHeadingBlock } from '../blocks/text.component';
-import { DotVideoBlock } from '../blocks/video.components';
+import { DotVideoBlock } from '../blocks/video.component';
 import { CustomRenderer } from '../dotcms-block-editor-renderer.component';
 
 @Component({

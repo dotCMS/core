@@ -53,7 +53,7 @@ import org.glassfish.jersey.server.ResourceConfig;
 public class DotRestApplication extends ResourceConfig {
 
 	private static final Lazy<Boolean> ENABLE_TELEMETRY_FROM_CORE = Lazy.of(() ->
-			Config.getBooleanProperty(FeatureFlagName.FEATURE_FLAG_TELEMETRY_CORE_ENABLED, false));
+			Config.getBooleanProperty(FeatureFlagName.FEATURE_FLAG_TELEMETRY_CORE_ENABLED, true));
 
 	public DotRestApplication() {
 		final List<String> packages = new ArrayList<>(List.of(

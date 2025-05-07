@@ -163,8 +163,6 @@ public class FieldAPIImpl implements FieldAPI {
             throw new DotDataValidationException("ContentTypeId needs to be set to save the Field");
         }
 
-        QuartzUtils.validateFieldReferences(field);
-
         ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
         ContentType type = contentTypeAPI.find(field.contentTypeId());
         permissionAPI.checkPermission(type, PermissionLevel.EDIT_PERMISSIONS, user);

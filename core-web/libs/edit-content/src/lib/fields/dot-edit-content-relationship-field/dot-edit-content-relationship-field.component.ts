@@ -267,7 +267,7 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
             position: 'center',
             width: '90%',
             height: '90%',
-            maskStyleClass: 'p-dialog-mask-dynamic',
+            maskStyleClass: 'p-dialog-mask-dynamic p-dialog-relationship-field',
             style: { 'max-width': '1040px', 'max-height': '800px' },
             data: {
                 contentTypeId: this.$attributes().contentTypeId,

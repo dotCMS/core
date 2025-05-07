@@ -1,13 +1,6 @@
 import { isEditMode } from '@/utils/isEditMode';
-import { BlockEditorRenderer } from '@dotcms/react';
-
-const CustomParagraph = ({ content }) => {
-    if (!content) {
-        return null;
-    }
-    const [{ text }] = content;
-    return <p style={{ color: '#333' }}>{text}</p>;
-};
+import { DotCMSBlockEditorRenderer } from '@dotcms/react/next';
+import { useEffect, useState } from 'react';
 
 const ActivityBlock = (props) => {
     const { title, description } = props.attrs.data;
@@ -20,21 +13,21 @@ const ActivityBlock = (props) => {
     );
 };
 
-function Blog({ blogContent, ...contentlet }) {
-    const twActives = isEditMode() ? 'border-2 border-solid border-cyan-400 cursor-pointer' : '';
+function Blog({ blogContent }) {
+    const [twActives, setTwActives] = useState("");
+
+    useEffect(() => {
+        setTwActives(isEditMode() ? "border-2 border-solid border-cyan-400 cursor-pointer" : "");
+    }, []);
 
     return (
-        <BlockEditorRenderer
-            editable={true}
-            contentlet={contentlet}
+        <DotCMSBlockEditorRenderer
             blocks={blogContent}
             fieldName="blogContent"
             customRenderers={{
-                Activity: ActivityBlock,
-                paragraph: CustomParagraph
+                Activity: ActivityBlock
             }}
-            style={{ padding: '10px' }}
-            className={`blog-styles ${twActives}`}
+            className={twActives}
         />
     );
 }

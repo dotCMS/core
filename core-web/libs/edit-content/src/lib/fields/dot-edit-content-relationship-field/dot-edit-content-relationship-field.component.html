@@ -13,6 +13,7 @@
     [first]="pagination.offset"
     [rows]="pagination.rowsPerPage"
     [scrollable]="true"
+    [reorderableColumns]="false"
     (onRowReorder)="onRowReorder($event)">
     <ng-template pTemplate="header" styleClass="relative">
         <p-menu #menu [model]="$menuItems()" [popup]="true" appendTo="body" />
@@ -22,10 +23,10 @@
             <th scope="col" class="max-w-12rem" style="min-width: 13rem">
                 {{ 'dot.file.relationship.field.table.title' | dm }}
             </th>
-            <th pReorderableColumn style="min-width: 8rem">
+            <th style="min-width: 8rem">
                 {{ 'dot.file.relationship.field.table.language' | dm }}
             </th>
-            <th pReorderableColumn style="min-width: 8rem">
+            <th style="min-width: 8rem">
                 {{ 'dot.file.relationship.field.table.status' | dm }}
             </th>
             <th scope="col" class="w-1rem" alignFrozen="right" pFrozenColumn [frozen]="true">
