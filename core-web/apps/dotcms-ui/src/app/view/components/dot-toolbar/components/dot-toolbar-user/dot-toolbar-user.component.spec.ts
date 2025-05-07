@@ -221,4 +221,17 @@ describe('DotToolbarUserComponent', () => {
         fixture.detectChanges();
         expect(de.query(By.css('[data-testid="dot-mask"]'))).toBeFalsy();
     });
+
+    it('should hide mask when menu hide', () => {
+        fixture.detectChanges();
+        const avatarComponent = de.query(By.css('[data-testid="avatar"]')).nativeElement;
+        avatarComponent.click();
+
+        const menu = de.query(By.css('p-menu'));
+        menu.triggerEventHandler('onHide', {});
+
+        fixture.detectChanges();
+
+        expect(de.query(By.css('[data-testId="dot-mask"]'))).toBeNull();
+    });
 });
