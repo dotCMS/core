@@ -28,8 +28,6 @@
 									"    pm.expect(jsonData.entity[0].fields[3].variable).to.eql('title');",
 									"    pm.collectionVariables.set(\"fields\", JSON.stringify([jsonData.entity[0].fields[3].id]))",
 									"    pm.collectionVariables.set(\"contentType\", jsonData.entity[0].variable);",
-									"    // Manually set the Workflow Action ID",
-									"    pm.collectionVariables.set(\"workflowActionId\", \"b9d89c80-3d88-4311-8365-187323c96436\");",
 									"});",
 									""
 								],
@@ -83,7 +81,7 @@
 									"",
 									"pm.test(\"Store Default Language's ID\", function () {",
 									"    const responseBody = pm.response.json();",
-									"    pm.collectionVariables.set(\"language\", responseBody.entity.id);",
+									"    pm.collectionVariables.set(\"language\", \"\" + responseBody.entity.id);",
 									"});"
 								],
 								"type": "text/javascript",
@@ -108,6 +106,32 @@
 						}
 					},
 					"response": []
+				}
+			],
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							"// Manually set several required properties for the tests to run properly",
+							"pm.collectionVariables.set(\"workflowActionId\", \"b9d89c80-3d88-4311-8365-187323c96436\");",
+							"pm.collectionVariables.set(\"queueName\", \"importContentlets\");",
+							"pm.collectionVariables.set(\"page\", \"1\");",
+							"pm.collectionVariables.set(\"pageSize\", \"20\");"
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
 				}
 			]
 		},
