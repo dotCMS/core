@@ -1262,10 +1262,12 @@ public class ESContentFactoryImpl extends ContentletFactory {
   @Override
   protected List<Contentlet> findContentlets(final List<String> inodes) throws DotDataException, DotStateException, DotSecurityException {
 
+        Logger.debug(this, "findContentlets - inodes: " + inodes);
     final HashMap<String, Contentlet> conMap = new HashMap<>();
     for (String i : inodes) {
       final Contentlet contentlet = contentletCache.get(i);
       if (contentlet != null && InodeUtils.isSet(contentlet.getInode())) {
+          Logger.debug(this, "findContentlets - found in cache: " + i);
         conMap.put(contentlet.getInode(), processCachedContentlet(contentlet));
       }
     }
@@ -1287,15 +1289,24 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
             dotConnect.setSQL(query.toString());
 
+            Logger.debug(this, "findContentlets - SQL: " + dotConnect.getSQL());
+
             final List<Contentlet> result = TransformerLocator
                     .createContentletTransformer(dotConnect.loadObjectResults()).asList();
+
+            Logger.debug(this, "findContentlets - result size: " + result.size());
+            Logger.debug(this, "findContentlets - result: " + result);
 
             result.forEach(contentlet -> {
                 conMap.put(contentlet.getInode(), contentlet);
                 contentletCache.add(contentlet.getInode(), contentlet);
+                Logger.debug(this, "findContentlets - added to cache: " + contentlet.getInode());
             });
         }
     }
+
+    Logger.debug(this, "findContentlets - conMap size: " + conMap.size());
+    Logger.debug(this, "findContentlets - conMap: " + conMap);
 
       return inodes.stream().map(inode -> conMap.get(inode)).filter(Objects::nonNull)
               .collect(Collectors.toList());
