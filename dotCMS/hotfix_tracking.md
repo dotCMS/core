@@ -125,4 +125,5 @@ This maintenance release includes the following code fixes:
 119. https://github.com/dotCMS/core/issues/29736 : Remove "Permissions" and "Relationships Legacy" fields from the field selections sidebar in the Content Type editor #29736
 120. https://github.com/dotCMS/core/issues/29534 : Login-as popup show's in the incorrect position. #29534
 121. https://github.com/dotCMS/core/issues/31994 : SAML: skip RequestedAuthenticationContext #31994
+122. https://github.com/dotCMS/core/issues/30731 : Company information doesn't show in comapny field after the relogin #30731
 
