@@ -1,12 +1,13 @@
-import { __UVE_EVENTS__, __UVE_EVENT_ERROR_FALLBACK__ } from '../../internal/constants';
 import {
     UVE_MODE,
-    UVEEventHandler,
     UVEState,
     UVEEventSubscription,
     UVEEventType,
-    UVEEventPayloadMap
-} from '../types/editor/public';
+    UVEEventPayloadMap,
+    UVEEventHandler
+} from '@dotcms/types';
+
+import { __UVE_EVENTS__, __UVE_EVENT_ERROR_FALLBACK__ } from '../../internal/constants';
 
 /**
  * Gets the current state of the Universal Visual Editor (UVE).
@@ -51,6 +52,7 @@ export function getUVEState(): UVEState | undefined {
     const variantName = url.searchParams.get('variantName');
     const experimentId = url.searchParams.get('experimentId');
     const publishDate = url.searchParams.get('publishDate');
+    const dotCMSHost = url.searchParams.get('dotCMSHost');
 
     if (!possibleModes.includes(mode)) {
         mode = UVE_MODE.EDIT;
@@ -62,7 +64,8 @@ export function getUVEState(): UVEState | undefined {
         persona,
         variantName,
         experimentId,
-        publishDate
+        publishDate,
+        dotCMSHost
     };
 }
 

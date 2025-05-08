@@ -1,4 +1,4 @@
-import { DotCMSContentlet } from '@dotcms/uve/types';
+import { DotCMSBasicContentlet } from '@dotcms/types';
 
 import { useIsDevMode } from '../../hooks/useIsDevMode';
 
@@ -7,19 +7,19 @@ import { useIsDevMode } from '../../hooks/useIsDevMode';
  *
  * Type definition for components that can be used as fallback when no matching component is found
  */
-export type NoComponentType = React.ComponentType<DotCMSContentlet>;
+export type NoComponentType = React.ComponentType<DotCMSBasicContentlet>;
 
 /**
  * @internal
  *
  * Props for the FallbackComponent
  * @interface DotCMSFallbackComponentProps
- * @property {React.ComponentType<DotCMSContentlet>} [UserNoComponent] - Optional custom component to render when no matching component is found
- * @property {DotCMSContentlet} [contentlet] - The contentlet that couldn't be rendered
+ * @property {React.ComponentType<DotCMSBasicContentlet>} [UserNoComponent] - Optional custom component to render when no matching component is found
+ * @property {DotCMSBasicContentlet} [contentlet] - The contentlet that couldn't be rendered
  */
 interface DotCMSFallbackComponentProps {
-    contentlet: DotCMSContentlet;
-    UserNoComponent?: React.ComponentType<DotCMSContentlet>;
+    contentlet: DotCMSBasicContentlet;
+    UserNoComponent?: React.ComponentType<DotCMSBasicContentlet>;
 }
 
 /**
@@ -58,10 +58,10 @@ export function FallbackComponent({ UserNoComponent, contentlet }: DotCMSFallbac
  *
  * Component to render when there is no component for the content type.
  *
- * @param {DotCMSContentlet} contentType - The content type that couldn't be rendered
+ * @param {DotCMSBasicContentlet} contentType - The content type that couldn't be rendered
  * @return {*}
  */
-function NoComponent({ contentType }: DotCMSContentlet) {
+function NoComponent({ contentType }: DotCMSBasicContentlet) {
     return (
         <div data-testid="no-component">
             No Component for <strong>{contentType}</strong>.

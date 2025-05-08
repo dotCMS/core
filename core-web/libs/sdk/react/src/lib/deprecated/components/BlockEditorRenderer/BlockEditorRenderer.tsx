@@ -127,6 +127,7 @@ export const BlockEditorRenderer = ({
 
     if (blockEditorState.error) {
         console.error(blockEditorState.error);
+
         if (isInsideEditor()) {
             return <div data-testid="invalid-blocks-message">{blockEditorState.error}</div>;
         }

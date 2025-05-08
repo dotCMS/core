@@ -45,6 +45,7 @@ export interface UIState {
     activeTab: number;
     isSidebarOpen: boolean;
     activeSidebarTab: number;
+    isBetaMessageVisible: boolean;
 }
 
 /**

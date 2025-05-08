@@ -8,6 +8,12 @@ import { BlockEditorRenderer } from './BlockEditorRenderer';
 import { dotcmsContentletMock } from '../../mocks/mockPageContext';
 import { Block } from '../../models/blocks.interface';
 
+jest.mock('@dotcms/client', () => ({
+    ...jest.requireActual('@dotcms/client'),
+    isInsideEditor: jest.fn().mockReturnValue(true),
+    initInlineEditing: jest.fn()
+}));
+
 describe('BlockEditorRenderer', () => {
     const blocks = {
         type: 'doc',
@@ -24,6 +30,13 @@ describe('BlockEditorRenderer', () => {
             }
         ]
     } as Block;
+
+    let isInsideEditorSpy: jest.SpyInstance<boolean>;
+    let initInlineEditingSpy: jest.SpyInstance<void>;
+    beforeEach(() => {
+        isInsideEditorSpy = jest.spyOn(client, 'isInsideEditor');
+        initInlineEditingSpy = jest.spyOn(client, 'initInlineEditing');
+    });
 
     it('should render the BlockEditorItem component', () => {
         const { getByText } = render(<BlockEditorRenderer blocks={blocks} />);
@@ -55,7 +68,6 @@ describe('BlockEditorRenderer', () => {
 
     describe('Error Handling', () => {
         it('should show error message when blocks object is not provided', () => {
-            jest.spyOn(client, 'isInsideEditor').mockImplementation(() => true);
             const consoleSpy = jest.spyOn(console, 'error');
 
             const { getByTestId } = render(
@@ -69,7 +81,6 @@ describe('BlockEditorRenderer', () => {
         });
 
         it('should show error message when blocks object is not valid', () => {
-            jest.spyOn(client, 'isInsideEditor').mockImplementation(() => true);
             const consoleSpy = jest.spyOn(console, 'error');
 
             const { getByTestId } = render(
@@ -85,7 +96,8 @@ describe('BlockEditorRenderer', () => {
         });
 
         it('should show error message when blocks object dont have a doc type', () => {
-            jest.spyOn(client, 'isInsideEditor').mockImplementation(() => false);
+            isInsideEditorSpy.mockReturnValue(false);
+
             const consoleSpy = jest.spyOn(console, 'error');
 
             const { queryByTestId } = render(
@@ -97,7 +109,8 @@ describe('BlockEditorRenderer', () => {
         });
 
         it('should show error message when blocks content array is empty', () => {
-            jest.spyOn(client, 'isInsideEditor').mockImplementation(() => false);
+            isInsideEditorSpy.mockReturnValue(false);
+
             const consoleSpy = jest.spyOn(console, 'error');
 
             const { queryByTestId } = render(
@@ -111,7 +124,7 @@ describe('BlockEditorRenderer', () => {
 
     describe('when the editable prop is true', () => {
         beforeEach(() => {
-            jest.spyOn(client, 'isInsideEditor').mockImplementation(() => true);
+            isInsideEditorSpy.mockImplementation(() => true);
         });
 
         it("should receive the 'editable' prop and render the BlockEditorBlock component", () => {
@@ -127,7 +140,6 @@ describe('BlockEditorRenderer', () => {
         });
 
         it('should call `initInlineEditing` when the component is clicked', () => {
-            const spy = jest.spyOn(client, 'initInlineEditing');
             const { inode, languageId: language, contentType } = dotcmsContentletMock;
             const { getByTestId } = render(
                 <BlockEditorRenderer
@@ -140,7 +152,7 @@ describe('BlockEditorRenderer', () => {
             const blockEditorContainer = getByTestId('dot-block-editor-container');
             blockEditorContainer.click();
             expect(blockEditorContainer).toHaveTextContent('Hello, World!');
-            expect(spy).toHaveBeenCalledWith('BLOCK_EDITOR', {
+            expect(initInlineEditingSpy).toHaveBeenCalledWith('BLOCK_EDITOR', {
                 inode,
                 language,
                 contentType,

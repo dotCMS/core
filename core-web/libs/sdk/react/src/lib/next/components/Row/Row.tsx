@@ -1,5 +1,5 @@
+import { DotPageAssetLayoutRow } from '@dotcms/types';
 import { combineClasses } from '@dotcms/uve/internal';
-import { DotPageAssetLayoutRow } from '@dotcms/uve/types';
 
 import styles from './Row.module.css';
 

@@ -1,13 +1,20 @@
 import {
+    Contentlet,
+    DotCMSUVEAction,
+    DotCMSUVEConfig,
+    DotCMSInlineEditingPayload,
+    DotCMSInlineEditingType,
+    DotCMSBasicContentlet
+} from '@dotcms/types'; // '../types/editor/public';
+import { DotCMSReorderMenuConfig, DotCMSUVEMessage } from '@dotcms/types/internal'; //'../types/editor/internal';
+
+import {
     addClassToEmptyContentlets,
     listenBlockEditorInlineEvent,
     registerUVEEvents,
     scrollHandler,
     setClientIsReady
 } from '../../script/utils';
-import { DotCMSReorderMenuConfig, DotCMSUVEMessage } from '../types/editor/internal';
-import { Contentlet, DotCMSUVEAction, DotCMSUVEConfig } from '../types/editor/public';
-import { DotCMSInlineEditingPayload, DotCMSInlineEditingType } from '../types/events/public';
 
 /**
  * Post message to dotcms page editor
@@ -80,6 +87,42 @@ export function initInlineEditing(
             data
         }
     });
+}
+
+/**
+ * Initializes the block editor inline editing for a contentlet field.
+ *
+ * @example
+ * ```html
+ * <div onclick="enableBlockEditorInline(contentlet, 'MY_BLOCK_EDITOR_FIELD_VARIABLE')">
+ *      ${My Content}
+ * </div>
+ * ```
+ *
+ * @export
+ * @param {DotCMSBasicContentlet} contentlet
+ * @param {string} fieldName
+ * @return {*}  {void}
+ */
+export function enableBlockEditorInline(
+    contentlet: DotCMSBasicContentlet,
+    fieldName: string
+): void {
+    if (!contentlet?.[fieldName]) {
+        console.error(`Contentlet ${contentlet?.identifier} does not have field ${fieldName}`);
+
+        return;
+    }
+
+    const data = {
+        fieldName,
+        inode: contentlet.inode,
+        language: contentlet.languageId,
+        contentType: contentlet.contentType,
+        content: contentlet[fieldName]
+    };
+
+    initInlineEditing('BLOCK_EDITOR', data);
 }
 
 /**

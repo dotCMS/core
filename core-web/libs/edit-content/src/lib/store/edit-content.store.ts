@@ -29,7 +29,7 @@ import { withWorkflow } from './features/workflow/workflow.feature';
 
 import { CurrentContentActionsWithScheme } from '../models/dot-edit-content-field.type';
 import { FormValues } from '../models/dot-edit-content-form.interface';
-import { Activity, DotContentletState } from '../models/dot-edit-content.model';
+import { Activity, DotContentletState, UIState } from '../models/dot-edit-content.model';
 
 export interface EditContentState {
     // Root state
@@ -63,11 +63,7 @@ export interface EditContentState {
     currentUser: DotCurrentUser;
 
     // UI state
-    uiState: {
-        activeTab: number;
-        isSidebarOpen: boolean;
-        activeSidebarTab: number;
-    };
+    uiState: UIState;
 
     // Information state
     information: {
@@ -131,7 +127,8 @@ export const initialRootState: EditContentState = {
     uiState: {
         activeTab: 0,
         isSidebarOpen: true,
-        activeSidebarTab: 0
+        activeSidebarTab: 0,
+        isBetaMessageVisible: true
     },
 
     // Information state

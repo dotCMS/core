@@ -7,3 +7,5 @@ export { DotCMSEditableTextComponent } from './components/dotcms-editable-text/d
 export { DotCMSBlockEditorRendererComponent } from './components/dotcms-block-editor-renderer/dotcms-block-editor-renderer.component';
 
 export { DotCMSLayoutBodyComponent } from './components/dotcms-layout-body/dotcms-layout-body.component';
+
+export { DotCMSEditablePageService } from './services/dotcms-editable-page.service';

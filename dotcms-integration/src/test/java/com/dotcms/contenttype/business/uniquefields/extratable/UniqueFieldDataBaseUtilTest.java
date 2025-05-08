@@ -30,6 +30,7 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 
 import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.UNIQUE_PER_SITE_FIELD_VARIABLE_NAME;
@@ -202,7 +203,7 @@ public class UniqueFieldDataBaseUtilTest {
         assertEquals(3, uniqueFieldsRegisters.size());
 
         for (Map<String, Object> uniqueFieldsRegister : uniqueFieldsRegisters) {
-            final Map<String, Object> supportingValues = JsonUtil.getJsonFromString(uniqueFieldsRegister.get("supporting_values").toString());
+            final Map<String, Object> supportingValues = getSupportingValues(uniqueFieldsRegister);
 
             final List<String> contentletIds = (List<String>) supportingValues.get(CONTENTLET_IDS_ATTR);
             final Boolean live = Boolean.valueOf(supportingValues.get(LIVE_ATTR) != null ?
@@ -283,7 +284,7 @@ public class UniqueFieldDataBaseUtilTest {
         assertEquals(1, uniqueFieldsRegisters.size());
 
         final Map<String, Object> uniqueFieldsRegister = uniqueFieldsRegisters.get(0);
-        final Map<String, Object> supportingValues = JsonUtil.getJsonFromString(uniqueFieldsRegister.get("supporting_values").toString());
+        final Map<String, Object> supportingValues = getSupportingValues(uniqueFieldsRegister);
 
         assertEquals(false, Boolean.valueOf(supportingValues.get(LIVE_ATTR) != null ?
                 supportingValues.get(LIVE_ATTR).toString() : "false"));
@@ -384,7 +385,7 @@ public class UniqueFieldDataBaseUtilTest {
         assertEquals(3, uniqueFieldsRegisters.size());
 
         for (Map<String, Object> uniqueFieldsRegister : uniqueFieldsRegisters) {
-            final Map<String, Object> supportingValues = JsonUtil.getJsonFromString(uniqueFieldsRegister.get("supporting_values").toString());
+            final Map<String, Object> supportingValues = getSupportingValues(uniqueFieldsRegister);
 
             final List<String> contentletIds = (List<String>) supportingValues.get(CONTENTLET_IDS_ATTR);
             final Boolean live = Boolean.valueOf(supportingValues.get(LIVE_ATTR) != null ?
@@ -482,12 +483,188 @@ public class UniqueFieldDataBaseUtilTest {
         assertEquals(1, uniqueFieldsRegisters.size());
 
         final Map<String, Object> uniqueFieldsRegister = uniqueFieldsRegisters.get(0);
-        final Map<String, Object> supportingValues = JsonUtil.getJsonFromString(uniqueFieldsRegister.get("supporting_values").toString());
+        final Map<String, Object> supportingValues = getSupportingValues(uniqueFieldsRegister);
 
         final List<String> contentletIds = (List<String>) supportingValues.get(CONTENTLET_IDS_ATTR);
         assertEquals(2, contentletIds.size());
         assertTrue(contentletIds.contains(contentlet_1.getIdentifier()));
         assertTrue(contentletIds.contains(contentlet_2.getIdentifier()));
+    }
+
+    /**
+     * Method to test: {@link UniqueFieldDataBaseUtil#populateUniqueFieldsTable()}
+     * When:
+     * - Create a {@link ContentType} with a field called unique but for now it's not going to be unique
+     * - Create a couple of {@link Contentlet} with the same value for the unique field in different sites.
+     * - Update the unique Field and set it as unique with the UNIQUE_PER_SITES variables set to false
+     * - Run the populate method
+     * Should: Create a register with 2 contentlets
+     *
+     * @throws SQLException
+     * @throws DotDataException
+     */
+    @Test
+    public void multiContentletWithTheSameValueInDifferentSites() throws SQLException, DotDataException, IOException, DotSecurityException {
+        final DotDatabaseMetaData dotDatabaseMetaData = new DotDatabaseMetaData();
+        final Connection connection = DbConnectionFactory.getConnection();
+
+        final String uniqueValue =  "unique_value";
+
+        final Language language = new LanguageDataGen().nextPersisted();
+
+        final Field uniqueTextField = new FieldDataGen()
+                .type(TextField.class)
+                .next();
+
+        Host systemHost = APILocator.getHostAPI().findSystemHost();
+        final Host host_1 = new SiteDataGen().nextPersisted();
+        final Host host_2 = new SiteDataGen().nextPersisted();
+
+        final ContentType contentType = new ContentTypeDataGen()
+                .host(systemHost)
+                .fields(list(uniqueTextField))
+                .nextPersisted();
+
+        final Contentlet contentlet_1 = new ContentletDataGen(contentType)
+                .host(host_1)
+                .languageId(language.getId())
+                .setProperty(uniqueTextField.variable(), uniqueValue)
+                .nextPersistedAndPublish();
+
+        final Contentlet contentlet_2 = new ContentletDataGen(contentType)
+                .host(host_2)
+                .languageId(language.getId())
+                .setProperty(uniqueTextField.variable(), uniqueValue)
+                .nextPersistedAndPublish();
+
+        final Field uniqueTextFieldFromDB = APILocator.getContentTypeFieldAPI()
+                .byContentTypeAndVar(contentType, uniqueTextField.variable());
+
+        final ImmutableTextField uniqueFieldUpdated = ImmutableTextField.builder()
+                .from(uniqueTextField)
+                .contentTypeId(contentType.id())
+                .unique(true)
+                .build();
+
+        APILocator.getContentTypeFieldAPI().save(uniqueFieldUpdated, APILocator.systemUser());
+
+        dotDatabaseMetaData.dropTable(connection, "unique_fields");
+
+        final UniqueFieldDataBaseUtil uniqueFieldDataBaseUtil = new UniqueFieldDataBaseUtil();
+        uniqueFieldDataBaseUtil.createUniqueFieldsValidationTable();
+
+        assertTrue(getUniqueFieldsRegisters(contentType).isEmpty());
+
+        uniqueFieldDataBaseUtil.populateUniqueFieldsTable();
+
+        final List<Map<String, Object>> uniqueFieldsRegisters = getUniqueFieldsRegisters(contentType);
+        assertEquals(1, uniqueFieldsRegisters.size());
+
+        final Map<String, Object> uniqueFieldsRegister = uniqueFieldsRegisters.get(0);
+        final Map<String, Object> supportingValues = getSupportingValues(uniqueFieldsRegister);
+
+        final List<String> contentletIds = (List<String>) supportingValues.get(CONTENTLET_IDS_ATTR);
+        assertEquals(2, contentletIds.size());
+        assertTrue(contentletIds.contains(contentlet_1.getIdentifier()));
+        assertTrue(contentletIds.contains(contentlet_2.getIdentifier()));
+    }
+
+    /**
+     * Method to test: {@link UniqueFieldDataBaseUtil#populateUniqueFieldsTable()}
+     * When:
+     * - Create a {@link ContentType} with a field called unique but for now it's not going to be unique
+     * - Create a couple of {@link Contentlet} with the same value for the unique field in different sites.
+     * - Update the unique Field and set it as unique with the UNIQUE_PER_SITES variables set to true
+     * - Run the populate method
+     * Should: Create a register with 2 contentlets
+     *
+     * @throws SQLException
+     * @throws DotDataException
+     */
+    @Test
+    public void multiContentletWithTheSameValueInDifferentSitesAndUniquePerSiteTrue()
+            throws SQLException, DotDataException, IOException, DotSecurityException {
+        final DotDatabaseMetaData dotDatabaseMetaData = new DotDatabaseMetaData();
+        final Connection connection = DbConnectionFactory.getConnection();
+
+        final String uniqueValue =  "unique_value";
+
+        final Language language = new LanguageDataGen().nextPersisted();
+
+        final Field uniqueTextField = new FieldDataGen()
+                .type(TextField.class)
+                .next();
+
+        Host systemHost = APILocator.getHostAPI().findSystemHost();
+        final Host host_1 = new SiteDataGen().nextPersisted();
+        final Host host_2 = new SiteDataGen().nextPersisted();
+
+        final ContentType contentType = new ContentTypeDataGen()
+                .host(systemHost)
+                .fields(list(uniqueTextField))
+                .nextPersisted();
+
+        final Contentlet contentlet_1 = new ContentletDataGen(contentType)
+                .host(host_1)
+                .languageId(language.getId())
+                .setProperty(uniqueTextField.variable(), uniqueValue)
+                .nextPersistedAndPublish();
+
+        final Contentlet contentlet_2 = new ContentletDataGen(contentType)
+                .host(host_2)
+                .languageId(language.getId())
+                .setProperty(uniqueTextField.variable(), uniqueValue)
+                .nextPersistedAndPublish();
+
+        final ImmutableTextField uniqueFieldUpdated = ImmutableTextField.builder()
+                .from(uniqueTextField)
+                .contentTypeId(contentType.id())
+                .unique(true)
+                .build();
+
+        final Field uniqueTextFieldFromDB = APILocator.getContentTypeFieldAPI()
+                .byContentTypeAndVar(contentType, uniqueTextField.variable());
+
+        new FieldVariableDataGen()
+                .key(UNIQUE_PER_SITE_FIELD_VARIABLE_NAME)
+                .value("true")
+                .field(uniqueTextFieldFromDB)
+                .nextPersisted();
+
+        APILocator.getContentTypeFieldAPI().save(uniqueFieldUpdated, APILocator.systemUser());
+
+        dotDatabaseMetaData.dropTable(connection, "unique_fields");
+
+        final UniqueFieldDataBaseUtil uniqueFieldDataBaseUtil = new UniqueFieldDataBaseUtil();
+        uniqueFieldDataBaseUtil.createUniqueFieldsValidationTable();
+
+        assertTrue(getUniqueFieldsRegisters(contentType).isEmpty());
+
+        uniqueFieldDataBaseUtil.populateUniqueFieldsTable();
+
+        final List<Map<String, Object>> uniqueFieldsRegisters = getUniqueFieldsRegisters(contentType);
+        assertEquals(2, uniqueFieldsRegisters.size());
+
+        final List<String> contentletIds = uniqueFieldsRegisters.stream()
+                .map(UniqueFieldDataBaseUtilTest::getSupportingValues)
+                .map(supportingValues ->  (List<String>) supportingValues.get("contentletIds"))
+                .map(supportingValuesContentletIds -> {
+                    assertEquals(1, supportingValuesContentletIds.size());
+                    return supportingValuesContentletIds.get(0);
+                })
+                .collect(Collectors.toList());
+
+        assertEquals(2, contentletIds.size());
+        assertTrue(contentletIds.contains(contentlet_1.getIdentifier()));
+        assertTrue(contentletIds.contains(contentlet_2.getIdentifier()));
+    }
+
+    private static Map<String, Object> getSupportingValues(Map<String, Object> uniqueFieldRegister) {
+        try {
+            return JsonUtil.getJsonFromString(uniqueFieldRegister.get("supporting_values").toString());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
@@ -548,7 +725,7 @@ public class UniqueFieldDataBaseUtilTest {
         assertEquals(1, uniqueFieldsRegisters.size());
 
         final Map<String, Object> uniqueFieldsRegister = uniqueFieldsRegisters.get(0);
-        final Map<String, Object> supportingValues = JsonUtil.getJsonFromString(uniqueFieldsRegister.get("supporting_values").toString());
+        final Map<String, Object> supportingValues = getSupportingValues(uniqueFieldsRegister);
 
         assertEquals(false, Boolean.valueOf(supportingValues.get(LIVE_ATTR) != null ?
                 supportingValues.get(LIVE_ATTR).toString() : "false"));
@@ -620,7 +797,7 @@ public class UniqueFieldDataBaseUtilTest {
         assertEquals(2, uniqueFieldsRegisters.size());
 
         for (Map<String, Object> uniqueFieldsRegister : uniqueFieldsRegisters) {
-            final Map<String, Object> supportingValues = JsonUtil.getJsonFromString(uniqueFieldsRegister.get("supporting_values").toString());
+            final Map<String, Object> supportingValues = getSupportingValues(uniqueFieldsRegister);
 
             final List<String> contentletIds = (List<String>) supportingValues.get(CONTENTLET_IDS_ATTR);
 

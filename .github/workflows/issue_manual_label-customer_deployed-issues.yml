@@ -1,0 +1,54 @@
+name: Add Customer Deployed Labels
+
+on:
+  # Allow manual triggering
+  workflow_dispatch:
+    inputs:
+      release_label:
+        description: 'Release Label (e.g., "Release: 24.03")'
+        required: true
+        type: string
+  
+  # Allow repository_dispatch for external triggering (like from Argo)
+  repository_dispatch:
+    types: [deployment-completed]
+
+jobs:
+  add-labels:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests urllib3
+      
+      # Run the Python script directly with environment variables
+      - name: Add Customer Deployed Labels
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_LABEL: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.release_label || github.event.client_payload.release_label }}
+        run: |
+          if [ -z "$GITHUB_TOKEN" ]; then
+            echo "Error: GITHUB_TOKEN is not defined"
+            exit 1
+          fi
+          
+          if [ -z "$RELEASE_LABEL" ]; then
+            echo "Error: Could not determine release label"
+            exit 1
+          fi
+          
+          echo "Adding Customer Deployed labels for release: $RELEASE_LABEL"
+          
+          # Execute the Python script from the correct directory
+          cd scripts/dev-metrics
+          python add_customer_deployed_label.py --release-label "$RELEASE_LABEL"
