@@ -5,7 +5,7 @@ import {
     OnInit,
     inject,
     signal,
-    viewChild
+    ViewChild
 } from '@angular/core';
 
 import { AvatarModule } from 'primeng/avatar';
@@ -40,7 +40,7 @@ export class DotToolbarUserComponent implements OnInit {
     readonly store = inject(DotToolbarUserStore);
 
     vm$ = this.store.vm$;
-    $menu = viewChild<Menu>('menu');
+    @ViewChild('menu') menu: Menu;
     $showMask = signal<boolean>(false);
 
     ngOnInit(): void {
@@ -48,7 +48,7 @@ export class DotToolbarUserComponent implements OnInit {
     }
 
     toggleMenu(event: Event): void {
-        this.$menu().toggle(event);
+        this.menu.toggle(event);
         this.$showMask.update((value) => !value);
     }
 
