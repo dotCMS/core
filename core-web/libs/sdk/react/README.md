@@ -3,7 +3,7 @@
 `@dotcms/react` is the official set of React components and hooks designed to work seamlessly with dotCMS, making it easy to render dotCMS pages and use the page builder.
 
 > **Note:** This SDK is currently in **beta** (v0.0.1-beta.13 or newest).
-> 
+>
 > For comprehensive documentation, visit our [developer portal](https://dev.dotcms.com/docs/javascript-sdk-react-library).
 
 > **⚠️ IMPORTANT:** Versions published under the `next` tag (`npm install @dotcms/react@next`) are experimental, in beta, and not code complete. For the current stable and functional version, please use `latest` (`npm install @dotcms/react@latest`). Once we release the stable version, we will provide a migration guide from the alpha to stable version. The current alpha version (under `latest`) will continue to work, allowing you to migrate progressively at your own pace.
@@ -108,7 +108,7 @@ The `DotCMSLayoutBody` component renders the layout body for a DotCMS page.
 #### Usage
 
 ```javascript
-import { DotCMSLayoutBody } from '@dotcms/react';
+import { DotCMSLayoutBody } from '@dotcms/react/next';
 
 const MyPage = ({ page }) => {
     return <DotCMSLayoutBody page={page} components={components} />;
@@ -129,7 +129,7 @@ The `DotCMSShow` component conditionally renders content based on dotCMS conditi
 #### Usage
 
 ```javascript
-import { DotCMSShow } from '@dotcms/react';
+import { DotCMSShow } from '@dotcms/react/next';
 import { UVE_MODE } from '@dotcms/uve';
 
 const MyComponent = () => {
@@ -171,12 +171,12 @@ A custom hook that provides the same functionality as the `DotCMSShow` component
 #### Usage
 
 ```javascript
-import { useDotCMSShowWhen } from '@dotcms/react';
+import { useDotCMSShowWhen } from '@dotcms/react/next';
 import { UVE_MODE } from '@dotcms/uve';
 
 const MyComponent = () => {
     const isVisible = useDotCMSShowWhen(UVE_MODE.EDIT);
-    
+
     return isVisible ? <div>Visible content</div> : null;
 };
 ```
@@ -201,7 +201,7 @@ A custom hook that handles the communication with the Universal View Editor (UVE
 import { useEffect, useState } from 'react';
 
 import { getUVEState, sendMessageToEditor, createUVESubscription} from '@dotcms/uve';
-import { DotCMSUVEAction, UVEEventType} from '@dotcms/uve/types';
+import { DotCMSUVEAction, UVEEventType} from '@dotcms/types';
 
 export const usePageAsset = (currentPageAsset) => {
     const [pageAsset, setPageAsset] = useState(null);
@@ -211,7 +211,7 @@ export const usePageAsset = (currentPageAsset) => {
         }
 
         // Note: If using plain JavaScript instead of TypeScript, you can use the string literals directly
-        sendMessageToEditor({ action: DotCMSUVEAction.CLIENT_READY || "client-ready" }); 
+        sendMessageToEditor({ action: DotCMSUVEAction.CLIENT_READY || "client-ready" });
         const subscription = createUVESubscription(UVEEventType.CONTENT_CHANGES || "changes", (pageAsset) => setPageAsset(pageAsset));
 
         return () => {
@@ -231,7 +231,7 @@ import { usePageAsset } from './hooks/usePageAsset';
 
 const MyPage = ({ initialPageAsset }) => {
     const pageAsset = usePageAsset(initialPageAsset);
-    
+
     return <DotCMSLayoutBody page={pageAsset} components={components} />;
 };
 ```

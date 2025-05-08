@@ -32,6 +32,7 @@ import {
     SiteService
 } from '@dotcms/dotcms-js';
 import { DotPageToolsSeoComponent } from '@dotcms/portlets/dot-ema/ui';
+import { UVE_MODE } from '@dotcms/types';
 import { DotNotLicenseComponent } from '@dotcms/ui';
 import { WINDOW } from '@dotcms/utils';
 import {
@@ -41,7 +42,6 @@ import {
     DotcmsEventsServiceMock,
     SiteServiceMock
 } from '@dotcms/utils-testing';
-import { UVE_MODE } from '@dotcms/uve/types';
 
 import { EditEmaNavigationBarComponent } from './components/edit-ema-navigation-bar/edit-ema-navigation-bar.component';
 import { DotEmaShellComponent } from './dot-ema-shell.component';
@@ -259,11 +259,11 @@ describe('DotEmaShellComponent', () => {
             {
                 provide: DotPageApiService,
                 useValue: {
-                    get({ language_id }) {
+                    get({ language_id = 1 }) {
                         return PAGE_RESPONSE_BY_LANGUAGE_ID[language_id] || of({});
                     },
-                    getClientPage({ language_id }, _clientConfig) {
-                        return PAGE_RESPONSE_BY_LANGUAGE_ID[language_id] || of({});
+                    getGraphQLPage() {
+                        return of({});
                     },
                     save() {
                         return of({});
@@ -922,9 +922,9 @@ describe('DotEmaShellComponent', () => {
             });
 
             it('should trigger a store reload if the url is the same', () => {
+                spectator.detectChanges();
                 const spyReload = jest.spyOn(store, 'reloadCurrentPage');
                 const spyLocation = jest.spyOn(location, 'go');
-                spectator.detectChanges();
 
                 spectator.triggerEventHandler(
                     DotEmaDialogComponent,

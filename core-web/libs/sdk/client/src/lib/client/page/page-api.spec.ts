@@ -1,4 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { DotCMSGraphQLPageResponse } from '@dotcms/types';
+
 import { GraphQLPageOptions, PageClient } from './page-api';
 import * as utils from './utils';
 
@@ -94,7 +96,12 @@ describe('PageClient', () => {
                 requestOptions
             );
 
-            expect(result).toEqual(mockPageData.entity);
+            expect(result).toEqual({
+                ...mockPageData.entity,
+                params: {
+                    siteId: 'test-site'
+                }
+            });
         });
 
         it('should throw error when path is not provided', async () => {
@@ -193,11 +200,15 @@ describe('PageClient', () => {
                 baseURL: 'https://demo.dotcms.com'
             });
 
-            // const pageResponse = graphqlToPageEntity(mockGraphQLResponse |  );
             expect(result).toEqual({
-                page: graphqlToPageEntity(mockGraphQLResponse.data),
+                page: graphqlToPageEntity(
+                    mockGraphQLResponse.data as unknown as DotCMSGraphQLPageResponse
+                ),
                 content: { content: mockGraphQLResponse.data.testContent },
-                errors: null
+                graphql: {
+                    query: expect.any(String),
+                    variables: expect.any(Object)
+                }
             });
         });
 
@@ -215,7 +226,9 @@ describe('PageClient', () => {
             expect(requestBody.variables).toEqual({
                 url: '/custom-page',
                 mode: 'PREVIEW_MODE',
-                languageId: '2'
+                languageId: '2',
+                fireRules: false,
+                siteId: 'test-site'
             });
         });
 
@@ -262,7 +275,9 @@ describe('PageClient', () => {
             expect(requestBody.variables).toEqual({
                 url: '/default-page',
                 mode: 'LIVE',
-                languageId: '1'
+                languageId: '1',
+                fireRules: false,
+                siteId: 'test-site'
             });
         });
     });

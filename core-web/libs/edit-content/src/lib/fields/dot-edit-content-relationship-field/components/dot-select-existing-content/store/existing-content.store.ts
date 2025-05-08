@@ -5,6 +5,7 @@ import { pipe } from 'rxjs';
 
 import { computed, inject } from '@angular/core';
 
+import { InputSwitchChangeEvent } from 'primeng/inputswitch';
 import { TablePageEvent } from 'primeng/table';
 
 import { tap, switchMap, filter } from 'rxjs/operators';
@@ -17,6 +18,13 @@ import {
     RelationshipFieldService,
     RelationshipFieldQueryParams
 } from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/services/relationship-field.service';
+
+const ViewMode = {
+    all: 'all',
+    selected: 'selected'
+} as const satisfies Record<string, string>;
+
+type ViewMode = (typeof ViewMode)[keyof typeof ViewMode];
 
 export interface ExistingContentState {
     contentTypeId: string;
@@ -32,8 +40,14 @@ export interface ExistingContentState {
         rowsPerPage: number;
         totalResults: number;
     };
+    previousPagination: {
+        offset: number;
+        currentPage: number;
+        rowsPerPage: number;
+        totalResults: number;
+    };
     selectionItems: DotCMSContentlet[] | DotCMSContentlet | null;
-    showOnlySelected: boolean;
+    viewMode: ViewMode;
 }
 
 const paginationInitialState: ExistingContentState['pagination'] = {
@@ -52,8 +66,9 @@ const initialState: ExistingContentState = {
     selectionMode: null,
     errorMessage: null,
     pagination: { ...paginationInitialState },
+    previousPagination: { ...paginationInitialState },
     selectionItems: null,
-    showOnlySelected: false
+    viewMode: ViewMode.all
 };
 
 /**
@@ -94,10 +109,11 @@ export const ExistingContentStore = signalStore(
          * @returns {DotCMSContentlet[]} The filtered data.
          */
         filteredData: computed(() => {
-            const showOnlySelected = state.showOnlySelected();
-            const data = showOnlySelected ? state.data() : state.searchData();
+            const viewMode = state.viewMode();
+            const isSelectedView = viewMode === ViewMode.selected;
+            const data = isSelectedView ? state.data() : state.searchData();
 
-            if (showOnlySelected) {
+            if (isSelectedView) {
                 const selectionItems = state.selectionItems();
                 const isArray = Array.isArray(selectionItems);
                 const currentItemsIds = isArray
@@ -108,7 +124,12 @@ export const ExistingContentStore = signalStore(
             }
 
             return data;
-        })
+        }),
+        /**
+         * Computes whether the show only selected state is true.
+         * @returns {boolean} True if the show only selected state is true, false otherwise.
+         */
+        isSelectedView: computed(() => state.viewMode() === ViewMode.selected)
     })),
     withMethods((store) => {
         const relationshipFieldService = inject(RelationshipFieldService);
@@ -128,7 +149,7 @@ export const ExistingContentStore = signalStore(
                         patchState(store, {
                             status: ComponentStatus.LOADING,
                             selectionMode,
-                            showOnlySelected: false,
+                            viewMode: ViewMode.all,
                             pagination: { ...paginationInitialState }
                         })
                     ),
@@ -217,11 +238,19 @@ export const ExistingContentStore = signalStore(
                 });
             },
             /**
-             * Toggles between showing all items or only selected items.
+             * Changes the view mode between all and selected items.
+             * @param event The event containing the checked property.
              */
-            toggleShowOnlySelected: () => {
+            changeViewMode: (event: InputSwitchChangeEvent) => {
+                const viewMode = event.checked ? ViewMode.selected : ViewMode.all;
+                const isSelectedView = viewMode === ViewMode.selected;
+
                 patchState(store, {
-                    showOnlySelected: !store.showOnlySelected()
+                    viewMode,
+                    previousPagination: { ...store.pagination() },
+                    pagination: isSelectedView
+                        ? { ...paginationInitialState }
+                        : { ...store.previousPagination() }
                 });
             },
             /**

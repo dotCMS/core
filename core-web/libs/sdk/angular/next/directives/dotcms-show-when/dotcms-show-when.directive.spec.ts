@@ -1,8 +1,8 @@
 import { describe, it, expect } from '@jest/globals';
 import { byTestId, createDirectiveFactory } from '@ngneat/spectator/jest';
 
+import { UVE_MODE, UVEState } from '@dotcms/types';
 import { getUVEState } from '@dotcms/uve';
-import { UVE_MODE, UVEState } from '@dotcms/uve/types';
 
 import { DotCMSShowWhenDirective } from './dotcms-show-when.directive';
 

@@ -1,9 +1,15 @@
-import { DotCMSReorderMenuConfig } from '@dotcms/uve/internal';
+import { Contentlet, DotCMSUVEAction, DotCMSBasicContentlet } from '@dotcms/types';
+import { DotCMSReorderMenuConfig } from '@dotcms/types/internal';
 
-import { sendMessageToUVE, editContentlet, reorderMenu, initUVE } from './public';
+import {
+    sendMessageToUVE,
+    editContentlet,
+    reorderMenu,
+    initUVE,
+    enableBlockEditorInline
+} from './public';
 
 import * as utils from '../../script/utils';
-import { Contentlet, DotCMSUVEAction } from '../types/editor/public';
 
 describe('UVE Public Functions', () => {
     let postMessageSpy: jest.SpyInstance;
@@ -116,6 +122,26 @@ describe('UVE Public Functions', () => {
             expect(utils.registerUVEEvents).toHaveBeenCalled();
         });
 
+        it('should call setClientIsReady with empty config when no config is provided', () => {
+            const setClientIsReadySpy = jest.spyOn(utils, 'setClientIsReady');
+            initUVE();
+            expect(setClientIsReadySpy).toHaveBeenCalledWith({});
+        });
+
+        it('should call setClientIsReady with graphql config when provided', () => {
+            const setClientIsReadySpy = jest.spyOn(utils, 'setClientIsReady');
+            const config = { graphql: { query: '{ test }', variables: {} } };
+            initUVE(config);
+            expect(setClientIsReadySpy).toHaveBeenCalledWith(config);
+        });
+
+        it('should call setClientIsReady with params config when provided', () => {
+            const setClientIsReadySpy = jest.spyOn(utils, 'setClientIsReady');
+            const config = { params: { depth: '1' } };
+            initUVE(config);
+            expect(setClientIsReadySpy).toHaveBeenCalledWith(config);
+        });
+
         it('should return destroy function that unsubscribes all subscriptions', () => {
             // Create spy functions for unsubscribe
             const unsubscribeSpy1 = jest.fn();
@@ -155,6 +181,78 @@ describe('UVE Public Functions', () => {
             const { destroyUVESubscriptions } = initUVE();
 
             expect(() => destroyUVESubscriptions()).not.toThrow();
+        });
+    });
+
+    describe('enableBlockEditorInline', () => {
+        let consoleErrorSpy: jest.SpyInstance;
+
+        beforeEach(() => {
+            consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
+        });
+
+        afterEach(() => {
+            consoleErrorSpy.mockRestore();
+        });
+
+        it('should call initInlineEditing with correct parameters when contentlet has the specified field', () => {
+            const contentlet = {
+                inode: '123',
+                languageId: 1,
+                identifier: 'test-identifier',
+                contentType: 'test-content-type',
+                testField: 'test content'
+            } as unknown as DotCMSBasicContentlet;
+
+            const fieldName = 'testField';
+
+            const expectedPayload = {
+                type: 'BLOCK_EDITOR',
+                data: {
+                    fieldName,
+                    inode: contentlet.inode,
+                    language: contentlet.languageId,
+                    contentType: contentlet.contentType,
+                    content: contentlet['testField']
+                }
+            };
+
+            enableBlockEditorInline(contentlet, fieldName);
+            expect(postMessageSpy).toHaveBeenCalledWith(
+                {
+                    action: DotCMSUVEAction.INIT_INLINE_EDITING,
+                    payload: expectedPayload
+                },
+                '*'
+            );
+        });
+
+        it('should log error and not call initInlineEditing when contentlet does not have the specified field', () => {
+            const contentlet = {
+                inode: '123',
+                languageId: 1,
+                identifier: 'test-identifier',
+                contentType: 'test-content-type'
+            } as unknown as DotCMSBasicContentlet;
+
+            const fieldName = 'nonExistentField';
+
+            enableBlockEditorInline(contentlet, fieldName);
+
+            expect(consoleErrorSpy).toHaveBeenCalledWith(
+                `Contentlet ${contentlet.identifier} does not have field ${fieldName}`
+            );
+            expect(postMessageSpy).not.toHaveBeenCalled();
+        });
+
+        it('should handle undefined contentlet gracefully', () => {
+            const contentlet = undefined;
+            const fieldName = 'testField';
+
+            enableBlockEditorInline(contentlet as unknown as DotCMSBasicContentlet, fieldName);
+
+            expect(consoleErrorSpy).toHaveBeenCalled();
+            expect(postMessageSpy).not.toHaveBeenCalled();
         });
     });
 });

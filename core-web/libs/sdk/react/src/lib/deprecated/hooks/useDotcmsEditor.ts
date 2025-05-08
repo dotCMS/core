@@ -8,8 +8,8 @@ import {
     postMessageToEditor,
     updateNavigation
 } from '@dotcms/client';
+import { UVEEventType } from '@dotcms/types';
 import { createUVESubscription } from '@dotcms/uve';
-import { UVEEventType } from '@dotcms/uve/types';
 
 import { DotcmsPageProps } from '../components/DotcmsLayout/DotcmsLayout';
 import { DotCMSPageContext } from '../models';
@@ -83,7 +83,7 @@ export const useDotcmsEditor = ({ pageContext, config }: DotcmsPageProps) => {
         }
 
         const { unsubscribe } = createUVESubscription(UVEEventType.CONTENT_CHANGES, (data) => {
-            const pageAsset = data as DotCMSPageContext['pageAsset'];
+            const pageAsset = data as unknown as DotCMSPageContext['pageAsset'];
             setState((state) => ({ ...state, pageAsset }));
         });
 

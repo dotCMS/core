@@ -17,11 +17,10 @@ import {
     DotTemplate,
     VanityUrl
 } from '@dotcms/dotcms-models';
-import { UVE_MODE } from '@dotcms/uve/types';
+import { DotCMSGraphQLPageResponse, UVE_MODE } from '@dotcms/types';
 
 import { PERSONA_KEY } from '../shared/consts';
 import { DotPage, DotPageAssetParams, SavePagePayload } from '../shared/models';
-import { ClientRequestProps } from '../store/features/client/withClient';
 import { getFullPageURL } from '../utils';
 
 export interface DotPageApiResponse {
@@ -43,13 +42,13 @@ export interface DotPageApiResponse {
 
 export interface DotPageApiParams {
     url: string;
+    depth?: string;
+    mode?: UVE_MODE;
     language_id: string;
     [PERSONA_KEY]: string;
     variantName?: string;
     experimentId?: string;
-    mode?: UVE_MODE;
     clientHost?: string;
-    depth?: string;
     publishDate?: string;
 }
 
@@ -160,26 +159,6 @@ export class DotPageApiService {
             .pipe(pluck('entity', 'content', 'identifier'));
     }
 
-    private getPersonasURL({ pageId, filter, page, perPage }: GetPersonasParams): string {
-        const apiUrl = `/api/v1/page/${pageId}/personas?`;
-
-        const queryParams = new URLSearchParams({
-            perper_page: perPage.toString(),
-            respectFrontEndRoles: 'true',
-            variantName: 'DEFAULT'
-        });
-
-        if (filter) {
-            queryParams.set('filter', filter);
-        }
-
-        if (page) {
-            queryParams.set('page', page.toString());
-        }
-
-        return apiUrl + queryParams.toString();
-    }
-
     /**
      *
      * @description Save a contentlet in a page
@@ -202,41 +181,51 @@ export class DotPageApiService {
      * @return {*}  {Observable<T>}
      * @memberof DotPageApiService
      */
-    getGraphQLPage(query: string): Observable<DotPageApiResponse> {
+    getGraphQLPage({
+        query,
+        variables
+    }: {
+        query: string;
+        variables: Record<string, string>;
+    }): Observable<{
+        page: DotPageApiResponse;
+        content: Record<string, unknown>;
+    }> {
         const headers = {
             'Content-Type': 'application/json',
-            dotcachettl: '0' // Bypasses GraphQL cache
+            dotcachettl: '0'
         };
 
-        return this.http
-            .post<{
-                data: { page: Record<string, unknown> };
-            }>('/api/v1/graphql', { query }, { headers })
-            .pipe(
-                pluck('data'),
-                map((data) => graphqlToPageEntity(data) as DotPageApiResponse)
-            );
+        return this.http.post<{ data }>('/api/v1/graphql', { query, variables }, { headers }).pipe(
+            pluck('data'),
+            map(({ page, ...content }) => {
+                const pageEntity = graphqlToPageEntity({ page } as DotCMSGraphQLPageResponse);
+
+                return {
+                    page: pageEntity,
+                    content
+                };
+            })
+        );
     }
 
-    /**
-     *
-     * @description Get Client Page from the Page API or GraphQL
-     * @return {*}  {Observable<DotPageApiResponse>}
-     * @memberof DotPageApiService
-     */
-    getClientPage(
-        params: DotPageApiParams,
-        clientProps: ClientRequestProps
-    ): Observable<DotPageApiResponse> {
-        const { query, params: clientParams } = clientProps;
+    private getPersonasURL({ pageId, filter, page, perPage }: GetPersonasParams): string {
+        const apiUrl = `/api/v1/page/${pageId}/personas?`;
 
-        if (!query) {
-            return this.get({
-                ...(clientParams || {}),
-                ...params
-            });
+        const queryParams = new URLSearchParams({
+            perper_page: perPage.toString(),
+            respectFrontEndRoles: 'true',
+            variantName: 'DEFAULT'
+        });
+
+        if (filter) {
+            queryParams.set('filter', filter);
         }
 
-        return this.getGraphQLPage(query);
+        if (page) {
+            queryParams.set('page', page.toString());
+        }
+
+        return apiUrl + queryParams.toString();
     }
 }

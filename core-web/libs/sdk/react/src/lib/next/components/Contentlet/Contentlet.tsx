@@ -1,7 +1,7 @@
 import { useContext, useRef, useMemo } from 'react';
 
+import { DotCMSBasicContentlet } from '@dotcms/types';
 import { CUSTOM_NO_COMPONENT, getDotContentletAttributes } from '@dotcms/uve/internal';
-import { DotCMSContentlet } from '@dotcms/uve/types';
 
 import { DotCMSPageContext } from '../../contexts/DotCMSPageContext';
 import { useCheckVisibleContent } from '../../hooks/useCheckVisibleContent';
@@ -17,7 +17,7 @@ import { FallbackComponent } from '../FallbackComponent/FallbackComponent';
  * @property {string} container - The container identifier where the contentlet is placed
  */
 interface DotCMSContentletRendererProps {
-    contentlet: DotCMSContentlet;
+    contentlet: DotCMSBasicContentlet;
     container: string;
 }
 
@@ -27,7 +27,7 @@ interface DotCMSContentletRendererProps {
  * @property {DotCMSContentlet} contentlet - The contentlet data to be rendered
  */
 interface CustomComponentProps {
-    contentlet: DotCMSContentlet;
+    contentlet: DotCMSBasicContentlet;
 }
 
 /**

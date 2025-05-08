@@ -23,9 +23,9 @@ import {
 } from '@dotcms/data-access';
 import { SiteService } from '@dotcms/dotcms-js';
 import { DotPageToolsSeoComponent } from '@dotcms/portlets/dot-ema/ui';
+import { UVE_MODE } from '@dotcms/types';
 import { DotInfoPageComponent, DotNotLicenseComponent } from '@dotcms/ui';
 import { WINDOW } from '@dotcms/utils';
-import { UVE_MODE } from '@dotcms/uve/types';
 
 import { EditEmaNavigationBarComponent } from './components/edit-ema-navigation-bar/edit-ema-navigation-bar.component';
 
@@ -131,7 +131,8 @@ export class DotEmaShellComponent implements OnInit {
     handleNgEvent({ event }: DialogAction) {
         switch (event.detail.name) {
             case NG_CUSTOM_EVENTS.UPDATE_WORKFLOW_ACTION: {
-                this.uveStore.getWorkflowActions();
+                const pageAPIResponse = this.uveStore.pageAPIResponse();
+                this.uveStore.getWorkflowActions(pageAPIResponse.page.inode);
                 break;
             }
 

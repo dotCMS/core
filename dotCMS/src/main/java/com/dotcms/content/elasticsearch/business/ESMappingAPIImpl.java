@@ -403,7 +403,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 			contentletMap.put(ESMappingConstants.IDENTIFIER, contentIdentifier.getId());
 			contentletMap.put(ESMappingConstants.CONTENTLET_HOST, contentIdentifier.getHostId());
 			contentletMap.put(ESMappingConstants.CONTENTLET_HOSTNAME, contentSite.getHostname());
-			contentletMap.put(ESMappingConstants.CONTENTLET_FOLER, InodeUtils.isSet(contentFolder.getInode()) ? contentFolder.getInode() : contentlet.getFolder());
+			contentletMap.put(ESMappingConstants.CONTENTLET_FOLDER, InodeUtils.isSet(contentFolder.getInode()) ? contentFolder.getInode() : contentlet.getFolder());
 			contentletMap.put(ESMappingConstants.PARENT_PATH, contentIdentifier.getParentPath());
 			contentletMap.put(ESMappingConstants.PATH, contentIdentifier.getPath());
 			// makes shorties searchable regardless of length

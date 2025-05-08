@@ -1,5 +1,16 @@
 @use "variables" as *;
 
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 :host {
     display: grid;
     grid-template-areas:
@@ -20,15 +31,27 @@
 
 .edit-content-layout__topBar {
     grid-area: topBar;
-    padding: $spacing-0 $spacing-1;
 
     display: flex;
     flex-direction: column;
-    gap: $spacing-0;
+
+    &--beta-message-visible {
+        border-bottom: solid 1px $color-palette-gray-300;
+    }
 
     .pi {
-        font-size: $font-size-lmd;
+        font-size: $icon-sm-box;
         margin-right: $spacing-1;
+    }
+
+    :host ::ng-deep .p-messages {
+        animation: slideIn $basic-speed ease-out;
+        margin-bottom: $spacing-2;
+    }
+
+    .edit-content-layout__beta-message,
+    .edit-content-layout__select-workflow-warning {
+        animation: slideIn $basic-speed ease-out;
     }
 }
 

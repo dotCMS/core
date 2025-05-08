@@ -19,8 +19,8 @@ import {
     postMessageToEditor,
     updateNavigation
 } from '@dotcms/client';
+import { UVEEventSubscription, UVEEventType } from '@dotcms/types';
 import { createUVESubscription } from '@dotcms/uve';
-import { UVEEventSubscription, UVEEventType } from '@dotcms/uve/types';
 
 import { DotCMSPageComponent } from '../../models';
 import { DotCMSPageAsset } from '../../models/dotcms.model';
@@ -142,7 +142,7 @@ export class DotcmsLayoutComponent implements OnInit {
                 return;
             }
 
-            this.pageContextService.setPageAsset(data as DotCMSPageAsset);
+            this.pageContextService.setPageAsset(data as unknown as DotCMSPageAsset);
         });
 
         postMessageToEditor({ action: CLIENT_ACTIONS.CLIENT_READY, payload: this.editor });
