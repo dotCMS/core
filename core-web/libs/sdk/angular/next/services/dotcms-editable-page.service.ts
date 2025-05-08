@@ -4,9 +4,8 @@ import { Injectable } from '@angular/core';
 
 import { finalize } from 'rxjs/operators';
 
-import { updateNavigation } from '@dotcms/client';
 import { UVEEventType, DotCMSPageResponse } from '@dotcms/types';
-import { createUVESubscription, getUVEState, initUVE } from '@dotcms/uve';
+import { createUVESubscription, getUVEState, initUVE, updateNavigation } from '@dotcms/uve';
 
 @Injectable({
     providedIn: 'root'

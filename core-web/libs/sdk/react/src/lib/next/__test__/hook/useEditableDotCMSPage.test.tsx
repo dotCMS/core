@@ -1,16 +1,12 @@
 import { renderHook, act } from '@testing-library/react-hooks';
 
-import { updateNavigation } from '@dotcms/client';
 import { DotCMSPageResponse, UVEEventType } from '@dotcms/types';
-import { getUVEState, initUVE, createUVESubscription } from '@dotcms/uve';
+import { getUVEState, initUVE, createUVESubscription, updateNavigation } from '@dotcms/uve';
 
 import { useEditableDotCMSPage } from '../../hooks/useEditableDotCMSPage';
 
-jest.mock('@dotcms/client', () => ({
-    updateNavigation: jest.fn()
-}));
-
 jest.mock('@dotcms/uve', () => ({
+    updateNavigation: jest.fn(),
     getUVEState: jest.fn(),
     initUVE: jest.fn(),
     createUVESubscription: jest.fn()

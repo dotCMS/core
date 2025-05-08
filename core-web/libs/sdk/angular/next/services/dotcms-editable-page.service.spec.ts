@@ -1,8 +1,7 @@
 import { createServiceFactory, SpectatorService } from '@ngneat/spectator/jest';
 
-import { updateNavigation } from '@dotcms/client';
 import { UVEEventType, DotCMSPageResponse } from '@dotcms/types';
-import { getUVEState, initUVE, createUVESubscription } from '@dotcms/uve';
+import { getUVEState, initUVE, createUVESubscription, updateNavigation } from '@dotcms/uve';
 
 import { DotCMSEditablePageService } from './dotcms-editable-page.service';
 
@@ -11,10 +10,7 @@ import { DotCMSEditablePageService } from './dotcms-editable-page.service';
 jest.mock('@dotcms/uve', () => ({
     getUVEState: jest.fn(),
     initUVE: jest.fn(),
-    createUVESubscription: jest.fn()
-}));
-
-jest.mock('@dotcms/client', () => ({
+    createUVESubscription: jest.fn(),
     updateNavigation: jest.fn()
 }));
 
