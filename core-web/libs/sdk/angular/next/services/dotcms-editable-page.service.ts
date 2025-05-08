@@ -64,7 +64,7 @@ export class DotCMSEditablePageService {
             return of(pageAsset || null);
         }
 
-        const pageURI = pageAsset?.page?.pageURI ?? '/';
+        const pageURI = pageAsset?.pageAsset?.page?.pageURI ?? '/';
 
         initUVE(pageAsset);
         updateNavigation(pageURI);

@@ -1,3 +1,4 @@
+import { expect } from '@jest/globals';
 import { createServiceFactory, SpectatorService } from '@ngneat/spectator/jest';
 
 import { UVEEventType, DotCMSPageResponse } from '@dotcms/types';
@@ -20,17 +21,23 @@ describe('DotCMSEditablePageService', () => {
     let unsubscribeMock: jest.Mock;
 
     const mockPageAsset: DotCMSPageResponse = {
-        page: {
-            pageURI: '/test-page',
-            title: 'Test Page'
-        }
+        pageAsset: {
+            page: {
+                pageURI: '/test-page',
+                title: 'Test Page'
+            }
+        },
+        graphql: {}
     } as DotCMSPageResponse;
 
     const mockUpdatedPageAsset: DotCMSPageResponse = {
-        page: {
-            pageURI: '/test-page',
-            title: 'Updated Test Page'
-        }
+        pageAsset: {
+            page: {
+                pageURI: '/test-page',
+                title: 'Updated Test Page'
+            }
+        },
+        graphql: {}
     } as DotCMSPageResponse;
 
     const createService = createServiceFactory({

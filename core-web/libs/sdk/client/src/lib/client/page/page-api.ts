@@ -186,7 +186,7 @@ export class PageClient {
             const contentResponse = mapResponseData(data, Object.keys(content));
 
             return {
-                page: pageResponse,
+                pageAsset: pageResponse,
                 content: contentResponse,
                 graphql: {
                     query: completeQuery,

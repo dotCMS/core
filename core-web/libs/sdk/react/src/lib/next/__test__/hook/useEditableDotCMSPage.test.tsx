@@ -23,19 +23,18 @@ describe('useEditableDotCMSPage', () => {
 
     // Use unknown as intermediate type to avoid type checking issues
     const mockPageResponse = {
-        page: {
-            pageURI: '/test-page',
-            title: 'Test Page',
-            metadata: {},
-            template: 'test-template',
-            modDate: '2023-01-01',
-            cachettl: 0
+        pageAsset: {
+            page: {
+                pageURI: '/test-page',
+                title: 'Test Page',
+                metadata: {}
+            }
         },
         content: {
             testContent: [{ title: 'Test Item' }]
         },
-        graphql: {} // Required for DotCMSGraphQLPageResponse
-    } as unknown as DotCMSPageResponse;
+        graphql: {}
+    } as DotCMSPageResponse;
 
     beforeEach(() => {
         jest.clearAllMocks();
@@ -96,19 +95,18 @@ describe('useEditableDotCMSPage', () => {
         const { result } = renderHook(() => useEditableDotCMSPage(mockPageResponse));
 
         const updatedPage = {
-            page: {
-                pageURI: '/test-page',
-                title: 'Updated Title',
-                metadata: {},
-                template: 'test-template',
-                modDate: '2023-01-01',
-                cachettl: 0
+            pageAsset: {
+                page: {
+                    pageURI: '/test-page',
+                    title: 'Test Page',
+                    metadata: {}
+                }
             },
             content: {
                 testContent: [{ title: 'Updated Item' }]
             },
-            graphql: {} // Required for DotCMSGraphQLPageResponse
-        } as unknown as DotCMSPageResponse;
+            graphql: {}
+        } as DotCMSPageResponse;
 
         act(() => {
             contentChangesCallback(updatedPage);

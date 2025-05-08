@@ -1012,9 +1012,9 @@ interface DotCMSSiteField {
 }
 
 /**
- * Represents a basic page object
+ * Represents a basic page object from the GraphQL API
  *
- * @interface DotCMSBasicPage
+ * @interface DotCMSGraphQLPage
  * @property {string} publishDate - The date the page was published
  * @property {string} type - The type of the page
  * @property {boolean} httpsRequired - Whether HTTPS is required to access the page
@@ -1057,14 +1057,14 @@ interface DotCMSSiteField {
  * @property {string} conLanguage.languageCode - Language code
  * @property {Object} template - Template information
  * @property {boolean} template.drawed - Whether template is drawn
- * @property {DotCMSPageGraphQLContainer[]} containers - Array of containers on the page
+ * @property {DotCMSPageContainer[]} containers - Array of containers on the page
  * @property {DotCMSLayout} layout - Layout configuration
  * @property {DotCMSViewAs} viewAs - View configuration
- * @property {Record<string, unknown>} urlContentMap - URL to content mapping
+ * @property {DotCMSURLContentMap} urlContentMap - URL to content mapping
  * @property {DotCMSSite} site - Site information
  * @property {Record<string, unknown>} _map - Additional mapping data
  */
-export interface DotCMSBasicPage {
+export interface DotCMSGraphQLPage {
     publishDate: string;
     type: string;
     httpsRequired: boolean;
@@ -1101,22 +1101,16 @@ export interface DotCMSBasicPage {
     live: boolean;
     isContentlet: boolean;
     statusIcons: string;
-
     // Language information
     conLanguage: {
         id: number;
         language: string;
         languageCode: string;
     };
-
     // Template information
-    template: {
-        drawed: boolean;
-    };
-
+    template: Partial<DotCMSTemplate>;
     // Container information
-    containers: DotCMSPageContainer[];
-
+    containers: DotCMSGraphQLPageContainer[];
     layout: DotCMSLayout;
     viewAs: DotCMSViewAs;
     urlContentMap: Record<string, unknown>;
@@ -1127,14 +1121,14 @@ export interface DotCMSBasicPage {
 /**
  * Represents a container in a page
  *
- * @interface DotCMSPageContainer
+ * @interface DotCMSGraphQLPageContainer
  * @property {string} path - The path/location of the container in the page
  * @property {string} identifier - Unique identifier for the container
  * @property {number} [maxContentlets] - Optional maximum number of content items allowed in container
  * @property {DotCMSContainerStructure[]} containerStructures - Array of content type structures allowed in container
  * @property {DotCMSPageContainerContentlets[]} containerContentlets - Array of content items in container
  */
-export interface DotCMSPageContainer {
+export interface DotCMSGraphQLPageContainer {
     path: string;
     identifier: string;
     maxContentlets?: number;
@@ -1163,12 +1157,23 @@ export interface DotCMSGraphQLError {
 }
 
 /**
- * Represents the complete response from a page query
- *
+ * Represents the complete response from a page query from the GraphQL API
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export interface DotCMSGraphQLPageResponse {
+    page: DotCMSGraphQLPage;
+    content?: Record<string, unknown> | unknown;
+    errors?: DotCMSGraphQLError;
+    graphql: {
+        query: string;
+        variables: Record<string, unknown>;
+    };
+}
+
+/**
+ * Represents the complete response from a page query
+ */
 export interface DotCMSPageResponse {
-    page: DotCMSBasicPage;
+    pageAsset: DotCMSPageAsset;
     content?: Record<string, unknown> | unknown;
     errors?: DotCMSGraphQLError;
     graphql: {
@@ -1178,13 +1183,13 @@ export interface DotCMSPageResponse {
 }
 
 // Pick only the page and content properties to be able to extend these properties, they are optional
-export type DotCMSExtendedPageResponse = Partial<Pick<DotCMSPageResponse, 'page' | 'content'>>;
+export type DotCMSExtendedPageResponse = Partial<Pick<DotCMSPageResponse, 'pageAsset' | 'content'>>;
 
 // Compose the page with the extended properties
-export type DotCMSComposedPage<T extends DotCMSExtendedPageResponse> =
-    T['page'] extends DotCMSPageResponse['page']
-        ? DotCMSPageResponse['page'] & T['page']
-        : DotCMSPageResponse['page'];
+export type DotCMSComposedPageAsset<T extends DotCMSExtendedPageResponse> =
+    T['pageAsset'] extends DotCMSPageResponse['pageAsset']
+        ? DotCMSPageResponse['pageAsset'] & T['pageAsset']
+        : DotCMSPageResponse['pageAsset'];
 
 // Compose the content with the extended properties
 export type DotCMSComposedContent<T extends Pick<DotCMSPageResponse, 'content'>> =
@@ -1193,9 +1198,9 @@ export type DotCMSComposedContent<T extends Pick<DotCMSPageResponse, 'content'>>
 // Compose the page response with the extended properties
 export type DotCMSComposedPageResponse<T extends DotCMSExtendedPageResponse> = Omit<
     DotCMSPageResponse,
-    'page' | 'content'
+    'pageAsset' | 'content'
 > & {
-    page: DotCMSComposedPage<T>;
+    pageAsset: DotCMSComposedPageAsset<T>;
     content?: DotCMSComposedContent<T>;
 };
 

@@ -2,9 +2,9 @@
 
 import {
     DotCMSBasicContentlet,
-    DotCMSPageContainerContentlets,
-    DotCMSPageContainer,
-    DotCMSPageResponse
+    DotCMSGraphQLPageContainer,
+    DotCMSGraphQLPageResponse,
+    DotCMSPageContainerContentlets
 } from '@dotcms/types';
 
 /**
@@ -18,7 +18,7 @@ import {
  * const pageEntity = graphqlToPageEntity(graphQLPageResponse);
  * ```
  */
-export const graphqlToPageEntity = (graphQLPageResponse: DotCMSPageResponse) => {
+export const graphqlToPageEntity = (graphQLPageResponse: DotCMSGraphQLPageResponse) => {
     const { page } = graphQLPageResponse;
 
     // If there is no page, return null
@@ -46,7 +46,7 @@ export const graphqlToPageEntity = (graphQLPageResponse: DotCMSPageResponse) => 
         },
         containers: parseContainers(containers as []),
         urlContentMap: urlContentMapData
-    } as any;
+    } as any; // NOTE: This is a rabbit hole and we have to fix this, not in this PR tho.
 };
 
 /**
@@ -55,24 +55,28 @@ export const graphqlToPageEntity = (graphQLPageResponse: DotCMSPageResponse) => 
  * @param {Array<Record<string, unknown>>} [containers=[]] - The containers array from the GraphQL response.
  * @returns {Record<string, unknown>} The parsed containers.
  */
-const parseContainers = (containers: DotCMSPageContainer[] = []) => {
-    return containers.reduce((acc: Record<string, unknown>, container: DotCMSPageContainer) => {
-        const { path, identifier, containerStructures, containerContentlets, ...rest } = container;
+const parseContainers = (containers: DotCMSGraphQLPageContainer[] = []) => {
+    return containers.reduce(
+        (acc: Record<string, unknown>, container: DotCMSGraphQLPageContainer) => {
+            const { path, identifier, containerStructures, containerContentlets, ...rest } =
+                container;
 
-        const key = (path || identifier) as string;
+            const key = (path || identifier) as string;
 
-        acc[key] = {
-            containerStructures,
-            container: {
-                path,
-                identifier,
-                ...rest
-            },
-            contentlets: parseContentletsToUuidMap(containerContentlets as [])
-        };
+            acc[key] = {
+                containerStructures,
+                container: {
+                    path,
+                    identifier,
+                    ...rest
+                },
+                contentlets: parseContentletsToUuidMap(containerContentlets as [])
+            };
 
-        return acc;
-    }, {});
+            return acc;
+        },
+        {}
+    );
 };
 
 /**
