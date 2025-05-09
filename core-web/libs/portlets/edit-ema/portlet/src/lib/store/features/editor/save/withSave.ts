@@ -53,7 +53,7 @@ export function withSave() {
                                                   tap((response) =>
                                                       store.setGraphqlResponse(response)
                                                   ),
-                                                  map((response) => response.page)
+                                                  map((response) => response.pageAsset)
                                               );
 
                                     return pageRequest.pipe(

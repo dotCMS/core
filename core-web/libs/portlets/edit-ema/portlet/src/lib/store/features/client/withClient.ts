@@ -27,7 +27,7 @@ export interface ClientConfigState {
         variables: Record<string, string>;
     };
     graphqlResponse: {
-        page: DotPageApiResponse;
+        pageAsset: DotPageApiResponse;
         content?: Record<string, unknown>;
     };
 }
@@ -85,7 +85,7 @@ export function withClient() {
                     // Old customers using graphQL expect only the page.
                     // We can remove this once we are in stable and tell the devs this won't work in new dotCMS versions.
                     if (store.legacyGraphqlResponse()) {
-                        return store.graphqlResponse()?.page;
+                        return store.graphqlResponse()?.pageAsset;
                     }
 
                     return {
