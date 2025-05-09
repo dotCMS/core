@@ -126,7 +126,6 @@ describe('DotFormComponent', () => {
         workflowActionsFireService = spectator.inject(DotWorkflowActionsFireService);
         dotWorkflowService = spectator.inject(DotWorkflowService);
         dotContentletService = spectator.inject(DotContentletService);
-        router = spectator.inject(Router);
     });
 
     afterEach(() => {
