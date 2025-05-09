@@ -28,7 +28,8 @@ export enum AvailableLanguageMonaco {
     Javascript = 'javascript',
     Markdown = 'markdown',
     Html = 'html',
-    Velocity = 'velocity'
+    Velocity = 'velocity',
+    Json = 'json'
 }
 
 /**
