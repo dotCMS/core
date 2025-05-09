@@ -204,3 +204,4 @@ This maintenance release includes the following code fixes:
 197. https://github.com/dotCMS/core/issues/31509 : Content Import Functionality Disabled When "Content Search" Tool is Hidden for Specific Roles #31509
 198. https://github.com/dotCMS/core/issues/31216 : Push Publishing not escaping comma in title. #31216
 199. https://github.com/dotCMS/core/issues/31649 : Filter on checkbox field not working as expected (Content search portal and relationship filter) #31649
+200. https://github.com/dotCMS/core/pull/32057 : fix(deployment): Bumping Docker Buildx version to fix GHA error. #32057
