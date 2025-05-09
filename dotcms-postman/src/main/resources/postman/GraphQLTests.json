@@ -1807,6 +1807,55 @@
 							"response": []
 						},
 						{
+							"name": "Create Vanity URL",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Test Forward Vanity URL was created successfully\", function () {",
+											"    var jsonData = pm.response.json().entity;",
+											"    pm.expect(jsonData.summary.failCount).to.eql(0, \"An error occurred when creating the test Vanity URL\");",
+											"    pm.expect(jsonData.summary.successCount).to.eql(1, \"One piece of content should have been created\");",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"contentlets\": [\n        {\n            \"contentType\": \"Vanityurl\",\n            \"languageId\": 1,\n            \"title\": \"Test Forward Vanity URL\",\n            \"site\": \"demo.dotcms.com\",\n            \"uri\": \"/store/products/eagles-nest-outfitters-doublenest-hammock-patriot\",\n            \"action\": 200,\n            \"forwardTo\": \"/destinations/costa-rica\",\n            \"order\": 0\n        }\n    ]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"workflow",
+										"actions",
+										"default",
+										"fire",
+										"PUBLISH"
+									]
+								}
+							},
+							"response": []
+						},
+						{
 							"name": "GivenRequestByURI_PageContainsUrlMappedContentField",
 							"event": [
 								{
@@ -1823,6 +1872,7 @@
 											"    var jsonData = pm.response.json();",
 											"    var page = jsonData.data.page;",
 											"    var urlmappedContent = page.urlContentMap;",
+											"    var vanityUrlContent = page.vanityUrl;",
 											"    ",
 											"    // Validate properties 'page'",
 											"    pm.expect(page.url, 'FAILED:[page.url]').equal(\"/store/product-detail\");",
@@ -1835,6 +1885,13 @@
 											"    pm.expect(urlmappedContent.contentType, 'FAILED:[urlmappedContent.contentType]').equal(\"Product\");",
 											"    pm.expect(urlmappedContent.productNumber, 'FAILED:[urlmappedContent.productNumber]').equal(\"9315054521506-1280000\");",
 											"    pm.expect(urlmappedContent.image.idPath, 'FAILED:[urlmappedContent.image.idPath]').equal(\"/dA/46e52dc2e7/image/hammock-1.jpg?language_id=1\");",
+											"",
+											"",
+											"    // Validate 'vanityUrl' properties",
+											"    pm.expect(vanityUrlContent.action, 'FAILED:[vanityUrlContent.action]').equal(200);",
+											"    pm.expect(vanityUrlContent.languageId, 'FAILED:[vanityUrlContent.languageId]').equal(1);",
+											"    pm.expect(vanityUrlContent.forwardTo, 'FAILED:[vanityUrlContent.forwardTo]').equal(\"/destinations/costa-rica\");",
+											"    pm.expect(vanityUrlContent.uri, 'FAILED:[vanityUrlContent.uri]').equal(\"/store/products/eagles-nest-outfitters-doublenest-hammock-patriot\");",
 											"});"
 										],
 										"type": "text/javascript",
@@ -1875,7 +1932,7 @@
 								"body": {
 									"mode": "graphql",
 									"graphql": {
-										"query": "{\n  page(url: \"/store/products/eagles-nest-outfitters-doublenest-hammock-patriot\") {\n    title\n    url\n     pageURI\n    urlContentMap {\n      ... on Product {\n        title\n        tags\n        urlTitle\n        identifier\n        urlMap\n        contentType\n        productNumber\n        image {\n          idPath\n        }\n      }\n    }\n  }\n}\n",
+										"query": "{\n  page(url: \"/store/products/eagles-nest-outfitters-doublenest-hammock-patriot\") {\n    title\n    url\n    pageURI\n    vanityUrl {\n      action\n      languageId\n      siteId\n      forwardTo\n      id\n      uri\n      order\n    }\n    urlContentMap {\n      ... on Product {\n        title\n        tags\n        urlTitle\n        identifier\n        urlMap\n        contentType\n        productNumber\n        image {\n          idPath\n        }\n      }\n    }\n  }\n}\n",
 										"variables": ""
 									}
 								},
