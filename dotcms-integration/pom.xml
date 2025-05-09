@@ -76,6 +76,8 @@
         <maven.failsafe.debugArgs/>
         <coreit.test.skip>true</coreit.test.skip>
         <docker.filter>database,opensearch</docker.filter>
+          <!-- Force to use node v18.20.3 -->
+        <node.js.version>v18.20.3</node.js.version>
     </properties>
     <dependencies>
         <dependency>

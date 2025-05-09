@@ -19,6 +19,8 @@ declare module '@tiptap/core' {
         bubbleLinkForm: {
             openLinkForm: ({ openOnClick }) => ReturnType;
             closeLinkForm: () => ReturnType;
+            setHighlight: () => ReturnType;
+            unsetHighlight: () => ReturnType;
         };
     }
 }
@@ -47,7 +49,6 @@ export const BubbleLinkFormExtension = (viewContainerRef: ViewContainerRef, lang
                             ?.setHighlight?.()
                             .command(({ tr }) => {
                                 tr.setMeta(LINK_FORM_PLUGIN_KEY, { isOpen: true, openOnClick });
-
                                 return true;
                             })
                             .freezeScroll(true)
@@ -64,7 +65,6 @@ export const BubbleLinkFormExtension = (viewContainerRef: ViewContainerRef, lang
                                     isOpen: false,
                                     openOnClick: false
                                 });
-
                                 return true;
                             })
                             .freezeScroll(false)
