@@ -39,7 +39,7 @@ jobs:
         name: Docker Setup Buildx
         uses: docker/setup-buildx-action@v3.10.0
         with:
-          version: v0.20.0 # version of buildx https://github.com/docker/buildx/releases
+          version: v0.23.0 # version of buildx https://github.com/docker/buildx/releases
           platforms: ${{ env.PLATFORMS }}
         if: github.event.inputs.multi_arch == 'true'
       - name: Docker Hub login
