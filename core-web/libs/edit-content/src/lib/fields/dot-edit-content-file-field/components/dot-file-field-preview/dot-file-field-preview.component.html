@@ -75,19 +75,19 @@
     <div class="preview-metadata__action--responsive">
         <p-button
             (click)="toggleShowDialog()"
-            styleClass="p-button-rounded"
+            styleClass="p-button-rounded p-button-sm p-button-tertiary"
             data-testId="info-btn-responsive"
             icon="pi pi-info" />
         @if (fileInfo.downloadLink) {
             <p-button
-                styleClass="p-button-rounded"
+                styleClass="p-button-rounded p-button-sm p-button-tertiary"
                 data-testId="download-btn-responsive"
                 icon="pi pi-download"
                 (click)="downloadAsset(fileInfo.downloadLink)" />
         }
         <p-button
             (click)="removeFile.emit()"
-            styleClass="p-button-rounded "
+            styleClass="p-button-rounded p-button-sm p-button-tertiary"
             data-testId="remove-button-responsive"
             icon="pi pi-trash" />
     </div>
