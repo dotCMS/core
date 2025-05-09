@@ -18,7 +18,7 @@ export class DotCMSEditablePageService {
      * @private
      * @type {Subject<DotCMSPageResponse | null>}
      */
-    #pageAssetSubject = new Subject<DotCMSPageResponse | null>();
+    #responseSubject = new Subject<DotCMSPageResponse | null>();
 
     /**
      * Observable stream of the page asset changes.
@@ -27,7 +27,7 @@ export class DotCMSEditablePageService {
      * @private
      * @type {Observable<DotCMSPageResponse | null>}
      */
-    #pageAsset$ = this.#pageAssetSubject.asObservable();
+    #response$ = this.#responseSubject.asObservable();
 
     /**
      * Listens for changes to an editable page and returns an Observable that emits the updated page data.
@@ -56,22 +56,22 @@ export class DotCMSEditablePageService {
      * subscription.unsubscribe();
      * ```
      *
-     * @param pageAsset Optional initial page data
+     * @param response Optional initial page data
      * @returns Observable that emits the updated page data or null
      */
-    listen(pageAsset?: DotCMSPageResponse): Observable<DotCMSPageResponse | null> {
+    listen(response?: DotCMSPageResponse): Observable<DotCMSPageResponse | null> {
         if (!getUVEState()) {
-            return of(pageAsset || null);
+            return of(response || null);
         }
 
-        const pageURI = pageAsset?.pageAsset?.page?.pageURI ?? '/';
+        const pageURI = response?.pageAsset?.page?.pageURI ?? '/';
 
-        initUVE(pageAsset);
+        initUVE(response);
         updateNavigation(pageURI);
 
         const unsubscribeUVEChanges = this.#listenUVEChanges();
 
-        return this.#pageAsset$.pipe(
+        return this.#response$.pipe(
             finalize(() => {
                 unsubscribeUVEChanges();
             })
@@ -87,7 +87,7 @@ export class DotCMSEditablePageService {
      */
     #listenUVEChanges() {
         const { unsubscribe } = createUVESubscription(UVEEventType.CONTENT_CHANGES, (payload) => {
-            this.#pageAssetSubject.next(payload);
+            this.#responseSubject.next(payload);
         });
 
         return unsubscribe;
