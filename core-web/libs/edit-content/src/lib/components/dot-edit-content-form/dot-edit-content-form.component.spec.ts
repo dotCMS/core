@@ -46,7 +46,6 @@ import {
 
 import { DotEditContentFormComponent } from './dot-edit-content-form.component';
 
-import { CONTENT_SEARCH_ROUTE } from '../../models/dot-edit-content-field.constant';
 import { DotEditContentService } from '../../services/dot-edit-content.service';
 import { DotEditContentStore } from '../../store/edit-content.store';
 import {
@@ -69,7 +68,6 @@ describe('DotFormComponent', () => {
     let dotEditContentService: SpyObject<DotEditContentService>;
     let dotWorkflowService: SpyObject<DotWorkflowService>;
     let dotContentletService: SpyObject<DotContentletService>;
-    let router: SpyObject<Router>;
 
     const createComponent = createComponentFactory({
         component: DotEditContentFormComponent,
@@ -274,17 +272,9 @@ describe('DotFormComponent', () => {
                 expect(tabPanels[1]._header).toBe('New Tab');
             });
 
-            it('should have append and prepend areas', () => {
-                const prependArea = spectator.query(byTestId('tabview-prepend-content'));
+            it('should have append area', () => {
                 const appendArea = spectator.query(byTestId('tabview-append-content'));
-                expect(prependArea).toBeTruthy();
                 expect(appendArea).toBeTruthy();
-            });
-
-            it('should render back button in prepend area', () => {
-                const backButton = spectator.query(byTestId('back-button'));
-                expect(backButton).toBeTruthy();
-                expect(backButton.getAttribute('icon')).toBe('pi pi-chevron-left');
             });
 
             it('should render workflow actions and sidebar toggle in append area', () => {
@@ -304,26 +294,6 @@ describe('DotFormComponent', () => {
                 spectator.click(sidebarButton);
 
                 expect(toggleSidebarSpy).toHaveBeenCalled();
-            });
-
-            it('should call toggleSidebar when sidebar toggle button is clicked', () => {
-                const toggleSidebarSpy = jest.spyOn(store, 'toggleSidebar');
-
-                const sidebarToggleButton = spectator.query(byTestId('sidebar-toggle-button'));
-                expect(sidebarToggleButton).toBeTruthy();
-
-                spectator.click(sidebarToggleButton);
-
-                expect(toggleSidebarSpy).toHaveBeenCalled();
-
-                const backButton = spectator.query(byTestId('back-button'));
-                expect(backButton).toBeTruthy();
-
-                spectator.click(backButton);
-
-                expect(router.navigate).toHaveBeenCalledWith([CONTENT_SEARCH_ROUTE], {
-                    queryParams: { filter: MOCK_CONTENTTYPE_2_TABS.variable }
-                });
             });
 
             describe('TabView Styling', () => {
