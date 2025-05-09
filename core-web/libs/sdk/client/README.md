@@ -127,11 +127,17 @@ const pageData = await client.page.get('/your-page-path', {
 });
 ```
 
+
+### Warning
+
+If you are updating from a version that is lower than `0.0.1-beta.29`, be aware that the response from the `client.page.get` method changed the access to the page value from `page` to `pageAsset`.
+This change was made to avoid redundancy on access inside of `page` object Ex. `page.page.title` -> `pageAsset.page.title`.
+
 #### Example with all options
 
 ```javascript
 // Fetching a page with all available options
-const { page, content } = await client.page.get('/about-us', {
+const { pageAsset, content } = await client.page.get('/about-us', {
     languageId: '1',                 // Language ID (optional)
     siteId: 'demo.dotcms.com',       // Site ID (optional, defaults to the one provided during initialization)
     mode: 'PREVIEW_MODE',            // ADMIN_MODE, PREVIEW_MODE, or LIVE_MODE (optional)
@@ -172,7 +178,7 @@ const { page, content } = await client.page.get('/about-us', {
 });
 
 // Access page data
-console.log(page.containers);
+console.log(pageAsset.containers);
 
 // Access content data
 console.log(content.blogPosts);
