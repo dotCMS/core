@@ -34,7 +34,11 @@ public class VanityURLFetcher implements DataFetcher<CachedVanityUrl> {
         final Language language = APILocator.getLanguageAPI().getLanguage(page.getLanguageId());
 
         // Resolve the vanity URL based on the page's URI, host, and language.
-        final String uri = page.getStringProperty("url");
+        // Try "pageURI" first, fallback to "url" if not set
+        String uri = page.getStringProperty("pageURI");
+        if (!UtilMethods.isSet(uri)) {
+            uri = page.getStringProperty("url");
+        }
         if (UtilMethods.isSet(uri)) {
             final Optional<CachedVanityUrl> vanityUrlOpt = APILocator.getVanityUrlAPI().
                     resolveVanityUrl(uri, host, language);
