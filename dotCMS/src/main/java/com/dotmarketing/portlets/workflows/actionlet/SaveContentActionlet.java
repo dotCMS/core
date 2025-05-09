@@ -1,7 +1,9 @@
 package com.dotmarketing.portlets.workflows.actionlet;
 
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.exception.ExceptionUtil;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -84,6 +86,13 @@ public class SaveContentActionlet extends WorkFlowActionlet {
 			final Contentlet contentletNew = (null != contentletDependencies)?
 					this.contentletAPI.checkin(checkoutContentlet, contentletDependencies):
 					this.contentletAPI.checkin(checkoutContentlet, processor.getUser(), respectFrontendPermission);
+
+			final Identifier identifier = APILocator.getIdentifierAPI().find( contentletNew );
+			if ( identifier.getAssetType().equals( "contentlet" ) ) {
+				//Get the structure for this contentlet
+				final ContentType contentType = contentlet.getContentType();
+				APILocator.getVersionableAPI().notifyIfFuturePublishDate(contentType, identifier, contentletNew.getModUser());
+			}
 
 			this.setIndexPolicy(contentlet, contentletNew);
 			this.setSpecialVariables(contentlet, contentletNew);
