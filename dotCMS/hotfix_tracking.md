@@ -36,3 +36,4 @@ This maintenance release includes the following code fixes:
 30. https://github.com/dotCMS/core/pull/31972
 31. https://github.com/dotCMS/core/issues/31804 : UVE: Content Panel Section Can No Longer Be Hidden #31804
 32. https://github.com/dotCMS/core/issues/31709 : Edit Button in Block Editor Only Visible for Blog Content Type #31709
+33. https://github.com/dotCMS/core/issues/31601 : Relate Button in a Relationship Field is not working #31601

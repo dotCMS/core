@@ -1323,7 +1323,6 @@ dojo.declare(
                     );
                     if (selectButton.onclick == undefined) {
                         selectButton.onclick = dojo.hitch(this, function (event) {
-                            event.stopPropagation();
                             selected(this, asset);
                         });
                     }
