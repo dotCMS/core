@@ -39,3 +39,4 @@ This maintenance release includes the following code fixes:
 33. https://github.com/dotCMS/core/issues/31601 : Relate Button in a Relationship Field is not working #31601
 34. https://github.com/dotCMS/core/pull/32057
 35. https://github.com/dotCMS/core/issues/31933 : The "Select All Content" option is intermittently not appearing for some users across different devices and browsers #31933
+36. https://github.com/dotCMS/core/issues/31994 : SAML: skip RequestedAuthenticationContext #31994
