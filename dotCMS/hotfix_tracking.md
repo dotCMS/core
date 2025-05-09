@@ -206,3 +206,4 @@ This maintenance release includes the following code fixes:
 199. https://github.com/dotCMS/core/issues/31649 : Filter on checkbox field not working as expected (Content search portal and relationship filter) #31649
 200. https://github.com/dotCMS/core/pull/32057 : fix(deployment): Bumping Docker Buildx version to fix GHA error. #32057
 201. https://github.com/dotCMS/core/issues/31933 : The "Select All Content" option is intermittently not appearing for some users across different devices and browsers #31933
+202. https://github.com/dotCMS/core/issues/29736 : Remove "Permissions" and "Relationships Legacy" fields from the field selections sidebar in the Content Type editor #29736
