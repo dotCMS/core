@@ -5,13 +5,16 @@ import {
     computed,
     HostBinding,
     inject,
-    input
+    input,
+    signal
 } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { ControlContainer, ReactiveFormsModule } from '@angular/forms';
 
 import { DividerModule } from 'primeng/divider';
 
 import { BlockEditorModule } from '@dotcms/block-editor';
+import { DotcmsConfigService } from '@dotcms/dotcms-js';
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotEditContentBinaryFieldComponent } from '@dotcms/edit-content/fields/dot-edit-content-binary-field/dot-edit-content-binary-field.component';
 import { DotEditContentCalendarFieldComponent } from '@dotcms/edit-content/fields/dot-edit-content-calendar-field/dot-edit-content-calendar-field.component';
@@ -71,9 +74,13 @@ import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
         DotEditContentRelationshipFieldComponent,
         DividerModule,
         NgTemplateOutlet
-    ]
+    ],
+    providers: [DotcmsConfigService]
 })
 export class DotEditContentFieldComponent {
+    readonly #dotcmsConfigService = inject(DotcmsConfigService);
+    #globalSystemConfig = toSignal(this.#dotcmsConfigService.getConfig());
+
     @HostBinding('class') class = 'field';
 
     /**
@@ -91,7 +98,19 @@ export class DotEditContentFieldComponent {
      */
     $contentType = input<string>(null, { alias: 'contentType' });
 
+    /**
+     * The system timezone.
+     */
+    $systemTimezone = computed(() => this.#globalSystemConfig()?.systemTimezone);
+
+    /**
+     * The field types.
+     */
     readonly fieldTypes = FIELD_TYPES;
+
+    /**
+     * The calendar types.
+     */
     readonly calendarTypes = CALENDAR_FIELD_TYPES as string[];
 
     /**

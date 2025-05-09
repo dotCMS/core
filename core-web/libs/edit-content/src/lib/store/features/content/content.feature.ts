@@ -18,6 +18,7 @@ import {
     DotWorkflowsActionsService,
     DotWorkflowService
 } from '@dotcms/data-access';
+import { DotcmsConfigService } from '@dotcms/dotcms-js';
 import { ComponentStatus, DotContentletDepth, FeaturedFlags } from '@dotcms/dotcms-models';
 
 import { DotEditContentService } from '../../../services/dot-edit-content.service';

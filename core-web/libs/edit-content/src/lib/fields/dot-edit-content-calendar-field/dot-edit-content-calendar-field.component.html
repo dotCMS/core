@@ -1,9 +1,23 @@
+@let field = $field();
+@let fieldTypeConfig = $fieldTypeConfig();
+@let systemTimezone = $systemTimezone();
+@let defaultDate = $defaultDate();
+
 <p-calendar
     [formControlName]="field.variable"
-    [timeOnly]="calendarOptions[field.fieldType].timeOnly"
-    [showTime]="calendarOptions[field.fieldType].showTime"
+    [timeOnly]="fieldTypeConfig.timeOnly"
+    [showTime]="fieldTypeConfig.showTime"
     [id]="'calendar-id-' + field.variable"
     [inputId]="field.variable"
     [attr.data-testId]="field.variable"
     [showIcon]="true"
-    [icon]="calendarOptions[field.fieldType].icon" />
+    [icon]="fieldTypeConfig.icon"
+    [showButtonBar]="true"
+    [dataType]="'string'"
+    [defaultDate]="defaultDate" />
+
+@if (systemTimezone) {
+    <div class="timezone-info">
+        <small>Server timezone: {{ systemTimezone.id }}</small>
+    </div>
+}
