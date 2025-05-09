@@ -2373,12 +2373,14 @@
 					"response": []
 				},
 				{
-					"name": "Waiting Job to complete",
+					"name": "Waiting for Job to complete",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
 								"exec": [
+									"pm.collectionVariables.set(\"retryTimeout\", 10000);",
+									"",
 									"const maxTimeout = 30000; // 10 seconds",
 									"const maxRetries = 10;    // Maximum number of retry attempts",
 									"const startTime = parseInt(pm.collectionVariables.get(\"startTime\"));",
@@ -2400,9 +2402,9 @@
 									"    pm.collectionVariables.set(\"retryCount\", retryCount + 1);",
 									"    ",
 									"    setTimeout(function(){",
-									"        console.log(\"Sleeping for 3 seconds before next request.\");",
-									"    }, 3000);",
-									"    postman.setNextRequest(\"Waiting Job to complete\");",
+									"        console.log(\"Sleeping for \" + pm.collectionVariables.get(\"retryTimeout\") + \" milliseconds before next request.\");",
+									"    }, parseInt(pm.collectionVariables.get(\"retryTimeout\")));",
+									"    pm.execution.setNextRequest(\"Waiting Job to complete\");",
 									"    console.log(`Job still processing, retrying... (${maxTimeout - elapsedTime}ms remaining)`);",
 									"} else {",
 									"    // If we exceed the max timeout or max retries, fail the test",
@@ -2593,7 +2595,7 @@
 					"response": []
 				},
 				{
-					"name": "Waiting Job to be canceled",
+					"name": "Waiting for Job to be canceled",
 					"event": [
 						{
 							"listen": "test",
@@ -2620,9 +2622,9 @@
 									"    pm.collectionVariables.set(\"retryCount\", retryCount + 1);",
 									"    ",
 									"    setTimeout(function(){",
-									"        console.log(\"Sleeping for 3 seconds before next request.\");",
-									"    }, 3000);",
-									"    postman.setNextRequest(\"Waiting Job to be canceled\");",
+									"        console.log(\"Sleeping for \" + pm.collectionVariables.get(\"retryTimeout\") + \" milliseconds before next request.\");",
+									"    }, parseInt(pm.collectionVariables.get(\"retryTimeout\")));",
+									"    pm.execution.setNextRequest(\"Waiting Job to be canceled\");",
 									"    console.log(`Job still processing, retrying... (${maxTimeout - elapsedTime}ms remaining)`);",
 									"} else {",
 									"    // If we exceed the max timeout or max retries, fail the test",
@@ -3495,8 +3497,8 @@
 									"    ",
 									"    // Set up the next request",
 									"    setTimeout(function(){",
-									"        console.log(\"Sleeping for 3 seconds before next request.\");",
-									"    }, 3000);",
+									"        console.log(\"Sleeping for \" + pm.collectionVariables.get(\"retryTimeout\") + \" milliseconds before next request.\");",
+									"    }, parseInt(pm.collectionVariables.get(\"retryTimeout\")));",
 									"    ",
 									"    // Use the correct method for setting the next request",
 									"    pm.execution.setNextRequest(\"Waiting Job to complete\");",
@@ -3744,8 +3746,8 @@
 									"    ",
 									"    // Set up the next request",
 									"    setTimeout(function(){",
-									"        console.log(\"Sleeping for 3 seconds before next request.\");",
-									"    }, 3000);",
+									"        console.log(\"Sleeping for \" + pm.collectionVariables.get(\"retryTimeout\") + \" milliseconds before next request.\");",
+									"    }, parseInt(pm.collectionVariables.get(\"retryTimeout\")));",
 									"    ",
 									"    // Use the correct method for setting the next request",
 									"    pm.execution.setNextRequest(\"Waiting Job to complete\");",
@@ -4023,8 +4025,8 @@
 									"    ",
 									"    // Set up the next request",
 									"    setTimeout(function(){",
-									"        console.log(\"Sleeping for 3 seconds before next request.\");",
-									"    }, 3000);",
+									"        console.log(\"Sleeping for \" + pm.collectionVariables.get(\"retryTimeout\") + \" milliseconds before next request.\");",
+									"    }, pm.collectionVariables.get(\"retryTimeout\"));",
 									"    ",
 									"    // Use the correct method for setting the next request",
 									"    pm.execution.setNextRequest(\"Waiting Job to complete\");",
