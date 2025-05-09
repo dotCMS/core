@@ -1,12 +1,11 @@
-import { faker } from '@faker-js/faker';
-
 import {
     DotCMSContentTypeField,
     DotCMSContentTypeLayoutRow,
-    DotCMSContentTypeLayoutColumn
+    DotCMSContentTypeLayoutColumn,
+    DotCMSClazzes
 } from '@dotcms/dotcms-models';
 
-export const EMPTY_FIELD: DotCMSContentTypeField = {
+export const EMPTY_FIELD = {
     contentTypeId: null,
     dataType: null,
     fieldType: null,
@@ -30,271 +29,84 @@ export const EMPTY_FIELD: DotCMSContentTypeField = {
     hint: null,
     regexCheck: null,
     values: null
-};
+} as unknown as DotCMSContentTypeField;
 
 const COLUMN_FIELD = {
     ...EMPTY_FIELD,
-    clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField'
-};
+    clazz: DotCMSClazzes.COLUMN
+} as unknown as DotCMSContentTypeField;
 
 const ROW_FIELD = {
     ...EMPTY_FIELD,
-    clazz: 'com.dotcms.contenttype.model.field.ImmutableRowField'
-};
+    clazz: DotCMSClazzes.ROW
+} as unknown as DotCMSContentTypeField;
 
 const TAB_FIELD = {
     ...EMPTY_FIELD,
-    clazz: 'com.dotcms.contenttype.model.field.ImmutableTabDividerField'
-};
+    clazz: DotCMSClazzes.TAB_DIVIDER
+} as unknown as DotCMSContentTypeField;
 
 const COLUMN_BREAK_FIELD = {
-    clazz: 'contenttype.column.break',
+    clazz: DotCMSClazzes.COLUMN_BREAK,
     name: 'Column'
-};
-
-/**
- * Create a fake category field with the given overrides
- *
- * @export
- * @param {Partial<DotCMSContentTypeField>} [overrides={}]
- * @return {*}  {DotCMSContentTypeField}
- */
-export function createFakeCategoryField(
-    overrides: Partial<DotCMSContentTypeField> = {}
-): DotCMSContentTypeField {
-    return {
-        id: faker.string.uuid(),
-        clazz: 'com.dotcms.contenttype.model.field.ImmutableCategoryField',
-        contentTypeId: faker.string.uuid(),
-        dataType: 'TEXT',
-        fieldType: 'Category',
-        fieldTypeLabel: 'Category',
-        fieldVariables: [],
-        fixed: faker.datatype.boolean(),
-        hint: faker.lorem.sentence(),
-        iDate: faker.date.recent().getTime(),
-        indexed: faker.datatype.boolean(),
-        listed: faker.datatype.boolean(),
-        modDate: faker.date.recent().getTime(),
-        name: faker.lorem.word(),
-        readOnly: faker.datatype.boolean(),
-        required: faker.datatype.boolean(),
-        searchable: faker.datatype.boolean(),
-        sortOrder: faker.number.int(),
-        unique: faker.datatype.boolean(),
-        values: faker.lorem.sentence(),
-        variable: faker.lorem.word(),
-        ...overrides
-    };
-}
-
-/**
- * Create a fake host folder field with the given overrides
- *
- * @export
- * @param {Partial<DotCMSContentTypeField>} [overrides={}]
- * @return {*}  {DotCMSContentTypeField}
- */
-export function createFakeHostFolderField(
-    overrides: Partial<DotCMSContentTypeField> = {}
-): DotCMSContentTypeField {
-    return {
-        id: faker.string.uuid(),
-        clazz: 'com.dotcms.contenttype.model.field.ImmutableHostFolderField',
-        contentTypeId: faker.string.uuid(),
-        dataType: 'SYSTEM',
-        fieldType: 'Host-Folder',
-        fieldTypeLabel: 'Site or Folder',
-        fieldVariables: [],
-        fixed: faker.datatype.boolean(),
-        hint: faker.lorem.sentence(),
-        forceIncludeInApi: faker.datatype.boolean(),
-        iDate: faker.date.recent().getTime(),
-        indexed: faker.datatype.boolean(),
-        listed: faker.datatype.boolean(),
-        modDate: faker.date.recent().getTime(),
-        name: faker.lorem.word(),
-        readOnly: faker.datatype.boolean(),
-        required: faker.datatype.boolean(),
-        searchable: faker.datatype.boolean(),
-        sortOrder: faker.number.int(),
-        unique: faker.datatype.boolean(),
-        variable: faker.lorem.word(),
-        ...overrides
-    };
-}
-
-/**
- * Create a fake text field with the given overrides
- *
- * @export
- * @param {Partial<DotCMSContentTypeField>} [overrides={}]
- * @return {*}  {DotCMSContentTypeField}
- */
-export function createFakeTextField(
-    overrides: Partial<DotCMSContentTypeField> = {}
-): DotCMSContentTypeField {
-    return {
-        clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
-        contentTypeId: faker.string.uuid(),
-        dataType: 'TEXT',
-        fieldType: 'Text',
-        fieldTypeLabel: 'Text',
-        fieldVariables: [],
-        fixed: faker.datatype.boolean(),
-        hint: faker.lorem.sentence(),
-        iDate: faker.date.recent().getTime(),
-        id: faker.string.uuid(),
-        indexed: faker.datatype.boolean(),
-        listed: faker.datatype.boolean(),
-        modDate: faker.date.recent().getTime(),
-        name: faker.lorem.word(),
-        readOnly: faker.datatype.boolean(),
-        required: faker.datatype.boolean(),
-        searchable: faker.datatype.boolean(),
-        sortOrder: faker.number.int(),
-        unique: faker.datatype.boolean(),
-        variable: faker.lorem.word(),
-        ...overrides
-    };
-}
-
-/**
- * Create a fake line divider field with the given overrides
- *
- * @export
- * @param {Partial<DotCMSContentTypeField>} [overrides={}]
- * @return {*}  {DotCMSContentTypeField}
- */
-export function createFakeLineDividerField(
-    overrides: Partial<DotCMSContentTypeField> = {}
-): DotCMSContentTypeField {
-    return {
-        clazz: 'com.dotcms.contenttype.model.field.ImmutableLineDividerField',
-        contentTypeId: '799f176a-d32e-4844-a07c-1b5fcd107578',
-        dataType: 'SYSTEM',
-        fieldType: 'Line_divider',
-        fieldTypeLabel: 'Line Divider',
-        fieldVariables: [],
-        fixed: false,
-        forceIncludeInApi: faker.datatype.boolean(),
-        iDate: faker.date.recent().getTime(),
-        id: faker.string.uuid(),
-        indexed: faker.datatype.boolean(),
-        listed: faker.datatype.boolean(),
-        modDate: faker.date.recent().getTime(),
-        name: faker.lorem.word(),
-        readOnly: faker.datatype.boolean(),
-        required: faker.datatype.boolean(),
-        searchable: faker.datatype.boolean(),
-        sortOrder: faker.number.int(),
-        unique: faker.datatype.boolean(),
-        variable: faker.lorem.word(),
-        ...overrides
-    };
-}
-
-/**
- * Create a fake relationship field with the given overrides
- *
- * @export
- * @param {Partial<DotCMSContentTypeField>} [overrides={}]
- * @return {*}  {DotCMSContentTypeField}
- */
-export function createFakeRelationshipField(
-    overrides: Partial<DotCMSContentTypeField> = {}
-): DotCMSContentTypeField {
-    return {
-        clazz: 'com.dotcms.contenttype.model.field.ImmutableRelationshipField',
-        contentTypeId: faker.string.uuid(),
-        dataType: 'SYSTEM',
-        fieldType: 'Relationship',
-        fieldTypeLabel: 'Relationships Field',
-        fieldVariables: [],
-        fixed: faker.datatype.boolean(),
-        forceIncludeInApi: faker.datatype.boolean(),
-        iDate: faker.date.recent().getTime(),
-        id: faker.string.uuid(),
-        indexed: faker.datatype.boolean(),
-        listed: faker.datatype.boolean(),
-        modDate: faker.date.recent().getTime(),
-        name: 'Relationship Field',
-        readOnly: false,
-        relationships: {
-            cardinality: 0,
-            isParentField: true,
-            velocityVar: 'AllTypes'
-        },
-        required: false,
-        searchable: false,
-        skipRelationshipCreation: false,
-        sortOrder: 6,
-        unique: false,
-        variable: 'relationshipField',
-        hint: 'Helper label to be displayed below the field',
-        ...overrides
-    };
-}
+} as unknown as DotCMSContentTypeField;
 
 export class FieldUtil {
     /**
-     * Verify if the Field already exist
-     * @param DotContentTypeField field
-     * @returns Boolean
-     * @memberof ContentTypeFieldsDropZoneComponent
+     * Determines if a field is new by checking if it has an ID
+     *
+     * @param {DotCMSContentTypeField} field - The field to check
+     * @returns {boolean} True if the field is new (has no ID)
      */
     static isNewField(field: DotCMSContentTypeField): boolean {
         return !field.id;
     }
 
     /**
-     * Return true if the field is a RowField or a ColumnField
+     * Determines if a field is a layout field (Row or Column)
      *
-     * @static
-     * @param {DotCMSContentTypeField} field
-     * @returns
-     * @memberof FieldUtil
+     * @param {DotCMSContentTypeField} field - The field to check
+     * @returns {boolean} True if the field is a layout field
      */
     static isLayoutField(field: DotCMSContentTypeField): boolean {
         return this.isRow(field) || this.isColumn(field);
     }
 
     /**
-     * Verify if the Field is a row
-     * @param DotContentTypeField field
-     * @returns Boolean
-     * @memberof ContentTypeFieldsDropZoneComponent
+     * Determines if a field is a Row field
+     *
+     * @param {DotCMSContentTypeField} field - The field to check
+     * @returns {boolean} True if the field is a Row field
      */
     static isRow(field: DotCMSContentTypeField): boolean {
         return field.clazz === ROW_FIELD.clazz;
     }
 
     /**
-     * Verify if the Field is a column
-     * @param DotContentTypeField field
-     * @returns Boolean
-     * @memberof ContentTypeFieldsDropZoneComponent
+     * Determines if a field is a Column field
+     *
+     * @param {DotCMSContentTypeField} field - The field to check
+     * @returns {boolean} True if the field is a Column field
      */
     static isColumn(field: DotCMSContentTypeField): boolean {
         return field.clazz === COLUMN_FIELD.clazz;
     }
 
     /**
-     * Verify if the Field is a tab
-     * @param {DotCMSContentTypeField} field
-     * @returns {Boolean}
-     * @memberof ContentTypeFieldsDropZoneComponent
+     * Determines if a field is a Tab Divider field
+     *
+     * @param {DotCMSContentTypeField} field - The field to check
+     * @returns {boolean} True if the field is a Tab Divider field
      */
     static isTabDivider(field: DotCMSContentTypeField): boolean {
         return field.clazz === TAB_FIELD.clazz;
     }
 
     /**
-     * Create a new row
-     * @static
-     * @param {number} nColumns
-     * @returns {DotCMSContentTypeLayoutRow}
-     * @memberof FieldUtil
+     * Creates a new row field with the specified number of columns
+     *
+     * @param {number} nColumns - Number of columns to create in the row
+     * @returns {DotCMSContentTypeLayoutRow} A complete row layout object
      */
     static createFieldRow(nColumns: number): DotCMSContentTypeLayoutRow {
         return {
@@ -304,12 +116,10 @@ export class FieldUtil {
     }
 
     /**
-     * Create a new column
+     * Creates a new column with optional fields
      *
-     * @static
-     * @param {DotCMSContentTypeField[]} [fields]
-     * @returns {DotCMSContentTypeLayoutColumn}
-     * @memberof FieldUtil
+     * @param {DotCMSContentTypeField[]} [fields] - Optional array of fields to add to the column
+     * @returns {DotCMSContentTypeLayoutColumn} A complete column layout object
      */
     static createFieldColumn(fields?: DotCMSContentTypeField[]): DotCMSContentTypeLayoutColumn {
         return {
@@ -319,11 +129,9 @@ export class FieldUtil {
     }
 
     /**
-     * Create a new TabField
+     * Creates a new Tab Divider field for content type layout
      *
-     * @static
-     * @returns {DotCMSContentTypeLayoutRow}
-     * @memberof FieldUtil
+     * @returns {DotCMSContentTypeLayoutRow} A layout row with a tab divider
      */
     static createFieldTabDivider(): DotCMSContentTypeLayoutRow {
         return {
@@ -332,49 +140,35 @@ export class FieldUtil {
     }
 
     /**
-     * Split the fields array by FieldDivider: for example if we have a field array like:
-     * ROW_FIELD, COLUMN_FIELD,TEXT_FIELD,TAB_FIELD,ROW_FIELD,COLUMN_FIELD,TEXT_FIELD
+     * Splits an array of fields by specific field types (Row or Tab dividers)
+     * For example, if fields array contains [ROW_FIELD, COLUMN_FIELD, TEXT_FIELD, TAB_FIELD, ROW_FIELD, COLUMN_FIELD, TEXT_FIELD]
+     * the result would be: [[ROW_FIELD, COLUMN_FIELD, TEXT_FIELD], [TAB_FIELD], [ROW_FIELD, COLUMN_FIELD, TEXT_FIELD]]
      *
-     * then you would get:
-     * [ROW_FIELD, COLUMN_FIELD,TEXT_FIELD], [TAB_FIELD] , [ROW_FIELD, COLUMN_FIELD, TEXT_FIELD]
-     *
-     * @static
-     * @param {DotCMSContentTypeField[]} fields
-     * @returns {DotCMSContentTypeField[][]}
-     * @memberof FieldUtil
+     * @param {DotCMSContentTypeField[]} fields - Array of fields to split
+     * @returns {DotCMSContentTypeField[][]} Array of field arrays split by divider types
      */
     static getRows(fields: DotCMSContentTypeField[]): DotCMSContentTypeField[][] {
         return FieldUtil.splitFieldsBy(fields, [ROW_FIELD.clazz, TAB_FIELD.clazz]);
     }
 
     /**
-     * Split the fields array by ColumnField: for example if we have a field array like:
-     * COLUMN_FIELD,TEXT_FIELD,COLUMN_FIELD,TEXT_FIELD
+     * Splits an array of fields by Column field type
+     * For example, if fields array contains [COLUMN_FIELD, TEXT_FIELD, COLUMN_FIELD, TEXT_FIELD]
+     * the result would be: [[COLUMN_FIELD, TEXT_FIELD], [COLUMN_FIELD, TEXT_FIELD]]
      *
-     * then you would get:
-     * [COLUMN_FIELD,TEXT_FIELD], [COLUMN_FIELD,TEXT_FIELD]
-     *
-     * @static
-     * @param {DotCMSContentTypeField[]} fields
-     * @returns {DotCMSContentTypeField[][]}
-     * @memberof FieldUtil
+     * @param {DotCMSContentTypeField[]} fields - Array of fields to split
+     * @returns {DotCMSContentTypeField[][]} Array of field arrays split by Column fields
      */
     static getColumns(fields: DotCMSContentTypeField[]): DotCMSContentTypeField[][] {
         return FieldUtil.splitFieldsBy(fields, [COLUMN_FIELD.clazz]);
     }
 
     /**
-     * Split the fields array by fieldClass: for example if we have a field array like:
-     * COLUMN_FIELD,TEXT_FIELD,COLUMN_FIELD,TEXT_FIELD
+     * Splits an array of fields by the specified field classes
      *
-     * and fieldClass is equal to 'com.dotcms.contenttype.model.field.ImmutableColumnField', then you would get:
-     * [COLUMN_FIELD,TEXT_FIELD], [COLUMN_FIELD,TEXT_FIELD]
-     *
-     * @static
-     * @param {DotCMSContentTypeField[]} fields
-     * @param {string[]} fieldClass
-     * @returns {DotCMSContentTypeField[][]}
-     * @memberof FieldUtil
+     * @param {DotCMSContentTypeField[]} fields - Array of fields to split
+     * @param {string[]} fieldClass - Array of field class names to split by
+     * @returns {DotCMSContentTypeField[][]} Array of field arrays split by specified field classes
      */
     static splitFieldsBy(
         fields: DotCMSContentTypeField[],
@@ -406,17 +200,16 @@ export class FieldUtil {
     }
 
     /**
-     * Get all the not layout fields from a layout, layout field could be RowField, ColumnFiled and TabField
+     * Extracts all non-layout fields from a layout structure
+     * Layout fields include Row, Column, and Tab fields
      *
-     * @static
-     * @param {DotCMSContentTypeLayoutRow[]} layout
-     * @returns {DotCMSContentTypeField[]}
-     * @memberof FieldUtil
+     * @param {DotCMSContentTypeLayoutRow[]} layout - The layout structure containing fields
+     * @returns {DotCMSContentTypeField[]} Array of all non-layout fields
      */
     static getFieldsWithoutLayout(layout: DotCMSContentTypeLayoutRow[]): DotCMSContentTypeField[] {
         return layout
-            .map((row: DotCMSContentTypeLayoutRow) => row.columns)
-            .filter((columns: DotCMSContentTypeLayoutColumn[]) => !!columns)
+            .map((row: DotCMSContentTypeLayoutRow) => row.columns || [])
+            .filter((columns: DotCMSContentTypeLayoutColumn[]) => columns.length > 0)
             .reduce(
                 (
                     accumulator: DotCMSContentTypeLayoutColumn[],
@@ -433,12 +226,10 @@ export class FieldUtil {
     }
 
     /**
-     * Return just the TabField from a layout
+     * Extracts all Tab Divider fields from a layout structure
      *
-     * @static
-     * @param {DotCMSContentTypeLayoutRow[]} layout
-     * @returns {DotCMSContentTypeField[]}
-     * @memberof FieldUtil
+     * @param {DotCMSContentTypeLayoutRow[]} layout - The layout structure containing fields
+     * @returns {DotCMSContentTypeField[]} Array of all Tab Divider fields
      */
     static getTabDividerFields(layout: DotCMSContentTypeLayoutRow[]): DotCMSContentTypeField[] {
         return layout
@@ -447,17 +238,20 @@ export class FieldUtil {
     }
 
     /**
-     * Return true if the clazz is a column break field
+     * Determines if a field class is a column break
      *
-     * @static
-     * @param {string} clazz
-     * @returns {boolean}
-     * @memberof FieldUtil
+     * @param {string} clazz - The field class to check
+     * @returns {boolean} True if the field class represents a column break
      */
     static isColumnBreak(clazz: string): boolean {
         return clazz === COLUMN_BREAK_FIELD.clazz;
     }
 
+    /**
+     * Creates a new column break object
+     *
+     * @returns {{ clazz: string; name: string }} A column break object
+     */
     static createColumnBreak(): { clazz: string; name: string } {
         return { ...COLUMN_BREAK_FIELD };
     }

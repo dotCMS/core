@@ -14,18 +14,16 @@ import {
 } from '@dotcms/data-access';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
 import {
-    dotcmsContentTypeBasicMock,
+    createFakeContentType,
     MockDotMessageService,
-    mockResponseView
+    mockResponseView,
+    createFakeBlockEditorField
 } from '@dotcms/utils-testing';
 
 import { DotBlockEditorSidebarComponent } from './dot-block-editor-sidebar.component';
 
-const BLOCK_EDITOR_FIELD = {
-    clazz: 'com.dotcms.contenttype.model.field.ImmutableStoryBlockField',
+const BLOCK_EDITOR_FIELD = createFakeBlockEditorField({
     contentTypeId: '799f176a-d32e-4844-a07c-1b5fcd107578',
-    dataType: 'LONG_TEXT',
-    fieldType: 'Story-Block',
     fieldTypeLabel: 'Block Editor',
     fixed: false,
     iDate: 1649791703000,
@@ -41,6 +39,7 @@ const BLOCK_EDITOR_FIELD = {
     sortOrder: 13,
     unique: false,
     variable: 'testName',
+    forceIncludeInApi: true,
     fieldVariables: [
         {
             clazz: 'com.dotcms.contenttype.model.field.ImmutableFieldVariable',
@@ -64,7 +63,7 @@ const BLOCK_EDITOR_FIELD = {
             value: 'height:50%'
         }
     ]
-};
+});
 
 const messageServiceMock = new MockDotMessageService({
     'editpage.inline.error': 'An error occurred',
@@ -82,10 +81,9 @@ const EVENT_DATA = {
     }
 };
 
-const contentTypeMock: DotCMSContentType = {
-    ...dotcmsContentTypeBasicMock,
+const contentTypeMock: DotCMSContentType = createFakeContentType({
     fields: [BLOCK_EDITOR_FIELD]
-};
+});
 
 describe('DotBlockEditorSidebarComponent', () => {
     let spectator: Spectator<DotBlockEditorSidebarComponent>;

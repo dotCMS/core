@@ -316,7 +316,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
             ...dotcmsContentTypeFieldBasicMock,
             clazz: 'classField',
             name: 'nameField'
-        };
+        } as unknown as DotCMSContentTypeField;
 
         comp.removeFields.subscribe((removeFields) => (fieldsToRemove = removeFields));
 
@@ -332,7 +332,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
             ...dotcmsContentTypeFieldBasicMock,
             clazz: 'classField',
             name: 'nameField'
-        };
+        } as unknown as DotCMSContentTypeField;
         fieldRow.columns[0].fields = [field];
         fieldRow.divider.id = 'test';
 
@@ -366,7 +366,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
             ...dotcmsContentTypeFieldBasicMock,
             clazz: 'classField',
             name: 'nameField'
-        };
+        } as unknown as DotCMSContentTypeField;
         fieldRow1.columns[0].fields = [field];
 
         comp.layout = [fieldRow1];
@@ -430,7 +430,7 @@ const BLOCK_EDITOR_FIELD = {
     name: 'field 12',
     sortOrder: 12,
     contentTypeId: '12b'
-};
+} as unknown as DotCMSContentTypeField;
 
 @Component({
     selector: 'dot-block-editor-settings',
@@ -577,7 +577,7 @@ describe('Load fields and drag and drop', () => {
                     clazz: 'com.dotcms.contenttype.model.field.ImmutableRowField',
                     sortOrder: 0,
                     contentTypeId: '1b'
-                },
+                } as unknown as DotCMSContentTypeField,
                 columns: [
                     {
                         columnDivider: {
@@ -587,7 +587,7 @@ describe('Load fields and drag and drop', () => {
                             clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField',
                             sortOrder: 1,
                             contentTypeId: '2b'
-                        },
+                        } as unknown as DotCMSContentTypeField,
                         fields: [
                             {
                                 ...dotcmsContentTypeFieldBasicMock,
@@ -596,7 +596,7 @@ describe('Load fields and drag and drop', () => {
                                 name: 'field 3',
                                 sortOrder: 2,
                                 contentTypeId: '3b'
-                            }
+                            } as unknown as DotCMSContentTypeField
                         ]
                     },
                     {
@@ -607,7 +607,7 @@ describe('Load fields and drag and drop', () => {
                             name: 'field 4',
                             sortOrder: 3,
                             contentTypeId: '4b'
-                        },
+                        } as unknown as DotCMSContentTypeField,
                         fields: [
                             {
                                 ...dotcmsContentTypeFieldBasicMock,
@@ -616,7 +616,7 @@ describe('Load fields and drag and drop', () => {
                                 name: 'field 5',
                                 sortOrder: 4,
                                 contentTypeId: '5b'
-                            }
+                            } as unknown as DotCMSContentTypeField
                         ]
                     }
                 ]
@@ -629,7 +629,7 @@ describe('Load fields and drag and drop', () => {
                     name: 'field 6',
                     sortOrder: 5,
                     contentTypeId: '6b'
-                }
+                } as unknown as DotCMSContentTypeField
             },
             {
                 divider: {
@@ -639,7 +639,7 @@ describe('Load fields and drag and drop', () => {
                     name: 'field 7',
                     sortOrder: 6,
                     contentTypeId: '7b'
-                },
+                } as unknown as DotCMSContentTypeField,
                 columns: [
                     {
                         columnDivider: {
@@ -649,7 +649,7 @@ describe('Load fields and drag and drop', () => {
                             name: 'field 8',
                             sortOrder: 7,
                             contentTypeId: '8b'
-                        },
+                        } as unknown as DotCMSContentTypeField,
                         fields: [
                             {
                                 ...dotcmsContentTypeFieldBasicMock,
@@ -658,7 +658,7 @@ describe('Load fields and drag and drop', () => {
                                 name: 'field 9',
                                 sortOrder: 8,
                                 contentTypeId: '9b'
-                            }
+                            } as unknown as DotCMSContentTypeField
                         ]
                     }
                 ]
@@ -671,7 +671,7 @@ describe('Load fields and drag and drop', () => {
                     name: 'field 10',
                     sortOrder: 10,
                     contentTypeId: '10b'
-                },
+                } as unknown as DotCMSContentTypeField,
                 columns: [
                     {
                         columnDivider: {
@@ -681,7 +681,7 @@ describe('Load fields and drag and drop', () => {
                             clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField',
                             sortOrder: 11,
                             contentTypeId: '11b'
-                        },
+                        } as unknown as DotCMSContentTypeField,
                         fields: [BLOCK_EDITOR_FIELD]
                     }
                 ]

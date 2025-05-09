@@ -2,11 +2,11 @@ import { DotCMSContentTypeField, DotCMSContentTypeLayoutRow } from '@dotcms/dotc
 import { DotContentletItem } from '../models/dot-contentlet-item.model';
 
 export const basicField: DotCMSContentTypeField = {
-    clazz: '',
+    clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
     contentTypeId: '',
-    dataType: '',
+    dataType: 'TEXT',
     defaultValue: '',
-    fieldType: '',
+    fieldType: 'Text',
     fieldTypeLabel: '',
     fieldVariables: [],
     fixed: true,
@@ -23,8 +23,8 @@ export const basicField: DotCMSContentTypeField = {
     searchable: true,
     sortOrder: 100,
     unique: true,
-    values: '',
-    variable: ''
+    variable: '',
+    forceIncludeInApi: true
 };
 
 export const dotFormLayoutMock: DotCMSContentTypeLayoutRow[] = [
@@ -65,7 +65,9 @@ export const dotFormLayoutMock: DotCMSContentTypeLayoutRow[] = [
                         fieldType: 'Key-Value',
                         name: 'Key Value:',
                         required: false,
-                        variable: 'keyvalue2'
+                        variable: 'keyvalue2',
+                        dataType: 'LONG_TEXT',
+                        clazz: 'com.dotcms.contenttype.model.field.ImmutableKeyValueField'
                     }
                 ]
             },
@@ -81,7 +83,8 @@ export const dotFormLayoutMock: DotCMSContentTypeLayoutRow[] = [
                         name: 'Dropdwon',
                         required: false,
                         values: '|,labelA|1,labelB|2,labelC|3',
-                        variable: 'dropdown3'
+                        variable: 'dropdown3',
+                        clazz: 'com.dotcms.contenttype.model.field.ImmutableSelectField'
                     }
                 ]
             }
@@ -106,7 +109,9 @@ export const fieldMockNotRequired: DotCMSContentTypeLayoutRow[] = [
                         fieldType: 'Key-Value',
                         name: 'Key Value:',
                         required: false,
-                        variable: 'keyvalue2'
+                        variable: 'keyvalue2',
+                        dataType: 'LONG_TEXT',
+                        clazz: 'com.dotcms.contenttype.model.field.ImmutableKeyValueField'
                     }
                 ]
             }
