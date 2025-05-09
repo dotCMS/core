@@ -131,7 +131,20 @@ const pageData = await client.page.get('/your-page-path', {
 ### Warning
 
 If you are updating from a version that is lower than `0.0.1-beta.29`, be aware that the response from the `client.page.get` method changed the access to the page value from `page` to `pageAsset`.
-This change was made to avoid redundancy on access inside of `page` object Ex. `page.page.title` -> `pageAsset.page.title`.
+This change was made to avoid redundancy on access inside of `page` object.
+
+#### Before
+
+```javascript
+const { page } = await client.page.get("/")
+```
+
+#### After
+
+```javascript
+const { pageAsset } = await client.page.get("/")
+```
+
 
 #### Example with all options
 
