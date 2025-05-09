@@ -1,11 +1,8 @@
-import { BehaviorSubject } from 'rxjs';
+import { Component, Input, OnInit } from '@angular/core';
 
-import { Component, inject, Input, OnInit } from '@angular/core';
-
-import { filter, mergeMap, take, toArray } from 'rxjs/operators';
+import { filter, flatMap, take, toArray } from 'rxjs/operators';
 
 import { FieldUtil } from '@dotcms/utils-testing';
-import { FIELD_ICONS } from '@portlets/shared/dot-content-types-edit/components/fields/content-types-fields-list/content-types-fields-icon-map';
 
 import { FieldType } from '..';
 import { FieldService } from '../service';
@@ -23,10 +20,9 @@ import { FieldService } from '../service';
 export class ContentTypesFieldsListComponent implements OnInit {
     @Input() baseType: string;
 
-    $fieldTypes = new BehaviorSubject<{ clazz: string; name: string }[]>([]);
-    fieldIcons = FIELD_ICONS;
+    fieldTypes: { clazz: string; name: string }[];
 
-    #dotFormFields = [
+    private dotFormFields = [
         'com.dotcms.contenttype.model.field.ImmutableBinaryField',
         'com.dotcms.contenttype.model.field.ImmutableCheckboxField',
         'com.dotcms.contenttype.model.field.ImmutableDateField',
@@ -41,16 +37,14 @@ export class ContentTypesFieldsListComponent implements OnInit {
         'com.dotcms.contenttype.model.field.ImmutableTextField'
     ];
 
-    #backListFields = ['relationships_tab', 'permissions_tab', 'tab_divider'];
-
-    readonly #fieldService = inject(FieldService);
+    constructor(public fieldService: FieldService) {}
 
     ngOnInit(): void {
-        this.#fieldService
+        this.fieldService
             .loadFieldTypes()
             .pipe(
-                mergeMap((fields: FieldType[]) => fields),
-                filter((field: FieldType) => !this.#backListFields.includes(field.id)),
+                flatMap((fields: FieldType[]) => fields),
+                filter((field: FieldType) => field.id !== 'tab_divider'),
                 toArray(),
                 take(1)
             )
@@ -76,11 +70,11 @@ export class ContentTypesFieldsListComponent implements OnInit {
                 );
 
                 const COLUMN_BREAK_FIELD = FieldUtil.createColumnBreak();
-                this.$fieldTypes.next([COLUMN_BREAK_FIELD, LINE_DIVIDER, ...fieldsFiltered]);
+                this.fieldTypes = [COLUMN_BREAK_FIELD, LINE_DIVIDER, ...fieldsFiltered];
             });
     }
 
     private isFormField(field: { clazz: string; name: string }): boolean {
-        return this.#dotFormFields.includes(field.clazz);
+        return this.dotFormFields.includes(field.clazz);
     }
 }
