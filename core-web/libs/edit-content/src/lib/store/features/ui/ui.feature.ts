@@ -7,7 +7,9 @@ import {
     withMethods
 } from '@ngrx/signals';
 
-import { computed, effect, untracked } from '@angular/core';
+import { computed, effect, inject, untracked } from '@angular/core';
+
+import { DotcmsConfigService } from '@dotcms/dotcms-js';
 
 import { getStoredUIState, saveStoreUIState } from '../../../utils/functions.util';
 import { EditContentState } from '../../edit-content.store';
@@ -50,7 +52,7 @@ export function withUI() {
              */
             isBetaMessageVisible: computed(() => store.uiState().isBetaMessageVisible)
         })),
-        withMethods((store) => ({
+        withMethods((store, dotcmsConfigService = inject(DotcmsConfigService)) => ({
             /**
              * Sets the active tab index in the store and persists it to localStorage
              * @param index - The index of the tab to set as active

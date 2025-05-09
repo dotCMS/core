@@ -372,7 +372,12 @@ export class DotEditContentFormComponent implements OnInit {
                     fieldValue instanceof Date &&
                     CALENDAR_FIELD_TYPES.includes(field.fieldType as FIELD_TYPES)
                 ) {
-                    fieldValue = fieldValue
+                    console.log('processFormValue fieldValue', fieldValue);
+                    // Convert to UTC and format as ISO string
+                    const utcDate = new Date(
+                        fieldValue.getTime() + fieldValue.getTimezoneOffset() * 60 * 1000
+                    );
+                    fieldValue = utcDate
                         .toISOString()
                         .replace(/T|\.\d{3}Z/g, (match) => (match === 'T' ? ' ' : ''));
                 }

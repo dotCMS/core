@@ -87,10 +87,16 @@ export const getSingleSelectableFieldOptions = (
 // This function is used to cast the value to a correct type for the Angular Form
 export const getFinalCastedValue = (
     value: object | string | undefined,
-    field: DotCMSContentTypeField
+    field: DotCMSContentTypeField,
+    utcSystemTimezone?: any
 ) => {
     if (CALENDAR_FIELD_TYPES.includes(field.fieldType as FIELD_TYPES)) {
+        // aqui necesito manejar el utcSystemTimezone
+        // en base de datos se guarda en el utc que viene en el config
+
+        console.log('getFinalCastedValue value', value);
         const parseResult = new Date(value as string);
+        console.log('getFinalCastedValue parseResult', parseResult);
 
         // When we create a field, we can set the default value to "now" so, it will cast to Invalid Date. But an undefined value can also be casted to Invalid Date.
         // So if the getTime() method returns NaN that means the value is invalid and it's either undefined or "now". Otherwise just return the parsed date.
