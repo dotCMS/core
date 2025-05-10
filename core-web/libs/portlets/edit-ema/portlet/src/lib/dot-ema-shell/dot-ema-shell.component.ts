@@ -30,20 +30,20 @@ import { WINDOW } from '@dotcms/utils';
 import { EditEmaNavigationBarComponent } from './components/edit-ema-navigation-bar/edit-ema-navigation-bar.component';
 
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
+import { DotEditorDialogService } from '../components/dot-ema-dialog/services/dot-ema-dialog.service';
 import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
+import { DotUVENgEvenHandlerService } from '../services/dot-ng-event-handler/dot-ng-event-handler.service';
 import { DotPageApiService } from '../services/dot-page-api.service';
-import { NG_CUSTOM_EVENTS } from '../shared/enums';
 import { DialogAction, DotPageAssetParams } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
 import { DotUveViewParams } from '../store/models';
 import {
     checkClientHostAccess,
     getAllowedPageParams,
-    getTargetUrl,
     normalizeQueryParams,
-    sanitizeURL,
-    shouldNavigate
+    sanitizeURL
 } from '../utils';
+
 @Component({
     selector: 'dot-ema-shell',
     standalone: true,
@@ -62,6 +62,7 @@ import {
         DotSeoMetaTagsService,
         DotSeoMetaTagsUtilService,
         DotWorkflowsActionsService,
+        DotUVENgEvenHandlerService,
         {
             provide: WINDOW,
             useValue: window
@@ -84,15 +85,16 @@ import {
     ]
 })
 export class DotEmaShellComponent implements OnInit {
-    @ViewChild('dialog') dialog!: DotEmaDialogComponent;
     @ViewChild('pageTools') pageTools!: DotPageToolsSeoComponent;
 
     readonly uveStore = inject(UVEStore);
 
-    readonly #activatedRoute = inject(ActivatedRoute);
     readonly #router = inject(Router);
-    readonly #siteService = inject(SiteService);
     readonly #location = inject(Location);
+    readonly #siteService = inject(SiteService);
+    readonly #activatedRoute = inject(ActivatedRoute);
+    readonly #dialogService = inject(DotEditorDialogService);
+    readonly #dotNgEventHandlerService = inject(DotUVENgEvenHandlerService);
 
     protected readonly $shellProps = this.uveStore.$shellProps;
 
@@ -128,42 +130,6 @@ export class DotEmaShellComponent implements OnInit {
             .subscribe(() => this.#router.navigate(['/pages']));
     }
 
-    handleNgEvent({ event }: DialogAction) {
-        switch (event.detail.name) {
-            case NG_CUSTOM_EVENTS.UPDATE_WORKFLOW_ACTION: {
-                const pageAPIResponse = this.uveStore.pageAPIResponse();
-                this.uveStore.getWorkflowActions(pageAPIResponse.page.inode);
-                break;
-            }
-
-            case NG_CUSTOM_EVENTS.SAVE_PAGE: {
-                this.handleSavePageEvent(event);
-                break;
-            }
-        }
-    }
-
-    /**
-     * Handles the save page event triggered from the dialog.
-     *
-     * @param {CustomEvent} event - The event object containing details about the save action.
-     * @return {void}
-     */
-    private handleSavePageEvent(event: CustomEvent): void {
-        const htmlPageReferer = event.detail.payload?.htmlPageReferer;
-        const url = new URL(htmlPageReferer, window.location.origin); // Add base for relative URLs
-        const targetUrl = getTargetUrl(url.pathname, this.uveStore.pageAPIResponse().urlContentMap);
-
-        if (shouldNavigate(targetUrl, this.uveStore.pageParams().url)) {
-            // Navigate to the new URL if it's different from the current one
-            this.uveStore.loadPageAsset({ url: targetUrl });
-
-            return;
-        }
-
-        this.uveStore.reloadCurrentPage();
-    }
-
     /**
      * Handle actions from nav bar
      *
@@ -176,7 +142,7 @@ export class DotEmaShellComponent implements OnInit {
         } else if (itemId === 'properties') {
             const page = this.uveStore.pageAPIResponse().page;
 
-            this.dialog.editContentlet({
+            this.#dialogService.editContentlet({
                 inode: page.inode,
                 title: page.title,
                 identifier: page.identifier,
@@ -264,5 +230,15 @@ export class DotEmaShellComponent implements OnInit {
     #updateLocation(queryParams: Params = {}): void {
         const urlTree = this.#router.createUrlTree([], { queryParams });
         this.#location.go(urlTree.toString());
+    }
+
+    /**
+     * Handle the event triggered from the dialog.
+     *
+     * @param {DialogAction} event - The event object containing details about the action.
+     * @memberof DotEmaShellComponent
+     */
+    protected handleNgEvent(event: DialogAction) {
+        this.#dotNgEventHandlerService.handleNgEvent(event);
     }
 }
