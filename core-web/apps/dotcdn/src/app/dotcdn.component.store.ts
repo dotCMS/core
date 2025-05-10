@@ -2,11 +2,14 @@ import { ComponentStore } from '@ngrx/component-store';
 import { tapResponse } from '@ngrx/operators';
 import { Observable, of } from 'rxjs';
 
+import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 
 import { SelectItem } from 'primeng/api';
 
-import { mergeMap, pluck, switchMapTo, tap } from 'rxjs/operators';
+import { switchMap, tap } from 'rxjs/operators';
+
+import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
 
 import {
     ChartData,
@@ -24,7 +27,11 @@ import { DotCDNService } from './dotcdn.service';
 export class DotCDNStore extends ComponentStore<DotCDNState> {
     selectedPeriod: SelectItem<string> = { value: ChartPeriod.Last15Days };
 
-    constructor(private readonly dotCdnService: DotCDNService) {
+    constructor(
+        private readonly dotCdnService: DotCDNService,
+        private readonly dotHttpErrorManagerService: DotHttpErrorManagerService,
+        private readonly dotMessageService: DotMessageService
+    ) {
         super({
             chartBandwidthData: {
                 labels: [],
@@ -40,6 +47,7 @@ export class DotCDNStore extends ComponentStore<DotCDNState> {
             isPurgeUrlsLoading: false,
             isPurgeZoneLoading: false
         });
+        this.dotMessageService.init();
         this.getChartStats(this.selectedPeriod.value);
     }
 
@@ -83,22 +91,17 @@ export class DotCDNStore extends ComponentStore<DotCDNState> {
      */
     getChartStats = this.effect((period$: Observable<string>): Observable<DotCDNStats> => {
         return period$.pipe(
-            mergeMap((period: string) => {
+            tap(() => {
                 // Dispatch the loading state
                 this.dispatchLoading({
                     loadingState: LoadingState.LOADING,
                     loader: Loader.CHART
                 });
-
-                return this.dotCdnService.requestStats(period).pipe(
+            }),
+            switchMap((period: string) =>
+                this.dotCdnService.requestStats(period).pipe(
                     tapResponse(
                         (data: DotCDNStats) => {
-                            // Now the chart is loaded
-                            this.dispatchLoading({
-                                loadingState: LoadingState.LOADED,
-                                loader: Loader.CHART
-                            });
-
                             const {
                                 statsData,
                                 chartData: [chartBandwidthData, chartRequestsData],
@@ -111,13 +114,23 @@ export class DotCDNStore extends ComponentStore<DotCDNState> {
                                 statsData,
                                 cdnDomain
                             });
+
+                            // Now the chart is loaded
+                            this.dispatchLoading({
+                                loadingState: LoadingState.LOADED,
+                                loader: Loader.CHART
+                            });
                         },
-                        (_error) => {
-                            // TODO: Handle error
+                        (error: HttpErrorResponse) => {
+                            this.dotHttpErrorManagerService.handle(error);
+                            this.dispatchLoading({
+                                loadingState: LoadingState.IDLE,
+                                loader: Loader.CHART
+                            });
                         }
                     )
-                );
-            })
+                )
+            )
         );
     });
 
@@ -160,43 +173,65 @@ export class DotCDNStore extends ComponentStore<DotCDNState> {
      */
 
     purgeCDNCache(urls: string[]): Observable<PurgeReturnData> {
-        const loading$ = of(
-            this.dispatchLoading({
-                loadingState: LoadingState.LOADING,
-                loader: Loader.PURGE_URLS
-            })
-        );
-
-        return loading$.pipe(
-            switchMapTo(
+        return of(urls).pipe(
+            tap(() => {
+                this.dispatchLoading({
+                    loadingState: LoadingState.LOADING,
+                    loader: Loader.PURGE_URLS
+                });
+            }),
+            switchMap((urls: string[]) =>
                 this.dotCdnService.purgeCache(urls).pipe(
-                    tap(() => {
-                        this.dispatchLoading({
-                            loadingState: LoadingState.LOADED,
-                            loader: Loader.PURGE_URLS
-                        });
-                    })
+                    tapResponse(
+                        () => {
+                            this.dispatchLoading({
+                                loadingState: LoadingState.LOADED,
+                                loader: Loader.PURGE_URLS
+                            });
+                        },
+                        (error: HttpErrorResponse) => {
+                            this.dotHttpErrorManagerService.handle(error);
+                            this.dispatchLoading({
+                                loadingState: LoadingState.IDLE,
+                                loader: Loader.PURGE_URLS
+                            });
+                        }
+                    )
                 )
             )
         );
     }
 
-    purgeCDNCacheAll(): void {
-        const $loading = of(
-            this.dispatchLoading({
-                loadingState: LoadingState.LOADING,
-                loader: Loader.PURGE_PULL_ZONE
-            })
-        );
-
-        $loading
-            .pipe(switchMapTo(this.dotCdnService.purgeCacheAll()), pluck('bodyJsonObject'))
-            .subscribe(() => {
-                this.dispatchLoading({
-                    loadingState: LoadingState.LOADED,
-                    loader: Loader.PURGE_PULL_ZONE
-                });
-            });
+    purgeCDNCacheAll() {
+        of('*')
+            .pipe(
+                tap(() => {
+                    this.dispatchLoading({
+                        loadingState: LoadingState.LOADING,
+                        loader: Loader.PURGE_PULL_ZONE
+                    });
+                }),
+                switchMap(() =>
+                    this.dotCdnService.purgeCacheAll().pipe(
+                        tapResponse(
+                            () => {
+                                this.dispatchLoading({
+                                    loadingState: LoadingState.LOADED,
+                                    loader: Loader.PURGE_PULL_ZONE
+                                });
+                            },
+                            (error: HttpErrorResponse) => {
+                                this.dotHttpErrorManagerService.handle(error);
+                                this.dispatchLoading({
+                                    loadingState: LoadingState.IDLE,
+                                    loader: Loader.PURGE_PULL_ZONE
+                                });
+                            }
+                        )
+                    )
+                )
+            )
+            .subscribe();
     }
 
     private getChartStatsData({ stats }: DotCDNStats) {

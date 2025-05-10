@@ -1,3 +1,5 @@
+<dot-message-display></dot-message-display>
+
 <p-tabView>
     <p-tabPanel *ngIf="vm$ | async as VM" header="Overview">
         <div class="dot-cdn__tab-content">
@@ -103,3 +105,6 @@
         </div>
     </p-tabPanel>
 </p-tabView>
+
+<dot-large-message-display></dot-large-message-display>
+<dot-alert-confirm></dot-alert-confirm>
