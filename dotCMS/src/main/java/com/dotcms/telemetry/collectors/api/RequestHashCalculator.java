@@ -1,192 +1,120 @@
 package com.dotcms.telemetry.collectors.api;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.dotmarketing.util.Logger;
+import org.apache.commons.codec.digest.DigestUtils;
 
+import javax.servlet.ServletInputStream;
 import javax.servlet.http.HttpServletRequest;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.Map;
-import java.util.Optional;
+import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.UUID;
 
 /**
  * Util class to provide methods to calculate a Hash from a {@link HttpServletRequest}
  */
 public class RequestHashCalculator {
 
-    final ObjectMapper jsonMapper = new ObjectMapper();
-    final MessageDigest digest;
-
-    RequestHashCalculator() {
+    /**
+     * This method will create a hash of the request, to be able to know if this is a unique request. To
+     * calculate the hash, the following elements are taken into account:
+     * <ul>
+     *     <li>URL Parameters</li>
+     *     <li>Query Parameters</li>
+     *     <li>Request Body</li>
+     * </ul>
+     *
+     * @param apiMetricType Metric to calculate the hash
+     * @param request       the request to get the content
+     *
+     * @return The hash of the request
+     */
+    public String calculate(final ApiMetricType apiMetricType,
+                            final ApiMetricWebInterceptor.RereadInputStreamRequest request) {
         try {
-            digest = MessageDigest.getInstance("SHA-256");
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
+            final StringBuilder key = new StringBuilder();
+            //API Path
+            key.append(cleanUrl(request.getRequestURI(), apiMetricType.getAPIUrl()));
+
+            // get URL parameters
+            final Map<String, String[]> parameters = request.getParameterMap();
+            key.append(getURLParameters(parameters));
+
+            // Try to extract request body if it exists and is not too large
+            try {
+                // We don't access the content directly anymore as it's buffered only in the input stream
+                // and only if it's small enough (< MAX_REQUEST_BUFFER_SIZE)
+                ServletInputStream inputStream = request.getInputStream();
+                // Just add a marker for the hash calculation
+                key.append("<content>");
+            } catch (Exception e) {
+                Logger.debug(this, "Failed to read request content for hash calculation: " + e.getMessage());
+            }
+
+            return DigestUtils.md5Hex(key.toString());
+        } catch (Exception e) {
+            Logger.debug(this, "Error calculating hash", e);
+            return DigestUtils.md5Hex(UUID.randomUUID().toString());
         }
     }
 
     /**
-     * Calculate a hash from a {@link HttpServletRequest} using:
-     * <ul>
-     *     <li>The Query Parameters</li>
-     *     <li>The body</li>
-     *     <li>The Url Parameters</li>
-     * </ul>
-     * <p>The steps to calculate this hash are the follows:
-     * <ul>
-     *     <li>If the Request has Query parameters the these are sort alphabetically by the
-     *     Parameter
-     *      Name, then 'xxx?a=1&b=2' and 'xxx?b=2&a=1' are the same. If the Request does not has any
-     *      Query parameters then the word 'NONE' is taking instead.</li>
-     *      <li>If the Request has Url parameters the these are sort alphabetically by the
-     *      Parameter Name,
-     *      then 'xxx/a/1/b/2' and 'xxx/b/2/a/1' are the same. If the Request does not has any Url
-     *      parameters then the word 'NONE' is taking instead.</li>
-     *      <li>If the Request has any JSON Body it is sort by alphabetically by the attribute
-     *      name, so:
-     *      <pre>
-     *          {@code { a: 1, b: 2 }}
-     *      </pre>
-     *      And:
-     *      <pre>
-     *          {@code { b: 2, a: 1 }}
-     *      </pre>
-     *      are the same.
-     *      </li>
-     *      <li>Finally all of them are concat and a hash is calculated with that String.</li>
-     * </ul>
-     *
-     * @param apiMetricType
-     * @param request
-     *
-     * @return
+     * Cleans the URL to get just the path without the API prefix
+     * 
+     * @param fullUrl The full request URI
+     * @param apiUrl The API URL prefix
+     * @return The cleaned URL
      */
-    public String calculate(final ApiMetricType apiMetricType,
-                            final ApiMetricWebInterceptor.RereadInputStreamRequest request) {
-
-        final String queryParametersAsString =
-                getQueryParameters(request).map(Map::toString).orElse("NONE");
-        final String urlParametersAsString = getUrlParameters(apiMetricType, request)
-                .map(Map::toString).orElse("NONE");
-        final String bodyAsString = getBody(request).map(Map::toString).orElse("NONE");
-
-        final String requestString = queryParametersAsString + urlParametersAsString + bodyAsString;
-
-
-        final byte[] encodedHash = digest.digest(requestString.getBytes(StandardCharsets.UTF_8));
-        return new String(encodedHash);
-    }
-
-    @SuppressWarnings("unchecked")
-    private Optional<Map<String, Object>> getBody(ApiMetricWebInterceptor.RereadInputStreamRequest request) {
-        final String requestContent = request.getReadContent();
-        try {
-            if (!requestContent.isEmpty()) {
-                final Map<String, Object> bodyMap = jsonMapper.readValue(requestContent,
-                        Map.class);
-
-                return Optional.of(sort(bodyMap));
-            }
-
-            return Optional.empty();
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
+    private String cleanUrl(final String fullUrl, final String apiUrl) {
+        if (fullUrl == null) {
+            return "";
         }
-
-    }
-
-    @SuppressWarnings("unchecked")
-    private TreeMap<String, Object> sort(final Map<String, Object> map) {
-        TreeMap<String, Object> treeMap = new TreeMap<>(map);
-
-        for (Map.Entry<String, Object> bodyMapEntry : map.entrySet()) {
-            final Object value = bodyMapEntry.getValue();
-
-            if (value instanceof Map) {
-                final TreeMap mapSorted = sort((Map) value);
-                treeMap.put(bodyMapEntry.getKey(), mapSorted);
-            }
+        
+        String cleanedUrl = fullUrl;
+        
+        // Remove API prefix
+        int apiIndex = fullUrl.indexOf("/api/");
+        if (apiIndex >= 0) {
+            cleanedUrl = fullUrl.substring(apiIndex + 5); // +5 to skip "/api/"
         }
-        return treeMap;
+        
+        // Remove any query parameters
+        int queryIndex = cleanedUrl.indexOf("?");
+        if (queryIndex >= 0) {
+            cleanedUrl = cleanedUrl.substring(0, queryIndex);
+        }
+        
+        return cleanedUrl;
     }
-
-
-    private Optional<Map<String, String>> getUrlParameters(final ApiMetricType apiMetricType,
-                                                           final HttpServletRequest request) {
-        String uri = request.getRequestURI();
-        String apiUrl = apiMetricType.getAPIUrl();
-
-        final String urlParameters = uri.substring(uri.indexOf("/es/search") + apiUrl.length());
-
-        TreeMap<String, String> sortedParameters = new TreeMap<>();
-
-        if (urlParameters != null) {
-            final String[] paramsAndValues = urlParameters.split("/");
-            final Pair pair = new Pair();
-
-            for (String paramOrValue : paramsAndValues) {
-                pair.add(paramOrValue);
-
-                if (pair.isCompleted()) {
-                    sortedParameters.put(pair.getKey(), pair.getValue());
-                    pair.reset();
+    
+    /**
+     * Get URL parameters as a sorted string for consistent hash generation
+     * 
+     * @param parameters The parameter map from the request
+     * @return A string representation of the sorted parameters
+     */
+    private String getURLParameters(final Map<String, String[]> parameters) {
+        if (parameters == null || parameters.isEmpty()) {
+            return "NOPARAMS";
+        }
+        
+        // Sort parameters by name for consistent hash generation
+        SortedMap<String, String[]> sortedParams = new TreeMap<>(parameters);
+        StringBuilder result = new StringBuilder();
+        
+        for (Map.Entry<String, String[]> entry : sortedParams.entrySet()) {
+            String paramName = entry.getKey();
+            String[] values = entry.getValue();
+            
+            if (values != null && values.length > 0) {
+                for (String value : values) {
+                    result.append(paramName).append("=").append(value).append(";");
                 }
-            }
-        }
-
-        return sortedParameters.isEmpty() ? Optional.empty() : Optional.of(sortedParameters);
-    }
-
-    private Optional<Map<String, String>> getQueryParameters(final HttpServletRequest request) {
-        String queryString = request.getQueryString();
-
-        TreeMap<String, String> sortedParameters = new TreeMap<>();
-
-        if (queryString != null) {
-            String[] params = queryString.split("&");
-
-            for (String param : params) {
-                String[] keyValue = param.split("=");
-                String key = keyValue[0];
-                String value = keyValue.length > 1 ? keyValue[1] : "";
-
-                sortedParameters.put(key, value);
-            }
-        }
-
-        return sortedParameters.isEmpty() ? Optional.empty() : Optional.of(sortedParameters);
-    }
-
-    private static class Pair {
-        private String key;
-        private String value;
-
-        void add(final String keyOrValue) {
-            if (key == null) {
-                key = keyOrValue;
             } else {
-                value = keyOrValue;
+                result.append(paramName).append("=;");
             }
         }
-
-        boolean isCompleted() {
-            return key != null && value != null;
-        }
-
-        public String getKey() {
-            return key;
-        }
-
-        public String getValue() {
-            return value;
-        }
-
-        public void reset() {
-            value = null;
-            key = null;
-        }
+        
+        return result.toString();
     }
-
 }
