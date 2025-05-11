@@ -8,8 +8,8 @@ import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -20,6 +20,7 @@ import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet;
 import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
+import com.dotmarketing.util.ContentPublishDateUtil;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
 import org.junit.AfterClass;
@@ -32,9 +33,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.times;
 
 public class SaveContentActionletTest extends BaseWorkflowIntegrationTest {
 
@@ -46,8 +49,6 @@ public class SaveContentActionletTest extends BaseWorkflowIntegrationTest {
     private static Contentlet                   contentlet             = null;
     private static Contentlet                   contentlet2            = null;
 
-    private static MockedStatic<APILocator>     mockedAPILocator       = null;
-    private static VersionableAPI               spyVersionableAPI      = null;
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -57,12 +58,6 @@ public class SaveContentActionletTest extends BaseWorkflowIntegrationTest {
         SaveContentActionletTest.workflowAPI              = APILocator.getWorkflowAPI();
         final ContentTypeAPI contentTypeAPI               = APILocator.getContentTypeAPI(APILocator.systemUser());
         SaveContentActionletTest.contentletAPI            = APILocator.getContentletAPI();
-
-        spyVersionableAPI = spy(APILocator.getVersionableAPI());
-        // open a static-mock for APILocator, defaulting to real methods
-        mockedAPILocator = mockStatic(APILocator.class, CALLS_REAL_METHODS);
-        // stub only getVersionableAPI() to return our spy
-        mockedAPILocator.when(APILocator::getVersionableAPI).thenReturn(spyVersionableAPI);
 
         // creates the scheme and actions
         SaveContentActionletTest.schemeStepActionResult   = SaveContentActionletTest.createSchemeStepActionActionlet
@@ -170,7 +165,6 @@ public class SaveContentActionletTest extends BaseWorkflowIntegrationTest {
                     ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
                     contentTypeAPI.delete(SaveContentActionletTest.type2);
                 }
-                mockedAPILocator.close();
             }
         }
     } // cleanup
@@ -248,30 +242,32 @@ public class SaveContentActionletTest extends BaseWorkflowIntegrationTest {
         contentlet1.setStringProperty("txt",   "Test Save Text 2");
         contentlet1.setIndexPolicy(IndexPolicy.FORCE);
 
-        final Contentlet contentlet2  =
-                SaveContentActionletTest.workflowAPI.fireContentWorkflow(contentlet1,
-                        new ContentletDependencies.Builder().respectAnonymousPermissions(false)
-                        .modUser(user)
-                        .workflowActionId(this.schemeStepActionResult.getAction().getId())
-                        .generateSystemEvent(false).build());
+        try (MockedStatic<ContentPublishDateUtil> utilMock = mockStatic(ContentPublishDateUtil.class)) {
 
-        final Contentlet contentlet3  = SaveContentActionletTest.contentletAPI.findContentletByIdentifier
-                (SaveContentActionletTest.contentlet2.getIdentifier(),
-                        false, languageId, user, false);
+            final Contentlet contentlet2  =
+                    SaveContentActionletTest.workflowAPI.fireContentWorkflow(contentlet1,
+                            new ContentletDependencies.Builder().respectAnonymousPermissions(false)
+                                    .modUser(user)
+                                    .workflowActionId(this.schemeStepActionResult.getAction().getId())
+                                    .generateSystemEvent(false).build());
 
-        // the contentlet save by the action must be not null, should has a new version.
-        Assert.assertNotNull(contentlet3);
-        Assert.assertNotNull(contentlet3.getInode());
-        Assert.assertFalse  (contentlet3.getInode().equals(firstInode));
-        Assert.assertEquals ("Test Save 2",      contentlet3.getStringProperty("title"));
-        Assert.assertEquals ("Test Save Text 2", contentlet3.getStringProperty("txt"));
+            final Contentlet contentlet3  = SaveContentActionletTest.contentletAPI.findContentletByIdentifier
+                    (SaveContentActionletTest.contentlet2.getIdentifier(),
+                            false, languageId, user, false);
 
-        // verify that notifyIfFuturePublishDate was invoked
-        verify(spyVersionableAPI, times(1))
-                .notifyIfFuturePublishDate(
-                        eq(SaveContentActionletTest.type2),   // the ContentType with a publishDateVar
-                        any(com.dotmarketing.beans.Identifier.class),
-                        anyString()
-                );
+            utilMock.verify(() ->
+                    ContentPublishDateUtil.notifyIfFuturePublishDate(
+                            eq(type2),
+                            any(Identifier.class),
+                            eq(contentlet2.getModUser())
+                    ), times(1)
+            );
+            // the contentlet save by the action must be not null, should has a new version.
+            Assert.assertNotNull(contentlet3);
+            Assert.assertNotNull(contentlet3.getInode());
+            Assert.assertFalse  (contentlet3.getInode().equals(firstInode));
+            Assert.assertEquals ("Test Save 2",      contentlet3.getStringProperty("title"));
+            Assert.assertEquals ("Test Save Text 2", contentlet3.getStringProperty("txt"));
+        }
     }
 }
