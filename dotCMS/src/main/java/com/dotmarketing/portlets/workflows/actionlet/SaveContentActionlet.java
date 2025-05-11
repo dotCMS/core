@@ -16,6 +16,7 @@ import com.dotmarketing.portlets.workflows.model.WorkflowActionFailureException;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionletParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
+import com.dotmarketing.util.ContentPublishDateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
@@ -91,7 +92,7 @@ public class SaveContentActionlet extends WorkFlowActionlet {
 			if ( identifier.getAssetType().equals( "contentlet" ) ) {
 				//Get the structure for this contentlet
 				final ContentType contentType = contentlet.getContentType();
-				APILocator.getVersionableAPI().notifyIfFuturePublishDate(contentType, identifier, contentletNew.getModUser());
+				ContentPublishDateUtil.notifyIfFuturePublishDate(contentType, identifier, contentletNew.getModUser());
 			}
 
 			this.setIndexPolicy(contentlet, contentletNew);
