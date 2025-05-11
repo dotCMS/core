@@ -460,7 +460,4 @@ public interface VersionableAPI {
 	 * @throws DotDataException
 	 */
 	List<ContentletVersionInfo> findAllByVariant(final Variant variant) throws DotDataException;
-
-
-	boolean notifyIfFuturePublishDate(final ContentType contentType, final Identifier identifier, final String modUser);
 }

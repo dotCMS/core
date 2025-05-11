@@ -23,6 +23,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.util.ContentPublishDateUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -48,7 +49,6 @@ public class VersionableAPIImpl implements VersionableAPI {
 
 	private final VersionableFactory versionableFactory;
 	private final PermissionAPI permissionAPI;
-    final Debouncer debouncer = new Debouncer();
     final UniqueFieldValidationStrategyResolver uniqueFieldValidationStrategyResolver;
 
 	public VersionableAPIImpl() {
@@ -528,7 +528,7 @@ public class VersionableAPIImpl implements VersionableAPI {
 
             //Get the structure for this contentlet
             final ContentType contentType = contentlet.getContentType();
-            if (notifyIfFuturePublishDate(contentType, identifier, versionable.getModUser())) {
+            if (ContentPublishDateUtil.notifyIfFuturePublishDate(contentType, identifier, versionable.getModUser())) {
                 return;
             }
             if ( UtilMethods.isSet( contentType.expireDateVar() ) ) {//Verify if the structure have a Expire Date Field set
@@ -554,48 +554,6 @@ public class VersionableAPIImpl implements VersionableAPI {
         }
     }
 
-    /**
-     * Checks whether the given versionable has a publish date set in the future and, if so,
-     * sends a user notification message indicating that the content cannot be published yet.
-     *
-     * <p>This method verifies that the contentType defines a publish date field and that the
-     * identifier's publish date is later than the current time. If both conditions are met,
-     * a success-type system message is sent to the user, and {@code true} is returned.</p>
-     *
-     * @param contentType   the contentType, used to determine if a publish date field exists
-     * @param identifier  the identifier containing publish date metadata
-     * @param modUser the user who last modified the version
-     * @return {@code true} if a future publish date was detected and a message was sent;
-     *         {@code false} otherwise
-     */
-    public boolean notifyIfFuturePublishDate(final ContentType contentType, final Identifier identifier, final String modUser) {
-        if (UtilMethods.isSet(contentType.publishDateVar()) &&
-                UtilMethods.isSet(identifier.getSysPublishDate()) &&
-                identifier.getSysPublishDate().after(new Date())) {
-
-            final Runnable futurePublishDateRunnable = () -> futurePublishDateMessage(modUser);
-            debouncer.debounce("contentPublishDateError" + modUser, futurePublishDateRunnable, 5000, TimeUnit.MILLISECONDS);
-            return true;
-        }
-        return false;
-    }
-
-    /**
-     * Method to encapsulate the logic of a growl message when content has a future publish date
-     * @param user user to show the growl
-     */
-    private void futurePublishDateMessage(final String user){
-        final String message = Try.of(() -> LanguageUtil.get("message.contentlet.publish.future.date"))
-                .getOrElse("The content was saved successfully but cannot be published because"
-                        + " it is scheduled to be published on future date.");
-        final SystemMessageBuilder systemMessageBuilder = new SystemMessageBuilder()
-                .setMessage(message).setType(MessageType.SIMPLE_MESSAGE)
-                .setSeverity(MessageSeverity.SUCCESS).setLife(5000);
-
-        SystemMessageEventUtil.getInstance().pushMessage(systemMessageBuilder.create(),
-                ImmutableList.of(user));
-        Logger.debug(this,message);
-    }
 
     @WrapInTransaction
     @Override
