@@ -16,15 +16,10 @@ import { CLIENT_ACTIONS, postMessageToEditor } from '@dotcms/client';
 import { getUVEState } from '@dotcms/uve';
 import { DYNAMIC_COMPONENTS } from './components';
 import { DotCMSEditablePageService, DotCMSLayoutBodyComponent } from '@dotcms/angular/next';
-import {
-    DotcmsNavigationItem,
-    DotCMSPageRequestParams,
-    DotCMSPageResponse,
-    DotCMSPageAsset,
-    DotCMSComposedPageResponse
-} from '@dotcms/types';
+import { DotcmsNavigationItem, DotCMSPageAsset, DotCMSComposedPageResponse } from '@dotcms/types';
 import { FooterContent } from '../shared/models';
 import { BASE_EXTRA_QUERIES } from '../shared/constants';
+
 type ComposedPageResponse = DotCMSComposedPageResponse<{
     pageAsset: DotCMSPageAsset;
     content: FooterContent;

@@ -7,7 +7,6 @@ import { getUVEState } from '@dotcms/uve';
 
 import {
     DotcmsNavigationItem,
-    DotCMSPageResponse,
     DotCMSPageAsset,
     DotCMSPageRequestParams,
     DotCMSComposedPageResponse

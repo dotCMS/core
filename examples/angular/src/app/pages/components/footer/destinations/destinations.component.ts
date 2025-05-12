@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, input, signal } from '@angular/core';
+import { Component, input } from '@angular/core';
 
 import { ContentletsWrapperComponent } from '../../../../shared/contentlets-wrapper/contentlets.component';
 
