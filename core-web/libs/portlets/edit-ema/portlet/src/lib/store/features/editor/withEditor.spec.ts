@@ -182,6 +182,28 @@ describe('withEditor', () => {
                 );
             });
 
+            // There is an issue with Signal Store when you try to spy on a signal called from a computed property
+            // Unskip this when this discussion is resolved: https://github.com/ngrx/platform/discussions/4627
+            describe.skip('pageAPIResponse dependency', () => {
+                it('should call pageAPIResponse when it is a headless page', () => {
+                    const spy = jest.spyOn(store, 'pageAPIResponse');
+                    patchState(store, { isTraditionalPage: false });
+                    store.$iframeURL();
+
+                    expect(spy).toHaveBeenCalled();
+                });
+
+                it('should call pageAPIResponse when it is a traditional page', () => {
+                    const spy = jest.spyOn(store, 'pageAPIResponse');
+
+                    patchState(store, { isTraditionalPage: true });
+
+                    store.$iframeURL();
+
+                    expect(spy).toHaveBeenCalled();
+                });
+            });
+
             it('should be an instance of String in src when the page is traditional', () => {
                 patchState(store, {
                     pageAPIResponse: MOCK_RESPONSE_VTL,
