@@ -26,3 +26,7 @@ table, th, td {
 .blog-styles {
   @apply bg-gray-100;
 }
+
+.dot-row-container {
+  @apply mb-4;
+}

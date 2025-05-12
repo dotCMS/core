@@ -1,12 +1,12 @@
 import Image from "next/image";
 import Link from "next/link";
-function Activity({ title, description, image, urlTitle }) {
+function Activity({ title, description, image, inode, urlTitle }) {
     return (
         <article className="p-4 overflow-hidden bg-white rounded shadow-lg">
             {image && (
                 <Image
                     className="w-full"
-                    src={image?.idPath ?? image}
+                    src={inode}
                     width={100}
                     height={100}
                     alt="Activity Image"

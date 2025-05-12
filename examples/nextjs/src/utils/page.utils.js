@@ -1,4 +1,4 @@
-import { client } from "./dotcmsClient";
+import { client } from "./dotClient";
 
 export const fetchPageData = async (params) => {
     try {

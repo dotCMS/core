@@ -1,7 +1,7 @@
 import { ErrorPage } from "@/components/error";
 
 import { handleVanityUrlRedirect } from "@/utils/vanityUrlHandler";
-import { client } from "@/utils/dotcmsClient";
+import { client } from "@/utils/dotClient";
 import { getPageRequestParams } from "@dotcms/client";
 import { fetchNavData, fetchPageData } from "@/utils/page.utils";
 import { MyBlogPage } from "@/components/my-blog-page";

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import Contentlets from '@/components/shared/contentlets';
-import { client } from '@/utils/dotcmsClient';
+import { client } from '@/utils/dotClient';
 
 export default function Blogs() {
     const [blogs, setBlogs] = useState([]);

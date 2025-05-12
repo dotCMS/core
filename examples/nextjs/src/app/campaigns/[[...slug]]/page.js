@@ -4,7 +4,7 @@ import { graphqlToPageEntity, getPageRequestParams } from "@dotcms/client";
 import { MyGraphQLPage } from "@/components/graphql-page";
 
 import { getGraphQLPageData, getGraphQLPageQuery } from "@/utils/gql";
-import { client } from "@/utils/dotcmsClient";
+import { client } from "@/utils/dotClient";
 
 const getPath = (params) => {
     const defaultPath = "colorado-preseason-special";

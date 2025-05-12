@@ -1,7 +1,7 @@
 "use client";
 
 import NotFound from "@/app/not-found";
-import Blog from "@/components/content-types/blog";
+import Blog from "@/components/contenttypes/blog";
 import Footer from "@/components/layout/footer/footer";
 import Header from "@/components/layout/header/header";
 import Navigation from "@/components/layout/navigation";

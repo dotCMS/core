@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-import { client } from '@/utils/dotcmsClient';
+import { client } from '@/utils/dotClient';
 import { CLIENT_ACTIONS, postMessageToEditor } from '@dotcms/client';
 import { getUVEState } from '@dotcms/uve';
 

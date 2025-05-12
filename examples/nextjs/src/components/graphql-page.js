@@ -1,12 +1,12 @@
 'use client';
 
-import GqlWebPageContent from './content-types/gqlWebPageContent';
-import Banner from './content-types/banner';
-import Activity from './content-types/activity';
-import CallToAction from './content-types/callToAction';
-import CalendarEvent from './content-types/calendarEvent';
-import Product from './content-types/product';
-import ImageComponent from './content-types/image';
+import GqlWebPageContent from './contenttypes/gqlWebPageContent';
+import Banner from './contenttypes/banner';
+import Activity from './contenttypes/activity';
+import CallToAction from './contenttypes/callToAction';
+import CalendarEvent from './contenttypes/calendarEvent';
+import Product from './contenttypes/product';
+import ImageComponent from './contenttypes/image';
 
 import Header from './layout/header/header';
 import Footer from './layout/footer/footer';
@@ -14,7 +14,7 @@ import Navigation from './layout/navigation';
 import { usePathname, useRouter } from 'next/navigation';
 import { DotcmsLayout } from '@dotcms/react';
 import { withExperiments } from '@dotcms/experiments';
-import { CustomNoComponent } from './content-types/empty';
+import { CustomNoComponent } from './contenttypes/empty';
 
 /**
  * Configure experiment settings below. If you are not using experiments,

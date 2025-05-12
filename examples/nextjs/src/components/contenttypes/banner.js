@@ -1,15 +1,15 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { DotEditableText } from '@dotcms/react';
+import { DotCMSEditableText } from '@dotcms/react/next';
 
 function Banner(contentlet) {
-    const { title, caption, image, link, buttonText } = contentlet;
+    const { title, caption, inode, image, link, buttonText } = contentlet;
 
     return (
         <div className="relative w-full p-4 bg-gray-200 h-96">
             {image && (
                 <Image
-                    src={image?.idPath ?? image}
+                    src={inode}
                     fill={true}
                     className="object-cover"
                     alt={title}
@@ -17,7 +17,7 @@ function Banner(contentlet) {
             )}
             <div className="absolute inset-0 flex flex-col items-center justify-center p-4 text-center text-white">
                 <h2 className="mb-2 text-6xl font-bold text-shadow">
-                    <DotEditableText contentlet={contentlet} fieldName="title" />
+                    <DotCMSEditableText contentlet={contentlet} fieldName="title" />
                 </h2>
                 <p className="mb-4 text-xl text-shadow">{caption}</p>
                 <Link
