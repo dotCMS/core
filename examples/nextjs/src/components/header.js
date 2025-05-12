@@ -3,7 +3,7 @@
 import Link from 'next/link';
 
 import { useIsEditMode } from '@/hooks/isEditMode';
-import ReorderButton from './components/reorderMenu';
+import { ReorderMenuButton } from './ReorderMenuButton';
 
 function Header({ children }) {
     const isEditMode = useIsEditMode();
@@ -15,7 +15,7 @@ function Header({ children }) {
                     <Link href="/">TravelLux in NextJS</Link>
                 </h2>
 
-                {isEditMode && <ReorderButton />}
+                {isEditMode && <ReorderMenuButton />}
             </div>
 
             {children}

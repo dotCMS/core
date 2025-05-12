@@ -11,7 +11,7 @@ function Navigation({ items, className }) {
           <Link
             href={{
               pathname: '/',
-              query: Object.fromEntries(searchParams.entries()) // We need to maintain the query params on the navigation, this way next loads the page with the same query params
+              query: Object.fromEntries(searchParams.entries())
             }}>
             Home
           </Link>
@@ -21,7 +21,7 @@ function Navigation({ items, className }) {
             <Link
               href={{
                 pathname: item.href,
-                query: Object.fromEntries(searchParams.entries()) // We need to maintain the query params on the navigation, this way next loads the page with the same query params
+                query: Object.fromEntries(searchParams.entries())
               }}
               target={item.target}>
               {item.title}
