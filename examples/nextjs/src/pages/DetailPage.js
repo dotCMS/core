@@ -1,38 +1,56 @@
 "use client";
 
-import NotFound from "@/app/not-found";
-import Blog from "@/components/contenttypes/Blog";
-import Footer from "@/components/layout/footer/footer";
-import Header from "@/components/layout/header/header";
-import Navigation from "@/components/layout/navigation";
-
-import { useCustomPageAsset } from "@/hooks/useCustomPageAsset";
+import { useEffect, useState } from "react";
 
 import { enableBlockEditorInline } from "@dotcms/uve";
+import { DotCMSBlockEditorRenderer, useEditableDotCMSPage } from "@dotcms/react/next";
 
-export function MyBlogPage({ initialPageAsset, nav }) {
-    const pageAsset = useCustomPageAsset(initialPageAsset);
+import { isEditMode } from "@/utils/isEditMode";
+import Footer from "@/components/layout/footer/footer";
+import Header from "@/components/layout/header/header";
+
+export function DetailPage({ pageContent }) {
+    const [twActives, setTwActives] = useState("");
+    const { pageAsset } = useEditableDotCMSPage(pageContent);
     const { urlContentMap } = pageAsset;
+    const { blogContent } = urlContentMap || {};
 
-    if (!urlContentMap) {
-        return <NotFound />;
-    }
+    useEffect(() => {
+        if (isEditMode()) {
+            setTwActives( "border-2 border-solid border-cyan-400 cursor-pointer");
+        }
+    }, []);
 
     const handleClick = () => {
         enableBlockEditorInline(urlContentMap, "blogContent");
     };
 
     return (
-        <div className="flex flex-col gap-6 min-h-screen bg-lime-50">
-            {pageAsset?.layout.header && (
-                <Header>{!!nav && <Navigation items={nav} />}</Header>
-            )}
+        <div className="flex flex-col gap-6 min-h-screen bg-slate-50">
+            {pageAsset?.layout.header && <Header />}
 
             <main className="flex flex-col gap-8 m-auto" onClick={handleClick}>
-                <Blog {...urlContentMap} />
+                <DotCMSBlockEditorRenderer
+                    blocks={JSON.parse(blogContent)}
+                    className={twActives}
+                    customRenderers={customeRenderers}
+                />
             </main>
 
-            {pageAsset?.layout.footer && <Footer />}
+            {/* {pageAsset?.layout.footer && <Footer />} */}
         </div>
     );
+}
+
+const customeRenderers = {
+    Activity: (props) => {
+        const { title, description } = props.attrs.data;
+
+        return (
+            <div>
+                <h1>{title}</h1>
+                <p>{description}</p>
+            </div>
+        );
+    }
 }

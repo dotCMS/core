@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+
 function Activity({ title, description, image, inode, urlTitle }) {
     return (
         <article className="p-4 overflow-hidden bg-white rounded shadow-lg mb-4">

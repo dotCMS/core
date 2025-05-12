@@ -27,5 +27,5 @@ export const pageComponents = {
     Image: ImageComponent,
     calendarEvent: CalendarEvent,
     CallToAction: CallToAction,
-    CustomNoComponent: CustomNoComponent
+    CustomNoComponent: CustomNoComponent,
 };
