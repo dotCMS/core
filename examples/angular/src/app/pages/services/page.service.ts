@@ -68,7 +68,9 @@ export class PageService {
                     depth: 2,
                     languageId: route.snapshot.params['languageId'] || 1
                 })
-                .then((response) => (response as any).entity)
+                .then((response) => {
+                    return response as DotcmsNavigationItem;
+                })
                 .catch((e) => {
                     console.error(`Error fetching navigation: ${e.message}`);
                     return undefined;

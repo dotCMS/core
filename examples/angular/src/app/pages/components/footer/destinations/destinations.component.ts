@@ -2,7 +2,7 @@ import { Component, OnInit, inject, input, signal } from '@angular/core';
 
 import { ContentletsWrapperComponent } from '../../../../shared/contentlets-wrapper/contentlets.component';
 
-import { Destination } from '../../../../models';
+import { Destination } from '../../../../shared/models';
 
 @Component({
     selector: 'app-destinations',

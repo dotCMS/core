@@ -2,7 +2,7 @@ import { Component, input } from '@angular/core';
 
 import { DatePipe, NgOptimizedImage } from '@angular/common';
 import { ContentletComponent } from './contentlet/contentlet.component';
-import { Contentlet } from '../../models';
+import { Contentlet } from '../models';
 
 /**
  * Local component for rendering a list of contentlets outside the DotCmsLayout.

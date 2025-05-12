@@ -23,23 +23,8 @@ import {
     DotCMSPageAsset,
     DotCMSComposedPageResponse
 } from '@dotcms/types';
-import { FooterContent } from '../models';
-const EXTRA_QUERIES: DotCMSPageRequestParams['graphql'] = {
-    content: {
-        logoImage: `FileAssetCollection(query: "+title:logo.png") {
-    fileAsset {
-      versionPath
-    }
-  }`,
-        blogs: `BlogCollection(limit: 3, sortBy: "modDate desc") {
-  _map
-  }`,
-        destinations: `DestinationCollection(limit: 3, sortBy: "modDate desc") {
-  _map
-  }`
-    }
-};
-
+import { FooterContent } from '../shared/models';
+import { BASE_EXTRA_QUERIES } from '../shared/constants';
 type ComposedPageResponse = DotCMSComposedPageResponse<{
     pageAsset: DotCMSPageAsset;
     content: FooterContent;
@@ -94,7 +79,7 @@ export class DotCMSPagesComponent implements OnInit {
                 switchMap(() =>
                     this.#pageService.getPageAndNavigation<DotCMSPageAsset, FooterContent>(
                         this.#route,
-                        EXTRA_QUERIES
+                        BASE_EXTRA_QUERIES
                     )
                 ),
                 takeUntilDestroyed(this.#destroyRef)

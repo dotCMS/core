@@ -1,6 +1,6 @@
 import { Component, OnInit, inject, input, signal } from '@angular/core';
 import { ContentletsWrapperComponent } from '../../../../shared/contentlets-wrapper/contentlets.component';
-import { Blog } from '../../../../models';
+import { Blog } from '../../../../shared/models';
 @Component({
     selector: 'app-blogs',
     standalone: true,
