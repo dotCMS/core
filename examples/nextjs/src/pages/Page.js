@@ -2,7 +2,7 @@
 
 import { DotCMSLayoutBody, useEditableDotCMSPage } from '@dotcms/react/next';
 import Footer from '@/components/footer/footer';
-import Header from '@/components/header/header';
+import Header from '@/components/header';
 import Navigation from '@/components/navigation';
 
 import NotFound from '@/app/not-found';

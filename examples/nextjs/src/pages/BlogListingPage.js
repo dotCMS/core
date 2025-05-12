@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import Header from "@/components/header/header";
+
 import { useIsEditMode } from "@/hooks/isEditMode";
 import { useEditableDotCMSPage } from "@dotcms/react/next";
 import { editContentlet } from "@dotcms/uve";
+
 import Image from "next/image";
+import Header from "@/components/header";
 
 export function BlogListingPage(pageResponse) {
     const { content } = useEditableDotCMSPage(pageResponse);

@@ -4,14 +4,11 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 
 import { enableBlockEditorInline } from "@dotcms/uve";
-import {
-    DotCMSBlockEditorRenderer,
-    useEditableDotCMSPage,
-} from "@dotcms/react/next";
+import { DotCMSBlockEditorRenderer, useEditableDotCMSPage } from "@dotcms/react/next";
 
 import { useIsEditMode } from "@/hooks/isEditMode";
 import Footer from "@/components/footer/footer";
-import Header from "@/components/header/header";
+import Header from "@/components/header";
 
 export function DetailPage({ pageContent }) {
     const [twActives, setTwActives] = useState(
