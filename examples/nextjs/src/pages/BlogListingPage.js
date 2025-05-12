@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Header from "@/components/layout/header/header";
+import Header from "@/components/header/header";
 import { useIsEditMode } from "@/hooks/isEditMode";
 import { useEditableDotCMSPage } from "@dotcms/react/next";
 import { editContentlet } from "@dotcms/uve";
@@ -50,34 +50,34 @@ export function BlogListingPage(pageResponse) {
 const SearchBar = ({ searchQuery, setSearchQuery }) => {
     return (
         <div className="mb-8">
-        <div className="relative">
-            <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                <svg
-                    className="w-4 h-4 text-gray-500"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                >
-                    <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                    />
-                </svg>
+            <div className="relative">
+                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                    <svg
+                        className="w-4 h-4 text-gray-500"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                    >
+                        <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                        />
+                    </svg>
+                </div>
+                <input
+                    type="search"
+                    className="block w-full p-4 pl-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-white focus:ring-blue-500 focus:border-blue-500 outline-none"
+                    placeholder="Search blogs..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                />
             </div>
-            <input
-                type="search"
-                className="block w-full p-4 pl-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-white focus:ring-blue-500 focus:border-blue-500 outline-none"
-                placeholder="Search blogs..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-            />
         </div>
-    </div>
-    )
-}
+    );
+};
 
 const BlogCard = ({ blog }) => {
     const {
@@ -101,11 +101,11 @@ const BlogCard = ({ blog }) => {
     const isEditMode = useIsEditMode();
 
     return (
-        <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300">
+        <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 relative">
             {isEditMode && (
                 <button
                     onClick={() => editContentlet(blog)}
-                    className="absolute top-2 right-2 z-10 bg-blue-500 text-white p-1 rounded-full"
+                    className="absolute top-2 right-2 z-10 bg-blue-500 text-white rounded-md py-2 px-4 shadow-md hover:bg-blue-600"
                 >
                     Edit
                 </button>

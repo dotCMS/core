@@ -1,9 +1,9 @@
 import { DetailPage } from "@/pages/DetailPage";
-import { getPage } from "@/utils/getPage";
+import { getDotCMSPage } from "@/utils/getDotCMSPage";
 
 export async function generateMetadata({ params, searchParams }) {
     const path = params.slug?.join("/");
-    const { pageAsset } = await getPage(`/blog/post/${path}`, searchParams);
+    const { pageAsset } = await getDotCMSPage(`/blog/post/${path}`, searchParams);
     const urlContentMap = pageAsset?.urlContentMap;
     const title = urlContentMap?.title || "Page not found";
     return {
@@ -13,6 +13,6 @@ export async function generateMetadata({ params, searchParams }) {
 
 export default async function Home({ searchParams, params }) {
     const path = params?.slug?.join("/");
-    const pageContent = await getPage(`/blog/post/${path}`, searchParams);
+    const pageContent = await getDotCMSPage(`/blog/post/${path}`, searchParams);
     return <DetailPage pageContent={pageContent} />;
 }

@@ -10,8 +10,8 @@ import {
 } from "@dotcms/react/next";
 
 import { useIsEditMode } from "@/hooks/isEditMode";
-import Footer from "@/components/layout/footer/footer";
-import Header from "@/components/layout/header/header";
+import Footer from "@/components/footer/footer";
+import Header from "@/components/header/header";
 
 export function DetailPage({ pageContent }) {
     const [twActives, setTwActives] = useState(
@@ -21,6 +21,8 @@ export function DetailPage({ pageContent }) {
     const { urlContentMap } = pageAsset;
     const { blogContent } = urlContentMap || {};
     const isEditMode = useIsEditMode();
+
+    console.log("HERE - DETAIL PAGE");
 
     useEffect(() => {
         if (isEditMode) {

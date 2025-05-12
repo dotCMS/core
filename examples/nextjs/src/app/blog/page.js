@@ -1,10 +1,10 @@
 import { cache } from "react";
 
-import { dotClient } from "@/utils/dotClient";
+import { dotCMSClient } from "@/utils/dotCMSClient";
 import { BlogListingPage } from "@/pages/BlogListingPage";
 
 export async function generateMetadata() {
-    const { pageAsset } = await getPage(`/blog`);
+    const { pageAsset } = await getDotCMSPage(`/blog`);
     const title = pageAsset?.page?.friendlyName || "Page not found";
     return {
         title: `${title} - Blog`
@@ -12,13 +12,13 @@ export async function generateMetadata() {
 }
 
 export default async function Home() {
-    const pageResponse = await getPage(`/blog`);
+    const pageResponse = await getDotCMSPage(`/blog`);
     return <BlogListingPage {...pageResponse} />;
 }
 
-export const getPage = cache(async (path) => {
+export const getDotCMSPage = cache(async (path) => {
     try {
-        const pageData = await dotClient.page.get(path, {
+        const pageData = await dotCMSClient.page.get(path, {
             graphql: {
                 content: {
                     blogs: blogQuery,

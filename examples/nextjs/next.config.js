@@ -3,6 +3,7 @@
 const url = new URL(process.env.NEXT_PUBLIC_DOTCMS_HOST);
 
 const nextConfig = {
+    trailingSlash: true,
     images: {
         remotePatterns: [
             {

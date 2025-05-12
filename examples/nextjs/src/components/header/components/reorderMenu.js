@@ -1,4 +1,4 @@
-import { reorderMenu } from '@dotcms/client';
+import { reorderMenu } from '@dotcms/uve';
 
 export default function ReorderButton() {
     const OrderIcon = () => (
