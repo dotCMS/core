@@ -9,7 +9,7 @@ import {
     useEditableDotCMSPage,
 } from "@dotcms/react/next";
 
-import { isEditMode } from "@/hooks/isEditMode";
+import { useIsEditMode } from "@/hooks/isEditMode";
 import Footer from "@/components/layout/footer/footer";
 import Header from "@/components/layout/header/header";
 
@@ -20,17 +20,18 @@ export function DetailPage({ pageContent }) {
     const { pageAsset, content } = useEditableDotCMSPage(pageContent);
     const { urlContentMap } = pageAsset;
     const { blogContent } = urlContentMap || {};
+    const isEditMode = useIsEditMode();
 
     useEffect(() => {
-        if (isEditMode()) {
+        if (isEditMode) {
             setTwActives((prev) => {
                 return `${prev} border-2 border-solid border-cyan-400 cursor-pointer`;
             });
         }
-    }, []);
+    }, [isEditMode]);
 
     const handleClick = () => {
-        if (isEditMode()) {
+        if (isEditMode) {
             enableBlockEditorInline(urlContentMap, "blogContent");
         }
     };

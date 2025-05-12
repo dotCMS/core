@@ -1,16 +1,12 @@
 'use client';
+
 import Link from 'next/link';
 
-import { useEffect, useState } from 'react';
-import { isEditMode } from '@/hooks/isEditMode';
+import { useIsEditMode } from '@/hooks/isEditMode';
 import ReorderButton from './components/reorderMenu';
 
 function Header({ children }) {
-    const [isEditing, setIsEditing] = useState(false);
-
-    useEffect(() => {
-        setIsEditing(isEditMode());
-    }, []);
+    const isEditMode = useIsEditMode();
 
     return (
         <div className="flex items-center justify-between p-4 bg-purple-500">
@@ -19,7 +15,7 @@ function Header({ children }) {
                     <Link href="/">TravelLux in NextJS</Link>
                 </h2>
 
-                {isEditing && <ReorderButton />}
+                {isEditMode && <ReorderButton />}
             </div>
 
             {children}
