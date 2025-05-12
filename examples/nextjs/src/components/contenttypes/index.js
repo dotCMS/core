@@ -1,12 +1,12 @@
-import { CustomNoComponent } from './empty';
-import Activity from './activity';
-import Banner from './banner';
-import Blog from './blog';
-import CalendarEvent from './calendarEvent';
-import CallToAction from './callToAction';
-import ImageComponent from './image';
-import Product from './product';
-import WebPageContent from './webPageContent';
+import { CustomNoComponent } from './Empty';
+import Activity from './Activity';
+import Banner from './Banner';
+import Blog from './Blog';
+import CalendarEvent from './CalendarEvent';
+import CallToAction from './CallToAction';
+import ImageComponent from './Image';
+import Product from './Product';
+import WebPageContent from './WebPageContent';
 
 // Provide a component for each content type
 export const contentComponents = {
