@@ -6,10 +6,10 @@ import { DetailPage } from "@/pages/DetailPage";
 export async function generateMetadata({ params, searchParams }) {
     const path = params.slug?.join("/");
     const { pageAsset } = await getPageData(path, searchParams);
-    const page = pageAsset?.page;
-    const title = page?.friendlyName || page?.title || "Page not found";
+    const urlContentMap = pageAsset?.urlContentMap;
+    const title = urlContentMap?.title || "Page not found";
     return {
-        title
+        title: `${title} - Blog`
     };
 }
 

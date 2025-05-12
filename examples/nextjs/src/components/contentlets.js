@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import Image from "next/image";
 
 import { editContentlet } from "@dotcms/client";
-import { isEditMode } from "@/utils/isEditMode";
+import { isEditMode } from "@/hooks/isEditMode";
 
 const dateFormatOptions = {
     year: "numeric",

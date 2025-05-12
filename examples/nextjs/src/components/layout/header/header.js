@@ -2,7 +2,7 @@
 import Link from 'next/link';
 
 import { useEffect, useState } from 'react';
-import { isEditMode } from '@/utils/isEditMode';
+import { isEditMode } from '@/hooks/isEditMode';
 import ReorderButton from './components/reorderMenu';
 
 function Header({ children }) {
