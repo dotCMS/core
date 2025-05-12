@@ -17,7 +17,7 @@ import {
     DotTemplate,
     VanityUrl
 } from '@dotcms/dotcms-models';
-import { UVE_MODE } from '@dotcms/uve/types';
+import { DotCMSGraphQLPageResponse, UVE_MODE } from '@dotcms/types';
 
 import { PERSONA_KEY } from '../shared/consts';
 import { DotPage, DotPageAssetParams, SavePagePayload } from '../shared/models';
@@ -188,7 +188,7 @@ export class DotPageApiService {
         query: string;
         variables: Record<string, string>;
     }): Observable<{
-        page: DotPageApiResponse;
+        pageAsset: DotPageApiResponse;
         content: Record<string, unknown>;
     }> {
         const headers = {
@@ -199,10 +199,10 @@ export class DotPageApiService {
         return this.http.post<{ data }>('/api/v1/graphql', { query, variables }, { headers }).pipe(
             pluck('data'),
             map(({ page, ...content }) => {
-                const pageEntity = graphqlToPageEntity({ page });
+                const pageEntity = graphqlToPageEntity({ page } as DotCMSGraphQLPageResponse);
 
                 return {
-                    page: pageEntity,
+                    pageAsset: pageEntity,
                     content
                 };
             })

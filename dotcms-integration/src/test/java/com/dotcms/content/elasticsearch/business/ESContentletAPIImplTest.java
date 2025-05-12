@@ -2,7 +2,6 @@ package com.dotcms.content.elasticsearch.business;
 
 import com.dotcms.DataProviderWeldRunner;
 import com.dotcms.IntegrationTestBase;
-import com.dotcms.JUnit4WeldRunner;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.contenttype.business.ContentTypeAPI;
@@ -14,6 +13,7 @@ import com.dotcms.contenttype.model.field.DateTimeField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.HostFolderField;
 import com.dotcms.contenttype.model.field.ImmutableTextField;
+import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
@@ -68,7 +68,6 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.WebAssetException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 
-import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
@@ -82,10 +81,10 @@ import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.quartz.job.ContentTypeDeleteJob;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.Files;
@@ -108,7 +107,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.postgresql.util.PGobject;
-import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -146,6 +144,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -4762,4 +4761,57 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
             ESContentletAPIImpl.setFeatureFlagDbUniqueFieldValidation(oldEnabledDataBaseValidation);
         }
     }
+
+    /**
+     * Method to test: {@link ContentletAPI#checkin(Contentlet, User, boolean)}  }
+     * When:
+     * - Create a Content Type with a required relationship
+     * - Create a parent contentlet without the required relationship
+     * - Try to checkin the parent contentlet
+     * Should: throw a DotContentletValidationException
+     */
+    @Test
+    public void testValidationExceptionForMissingRequiredRelationship() throws Exception {
+
+        ContentType parentContentType = null;
+        ContentType childContentType = null;
+
+        try {
+            // Create a child content type
+            childContentType = new ContentTypeDataGen()
+                    .name("Child Type - Required Relationship")
+                    .nextPersisted();
+
+            // Create a required relationship
+            final Field relationshipField = new FieldDataGen()
+                    .type(RelationshipField.class)
+                    .values(String.valueOf(
+                            WebKeys.Relationship.RELATIONSHIP_CARDINALITY.ONE_TO_ONE.ordinal()))
+                    .relationType(childContentType.variable())
+                    .required(true)
+                    .next();
+
+            // Create a parent content type with a required relationship
+            parentContentType = new ContentTypeDataGen()
+                    .name("Parent Type - Required Relationship")
+                    .field(relationshipField)
+                    .nextPersisted();
+
+            // Create a parent contentlet without the required relationship
+            final Contentlet parentContentlet = new ContentletDataGen(parentContentType)
+                    .next(); // Don't persist yet
+            parentContentlet.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
+
+            // Assert that a exception is thrown when trying to checkin the parent contentlet
+            assertThrows(DotContentletValidationException.class, () -> {
+                contentletAPI.checkin(parentContentlet, user, false);
+            }, "Should throw DotContentletValidationException when required relationship children are missing");
+        } finally {
+            // Clean up
+            ContentTypeDataGen.remove(parentContentType);
+            ContentTypeDataGen.remove(childContentType);
+        }
+
+    }
+
 }

@@ -18,12 +18,13 @@
             border-left: 1px solid $color-palette-black-op-10;
             display: flex;
             align-items: center;
-            justify-content: space-between;
+            justify-content: center;
             flex: 0;
+            min-width: 64px;
         }
         .p-tabview-nav-container {
             padding: 0;
-            border: solid 1px $color-palette-gray-300;
+            border-bottom: solid 1px $color-palette-gray-300;
             border-right: none;
             overflow: initial;
             position: initial;
@@ -112,7 +113,6 @@
 }
 
 .content-sidebar__close {
-    padding: $spacing-1 $spacing-1 $spacing-1 $spacing-2;
     button {
         rect {
             stroke: $color-palette-primary;

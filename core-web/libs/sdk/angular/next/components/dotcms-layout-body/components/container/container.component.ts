@@ -9,17 +9,13 @@ import {
     signal
 } from '@angular/core';
 
+import { DotCMSBasicContentlet, DotCMSColumnContainer, EditableContainerData } from '@dotcms/types';
+import { DotContainerAttributes } from '@dotcms/types/internal';
 import {
     getContainersData,
     getContentletsInContainer,
     getDotContainerAttributes
 } from '@dotcms/uve/internal';
-import {
-    DotCMSColumnContainer,
-    DotCMSContentlet,
-    DotContainerAttributes,
-    EditableContainerData
-} from '@dotcms/uve/types';
 
 import { ContainerNotFoundComponent } from './components/container-not-found/container-not-found.component';
 import { EmptyContainerComponent } from './components/empty-container/empty-container.component';
@@ -46,7 +42,7 @@ import { ContentletComponent } from '../../components/contentlet/contentlet.comp
             <dotcms-empty-container />
         } @else {
             @for (contentlet of $contentlets(); track contentlet.identifier) {
-                <dotcms-contentlet [contentlet]="contentlet" [container]="container.identifier" />
+                <dotcms-contentlet [contentlet]="contentlet" [containerData]="$containerData()!" />
             }
         }
     `,
@@ -61,7 +57,7 @@ export class ContainerComponent implements OnChanges {
     #dotCMSStore = inject(DotCMSStore);
 
     $containerData = signal<EditableContainerData | null>(null);
-    $contentlets = signal<DotCMSContentlet[]>([]);
+    $contentlets = signal<DotCMSBasicContentlet[]>([]);
     $isEmpty = computed(() => this.$contentlets().length === 0);
     $dotAttributes = computed<DotContainerAttributes>(() => {
         const containerData = this.$containerData();

@@ -1,5 +1,5 @@
 import { getUVEState } from '@dotcms/uve';
-import { UVE_MODE } from '@dotcms/uve/types';
+import { UVE_MODE } from '@dotcms/types';
 
 /**
  * Check if the user is in edit mode

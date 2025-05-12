@@ -46,9 +46,9 @@ import {
     SeoMetaTags
 } from '@dotcms/dotcms-models';
 import { DotResultsSeoToolComponent } from '@dotcms/portlets/dot-ema/ui';
+import { __DOTCMS_UVE_EVENT__ } from '@dotcms/types/internal';
 import { SafeUrlPipe, DotSpinnerModule, DotCopyContentModalService } from '@dotcms/ui';
 import { isEqual, WINDOW } from '@dotcms/utils';
-import { __DOTCMS_UVE_EVENT__ } from '@dotcms/uve/internal';
 
 import { DotUvePageVersionNotFoundComponent } from './components/dot-uve-page-version-not-found/dot-uve-page-version-not-found.component';
 import { DotUveToolbarComponent } from './components/dot-uve-toolbar/dot-uve-toolbar.component';
@@ -1006,7 +1006,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             [CLIENT_ACTIONS.CLIENT_READY]: (devConfig) => {
                 const isClientReady = this.uveStore.isClientReady();
 
-                // console.log('isClientReady', isClientReady);
                 if (isClientReady) {
                     return;
                 }

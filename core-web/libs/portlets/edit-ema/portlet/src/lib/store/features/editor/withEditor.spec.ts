@@ -6,8 +6,9 @@ import { of } from 'rxjs';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { DEFAULT_VARIANT_ID, DotDeviceListItem } from '@dotcms/dotcms-models';
+import { UVE_MODE } from '@dotcms/types';
+import { WINDOW } from '@dotcms/utils';
 import { mockDotDevices, seoOGTagsMock } from '@dotcms/utils-testing';
-import { UVE_MODE } from '@dotcms/uve/types';
 
 import { withEditor } from './withEditor';
 
@@ -84,6 +85,10 @@ describe('withEditor', () => {
                     },
                     save: jest.fn()
                 }
+            },
+            {
+                provide: WINDOW,
+                useValue: window
             }
         ]
     });
@@ -173,8 +178,30 @@ describe('withEditor', () => {
         describe('$iframeURL', () => {
             it("should return the iframe's URL", () => {
                 expect(store.$iframeURL()).toBe(
-                    'http://localhost:3000/test-url?language_id=1&variantName=DEFAULT&mode=EDIT_MODE&personaId=dot%3Apersona'
+                    'http://localhost:3000/test-url?language_id=1&variantName=DEFAULT&mode=EDIT_MODE&personaId=dot%3Apersona&dotCMSHost=http://localhost'
                 );
+            });
+
+            // There is an issue with Signal Store when you try to spy on a signal called from a computed property
+            // Unskip this when this discussion is resolved: https://github.com/ngrx/platform/discussions/4627
+            describe.skip('pageAPIResponse dependency', () => {
+                it('should call pageAPIResponse when it is a headless page', () => {
+                    const spy = jest.spyOn(store, 'pageAPIResponse');
+                    patchState(store, { isTraditionalPage: false });
+                    store.$iframeURL();
+
+                    expect(spy).toHaveBeenCalled();
+                });
+
+                it('should call pageAPIResponse when it is a traditional page', () => {
+                    const spy = jest.spyOn(store, 'pageAPIResponse');
+
+                    patchState(store, { isTraditionalPage: true });
+
+                    store.$iframeURL();
+
+                    expect(spy).toHaveBeenCalled();
+                });
             });
 
             it('should be an instance of String in src when the page is traditional', () => {
@@ -213,7 +240,7 @@ describe('withEditor', () => {
                 });
 
                 expect(store.$iframeURL()).toBe(
-                    'http://localhost/first?language_id=1&variantName=DEFAULT&personaId=dot%3Apersona'
+                    'http://localhost/first?language_id=1&variantName=DEFAULT&personaId=dot%3Apersona&dotCMSHost=http://localhost'
                 );
             });
 
@@ -229,7 +256,9 @@ describe('withEditor', () => {
                     }
                 });
 
-                expect(store.$iframeURL()).toBe('http://localhost:3000/test-url');
+                expect(store.$iframeURL()).toBe(
+                    'http://localhost:3000/test-url&dotCMSHost=http://localhost'
+                );
             });
 
             it('should set the right iframe url when the clientHost is present with a aditional path', () => {
@@ -244,7 +273,9 @@ describe('withEditor', () => {
                     }
                 });
 
-                expect(store.$iframeURL()).toBe('http://localhost:3000/test/test-url');
+                expect(store.$iframeURL()).toBe(
+                    'http://localhost:3000/test/test-url&dotCMSHost=http://localhost'
+                );
             });
         });
 

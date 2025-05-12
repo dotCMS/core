@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeAll, beforeEach, afterEach } from '@jest/globals';
 
-import { getUVEState, createUVESubscription } from './core.utils';
+import { UVE_MODE, UVEEventType } from '@dotcms/types';
+import { __DOTCMS_UVE_EVENT__ } from '@dotcms/types/internal';
 
-import { UVE_MODE, UVEEventType } from '../types/editor/public';
-import { __DOTCMS_UVE_EVENT__ } from '../types/events/internal';
+import { getUVEState, createUVESubscription } from './core.utils';
 
 describe('getUVEStatus', () => {
     beforeAll(() => {
@@ -49,7 +49,8 @@ describe('getUVEStatus', () => {
             variantName: null,
             experimentId: null,
             publishDate: null,
-            languageId: null
+            languageId: null,
+            dotCMSHost: null
         });
     });
 
@@ -73,7 +74,8 @@ describe('getUVEStatus', () => {
             variantName: null,
             experimentId: null,
             publishDate: null,
-            languageId: null
+            languageId: null,
+            dotCMSHost: null
         });
     });
 
@@ -97,7 +99,8 @@ describe('getUVEStatus', () => {
             variantName: null,
             experimentId: null,
             publishDate: null,
-            languageId: null
+            languageId: null,
+            dotCMSHost: null
         });
     });
 
@@ -121,130 +124,161 @@ describe('getUVEStatus', () => {
             variantName: null,
             experimentId: null,
             publishDate: null,
-            languageId: null
+            languageId: null,
+            dotCMSHost: null
         });
     });
-});
 
-it('should set the mode to edit when the mode parameter is invalid', () => {
-    const mockWindow = {
-        ...window,
-        parent: {
-            ...window
-        },
-        location: {
-            href: 'https://test.com/hello?mode=IM_TRYING_TO_BREAK_IT'
-        }
-    };
+    it('should set the mode to edit when the mode parameter is invalid', () => {
+        const mockWindow = {
+            ...window,
+            parent: {
+                ...window
+            },
+            location: {
+                href: 'https://test.com/hello?mode=IM_TRYING_TO_BREAK_IT'
+            }
+        };
 
-    const spy = jest.spyOn(global, 'window', 'get');
-    spy.mockReturnValue(mockWindow as unknown as Window & typeof globalThis);
+        const spy = jest.spyOn(global, 'window', 'get');
+        spy.mockReturnValue(mockWindow as unknown as Window & typeof globalThis);
 
-    getUVEState();
+        getUVEState();
 
-    expect(getUVEState()).toEqual({
-        mode: UVE_MODE.EDIT,
-        persona: null,
-        variantName: null,
-        experimentId: null,
-        publishDate: null,
-        languageId: null
+        expect(getUVEState()).toEqual({
+            mode: UVE_MODE.EDIT,
+            persona: null,
+            variantName: null,
+            experimentId: null,
+            publishDate: null,
+            languageId: null,
+            dotCMSHost: null
+        });
     });
-});
 
-it('should parse all URL parameters correctly', () => {
-    const mockWindow = {
-        ...window,
-        parent: {
-            ...window
-        },
-        location: {
-            href: 'https://test.com/hello?mode=EDIT_MODE&personaId=mobile&variantName=test-variant&experimentId=exp-123&publishDate=2024-03-20&language_id=en-US'
-        }
-    };
+    it('should parse all URL parameters correctly', () => {
+        const mockWindow = {
+            ...window,
+            parent: {
+                ...window
+            },
+            location: {
+                href: 'https://test.com/hello?mode=EDIT_MODE&personaId=mobile&variantName=test-variant&experimentId=exp-123&publishDate=2024-03-20&language_id=en-US&dotCMSHost=https://test.com'
+            }
+        };
 
-    const spy = jest.spyOn(global, 'window', 'get');
-    spy.mockReturnValue(mockWindow as unknown as Window & typeof globalThis);
+        const spy = jest.spyOn(global, 'window', 'get');
+        spy.mockReturnValue(mockWindow as unknown as Window & typeof globalThis);
 
-    expect(getUVEState()).toEqual({
-        mode: UVE_MODE.EDIT,
-        persona: 'mobile',
-        variantName: 'test-variant',
-        experimentId: 'exp-123',
-        publishDate: '2024-03-20',
-        languageId: 'en-US'
+        expect(getUVEState()).toEqual({
+            mode: UVE_MODE.EDIT,
+            persona: 'mobile',
+            variantName: 'test-variant',
+            experimentId: 'exp-123',
+            publishDate: '2024-03-20',
+            languageId: 'en-US',
+            dotCMSHost: 'https://test.com'
+        });
     });
-});
 
-it('should handle partial URL parameters', () => {
-    const mockWindow = {
-        ...window,
-        parent: {
-            ...window
-        },
-        location: {
-            href: 'https://test.com/hello?mode=PREVIEW_MODE&personaId=desktop'
-        }
-    };
+    it('should handle partial URL parameters', () => {
+        const mockWindow = {
+            ...window,
+            parent: {
+                ...window
+            },
+            location: {
+                href: 'https://test.com/hello?mode=PREVIEW_MODE&personaId=desktop&dotCMSHost=https://test.com'
+            }
+        };
 
-    const spy = jest.spyOn(global, 'window', 'get');
-    spy.mockReturnValue(mockWindow as unknown as Window & typeof globalThis);
+        const spy = jest.spyOn(global, 'window', 'get');
+        spy.mockReturnValue(mockWindow as unknown as Window & typeof globalThis);
 
-    expect(getUVEState()).toEqual({
-        mode: UVE_MODE.PREVIEW,
-        persona: 'desktop',
-        variantName: null,
-        experimentId: null,
-        publishDate: null,
-        languageId: null
+        expect(getUVEState()).toEqual({
+            mode: UVE_MODE.PREVIEW,
+            persona: 'desktop',
+            variantName: null,
+            experimentId: null,
+            publishDate: null,
+            languageId: null,
+            dotCMSHost: 'https://test.com'
+        });
     });
-});
 
-it('should handle URL encoded parameters with variant and experiment', () => {
-    const mockWindow = {
-        ...window,
-        parent: {
-            ...window
-        },
-        location: {
-            href: 'https://test.com/hello?mode=LIVE&variantName=test%20variant&experimentId=exp%2D123&language_id=en%2DUS'
-        }
-    };
+    it('should handle URL encoded parameters with variant and experiment', () => {
+        const mockWindow = {
+            ...window,
+            parent: {
+                ...window
+            },
+            location: {
+                href: 'https://test.com/hello?mode=LIVE&variantName=test%20variant&experimentId=exp%2D123&language_id=en%2DUS&dotCMSHost=https://test.com'
+            }
+        };
 
-    const spy = jest.spyOn(global, 'window', 'get');
-    spy.mockReturnValue(mockWindow as unknown as Window & typeof globalThis);
+        const spy = jest.spyOn(global, 'window', 'get');
+        spy.mockReturnValue(mockWindow as unknown as Window & typeof globalThis);
 
-    expect(getUVEState()).toEqual({
-        mode: UVE_MODE.LIVE,
-        persona: null,
-        variantName: 'test variant',
-        experimentId: 'exp-123',
-        publishDate: null,
-        languageId: 'en-US'
+        expect(getUVEState()).toEqual({
+            mode: UVE_MODE.LIVE,
+            persona: null,
+            variantName: 'test variant',
+            experimentId: 'exp-123',
+            publishDate: null,
+            languageId: 'en-US',
+            dotCMSHost: 'https://test.com'
+        });
     });
-});
 
-it('should handle variantName and experimentId being provided together', () => {
-    const mockWindow = {
-        ...window,
-        parent: {
-            ...window
-        },
-        location: {
-            href: 'https://test.com/hello?mode=LIVE&variantName=test-variant&experimentId=exp-123'
-        }
-    };
+    it('should handle variantName and experimentId being provided together', () => {
+        const mockWindow = {
+            ...window,
+            parent: {
+                ...window
+            },
+            location: {
+                href: 'https://test.com/hello?mode=LIVE&variantName=test-variant&experimentId=exp-123'
+            }
+        };
 
-    const spy = jest.spyOn(global, 'window', 'get');
-    spy.mockReturnValue(mockWindow as unknown as Window & typeof globalThis);
+        const spy = jest.spyOn(global, 'window', 'get');
+        spy.mockReturnValue(mockWindow as unknown as Window & typeof globalThis);
 
-    expect(getUVEState()).toEqual({
-        mode: UVE_MODE.LIVE,
-        persona: null,
-        variantName: 'test-variant',
-        experimentId: 'exp-123',
-        publishDate: null,
-        languageId: null
+        expect(getUVEState()).toEqual({
+            mode: UVE_MODE.LIVE,
+            persona: null,
+            variantName: 'test-variant',
+            experimentId: 'exp-123',
+            publishDate: null,
+            languageId: null,
+            dotCMSHost: null
+        });
+    });
+
+    it('should handle dotCMSHost parameter', () => {
+        const mockWindow = {
+            ...window,
+            parent: {
+                ...window
+            },
+            location: {
+                href: 'https://test.com/hello?mode=LIVE&dotCMSHost=https://test.com'
+            }
+        };
+
+        const spy = jest.spyOn(global, 'window', 'get');
+        spy.mockReturnValue(mockWindow as unknown as Window & typeof globalThis);
+
+        expect(getUVEState()).toEqual({
+            mode: UVE_MODE.LIVE,
+            persona: null,
+            variantName: null,
+            experimentId: null,
+            publishDate: null,
+            languageId: null,
+            dotCMSHost: 'https://test.com'
+        });
     });
 });
 

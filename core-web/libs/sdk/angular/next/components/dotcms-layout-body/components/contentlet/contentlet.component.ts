@@ -12,8 +12,9 @@ import {
     ViewChild
 } from '@angular/core';
 
+import { DotCMSBasicContentlet, EditableContainerData } from '@dotcms/types';
+import { DotContentletAttributes } from '@dotcms/types/internal';
 import { CUSTOM_NO_COMPONENT, getDotContentletAttributes } from '@dotcms/uve/internal';
-import { DotCMSContentlet, DotContentletAttributes } from '@dotcms/uve/types';
 
 import { DynamicComponentEntity } from '../../../../models';
 import { DotCMSStore } from '../../../../store/dotcms.store';
@@ -47,14 +48,14 @@ import { FallbackComponent } from '../fallback-component/fallback-component.comp
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ContentletComponent implements OnChanges {
-    @Input({ required: true }) contentlet!: DotCMSContentlet;
-    @Input({ required: true }) container!: string;
+    @Input({ required: true }) contentlet!: DotCMSBasicContentlet;
+    @Input({ required: true }) containerData!: EditableContainerData;
     @ViewChild('contentletRef') contentletRef!: ElementRef;
     @HostBinding('attr.data-dot-object') dotObject = 'contentlet';
 
     #dotCMSStore = inject(DotCMSStore);
 
-    $contentlet = signal<DotCMSContentlet | null>(null);
+    $contentlet = signal<DotCMSBasicContentlet | null>(null);
     $UserComponent = signal<DynamicComponentEntity | null>(null);
     $UserNoComponent = signal<DynamicComponentEntity | null>(null);
     $isDevMode = this.#dotCMSStore.$isDevMode;
@@ -66,7 +67,7 @@ export class ContentletComponent implements OnChanges {
         const contentlet = this.$contentlet();
         if (!contentlet || !this.$isDevMode()) return {} as DotContentletAttributes;
 
-        return getDotContentletAttributes(contentlet, this.container);
+        return getDotContentletAttributes(contentlet, this.containerData.identifier);
     });
 
     @HostBinding('attr.data-dot-identifier') identifier: string | null = null;
@@ -87,7 +88,7 @@ export class ContentletComponent implements OnChanges {
         this.title = this.$dotAttributes()['data-dot-title'];
         this.inode = this.$dotAttributes()['data-dot-inode'];
         this.type = this.$dotAttributes()['data-dot-type'];
-        this.containerAttribute = this.$dotAttributes()['data-dot-container'];
+        this.containerAttribute = JSON.stringify(this.containerData);
         this.onNumberOfPages = this.$dotAttributes()['data-dot-on-number-of-pages'];
         this.styleAttribute = this.$style();
     }
