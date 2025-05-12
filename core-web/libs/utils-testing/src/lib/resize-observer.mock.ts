@@ -2,9 +2,15 @@
  * Mock implementation of ResizeObserver for testing environments
  */
 export class MockResizeObserver {
-    observe() {}
-    unobserve() {}
-    disconnect() {}
+    observe() {
+        // do nothing
+    }
+    unobserve() {
+        // do nothing
+    }
+    disconnect() {
+        // do nothing
+    }
 }
 
 /**
@@ -12,4 +18,4 @@ export class MockResizeObserver {
  */
 export function setupResizeObserverMock(): void {
     window.ResizeObserver = MockResizeObserver;
-} 
+}
