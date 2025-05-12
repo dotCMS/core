@@ -5,7 +5,7 @@ import { RouterLink } from '@angular/router';
 import { DotCMSBasicContentlet } from '@dotcms/types';
 
 interface ProductContentlet extends DotCMSBasicContentlet {
-    image: {
+    image?: {
         versionPath: string;
     };
     salePrice: number;
@@ -19,10 +19,10 @@ interface ProductContentlet extends DotCMSBasicContentlet {
     imports: [RouterLink, NgOptimizedImage],
     template: ` <div class="overflow-hidden bg-white rounded shadow-lg">
         <div class="p-4">
-            @if (contentlet().image; as image) {
+            @if (contentlet().image?.versionPath; as imageVersionPath) {
             <img
                 class="w-full"
-                [ngSrc]="image.versionPath"
+                [ngSrc]="imageVersionPath"
                 width="100"
                 height="100"
                 alt="Product Image" />

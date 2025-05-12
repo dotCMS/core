@@ -6,7 +6,7 @@ import { DotCMSEditableTextComponent } from '@dotcms/angular/next';
 import { DotCMSBasicContentlet } from '@dotcms/types';
 
 interface BannerContentlet extends DotCMSBasicContentlet {
-    image: {
+    image?: {
         identifier: string;
     };
     title: string;
@@ -21,10 +21,10 @@ interface BannerContentlet extends DotCMSBasicContentlet {
     imports: [RouterLink, NgOptimizedImage, DotCMSEditableTextComponent],
     template: `<div
         class="flex overflow-hidden relative justify-center items-center w-full h-96 bg-gray-200">
-        @if (contentlet().image; as image) {
+        @if (contentlet().image?.identifier; as imageIdentifier) {
         <img
             class="object-cover w-full"
-            [ngSrc]="image.identifier"
+            [ngSrc]="imageIdentifier"
             [alt]="contentlet().title"
             fill
             priority />

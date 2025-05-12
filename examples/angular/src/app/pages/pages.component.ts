@@ -68,8 +68,6 @@ export class DotCMSPagesComponent implements OnInit {
                 takeUntilDestroyed(this.#destroyRef)
             )
             .subscribe(({ response, error, nav }) => {
-                console.log('page', response);
-
                 if (error) {
                     this.#setError(error);
                     return;
@@ -89,8 +87,6 @@ export class DotCMSPagesComponent implements OnInit {
     }
 
     #updatePageContent(page?: DotCMSPageResponse | null) {
-        console.log('page', page);
-
         this.$context.update((state) => ({
             ...state,
             pageResponse: page
@@ -98,8 +94,6 @@ export class DotCMSPagesComponent implements OnInit {
     }
 
     #setPageContent(page?: DotCMSPageResponse, nav?: DotcmsNavigationItem) {
-        console.log('page', page);
-
         this.$context.set({
             pageResponse: page,
             nav,

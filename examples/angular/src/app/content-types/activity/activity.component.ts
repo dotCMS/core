@@ -4,7 +4,7 @@ import { RouterLink } from '@angular/router';
 import { DotCMSBasicContentlet } from '@dotcms/types';
 
 interface ActivityContentlet extends DotCMSBasicContentlet {
-    image: {
+    image?: {
         identifier: string;
     };
     title: string;
@@ -17,10 +17,10 @@ interface ActivityContentlet extends DotCMSBasicContentlet {
     standalone: true,
     imports: [RouterLink, NgOptimizedImage],
     template: ` <article class="overflow-hidden p-4 bg-white rounded shadow-lg">
-        @if (contentlet().image; as image) {
+        @if (contentlet().image?.identifier; as imageIdentifier) {
         <img
             class="w-full"
-            [ngSrc]="image.identifier"
+            [ngSrc]="imageIdentifier"
             width="100"
             height="100"
             alt="Activity Image" />
