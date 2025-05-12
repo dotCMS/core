@@ -1,10 +1,10 @@
-import { ErrorPage } from "@/components/error";
-
-import { handleVanityUrlRedirect } from "@/utils/vanityUrlHandler";
 import { client } from "@/utils/dotClient";
-import { getPageRequestParams } from "@dotcms/client";
+
+import { DetailPage } from "@/pages/DetailPage";
+import { ErrorPage } from "@/components/error";
 import { fetchNavData, fetchPageData } from "@/utils/page.utils";
-import { MyBlogPage } from "@/components/my-blog-page";
+import { getPageRequestParams } from "@dotcms/client";
+import { handleVanityUrlRedirect } from "@/utils/vanityUrlHandler";
 
 /**
  * Generate metadata
@@ -64,5 +64,5 @@ export default async function Home({ searchParams, params }) {
         handleVanityUrlRedirect(pageAsset?.vanityUrl);
     }
 
-    return <MyBlogPage nav={nav?.entity.children} initialPageAsset={pageAsset} />;
+    return <DetailPage nav={nav?.entity.children} initialPageAsset={pageAsset} />;
 }

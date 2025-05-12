@@ -1,6 +1,6 @@
 import { cache } from "react";
 
-import { MyPage } from "@/components/my-page";
+import { Page } from "@/pages/Page";
 import { dotClient } from "@/utils/dotClient";
 
 export async function generateMetadata({ params, searchParams }) {
@@ -21,13 +21,20 @@ export async function generateMetadata({ params, searchParams }) {
 
 export default async function Home({ params, searchParams }) {
     const pageContent = await getPageData(params, searchParams);
-    return <MyPage pageContent={pageContent} />;
+    return <Page pageContent={pageContent} />;
 }
 
 export const getPageData = cache(async (params, searchParams) => {
     try {
         const path = params?.slug?.join("/") || "/";
-        const pageData = await dotClient.page.get(path);
+        const pageData = await dotClient.page.get(path, {
+            graphql: {
+                content: {
+                    blogs: blogQuery,
+                    destinations: destinationQuery
+                }
+            }
+        });
         return pageData;
     } catch (e) {
         return {
@@ -35,3 +42,35 @@ export const getPageData = cache(async (params, searchParams) => {
         };
     }
 });
+
+const blogQuery = `
+search(query: "+contenttype:Blog +live:true", limit: 3) {
+    title
+    identifier
+    ... on Blog {
+        inode
+        image {
+          fileName
+        }
+        urlMap
+        modDate
+        urlTitle
+    }
+}
+`;
+
+const destinationQuery = `
+search(query: "+contenttype:Destination +live:true", limit: 3) {
+    title
+    identifier
+    ... on Destination {
+        inode
+        image {
+          fileName
+        }
+        urlMap
+        modDate
+      	url
+   }
+}
+`;
