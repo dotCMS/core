@@ -4,21 +4,28 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 
 import { enableBlockEditorInline } from "@dotcms/uve";
-import { DotCMSBlockEditorRenderer, useEditableDotCMSPage } from "@dotcms/react/next";
+import {
+    DotCMSBlockEditorRenderer,
+    useEditableDotCMSPage,
+} from "@dotcms/react/next";
 
 import { isEditMode } from "@/hooks/isEditMode";
 import Footer from "@/components/layout/footer/footer";
 import Header from "@/components/layout/header/header";
 
 export function DetailPage({ pageContent }) {
-    const [twActives, setTwActives] = useState("prose lg:prose-xl prose-a:text-blue-600");
-    const { pageAsset } = useEditableDotCMSPage(pageContent);
+    const [twActives, setTwActives] = useState(
+        "prose lg:prose-xl prose-a:text-blue-600"
+    );
+    const { pageAsset, content } = useEditableDotCMSPage(pageContent);
     const { urlContentMap } = pageAsset;
     const { blogContent } = urlContentMap || {};
 
     useEffect(() => {
         if (isEditMode()) {
-            setTwActives((prev) => `${prev} border-2 border-solid border-cyan-400 cursor-pointer`);
+            setTwActives((prev) => {
+                return `${prev} border-2 border-solid border-cyan-400 cursor-pointer`;
+            });
         }
     }, []);
 
@@ -52,7 +59,7 @@ export function DetailPage({ pageContent }) {
                 </div>
             </main>
 
-            {/* {pageAsset?.layout.footer && <Footer />} */}
+            {pageAsset?.layout.footer && <Footer {...content} />}
         </div>
     );
 }
@@ -67,5 +74,5 @@ const customeRenderers = {
                 <p>{description}</p>
             </div>
         );
-    }
-}
+    },
+};
