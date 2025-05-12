@@ -3,7 +3,7 @@
 import Link from 'next/link';
 
 import { useIsEditMode } from '@/hooks/isEditMode';
-import { ReorderMenuButton } from './ReorderMenuButton';
+import { ReorderMenuButton } from './editor/ReorderMenuButton';
 
 function Header({ children }) {
     const isEditMode = useIsEditMode();

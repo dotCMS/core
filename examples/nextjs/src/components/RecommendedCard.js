@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { EditButton } from "./EditButton";
+import { EditButton } from "./editor/EditButton";
 
 const RecommendedCard = ({contentlet}) => {
     const { url, title, inode, image, urlMap, modDate, urlTitle } = contentlet;
