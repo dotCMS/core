@@ -9,13 +9,6 @@
     resize: vertical;
 }
 
-.dot-json-field {
-    &__container {
-        height: 100%;
-        width: 100%;
-    }
-}
-
 dot-edit-content-monaco-editor-control {
     border-radius: $border-radius-md;
     display: block;

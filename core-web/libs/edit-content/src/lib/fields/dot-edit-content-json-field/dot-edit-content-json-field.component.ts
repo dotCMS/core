@@ -36,7 +36,7 @@ export class DotEditContentJsonFieldComponent {
      * Reference to the Monaco editor component
      */
     private readonly $monacoComponent =
-        viewChild<DotEditContentMonacoEditorControlComponent>('monaco');
+        viewChild.required<DotEditContentMonacoEditorControlComponent>('monaco');
 
     /**
      * Available languages for Monaco editor
