@@ -6,11 +6,14 @@
         <b>{{ config?.data?.currentLocale?.isoCode | dotIsoCode }}</b>
     </label>
 </div>
-<p-radioButton
-    value="manual"
-    name="option"
-    [(ngModel)]="selectedOption"
-    [label]="'edit.content.sidebar.locales.untranslated.manually' | dm"></p-radioButton>
+<div class="flex items-center">
+    <p-radioButton
+        value="manual"
+        name="option"
+        [(ngModel)]="selectedOption"
+        inputId="manual" />
+    <label for="manual" class="ml-2">{{ 'edit.content.sidebar.locales.untranslated.manually' | dm }}</label>
+</div>
 
 <div class="untranslated-locale__actions">
     <button

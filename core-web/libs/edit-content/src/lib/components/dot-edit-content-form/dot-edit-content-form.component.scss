@@ -102,7 +102,7 @@ $tab-min-height: 52px;
             z-index: 1000;
         }
 
-        .p-tabview-nav-content .p-tabview-nav {
+        .p-tabs-nav-content .p-tabs-nav {
             border: none;
             border-left: solid 1px $color-palette-gray-300;
             border-right: solid 1px $color-palette-gray-300;
@@ -110,7 +110,7 @@ $tab-min-height: 52px;
             min-width: auto;
         }
 
-        .p-tabview-nav-content {
+        .p-tabs-nav-content {
             display: flex;
             align-items: center;
             width: 100%;

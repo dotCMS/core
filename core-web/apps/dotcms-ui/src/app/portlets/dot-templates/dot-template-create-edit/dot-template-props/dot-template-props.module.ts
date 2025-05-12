@@ -3,7 +3,7 @@ import { NgModule } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 import { InputTextModule } from 'primeng/inputtext';
-import { InputTextareaModule } from 'primeng/inputtextarea';
+import { TextareaModule } from 'primeng/textarea';
 
 import { DotThemeSelectorDropdownModule } from '@components/dot-theme-selector-dropdown/dot-theme-selector-dropdown.module';
 import {
@@ -24,7 +24,7 @@ import { DotTemplateThumbnailFieldModule } from './dot-template-thumbnail-field/
         DotFormDialogComponent,
         FormsModule,
         InputTextModule,
-        InputTextareaModule,
+        TextareaModule,
         ReactiveFormsModule,
         DotMessagePipe,
         DotTemplateThumbnailFieldModule,

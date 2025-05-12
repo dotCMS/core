@@ -2,7 +2,7 @@ import { AsyncPipe, NgClass, NgFor, NgIf, NgStyle } from '@angular/common';
 import { NgModule } from '@angular/core';
 
 import { DividerModule } from 'primeng/divider';
-import { DialogService, DynamicDialogModule, DynamicDialogRef } from 'primeng/dynamicdialog';
+import { DialogService, DynamicDialog, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { ToolbarModule } from 'primeng/toolbar';
 
 import { DotContainersService } from '@dotcms/data-access';
@@ -18,7 +18,7 @@ import { TemplateBuilderComponent } from './components/template-builder/template
         NgFor,
         AsyncPipe,
         DotMessagePipe,
-        DynamicDialogModule,
+        DynamicDialog,
         NgStyle,
         NgClass,
         ToolbarModule,
