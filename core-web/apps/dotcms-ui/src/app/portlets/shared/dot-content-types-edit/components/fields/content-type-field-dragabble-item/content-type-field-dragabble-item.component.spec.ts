@@ -60,9 +60,8 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
     }));
 
     it('should have a name & variable', () => {
-        const field = {
+        const field: DotCMSContentTypeField = {
             ...dotcmsContentTypeFieldBasicMock,
-            fieldType: 'fieldType',
             fixed: true,
             indexed: true,
             name: 'Field name',
@@ -81,9 +80,8 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
     });
 
     it('should have copy variable button', () => {
-        const field = {
+        const field: DotCMSContentTypeField = {
             ...dotcmsContentTypeFieldBasicMock,
-            fieldType: 'fieldType',
             fixed: true,
             indexed: true,
             listed: true,
@@ -103,9 +101,8 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
     });
 
     it('should have field attributes label', () => {
-        const field = {
+        const field: DotCMSContentTypeField = {
             ...dotcmsContentTypeFieldBasicMock,
-            fieldType: 'fieldType',
             fieldTypeLabel: 'FieldLabel',
             fixed: true,
             indexed: true,
@@ -130,9 +127,8 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
     });
 
     it('should has a drag button', () => {
-        const field = {
+        const field: DotCMSContentTypeField = {
             ...dotcmsContentTypeFieldBasicMock,
-            fieldType: 'fieldType',
             fixed: false,
             indexed: true,
             name: 'Field name',
@@ -149,9 +145,8 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
     });
 
     it('should has a remove button', () => {
-        const field = {
+        const field: DotCMSContentTypeField = {
             ...dotcmsContentTypeFieldBasicMock,
-            fieldType: 'fieldType',
             fixed: false,
             indexed: true,
             name: 'Field name',
@@ -179,9 +174,8 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
     });
 
     it('should not has a remove button (Fixed Field)', () => {
-        const field = {
+        const field: DotCMSContentTypeField = {
             ...dotcmsContentTypeFieldBasicMock,
-            fieldType: 'fieldType',
             fixed: true,
             indexed: true,
             name: 'Field name',
@@ -198,9 +192,8 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
     });
 
     it('should edit field on host click', () => {
-        const mockField = {
+        const mockField: DotCMSContentTypeField = {
             ...dotcmsContentTypeFieldBasicMock,
-            fieldType: 'fieldType',
             fixed: true,
             indexed: true,
             name: 'Field name',
@@ -225,9 +218,8 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
     });
 
     it('should not have info button on default', () => {
-        const mockField = {
+        const mockField: DotCMSContentTypeField = {
             ...dotcmsContentTypeFieldBasicMock,
-            fieldType: 'fieldType',
             fixed: true,
             indexed: true,
             name: 'Field name',
@@ -242,9 +234,8 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
     });
 
     it('should have info button when row has more than one column', () => {
-        const mockField = {
+        const mockField: DotCMSContentTypeField = {
             ...dotcmsContentTypeFieldBasicMock,
-            fieldType: 'fieldType',
             fixed: true,
             indexed: true,
             name: 'Field name',

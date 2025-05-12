@@ -6,10 +6,11 @@ import { ReactiveFormsModule, ControlContainer, FormGroupDirective } from '@angu
 
 import { InputTextModule } from 'primeng/inputtext';
 
+import { DotCMSDataTypes } from '@dotcms/dotcms-models';
 import { DotFieldRequiredDirective } from '@dotcms/ui';
 
 import { DotEditContentTextFieldComponent } from './dot-edit-content-text-field.component';
-import { INPUT_TEXT_OPTIONS, INPUT_TYPE } from './utils';
+import { INPUT_TEXT_OPTIONS } from './utils';
 
 import { TEXT_FIELD_MOCK, createFormGroupDirectiveMock } from '../../utils/mocks';
 
@@ -32,7 +33,7 @@ describe('DotEditContentTextFieldComponent', () => {
         spectator = createComponent({
             props: {
                 field: TEXT_FIELD_MOCK
-            }
+            } as unknown
         });
 
         textInput = spectator.query(byTestId(TEXT_FIELD_MOCK.variable));
@@ -53,13 +54,13 @@ describe('DotEditContentTextFieldComponent', () => {
 
     describe.each([
         {
-            dataType: INPUT_TYPE.TEXT
+            dataType: DotCMSDataTypes.TEXT
         },
         {
-            dataType: INPUT_TYPE.INTEGER
+            dataType: DotCMSDataTypes.INTEGER
         },
         {
-            dataType: INPUT_TYPE.FLOAT
+            dataType: DotCMSDataTypes.FLOAT
         }
     ])('with dataType as $dataType', ({ dataType }) => {
         const options = INPUT_TEXT_OPTIONS[dataType];
@@ -68,7 +69,7 @@ describe('DotEditContentTextFieldComponent', () => {
             spectator = createComponent({
                 props: {
                     field: { ...TEXT_FIELD_MOCK, dataType }
-                }
+                } as unknown
             });
 
             textInput = spectator.query(byTestId(TEXT_FIELD_MOCK.variable));

@@ -22,7 +22,7 @@ import { TableRowReorderEvent, TableModule } from 'primeng/table';
 import { filter } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { ContentTypeRelationshipField, DotCMSContentlet } from '@dotcms/dotcms-models';
 import { ContentletStatusPipe } from '@dotcms/edit-content/pipes/contentlet-status.pipe';
 import { LanguagePipe } from '@dotcms/edit-content/pipes/language.pipe';
 import { DotMessagePipe } from '@dotcms/ui';
@@ -123,7 +123,7 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
      *
      * @memberof DotEditContentFileFieldComponent
      */
-    $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
+    $field = input.required<ContentTypeRelationshipField>({ alias: 'field' });
 
     /**
      * DotCMS Contentlet

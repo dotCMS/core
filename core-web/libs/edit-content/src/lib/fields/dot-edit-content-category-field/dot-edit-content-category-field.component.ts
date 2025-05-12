@@ -12,7 +12,7 @@ import { ControlContainer, FormControl, FormGroup, ReactiveFormsModule } from '@
 
 import { ButtonModule } from 'primeng/button';
 
-import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { ContentTypeCategoryField, DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotCategoryFieldChipsComponent } from './components/dot-category-field-chips/dot-category-field-chips.component';
@@ -62,7 +62,7 @@ export class DotEditContentCategoryFieldComponent implements OnInit {
      * The `field` variable is of type `DotCMSContentTypeField` and is a required input.
      * @description The variable represents a field of a DotCMS content type and is a required input.
      */
-    field = input.required<DotCMSContentTypeField>();
+    field = input.required<ContentTypeCategoryField>();
     /**
      * Represents a DotCMS contentlet and is a required input
      * @description DotCMSContentlet input representing a DotCMS contentlet.
