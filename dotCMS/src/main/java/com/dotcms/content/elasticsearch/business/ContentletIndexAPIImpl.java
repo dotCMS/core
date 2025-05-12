@@ -968,6 +968,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             } else {
                 // add a commit listener to index the contentlet if the entire
                 // transaction finish clean
+                Logger.debug(ContentletIndexAPIImpl.class, "Adding a commit listener to index ");
                 HibernateUtil.addCommitListener(
                         content.getInode() + ReindexRunnable.Action.REMOVING,
                         new RemoveReindexRunnable(content, onlyLive, relationships));
@@ -1007,9 +1008,13 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         public void run() {
 
             try {
+                Logger.debug(ContentletIndexAPIImpl.class, "Removing context from ES and process dependencies");
+
                 removeContentAndProcessDependencies(this.contentlet, this.relationships,
                         this.onlyLive, IndexPolicy.DEFER,
                         IndexPolicy.DEFER);
+
+                Logger.debug(ContentletIndexAPIImpl.class, "Contentlet removed from ES");
             } catch (Exception ex) {
                 throw new ElasticsearchException(ex.getMessage(), ex);
             }
@@ -1026,6 +1031,10 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                 contentlet.getLanguageId(), StringPool.UNDERLINE, contentlet.getVariantId())
                 .toString();
         final IndiciesInfo info = APILocator.getIndiciesAPI().loadIndicies();
+
+        Logger.debug(this, String.format("Removing contentlet %s(%s) using policy %s from indices %s:%s",
+                contentlet.getIdentifier(), id, indexPolicy, info.getWorking(), info.getLive()));
+
         final BulkRequest bulkRequest = new BulkRequest();
 
         // we want to wait until the content is already indexed
@@ -1067,15 +1076,21 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             }
         }
 
+        Logger.debug(this, String.format("Sending request to ES to remove content %s", bulkRequest.getDescription()));
+
         bulkRequest.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
         BulkResponse response = Sneaky.sneak(
                 () -> RestHighLevelClientProvider.getInstance().getClient()
                         .bulk(bulkRequest, RequestOptions.DEFAULT));
 
+        Logger.debug(this, String.format("Response from ES for remove content %s", response.status()));
+
         if (response.hasFailures()) {
             Logger.error(this,
                     "Failed to remove content from index: " + response.buildFailureMessage());
         }
+
+        Logger.debug(this, "Removing cache");
 
         //Delete query cache when a new content has been reindexed
         CacheLocator.getESQueryCache().clearCache();
