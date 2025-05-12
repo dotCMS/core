@@ -2,7 +2,7 @@ import RecommendedCard from '@/components/RecommendedCard';
 
 export default function Blogs({ blogs }) {
 
-    if (!blogs.length) return null;
+    if (!blogs?.length) return null;
 
     return (
         <div className="flex flex-col">

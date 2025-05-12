@@ -45,6 +45,13 @@ export function BlogListingPage(pageResponse) {
                     </div>
                 )}
             </main>
+            <footer className="bg-slate-50 text-slate-900 py-4">
+                <div className="container mx-auto px-4">
+                    <p className="text-center">
+                        &copy; {new Date().getFullYear()} TravelLux. All rights reserved.
+                    </p>
+                </div>
+            </footer>
         </div>
     );
 }
@@ -103,7 +110,7 @@ const BlogCard = ({ blog }) => {
     const isEditMode = useIsEditMode();
 
     return (
-        <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 relative">
+        <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 relative flex flex-col h-full">
             {isEditMode && (
                 <button
                     onClick={() => editContentlet(blog)}
@@ -128,9 +135,9 @@ const BlogCard = ({ blog }) => {
                 )}
             </div>
 
-            <div className="p-4">
+            <div className="p-4 flex flex-col flex-grow">
                 <h3 className="text-lg font-bold mb-2 hover:text-blue-600">
-                    <a href={urlMap || `#${identifier}`}>{title}</a>
+                    <a href={urlMap}>{title}</a>
                 </h3>
 
                 {teaser && (
@@ -139,7 +146,7 @@ const BlogCard = ({ blog }) => {
                     </p>
                 )}
 
-                <div className="flex justify-between items-center mt-3">
+                <div className="flex justify-between items-center mt-auto pt-3 border-t border-gray-100">
                     {author && (
                         <div className="text-sm text-gray-700">
                             {author.firstName && author.lastName

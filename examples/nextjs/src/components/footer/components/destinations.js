@@ -1,7 +1,7 @@
 import RecommendedCard from '@/components/RecommendedCard';
 
 export default function Destinations({ destinations }) {
-    if (!destinations.length) return null;
+    if (!destinations?.length) return null;
 
     return (
         <div className="flex flex-col">
