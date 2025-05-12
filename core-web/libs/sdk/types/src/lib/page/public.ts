@@ -1011,12 +1011,10 @@ interface DotCMSSiteField {
     versionType: string;
 }
 
-/* GraphQL Page Types */
-
 /**
- * Represents a basic page object returned from GraphQL queries
+ * Represents a basic page object from the GraphQL API
  *
- * @interface DotCMSBasicGraphQLPage
+ * @interface DotCMSGraphQLPage
  * @property {string} publishDate - The date the page was published
  * @property {string} type - The type of the page
  * @property {boolean} httpsRequired - Whether HTTPS is required to access the page
@@ -1059,14 +1057,14 @@ interface DotCMSSiteField {
  * @property {string} conLanguage.languageCode - Language code
  * @property {Object} template - Template information
  * @property {boolean} template.drawed - Whether template is drawn
- * @property {DotCMSPageGraphQLContainer[]} containers - Array of containers on the page
+ * @property {DotCMSPageContainer[]} containers - Array of containers on the page
  * @property {DotCMSLayout} layout - Layout configuration
  * @property {DotCMSViewAs} viewAs - View configuration
- * @property {Record<string, unknown>} urlContentMap - URL to content mapping
+ * @property {DotCMSURLContentMap} urlContentMap - URL to content mapping
  * @property {DotCMSSite} site - Site information
  * @property {Record<string, unknown>} _map - Additional mapping data
  */
-export interface DotCMSBasicGraphQLPage {
+export interface DotCMSGraphQLPage {
     publishDate: string;
     type: string;
     httpsRequired: boolean;
@@ -1103,22 +1101,16 @@ export interface DotCMSBasicGraphQLPage {
     live: boolean;
     isContentlet: boolean;
     statusIcons: string;
-
     // Language information
     conLanguage: {
         id: number;
         language: string;
         languageCode: string;
     };
-
     // Template information
-    template: {
-        drawed: boolean;
-    };
-
+    template: Partial<DotCMSTemplate>;
     // Container information
-    containers: DotCMSPageGraphQLContainer[];
-
+    containers: DotCMSGraphQLPageContainer[];
     layout: DotCMSLayout;
     viewAs: DotCMSViewAs;
     urlContentMap: Record<string, unknown>;
@@ -1127,16 +1119,16 @@ export interface DotCMSBasicGraphQLPage {
 }
 
 /**
- * Represents a container in a GraphQL page response
+ * Represents a container in a page
  *
- * @interface DotCMSPageGraphQLContainer
+ * @interface DotCMSGraphQLPageContainer
  * @property {string} path - The path/location of the container in the page
  * @property {string} identifier - Unique identifier for the container
  * @property {number} [maxContentlets] - Optional maximum number of content items allowed in container
  * @property {DotCMSContainerStructure[]} containerStructures - Array of content type structures allowed in container
  * @property {DotCMSPageContainerContentlets[]} containerContentlets - Array of content items in container
  */
-export interface DotCMSPageGraphQLContainer {
+export interface DotCMSGraphQLPageContainer {
     path: string;
     identifier: string;
     maxContentlets?: number;
@@ -1165,15 +1157,11 @@ export interface DotCMSGraphQLError {
 }
 
 /**
- * Represents the complete response from a GraphQL page query
- *
- * @template TContent - The type of the content data
- * @template TNav - The type of the navigation data
+ * Represents the complete response from a page query from the GraphQL API
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export interface DotCMSGraphQLPageResponse<TContent = Record<string, any>> {
-    page: DotCMSBasicGraphQLPage;
-    content?: TContent;
+export interface DotCMSGraphQLPageResponse {
+    page: DotCMSGraphQLPage;
+    content?: Record<string, unknown> | unknown;
     errors?: DotCMSGraphQLError;
     graphql: {
         query: string;
@@ -1182,7 +1170,41 @@ export interface DotCMSGraphQLPageResponse<TContent = Record<string, any>> {
 }
 
 /**
- * Payload for initializing the UVE
- * @interface DotCMSEditablePage
+ * Represents the complete response from a page query
  */
-export type DotCMSEditablePage = DotCMSGraphQLPageResponse | DotCMSPageAsset;
+export interface DotCMSPageResponse {
+    pageAsset: DotCMSPageAsset;
+    content?: Record<string, unknown> | unknown;
+    errors?: DotCMSGraphQLError;
+    graphql: {
+        query: string;
+        variables: Record<string, unknown>;
+    };
+}
+
+// Pick only the page and content properties to be able to extend these properties, they are optional
+export type DotCMSExtendedPageResponse = Partial<Pick<DotCMSPageResponse, 'pageAsset' | 'content'>>;
+
+// Compose the page with the extended properties
+export type DotCMSComposedPageAsset<T extends DotCMSExtendedPageResponse> =
+    T['pageAsset'] extends DotCMSPageResponse['pageAsset']
+        ? DotCMSPageResponse['pageAsset'] & T['pageAsset']
+        : DotCMSPageResponse['pageAsset'];
+
+// Compose the content with the extended properties
+export type DotCMSComposedContent<T extends Pick<DotCMSPageResponse, 'content'>> =
+    T['content'] extends undefined ? DotCMSPageResponse['content'] : T['content'];
+
+// Compose the page response with the extended properties
+export type DotCMSComposedPageResponse<T extends DotCMSExtendedPageResponse> = Omit<
+    DotCMSPageResponse,
+    'pageAsset' | 'content'
+> & {
+    pageAsset: DotCMSComposedPageAsset<T>;
+    content?: DotCMSComposedContent<T>;
+};
+
+// Compose the client get response with the extended properties
+export type DotCMSClientPageGetResponse<T extends DotCMSExtendedPageResponse> = Promise<
+    DotCMSComposedPageResponse<T>
+>;

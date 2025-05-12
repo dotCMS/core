@@ -17,6 +17,23 @@ import {
 } from '../../script/utils';
 
 /**
+ * Updates the navigation in the editor.
+ *
+ * @param {string} pathname - The pathname to update the navigation with.
+ * @memberof DotCMSPageEditor
+ * @example
+ * updateNavigation('/home'); // Sends a message to the editor to update the navigation to '/home'
+ */
+export function updateNavigation(pathname: string): void {
+    sendMessageToUVE({
+        action: DotCMSUVEAction.NAVIGATION_UPDATE,
+        payload: {
+            url: pathname || '/'
+        }
+    });
+}
+
+/**
  * Post message to dotcms page editor
  *
  * @export
