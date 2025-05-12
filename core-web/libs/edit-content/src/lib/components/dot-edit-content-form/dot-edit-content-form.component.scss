@@ -91,8 +91,8 @@ $tab-min-height: 52px;
         align-items: center;
     }
     .dot-edit-content-tabview {
-        .p-tabs-nav-container {
-            padding: 0 0 0 $spacing-4;
+        .p-tabview-nav-container {
+            padding: 0;
             border-bottom: solid 1px $color-palette-gray-300;
             border-right: none;
             overflow: initial;
@@ -106,7 +106,6 @@ $tab-min-height: 52px;
             border: none;
             border-left: solid 1px $color-palette-gray-300;
             border-right: solid 1px $color-palette-gray-300;
-            padding-left: $spacing-3;
             min-height: $tab-min-height;
             min-width: auto;
         }

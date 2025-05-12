@@ -1006,7 +1006,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             [CLIENT_ACTIONS.CLIENT_READY]: (devConfig) => {
                 const isClientReady = this.uveStore.isClientReady();
 
-                // console.log('isClientReady', isClientReady);
                 if (isClientReady) {
                     return;
                 }

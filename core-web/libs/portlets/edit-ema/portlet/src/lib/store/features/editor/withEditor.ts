@@ -98,7 +98,7 @@ export function withEditor() {
                 $reloadEditorContent: computed<ReloadEditorContent>(() => {
                     return {
                         code: store.pageAPIResponse()?.page?.rendered,
-                        isTraditionalPage: untracked(() => store.isTraditionalPage()),
+                        isTraditionalPage: store.isTraditionalPage(),
                         enableInlineEdit:
                             store.isEditState() && untracked(() => store.isEnterprise())
                     };
@@ -207,7 +207,15 @@ export function withEditor() {
                     };
                 }),
                 $iframeURL: computed<string | InstanceType<typeof String>>(() => {
+                    /*
+                        Here we need to import pageAPIResponse() to create the computed dependency and have it updated every time a response is received from the PageAPI.
+                        This should change in future UVE improvements.
+                        More info: https://github.com/dotCMS/core/issues/31475 and https://github.com/dotCMS/core/issues/32139
+                     */
+                    const pageAPIResponse = store.pageAPIResponse();
+                    const vanityURL = pageAPIResponse?.vanityUrl?.url;
                     const isTraditionalPage = untracked(() => store.isTraditionalPage());
+                    const params = untracked(() => store.pageParams());
 
                     if (isTraditionalPage) {
                         // Force iframe reload on every page load to avoid caching issues and window dirty state
@@ -216,16 +224,7 @@ export function withEditor() {
                         return new String('');
                     }
 
-                    /*
-                        Here we need to import pageAPIResponse() to create the computed dependency and have it updated every time a response is received from the PageAPI.
-                        This should change in future UVE improvements.
-                        The url should not depend on the PageAPI response since it does not change (In traditional).
-                        In the future we should have a function that updates the content, independent of the url.
-                        More info: https://github.com/dotCMS/core/issues/31475
-                     */
-                    const vanityURL = store.pageAPIResponse()?.vanityUrl?.url;
-                    const url = sanitizeURL(vanityURL ?? untracked(() => store.pageParams().url));
-                    const params = untracked(() => store.pageParams());
+                    const url = sanitizeURL(vanityURL ?? params.url);
                     const dotCMSHost = dotWindow?.location?.origin;
 
                     return buildIframeURL({

@@ -9,7 +9,7 @@ import {
 } from './utils';
 
 import { createUVESubscription, getUVEState } from '../lib/core/core.utils';
-import { editContentlet, reorderMenu } from '../lib/editor/public';
+import { editContentlet, reorderMenu, updateNavigation } from '../lib/editor/public';
 
 declare global {
     interface Window {
@@ -20,7 +20,8 @@ declare global {
 const dotUVE = {
     createSubscription: createUVESubscription,
     editContentlet,
-    reorderMenu
+    reorderMenu,
+    updateNavigation
 };
 
 window.dotUVE = dotUVE;

@@ -1,3 +1,5 @@
+import { Contentlet } from '@dotcms/types';
+
 import {
     fetchPageDataFromInsideUVE,
     listenEditorMessages,
@@ -8,8 +10,6 @@ import {
 import { CLIENT_ACTIONS, INITIAL_DOT_UVE, postMessageToEditor } from './models/client.model';
 import { DotCMSPageEditorConfig, ReorderMenuConfig } from './models/editor.model';
 import { INLINE_EDITING_EVENT_KEY, InlineEditEventData } from './models/inline-event.model';
-
-import { Contentlet } from '../../client/content/shared/types';
 
 /**
  * Updates the navigation in the editor.
