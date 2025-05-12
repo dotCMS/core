@@ -16,7 +16,34 @@ import { CLIENT_ACTIONS, postMessageToEditor } from '@dotcms/client';
 import { getUVEState } from '@dotcms/uve';
 import { DYNAMIC_COMPONENTS } from './components';
 import { DotCMSEditablePageService, DotCMSLayoutBodyComponent } from '@dotcms/angular/next';
-import { DotcmsNavigationItem, DotCMSPageResponse } from '@dotcms/types';
+import {
+    DotcmsNavigationItem,
+    DotCMSPageRequestParams,
+    DotCMSPageResponse,
+    DotCMSPageAsset,
+    DotCMSComposedPageResponse
+} from '@dotcms/types';
+import { FooterContent } from '../models';
+const EXTRA_QUERIES: DotCMSPageRequestParams['graphql'] = {
+    content: {
+        logoImage: `FileAssetCollection(query: "+title:logo.png") {
+    fileAsset {
+      versionPath
+    }
+  }`,
+        blogs: `BlogCollection(limit: 3, sortBy: "modDate desc") {
+  _map
+  }`,
+        destinations: `DestinationCollection(limit: 3, sortBy: "modDate desc") {
+  _map
+  }`
+    }
+};
+
+type ComposedPageResponse = DotCMSComposedPageResponse<{
+    pageAsset: DotCMSPageAsset;
+    content: FooterContent;
+}>;
 
 export type PageError = {
     message: string;
@@ -24,7 +51,7 @@ export type PageError = {
 };
 
 type PageRender = {
-    pageResponse?: DotCMSPageResponse | null;
+    pageResponse?: ComposedPageResponse | null;
     nav?: DotcmsNavigationItem;
     error?: PageError;
     status: 'idle' | 'success' | 'error' | 'loading';
@@ -64,7 +91,12 @@ export class DotCMSPagesComponent implements OnInit {
                 filter((event): event is NavigationEnd => event instanceof NavigationEnd),
                 startWith(null), // Trigger initial load
                 tap(() => this.#setLoading()),
-                switchMap(() => this.#pageService.getPageAndNavigation(this.#route)),
+                switchMap(() =>
+                    this.#pageService.getPageAndNavigation<DotCMSPageAsset, FooterContent>(
+                        this.#route,
+                        EXTRA_QUERIES
+                    )
+                ),
                 takeUntilDestroyed(this.#destroyRef)
             )
             .subscribe(({ response, error, nav }) => {
@@ -78,7 +110,7 @@ export class DotCMSPagesComponent implements OnInit {
                         .listen(response)
                         .pipe(takeUntilDestroyed(this.#destroyRef))
                         .subscribe((page) => {
-                            this.#updatePageContent(page);
+                            this.#updatePageContent(page as ComposedPageResponse);
                         });
                 }
 
@@ -86,14 +118,14 @@ export class DotCMSPagesComponent implements OnInit {
             });
     }
 
-    #updatePageContent(page?: DotCMSPageResponse | null) {
+    #updatePageContent(page?: ComposedPageResponse | null) {
         this.$context.update((state) => ({
             ...state,
             pageResponse: page
         }));
     }
 
-    #setPageContent(page?: DotCMSPageResponse, nav?: DotcmsNavigationItem) {
+    #setPageContent(page?: ComposedPageResponse, nav?: DotcmsNavigationItem) {
         this.$context.set({
             pageResponse: page,
             nav,

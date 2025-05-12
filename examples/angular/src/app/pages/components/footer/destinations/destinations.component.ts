@@ -1,47 +1,24 @@
-import {
-  Component,
-  OnInit,
-  inject,
-  signal,
-} from '@angular/core';
+import { Component, OnInit, inject, input, signal } from '@angular/core';
 
 import { ContentletsWrapperComponent } from '../../../../shared/contentlets-wrapper/contentlets.component';
-import { DotCMSURLContentMap } from '@dotcms/types';
-import { DotCmsClient } from '@dotcms/client';
-import { DOTCMS_CLIENT_TOKEN } from '../../../../app.config';
 
+import { Destination } from '../../../../models';
 
 @Component({
-  selector: 'app-destinations',
-  standalone: true,
-  imports: [ContentletsWrapperComponent],
-  template: ` <div class="flex flex-col">
-    <h2 class="mb-7 text-2xl font-bold text-black">Popular Destinations</h2>
-    @if (!!destinations().length) {
-    <app-contentlets-wrapper [contentlets]="destinations()" />
-    }
-  </div>`,
+    selector: 'app-destinations',
+    standalone: true,
+    imports: [ContentletsWrapperComponent],
+    template: ` <div class="flex flex-col">
+        <h2 class="mb-7 text-2xl font-bold text-black">Popular Destinations</h2>
+        @if (!!cleanedDestinations.length) {
+        <app-contentlets-wrapper [contentlets]="cleanedDestinations" />
+        }
+    </div>`
 })
-export class DestinationsComponent implements OnInit {
-  private readonly client = inject<DotCmsClient>(DOTCMS_CLIENT_TOKEN);
+export class DestinationsComponent {
+    destinations = input<Destination[]>([]);
 
-  readonly destinations = signal<DotCMSURLContentMap[]>([]);
-
-  ngOnInit() {
-    this.client.content
-      .getCollection<DotCMSURLContentMap>('Destination')
-      .limit(3)
-      .sortBy([
-        {
-          field: 'modDate',
-          order: 'desc',
-        },
-      ])
-      .then((response) => {
-        this.destinations.set(response.contentlets);
-      })
-      .catch((error) => {
-        console.error('Error fetching Destinations', error);
-      });
-  }
+    get cleanedDestinations() {
+        return this.destinations().map((destination) => destination._map);
+    }
 }

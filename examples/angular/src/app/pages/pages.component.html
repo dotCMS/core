@@ -22,7 +22,7 @@
     </main>
 
     @if (vm.pageResponse?.pageAsset?.layout?.footer) {
-    <app-footer />
+    <app-footer [content]="vm.pageResponse?.content" />
     }
 </div>
 } }

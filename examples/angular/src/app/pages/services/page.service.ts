@@ -5,18 +5,24 @@ import { catchError, map } from 'rxjs/operators';
 
 import { getUVEState } from '@dotcms/uve';
 
-import { DotcmsNavigationItem, DotCMSPageResponse, DotCMSPageAsset } from '@dotcms/types';
+import {
+    DotcmsNavigationItem,
+    DotCMSPageResponse,
+    DotCMSPageAsset,
+    DotCMSPageRequestParams,
+    DotCMSComposedPageResponse
+} from '@dotcms/types';
 
 import { PageError } from '../pages.component';
 import { DOTCMS_CLIENT_TOKEN } from '../../app.config';
 
-export interface PageResponse<TResponse extends DotCMSPageResponse = DotCMSPageResponse> {
-    response?: TResponse;
+export interface PageResponse<TPage extends DotCMSPageAsset, TContent> {
+    response?: DotCMSComposedPageResponse<{ pageAsset: TPage; content: TContent }>;
     error?: PageError;
 }
 
-export interface PageWithNavigation<TResponse extends DotCMSPageResponse = DotCMSPageResponse>
-    extends PageResponse<TResponse> {
+export interface PageWithNavigation<TPage extends DotCMSPageAsset, TContent>
+    extends PageResponse<TPage, TContent> {
     nav?: DotcmsNavigationItem;
 }
 
@@ -35,16 +41,17 @@ export class PageService {
      * @return {*}  {(Observable<{ page: DotCMSPageAsset | { error: PageError }; nav: DotcmsNavigationItem }>)}
      * @memberof PageService
      */
-    getPageAndNavigation<TResponse extends DotCMSPageResponse = DotCMSPageResponse>(
-        route: ActivatedRoute
-    ): Observable<PageWithNavigation<TResponse>> {
+    getPageAndNavigation<TPage extends DotCMSPageAsset, TContent>(
+        route: ActivatedRoute,
+        extraQueries?: DotCMSPageRequestParams['graphql']
+    ): Observable<PageWithNavigation<TPage, TContent>> {
         if (!this.navObservable) {
             this.navObservable = this.fetchNavigation(route);
         }
 
         return forkJoin({
             nav: this.navObservable,
-            pageAsset: this.fetchPage<TResponse>(route)
+            pageAsset: this.fetchPage<TPage, TContent>(route, extraQueries)
         }).pipe(
             map(({ nav, pageAsset }) => {
                 const { response, error } = pageAsset;
@@ -69,15 +76,21 @@ export class PageService {
         ).pipe(shareReplay(1));
     }
 
-    private fetchPage<TResponse extends DotCMSPageResponse = DotCMSPageResponse>(
-        route: ActivatedRoute
-    ): Observable<PageResponse<TResponse>> {
+    private fetchPage<TPage extends DotCMSPageAsset, TContent>(
+        route: ActivatedRoute,
+        extraQueries: DotCMSPageRequestParams['graphql'] = {}
+    ): Observable<PageResponse<TPage, TContent>> {
         const params = route.snapshot.queryParams;
         const url = route.snapshot.url.map((segment) => segment.path).join('/');
         const path = url || '/';
 
         return from(
-            this.client.page.get<{ pageAsset: TResponse['pageAsset'] }>(path, { ...params })
+            this.client.page.get<{ pageAsset: TPage; content: TContent }>(path, {
+                ...params,
+                graphql: {
+                    ...extraQueries
+                }
+            })
         ).pipe(
             map((response) => {
                 if (!response?.pageAsset?.layout) {
@@ -90,7 +103,12 @@ export class PageService {
                     };
                 }
 
-                return { response: response as TResponse };
+                return {
+                    response: response as DotCMSComposedPageResponse<{
+                        pageAsset: TPage;
+                        content: TContent;
+                    }>
+                };
             }),
             catchError((error) => {
                 // If the page is not found and we are inside the editor, return an empty object
@@ -98,10 +116,16 @@ export class PageService {
 
                 // REMIND ME TO REVISIT THIS
                 if (error.status === 404 && getUVEState()) {
-                    return of({ response: {} } as PageResponse<TResponse>);
+                    return of({ response: {} } as PageResponse<TPage, TContent>);
                 }
 
-                return of({ response: {} as TResponse, error });
+                return of({
+                    response: {} as DotCMSComposedPageResponse<{
+                        pageAsset: TPage;
+                        content: TContent;
+                    }>,
+                    error
+                });
             })
         );
     }
