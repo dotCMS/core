@@ -7,12 +7,13 @@ import { useEditableDotCMSPage } from "@dotcms/react/next";
 import { editContentlet } from "@dotcms/uve";
 
 import Image from "next/image";
-import Header from "@/components/header";
+import Header from "@/components/Header";
 
 export function BlogListingPage(pageResponse) {
     const { content } = useEditableDotCMSPage(pageResponse);
     const [searchQuery, setSearchQuery] = useState("");
     const allBlogs = content.blogs || [];
+    const navigation = content.navigation;
 
     const filteredBlogs = searchQuery
         ? allBlogs.filter((blog) =>
@@ -22,7 +23,7 @@ export function BlogListingPage(pageResponse) {
 
     return (
         <div className="flex flex-col gap-6 min-h-screen bg-slate-50">
-            <Header />
+            <Header navItems={navigation?.children} />
             <main className="container mx-auto px-4 py-8">
                 <div className="flex flex-col gap-4 mb-8">
                     <h1 className="text-4xl font-bold text-center">Travel Blog</h1>

@@ -1,6 +1,6 @@
 import { cache } from "react";
 import { dotCMSClient } from "./dotCMSClient";
-import { blogQuery, destinationQuery } from "./queries";
+import { blogQuery, destinationQuery, fragmentNav, navigationQuery } from "./queries";
 
 export const getDotCMSPage = cache(async (path, searchParams) => {
     try {
@@ -10,7 +10,9 @@ export const getDotCMSPage = cache(async (path, searchParams) => {
                 content: {
                     blogs: blogQuery,
                     destinations: destinationQuery,
+                    navigation: navigationQuery,
                 },
+                fragments: [fragmentNav],
             },
         });
         return pageData;

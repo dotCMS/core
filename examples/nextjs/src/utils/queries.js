@@ -29,3 +29,27 @@ export const destinationQuery = `
         }
     }
 `;
+
+export const navigationQuery = `
+DotNavigation(uri: "/", depth: 1000) {
+    ...NavProps
+    children {
+        ...NavProps
+    }
+}
+`;
+
+export const fragmentNav = `
+fragment NavProps on DotNavigation {
+    code
+    folder
+    hash
+    host
+    href
+    languageId
+    order
+    target
+    title
+    type
+}
+`;

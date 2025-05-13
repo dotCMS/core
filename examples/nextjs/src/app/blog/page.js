@@ -2,6 +2,7 @@ import { cache } from "react";
 
 import { dotCMSClient } from "@/utils/dotCMSClient";
 import { BlogListingPage } from "@/pages/BlogListingPage";
+import { fragmentNav, navigationQuery } from "@/utils/queries";
 
 export async function generateMetadata() {
     const { pageAsset } = await getDotCMSPage(`/blog`);
@@ -22,7 +23,10 @@ export const getDotCMSPage = cache(async (path) => {
             graphql: {
                 content: {
                     blogs: blogQuery,
+                    navigation: navigationQuery,
+
                 },
+                fragments: [fragmentNav],
             },
         });
         return pageData;

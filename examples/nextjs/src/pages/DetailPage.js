@@ -8,7 +8,7 @@ import { DotCMSBlockEditorRenderer, useEditableDotCMSPage } from "@dotcms/react/
 
 import { useIsEditMode } from "@/hooks/isEditMode";
 import Footer from "@/components/footer/footer";
-import Header from "@/components/header";
+import Header from "@/components/Header";
 
 export function DetailPage({ pageContent }) {
     const [twActives, setTwActives] = useState(
@@ -18,8 +18,6 @@ export function DetailPage({ pageContent }) {
     const { urlContentMap } = pageAsset;
     const { blogContent } = urlContentMap || {};
     const isEditMode = useIsEditMode();
-
-    console.log("HERE - DETAIL PAGE");
 
     useEffect(() => {
         if (isEditMode) {
