@@ -10,7 +10,6 @@ import com.dotcms.telemetry.collectors.ai.TotalEmbeddingsIndexesMetricType;
 import com.dotcms.telemetry.collectors.ai.TotalSitesUsingDotaiMetricType;
 import com.dotcms.telemetry.collectors.ai.TotalSitesWithAutoIndexContentConfigMetricType;
 import com.dotcms.telemetry.collectors.api.ApiMetricAPI;
-import com.dotcms.telemetry.collectors.api.ApiMetricTypes;
 import com.dotcms.telemetry.collectors.container.TotalFileContainersInLivePageDatabaseMetricType;
 import com.dotcms.telemetry.collectors.container.TotalFileContainersInLiveTemplatesDatabaseMetricType;
 import com.dotcms.telemetry.collectors.container.TotalFileContainersInWorkingPageDatabaseMetricType;
@@ -266,9 +265,6 @@ public final class MetricStatsCollector {
         metricStatsCollectors.add(new CountExperimentsWithExitRateGoalMetricType());
         metricStatsCollectors.add(new CountExperimentsWithBounceRateGoalMetricType());
         metricStatsCollectors.add(new CountExperimentsEditedInThePast30DaysMetricType());
-
-        // api ones
-        metricStatsCollectors.addAll(ApiMetricTypes.INSTANCE.get());
     }
 
     public static MetricsSnapshot getStatsAndCleanUp() {
