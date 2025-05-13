@@ -1,10 +1,10 @@
 {
 	"info": {
-		"_postman_id": "8b4a1de3-1d5a-47e7-956b-9712c8375298",
+		"_postman_id": "c4323b76-2dcf-43ad-bce0-8ed5d5671675",
 		"name": "ContentImportResource",
 		"description": "Postman collection for testing the ContentImportResource API endpoints.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "36604690"
+		"_exporter_id": "5403727"
 	},
 	"item": [
 		{
@@ -27,6 +27,7 @@
 									"    pm.expect(jsonData.entity[0].fields.length).to.eql(8);",
 									"    pm.expect(jsonData.entity[0].fields[3].variable).to.eql('title');",
 									"    pm.collectionVariables.set(\"fields\", JSON.stringify([jsonData.entity[0].fields[3].id]))",
+									"    pm.collectionVariables.set(\"contentType\", jsonData.entity[0].variable);",
 									"});",
 									""
 								],
@@ -61,6 +62,76 @@
 						"description": "Given a content type payload containing field variables.\nWhen sending a POST.\nExpect that code is 200.\nExpect content type is created with the provided fields.\nExpect that new properties of content types are set (icon and sortOrder)."
 					},
 					"response": []
+				},
+				{
+					"name": "Get Default Language ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"HTTP Status code must be successful\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"No errors were reported\", function () {",
+									"    const responseBody = pm.response.json();",
+									"    pm.expect(responseBody.errors.length).to.equal(0, \"An error occurred when retrieving the default Language\");",
+									"});",
+									"",
+									"pm.test(\"Store Default Language's ID\", function () {",
+									"    const responseBody = pm.response.json();",
+									"    pm.collectionVariables.set(\"language\", \"\" + responseBody.entity.id);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v2/languages/_getdefault",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"languages",
+								"_getdefault"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							"// Manually set several required properties for the tests to run properly",
+							"pm.collectionVariables.set(\"workflowActionId\", \"b9d89c80-3d88-4311-8365-187323c96436\");",
+							"pm.collectionVariables.set(\"queueName\", \"importContentlets\");",
+							"pm.collectionVariables.set(\"page\", \"1\");",
+							"pm.collectionVariables.set(\"pageSize\", \"20\");"
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
 				}
 			]
 		},
@@ -2302,12 +2373,14 @@
 					"response": []
 				},
 				{
-					"name": "Waiting Job to complete",
+					"name": "Waiting for Job to complete",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
 								"exec": [
+									"pm.collectionVariables.set(\"retryTimeout\", 10000);",
+									"",
 									"const maxTimeout = 30000; // 10 seconds",
 									"const maxRetries = 10;    // Maximum number of retry attempts",
 									"const startTime = parseInt(pm.collectionVariables.get(\"startTime\"));",
@@ -2329,9 +2402,9 @@
 									"    pm.collectionVariables.set(\"retryCount\", retryCount + 1);",
 									"    ",
 									"    setTimeout(function(){",
-									"        console.log(\"Sleeping for 3 seconds before next request.\");",
-									"    }, 3000);",
-									"    postman.setNextRequest(\"Waiting Job to complete\");",
+									"        console.log(\"Sleeping for \" + pm.collectionVariables.get(\"retryTimeout\") + \" milliseconds before next request.\");",
+									"    }, parseInt(pm.collectionVariables.get(\"retryTimeout\")));",
+									"    pm.execution.setNextRequest(\"Waiting Job to complete\");",
 									"    console.log(`Job still processing, retrying... (${maxTimeout - elapsedTime}ms remaining)`);",
 									"} else {",
 									"    // If we exceed the max timeout or max retries, fail the test",
@@ -2522,7 +2595,7 @@
 					"response": []
 				},
 				{
-					"name": "Waiting Job to be canceled",
+					"name": "Waiting for Job to be canceled",
 					"event": [
 						{
 							"listen": "test",
@@ -2549,9 +2622,9 @@
 									"    pm.collectionVariables.set(\"retryCount\", retryCount + 1);",
 									"    ",
 									"    setTimeout(function(){",
-									"        console.log(\"Sleeping for 3 seconds before next request.\");",
-									"    }, 3000);",
-									"    postman.setNextRequest(\"Waiting Job to be canceled\");",
+									"        console.log(\"Sleeping for \" + pm.collectionVariables.get(\"retryTimeout\") + \" milliseconds before next request.\");",
+									"    }, parseInt(pm.collectionVariables.get(\"retryTimeout\")));",
+									"    pm.execution.setNextRequest(\"Waiting Job to be canceled\");",
 									"    console.log(`Job still processing, retrying... (${maxTimeout - elapsedTime}ms remaining)`);",
 									"} else {",
 									"    // If we exceed the max timeout or max retries, fail the test",
@@ -2721,9 +2794,16 @@
 									"// Validate that the job ID in the response matches the expected job ID",
 									"pm.test(\"Job ID should be present\", function () {",
 									"    // Check if any job in the response matches the expected job ID",
-									"    const hasMatchingJob = response.entity.jobs.some(job => job.id === jobId.toString());",
-									"    pm.expect(hasMatchingJob, `Expected Job ID ${jobId} to be present`).to.be.true;",
-									"});"
+									"    var found = false;",
+									"    for (let job of response.entity.jobs) {",
+									"        if (job.id === jobId.toString()) {",
+									"            found = true;",
+									"            break;",
+									"        }",
+									"    }",
+									"    pm.expect(found).to.equal(true, \"Expected Job ID '\" + jobId + \"' was not found\");",
+									"});",
+									""
 								],
 								"type": "text/javascript",
 								"packages": {}
@@ -3417,8 +3497,8 @@
 									"    ",
 									"    // Set up the next request",
 									"    setTimeout(function(){",
-									"        console.log(\"Sleeping for 3 seconds before next request.\");",
-									"    }, 3000);",
+									"        console.log(\"Sleeping for \" + pm.collectionVariables.get(\"retryTimeout\") + \" milliseconds before next request.\");",
+									"    }, parseInt(pm.collectionVariables.get(\"retryTimeout\")));",
 									"    ",
 									"    // Use the correct method for setting the next request",
 									"    pm.execution.setNextRequest(\"Waiting Job to complete\");",
@@ -3666,8 +3746,8 @@
 									"    ",
 									"    // Set up the next request",
 									"    setTimeout(function(){",
-									"        console.log(\"Sleeping for 3 seconds before next request.\");",
-									"    }, 3000);",
+									"        console.log(\"Sleeping for \" + pm.collectionVariables.get(\"retryTimeout\") + \" milliseconds before next request.\");",
+									"    }, parseInt(pm.collectionVariables.get(\"retryTimeout\")));",
 									"    ",
 									"    // Use the correct method for setting the next request",
 									"    pm.execution.setNextRequest(\"Waiting Job to complete\");",
@@ -3945,8 +4025,8 @@
 									"    ",
 									"    // Set up the next request",
 									"    setTimeout(function(){",
-									"        console.log(\"Sleeping for 3 seconds before next request.\");",
-									"    }, 3000);",
+									"        console.log(\"Sleeping for \" + pm.collectionVariables.get(\"retryTimeout\") + \" milliseconds before next request.\");",
+									"    }, pm.collectionVariables.get(\"retryTimeout\"));",
 									"    ",
 									"    // Use the correct method for setting the next request",
 									"    pm.execution.setNextRequest(\"Waiting Job to complete\");",
@@ -4606,74 +4686,6 @@
 					""
 				]
 			}
-		}
-	],
-	"variable": [
-		{
-			"key": "queueName",
-			"value": "importContentlets",
-			"type": "string"
-		},
-		{
-			"key": "jobId",
-			"value": "7a0071dd-cfb8-497e-9280-f5c08232b86f",
-			"type": "string"
-		},
-		{
-			"key": "user",
-			"value": "admin@dotCMS.com",
-			"type": "string"
-		},
-		{
-			"key": "password",
-			"value": "admin",
-			"type": "string"
-		},
-		{
-			"key": "jwt",
-			"value": ""
-		},
-		{
-			"key": "contentType",
-			"value": "TestImportJob",
-			"type": "string"
-		},
-		{
-			"key": "language",
-			"value": "1",
-			"type": "string"
-		},
-		{
-			"key": "workflowActionId",
-			"value": "b9d89c80-3d88-4311-8365-187323c96436",
-			"type": "string"
-		},
-		{
-			"key": "fields",
-			"value": "",
-			"type": "string"
-		},
-		{
-			"key": "page",
-			"value": "1",
-			"type": "string"
-		},
-		{
-			"key": "pageSize",
-			"value": "20",
-			"type": "string"
-		},
-		{
-			"key": "cancelledJobId",
-			"value": ""
-		},
-		{
-			"key": "invalidLocationJobId",
-			"value": ""
-		},
-		{
-			"key": "invalidLocationWithoutStopJobId",
-			"value": ""
 		}
 	]
 }
