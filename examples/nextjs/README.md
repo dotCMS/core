@@ -319,3 +319,27 @@ const pageComponents = {
 
 This mapping tells the dotCMS integration which React component should render which type of content from dotCMS. It should be passed to the `DotCMSBodyLayout` component. Learn more about the `DotCMSBodyLayout` component [here](https://www.npmjs.com/package/@dotcms/react/v/next).
 
+## Conclusion
+
+This example demonstrates the powerful integration between dotCMS and Next.js, enabling fully editable and dynamic web pages. By leveraging dotCMS as a Universal CMS and Next.js for frontend rendering, you can create high-performance websites that offer both developer flexibility and content editor ease-of-use.
+
+Key benefits of this approach include:
+
+- **Separation of concerns**: Content management in dotCMS, presentation in Next.js
+- **Visual editing**: In-context editing with the Universal Visual Editor
+- **Performance**: Next.js server-side rendering and optimization
+- **Flexibility**: Custom React components for different content types
+- **Developer experience**: Modern JavaScript tooling and frameworks
+
+## Learn More
+
+To deepen your understanding of this integration, explore these official dotCMS resources:
+
+- [JavaScript SDK: React Library](https://dev.dotcms.com/docs/javascript-sdk-react-library) - Documentation for the @dotcms/react package, including components and hooks
+- [Universal Visual Editor](https://dev.dotcms.com/docs/universal-visual-editor) - Learn more about the visual editing capabilities
+- [Content in dotCMS](https://dev.dotcms.com/docs/content) - Understanding content types and content management in dotCMS
+
+Additional resources:
+- [dotCMS Developer Documentation](https://dev.dotcms.com/)
+- [Next.js Documentation](https://nextjs.org/docs)
+
