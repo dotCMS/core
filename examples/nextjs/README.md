@@ -52,6 +52,19 @@ Before you begin, make sure you have:
 - Basic understanding of React and Next.js concepts
 - Familiarity with content management systems (prior dotCMS experience helpful but not required)
 
+## dotCMS SDK Components
+
+This example uses the following npm packages from dotCMS:
+
+| Package | Purpose | Description |
+|---------|---------|-------------|
+| [@dotcms/client](https://www.npmjs.com/package/@dotcms/client/next) | API Communication | Core API client for fetching content from dotCMS |
+| [@dotcms/react](https://www.npmjs.com/package/@dotcms/react/next) | UI Components | React components and hooks for rendering dotCMS content |
+| [@dotcms/uve](https://www.npmjs.com/package/@dotcms/uve) | Visual Editing | Universal Visual Editor integration |
+| [@dotcms/types](https://www.npmjs.com/package/@dotcms/types) | Type Safety | TypeScript type definitions for dotCMS |
+
+> **Note**: These packages are already included in the example project's dependencies, so you don't need to install them separately.
+
 ## Setup Guide
 
 This guide will walk you through the process of setting up the dotCMS Next.js example from scratch.
@@ -170,33 +183,52 @@ You should see a message in your terminal indicating that the Next.js app is run
 ### File Structure
 
 ```bash
-.
-├── src/
-│   ├── app/              # App router components
-│   │   ├── [[...slug]]/  # Dynamic routing
-│   │   ├── blog/         # Blog pages
-│   │   ├── layout.js     # Root layout
-│   │   └── ...
-│   ├── components/       # Reusable UI components
-│   ├── hooks/            # Custom React hooks
-│   ├── pages/            # Page templates
-│   └── utils/            # Utility functions
-│       ├── dotCMSClient.js  # dotCMS API client
-│       └── ...
-├── .env.local.example    # Template for environment variables
-├── next.config.js        # Next.js configuration
-├── package.json          # Dependencies and scripts
-└── jsconfig.json         # JavaScript configuration
+src/
+├── app/              # App Router components (Server-Side Rendered pages)
+│   ├── [[...slug]]/  # Dynamic routing
+│   ├── blog/         # Blog pages
+│   ├── layout.js     # Root layout
+│   └── ...
+├── components/ 
+│   └── contenttype/  # Components for rendering dotCMS contenttypes
+├── hooks/            # Custom React hooks
+├── pages/            # Client-side page templates (can use React hooks)
+└── utils/            # Utility functions
+    ├── dotCMSClient.js  # dotCMS API client initialization
+    └── ...
 ```
 
-### @dotcms SDK Components Used
+### Understanding the Structure
 
-This project uses the following @dotcms packages:
+This project uses Next.js with App Router for server-side rendering, but with some important architectural decisions:
 
-- [@dotcms/client](https://www.npmjs.com/package/@dotcms/client/next) - Core API client for fetching content from dotCMS
-- [@dotcms/react](https://www.npmjs.com/package/@dotcms/react/next) - React components and hooks for rendering dotCMS content
-- [@dotcms/uve](https://www.npmjs.com/package/@dotcms/uve) - Universal Visual Editor integration
-- [@dotcms/types](https://www.npmjs.com/package/@dotcms/types) - TypeScript type definitions for dotCMS
+1. **App Router (src/app/)**: Contains all server-side rendered pages and routes. These components don't use React hooks directly due to Next.js 13+ restrictions.
+
+2. **Components (src/components/)**: 
+   - The `contenttype/` folder contains React components that render dotCMS content.
+   - In dotCMS, a "Content Type" is like a data model (e.g., "Product", "BlogPost"), while a "Contentlet" is an actual content instance.
+   - For each Content Type in dotCMS, you need a corresponding React component to render it.
+   - For example, if you have a `MyCustomContent` content type in dotCMS, you would create a matching component in this folder to render it.
+
+3. **Pages (src/pages/)**: Contains client-side page templates that can use React hooks. Since Next.js App Router components can't directly use hooks, these components handle client-side logic.
+
+4. **Utils (src/utils/)**: Contains utility functions, most importantly the `dotCMSClient.js` which initializes the connection to your dotCMS instance.
+
+### ContentType to React Component Mapping
+
+One of the key concepts in this integration is mapping dotCMS contenttypes to React components:
+
+```js
+// Example of mapping dotCMS contenttypes to React components
+const pageComponents = {
+  // If you have a "Product" content type in dotCMS, this maps it to your ProductComponent
+  DotCMSProduct: ProductComponent,
+  // If you have a "BlogPost" content type, this maps it to your BlogPostComponent
+  DotCMSBlogPost: BlogPostComponent
+}
+```
+
+This mapping tells the dotCMS integration which React component should render which type of content from dotCMS.
 
 ## How It Works
 
@@ -229,7 +261,7 @@ This project uses `@dotcms/react` to render dotCMS content in React components:
 ```js
 import { DotCMSBodyLayout, useEditableDotCMSPage } from "@dotcms/react/next";
 
-// Define custom components for specific content types
+// Define custom components for specific contenttypes
 const pageComponents = {
     dotCMSProductContent: MyCustomDotCMSProductComponent,
 }
@@ -257,7 +289,7 @@ This code:
 > [!NOTE]
 > - The `useEditableDotCMSPage` hook will not modify the `pageResponse` object outside the editor
 > - The `DotCMSBodyLayout` component renders both the page structure and content
-> - Custom components defined in `pageComponents` will be used to render specific content types
+> - Custom components defined in `pageComponents` will be used to render specific contenttypes
 
 Learn more about the `@dotcms/react` package [here](https://www.npmjs.com/package/@dotcms/react/next).
 
