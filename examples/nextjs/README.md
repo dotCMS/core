@@ -63,7 +63,8 @@ This example uses the following npm packages from dotCMS:
 | [@dotcms/uve](https://www.npmjs.com/package/@dotcms/uve) | Visual Editing | Universal Visual Editor integration |
 | [@dotcms/types](https://www.npmjs.com/package/@dotcms/types) | Type Safety | TypeScript type definitions for dotCMS |
 
-> **Note**: These packages are already included in the example project's dependencies, so you don't need to install them separately.
+> [!NOTE]
+> These packages are already included in the example project's dependencies, so you don't need to install them separately.
 
 ## Setup Guide
 
@@ -90,7 +91,7 @@ This will create a new directory with the example code and install all necessary
 
 #### A. Get a dotCMS Site
 
-First, [get a dotCMS Site](https://www.dotcms.com/pricing). If you want to test this example, you can also use our [demo site](https://dev.dotcms.com/docs/demo-site).
+First, get a [dotCMS Site](https://www.dotcms.com/pricing). If you want to test this example, you can also use our [demo site](https://dev.dotcms.com/docs/demo-site).
 
 If using the demo site, you can log in with these credentials:
 
@@ -98,28 +99,29 @@ If using the demo site, you can log in with these credentials:
 |-----------|----------|
 | admin@dotcms.com | admin |
 
-After creating an account, create a new empty site from the dashboard and assign to it any name of your liking.
+Once you have a site, you can log in with the credentials and start creating content.
 
 #### B. Create a dotCMS API Key
 
 This integration requires an API Key with read-only permissions for security best practices:
 
-1. Go to the dotCMS admin panel.
-2. Click on System > Users.
+1. Go to the **dotCMS admin panel**.
+2. Click on **System** > **Users**.
 3. Select the user you want to create the API Key for.
-4. Go to API Access Key and generate a new key.
+4. Go to **API Access Key** and generate a new key.
 
+> [!WARNING]
 > **Security Note**: Read-only permissions for Pages, Folders, Assets, and Content are sufficient for this integration. Using a key with minimal permissions follows security best practices.
 
 For detailed instructions, please refer to the [dotCMS API Documentation - Read-only token](https://dev.dotcms.com/docs/rest-api-authentication#ReadOnlyToken).
 
 #### C. Configure the Universal Visual Editor
 
-The Universal Visual Editor (UVE) is a critical feature that creates a bridge between your dotCMS instance and your Next.js application. This integration **Enables real-time visual editing** and allows content editors to see and modify your actual Next.js pages directly from within dotCMS.
+The [Universal Visual Editor (UVE)](https://dev.dotcms.com/docs/universal-visual-editor) is a critical feature that creates a bridge between your dotCMS instance and your Next.js application. This integration **Enables real-time visual editing** and allows content editors to see and modify your actual Next.js pages directly from within dotCMS.
 
 To set up the Universal Visual Editor:
 
-1. Browse to Settings -> Apps.
+1. Browse to **Settings** > **Apps**.
 2. Select the built-in integration for UVE - Universal Visual Editor.
 3. Select the site that will be feeding the destination pages.
 4. Add the following configuration:
@@ -143,9 +145,10 @@ You can learn more about configuring the Universal Visual Editor in the [dotCMS 
 
 #### A. Set Environment Variables
 
-Create a `.env.local` file in the root of the project by copying the example file:
+Create a `.env.local` file in the root of the project by running the following command:
 
 ```bash
+# This will create a new file with the correct variables.
 cp .env.local.example .env.local
 ```
 
@@ -154,12 +157,10 @@ Then set each variable in the `.env.local` file:
 - `NEXT_PUBLIC_DOTCMS_HOST`: The URL of your dotCMS site.
 - `NEXT_PUBLIC_DOTCMS_API_KEY`: The API Key you created in Step 2B.
 - `NEXT_PUBLIC_DOTCMS_SITE_ID`: The ID of the site you want to use. 
-  - dotCMS is a multi-site CMS, meaning a single instance can manage multiple websites.
-  - The site ID specifies which specific site's content should be pulled into your Next.js app.
-  - If incorrect, content requests will fail.
-  - If left empty, content will be pulled from the default site configured in dotCMS.
-  - You can find your site ID in the dotCMS admin panel under System > Sites. 
-  - Learn more about [dotCMS Multi-Site management here](https://dev.dotcms.com/docs/multi-site-management#multi-site-management).
+
+The Site ID refers to the site that will be used to pull content into your Next.js app. dotCMS is a multi-site CMS, meaning a single instance can manage multiple websites, the site ID specifies which specific site's content should be pulled into your Next.js app. If incorrect, content requests will fail. If left empty, content will be pulled from the default site configured in dotCMS.
+
+You can find your site ID in the dotCMS admin panel under System > Sites. Learn more about [dotCMS Multi-Site management here](https://dev.dotcms.com/docs/multi-site-management#multi-site-management).
 
 ### Step 4: Run the Application
 
@@ -259,6 +260,23 @@ export const dotCMSClient = createDotCMSClient({
 
 The `dotCMSClient` can then be used to fetch various types of content from dotCMS, including pages, assets, and contentlets.
 
+As an example, inside the `src/utils/getDotCMSPage.js` file, we fetch a page from dotCMS:
+
+```js
+import { dotCMSClient } from "./dotCMSClient";
+
+export const getDotCMSPage = async (path, searchParams) => {
+    try {
+        const pageData = await dotCMSClient.page.get(path, searchParams);
+        return pageData;
+    } catch (e) {
+        console.error("ERROR FETCHING PAGE: ", e.message);
+
+        return null;
+    }
+};
+```
+
 Learn more about the `@dotcms/client` package [here](https://www.npmjs.com/package/@dotcms/client/next).
 
 ### How the Page is Rendered
@@ -267,7 +285,6 @@ This project uses `@dotcms/react` to render dotCMS content in React components:
 
 ```js
 "use client";
-
 
 import { DotCMSBodyLayout, useEditableDotCMSPage } from "@dotcms/react/next";
 
@@ -292,12 +309,12 @@ export function MyPage({ page }) {
 ```
 
 This code:
-1. Takes the `page` from the dotCMS Client SDK using the `page` method.
+1. Takes the `page` from the dotCMS Client SDK using the `getDotCMSPage` method.
 2. Uses `useEditableDotCMSPage` to make the page editable in the Universal Visual Editor
 3. Renders the page content with `DotCMSBodyLayout`
 
-> [!NOTE]
-> - The `useEditableDotCMSPage` hook will not modify the `pageResponse` object outside the editor
+> [!HINT]
+> - The `useEditableDotCMSPage` hook will not modify the `page` object outside the editor
 > - The `DotCMSBodyLayout` component renders both the page structure and content
 > - Custom components defined in `pageComponents` will be used to render specific contenttypes
 
