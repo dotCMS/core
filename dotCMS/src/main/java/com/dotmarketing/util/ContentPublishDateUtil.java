@@ -20,8 +20,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class ContentPublishDateUtil {
 
-    @VisibleForTesting
-    static Debouncer debouncer = new Debouncer();
+    private static Debouncer debouncer = new Debouncer();
 
     @VisibleForTesting
     static void setDebouncer(Debouncer testDebouncer) {
