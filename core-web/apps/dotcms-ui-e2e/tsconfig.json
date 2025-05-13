@@ -1,10 +1,25 @@
 {
     "extends": "../../tsconfig.base.json",
-    "files": [],
-    "include": [],
-    "references": [
-        {
-            "path": "./tsconfig.e2e.json"
-        }
+    "compilerOptions": {
+        "allowJs": true,
+        "outDir": "../../dist/out-tsc",
+        "module": "commonjs",
+        "sourceMap": false,
+        "forceConsistentCasingInFileNames": true,
+        "strict": true,
+        "noImplicitOverride": true,
+        "noPropertyAccessFromIndexSignature": true,
+        "noImplicitReturns": true,
+        "noFallthroughCasesInSwitch": true
+    },
+    "include": [
+        "**/*.ts",
+        "**/*.js",
+        "playwright.config.ts",
+        "src/**/*.spec.ts",
+        "src/**/*.spec.js",
+        "src/**/*.test.ts",
+        "src/**/*.test.js",
+        "src/**/*.d.ts"
     ]
 }
