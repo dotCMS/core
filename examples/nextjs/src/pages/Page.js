@@ -1,11 +1,10 @@
 'use client';
 
 import { DotCMSLayoutBody, useEditableDotCMSPage } from '@dotcms/react/next';
+
+import { pageComponents } from '@/components/contenttypes';
 import Footer from '@/components/footer/Footer';
 import Header from '@/components/Header';
-
-import NotFound from '@/app/not-found';
-import { pageComponents } from '@/components/contenttypes';
 
 export function Page({ pageContent }) {
     const { pageAsset, content = {} } = useEditableDotCMSPage(pageContent);

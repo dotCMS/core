@@ -92,7 +92,6 @@ const SearchBar = ({ searchQuery, setSearchQuery }) => {
 const BlogCard = ({ blog }) => {
     const {
         title,
-        identifier,
         image,
         urlMap,
         inode,
