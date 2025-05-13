@@ -8,7 +8,7 @@ const RecommendedCard = ({contentlet}) => {
         month: "long",
         day: "numeric",
     };
-    console.log(contentlet);
+
     return (
         <div className="flex gap-7 min-h-16 relative">
             <EditButton contentlet={contentlet} />
