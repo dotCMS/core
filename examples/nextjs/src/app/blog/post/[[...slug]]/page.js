@@ -2,7 +2,9 @@ import NotFound from "@/app/not-found";
 import { DetailPage } from "@/pages/DetailPage";
 import { getDotCMSPage } from "@/utils/getDotCMSPage";
 
-export async function generateMetadata({ params, searchParams }) {
+export async function generateMetadata(props) {
+    const searchParams = await props.searchParams;
+    const params = await props.params;
     try {
         const path = params.slug[0];
         const { pageAsset } = await getDotCMSPage(`/blog/post/${path}`, searchParams);
@@ -18,7 +20,9 @@ export async function generateMetadata({ params, searchParams }) {
     }
 }
 
-export default async function Home({ searchParams, params }) {
+export default async function Home(props) {
+    const params = await props.params;
+    const searchParams = await props.searchParams;
     const path = params.slug[0];
     const pageContent = await getDotCMSPage(`/blog/post/${path}`, searchParams);
 

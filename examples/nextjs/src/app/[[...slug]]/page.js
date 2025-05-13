@@ -4,7 +4,9 @@ import NotFound from "@/app/not-found";
 import { Page } from "@/pages/Page";
 import { getDotCMSPage } from "@/utils/getDotCMSPage";
 
-export async function generateMetadata({ params, searchParams }) {
+export async function generateMetadata(props) {
+    const searchParams = await props.searchParams;
+    const params = await props.params;
     try {
         const path = params?.slug?.join("/") || "/";
         const { pageAsset } = await getDotCMSPage(path, searchParams);
@@ -21,7 +23,9 @@ export async function generateMetadata({ params, searchParams }) {
     }
 }
 
-export default async function Home({ params, searchParams }) {
+export default async function Home(props) {
+    const searchParams = await props.searchParams;
+    const params = await props.params;
     const path = params?.slug?.join("/") || "/";
     const pageContent = await getDotCMSPage(path, searchParams);
 

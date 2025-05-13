@@ -2,12 +2,13 @@ import Image from "next/image";
 import { EditButton } from "./editor/EditButton";
 
 const RecommendedCard = ({contentlet}) => {
-    const { url, title, inode, image, urlMap, modDate, urlTitle } = contentlet;
+    const { url, title, inode, image, urlMap, modDate } = contentlet;
     const dateFormatOptions = {
         year: "numeric",
         month: "long",
         day: "numeric",
     };
+    console.log(contentlet);
     return (
         <div className="flex gap-7 min-h-16 relative">
             <EditButton contentlet={contentlet} />
@@ -15,7 +16,7 @@ const RecommendedCard = ({contentlet}) => {
                 {image && (
                     <Image
                         src={inode}
-                        alt={urlTitle}
+                        alt={title}
                         fill={true}
                         className="object-cover"
                     />
