@@ -5,11 +5,17 @@ export const blogQuery = `
         ... on Blog {
             inode
             image {
-            fileName
+                fileName
             }
             urlMap
             modDate
             urlTitle
+            teaser
+            author {
+                firstName
+                lastName
+                inode
+            }
         }
     }
 `;
@@ -18,7 +24,7 @@ export const destinationQuery = `
     search(query: "+contenttype:Destination +live:true", limit: 3) {
         title
         identifier
-            ... on Destination {
+        ... on Destination {
                 inode
                 image {
                 fileName

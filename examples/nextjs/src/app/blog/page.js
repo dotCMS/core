@@ -2,7 +2,7 @@ import { cache } from "react";
 
 import { dotCMSClient } from "@/utils/dotCMSClient";
 import { BlogListingPage } from "@/pages/BlogListingPage";
-import { fragmentNav, navigationQuery } from "@/utils/queries";
+import { blogQuery, fragmentNav, navigationQuery } from "@/utils/queries";
 import NotFound from "../not-found";
 
 export async function generateMetadata() {
@@ -36,7 +36,6 @@ export const getDotCMSPage = cache(async (path) => {
                 content: {
                     blogs: blogQuery,
                     navigation: navigationQuery,
-
                 },
                 fragments: [fragmentNav],
             },
@@ -48,25 +47,3 @@ export const getDotCMSPage = cache(async (path) => {
         };
     }
 });
-
-const blogQuery = `
-    search(query: "+contenttype:Blog +live:true") {
-        title
-        identifier
-        ... on Blog {
-            inode
-            image {
-                fileName
-            }
-            urlMap
-            modDate
-            urlTitle
-            teaser
-            author {
-                firstName
-                lastName
-                inode
-            }
-        }
-    }
-`;
