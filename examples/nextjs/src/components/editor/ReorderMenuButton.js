@@ -6,7 +6,7 @@ export function ReorderMenuButton() {
     return (
         isEditMode && (
             <button
-                className="bg-[#426BF0] rounded-sm flex cursor-pointer border-none px-2 py-1 gap-2"
+                className="bg-[#426BF0] rounded-xs flex cursor-pointer border-none px-2 py-1 gap-2"
                 onClick={() => reorderMenu()}
             >
                 <OrderIcon />

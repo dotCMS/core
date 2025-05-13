@@ -47,7 +47,7 @@ function CalendarEvent({ image, title, urlMap, description, location }) {
                         {locations.map(({ title, url }, index) => {
                             return (
                                 <Link key={index} href={url ?? ""}>
-                                    <span className="bg-yellow-100 text-yellow-800 text-xs font-medium me-2 px-2.5 py-0.5 rounded dark:bg-yellow-900 dark:text-yellow-300">
+                                    <span className="bg-yellow-100 text-yellow-800 text-xs font-medium me-2 px-2.5 py-0.5 rounded-sm dark:bg-yellow-900 dark:text-yellow-300">
                                         {title}
                                     </span>
                                 </Link>
@@ -66,7 +66,7 @@ function CalendarEvent({ image, title, urlMap, description, location }) {
                             .map(({ title, urlMap }, index) => {
                                 return (
                                     <Link key={index} href={urlMap ?? ""}>
-                                        <span className="bg-indigo-100 text-indigo-800 text-xs font-medium me-2 px-2.5 py-0.5 rounded dark:bg-indigo-900 dark:text-indigo-300">
+                                        <span className="bg-indigo-100 text-indigo-800 text-xs font-medium me-2 px-2.5 py-0.5 rounded-sm dark:bg-indigo-900 dark:text-indigo-300">
                                             {title}
                                         </span>
                                     </Link>

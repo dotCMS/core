@@ -4,8 +4,8 @@ export default function NotFound() {
     return (
       <div className="bg-slate-100 min-h-dvh w-full flex justify-center items-center">
         <section>
-            <div className="py-8 px-4 mx-auto max-w-screen-xl lg:py-16 lg:px-6">
-                <div className="mx-auto max-w-screen-sm text-center">
+            <div className="py-8 px-4 mx-auto max-w-5xl lg:py-16 lg:px-6">
+                <div className="mx-auto max-w-2xl text-center">
                     <h1 className="mb-4 text-7xl tracking-tight font-extrabold lg:text-9xl text-primary-600">
                         404
                     </h1>
@@ -17,7 +17,7 @@ export default function NotFound() {
                         explore on the home page.{" "}
                     </p>
                     <Link href="/">
-                        <div className="inline-flex text-white bg-purple-600 hover:bg-purple-800 focus:ring-4 focus:outline-none focus:ring-purple-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center my-4">
+                        <div className="inline-flex text-white bg-purple-600 hover:bg-purple-800 focus:ring-4 focus:outline-hidden focus:ring-purple-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center my-4">
                             Return Home
                         </div>
                     </Link>

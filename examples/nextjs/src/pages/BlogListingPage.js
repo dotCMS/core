@@ -79,7 +79,7 @@ const SearchBar = ({ searchQuery, setSearchQuery }) => {
                 </div>
                 <input
                     type="search"
-                    className="block w-full p-4 pl-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-white focus:ring-blue-500 focus:border-blue-500 outline-none"
+                    className="block w-full p-4 pl-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-white focus:ring-blue-500 focus:border-blue-500 outline-hidden"
                     placeholder="Search blogs..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
@@ -136,7 +136,7 @@ const BlogCard = ({ blog }) => {
                 )}
             </div>
 
-            <div className="p-4 flex flex-col flex-grow">
+            <div className="p-4 flex flex-col grow">
                 <h3 className="text-lg font-bold mb-2 hover:text-blue-600">
                     <a href={urlMap}>{title}</a>
                 </h3>

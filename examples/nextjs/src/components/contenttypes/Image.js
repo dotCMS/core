@@ -2,7 +2,7 @@ import Image from "next/image";
 
 function ImageComponent({ fileAsset, title, description }) {
     return (
-        <div className="relative overflow-hidden bg-white rounded shadow-lg group">
+        <div className="relative overflow-hidden bg-white rounded-sm shadow-lg group">
             <div className="relative w-full bg-gray-200 h-96">
                 {fileAsset && (
                     <Image

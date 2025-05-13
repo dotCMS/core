@@ -3,7 +3,7 @@ import Link from "next/link";
 
 function Activity({ title, description, image, inode, urlTitle }) {
     return (
-        <article className="p-4 overflow-hidden bg-white rounded shadow-lg mb-4">
+        <article className="p-4 overflow-hidden bg-white rounded-sm shadow-lg mb-4">
             {image && (
                 <div className="relative w-full h-56 overflow-hidden">
                     <Image
