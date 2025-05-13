@@ -34,7 +34,7 @@
         <!-- Some tests e.g. in ApiToken_Resource.postman_collection currently fail unless docker external port is same as internal -->
         <tomcat.port>8080</tomcat.port>
         <docker.jacoco.skip>false</docker.jacoco.skip>
-    </properties>
+    </properties>   
 
     <build>
         <plugins>
@@ -42,7 +42,7 @@
                 <groupId>com.github.eirslett</groupId>
                 <artifactId>frontend-maven-plugin</artifactId>
                 <executions>
-                    <execution>
+                    <execution> 
                         <id>install</id>
                         <goals>
                             <goal>yarn</goal>
