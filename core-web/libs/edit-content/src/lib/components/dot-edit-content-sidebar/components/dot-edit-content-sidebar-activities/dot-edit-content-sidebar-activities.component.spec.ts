@@ -309,6 +309,27 @@ describe('DotEditContentSidebarActivitiesComponent', () => {
             expect(spectator.component.form.get('comment').untouched).toBe(true);
         });
 
+        it('should disable clear button when comment field is empty', () => {
+            // Initially check that it's disabled
+            let clearButton = spectator.query(byTestId('activities-clear'));
+            expect(clearButton).toBeDisabled();
+
+            // Type something to enable it
+            const commentInput = spectator.query(byTestId('activities-input'));
+            spectator.typeInElement('Test comment', commentInput);
+            spectator.detectChanges();
+
+            clearButton = spectator.query(byTestId('activities-clear'));
+            expect(clearButton).not.toBeDisabled();
+
+            // Delete the content to see if it gets disabled again
+            spectator.typeInElement('', commentInput);
+            spectator.detectChanges();
+
+            clearButton = spectator.query(byTestId('activities-clear'));
+            expect(clearButton).toBeDisabled();
+        });
+
         it('should reset form state when clearComment is called', () => {
             const commentInput = spectator.query(byTestId('activities-input'));
             spectator.typeInElement('Test comment', commentInput);
@@ -321,6 +342,65 @@ describe('DotEditContentSidebarActivitiesComponent', () => {
             expect(spectator.component.form.pristine).toBe(true);
             expect(spectator.component.form.get('comment').untouched).toBe(true);
             expect(spectator.component.form.get('comment').value).toBe(null);
+        });
+
+        // New test cases for custom validation behavior
+        it('should not show validation errors when input field is empty before submit', () => {
+            const commentInput = spectator.query(byTestId('activities-input'));
+
+            // Type something and then delete it
+            spectator.typeInElement('Test', commentInput);
+            spectator.detectChanges();
+
+            spectator.typeInElement('', commentInput);
+            spectator.detectChanges();
+
+            // Check that there are no errors shown before submission
+            const control = spectator.component.form.get('comment');
+            expect(control.valid).toBe(true);
+            expect(control.errors).toBeFalsy();
+            expect(commentInput).not.toHaveClass('ng-invalid');
+        });
+
+        it('should apply required validation only when form is submitted with empty value', () => {
+            const commentInput = spectator.query(byTestId('activities-input'));
+            const form = spectator.query(byTestId('activities-form'));
+
+            // Initially no errors
+            expect(spectator.component.form.get('comment').errors).toBeFalsy();
+
+            // Submit empty form
+            spectator.dispatchFakeEvent(form, 'submit');
+            spectator.detectChanges();
+
+            // Now should have required error
+            const control = spectator.component.form.get('comment');
+            expect(control.errors).toBeTruthy();
+            expect(control.errors['required']).toBeTruthy();
+            expect(commentInput).toHaveClass('ng-invalid');
+            expect(commentInput).toHaveClass('ng-touched');
+        });
+
+        it('should disable submit button while saving', () => {
+            // Set saving state
+            spectator.setInput('status', ComponentStatus.SAVING);
+            spectator.detectChanges();
+
+            const submitButton = spectator.query(byTestId('activities-submit'));
+
+            expect(submitButton).toBeDisabled();
+            expect(spectator.component['$isSaving']()).toBe(true);
+        });
+
+        it('should not disable submit button when not saving', () => {
+            // Set loaded state
+            spectator.setInput('status', ComponentStatus.LOADED);
+            spectator.detectChanges();
+
+            const submitButton = spectator.query(byTestId('activities-submit'));
+
+            expect(submitButton).not.toBeDisabled();
+            expect(spectator.component['$isSaving']()).toBe(false);
         });
     });
 
