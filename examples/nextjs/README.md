@@ -178,7 +178,32 @@ pnpm dev
 
 You should see a message in your terminal indicating that the Next.js app is running at `http://localhost:3000`. Open this URL in your browser to see your dotCMS-powered Next.js site.
 
-## Project Structure and Components
+## How It Works
+
+The integration between dotCMS and Next.js works by:
+
+1. **Content Creation**: Content editors create and manage content in dotCMS
+2. **Content Delivery**: Next.js fetches content from dotCMS using the API client
+3. **Content Rendering**: React components render the fetched content
+4. **Visual Editing**: The Universal Visual Editor enables in-context editing
+
+For developers who want to understand the technical implementation details, see the [Advanced: Next.js + dotCMS Architecture](#advanced-nextjs--dotcms-architecture) section.
+
+## Edit your page in the Universal Visual Editor
+
+After setting up the Universal Visual Editor and running your Next.js application, you can edit your page in the Universal Visual Editor:
+
+1. Log in to the dotCMS admin panel
+2. Go to the page you want to edit
+3. Click on the "Edit" button
+4. The page will be rendered in the editor with your Next.js frontend
+5. Make changes directly on the page
+
+Learn more about the Universal Visual Editor [here](https://dev.dotcms.com/docs/universal-visual-editor).
+
+## Advanced: Next.js + dotCMS Architecture
+
+If you want to understand the technical details of how this project is structured and how it integrates with dotCMS, this section provides an in-depth look at the architecture.
 
 ### File Structure
 
@@ -202,7 +227,7 @@ src/
 
 This project uses Next.js with App Router for server-side rendering, but with some important architectural decisions:
 
-1. **App Router (src/app/)**: Contains all server-side rendered pages and routes. These components don't use React hooks directly due to Next.js 13+ restrictions.
+1. **App Router (src/app/)**: Contains all server-side rendered pages and routes. These components don't use React hooks directly due to Next.js 13+ restrictions. Learn more about the App Router [here](https://nextjs.org/docs/app).
 
 2. **Components (src/components/)**: 
    - The `contenttype/` folder contains React components that render dotCMS content.
@@ -214,25 +239,7 @@ This project uses Next.js with App Router for server-side rendering, but with so
 
 4. **Utils (src/utils/)**: Contains utility functions, most importantly the `dotCMSClient.js` which initializes the connection to your dotCMS instance.
 
-### ContentType to React Component Mapping
-
-One of the key concepts in this integration is mapping dotCMS contenttypes to React components:
-
-```js
-// Example of mapping dotCMS contenttypes to React components
-const pageComponents = {
-  // If you have a "Product" content type in dotCMS, this maps it to your ProductComponent
-  DotCMSProduct: ProductComponent,
-  // If you have a "BlogPost" content type, this maps it to your BlogPostComponent
-  DotCMSBlogPost: BlogPostComponent
-}
-```
-
-This mapping tells the dotCMS integration which React component should render which type of content from dotCMS.
-
-## How It Works
-
-### Fetching Content from dotCMS
+### How the Content is Fetched from dotCMS
 
 This project uses `@dotcms/client` to pull content from dotCMS.
 Inside the `src/utils/dotCMSClient.js` file, we configure the client to use the dotCMS API:
@@ -254,11 +261,14 @@ The `dotCMSClient` can then be used to fetch various types of content from dotCM
 
 Learn more about the `@dotcms/client` package [here](https://www.npmjs.com/package/@dotcms/client/next).
 
-### Rendering Content on the Page
+### How the Page is Rendered
 
 This project uses `@dotcms/react` to render dotCMS content in React components:
 
 ```js
+"use client";
+
+
 import { DotCMSBodyLayout, useEditableDotCMSPage } from "@dotcms/react/next";
 
 // Define custom components for specific contenttypes
@@ -266,9 +276,9 @@ const pageComponents = {
     dotCMSProductContent: MyCustomDotCMSProductComponent,
 }
 
-export function MyPage({ pageResponse }) {
+export function MyPage({ page }) {
     // Make the page editable in the UVE
-    const { pageAsset, content } = useEditableDotCMSPage(pageResponse);
+    const { pageAsset, content } = useEditableDotCMSPage(page);
 
     return (
         <div>
@@ -282,7 +292,7 @@ export function MyPage({ pageResponse }) {
 ```
 
 This code:
-1. Takes the `pageResponse` from the dotCMS API
+1. Takes the `page` from the dotCMS Client SDK using the `page` method.
 2. Uses `useEditableDotCMSPage` to make the page editable in the Universal Visual Editor
 3. Renders the page content with `DotCMSBodyLayout`
 
@@ -291,16 +301,21 @@ This code:
 > - The `DotCMSBodyLayout` component renders both the page structure and content
 > - Custom components defined in `pageComponents` will be used to render specific contenttypes
 
-Learn more about the `@dotcms/react` package [here](https://www.npmjs.com/package/@dotcms/react/next).
+Learn more about the `@dotcms/react` package [here](https://www.npmjs.com/package/@dotcms/react/v/next).
 
-### Using the Universal Visual Editor
+#### ContentType to React Component Mapping
 
-After setting up the Universal Visual Editor and running your Next.js application:
+One of the key concepts in this integration is mapping dotCMS contenttypes to React components:
 
-1. Log in to the dotCMS admin panel
-2. Go to the page you want to edit
-3. Click on the "Edit" button
-4. The page will be rendered in the editor with your Next.js frontend
-5. Make changes directly on the page
+```js
+// Example of mapping dotCMS contenttypes to React components
+const pageComponents = {
+  // If you have a "Product" content type in dotCMS, this maps it to your ProductComponent
+  DotCMSProduct: ProductComponent,
+  // If you have a "BlogPost" content type, this maps it to your BlogPostComponent
+  DotCMSBlogPost: BlogPostComponent
+}
+```
 
-Learn more about the Universal Visual Editor [here](https://dev.dotcms.com/docs/universal-visual-editor).
+This mapping tells the dotCMS integration which React component should render which type of content from dotCMS. It should be passed to the `DotCMSBodyLayout` component. Learn more about the `DotCMSBodyLayout` component [here](https://www.npmjs.com/package/@dotcms/react/v/next).
+
