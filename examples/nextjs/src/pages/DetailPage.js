@@ -17,6 +17,7 @@ export function DetailPage({ pageContent }) {
     const { pageAsset, content } = useEditableDotCMSPage(pageContent);
     const { urlContentMap } = pageAsset;
     const { blogContent } = urlContentMap || {};
+    const navigation = content.navigation;
     const isEditMode = useIsEditMode();
 
     useEffect(() => {
@@ -35,7 +36,7 @@ export function DetailPage({ pageContent }) {
 
     return (
         <div className="flex flex-col gap-6 min-h-screen bg-slate-50">
-            {pageAsset?.layout.header && <Header />}
+            {pageAsset?.layout.header && <Header navItems={navigation?.children} />}
             <main className="flex flex-col gap-8 m-auto">
                 {urlContentMap?.image && (
                     <div className="relative w-full h-80 overflow-hidden">
