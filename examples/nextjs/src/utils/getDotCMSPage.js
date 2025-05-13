@@ -17,7 +17,7 @@ export const getDotCMSPage = cache(async (path, searchParams) => {
         });
         return pageData;
     } catch (e) {
-        console.log("ERROR FETCHING PAGE: ", e);
+        console.error("ERROR FETCHING PAGE: ", e);
 
         return null;
     }

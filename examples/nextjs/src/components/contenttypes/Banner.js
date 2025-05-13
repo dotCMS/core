@@ -21,7 +21,7 @@ function Banner(contentlet) {
                 </h2>
                 <p className="mb-4 text-xl text-shadow">{caption}</p>
                 <Link
-                    className="p-4 text-xl transition duration-300 bg-indigo-600 rounded-sm hover:bg-indigo-700"
+                    className="p-4 text-xl transition duration-300 bg-blue-500 rounded-sm hover:bg-blue-700"
                     href={link || '#'}>
                     {buttonText}
                 </Link>
