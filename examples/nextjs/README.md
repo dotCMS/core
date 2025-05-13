@@ -36,7 +36,7 @@ See a live example at [https://dotcms-nextjs-demo.vercel.app/](https://dotcms-ne
 Before you begin, make sure you have:
 
 ### System Requirements
-- **Node.js**: v18.8.0 or later (v22+ recommended)
+- **Node.js**: v18.20.8 (LTS) or later (v22+ recommended)
 - **NPM**, **Yarn**, or **pnpm** package manager
 - **Git** for version control
 - A code editor (VS Code, WebStorm, etc.)
