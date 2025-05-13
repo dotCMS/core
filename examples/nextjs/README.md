@@ -89,14 +89,20 @@ After creating an account, create a new empty site from the dashboard and assign
 
 #### B. Create a dotCMS API Key
 
+This integration requires an API Key with read-only permissions for security best practices:
+
 1. Go to the dotCMS admin panel.
 2. Click on System > Users.
 3. Select the user you want to create the API Key for.
 4. Go to API Access Key and generate a new key.
 
-For detailed instructions, please refer to the [dotCMS API Documentation](https://dev.dotcms.com/docs/rest-api-authentication#ReadOnlyToken).
+> **Security Note**: Read-only permissions for Pages, Folders, Assets, and Content are sufficient for this integration. Using a key with minimal permissions follows security best practices.
+
+For detailed instructions, please refer to the [dotCMS API Documentation - Read-only token](https://dev.dotcms.com/docs/rest-api-authentication#ReadOnlyToken).
 
 #### C. Configure the Universal Visual Editor
+
+The Universal Visual Editor (UVE) is a critical feature that creates a bridge between your dotCMS instance and your Next.js application. This integration **Enables real-time visual editing** and allows content editors to see and modify your actual Next.js pages directly from within dotCMS.
 
 To set up the Universal Visual Editor:
 
@@ -116,6 +122,8 @@ To set up the Universal Visual Editor:
 }
 ```
 
+This configuration tells dotCMS that when editors are working on content in the admin panel, they should see your Next.js application running at `http://localhost:3000`. The pattern `(.*)` means this applies to all pages in your site.
+
 You can learn more about configuring the Universal Visual Editor in the [dotCMS UVE Documentation](https://dev.dotcms.com/docs/uve-headless-config).
 
 ### Step 3: Configure the Next.js Application
@@ -133,6 +141,10 @@ Then set each variable in the `.env.local` file:
 - `NEXT_PUBLIC_DOTCMS_HOST`: The URL of your dotCMS site.
 - `NEXT_PUBLIC_DOTCMS_API_KEY`: The API Key you created in Step 2B.
 - `NEXT_PUBLIC_DOTCMS_SITE_ID`: The ID of the site you want to use. 
+  - dotCMS is a multi-site CMS, meaning a single instance can manage multiple websites.
+  - The site ID specifies which specific site's content should be pulled into your Next.js app.
+  - If incorrect, content requests will fail.
+  - If left empty, content will be pulled from the default site configured in dotCMS.
   - You can find your site ID in the dotCMS admin panel under System > Sites. 
   - Learn more about [dotCMS Multi-Site management here](https://dev.dotcms.com/docs/multi-site-management#multi-site-management).
 
