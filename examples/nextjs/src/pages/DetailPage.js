@@ -7,7 +7,7 @@ import { enableBlockEditorInline } from "@dotcms/uve";
 import { DotCMSBlockEditorRenderer, useEditableDotCMSPage } from "@dotcms/react/next";
 
 import { useIsEditMode } from "@/hooks/isEditMode";
-import Footer from "@/components/footer/footer";
+import Footer from "@/components/footer/Footer";
 import Header from "@/components/Header";
 
 export function DetailPage({ pageContent }) {
@@ -70,6 +70,16 @@ const customeRenderers = {
             <div>
                 <h1>{title}</h1>
                 <p>{description}</p>
+            </div>
+        );
+    },
+    Product: (props) => {
+        const { title, description } = props.attrs.data;
+
+        return (
+            <div>
+                <h1>{title}</h1>
+                <div dangerouslySetInnerHTML={{ __html: description }} />
             </div>
         );
     },

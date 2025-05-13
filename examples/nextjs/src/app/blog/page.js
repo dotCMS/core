@@ -1,8 +1,6 @@
-import { cache } from "react";
-
-import { dotCMSClient } from "@/utils/dotCMSClient";
 import { BlogListingPage } from "@/pages/BlogListingPage";
-import { blogQuery, fragmentNav, navigationQuery } from "@/utils/queries";
+import { getDotCMSPage } from "@/utils/getDotCMSPage";
+
 import NotFound from "../not-found";
 
 export async function generateMetadata() {
@@ -28,22 +26,3 @@ export default async function Home() {
 
     return <BlogListingPage {...pageResponse} />;
 }
-
-export const getDotCMSPage = cache(async (path) => {
-    try {
-        const pageData = await dotCMSClient.page.get(path, {
-            graphql: {
-                content: {
-                    blogs: blogQuery,
-                    navigation: navigationQuery,
-                },
-                fragments: [fragmentNav],
-            },
-        });
-        return pageData;
-    } catch (e) {
-        return {
-            pageAsset: null,
-        };
-    }
-});
