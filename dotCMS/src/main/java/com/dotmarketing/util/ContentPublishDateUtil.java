@@ -23,6 +23,16 @@ public class ContentPublishDateUtil {
     @VisibleForTesting
     static Debouncer debouncer = new Debouncer();
 
+    @VisibleForTesting
+    static void setDebouncer(Debouncer testDebouncer) {
+        debouncer = testDebouncer;
+    }
+
+    @VisibleForTesting
+    static Debouncer getDebouncer() {
+        return debouncer;
+    }
+
     /**
      * Checks whether the given versionable has a publish date set in the future and, if so,
      * sends a user notification message indicating that the content cannot be published yet.

@@ -5,6 +5,7 @@ import com.dotcms.concurrent.Debouncer;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.beans.Identifier;
 import com.liferay.portal.language.LanguageUtil;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
@@ -26,6 +27,7 @@ class ContentPublishDateUtilTest {
 
     private ContentType contentType;
     private Identifier identifier;
+    private Debouncer originalDebouncer;
     private Debouncer debouncerMock;
 
     /**
@@ -35,8 +37,14 @@ class ContentPublishDateUtilTest {
     void setUp() {
         contentType = mock(ContentType.class);
         identifier = mock(Identifier.class);
+        originalDebouncer = ContentPublishDateUtil.getDebouncer();
         debouncerMock = mock(Debouncer.class);
-        ContentPublishDateUtil.debouncer = debouncerMock;
+        ContentPublishDateUtil.setDebouncer(debouncerMock);
+    }
+
+    @AfterEach
+    void tearDown() {
+        ContentPublishDateUtil.setDebouncer(originalDebouncer);
     }
 
     /**
