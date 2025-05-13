@@ -3,17 +3,29 @@ import { cache } from "react";
 import { dotCMSClient } from "@/utils/dotCMSClient";
 import { BlogListingPage } from "@/pages/BlogListingPage";
 import { fragmentNav, navigationQuery } from "@/utils/queries";
+import NotFound from "../not-found";
 
 export async function generateMetadata() {
-    const { pageAsset } = await getDotCMSPage(`/blog`);
-    const title = pageAsset?.page?.friendlyName || "Page not found";
-    return {
-        title: `${title} - Blog`
-    };
+    try {
+        const { pageAsset } = await getDotCMSPage(`/blog`);
+        const title = pageAsset?.page?.friendlyName;
+        return {
+            title: `${title} - Blog`
+        };
+    } catch (e) {
+        return {
+            title: "Blog - Page not found",
+        };
+    }
 }
 
 export default async function Home() {
     const pageResponse = await getDotCMSPage(`/blog`);
+
+    if (!pageResponse) {
+        return <NotFound />;
+    }
+
     return <BlogListingPage {...pageResponse} />;
 }
 
