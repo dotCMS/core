@@ -187,5 +187,4 @@ dotCMS/dependencies.gradle
 **/*vite.config*.timestamp-*.ts
 
 # Examples package-lock.json
-examples/package-lock.json
 examples/nextjs/package-lock.json
