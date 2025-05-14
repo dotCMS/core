@@ -219,6 +219,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -8223,9 +8224,41 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 ? contentlet.getIdentifier() :
                 "Unknown/New");
         final ContentType contentType = contentlet.getContentType();
+        final List<Relationship> relationships = APILocator.getRelationshipAPI()
+                .byContentType(contentType);
         final DotContentletValidationException cve = new DotContentletValidationException(
                 "Contentlet [" +
                         contentletId + "] has invalid/missing relationships");
+
+
+        // Check if any required relationships are missing from contentRelationships
+        for (final Relationship rel : relationships) {
+            final List<Boolean> checkIfContentIsParent = new ArrayList<>();
+            if (rel.isChildRequired() && Objects.equals(contentType.id(), rel.getParentStructureInode())) {
+                checkIfContentIsParent.add(true);
+            }
+            if (rel.isParentRequired() && Objects.equals(contentType.id(), rel.getChildStructureInode())) {
+                checkIfContentIsParent.add(false);
+            }
+
+            for (final boolean checkParent : checkIfContentIsParent) {
+                final boolean foundInRelationships = contentRelationships != null
+                        && contentRelationships.getRelationshipsRecords() != null
+                        && contentRelationships.getRelationshipsRecords().stream()
+                            .anyMatch(records ->
+                                    checkParent == records.isHasParent() &&
+                                    records.getRelationship().getInode().equals(rel.getInode()));
+
+                if (!foundInRelationships) {
+                    hasError = true;
+                    Logger.error(this, "Required " +
+                            (checkParent ? "child" : "parent" )  +
+                            " relationship [" + rel.getRelationTypeValue() +
+                            "] is not present for contentlet [" + contentletId + "]");
+                    cve.addRequiredRelationship(rel, new ArrayList<>());
+                }
+            }
+        }
 
         if (null != contentRelationships) {
             final List<ContentletRelationshipRecords> records = contentRelationships.getRelationshipsRecords();
@@ -8330,11 +8363,21 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                         .getRelationTypeValue() + "] is required.");
                         cve.addRequiredRelationship(relationship, contentsInRelationship);
                     }
+                    //grouping by id to avoid duplicate contents due to different languages
+                    List<Contentlet> contentsInRelationshipSameLanguage = new ArrayList<>(contentsInRelationship.stream()
+                            .collect(Collectors.toMap(
+                                    Contentlet::getIdentifier,
+                                    Function.identity(),
+                                    (existing, replacement) -> existing
+                            ))
+                            .values());
+
                     // If there's a 1-N relationship and the child content is
                     // trying to relate to one more parent...
+
                     if (relationship.getCardinality()
                             == RELATIONSHIP_CARDINALITY.ONE_TO_MANY.ordinal()
-                            && contentsInRelationship.size() > 1) {
+                            && contentsInRelationshipSameLanguage.size() > 1) {
                         final StringBuilder error = new StringBuilder();
                         error.append("ERROR! Child content [").append(contentletId)
                                 .append("] is already related to another parent content [");

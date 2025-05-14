@@ -295,6 +295,117 @@
     }
 }
 
+// Success button styles
+#main-success-severity {
+    background-color: $color-palette-green;
+    color: $white;
+
+    .p-button-icon,
+    .pi {
+        color: $white;
+    }
+
+    &:hover {
+        background-color: $color-palette-green-shade;
+    }
+
+    &:active {
+        background-color: $color-palette-green-shade;
+    }
+
+    &:focus {
+        background-color: $color-palette-green;
+        @include field-focus;
+        outline-color: $color-palette-green-op-20;
+    }
+}
+
+#outlined-success-severity {
+    background-color: transparent;
+    border: $field-border-size solid $color-palette-green;
+    white-space: nowrap;
+
+    .p-button-label,
+    .p-button-icon,
+    .pi {
+        color: $color-palette-green;
+    }
+
+    &:hover {
+        background-color: $color-palette-green-op-10;
+    }
+
+    &:active {
+        background-color: $color-palette-green-op-20;
+    }
+
+    &:focus {
+        background-color: transparent;
+        @include field-focus;
+        outline-color: $color-palette-green-op-20;
+    }
+}
+
+#outlined-success-severity-sm {
+    border: 1px solid $color-palette-green;
+}
+
+#text-success-severity {
+    background-color: transparent;
+    color: $black;
+
+    .p-button-label {
+        color: $color-palette-green;
+    }
+
+    .p-button-icon,
+    .pi {
+        color: $color-palette-green;
+    }
+
+    &:hover {
+        background-color: $color-palette-green-op-10;
+    }
+
+    &:active {
+        background-color: $color-palette-green-op-20;
+    }
+
+    &:focus {
+        background-color: transparent;
+        @include field-focus;
+        outline-color: $color-palette-green-op-20;
+    }
+}
+
+#text-warning-severity {
+    background-color: transparent;
+    color: $black;
+
+    .p-button-label {
+        color: $color-palette-yellow;
+    }
+
+    .p-button-icon,
+    .pi {
+        color: $color-palette-yellow;
+    }
+
+    &:hover {
+        background-color: $color-palette-yellow-op-10;
+    }
+
+    &:active {
+        background-color: $color-palette-yellow-op-20;
+    }
+
+    &:focus {
+        background-color: transparent;
+        @include field-focus;
+        outline-color: $color-palette-yellow-op-20;
+    }
+}
+
 #button-disabled {
     background-color: $color-palette-gray-200;
     color: $color-palette-gray-500;

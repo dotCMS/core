@@ -1,6 +1,6 @@
 import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { NavigationEnd, Router, ActivatedRoute } from '@angular/router';
-import { PageService } from '../services/page.service';
+import { BlogPageAsset, PageService } from '../services/page.service';
 import { DOTCMS_CLIENT_TOKEN } from '../../app.config';
 import { startWith, switchMap, filter, tap } from 'rxjs/operators';
 import { DYNAMIC_COMPONENTS } from '../components';
@@ -13,10 +13,8 @@ import { NavigationComponent } from "../components/navigation/navigation.compone
 import { LoadingComponent } from "../components/loading/loading.component";
 import { ErrorComponent } from "../components/error/error.component";
 import { FooterComponent } from "../components/footer/footer.component";
-import { Block } from '@angular/compiler';
 import { BlogPostComponent } from './blog-post/blog-post.component';
-import { Contentlet } from '@dotcms/uve/types';
-import { DotCMSPageAsset } from '@dotcms/client/types';
+import { DotCMSPageAsset } from '@dotcms/types';
 
 
 export type PageError = {
@@ -25,7 +23,7 @@ export type PageError = {
 };
 
 type PageRender = {
-    page: DotCMSPageAsset<{urlContentMap?: Contentlet<{ blogContent: Block }>} > | null;
+    page: BlogPageAsset | null;
     nav: DotcmsNavigationItem | null;
     error: PageError | null;
     status: 'idle' | 'success' | 'error' | 'loading';
@@ -92,7 +90,7 @@ export class BlogComponent {
     #setPageContent(page: DotCMSPageAsset, nav: DotcmsNavigationItem | null) {
         this.$context.set({
             status: 'success',
-            page: page as DotCMSPageAsset & { urlContentMap?: Contentlet<{ blogContent: Block }> },
+            page: page as BlogPageAsset,
             nav,
             error: null
         });
@@ -128,7 +126,7 @@ export class BlogComponent {
             }
             this.$context.update((state) => ({
                 ...state,
-                page: page as DotCMSPageAsset & { urlContentMap?: Contentlet<{ blogContent: Block }> },
+                page: page as BlogPageAsset,
                 status: 'success',
                 error: null
             }));

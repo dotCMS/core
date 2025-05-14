@@ -8,7 +8,7 @@ import {
     DotLanguage,
     UI_STORAGE_KEY
 } from '@dotcms/dotcms-models';
-import { UVE_MODE } from '@dotcms/uve/types';
+import { UVE_MODE } from '@dotcms/types';
 
 import {
     CALENDAR_FIELD_TYPES,
@@ -335,10 +335,12 @@ export const getStoredUIState = (): UIState => {
         console.warn('Error reading UI state from sessionStorage:', e);
     }
 
+    // Default values
     return {
         activeTab: 0,
         isSidebarOpen: true,
-        activeSidebarTab: 0
+        activeSidebarTab: 0,
+        isBetaMessageVisible: true
     };
 };
 

@@ -14,7 +14,6 @@
 @let isContentLocked = $store.isContentLocked();
 @let canLock = $store.canLock();
 @let lockSwitchLabel = $store.lockSwitchLabel();
-@let lockWarningMessage = $store.lockWarningMessage();
 @let tabs = $tabs();
 
 <!-- TODO: Handle the error, no form -->
@@ -32,10 +31,7 @@
             scrollable="false"
             class="dot-edit-content-tabview">
             <!-- Add prepend and append areas to the tabs -->
-            <ng-template
-                dotTabViewInsert
-                [dotTabViewPrepend]="prependContent"
-                [dotTabViewAppend]="appendContent"></ng-template>
+            <ng-template dotTabViewInsert [dotTabViewAppend]="appendContent"></ng-template>
 
             <!-- Tabs are lazy -->
             @for (tab of tabs; track tab) {
@@ -50,16 +46,6 @@
         <!-- Template for the tab tabPanel -->
         <ng-template #tabPanelTemplate let-tab="tab">
             <div class="dot-edit-content-form__layout">
-                @if (lockWarningMessage) {
-                    <p-messages severity="info" styleClass="mb-3" [@fadeIn]>
-                        <ng-template pTemplate>
-                            <div class="flex gap-2 justify-content-start">
-                                <i class="pi pi-info-circle"></i>
-                                <span [innerHTML]="lockWarningMessage"></span>
-                            </div>
-                        </ng-template>
-                    </p-messages>
-                }
                 @for (row of tab.layout; track row) {
                     <div class="dot-edit-content-form__layout-row" data-testId="row">
                         @for (column of row.columns; track column) {
@@ -79,18 +65,6 @@
         </ng-template>
     </form>
 }
-
-<!-- Prepend template to add to the tabs-->
-<ng-template #prependContent>
-    <div class="back-button__wrapper h-100 flex">
-        <button
-            data-testId="back-button"
-            pButton
-            (click)="goBack()"
-            icon="pi pi-chevron-left"
-            class="p-button-tertiary p-button-rounded p-button-sm"></button>
-    </div>
-</ng-template>
 
 <!-- Append template to add to the tabs -->
 <ng-template #appendContent>
@@ -120,8 +94,8 @@
             @if ($showPreviewLink()) {
                 <button
                     pButton
-                    icon="pi pi-external-link"
                     class="p-button-link p-button-md"
+                    text="true"
                     data-testId="preview-button"
                     (click)="showPreview()">
                     {{ 'edit.content.preview-link' | dm }}

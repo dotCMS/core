@@ -43,6 +43,7 @@ import {
     VTL_BASE_QUERY_PARAMS
 } from '../../../shared/mocks';
 import { UVEState } from '../../models';
+import { withClient } from '../client/withClient';
 
 const buildPageAPIResponseFromMock =
     (mock) =>
@@ -76,13 +77,16 @@ const initialState: UVEState = {
     isClientReady: false
 };
 
-export const uveStoreMock = signalStore(withState<UVEState>(initialState), withLoad());
+export const uveStoreMock = signalStore(
+    withState<UVEState>(initialState),
+    withClient(),
+    withLoad()
+);
 
 describe('withLoad', () => {
     let spectator: SpectatorService<InstanceType<typeof uveStoreMock>>;
     let store: InstanceType<typeof uveStoreMock>;
     let dotPageApiService: SpyObject<DotPageApiService>;
-    let dotWorkflowsActionsService: SpyObject<DotWorkflowsActionsService>;
     let router: Router;
 
     const createService = createServiceFactory({
@@ -102,9 +106,7 @@ describe('withLoad', () => {
                     get() {
                         return of({});
                     },
-                    getClientPage: jest
-                        .fn()
-                        .mockImplementation(buildPageAPIResponseFromMock(MOCK_RESPONSE_HEADLESS)),
+                    getGraphQLPage: () => of({}),
                     save: jest.fn()
                 }
             },
@@ -152,7 +154,6 @@ describe('withLoad', () => {
 
         router = spectator.inject(Router);
         dotPageApiService = spectator.inject(DotPageApiService);
-        dotWorkflowsActionsService = spectator.inject(DotWorkflowsActionsService);
         jest.spyOn(dotPageApiService, 'get').mockImplementation(
             buildPageAPIResponseFromMock(MOCK_RESPONSE_HEADLESS)
         );
@@ -167,7 +168,6 @@ describe('withLoad', () => {
                 expect(store.currentUser()).toEqual(CurrentUserDataMock);
                 expect(store.experiment()).toBe(getDraftExperimentMock());
                 expect(store.languages()).toBe(mockLanguageArray);
-                expect(store.canEditPage()).toBe(true);
                 expect(store.pageIsLocked()).toBe(false);
                 expect(store.status()).toBe(UVE_STATUS.LOADED);
                 expect(store.isTraditionalPage()).toBe(false);
@@ -186,19 +186,10 @@ describe('withLoad', () => {
                 expect(store.currentUser()).toEqual(CurrentUserDataMock);
                 expect(store.experiment()).toBe(getDraftExperimentMock());
                 expect(store.languages()).toBe(mockLanguageArray);
-                expect(store.canEditPage()).toBe(true);
                 expect(store.pageIsLocked()).toBe(false);
                 expect(store.status()).toBe(UVE_STATUS.LOADED);
                 expect(store.isTraditionalPage()).toBe(true);
                 expect(store.isClientReady()).toBe(true);
-            });
-
-            it('should call workflow action service on loadPageAsset', () => {
-                const getWorkflowActionsSpy = jest.spyOn(dotWorkflowsActionsService, 'getByInode');
-                store.loadPageAsset(HEADLESS_BASE_QUERY_PARAMS);
-                expect(getWorkflowActionsSpy).toHaveBeenCalledWith(
-                    MOCK_RESPONSE_HEADLESS.page.inode
-                );
             });
 
             it('should update the pageParams with the vanity URL on permanent redirect', () => {
@@ -243,24 +234,37 @@ describe('withLoad', () => {
         });
 
         describe('reloadCurrentPage', () => {
-            it('should reload with the pageParams from the store', () => {
-                const getPageSpy = jest.spyOn(dotPageApiService, 'getClientPage');
+            it('should call page with same params', () => {
+                const spy = jest
+                    .spyOn(dotPageApiService, 'get')
+                    .mockImplementation(() => of(MOCK_RESPONSE_HEADLESS));
                 store.reloadCurrentPage();
 
-                expect(getPageSpy).toHaveBeenCalledWith(pageParams, { params: null, query: '' });
+                expect(spy).toHaveBeenCalledWith(pageParams);
             });
 
-            it('should reload the store with a specific property value', () => {
-                store.reloadCurrentPage({ isClientReady: false });
+            it('should call getGraphQLPage if graphql is present', () => {
+                jest.spyOn(dotPageApiService, 'getGraphQLPage').mockImplementation(() =>
+                    of({
+                        pageAsset: MOCK_RESPONSE_HEADLESS,
+                        content: {}
+                    })
+                );
 
-                expect(store.isClientReady()).toBe(false);
-            });
-
-            it('should call workflow action service on reloadCurrentPage', () => {
-                const getWorkflowActionsSpy = jest.spyOn(dotWorkflowsActionsService, 'getByInode');
+                store.setCustomGraphQL(
+                    {
+                        query: 'query',
+                        variables: {
+                            url: 'url',
+                            mode: 'mode',
+                            languageId: 'languageId'
+                        }
+                    },
+                    true
+                );
                 store.reloadCurrentPage();
-                expect(getWorkflowActionsSpy).toHaveBeenCalledWith(
-                    MOCK_RESPONSE_HEADLESS.page.inode
+                expect(dotPageApiService.getGraphQLPage).toHaveBeenCalledWith(
+                    store.$graphqlWithParams()
                 );
             });
         });

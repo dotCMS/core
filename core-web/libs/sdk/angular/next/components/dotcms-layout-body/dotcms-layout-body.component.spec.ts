@@ -1,8 +1,8 @@
 import { expect } from '@jest/globals';
 import { Spectator, byTestId, createRoutingFactory } from '@ngneat/spectator/jest';
 
+import { UVE_MODE } from '@dotcms/types';
 import * as uve from '@dotcms/uve';
-import { UVE_MODE } from '@dotcms/uve/types';
 
 import { RowComponent } from './components/row/row.component';
 import { DotCMSLayoutBodyComponent } from './dotcms-layout-body.component';
@@ -61,7 +61,7 @@ describe('DotCMSLayoutBodyComponent', () => {
     it('should show page error message if page is not found and is on development mode', () => {
         getUVEStateMock.mockReturnValue(undefined);
 
-        spectator.setInput({ page: null, mode: 'development' });
+        spectator.setInput({ page: undefined, mode: 'development' });
         spectator.detectChanges();
 
         expect(spectator.query(byTestId('error-message'))).toBeTruthy();
@@ -73,7 +73,7 @@ describe('DotCMSLayoutBodyComponent', () => {
             languageId: 'en'
         });
 
-        spectator.setInput({ page: null, mode: 'production' });
+        spectator.setInput({ page: undefined, mode: 'production' });
         spectator.detectChanges();
 
         expect(spectator.query(byTestId('error-message'))).toBeFalsy();
@@ -97,7 +97,7 @@ describe('DotCMSLayoutBodyComponent', () => {
         });
 
         spectator.setInput({
-            page: null,
+            page: undefined,
             mode: 'production'
         });
         spectator.detectChanges();

@@ -14,10 +14,10 @@
     "defaultProject": "dotcms-ui",
     "generators": {
         "@nx/angular:application": {
-            "style": "scss",
+            "e2eTestRunner": "playwright",
             "linter": "eslint",
-            "unitTestRunner": "jest",
-            "e2eTestRunner": "cypress"
+            "style": "scss",
+            "unitTestRunner": "jest"
         },
         "@nx/angular:library": {
             "linter": "eslint",
@@ -42,7 +42,7 @@
             "style": "scss",
             "linter": "eslint",
             "unitTestRunner": "karma",
-            "e2eTestRunner": "cypress"
+            "e2eTestRunner": "playwright"
         },
         "@nrwl/angular:library": {
             "linter": "eslint",
@@ -126,6 +126,14 @@
             "cache": true,
             "dependsOn": ["^build"],
             "inputs": ["production", "^production"]
+        },
+        "@angular-devkit/build-angular:application": {
+            "cache": true,
+            "dependsOn": ["^build"],
+            "inputs": ["production", "^production"]
+        },
+        "e2e-ci--**/*": {
+            "dependsOn": ["^build"]
         }
     },
     "namedInputs": {
@@ -173,8 +181,19 @@
             "options": {
                 "buildTargetName": "rollup:build"
             }
+        },
+        {
+            "plugin": "@nx/playwright/plugin",
+            "options": {
+                "targetName": "e2e"
+            }
         }
     ],
     "defaultBase": "main",
-    "ignorePatterns": ["**/node_modules"]
+    "ignorePatterns": ["**/node_modules"],
+    "release": {
+        "version": {
+            "preVersionCommand": "yarn nx run-many -t build"
+        }
+    }
 }

@@ -131,10 +131,12 @@ describe('SiteFieldComponent', () => {
                 }
             };
 
+            const expectedValue = `${mockEvent.node.data.type}:${mockEvent.node.data.id}`;
+
             store.chooseNode(mockEvent);
             spectator.detectChanges();
 
-            expect(onChangeSpy).toHaveBeenCalledWith(mockEvent.node.data.id);
+            expect(onChangeSpy).toHaveBeenCalledWith(expectedValue);
         });
 
         it('should register onTouched callback', () => {

@@ -1,6 +1,6 @@
 import { createHttpFactory, HttpMethod, SpectatorHttp } from '@ngneat/spectator';
 
-import { UVE_MODE } from '@dotcms/uve/types';
+import { UVE_MODE } from '@dotcms/types';
 
 import { DotPageApiService } from './dot-page-api.service';
 
@@ -119,18 +119,6 @@ describe('DotPageApiService', () => {
         );
     });
 
-    it('should get the page using graphql', () => {
-        const query = 'query { ... }';
-        spectator.service.getGraphQLPage(query).subscribe();
-
-        const { request } = spectator.expectOne('/api/v1/graphql', HttpMethod.POST);
-        const requestHeaders = request.headers;
-
-        expect(request.body).toEqual({ query });
-        expect(requestHeaders.get('dotcachettl')).toBe('0');
-        expect(requestHeaders.get('Content-Type')).toEqual('application/json');
-    });
-
     describe('editMode', () => {
         const BASE_URL =
             '/api/v1/page/render/test-url?language_id=en&com.dotmarketing.persona.id=modes.persona.no.persona';
@@ -189,39 +177,17 @@ describe('DotPageApiService', () => {
         });
     });
 
-    describe('getClientPage', () => {
-        const baseParams = {
-            url: '///test-url',
-            mode: UVE_MODE.EDIT,
-            language_id: 'en',
-            [PERSONA_KEY]: 'modes.persona.no.persona'
-        };
-
+    describe('getGraphQLPage', () => {
         it('should get the page using graphql if the client send a query', () => {
             const query = 'query { ... }';
-            spectator.service.getClientPage(baseParams, { query }).subscribe();
+            spectator.service.getGraphQLPage({ query, variables: {} }).subscribe();
 
             const { request } = spectator.expectOne('/api/v1/graphql', HttpMethod.POST);
             const requestHeaders = request.headers;
 
-            expect(request.body).toEqual({ query });
+            expect(request.body).toEqual({ query, variables: {} });
             expect(requestHeaders.get('dotcachettl')).toBe('0');
             expect(requestHeaders.get('Content-Type')).toEqual('application/json');
-        });
-
-        it('should get the page using the page api if the client does not send a query', () => {
-            spectator.service
-                .getClientPage(baseParams, {
-                    params: {
-                        depth: '1'
-                    }
-                })
-                .subscribe();
-
-            spectator.expectOne(
-                '/api/v1/page/render/test-url?depth=1&mode=EDIT_MODE&language_id=en&com.dotmarketing.persona.id=modes.persona.no.persona',
-                HttpMethod.GET
-            );
         });
     });
 });

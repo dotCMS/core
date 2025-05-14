@@ -15,14 +15,10 @@ import {
 } from '@angular/core';
 import { DomSanitizer } from '@angular/platform-browser';
 
-import {
-    CLIENT_ACTIONS,
-    DotCmsClient,
-    isInsideEditor,
-    NOTIFY_CLIENT,
-    postMessageToEditor
-} from '@dotcms/client';
-import { DotCMSContentlet } from '@dotcms/uve/types';
+import { DotCMSBasicContentlet, DotCMSUVEAction, UVE_MODE } from '@dotcms/types';
+import { __DOTCMS_UVE_EVENT__ } from '@dotcms/types/internal';
+import { getUVEState, sendMessageToUVE } from '@dotcms/uve';
+import { __TINYMCE_PATH_ON_DOTCMS__ } from '@dotcms/uve/internal';
 
 import { TINYMCE_CONFIG, DOT_EDITABLE_TEXT_FORMAT, DOT_EDITABLE_TEXT_MODE } from './utils';
 
@@ -45,7 +41,9 @@ import { TINYMCE_CONFIG, DOT_EDITABLE_TEXT_FORMAT, DOT_EDITABLE_TEXT_MODE } from
         {
             provide: TINYMCE_SCRIPT_SRC,
             useFactory: () => {
-                return `${DotCmsClient.dotcmsUrl}/ext/tinymcev7/tinymce.min.js`;
+                const { dotCMSHost } = getUVEState() || {};
+
+                return `${dotCMSHost || ''}${__TINYMCE_PATH_ON_DOTCMS__}`;
             }
         }
     ]
@@ -73,7 +71,7 @@ export class DotCMSEditableTextComponent implements OnInit, OnChanges {
      * @type {DotCMSContentlet}
      * @memberof DotCMSEditableTextComponent
      */
-    @Input() contentlet!: DotCMSContentlet;
+    @Input() contentlet!: DotCMSBasicContentlet;
     /**
      * Represents the field name of the `contentlet` that can be edited
      *
@@ -96,14 +94,9 @@ export class DotCMSEditableTextComponent implements OnInit, OnChanges {
      * @memberof DotCMSEditableTextComponent
      */
     protected init!: EditorComponent['init'];
-    /**
-     * Represents if the component is inside the editor
-     *
-     * @protected
-     * @type {boolean}
-     * @memberof DotCMSEditableTextComponent
-     */
-    protected isInsideEditor!: boolean;
+
+    readonly #NotDotCMSHostMessage =
+        'The `dotCMSHost` parameter is not defined. Check that the UVE is sending the correct parameters.';
 
     readonly #sanitizer = inject<DomSanitizer>(DomSanitizer);
     readonly #renderer = inject<Renderer2>(Renderer2);
@@ -117,6 +110,19 @@ export class DotCMSEditableTextComponent implements OnInit, OnChanges {
      */
     get editor() {
         return this.editorComponent?.editor;
+    }
+
+    /**
+     * Represents if the component is inside the editor
+     *
+     * @protected
+     * @type {boolean}
+     * @memberof DotCMSEditableTextComponent
+     */
+    protected get isEditMode() {
+        const { mode, dotCMSHost } = getUVEState() || {};
+
+        return mode === UVE_MODE.EDIT && dotCMSHost;
     }
 
     /**
@@ -139,7 +145,7 @@ export class DotCMSEditableTextComponent implements OnInit, OnChanges {
     @HostListener('window:message', ['$event'])
     onMessage({ data }: MessageEvent) {
         const { name, payload } = data;
-        if (name !== NOTIFY_CLIENT.UVE_COPY_CONTENTLET_INLINE_EDITING_SUCCESS) {
+        if (name !== __DOTCMS_UVE_EVENT__.UVE_COPY_CONTENTLET_INLINE_EDITING_SUCCESS) {
             return;
         }
 
@@ -154,17 +160,21 @@ export class DotCMSEditableTextComponent implements OnInit, OnChanges {
     }
 
     ngOnInit() {
-        this.isInsideEditor = isInsideEditor();
+        const { dotCMSHost } = getUVEState() || {};
 
-        if (!this.isInsideEditor) {
+        if (!this.isEditMode) {
             this.innerHTMLToElement();
+
+            if (!dotCMSHost) {
+                console.warn(this.#NotDotCMSHostMessage);
+            }
 
             return;
         }
 
         this.init = {
             ...TINYMCE_CONFIG[this.mode],
-            base_url: `${DotCmsClient.dotcmsUrl}/ext/tinymcev7`
+            base_url: `${dotCMSHost}/ext/tinymcev7`
         };
     }
 
@@ -183,7 +193,7 @@ export class DotCMSEditableTextComponent implements OnInit, OnChanges {
      * @memberof DotCMSEditableTextComponent
      */
     onMouseDown({ event }: EventObj<MouseEvent>) {
-        if (this.onNumberOfPages <= 1 || this.editorComponent.editor.hasFocus()) {
+        if (Number(this.onNumberOfPages) <= 1 || this.editorComponent.editor.hasFocus()) {
             return;
         }
 
@@ -193,8 +203,8 @@ export class DotCMSEditableTextComponent implements OnInit, OnChanges {
         event.preventDefault();
 
         try {
-            postMessageToEditor({
-                action: CLIENT_ACTIONS.COPY_CONTENTLET_INLINE_EDITING,
+            sendMessageToUVE({
+                action: DotCMSUVEAction.COPY_CONTENTLET_INLINE_EDITING,
                 payload: {
                     dataset: {
                         inode,
@@ -223,8 +233,8 @@ export class DotCMSEditableTextComponent implements OnInit, OnChanges {
         const { inode, languageId: langId } = this.contentlet;
 
         try {
-            postMessageToEditor({
-                action: CLIENT_ACTIONS.UPDATE_CONTENTLET_INLINE_EDITING,
+            sendMessageToUVE({
+                action: DotCMSUVEAction.UPDATE_CONTENTLET_INLINE_EDITING,
                 payload: {
                     content,
                     dataset: {

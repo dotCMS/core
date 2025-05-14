@@ -1,6 +1,6 @@
-import { CollectionBuilder } from './builders/collection/collection';
+import { RequestOptions } from '@dotcms/types';
 
-import { ClientOptions } from '../../deprecated/sdk-js-client';
+import { CollectionBuilder } from './builders/collection/collection';
 
 /**
  * Creates a builder to filter and fetch a collection of content items.
@@ -55,15 +55,15 @@ import { ClientOptions } from '../../deprecated/sdk-js-client';
  * ```
  */
 export class Content {
-    #requestOptions: ClientOptions;
+    #requestOptions: RequestOptions;
     #serverUrl: string;
 
     /**
      * Creates an instance of Content.
-     * @param {ClientOptions} requestOptions - The options for the client request.
+     * @param {RequestOptions} requestOptions - The options for the client request.
      * @param {string} serverUrl - The server URL.
      */
-    constructor(requestOptions: ClientOptions, serverUrl: string) {
+    constructor(requestOptions: RequestOptions, serverUrl: string) {
         this.#requestOptions = requestOptions;
         this.#serverUrl = serverUrl;
     }

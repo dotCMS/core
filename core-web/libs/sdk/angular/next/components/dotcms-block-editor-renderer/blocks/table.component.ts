@@ -1,7 +1,7 @@
 import { NgComponentOutlet } from '@angular/common';
 import { Component, Input } from '@angular/core';
 
-import { ContentNode } from '@dotcms/uve/types';
+import { BlockEditorNode } from '@dotcms/types';
 
 import { DotCMSBlockEditorItemComponent } from '../item/dotcms-block-editor-item.component';
 @Component({
@@ -48,6 +48,6 @@ import { DotCMSBlockEditorItemComponent } from '../item/dotcms-block-editor-item
     `
 })
 export class DotTableBlock {
-    @Input() content: ContentNode[] | undefined;
+    @Input() content: BlockEditorNode[] | undefined;
     blockEditorItem = DotCMSBlockEditorItemComponent;
 }

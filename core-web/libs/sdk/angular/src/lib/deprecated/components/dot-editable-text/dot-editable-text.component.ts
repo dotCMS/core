@@ -73,18 +73,18 @@ export class DotEditableTextComponent implements OnInit, OnChanges {
      */
     @Input() format: DOT_EDITABLE_TEXT_FORMAT = 'text';
     /**
+     * Represents the field name of the `contentlet` that can be edited
+     *
+     * @memberof DotEditableTextComponent
+     */
+    @Input() fieldName = '';
+    /**
      * Represents the `contentlet` that can be inline edited
      *
      * @type {DotCMSContentlet}
      * @memberof DotEditableTextComponent
      */
     @Input() contentlet!: DotCMSContentlet;
-    /**
-     * Represents the field name of the `contentlet` that can be edited
-     *
-     * @memberof DotEditableTextComponent
-     */
-    @Input() fieldName = '';
 
     /**
      * Represents the content of the `contentlet` that can be edited
@@ -188,7 +188,7 @@ export class DotEditableTextComponent implements OnInit, OnChanges {
      * @memberof DotEditableTextComponent
      */
     onMouseDown({ event }: EventObj<MouseEvent>) {
-        if (this.onNumberOfPages <= 1 || this.editorComponent.editor.hasFocus()) {
+        if (Number(this.onNumberOfPages) <= 1 || this.editorComponent.editor.hasFocus()) {
             return;
         }
 

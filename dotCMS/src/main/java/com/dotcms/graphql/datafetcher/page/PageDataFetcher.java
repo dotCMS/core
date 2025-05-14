@@ -20,6 +20,7 @@ import com.dotmarketing.portlets.rules.model.Rule.FireOn;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
@@ -129,7 +130,6 @@ public class PageDataFetcher implements DataFetcher<Contentlet> {
             final HTMLPageAsset pageAsset = pageUrl.getHTMLPage();
             context.addParam("page", pageAsset);
             pageAsset.getMap().put("URLMapContent", pageUrl.getUrlMapInfo());
-
             if(fireRules) {
                 Logger.info(this, "Rules will be fired");
                 request.setAttribute("fireRules", true);
@@ -139,7 +139,14 @@ public class PageDataFetcher implements DataFetcher<Contentlet> {
             final DotContentletTransformer transformer = new DotTransformerBuilder()
                     .graphQLDataFetchOptions().content(pageAsset).forUser(user).build();
 
-            return transformer.hydrate().get(0);
+            final Contentlet out = transformer.hydrate().get(0);
+            // PageResource add this property to the map at Serializer
+            // Level that's why it is not part of the Transformers logic
+            final String urlMapper = pageUrl.getPageUrlMapper();
+            if(StringUtils.isSet(urlMapper)) {
+               out.getMap().put("pageURI", urlMapper);
+            }
+            return out;
 
         } catch (Exception e) {
             Logger.error(this, e.getMessage());
