@@ -29,7 +29,7 @@ The integration uses dotCMS APIs to fetch content and the Universal Visual Edito
 
 ### Demo
 
-See a live example at [https://dotcms-nextjs-demo.vercel.app/](https://dotcms-nextjs-demo.vercel.app/)
+See a live example at [https://nextjs-example-sigma-five.vercel.app/](https://nextjs-example-sigma-five.vercel.app/)
 
 ## Table of Contents
 

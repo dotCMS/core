@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import { DotCMSLayoutBody, useEditableDotCMSPage } from '@dotcms/react/next';
+import { DotCMSLayoutBody, useEditableDotCMSPage } from "@dotcms/react/next";
 
-import { pageComponents } from '@/components/contenttypes';
-import Footer from '@/components/footer/Footer';
-import Header from '@/components/Header';
+import { pageComponents } from "@/components/contenttypes";
+import Footer from "@/components/footer/Footer";
+import Header from "@/components/Header";
 
 export function Page({ pageContent }) {
     const { pageAsset, content = {} } = useEditableDotCMSPage(pageContent);
@@ -12,13 +12,14 @@ export function Page({ pageContent }) {
 
     return (
         <div className="flex flex-col gap-6 min-h-screen bg-slate-50">
-            {pageAsset?.layout.header && <Header navItems={navigation?.children} />}
+            {pageAsset?.layout.header && (
+                <Header navItems={navigation?.children} />
+            )}
 
             <main className="container m-auto">
                 <DotCMSLayoutBody
                     page={pageAsset}
                     components={pageComponents}
-                    mode={process.env.NEXT_PUBLIC_DOTCMS_LAYOUT_BODY_MODE}
                 />
             </main>
 
