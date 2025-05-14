@@ -3,9 +3,10 @@ import { dotCMSClient } from "./dotCMSClient";
 import { blogQuery, destinationQuery, fragmentNav, navigationQuery } from "./queries";
 
 export const getDotCMSPage = cache(async (path, searchParams) => {
+    const { languageId= '1', } = searchParams;
     try {
         const pageData = await dotCMSClient.page.get(path, {
-            ...searchParams,
+            languageId,
             graphql: {
                 content: {
                     blogs: blogQuery,
@@ -22,4 +23,3 @@ export const getDotCMSPage = cache(async (path, searchParams) => {
         return null;
     }
 });
-

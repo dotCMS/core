@@ -37,7 +37,7 @@ export const destinationQuery = `
 `;
 
 export const navigationQuery = `
-DotNavigation(uri: "/", depth: 1000) {
+DotNavigation(uri: "/", depth: 2) {
     ...NavProps
     children {
         ...NavProps
