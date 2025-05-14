@@ -504,6 +504,10 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                 "Indexing: " + parentContenlet.getIdentifier() + " : " + parentContenlet.getTitle()
                         + ", includeDependencies: " + includeDependencies +
                         ", policy: " + parentContenlet.getIndexPolicy());
+        Logger.debug(this,
+                "Indexing: " + parentContenlet
+                        + ", includeDependencies: " + includeDependencies +
+                        ", policy: " + parentContenlet.getIndexPolicy());
 
         final List<Contentlet> contentToIndex = includeDependencies
                 ? ImmutableList.<Contentlet>builder()
