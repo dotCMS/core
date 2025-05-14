@@ -23,9 +23,9 @@ import { Observable } from 'rxjs';
  */
 @Injectable()
 export class EditablePageService<TPage extends DotCMSPageAsset, TContent = FooterContent> {
-    private router = inject(Router);
-    private pageService = inject(PageService);
-    private dotcmsEditablePageService = inject(DotCMSEditablePageService);
+    #router = inject(Router);
+    #pageService = inject(PageService);
+    #dotcmsEditablePageService = inject(DotCMSEditablePageService);
 
     readonly $context = signal<PageRender<TPage, TContent>>({
         status: 'idle'
@@ -54,14 +54,14 @@ export class EditablePageService<TPage extends DotCMSPageAsset, TContent = Foote
 
         this.#setLoading();
 
-        return this.router.events.pipe(
+        return this.#router.events.pipe(
             filter((event): event is NavigationEnd => event instanceof NavigationEnd),
             startWith(null), // Trigger initial load
             tap(() => {
                 this.#setLoading();
             }),
             switchMap(() => {
-                return this.pageService.getPageAndNavigation<TPage, TContent>(
+                return this.#pageService.getPageAndNavigation<TPage, TContent>(
                     activateRoute,
                     extraQuery
                 );
@@ -73,7 +73,7 @@ export class EditablePageService<TPage extends DotCMSPageAsset, TContent = Foote
                 }
 
                 if (getUVEState()) {
-                    this.dotcmsEditablePageService
+                    this.#dotcmsEditablePageService
                         .listen(response)
                         .pipe(takeUntilDestroyed(destroyRef))
                         .subscribe((page) => {
