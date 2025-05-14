@@ -202,7 +202,7 @@ export function withLoad() {
                                 ? dotPageApiService.get(store.pageParams())
                                 : dotPageApiService.getGraphQLPage(store.$graphqlWithParams()).pipe(
                                       tap((response) => store.setGraphqlResponse(response)),
-                                      map((response) => response.page)
+                                      map((response) => response.pageAsset)
                                   );
 
                             return pageRequest.pipe(

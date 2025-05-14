@@ -31,10 +31,7 @@
             scrollable="false"
             class="dot-edit-content-tabview">
             <!-- Add prepend and append areas to the tabs -->
-            <ng-template
-                dotTabViewInsert
-                [dotTabViewPrepend]="prependContent"
-                [dotTabViewAppend]="appendContent"></ng-template>
+            <ng-template dotTabViewInsert [dotTabViewAppend]="appendContent"></ng-template>
 
             <!-- Tabs are lazy -->
             @for (tab of tabs; track tab) {
@@ -68,18 +65,6 @@
         </ng-template>
     </form>
 }
-
-<!-- Prepend template to add to the tabs-->
-<ng-template #prependContent>
-    <div class="back-button__wrapper h-100 flex">
-        <button
-            data-testId="back-button"
-            pButton
-            (click)="goBack()"
-            icon="pi pi-chevron-left"
-            class="p-button-tertiary p-button-rounded p-button-sm"></button>
-    </div>
-</ng-template>
 
 <!-- Append template to add to the tabs -->
 <ng-template #appendContent>

@@ -188,7 +188,7 @@ export class DotPageApiService {
         query: string;
         variables: Record<string, string>;
     }): Observable<{
-        page: DotPageApiResponse;
+        pageAsset: DotPageApiResponse;
         content: Record<string, unknown>;
     }> {
         const headers = {
@@ -202,7 +202,7 @@ export class DotPageApiService {
                 const pageEntity = graphqlToPageEntity({ page } as DotCMSGraphQLPageResponse);
 
                 return {
-                    page: pageEntity,
+                    pageAsset: pageEntity,
                     content
                 };
             })

@@ -2,9 +2,9 @@
 
 import {
     DotCMSBasicContentlet,
+    DotCMSGraphQLPageContainer,
     DotCMSGraphQLPageResponse,
-    DotCMSPageContainerContentlets,
-    DotCMSPageGraphQLContainer
+    DotCMSPageContainerContentlets
 } from '@dotcms/types';
 
 /**
@@ -46,7 +46,7 @@ export const graphqlToPageEntity = (graphQLPageResponse: DotCMSGraphQLPageRespon
         },
         containers: parseContainers(containers as []),
         urlContentMap: urlContentMapData
-    } as any;
+    } as any; // NOTE: This is a rabbit hole and we have to fix this, not in this PR tho.
 };
 
 /**
@@ -55,9 +55,9 @@ export const graphqlToPageEntity = (graphQLPageResponse: DotCMSGraphQLPageRespon
  * @param {Array<Record<string, unknown>>} [containers=[]] - The containers array from the GraphQL response.
  * @returns {Record<string, unknown>} The parsed containers.
  */
-const parseContainers = (containers: DotCMSPageGraphQLContainer[] = []) => {
+const parseContainers = (containers: DotCMSGraphQLPageContainer[] = []) => {
     return containers.reduce(
-        (acc: Record<string, unknown>, container: DotCMSPageGraphQLContainer) => {
+        (acc: Record<string, unknown>, container: DotCMSGraphQLPageContainer) => {
             const { path, identifier, containerStructures, containerContentlets, ...rest } =
                 container;
 

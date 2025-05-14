@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
 
-import { updateNavigation } from '@dotcms/client';
-import { DotCMSEditablePage, UVEEventType } from '@dotcms/types';
-import { getUVEState, initUVE, createUVESubscription } from '@dotcms/uve';
+import { DotCMSPageResponse, UVEEventType } from '@dotcms/types';
+import { getUVEState, initUVE, createUVESubscription, updateNavigation } from '@dotcms/uve';
 
 /**
  * Custom hook to manage the editable state of a DotCMS page.
@@ -87,23 +86,23 @@ import { getUVEState, initUVE, createUVESubscription } from '@dotcms/uve';
  *   </div>
  * );
  * ```
- * @param {DotCMSEditablePage} editablePage - The initial editable page data from client.page.get().
+ * @param {DotCMSPageResponse} pageResponse - The initial editable page data from client.page.get().
  *
- * @returns {DotCMSEditablePage} The updated editable page state that reflects any changes made in the UVE.
+ * @returns {DotCMSPageResponse} The updated editable page state that reflects any changes made in the UVE.
  * The structure includes page data and any GraphQL content that was requested.
  */
-export const useEditableDotCMSPage = (editablePage: DotCMSEditablePage): DotCMSEditablePage => {
-    const [updatedEditablePage, setUpdatedEditablePage] =
-        useState<DotCMSEditablePage>(editablePage);
+export const useEditableDotCMSPage = (pageResponse: DotCMSPageResponse): DotCMSPageResponse => {
+    const [updatedPageResponse, setUpdatedPageResponse] =
+        useState<DotCMSPageResponse>(pageResponse);
 
     useEffect(() => {
         if (!getUVEState()) {
             return;
         }
 
-        const pageURI = editablePage?.page?.pageURI ?? '/';
+        const pageURI = pageResponse?.pageAsset?.page?.pageURI ?? '/';
 
-        const { destroyUVESubscriptions } = initUVE(editablePage);
+        const { destroyUVESubscriptions } = initUVE(pageResponse);
 
         // Update the navigation to the pageURI
         updateNavigation(pageURI);
@@ -111,11 +110,11 @@ export const useEditableDotCMSPage = (editablePage: DotCMSEditablePage): DotCMSE
         return () => {
             destroyUVESubscriptions();
         };
-    }, [editablePage]);
+    }, [pageResponse]);
 
     useEffect(() => {
         const { unsubscribe } = createUVESubscription(UVEEventType.CONTENT_CHANGES, (payload) => {
-            setUpdatedEditablePage(payload);
+            setUpdatedPageResponse(payload);
         });
 
         return () => {
@@ -123,5 +122,5 @@ export const useEditableDotCMSPage = (editablePage: DotCMSEditablePage): DotCMSE
         };
     }, []);
 
-    return updatedEditablePage;
+    return updatedPageResponse;
 };

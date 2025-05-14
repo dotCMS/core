@@ -1,11 +1,10 @@
 {
 	"info": {
-		"_postman_id": "d5283386-5b93-44de-99ba-b59613dc8b5a",
+		"_postman_id": "c3b5b111-fcba-47b0-96d8-dc6415d12098",
 		"name": "GraphQL",
 		"description": "This suite verifies that the GraphQL REST Endpoint is working as expected.\n\n[GraphQL](https://graphql.org/) is an open query language which allows you to perform real-type dynamic queries which specify exactly what data you want, and in what order. The dotCMS GraphQL content delivery API has a number of advantages over querying content via REST:\n\n- A single endpoint to query all content: `api/v1/graphql`.\n    \n- Self documenting via schema introspection.\n    \n- No over-fetching of data (e.g. unneeded fields).\n    \n- No need for multiple requests to get combined data.\n    \n- Client control over both the query and the data received.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "10041132",
-		"_collection_link": "https://speeding-firefly-555540.postman.co/workspace/dot-graphQL~9b6080f8-c830-4540-b9f7-2bc0a8b1ab58/collection/10041132-d5283386-5b93-44de-99ba-b59613dc8b5a?action=share&source=collection_link&creator=10041132"
+		"_exporter_id": "5403727"
 	},
 	"item": [
 		{
@@ -1522,7 +1521,7 @@
 											"",
 											"let checker = (arr, target) => target.every(v => arr.includes(v));",
 											"",
-											"pm.test(\"Status code is 200\", function () {",
+											"pm.test(\"HTTP Status code must be 200\", function () {",
 											"    pm.response.to.have.status(200);",
 											"});",
 											"",
@@ -1571,23 +1570,17 @@
 											"                        \"skiing\"",
 											"                    ];",
 											"",
-											"    pm.expect(checker(expectedVisitorPersonaTags, visitorPersona[\"tags\"]), 'FAILED:[visitorPersona.tags]').equal(true);",
+											"    pm.expect(checker(expectedVisitorPersonaTags, visitorPersona[\"tags\"]), 'FAILED:[visitor.persona.tags] Failed to validate expected tags').equal(true);",
+											"",
+											"    var tagCounter = 0;",
+											"    visitor[\"tags\"].forEach((element) => {",
+											"        if (element.tag == \"snowmobile\" || element.tag == \"snowboarding\" || element.tag == \"skiing\") {",
+											"            tagCounter++;",
+											"        }",
+											"    });",
 											"",
 											"    // visitor's tags",
-											"    pm.expect(JSON.stringify(visitor[\"tags\"])==JSON.stringify([",
-											"                        {",
-											"                            \"tag\": \"snowmobile\",",
-											"                            \"count\": 2",
-											"                        },",
-											"                        {",
-											"                            \"tag\": \"skiing\",",
-											"                            \"count\": 2",
-											"                        },",
-											"                        {",
-											"                            \"tag\": \"snowboarding\",",
-											"                            \"count\": 2",
-											"                        }",
-											"                    ]), 'FAILED:[visitorPersona.tags]').equal(true);",
+											"    pm.expect(tagCounter).to.equal(3, \"FAILED:[visitor.tags] Expected three Tags in array: 'snowmobile', 'snowboarding', and 'skiing'\");",
 											"",
 											"    var userAgent = visitor.userAgent;                ",
 											"    pm.expect(userAgent[\"operatingSystem\"], 'FAILED:[userAgent.operatingSystem]').equal(\"MAC_OS_X\");",
@@ -1604,9 +1597,7 @@
 											"                            \"persona\": \"WinterEnthusiast\",",
 											"                            \"count\": 1",
 											"                        }",
-											"                    ]), 'FAILED:[visitorPersona.tags]').equal(true);",
-											"",
-											"",
+											"                    ]), 'FAILED:[visitor.personas] expected Persona not found').equal(true);",
 											"",
 											"});",
 											""
@@ -1807,6 +1798,55 @@
 							"response": []
 						},
 						{
+							"name": "Create Vanity URL",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Test Forward Vanity URL was created successfully\", function () {",
+											"    var jsonData = pm.response.json().entity;",
+											"    pm.expect(jsonData.summary.failCount).to.eql(0, \"An error occurred when creating the test Vanity URL\");",
+											"    pm.expect(jsonData.summary.successCount).to.eql(1, \"One piece of content should have been created\");",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"contentlets\": [\n        {\n            \"contentType\": \"Vanityurl\",\n            \"languageId\": 1,\n            \"title\": \"Test Forward Vanity URL\",\n            \"site\": \"demo.dotcms.com\",\n            \"uri\": \"/store/products/eagles-nest-outfitters-doublenest-hammock-patriot\",\n            \"action\": 200,\n            \"forwardTo\": \"/destinations/costa-rica\",\n            \"order\": 0\n        }\n    ]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"workflow",
+										"actions",
+										"default",
+										"fire",
+										"PUBLISH"
+									]
+								}
+							},
+							"response": []
+						},
+						{
 							"name": "GivenRequestByURI_PageContainsUrlMappedContentField",
 							"event": [
 								{
@@ -1823,6 +1863,7 @@
 											"    var jsonData = pm.response.json();",
 											"    var page = jsonData.data.page;",
 											"    var urlmappedContent = page.urlContentMap;",
+											"    var vanityUrlContent = page.vanityUrl;",
 											"    ",
 											"    // Validate properties 'page'",
 											"    pm.expect(page.url, 'FAILED:[page.url]').equal(\"/store/product-detail\");",
@@ -1835,6 +1876,13 @@
 											"    pm.expect(urlmappedContent.contentType, 'FAILED:[urlmappedContent.contentType]').equal(\"Product\");",
 											"    pm.expect(urlmappedContent.productNumber, 'FAILED:[urlmappedContent.productNumber]').equal(\"9315054521506-1280000\");",
 											"    pm.expect(urlmappedContent.image.idPath, 'FAILED:[urlmappedContent.image.idPath]').equal(\"/dA/46e52dc2e7/image/hammock-1.jpg?language_id=1\");",
+											"",
+											"",
+											"    // Validate 'vanityUrl' properties",
+											"    pm.expect(vanityUrlContent.action, 'FAILED:[vanityUrlContent.action]').equal(200);",
+											"    pm.expect(vanityUrlContent.languageId, 'FAILED:[vanityUrlContent.languageId]').equal(1);",
+											"    pm.expect(vanityUrlContent.forwardTo, 'FAILED:[vanityUrlContent.forwardTo]').equal(\"/destinations/costa-rica\");",
+											"    pm.expect(vanityUrlContent.uri, 'FAILED:[vanityUrlContent.uri]').equal(\"/store/products/eagles-nest-outfitters-doublenest-hammock-patriot\");",
 											"});"
 										],
 										"type": "text/javascript",
@@ -1875,7 +1923,7 @@
 								"body": {
 									"mode": "graphql",
 									"graphql": {
-										"query": "{\n  page(url: \"/store/products/eagles-nest-outfitters-doublenest-hammock-patriot\") {\n    title\n    url\n     pageURI\n    urlContentMap {\n      ... on Product {\n        title\n        tags\n        urlTitle\n        identifier\n        urlMap\n        contentType\n        productNumber\n        image {\n          idPath\n        }\n      }\n    }\n  }\n}\n",
+										"query": "{\n  page(url: \"/store/products/eagles-nest-outfitters-doublenest-hammock-patriot\") {\n    title\n    url\n    pageURI\n    vanityUrl {\n      action\n      languageId\n      siteId\n      forwardTo\n      id\n      uri\n      order\n    }\n    urlContentMap {\n      ... on Product {\n        title\n        tags\n        urlTitle\n        identifier\n        urlMap\n        contentType\n        productNumber\n        image {\n          idPath\n        }\n      }\n    }\n  }\n}\n",
 										"variables": ""
 									}
 								},
@@ -12353,116 +12401,6 @@
 					""
 				]
 			}
-		}
-	],
-	"variable": [
-		{
-			"key": "contentTypeVariable",
-			"value": ""
-		},
-		{
-			"key": "contentIdentifier",
-			"value": ""
-		},
-		{
-			"key": "imageTypeInfo",
-			"value": ""
-		},
-		{
-			"key": "videoTypeInfo",
-			"value": ""
-		},
-		{
-			"key": "languageId",
-			"value": ""
-		},
-		{
-			"key": "fileImageContentTypeVariable",
-			"value": ""
-		},
-		{
-			"key": "imageFieldVariable",
-			"value": ""
-		},
-		{
-			"key": "fileFieldVariable",
-			"value": ""
-		},
-		{
-			"key": "childContentTypeVariable",
-			"value": ""
-		},
-		{
-			"key": "parentContentTypeVariable",
-			"value": ""
-		},
-		{
-			"key": "relFieldVariable",
-			"value": ""
-		},
-		{
-			"key": "childContentIdentifier",
-			"value": ""
-		},
-		{
-			"key": "parentContentIdentifier",
-			"value": ""
-		},
-		{
-			"key": "contentTypeID",
-			"value": ""
-		},
-		{
-			"key": "contentTypeVAR",
-			"value": ""
-		},
-		{
-			"key": "contentTypeFieldID",
-			"value": ""
-		},
-		{
-			"key": "dotAssetIdentifier",
-			"value": ""
-		},
-		{
-			"key": "contentTypeId",
-			"value": ""
-		},
-		{
-			"key": "contentCount",
-			"value": ""
-		},
-		{
-			"key": "pageDetailSiteId",
-			"value": ""
-		},
-		{
-			"key": "pageDetailSiteName",
-			"value": ""
-		},
-		{
-			"key": "pageId",
-			"value": ""
-		},
-		{
-			"key": "pageInode",
-			"value": ""
-		},
-		{
-			"key": "pageURL",
-			"value": ""
-		},
-		{
-			"key": "experimentId",
-			"value": ""
-		},
-		{
-			"key": "siteId",
-			"value": ""
-		},
-		{
-			"key": "siteName",
-			"value": ""
 		}
 	]
 }

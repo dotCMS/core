@@ -69,7 +69,7 @@
                         <button
                             pButton
                             type="button"
-                            [disabled]="!form.dirty || $isSaving()"
+                            [disabled]="!form.dirty || !commentControl.value?.trim() || $isSaving()"
                             class="p-button-sm p-button-secondary activities__clear"
                             data-testid="activities-clear"
                             (click)="clearComment()">
@@ -79,6 +79,7 @@
                             pButton
                             type="submit"
                             [loading]="$isSaving()"
+                            [disabled]="$isSaving()"
                             class="p-button-sm p-button-primary activities__submit"
                             data-testid="activities-submit">
                             {{ 'edit.content.sidebar.activities.send' | dm }}
