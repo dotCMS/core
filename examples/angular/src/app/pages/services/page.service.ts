@@ -12,8 +12,8 @@ import {
     DotCMSComposedPageResponse
 } from '@dotcms/types';
 
-import { PageError } from '../pages.component';
 import { DOTCMS_CLIENT_TOKEN } from '../../app.config';
+import { PageError } from '../../shared/models';
 
 export interface PageResponse<TPage extends DotCMSPageAsset, TContent> {
     response?: DotCMSComposedPageResponse<{ pageAsset: TPage; content: TContent }>;
