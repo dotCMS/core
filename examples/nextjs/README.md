@@ -31,6 +31,28 @@ The integration uses dotCMS APIs to fetch content and the Universal Visual Edito
 
 See a live example at [https://dotcms-nextjs-demo.vercel.app/](https://dotcms-nextjs-demo.vercel.app/)
 
+## Table of Contents
+
+- [Prerequisites](#prerequisites)
+  - [System Requirements](#system-requirements)
+  - [dotCMS Requirements](#dotcms-requirements)
+  - [Knowledge Prerequisites](#knowledge-prerequisites)
+- [dotCMS SDK Components](#dotcms-sdk-components)
+- [Setup Guide](#setup-guide)
+  - [Step 1: Create the Next.js Application](#step-1-create-the-nextjs-application)
+  - [Step 2: Configure dotCMS Access](#step-2-configure-dotcms-access)
+  - [Step 3: Configure the Next.js Application](#step-3-configure-the-nextjs-application)
+  - [Step 4: Run the Application](#step-4-run-the-application)
+- [How It Works](#how-it-works)
+- [Edit your page in the Universal Visual Editor](#edit-your-page-in-the-universal-visual-editor)
+- [Advanced: Next.js + dotCMS Architecture](#advanced-nextjs--dotcms-architecture)
+  - [File Structure](#file-structure)
+  - [Understanding the Structure](#understanding-the-structure)
+  - [How to Fetch Content from dotCMS](#how-to-fetch-content-from-dotcms)
+  - [How to Render Your Page](#how-to-render-your-page)
+- [Conclusion](#conclusion)
+- [Learn More](#learn-more)
+
 ## Prerequisites
 
 Before you begin, make sure you have:
