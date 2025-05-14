@@ -8,6 +8,7 @@ import CallToAction from './CallToAction';
 import ImageComponent from './Image';
 import Product from './Product';
 import WebPageContent from './WebPageContent';
+import VtlInclude from './VtlInclude';
 
 export const pageComponents = {
     Activity: Activity,
@@ -20,4 +21,5 @@ export const pageComponents = {
     Image: ImageComponent,
     Product: Product,
     webPageContent: WebPageContent,
+    VtlInclude: VtlInclude,
 };
