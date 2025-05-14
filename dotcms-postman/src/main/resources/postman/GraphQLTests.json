@@ -1,10 +1,10 @@
 {
 	"info": {
-		"_postman_id": "c3b5b111-fcba-47b0-96d8-dc6415d12098",
+		"_postman_id": "3db62c6c-4db3-4c9b-835f-477cc4e61578",
 		"name": "GraphQL",
 		"description": "This suite verifies that the GraphQL REST Endpoint is working as expected.\n\n[GraphQL](https://graphql.org/) is an open query language which allows you to perform real-type dynamic queries which specify exactly what data you want, and in what order. The dotCMS GraphQL content delivery API has a number of advantages over querying content via REST:\n\n- A single endpoint to query all content: `api/v1/graphql`.\n    \n- Self documenting via schema introspection.\n    \n- No over-fetching of data (e.g. unneeded fields).\n    \n- No need for multiple requests to get combined data.\n    \n- Client control over both the query and the data received.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "5403727"
+		"_exporter_id": "781456"
 	},
 	"item": [
 		{
@@ -1521,7 +1521,7 @@
 											"",
 											"let checker = (arr, target) => target.every(v => arr.includes(v));",
 											"",
-											"pm.test(\"HTTP Status code must be 200\", function () {",
+											"pm.test(\"Status code is 200\", function () {",
 											"    pm.response.to.have.status(200);",
 											"});",
 											"",
@@ -1570,17 +1570,23 @@
 											"                        \"skiing\"",
 											"                    ];",
 											"",
-											"    pm.expect(checker(expectedVisitorPersonaTags, visitorPersona[\"tags\"]), 'FAILED:[visitor.persona.tags] Failed to validate expected tags').equal(true);",
-											"",
-											"    var tagCounter = 0;",
-											"    visitor[\"tags\"].forEach((element) => {",
-											"        if (element.tag == \"snowmobile\" || element.tag == \"snowboarding\" || element.tag == \"skiing\") {",
-											"            tagCounter++;",
-											"        }",
-											"    });",
+											"    pm.expect(checker(expectedVisitorPersonaTags, visitorPersona[\"tags\"]), 'FAILED:[visitorPersona.tags]').equal(true);",
 											"",
 											"    // visitor's tags",
-											"    pm.expect(tagCounter).to.equal(3, \"FAILED:[visitor.tags] Expected three Tags in array: 'snowmobile', 'snowboarding', and 'skiing'\");",
+											"    pm.expect(JSON.stringify(visitor[\"tags\"])==JSON.stringify([",
+											"                        {",
+											"                            \"tag\": \"snowmobile\",",
+											"                            \"count\": 2",
+											"                        },",
+											"                        {",
+											"                            \"tag\": \"skiing\",",
+											"                            \"count\": 2",
+											"                        },",
+											"                        {",
+											"                            \"tag\": \"snowboarding\",",
+											"                            \"count\": 2",
+											"                        }",
+											"                    ]), 'FAILED:[visitorPersona.tags]').equal(true);",
 											"",
 											"    var userAgent = visitor.userAgent;                ",
 											"    pm.expect(userAgent[\"operatingSystem\"], 'FAILED:[userAgent.operatingSystem]').equal(\"MAC_OS_X\");",
@@ -1597,7 +1603,9 @@
 											"                            \"persona\": \"WinterEnthusiast\",",
 											"                            \"count\": 1",
 											"                        }",
-											"                    ]), 'FAILED:[visitor.personas] expected Persona not found').equal(true);",
+											"                    ]), 'FAILED:[visitorPersona.tags]').equal(true);",
+											"",
+											"",
 											"",
 											"});",
 											""
@@ -2324,7 +2332,6 @@
 											"    pm.expect(container1.parentPermissionable.hostName, 'FAILED:[container1.parentPermissionable.hostName]').equal(\"demo.dotcms.com\");",
 											"    pm.expect(container1.path, 'FAILED:[container1.path]').equal(\"//demo.dotcms.com/application/containers/default/\");",
 											"    pm.expect(container1.permissionId, 'FAILED:[container1.permissionId]').equal(\"69b3d24d-7e80-4be6-b04a-d352d16493ee\");",
-											"    pm.expect(container1.permissionType, 'FAILED:[container1.permissionType]').equal(\"com.dotmarketing.portlets.containers.model.FileAssetContainer\");",
 											"    pm.expect(container1.postLoop, 'FAILED:[container1.postLoop]').equal(\"#dotParse(\\\"//demo.dotcms.com/application/containers/default/postloop.vtl\\\")\");",
 											"    pm.expect(container1.preLoop, 'FAILED:[container1.preLoop]').equal(\"#dotParse(\\\"//demo.dotcms.com/application/containers/default/preloop.vtl\\\")\");",
 											"    pm.expect(container1.showOnMenu, 'FAILED:[container1.showOnMenu]').equal(false);",
@@ -12401,6 +12408,116 @@
 					""
 				]
 			}
+		}
+	],
+	"variable": [
+		{
+			"key": "contentTypeVariable",
+			"value": ""
+		},
+		{
+			"key": "contentIdentifier",
+			"value": ""
+		},
+		{
+			"key": "imageTypeInfo",
+			"value": ""
+		},
+		{
+			"key": "videoTypeInfo",
+			"value": ""
+		},
+		{
+			"key": "languageId",
+			"value": ""
+		},
+		{
+			"key": "fileImageContentTypeVariable",
+			"value": ""
+		},
+		{
+			"key": "imageFieldVariable",
+			"value": ""
+		},
+		{
+			"key": "fileFieldVariable",
+			"value": ""
+		},
+		{
+			"key": "childContentTypeVariable",
+			"value": ""
+		},
+		{
+			"key": "parentContentTypeVariable",
+			"value": ""
+		},
+		{
+			"key": "relFieldVariable",
+			"value": ""
+		},
+		{
+			"key": "childContentIdentifier",
+			"value": ""
+		},
+		{
+			"key": "parentContentIdentifier",
+			"value": ""
+		},
+		{
+			"key": "contentTypeID",
+			"value": ""
+		},
+		{
+			"key": "contentTypeVAR",
+			"value": ""
+		},
+		{
+			"key": "contentTypeFieldID",
+			"value": ""
+		},
+		{
+			"key": "dotAssetIdentifier",
+			"value": ""
+		},
+		{
+			"key": "contentTypeId",
+			"value": ""
+		},
+		{
+			"key": "contentCount",
+			"value": ""
+		},
+		{
+			"key": "pageDetailSiteId",
+			"value": ""
+		},
+		{
+			"key": "pageDetailSiteName",
+			"value": ""
+		},
+		{
+			"key": "pageId",
+			"value": ""
+		},
+		{
+			"key": "pageInode",
+			"value": ""
+		},
+		{
+			"key": "pageURL",
+			"value": ""
+		},
+		{
+			"key": "experimentId",
+			"value": ""
+		},
+		{
+			"key": "siteId",
+			"value": ""
+		},
+		{
+			"key": "siteName",
+			"value": ""
 		}
 	]
 }
