@@ -261,8 +261,16 @@ This project uses Next.js with App Router for server-side rendering, but with so
 
 ### How the Content is Fetched from dotCMS
 
-This project uses `@dotcms/client` to pull content from dotCMS.
-Inside the `src/utils/dotCMSClient.js` file, we configure the client to use the dotCMS API:
+Content in this integration is fetched using the `@dotcms/client` package, which provides a streamlined way to communicate with the dotCMS API. This client handles authentication, request formatting, and response parsing automatically.
+
+The process works as follows:
+
+1. First, we create a configured client instance in `src/utils/dotCMSClient.js`
+2. This client uses the environment variables to connect to your dotCMS instance
+3. When a page is requested, we use this client to fetch the page data along with its content
+4. All API requests are managed through this central client for consistency
+
+Here's how the client is configured:
 
 ```js
 import { createDotCMSClient } from "@dotcms/client/next";
@@ -277,29 +285,37 @@ export const dotCMSClient = createDotCMSClient({
 });
 ```
 
-The `dotCMSClient` can then be used to fetch various types of content from dotCMS, including pages, assets, and contentlets.
-
-As an example, inside the `src/utils/getDotCMSPage.js` file, we fetch a page from dotCMS:
+And here's a typical page fetching function:
 
 ```js
-import { dotCMSClient } from "./dotCMSClient";
-
 export const getDotCMSPage = async (path, searchParams) => {
     try {
         return await dotCMSClient.page.get(path, searchParams);
     } catch (e) {
         console.error("ERROR FETCHING PAGE: ", e.message);
-
         return null;
     }
 };
 ```
 
-Learn more about the `@dotcms/client` package [here](https://www.npmjs.com/package/@dotcms/client/next).
+Learn more about the `@dotcms/client` package [here](https://www.npmjs.com/package/@dotcms/client/v/next).
 
-### How the Page is Rendered
+### How to Render Your Page
 
-This project uses `@dotcms/react` to render dotCMS content in React components:
+The rendering process for dotCMS content in Next.js involves several key components working together:
+
+1. **Page Templates**: Define the overall layout and structure
+2. **DotCMSBodyLayout**: A component that renders the page content structure
+3. **ContentType Components**: Custom React components that render specific contenttypes from dotCMS
+4. **useEditableDotCMSPage**: A hook that makes the page editable in the UVE
+
+When a page is rendered:
+- The page data is fetched from dotCMS
+- The `useEditableDotCMSPage` hook prepares it for potential editing
+- The `DotCMSBodyLayout` component renders the page structure
+- Each content item is rendered by its corresponding React component
+
+Here's how this looks in code:
 
 ```js
 "use client";
@@ -307,12 +323,13 @@ This project uses `@dotcms/react` to render dotCMS content in React components:
 import { DotCMSBodyLayout, useEditableDotCMSPage } from "@dotcms/react/next";
 
 // Define custom components for specific contenttypes
+// The key is the contenttype variable name in dotCMS
 const pageComponents = {
     dotCMSProductContent: MyCustomDotCMSProductComponent,
+    dotCMSBlogPost: BlogPostComponent
 }
 
 export function MyPage({ page }) {
-    // Make the page editable in the UVE
     const { pageAsset, content } = useEditableDotCMSPage(page);
 
     return (
@@ -326,11 +343,6 @@ export function MyPage({ page }) {
 }
 ```
 
-This code:
-1. Takes the `page` from the dotCMS Client SDK using the `getDotCMSPage` method.
-2. Uses `useEditableDotCMSPage` to make the page editable in the Universal Visual Editor
-3. Renders the page content with `DotCMSBodyLayout`
-
 > [!IMPORTANT]
 > - The `useEditableDotCMSPage` hook will not modify the `page` object outside the editor
 > - The `DotCMSBodyLayout` component renders both the page structure and content
@@ -340,19 +352,58 @@ Learn more about the `@dotcms/react` package [here](https://www.npmjs.com/packag
 
 #### ContentType to React Component Mapping
 
-One of the key concepts in this integration is mapping dotCMS contenttypes to React components:
+One of the key concepts in this integration is mapping dotCMS contenttypes to React components. This mapping tells the framework which React component should render which type of content from dotCMS.
+
+**How the mapping works:**
+
+1. Each key in the mapping object must match exactly with a contenttype variable name in dotCMS
+2. Each value is a React component that will be used to render that specific contenttype
+3. When content is rendered, the contentlet data from dotCMS is passed as props to your component
 
 ```js
 // Example of mapping dotCMS contenttypes to React components
 const pageComponents = {
-  // If you have a "Product" content type in dotCMS, this maps it to your ProductComponent
+  // The key "DotCMSProduct" must match a contenttype variable name in dotCMS
   DotCMSProduct: ProductComponent,
-  // If you have a "BlogPost" content type, this maps it to your BlogPostComponent
+  // The key "DotCMSBlogPost" must match a contenttype variable name in dotCMS
   DotCMSBlogPost: BlogPostComponent
 }
 ```
 
-This mapping tells the dotCMS integration which React component should render which type of content from dotCMS. It should be passed to the `DotCMSBodyLayout` component. Learn more about the `DotCMSBodyLayout` component [here](https://www.npmjs.com/package/@dotcms/react/v/next).
+**What happens at runtime:**
+
+1. When dotCMS content of type "DotCMSProduct" is encountered on a page:
+   - The `ProductComponent` is rendered
+   - The contentlet data is passed as props to `ProductComponent`
+2. Your component then has access to all fields defined in that contenttype
+
+Example of a component receiving contentlet data:
+
+```jsx
+// The props passed to this component will be the contentlet data from dotCMS
+function ProductComponent(props) {
+  // Access fields defined in the DotCMSProduct contenttype
+  const { title, price, description, image } = props;
+  
+  return (
+    <div className="product">
+      <h2>{title}</h2>
+      <img src={image.url} alt={title} />
+      <p className="price">${price}</p>
+      <p>{description}</p>
+    </div>
+  );
+}
+```
+
+This pattern allows you to create custom rendering for each type of content in your dotCMS instance, while maintaining a clean separation between content and presentation.
+
+This mapping should be passed to the `DotCMSBodyLayout` component as shown in the previous section.
+
+**Learn more about dotCMS Content and Components:**
+- [Understanding Content Types in dotCMS](https://dev.dotcms.com/docs/content-types) - In-depth explanation of content types and their structure
+- [Contentlets in dotCMS](https://dev.dotcms.com/docs/content#Contentlets) - Learn how individual content items (contentlets) work
+- [@dotcms/react Documentation](https://www.npmjs.com/package/@dotcms/react/v/next) - Complete reference for the React components library
 
 ## Conclusion
 
