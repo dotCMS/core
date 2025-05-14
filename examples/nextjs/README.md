@@ -335,7 +335,7 @@ This code:
 2. Uses `useEditableDotCMSPage` to make the page editable in the Universal Visual Editor
 3. Renders the page content with `DotCMSBodyLayout`
 
-> [!HINT]
+> [!IMPORTANT]
 > - The `useEditableDotCMSPage` hook will not modify the `page` object outside the editor
 > - The `DotCMSBodyLayout` component renders both the page structure and content
 > - Custom components defined in `pageComponents` will be used to render specific contenttypes
