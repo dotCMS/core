@@ -1,13 +1,12 @@
 import { inject } from '@angular/core';
 import { ActivatedRouteSnapshot, CanActivateFn, Params, Router } from '@angular/router';
 
-import { DEFAULT_PERSONA } from '../../shared/consts';
-import { sanitizeURL } from '../../utils';
+import { DEFAULT_PERSONA, PERSONA_KEY } from '../../shared/consts';
 
 type EmaQueryParams = {
     url: string;
     language_id: number;
-    'com.dotmarketing.persona.id': string;
+    [PERSONA_KEY]: string;
     variantName: string;
 };
 
@@ -36,18 +35,19 @@ function confirmQueryParams(queryParams: Params): {
     didQueryParamsGetCompleted: boolean;
 } {
     const { missing, ...missingQueryParams } = DEFAULT_QUERY_PARAMS.reduce(
-        (acc, curr) => {
-            if (!queryParams[curr.key]) {
-                acc[curr.key] = curr.value;
+        (acc, { key, value }) => {
+            if (key === 'url' && queryParams[key]?.trim()?.length === 0) {
+                acc[key] = '/';
                 acc.missing = true;
-            } else if (curr.key === 'url') {
-                if (queryParams[curr.key] !== 'index' && queryParams[curr.key].endsWith('/index')) {
-                    acc[curr.key] = sanitizeURL(queryParams[curr.key]);
-                    acc.missing = true;
-                } else if (queryParams[curr.key] === '/') {
-                    acc[curr.key] = 'index';
-                    acc.missing = true;
-                }
+
+                return acc;
+            }
+
+            if (!queryParams[key]) {
+                acc[key] = value;
+                acc.missing = true;
+
+                return acc;
             }
 
             return acc;
@@ -77,7 +77,7 @@ const DEFAULT_QUERY_PARAMS = [
     },
     {
         key: 'url',
-        value: 'index'
+        value: '/'
     },
     {
         key: 'com.dotmarketing.persona.id',

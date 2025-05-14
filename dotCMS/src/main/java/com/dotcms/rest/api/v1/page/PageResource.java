@@ -404,8 +404,17 @@ public class PageResource {
                         .isPermanentRedirect()) {
                     Logger.debug(this, () -> String.format("Incoming Vanity URL is a %d Redirect",
                             cachedVanityUrlOpt.get().response));
+
+
+                    final CachedVanityUrl cachedVanityUrl = cachedVanityUrlOpt.get();
+                    final String finalForwardTo = cachedVanityUrlOpt.get().handle(renderParams.uri()).getRewrite();
+                    final CachedVanityUrl finalCachedVanityUrl = new CachedVanityUrl( cachedVanityUrl.vanityUrlId,
+                    cachedVanityUrl.url, cachedVanityUrl.languageId, cachedVanityUrl.siteId, finalForwardTo, cachedVanityUrl.response, cachedVanityUrl.order);
+
+
                     final EmptyPageView emptyPageView =
-                            new EmptyPageView.Builder().vanityUrl(cachedVanityUrlOpt.get()).build();
+                            new EmptyPageView.Builder().vanityUrl(finalCachedVanityUrl).build();
+
                     return Response.ok(new ResponseEntityView<>(emptyPageView)).build();
                 } else {
                     final VanityUrlResult vanityUrlResult = cachedVanityUrlOpt.get()

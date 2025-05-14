@@ -61,7 +61,8 @@ public class CachedVanityUrl implements Serializable, Comparable<CachedVanityUrl
      * @param urlIn
      * @return
      */
-    final Tuple2<String, String> processForward(final String urlIn) {
+    final Tuple2<String, String> processForward(final String url) {
+      final String urlIn = !url.startsWith(StringPool.SLASH) ? StringPool.SLASH + url : url;
       String newForward = this.forwardTo;
       String queryString = null;
       if(pattern!=null) {
@@ -72,6 +73,9 @@ public class CachedVanityUrl implements Serializable, Comparable<CachedVanityUrl
           }
         }
       }
+      //check to handle the cases where forwardTo is empty, which means that it should redirect to the root
+      newForward = newForward.isEmpty() ? "/" : newForward;
+
       if (UtilMethods.isSet(newForward) && newForward.contains("?")) {
           String[] arr = newForward.split("\\?", 2);
           newForward = arr[0];
