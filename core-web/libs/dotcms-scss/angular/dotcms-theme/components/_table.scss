@@ -250,7 +250,6 @@ $dot-table-cell-height: 1.25rem;
             }
 
             &:not(.p-highlight):hover {
-                background: inherit;
                 color: $text-color-hover;
                 transition: background-color ease-in $basic-speed;
                 cursor: default;
