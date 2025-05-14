@@ -37,15 +37,15 @@ See a live example at [https://nextjs-example-sigma-five.vercel.app/](https://ne
   - [System Requirements](#system-requirements)
   - [dotCMS Requirements](#dotcms-requirements)
   - [Knowledge Prerequisites](#knowledge-prerequisites)
-- [dotCMS SDK Components](#dotcms-sdk-components)
+- [dotCMS SDK Dependencies](#dotcms-sdk-dependencies)
 - [Setup Guide](#setup-guide)
   - [Step 1: Create the Next.js Application](#step-1-create-the-nextjs-application)
   - [Step 2: Configure dotCMS Access](#step-2-configure-dotcms-access)
   - [Step 3: Configure the Next.js Application](#step-3-configure-the-nextjs-application)
   - [Step 4: Run the Application](#step-4-run-the-application)
-- [How It Works](#how-it-works)
 - [Edit your page in the Universal Visual Editor](#edit-your-page-in-the-universal-visual-editor)
 - [Advanced: Next.js + dotCMS Architecture](#advanced-nextjs--dotcms-architecture)
+  - [Integration Overview](#integration-overview)
   - [File Structure](#file-structure)
   - [Understanding the Structure](#understanding-the-structure)
   - [How to Fetch Content from dotCMS](#how-to-fetch-content-from-dotcms)
@@ -74,19 +74,19 @@ Before you begin, make sure you have:
 - Basic understanding of React and Next.js concepts
 - Familiarity with content management systems (prior dotCMS experience helpful but not required)
 
-## dotCMS SDK Components
+## dotCMS SDK Dependencies
+
+> [!NOTE]
+> These packages are already included in the example project's dependencies, so you don't need to install them separately.
 
 This example uses the following npm packages from dotCMS:
 
 | Package | Purpose | Description |
 |---------|---------|-------------|
-| [@dotcms/client](https://www.npmjs.com/package/@dotcms/client/next) | API Communication | Core API client for fetching content from dotCMS |
-| [@dotcms/react](https://www.npmjs.com/package/@dotcms/react/next) | UI Components | React components and hooks for rendering dotCMS content |
+| [@dotcms/client](https://www.npmjs.com/package/@dotcms/client/v/next) | API Communication | Core API client for fetching content from dotCMS |
+| [@dotcms/react](https://www.npmjs.com/package/@dotcms/react/v/next) | UI Components | React components and hooks for rendering dotCMS content |
 | [@dotcms/uve](https://www.npmjs.com/package/@dotcms/uve) | Visual Editing | Universal Visual Editor integration |
 | [@dotcms/types](https://www.npmjs.com/package/@dotcms/types) | Type Safety | TypeScript type definitions for dotCMS |
-
-> [!NOTE]
-> These packages are already included in the example project's dependencies, so you don't need to install them separately.
 
 ## Setup Guide
 
@@ -113,7 +113,7 @@ This will create a new directory with the example code and install all necessary
 
 #### A. Get a dotCMS Site
 
-First, get a [dotCMS Site](https://www.dotcms.com/pricing). If you want to test this example, you can also use our [demo site](https://dev.dotcms.com/docs/demo-site).
+First, get a [dotCMS Site](https://www.dotcms.com/pricing). If you want to test this example, you can also use our [demo site](https://demo.dotcms.com/dotAdmin/).
 
 If using the demo site, you can log in with these credentials:
 
@@ -125,15 +125,15 @@ Once you have a site, you can log in with the credentials and start creating con
 
 #### B. Create a dotCMS API Key
 
+> [!TIP]
+> Make your API Token had read-only permissions for Pages, Folders, Assets, and Content. Using a key with minimal permissions follows security best practices.
+
 This integration requires an API Key with read-only permissions for security best practices:
 
 1. Go to the **dotCMS admin panel**.
 2. Click on **System** > **Users**.
 3. Select the user you want to create the API Key for.
 4. Go to **API Access Key** and generate a new key.
-
-> [!WARNING]
-> **Security Note**: Read-only permissions for Pages, Folders, Assets, and Content are sufficient for this integration. Using a key with minimal permissions follows security best practices.
 
 For detailed instructions, please refer to the [dotCMS API Documentation - Read-only token](https://dev.dotcms.com/docs/rest-api-authentication#ReadOnlyToken).
 
@@ -159,9 +159,9 @@ To set up the Universal Visual Editor:
 }
 ```
 
-This configuration tells dotCMS that when editors are working on content in the admin panel, they should see your Next.js application running at `http://localhost:3000`. The pattern `(.*)` means this applies to all pages in your site.
+For detailed instructions, see the [dotCMS UVE Headless Configuration](https://dev.dotcms.com/docs/uve-headless-config).
 
-You can learn more about configuring the Universal Visual Editor in the [dotCMS UVE Documentation](https://dev.dotcms.com/docs/uve-headless-config).
+This configuration tells dotCMS that when editors are working on content in the admin panel, they should see your Next.js application running at `http://localhost:3000`. The pattern `(.*)` means this applies to all pages in your site.
 
 ### Step 3: Configure the Next.js Application
 
@@ -201,16 +201,6 @@ pnpm dev
 
 You should see a message in your terminal indicating that the Next.js app is running at `http://localhost:3000`. Open this URL in your browser to see your dotCMS-powered Next.js site.
 
-## How It Works
-
-The integration between dotCMS and Next.js works by:
-
-1. **Content Creation**: Content editors create and manage content in dotCMS
-2. **Content Delivery**: Next.js fetches content from dotCMS using the API client
-3. **Content Rendering**: React components render the fetched content
-4. **Visual Editing**: The Universal Visual Editor enables in-context editing
-
-For developers who want to understand the technical implementation details, see the [Advanced: Next.js + dotCMS Architecture](#advanced-nextjs--dotcms-architecture) section.
 
 ## Edit your page in the Universal Visual Editor
 
@@ -226,7 +216,14 @@ Learn more about the Universal Visual Editor [here](https://dev.dotcms.com/docs/
 
 ## Advanced: Next.js + dotCMS Architecture
 
-If you want to understand the technical details of how this project is structured and how it integrates with dotCMS, this section provides an in-depth look at the architecture.
+### Integration Overview
+
+The integration between dotCMS and Next.js works by:
+
+1. **Content Creation**: Content editors create and manage content in dotCMS
+2. **Content Delivery**: Next.js fetches content from dotCMS using the API client
+3. **Content Rendering**: React components render the fetched content
+4. **Visual Editing**: The Universal Visual Editor enables in-context editing
 
 ### File Structure
 
@@ -289,8 +286,7 @@ import { dotCMSClient } from "./dotCMSClient";
 
 export const getDotCMSPage = async (path, searchParams) => {
     try {
-        const pageData = await dotCMSClient.page.get(path, searchParams);
-        return pageData;
+        return await dotCMSClient.page.get(path, searchParams);
     } catch (e) {
         console.error("ERROR FETCHING PAGE: ", e.message);
 
