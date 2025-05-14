@@ -20,7 +20,7 @@
         <p-menu #menu [model]="$menuItems()" [popup]="true" appendTo="body" />
 
         <tr class="relationship-field__table_header">
-            <th scope="col" [class.w-3rem]="!isEmpty"></th>
+            <th scope="col" class="min-w-3rem"></th>
             <th scope="col" [class.min-w-12rem]="!isEmpty">
                 {{ 'dot.file.relationship.field.table.title' | dm }}
             </th>
