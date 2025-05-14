@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { editContentlet } from "@dotcms/uve";
+import { EditButton } from "./editor/EditButton";
 
 export default function DestinationListing({ destinations }) {
     if (!destinations || !destinations.length) {
@@ -15,10 +15,10 @@ export default function DestinationListing({ destinations }) {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 my-8">
                 {destinations.map((destination) => (
                     <div
-                        onClick={() => editContentlet(destination)}
                         key={destination.identifier}
                         className="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300"
                     >
+                        <EditButton contentlet={destination} />
                         <div className="relative h-64">
                             <Image
                                 src={destination.inode}

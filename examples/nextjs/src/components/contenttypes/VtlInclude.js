@@ -1,3 +1,5 @@
+"use client";
+
 import { useIsEditMode } from "@/hooks/isEditMode";
 import DestinationListing from "../DestinationListing";
 

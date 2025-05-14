@@ -2,7 +2,7 @@ import { cache } from "react";
 import { dotCMSClient } from "./dotCMSClient";
 import { blogQuery, destinationQuery, fragmentNav, navigationQuery } from "./queries";
 
-export const getDotCMSPage = cache(async (path, searchParams) => {
+export const getDotCMSPage = cache(async (path, searchParams = {}) => {
     const { languageId= '1', } = searchParams;
     try {
         const pageData = await dotCMSClient.page.get(path, {
