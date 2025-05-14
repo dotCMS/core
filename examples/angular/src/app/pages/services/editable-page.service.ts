@@ -72,8 +72,6 @@ export class EditablePageService<TPage extends DotCMSPageAsset, TContent = Foote
                     return;
                 }
 
-                console.log(response);
-
                 if (getUVEState()) {
                     this.dotcmsEditablePageService
                         .listen(response)
@@ -122,6 +120,8 @@ export class EditablePageService<TPage extends DotCMSPageAsset, TContent = Foote
          * This is a temporary workaround to avoid the editor to be stuck in the loading state.
          * This will be removed once the editor is able to detect when the client is ready without use DotcmsLayoutComponent.
          */
+
+        // REMIND ME TO REVISIT THIS
         sendMessageToUVE({ action: DotCMSUVEAction.CLIENT_READY, payload: {} });
     }
 }
