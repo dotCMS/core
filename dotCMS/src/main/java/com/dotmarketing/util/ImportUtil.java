@@ -1,8 +1,11 @@
 package com.dotmarketing.util;
 
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.IDENTIFIER_KEY;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.STRUCTURE_INODE_KEY;
 import static com.dotmarketing.util.importer.HeaderValidationCodes.HEADERS_NOT_FOUND;
 import static com.dotmarketing.util.importer.ImportLineValidationCodes.LANGUAGE_NOT_FOUND;
 
+import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.elasticsearch.util.ESUtils;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.HostFolderField;
@@ -390,7 +393,7 @@ public class ImportUtil {
 
                         try {
 
-                            Logger.debug(ImportUtil.class,
+                            Logger.info(ImportUtil.class,
                                     "Line " + lineNumber + ": (" + params.csvReader().getRawRecord() + ").");
 
                             // Process language for line
@@ -439,7 +442,7 @@ public class ImportUtil {
                                     counters.incCommits();
                                     savepoint = null;
 
-                                    Logger.debug(ImportUtil.class,
+                                    Logger.info(ImportUtil.class,
                                             "Committed batch at line " + lineNumber + " after " +
                                                     successfulImports + " successful imports.");
                                 }
@@ -472,7 +475,7 @@ public class ImportUtil {
                                 HibernateUtil.rollbackSavepoint(savepoint);
                                 counters.incRollbacks();
 
-                                Logger.debug(ImportUtil.class,
+                                Logger.info(ImportUtil.class,
                                         "Rolled back to savepoint at line " + lineNumber);
                             }
 
@@ -509,7 +512,7 @@ public class ImportUtil {
                             successfulImports % params.commitGranularityOverride() != 0) {
                         handleBatchCommit(params.preview(), lineNumber);
                         counters.incCommits();
-                        Logger.debug(ImportUtil.class,
+                        Logger.info(ImportUtil.class,
                                 "Final commit at line " + lineNumber + " for remaining " +
                                         (successfulImports % params.commitGranularityOverride()) + " records.");
                     }
@@ -1666,10 +1669,8 @@ public class ImportUtil {
         fieldResults.categories().forEach(resultBuilder::addCategory);
         uniqueFieldBeans.addAll(fieldResults.uniqueFields());
 
-        final Map<Integer, Object> values = new HashMap<>();
-        final Set<Category> categories = new HashSet<>();
-        values.putAll(fieldResults.values());
-        categories.addAll(fieldResults.categories());
+        final Map<Integer, Object> values = new HashMap<>(fieldResults.values());
+        final Set<Category> categories = new HashSet<>(fieldResults.categories());
 
         if (fieldResults.ignoreLine()) {
             resultBuilder.setIgnoreLine(true);
@@ -1808,7 +1809,7 @@ public class ImportUtil {
             }
         }
 
-        ProcessedContentResult processResult = processContent(
+        final ProcessedContentResult processResult = processContent(
                 lineNumber,
                 contentlets,
                 resultBuilder.isNewContent(),
@@ -2572,7 +2573,7 @@ public class ImportUtil {
 
         if (UtilMethods.isSet(identifier)) {
             contentlets.addAll(
-                    searchByIdentifier(identifier, contentType, user));
+                    searchByIdentifierFromDB(identifier, contentType, user));
         } else if (urlValue != null && keyFields.isEmpty()) {
             // For HTMLPageAsset, we need to search by URL to math existing pages
             contentlets.addAll(searchByUrl(contentType, urlValue, siteAndFolder, language, user));
@@ -2631,6 +2632,29 @@ public class ImportUtil {
         }
 
         return convertSearchResults(contentsSearch, user);
+    }
+
+    private static List<Contentlet> searchByIdentifierFromDB(
+            final String identifier,
+            final Structure contentType,
+            final User user
+    ) throws DotDataException, DotSecurityException {
+
+        final Contentlet contentlet = new Contentlet(Map.of(
+                IDENTIFIER_KEY, identifier,
+                STRUCTURE_INODE_KEY, contentType.getInode()
+        ));
+
+        final List<Contentlet> allLanguages = conAPI.getAllLanguages(contentlet, false, user, true);
+        if (allLanguages == null || allLanguages.isEmpty()) {
+            throw ImportLineException.builder()
+                    .message("Content not found with identifier")
+                    .code(ImportLineValidationCodes.CONTENT_NOT_FOUND.name())
+                    .invalidValue(identifier)
+                    .build();
+        }
+
+        return allLanguages.stream().map(Contentlet::new).collect(Collectors.toList());
     }
 
     /**
@@ -3051,7 +3075,7 @@ public class ImportUtil {
             final String[] line
     ) throws DotDataException, DotSecurityException, IOException, LanguageException {
 
-        ProcessedContentResultBuilder resultBuilder = new ProcessedContentResultBuilder();
+        final ProcessedContentResultBuilder resultBuilder = new ProcessedContentResultBuilder();
 
         for (Contentlet cont : contentlets) {
 
@@ -3333,14 +3357,11 @@ public class ImportUtil {
 
         cont.setLowIndexPriority(true);
 
-        final var validationResult = validateWorkflowExecution(lineNumber, wfActionId, cont, user,
-                resultBuilder);
-        if (validationResult.getLeft()) {
-            executeWorkflowAction(cont, categories, validationResult.getRight(), relationships,
-                    user);
+        final var validationResult = validateWorkflowExecution(lineNumber, wfActionId, cont, user, resultBuilder);
+        if (Boolean.TRUE.equals(validationResult.getLeft())) {
+            cont = executeWorkflowAction(cont, categories, validationResult.getRight(), relationships, user);
         } else {
-            cont = runWorkflowIfCould(user, contentTypePermissions, categories, cont,
-                    relationships);
+            cont = runWorkflowIfCould(user, contentTypePermissions, categories, cont, relationships);
         }
 
         processTagFields(cont, headers, values, siteAndFolder);
@@ -3623,7 +3644,7 @@ public class ImportUtil {
      * @throws DotDataException     If an error occurs during workflow execution or processing.
      * @throws DotSecurityException If a security-related exception occurs during execution.
      */
-    private static void executeWorkflowAction(
+    private static Contentlet executeWorkflowAction(
             final Contentlet cont,
             final List<Category> categories,
             final WorkflowAction executeWfAction,
@@ -3635,17 +3656,17 @@ public class ImportUtil {
         cont.setBoolProperty(Contentlet.SKIP_RELATIONSHIPS_VALIDATION,
                 relationships == null || relationships.getRelationshipsRecords().isEmpty());
 
-        workflowAPI.fireContentWorkflow(cont,
-                new ContentletDependencies.Builder()
-                        .respectAnonymousPermissions(Boolean.FALSE)
-                        .modUser(user)
-                        .relationships(relationships)
-                        .workflowActionId(executeWfAction.getId())
-                        .workflowActionComments("")
-                        .workflowAssignKey("")
-                        .categories(categories)
-                        .generateSystemEvent(Boolean.FALSE)
-                        .build());
+        return workflowAPI.fireContentWorkflow(cont,
+                    new ContentletDependencies.Builder()
+                            .respectAnonymousPermissions(Boolean.FALSE)
+                            .modUser(user)
+                            .relationships(relationships)
+                            .workflowActionId(executeWfAction.getId())
+                            .workflowActionComments("")
+                            .workflowAssignKey("")
+                            .categories(categories)
+                            .generateSystemEvent(Boolean.FALSE)
+                            .build());
     }
 
     /**

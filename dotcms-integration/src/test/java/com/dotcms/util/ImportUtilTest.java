@@ -1,6 +1,7 @@
 package com.dotcms.util;
 
 import static com.dotcms.util.CollectionsUtils.list;
+import static com.dotmarketing.portlets.workflows.business.SystemWorkflowConstants.WORKFLOW_PUBLISH_ACTION_ID;
 import static com.dotmarketing.util.importer.ImportLineValidationCodes.INVALID_LOCATION;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -3237,13 +3238,43 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
 
     /**
      * Helper method to perform the import and basic validation
+     * @param contentType
+     * @param titleField
+     * @param reader
+     * @param stopOnError
+     * @param commitGranularity
+     * @return
+     * @throws IOException
+     * @throws DotDataException
      */
     private ImportResult importAndValidate(
             final ContentType contentType,
             final com.dotcms.contenttype.model.field.Field titleField,
             final Reader reader,
             final boolean stopOnError,
-            final int commitGranularity) throws IOException, DotDataException {
+            final int commitGranularity
+    ) throws IOException, DotDataException{
+        return importAndValidate(
+                contentType,
+                titleField,
+                reader,
+                stopOnError,
+                commitGranularity,
+                null
+        );
+    }
+
+    /**
+     * Helper method to perform the import and basic validation
+     */
+    private ImportResult importAndValidate(
+            final ContentType contentType,
+            final com.dotcms.contenttype.model.field.Field titleField,
+            final Reader reader,
+            final boolean stopOnError,
+            final int commitGranularity,
+            final String workflowActionId
+    ) throws IOException, DotDataException {
 
         CsvReader csvreader = new CsvReader(reader);
         csvreader.setSafetySwitch(false);
@@ -3260,6 +3291,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                 .request(getHttpRequest())
                 .stopOnError(stopOnError)
                 .commitGranularityOverride(commitGranularity)
+                .workflowActionId(workflowActionId)
                 .build();
         return ImportUtil.importFileResult(importFileParams);
     }
@@ -3473,4 +3505,60 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             ESContentletAPIImpl.setFeatureFlagDbUniqueFieldValidation(oldEnabledDataBaseValidation);
         }
     }
+
+    @Test
+    public void importVersionsSharingSameIdentifier()
+            throws DotSecurityException, DotDataException, IOException {
+
+        String contentTypeName = "ImportFileManyItemsSharingIdentifier_" + System.currentTimeMillis();
+        String contentTypeVarName = contentTypeName.replaceAll("_", "Var_");
+        com.dotcms.contenttype.model.field.Field titleField = new FieldDataGen()
+                .name("title")
+                .velocityVarName("title")
+                .type(TextField.class)
+                .next();
+
+        ContentType contentType = new ContentTypeDataGen()
+                .name(contentTypeName)
+                .velocityVarName(contentTypeVarName)
+                .host(APILocator.systemHost())
+                .fields(List.of(titleField))
+                .nextPersisted();
+
+        final Contentlet contentlet = new ContentletDataGen(contentType)
+                .host(defaultSite)
+                .setProperty(titleField.variable(), "Here we go 0")
+                .nextPersisted();
+
+        final ContentType saved = contentTypeApi.find(contentType.inode());
+        titleField = saved.fields().get(0);
+
+        final Reader reader = createTempFile("identifier,title \r\n" +
+                contentlet.getIdentifier()+ ", Here we go 10" + "\r\n" +
+                contentlet.getIdentifier()+ ", Here we go 9" + "\r\n" +
+                contentlet.getIdentifier()+ ", Here we go 8" + "\r\n" +
+                contentlet.getIdentifier()+ ", Here we go 7" + "\r\n" +
+                contentlet.getIdentifier()+ ", Here we go 6" + "\r\n" +
+                contentlet.getIdentifier()+ ", Here we go 5" + "\r\n" +
+                contentlet.getIdentifier()+ ", Here we go 4" + "\r\n" +
+                contentlet.getIdentifier()+ ", Here we go 3" + "\r\n" +
+                contentlet.getIdentifier()+ ", Here we go 2" + "\r\n" +
+                contentlet.getIdentifier()+ ", Here we go 1" + "\r\n"
+        );
+
+        final ImportResult result = importAndValidate(contentType, titleField, reader, true, 1, WORKFLOW_PUBLISH_ACTION_ID);
+        // Validate results
+        final List<Contentlet> savedData = contentletAPI.findByStructure(contentType.inode(), user, false, 0, 0);
+        assertNotNull(savedData);
+
+        // Should only have rows before the error (1)
+        assertEquals(1, savedData.size());
+        final Identifier identifier = new Identifier(contentlet.getIdentifier());
+        final List<Contentlet> allVersions = contentletAPI.findAllVersions(identifier, user, false);
+        assertEquals(11, allVersions.size());
+
+        final ResultData data = result.data().orElse(null);
+        assertNotNull(data);
+    }
+
 }
