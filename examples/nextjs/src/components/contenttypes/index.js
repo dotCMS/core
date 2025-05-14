@@ -9,6 +9,7 @@ import ImageComponent from './Image';
 import Product from './Product';
 import WebPageContent from './WebPageContent';
 import VtlInclude from './VtlInclude';
+import Forms from './Forms';
 
 export const pageComponents = {
     Activity: Activity,
@@ -22,4 +23,5 @@ export const pageComponents = {
     Product: Product,
     webPageContent: WebPageContent,
     VtlInclude: VtlInclude,
+    PageForm: Forms,
 };

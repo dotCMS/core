@@ -16,7 +16,7 @@ export default function DestinationListing({ destinations }) {
                 {destinations.map((destination) => (
                     <div
                         key={destination.identifier}
-                        className="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300"
+                        className="relative bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300"
                     >
                         <EditButton contentlet={destination} />
                         <div className="relative h-64">
