@@ -10,13 +10,7 @@ import {
     output,
     viewChildren
 } from '@angular/core';
-import {
-    FormBuilder,
-    FormControl,
-    FormGroup,
-    ReactiveFormsModule,
-    Validators
-} from '@angular/forms';
+import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 
 import { AvatarModule } from 'primeng/avatar';
 import { ButtonModule } from 'primeng/button';
@@ -76,9 +70,36 @@ export class DotEditContentSidebarActivitiesComponent {
         comment: [
             '',
             [
-                Validators.required,
-                Validators.minLength(COMMENT_MIN_LENGTH),
-                Validators.maxLength(COMMENT_MAX_LENGTH)
+                // Custom validator: only validate when field has value
+                (control: FormControl) => {
+                    const value = control.value?.trim() || '';
+
+                    // If empty, no validation needed
+                    if (!value) {
+                        return null;
+                    }
+
+                    // Otherwise apply min/max length validators
+                    if (value.length < COMMENT_MIN_LENGTH) {
+                        return {
+                            minlength: {
+                                requiredLength: COMMENT_MIN_LENGTH,
+                                actualLength: value.length
+                            }
+                        };
+                    }
+
+                    if (value.length > COMMENT_MAX_LENGTH) {
+                        return {
+                            maxlength: {
+                                requiredLength: COMMENT_MAX_LENGTH,
+                                actualLength: value.length
+                            }
+                        };
+                    }
+
+                    return null;
+                }
             ]
         ]
     });
@@ -155,16 +176,23 @@ export class DotEditContentSidebarActivitiesComponent {
      * Validates the form and emits the comment if valid
      */
     onSubmit(): void {
+        const comment = this.commentControl.value?.trim();
+
+        // Check for empty comment and mark as touched to trigger validation
+        if (!comment) {
+            this.commentControl.setErrors({ required: true });
+            this.commentControl.markAsDirty();
+            this.commentControl.markAsTouched();
+
+            return;
+        }
+
+        // Check for other validation errors
         if (this.form.invalid) {
             this.commentControl.markAsDirty();
             this.commentControl.markAsTouched();
             this.commentControl.updateValueAndValidity({ onlySelf: true });
 
-            return;
-        }
-
-        const comment = this.commentControl.value?.trim();
-        if (!comment) {
             return;
         }
 
