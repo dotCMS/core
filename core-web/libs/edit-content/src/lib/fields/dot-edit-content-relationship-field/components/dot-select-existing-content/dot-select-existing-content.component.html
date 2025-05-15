@@ -27,7 +27,7 @@
             currentPageReportTemplate="{first} - {last} of {totalRecords}"
             [showPageLinks]="false"
             [showFirstLastIcon]="false"
-            scrollHeight="34rem"
+            scrollHeight="36rem"
             styleClass="dotTable p-datatable-existing-content w-full">
             <ng-template pTemplate="header" styleClass="relative" let-columns>
                 <tr>
@@ -41,10 +41,7 @@
                             <p-tableHeaderCheckbox />
                         }
                     </th>
-                    <th scope="col" class="column-thumbnail">
-                        {{ 'dot.file.relationship.dialog.table.type' | dm }}
-                    </th>
-                    <th scope="col" class="max-w-11rem" [pSortableColumn]="'title'">
+                    <th scope="col" [colSpan]="2" class="max-w-11rem" [pSortableColumn]="'title'">
                         <span class="capitalize">
                             {{ 'dot.file.relationship.dialog.table.title' | dm }}
                         </span>
@@ -94,7 +91,7 @@
                         }
                     </td>
                     <td class="column-thumbnail">
-                        <div class="container-thumbnail" [class.border-1]="item.hasTitleImage">
+                        <div class="container-thumbnail">
                             <dot-contentlet-thumbnail
                                 [iconSize]="'30px'"
                                 [contentlet]="item"
