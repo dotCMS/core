@@ -1,6 +1,7 @@
 import React from "react";
-import Link from "next/link";
 import Image from "next/image";
+
+import { EditButton } from "../editor/EditButton";
 
 export default function StoreProductList({ widgetTitle, widgetCodeJSON }) {
     const products = widgetCodeJSON.products;
@@ -29,7 +30,8 @@ function ProductCard({ product }) {
         salePrice && retailPrice && Number(salePrice) < Number(retailPrice);
 
     return (
-        <div className="group" onClick={() => alert("Selected Product: " + title)}>
+        <div className="group relative" onClick={() => alert("Selected Product: " + title)}>
+            <EditButton contentlet={product} />
             <div className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300 flex flex-col h-full">
                 <div className="relative aspect-square w-full overflow-hidden bg-gray-100">
                     <Image
