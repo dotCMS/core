@@ -7,15 +7,11 @@ import { Blog } from '../../../../shared/models';
     imports: [ContentletsWrapperComponent],
     template: ` <div class="flex flex-col">
         <h2 class="mb-7 text-2xl font-bold text-black">Latest Blog Posts</h2>
-        @if (!!cleanedBlogs.length) {
-        <app-contentlets-wrapper [contentlets]="cleanedBlogs" />
+        @if (!!blogs().length) {
+        <app-contentlets-wrapper [contentlets]="blogs()" />
         }
     </div>`
 })
 export class BlogsComponent {
     blogs = input<Blog[]>([]);
-
-    get cleanedBlogs() {
-        return this.blogs().map((blog) => blog._map);
-    }
 }

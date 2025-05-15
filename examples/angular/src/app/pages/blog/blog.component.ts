@@ -11,6 +11,7 @@ import { FooterComponent } from '../components/footer/footer.component';
 import { BlogPostComponent } from './blog-post/blog-post.component';
 import { DotCMSPageAsset, DotCMSURLContentMap } from '@dotcms/types';
 import { EditablePageService } from '../services/editable-page.service';
+import { ExtraContent } from '../../shared/models';
 
 export interface BlogContentlet extends DotCMSURLContentMap {
     blogContent: string;
@@ -39,7 +40,8 @@ export class BlogComponent {
     readonly #route = inject(ActivatedRoute);
     readonly #destroyRef = inject(DestroyRef);
 
-    readonly #editablePageService = inject<EditablePageService<BlogPageAsset>>(EditablePageService);
+    readonly #editablePageService =
+        inject<EditablePageService<BlogPageAsset, ExtraContent>>(EditablePageService);
 
     readonly $context = this.#editablePageService.$context;
 

@@ -10,7 +10,7 @@ import { FooterComponent } from './components/footer/footer.component';
 
 import { DotCMSLayoutBodyComponent } from '@dotcms/angular/next';
 import { DotCMSPageAsset } from '@dotcms/types';
-import { FooterContent } from '../shared/models';
+import { ExtraContent, FooterContent } from '../shared/models';
 import { EditablePageService } from './services/editable-page.service';
 import { DYNAMIC_COMPONENTS } from './components';
 
@@ -31,7 +31,7 @@ import { DYNAMIC_COMPONENTS } from './components';
 })
 export class DotCMSPagesComponent implements OnInit {
     readonly #editablePageService =
-        inject<EditablePageService<DotCMSPageAsset, FooterContent>>(EditablePageService);
+        inject<EditablePageService<DotCMSPageAsset, ExtraContent>>(EditablePageService);
 
     readonly #destroyRef = inject(DestroyRef);
     readonly #activateRoute = inject(ActivatedRoute);

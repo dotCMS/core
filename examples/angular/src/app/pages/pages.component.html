@@ -2,8 +2,8 @@
 <div class="flex flex-col gap-6 min-h-screen bg-neutral-50">
     @if (vm.pageResponse?.pageAsset?.layout?.header) {
     <app-header>
-        @if (vm.nav?.children) {
-        <app-navigation [items]="vm.nav?.children || []" />
+        @if (vm.pageResponse?.content?.navigation?.children) {
+        <app-navigation [items]="vm.pageResponse?.content?.navigation?.children || []" />
         }
     </app-header>
     }

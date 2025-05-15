@@ -13,7 +13,7 @@ import { DotCMSEditablePageService } from '@dotcms/angular/next';
 import { BASE_EXTRA_QUERIES } from '../../shared/constants';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { getUVEState, sendMessageToUVE } from '@dotcms/uve';
-import { ComposedPageResponse, FooterContent, PageRender } from '../../shared/models';
+import { ComposedPageResponse, ExtraContent, PageRender } from '../../shared/models';
 import { Observable } from 'rxjs';
 
 /**
@@ -22,7 +22,10 @@ import { Observable } from 'rxjs';
  * to ensure each page component has its own isolated instance.
  */
 @Injectable()
-export class EditablePageService<TPage extends DotCMSPageAsset, TContent = FooterContent> {
+export class EditablePageService<
+    TPage extends DotCMSPageAsset = DotCMSPageAsset,
+    TContent = ExtraContent
+> {
     #router = inject(Router);
     #pageService = inject(PageService);
     #dotcmsEditablePageService = inject(DotCMSEditablePageService);
@@ -61,29 +64,25 @@ export class EditablePageService<TPage extends DotCMSPageAsset, TContent = Foote
                 this.#setLoading();
             }),
             switchMap(() => {
-                return this.#pageService.getPageAndNavigation<TPage, TContent>(
-                    activateRoute,
-                    extraQuery
-                );
+                return this.#pageService.getPageAsset<TPage, TContent>(activateRoute, extraQuery);
             }),
-            tap(({ response, error, nav }) => {
+            tap(({ response, error }) => {
                 if (error) {
                     this.#setError(error);
                     return;
                 }
+
+                console.log('response', response);
 
                 if (getUVEState()) {
                     this.#dotcmsEditablePageService
                         .listen(response)
                         .pipe(takeUntilDestroyed(destroyRef))
                         .subscribe((page) => {
-                            this.#setPageContent(
-                                page as ComposedPageResponse<TPage, TContent>,
-                                nav
-                            );
+                            this.#setPageContent(page as ComposedPageResponse<TPage, TContent>);
                         });
                 } else {
-                    this.#setPageContent(response as ComposedPageResponse<TPage, TContent>, nav);
+                    this.#setPageContent(response as ComposedPageResponse<TPage, TContent>);
                 }
             }),
             // Transform to void to simplify the API
@@ -91,10 +90,9 @@ export class EditablePageService<TPage extends DotCMSPageAsset, TContent = Foote
         );
     }
 
-    #setPageContent(page?: ComposedPageResponse<TPage, TContent>, nav?: DotcmsNavigationItem) {
+    #setPageContent(page?: ComposedPageResponse<TPage, TContent>) {
         this.$context.set({
             pageResponse: page,
-            nav,
             status: 'success',
             error: undefined
         });

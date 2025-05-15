@@ -30,7 +30,6 @@ export interface PageWithNavigation<TPage extends DotCMSPageAsset, TContent>
 })
 export class PageService {
     private readonly client = inject(DOTCMS_CLIENT_TOKEN);
-    private navObservable?: Observable<DotcmsNavigationItem | undefined>;
 
     /**
      * Get the page and navigation for the given route and config.
@@ -40,41 +39,17 @@ export class PageService {
      * @return {*}  {(Observable<{ page: DotCMSPageAsset | { error: PageError }; nav: DotcmsNavigationItem }>)}
      * @memberof PageService
      */
-    getPageAndNavigation<TPage extends DotCMSPageAsset, TContent>(
+    getPageAsset<TPage extends DotCMSPageAsset, TContent>(
         route: ActivatedRoute,
         extraQueries?: DotCMSPageRequestParams['graphql']
     ): Observable<PageWithNavigation<TPage, TContent>> {
-        if (!this.navObservable) {
-            this.navObservable = this.fetchNavigation(route);
-        }
-
-        return forkJoin({
-            nav: this.navObservable,
-            pageAsset: this.fetchPage<TPage, TContent>(route, extraQueries)
-        }).pipe(
-            map(({ nav, pageAsset }) => {
+        return this.fetchPage<TPage, TContent>(route, extraQueries).pipe(
+            map((pageAsset) => {
                 const { response, error } = pageAsset;
 
-                return { nav, response, error };
+                return { response, error };
             })
         );
-    }
-
-    private fetchNavigation(route: ActivatedRoute): Observable<DotcmsNavigationItem | undefined> {
-        return from(
-            this.client.nav
-                .get('/', {
-                    depth: 2,
-                    languageId: route.snapshot.params['languageId'] || 1
-                })
-                .then((response) => {
-                    return response as DotcmsNavigationItem;
-                })
-                .catch((e) => {
-                    console.error(`Error fetching navigation: ${e.message}`);
-                    return undefined;
-                })
-        ).pipe(shareReplay(1));
     }
 
     private fetchPage<TPage extends DotCMSPageAsset, TContent>(

@@ -5,14 +5,15 @@ import {
     DotCMSPageAsset
 } from '@dotcms/types';
 
-export interface LogoImage {
+export interface FileAsset {
     fileAsset: {
         versionPath: string;
     };
 }
 
-export interface ContentletImage {
+export interface ContentletImage extends FileAsset {
     identifier: string;
+    fileName: string;
 }
 
 export interface Contentlet extends DotCMSBasicContentlet {
@@ -22,17 +23,38 @@ export interface Contentlet extends DotCMSBasicContentlet {
     widgetTitle?: string;
 }
 
-export interface Blog {
-    _map: Contentlet;
+export interface Author {
+    firstName: string;
+    lastName: string;
+    inode: string;
 }
 
-export interface Destination {
-    _map: Contentlet;
+export interface Blog extends Contentlet {
+    title: string;
+    identifier: string;
+    inode: string;
+    modDate: string;
+    urlTitle: string;
+    teaser: string;
+    author: Author;
+}
+
+export interface Destination extends Contentlet {
+    title: string;
+    identifier: string;
+    inode: string;
+    urlMap: string;
+    modDate: string;
+    url: string;
 }
 export interface FooterContent {
-    logoImage: LogoImage[];
+    logoImage: FileAsset[];
     blogs: Blog[];
     destinations: Destination[];
+}
+
+export interface ExtraContent extends FooterContent {
+    navigation: DotcmsNavigationItem;
 }
 
 export type PageError = {

@@ -42,7 +42,7 @@ import { UVE_MODE } from '@dotcms/types';
             </ng-template>
             <a class="relative min-w-32" [href]="contentlet.urlMap ?? contentlet.url">
                 <img
-                    [ngSrc]="contentlet.image.identifier"
+                    [ngSrc]="contentlet.image.fileAsset.versionPath"
                     [fill]="true"
                     [alt]="contentlet.urlTitle ?? contentlet.title"
                     [loaderParams]="{ languageId: contentlet.languageId || 1 }"
