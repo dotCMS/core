@@ -72,8 +72,6 @@ export class EditablePageService<
                     return;
                 }
 
-                console.log('response', response);
-
                 if (getUVEState()) {
                     this.#dotcmsEditablePageService
                         .listen(response)
@@ -112,14 +110,5 @@ export class EditablePageService<
             error: error,
             status: 'error'
         }));
-
-        /**
-         * Send a message to the editor to let it know that the client is ready.
-         * This is a temporary workaround to avoid the editor to be stuck in the loading state.
-         * This will be removed once the editor is able to detect when the client is ready without use DotcmsLayoutComponent.
-         */
-
-        // REMIND ME TO REVISIT THIS
-        sendMessageToUVE({ action: DotCMSUVEAction.CLIENT_READY, payload: {} });
     }
 }

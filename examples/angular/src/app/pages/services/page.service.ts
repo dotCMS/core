@@ -89,8 +89,6 @@ export class PageService {
             catchError((error) => {
                 // If the page is not found and we are inside the editor, return an empty object
                 // The editor will get the working/unpublished page
-
-                // REMIND ME TO REVISIT THIS
                 if (error.status === 404 && getUVEState()) {
                     return of({ response: {} } as PageResponse<TPage, TContent>);
                 }
