@@ -67,8 +67,6 @@ export class EditablePageService<
                     return;
                 }
 
-                console.log('response', response);
-
                 if (getUVEState()) {
                     this.#dotcmsEditablePageService
                         .listen(response)
