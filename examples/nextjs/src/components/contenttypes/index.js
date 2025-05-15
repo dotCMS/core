@@ -11,6 +11,7 @@ import WebPageContent from './WebPageContent';
 import VtlInclude from './VtlInclude';
 import PageForm from './PageForm';
 import StoreProductList from './StoreProductList';
+import CategoryFilter from './CategoryFilter';
 
 export const pageComponents = {
     Activity: Activity,
@@ -26,4 +27,5 @@ export const pageComponents = {
     VtlInclude: VtlInclude,
     PageForm: PageForm,
     StoreProductList: StoreProductList,
+    CategoryFilter: CategoryFilter,
 };

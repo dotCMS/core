@@ -2,7 +2,7 @@ import React from "react";
 import Link from "next/link";
 import Image from "next/image";
 
-export default function StoreProductList({ widgetCodeJSON }) {
+export default function StoreProductList({ widgetTitle, widgetCodeJSON }) {
     const products = widgetCodeJSON.products;
 
     if (!products) {
@@ -11,10 +11,13 @@ export default function StoreProductList({ widgetCodeJSON }) {
     }
 
     return (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {products?.map((product) => (
-                <ProductCard key={product.identifier} product={product} />
-            ))}
+        <div>
+            <h2 className="text-4xl font-bold mb-4">{widgetTitle}</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                {products?.map((product) => (
+                    <ProductCard key={product.identifier} product={product} />
+                ))}
+            </div>
         </div>
     );
 }
