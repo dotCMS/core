@@ -34,7 +34,6 @@ export function BlogListingPage(pageResponse) {
                 },
             ])
             .then(({ contentlets }) => {
-                console.log("contentlets", contentlets);
                 setFilteredBlogs(contentlets);
             });
     }, [debouncedSearchQuery, content.blogs]);
