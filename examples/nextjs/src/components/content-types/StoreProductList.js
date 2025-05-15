@@ -7,7 +7,7 @@ export default function StoreProductList({ widgetTitle, widgetCodeJSON }) {
     const products = widgetCodeJSON.products;
 
     if (!products) {
-        console.warn('No products found in StoreProductList');
+        console.warn("No products found in StoreProductList");
         return null;
     }
 
@@ -30,7 +30,10 @@ function ProductCard({ product }) {
         salePrice && retailPrice && Number(salePrice) < Number(retailPrice);
 
     return (
-        <div className="group relative" onClick={() => alert("Selected Product: " + title)}>
+        <div
+            className="group relative"
+            onClick={() => alert("Selected Product: " + title)}
+        >
             <EditButton contentlet={product} />
             <div className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300 flex flex-col h-full">
                 <div className="relative aspect-square w-full overflow-hidden bg-gray-100">
@@ -69,7 +72,7 @@ function ProductCard({ product }) {
                                     (1 -
                                         Number(salePrice) /
                                             Number(retailPrice)) *
-                                        100
+                                        100,
                                 )}
                                 % OFF
                             </span>

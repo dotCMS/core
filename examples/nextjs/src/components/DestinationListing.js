@@ -70,7 +70,7 @@ export default function DestinationListing({ destinations }) {
                                                             </span>
                                                         )}
                                                     </span>
-                                                )
+                                                ),
                                             )}
                                         </div>
                                     </div>

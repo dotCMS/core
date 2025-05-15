@@ -40,9 +40,7 @@ export default function ContactUs({ description }) {
             </h2>
 
             {description && (
-                <div className="text-gray-700 mb-6">
-                    {description}
-                </div>
+                <div className="text-gray-700 mb-6">{description}</div>
             )}
 
             {isSuccess && (

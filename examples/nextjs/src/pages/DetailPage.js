@@ -4,7 +4,10 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 
 import { enableBlockEditorInline } from "@dotcms/uve";
-import { DotCMSBlockEditorRenderer, useEditableDotCMSPage } from "@dotcms/react/next";
+import {
+    DotCMSBlockEditorRenderer,
+    useEditableDotCMSPage,
+} from "@dotcms/react/next";
 
 import { useIsEditMode } from "@/hooks/isEditMode";
 import Footer from "@/components/footer/Footer";
@@ -12,7 +15,7 @@ import Header from "@/components/Header";
 
 export function DetailPage({ pageContent }) {
     const [twActives, setTwActives] = useState(
-        "prose lg:prose-xl prose-a:text-blue-600"
+        "prose lg:prose-xl prose-a:text-blue-600",
     );
     const { pageAsset, content } = useEditableDotCMSPage(pageContent);
     const { urlContentMap } = pageAsset;
@@ -36,7 +39,9 @@ export function DetailPage({ pageContent }) {
 
     return (
         <div className="flex flex-col gap-6 min-h-screen bg-slate-50">
-            {pageAsset?.layout.header && <Header navItems={navigation?.children} />}
+            {pageAsset?.layout.header && (
+                <Header navItems={navigation?.children} />
+            )}
             <main className="flex flex-col gap-8 m-auto">
                 {urlContentMap?.image && (
                     <div className="relative w-full h-80 overflow-hidden">

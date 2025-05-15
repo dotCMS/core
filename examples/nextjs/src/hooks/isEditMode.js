@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from "react";
 
-import { getUVEState } from '@dotcms/uve';
-import { UVE_MODE } from '@dotcms/types';
+import { getUVEState } from "@dotcms/uve";
+import { UVE_MODE } from "@dotcms/types";
 
 /**
  * Check if the user is in edit mode

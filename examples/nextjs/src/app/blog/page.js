@@ -8,7 +8,7 @@ export async function generateMetadata() {
         const { pageAsset } = await getDotCMSPage(`/blog`);
         const title = pageAsset?.page?.friendlyName;
         return {
-            title: `${title} - Blog`
+            title: `${title} - Blog`,
         };
     } catch (e) {
         return {

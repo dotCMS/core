@@ -1,5 +1,4 @@
-
-import { DotCMSBlockEditorRenderer } from '@dotcms/react/next';
+import { DotCMSBlockEditorRenderer } from "@dotcms/react/next";
 
 function Blog({ blogContent }) {
     return (

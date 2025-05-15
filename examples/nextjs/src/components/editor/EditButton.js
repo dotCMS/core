@@ -1,4 +1,3 @@
-
 import { editContentlet } from "@dotcms/uve";
 import { useIsEditMode } from "@/hooks/isEditMode";
 
@@ -14,4 +13,4 @@ export function EditButton({ contentlet }) {
             </button>
         )
     );
-};
+}

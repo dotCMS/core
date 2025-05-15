@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
+import Link from "next/link";
 
-import { useIsEditMode } from '@/hooks/isEditMode';
-import { ReorderMenuButton } from './editor/ReorderMenuButton';
-import { usePathname } from 'next/navigation';
+import { useIsEditMode } from "@/hooks/isEditMode";
+import { ReorderMenuButton } from "./editor/ReorderMenuButton";
+import { usePathname } from "next/navigation";
 
 function Header({ navItems }) {
     const isEditMode = useIsEditMode();
@@ -25,32 +25,33 @@ function Header({ navItems }) {
 }
 
 function Navigation({ navItems }) {
-  const pathname = usePathname();
-  
+    const pathname = usePathname();
+
     return (
-      <nav>
-        <ul className="flex space-x-4 text-white">
-          <li>
-            <Link
-              href={{ pathname: '/' }}
-              className={`underline-offset-4 hover:underline ${pathname === '/' && 'underline'}`}>
-              Home
-            </Link>
-          </li>
-          {navItems.map(({ folder, href, target, title }) => (
-            <li key={folder}>
-              <Link
-                href={{ pathname: href }}
-                className={`underline-offset-4 hover:underline ${pathname === href && 'underline'}`}
-                target={target}>
-                {title}
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </nav>
+        <nav>
+            <ul className="flex space-x-4 text-white">
+                <li>
+                    <Link
+                        href={{ pathname: "/" }}
+                        className={`underline-offset-4 hover:underline ${pathname === "/" && "underline"}`}
+                    >
+                        Home
+                    </Link>
+                </li>
+                {navItems.map(({ folder, href, target, title }) => (
+                    <li key={folder}>
+                        <Link
+                            href={{ pathname: href }}
+                            className={`underline-offset-4 hover:underline ${pathname === href && "underline"}`}
+                            target={target}
+                        >
+                            {title}
+                        </Link>
+                    </li>
+                ))}
+            </ul>
+        </nav>
     );
-  }
-  
+}
 
 export default Header;

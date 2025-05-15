@@ -18,7 +18,7 @@ const nextConfig = {
     async rewrites() {
         return [
             {
-                source: '/dA/:path*',
+                source: "/dA/:path*",
                 destination: `${process.env.NEXT_PUBLIC_DOTCMS_HOST}/dA/:path*`,
             },
         ];
@@ -26,8 +26,8 @@ const nextConfig = {
     async redirects() {
         return [
             {
-                source: '/:path*/index',
-                destination: '/:path*/',
+                source: "/:path*/index",
+                destination: "/:path*/",
                 permanent: true,
             },
         ];

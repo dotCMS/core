@@ -1,6 +1,6 @@
-import Image from 'next/image';
-import Link from 'next/link';
-import { DotCMSEditableText } from '@dotcms/react/next';
+import Image from "next/image";
+import Link from "next/link";
+import { DotCMSEditableText } from "@dotcms/react/next";
 
 function Banner(contentlet) {
     const { title, caption, inode, image, link, buttonText } = contentlet;
@@ -17,13 +17,17 @@ function Banner(contentlet) {
             )}
             <div className="absolute inset-0 flex flex-col items-center justify-center p-4 text-center text-white">
                 <h2 className="mb-2 text-6xl font-bold text-shadow">
-                    <DotCMSEditableText contentlet={contentlet} fieldName="title" />
+                    <DotCMSEditableText
+                        contentlet={contentlet}
+                        fieldName="title"
+                    />
                 </h2>
                 <p className="mb-4 text-xl text-shadow">{caption}</p>
                 {link && (
                     <Link
                         className="p-4 text-xl transition duration-300 bg-blue-500 rounded-sm hover:bg-blue-700"
-                        href={link}>
+                        href={link}
+                    >
                         {buttonText || "See more"}
                     </Link>
                 )}

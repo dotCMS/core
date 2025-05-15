@@ -7,11 +7,14 @@ export async function generateMetadata(props) {
     const params = await props.params;
     try {
         const path = params.slug[0];
-        const { pageAsset } = await getDotCMSPage(`/blog/post/${path}`, searchParams);
+        const { pageAsset } = await getDotCMSPage(
+            `/blog/post/${path}`,
+            searchParams,
+        );
         const urlContentMap = pageAsset?.urlContentMap;
         const title = urlContentMap?.title || "Page not found";
         return {
-            title: `${title} - Blog`
+            title: `${title} - Blog`,
         };
     } catch (e) {
         return {

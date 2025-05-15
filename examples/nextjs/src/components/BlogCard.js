@@ -9,15 +9,7 @@ const dateFormatOptions = {
 };
 
 export default function BlogCard({ blog }) {
-    const {
-        title,
-        image,
-        urlMap,
-        inode,
-        modDate,
-        urlTitle,
-        teaser,
-    } = blog;
+    const { title, image, urlMap, inode, modDate, urlTitle, teaser } = blog;
 
     const isEditMode = useIsEditMode();
 
@@ -62,11 +54,11 @@ export default function BlogCard({ blog }) {
                     <time className="text-sm text-gray-500">
                         {new Date(modDate).toLocaleDateString(
                             "en-US",
-                            dateFormatOptions
+                            dateFormatOptions,
                         )}
                     </time>
                 </div>
             </div>
         </div>
     );
-};
+}

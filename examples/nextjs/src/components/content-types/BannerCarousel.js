@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 export default function BannerCarousel({ widgetCodeJSON }) {
     const banners = widgetCodeJSON?.banners || [];
     const [currentIndex, setCurrentIndex] = useState(0);
-    
+
     useEffect(() => {
         const length = banners?.length || 1;
         const slideInterval = setInterval(() => {
@@ -22,7 +22,7 @@ export default function BannerCarousel({ widgetCodeJSON }) {
 
     const prevSlide = () => {
         setCurrentIndex(
-            (prevIndex) => (prevIndex - 1 + banners.length) % banners.length
+            (prevIndex) => (prevIndex - 1 + banners.length) % banners.length,
         );
     };
 
@@ -32,9 +32,17 @@ export default function BannerCarousel({ widgetCodeJSON }) {
         <div className="relative w-full mx-auto">
             <div className="overflow-hidden relative h-96">
                 {banners.map(({ image, title }, index) => (
-                    
-                    <div key={index} className={`duration-700 ease-in-out w-full h-full object-cover ${index === currentIndex ? "" : "hidden"}`} data-carousel-item>
-                        <Image src={image} fill={true} className="absolute block w-full " alt={title} />
+                    <div
+                        key={index}
+                        className={`duration-700 ease-in-out w-full h-full object-cover ${index === currentIndex ? "" : "hidden"}`}
+                        data-carousel-item
+                    >
+                        <Image
+                            src={image}
+                            fill={true}
+                            className="absolute block w-full "
+                            alt={title}
+                        />
                     </div>
                 ))}
             </div>

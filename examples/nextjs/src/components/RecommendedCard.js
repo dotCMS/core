@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { EditButton } from "./editor/EditButton";
 
-const RecommendedCard = ({contentlet}) => {
+const RecommendedCard = ({ contentlet }) => {
     const { url, title, inode, image, urlMap, modDate } = contentlet;
     const dateFormatOptions = {
         year: "numeric",
@@ -32,13 +32,12 @@ const RecommendedCard = ({contentlet}) => {
                 <time className="text-gray-400">
                     {new Date(modDate).toLocaleDateString(
                         "en-US",
-                        dateFormatOptions
+                        dateFormatOptions,
                     )}
                 </time>
             </div>
         </div>
     );
 };
-
 
 export default RecommendedCard;
