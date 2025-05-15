@@ -58,19 +58,6 @@
                 </exclusion>
             </exclusions>
         </dependency>
-        <dependency>
-            <groupId>com.dotcms.core.plugins</groupId>
-            <artifactId>com.dotcms.telemetry</artifactId>
-            <version>24.08.08</version>
-            <scope>provided</scope>
-
-            <exclusions>
-                <exclusion>
-                    <groupId>*</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
     </dependencies>
     <build>
         <plugins>

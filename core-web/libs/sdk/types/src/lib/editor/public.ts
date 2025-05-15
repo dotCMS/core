@@ -1,6 +1,6 @@
 import { DotCMSContainerBound } from './internal';
 
-import { DotCMSBasicContentlet, DotCMSEditablePage } from '../page/public';
+import { DotCMSBasicContentlet, DotCMSPageResponse } from '../page/public';
 
 /**
  * Development mode
@@ -197,7 +197,7 @@ export enum UVEEventType {
  * Type definitions for each event's payload
  */
 export type UVEEventPayloadMap = {
-    [UVEEventType.CONTENT_CHANGES]: DotCMSEditablePage;
+    [UVEEventType.CONTENT_CHANGES]: DotCMSPageResponse;
     [UVEEventType.PAGE_RELOAD]: undefined;
     [UVEEventType.REQUEST_BOUNDS]: DotCMSContainerBound[];
     [UVEEventType.IFRAME_SCROLL]: 'up' | 'down';

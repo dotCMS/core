@@ -246,7 +246,7 @@ describe('withLoad', () => {
             it('should call getGraphQLPage if graphql is present', () => {
                 jest.spyOn(dotPageApiService, 'getGraphQLPage').mockImplementation(() =>
                     of({
-                        page: MOCK_RESPONSE_HEADLESS,
+                        pageAsset: MOCK_RESPONSE_HEADLESS,
                         content: {}
                     })
                 );

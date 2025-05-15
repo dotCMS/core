@@ -131,7 +131,7 @@ test-integration-stop:
     ./mvnw -pl :dotcms-integration -Pdocker-stop -Dcoreit.test.skip=false
 
 test-postman-ide:
-    ./mvnw -pl :dotcms-test-karate pre-integration-test -Dpostman.test.skip=false -Dtomcat.port=8080
+    ./mvnw -pl :dotcms-test-postman pre-integration-test -Dpostman.test.skip=false -Dtomcat.port=8080
 
 test-karate-ide:
     ./mvnw -pl :dotcms-test-karate pre-integration-test -Dkarate.test.skip=false -Dtomcat.port=8080

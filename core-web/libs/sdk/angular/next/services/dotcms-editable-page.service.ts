@@ -4,9 +4,8 @@ import { Injectable } from '@angular/core';
 
 import { finalize } from 'rxjs/operators';
 
-import { updateNavigation } from '@dotcms/client';
-import { UVEEventType, DotCMSEditablePage } from '@dotcms/types';
-import { createUVESubscription, getUVEState, initUVE } from '@dotcms/uve';
+import { UVEEventType, DotCMSPageResponse } from '@dotcms/types';
+import { createUVESubscription, getUVEState, initUVE, updateNavigation } from '@dotcms/uve';
 
 @Injectable({
     providedIn: 'root'
@@ -17,18 +16,18 @@ export class DotCMSEditablePageService {
      * Used internally to track changes to the page data.
      *
      * @private
-     * @type {Subject<DotCMSEditablePage | null>}
+     * @type {Subject<DotCMSPageResponse | null>}
      */
-    #pageAssetSubject = new Subject<DotCMSEditablePage | null>();
+    #responseSubject = new Subject<DotCMSPageResponse | null>();
 
     /**
      * Observable stream of the page asset changes.
      * Exposes the pageAssetSubject as an Observable for subscribers.
      *
      * @private
-     * @type {Observable<DotCMSEditablePage | null>}
+     * @type {Observable<DotCMSPageResponse | null>}
      */
-    #pageAsset$ = this.#pageAssetSubject.asObservable();
+    #response$ = this.#responseSubject.asObservable();
 
     /**
      * Listens for changes to an editable page and returns an Observable that emits the updated page data.
@@ -57,22 +56,22 @@ export class DotCMSEditablePageService {
      * subscription.unsubscribe();
      * ```
      *
-     * @param pageAsset Optional initial page data
+     * @param response Optional initial page data
      * @returns Observable that emits the updated page data or null
      */
-    listen(pageAsset?: DotCMSEditablePage): Observable<DotCMSEditablePage | null> {
+    listen(response?: DotCMSPageResponse): Observable<DotCMSPageResponse | null> {
         if (!getUVEState()) {
-            return of(pageAsset || null);
+            return of(response || null);
         }
 
-        const pageURI = pageAsset?.page?.pageURI ?? '/';
+        const pageURI = response?.pageAsset?.page?.pageURI ?? '/';
 
-        initUVE(pageAsset);
+        initUVE(response);
         updateNavigation(pageURI);
 
         const unsubscribeUVEChanges = this.#listenUVEChanges();
 
-        return this.#pageAsset$.pipe(
+        return this.#response$.pipe(
             finalize(() => {
                 unsubscribeUVEChanges();
             })
@@ -88,7 +87,7 @@ export class DotCMSEditablePageService {
      */
     #listenUVEChanges() {
         const { unsubscribe } = createUVESubscription(UVEEventType.CONTENT_CHANGES, (payload) => {
-            this.#pageAssetSubject.next(payload);
+            this.#responseSubject.next(payload);
         });
 
         return unsubscribe;

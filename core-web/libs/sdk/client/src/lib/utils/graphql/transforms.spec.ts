@@ -229,9 +229,9 @@ describe('GraphQL Parser', () => {
             graphqlResponse as unknown as DotCMSGraphQLPageResponse
         );
 
-        expect(pageEntity.page).toEqual(expectedResult.page);
-        expect(pageEntity.urlContentMap).toEqual(expectedResult.urlContentMap);
-        expect(pageEntity.containers['//test/container/'].contentlets['test-uuid'][0]).toEqual(
+        expect(pageEntity?.page).toEqual(expectedResult.page);
+        expect(pageEntity?.urlContentMap).toEqual(expectedResult.urlContentMap);
+        expect(pageEntity?.containers['//test/container/'].contentlets['test-uuid'][0]).toEqual(
             expectedResult.containers['//test/container/'].contentlets['test-uuid'][0]
         );
     });

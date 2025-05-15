@@ -5,7 +5,7 @@
             type="text"
             class="w-26rem h-auto"
             (keydown.enter)="doSearch()"
-            [placeholder]="'dot.file.relationship.dialog.search.title' | dm"
+            [placeholder]="'dot.file.relationship.dialog.search.placeholder' | dm"
             formControlName="query" />
         <p-button
             (onClick)="popover.toggle($event, formElement)"

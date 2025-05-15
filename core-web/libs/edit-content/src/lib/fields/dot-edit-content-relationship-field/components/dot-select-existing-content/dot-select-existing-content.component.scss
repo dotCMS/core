@@ -4,7 +4,7 @@
     p-table {
         .dotTable.p-datatable.p-datatable-existing-content {
             .p-datatable-wrapper {
-                height: 34rem;
+                height: 36rem;
             }
             .p-datatable-header {
                 background-color: $white;
@@ -30,6 +30,18 @@
                 width: 4.5rem;
                 max-width: 4.5rem;
                 min-width: 4.5rem;
+            }
+
+            .p-paginator .p-paginator-current {
+                height: 2rem;
+                min-height: 2rem;
+            }
+            .p-paginator .p-paginator-prev,
+            .p-paginator .p-paginator-next {
+                height: 2rem;
+                min-height: 2rem;
+                width: 2rem;
+                min-width: 2rem;
             }
         }
     }

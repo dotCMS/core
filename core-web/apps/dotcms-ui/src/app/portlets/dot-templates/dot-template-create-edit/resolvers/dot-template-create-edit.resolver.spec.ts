@@ -7,9 +7,12 @@ import { TestBed } from '@angular/core/testing';
 import { DotTemplatesService } from '@dotcms/app/api/services/dot-templates/dot-templates.service';
 import { DotRouterService } from '@dotcms/data-access';
 import { DotTemplate } from '@dotcms/dotcms-models';
-import { MockDotRouterService } from '@dotcms/utils-testing';
+import { MockDotRouterService, setupResizeObserverMock } from '@dotcms/utils-testing';
 
 import { DotTemplateCreateEditResolver } from './dot-template-create-edit.resolver';
+
+// Setup ResizeObserver mock
+setupResizeObserverMock();
 
 const templateMock: DotTemplate = {
     anonymous: false,
