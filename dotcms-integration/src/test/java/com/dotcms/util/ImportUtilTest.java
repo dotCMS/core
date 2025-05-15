@@ -3506,6 +3506,14 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         }
     }
 
+    /**
+     * Method to test: {@link ImportUtil#importFile(Long, String, String, String[], boolean, boolean, User, long, String[], CsvReader, int, int, Reader, String, HttpServletRequest)}
+     * When: We have one contentlet with identifier "A" and we try to import 10 contentlets with the same identifier but different title
+     *  We should end up with 10 contentlets with the same identifier and different titles and inode as we are importing versions
+     * @throws DotSecurityException
+     * @throws DotDataException
+     * @throws IOException
+     */
     @Test
     public void importVersionsSharingSameIdentifier()
             throws DotSecurityException, DotDataException, IOException {
