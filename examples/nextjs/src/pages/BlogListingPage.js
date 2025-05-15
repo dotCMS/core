@@ -20,6 +20,7 @@ export function BlogListingPage(pageResponse) {
 
         if (!debouncedSearchQuery.length) {
             setFilteredBlogs(allBlogs);
+            return;
         }
 
         dotCMSClient.content
@@ -33,6 +34,7 @@ export function BlogListingPage(pageResponse) {
                 },
             ])
             .then(({ contentlets }) => {
+                console.log("contentlets", contentlets);
                 setFilteredBlogs(contentlets);
             });
     }, [debouncedSearchQuery, content.blogs]);

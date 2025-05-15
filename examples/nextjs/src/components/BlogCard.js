@@ -18,8 +18,6 @@ export default function BlogCard({ blog }) {
         urlTitle,
         teaser,
     } = blog;
-    const author = blog.author?.[0];
-
 
     const isEditMode = useIsEditMode();
 
@@ -61,14 +59,6 @@ export default function BlogCard({ blog }) {
                 )}
 
                 <div className="flex justify-between items-center mt-auto pt-3 border-t border-gray-100">
-                    {author && (
-                        <div className="text-sm text-gray-700">
-                            {author.firstName && author.lastName
-                                ? `${author.firstName} ${author.lastName}`
-                                : "Unknown Author"}
-                        </div>
-                    )}
-
                     <time className="text-sm text-gray-500">
                         {new Date(modDate).toLocaleDateString(
                             "en-US",
