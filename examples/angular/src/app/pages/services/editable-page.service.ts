@@ -1,18 +1,13 @@
 import { DestroyRef, inject, Injectable, signal } from '@angular/core';
 import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
 import { DYNAMIC_COMPONENTS } from '../components';
-import {
-    DotcmsNavigationItem,
-    DotCMSPageAsset,
-    DotCMSUVEAction,
-    DotCMSPageRequestParams
-} from '@dotcms/types';
+import { DotCMSPageAsset, DotCMSPageRequestParams } from '@dotcms/types';
 import { filter, map, startWith, switchMap, tap } from 'rxjs/operators';
 import { PageService } from './page.service';
 import { DotCMSEditablePageService } from '@dotcms/angular/next';
 import { BASE_EXTRA_QUERIES } from '../../shared/constants';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { getUVEState, sendMessageToUVE } from '@dotcms/uve';
+import { getUVEState } from '@dotcms/uve';
 import { ComposedPageResponse, ExtraContent, PageRender } from '../../shared/models';
 import { Observable } from 'rxjs';
 
@@ -71,6 +66,8 @@ export class EditablePageService<
                     this.#setError(error);
                     return;
                 }
+
+                console.log('response', response);
 
                 if (getUVEState()) {
                     this.#dotcmsEditablePageService
