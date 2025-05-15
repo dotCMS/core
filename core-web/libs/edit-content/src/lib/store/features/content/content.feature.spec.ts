@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { createServiceFactory, SpectatorService, SpyObject } from '@ngneat/spectator/jest';
-import { signalStore, withState } from '@ngrx/signals';
+import { signalStore, withState, patchState } from '@ngrx/signals';
 import { of, throwError } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
@@ -384,6 +384,35 @@ describe('ContentFeature', () => {
             tick();
 
             expect(store.initialContentletState()).toBe('reset');
+        }));
+    });
+
+    describe('disableNewContentEditor', () => {
+        const mockContentlet = {
+            inode: '123',
+            stInode: 'st-123',
+            contentType: 'testContentType'
+        } as any;
+
+        beforeEach(() => {
+            // Set up the store to have a contentlet
+            patchState(store, { contentlet: mockContentlet });
+        });
+
+        it('should call updateContentType and navigate to legacy edit page on success', fakeAsync(() => {
+            contentTypeService.updateContentType.mockReturnValue(of(CONTENT_TYPE_MOCK));
+
+            store.disableNewContentEditor();
+            tick();
+
+            expect(contentTypeService.updateContentType).toHaveBeenCalledWith('st-123', {
+                clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
+                name: 'testContentType',
+                metadata: {
+                    CONTENT_EDITOR2_ENABLED: false
+                }
+            });
+            expect(router.navigate).toHaveBeenCalledWith(['/c/content/', '123']);
         }));
     });
 });

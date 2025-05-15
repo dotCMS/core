@@ -212,6 +212,29 @@ describe('DotContentletService', () => {
         req.flush({ entity: [contenttypeA, contentTypeB] });
     });
 
+    it('should update the content type ', (done) => {
+        const id = 'test-id-123';
+        const payload = { title: 'Updated Content Type', description: 'Updated description' };
+        const contentTypeExpected: DotCMSContentType = {
+            ...dotcmsContentTypeBasicMock,
+            id,
+            title: payload.title,
+            description: payload.description
+        };
+
+        dotContentTypeService
+            .updateContentType(id, payload)
+            .subscribe((contentType: DotCMSContentType) => {
+                expect(contentType).toEqual(contentTypeExpected);
+                done();
+            });
+
+        const req = httpMock.expectOne(`/api/v1/contenttype/id/${id}`);
+        expect(req.request.method).toBe('PUT');
+        expect(req.request.body).toEqual(payload);
+        req.flush({ entity: contentTypeExpected });
+    });
+
     afterEach(() => {
         httpMock.verify();
     });

@@ -30,10 +30,8 @@
                             data-testId="edit-content-layout__beta-message-content">
                             {{ 'edit.content.layout.back.to.old.edit.content' | dm }}
                             <a
-                                [routerLink]="['/content-types-angular/edit', variable]"
-                                [queryParams]="{
-                                    'open-config': 'true'
-                                }"
+                                href="#"
+                                (click)="$event.preventDefault(); $store.disableNewContentEditor()"
                                 data-testId="edit-content-layout__beta-message-link">
                                 {{ 'edit.content.layout.back.to.old.edit.content.switch' | dm }}
                             </a>
