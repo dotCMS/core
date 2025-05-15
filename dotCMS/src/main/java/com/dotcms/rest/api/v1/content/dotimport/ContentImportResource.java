@@ -23,6 +23,7 @@ import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.media.SchemaProperty;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import java.io.IOException;
@@ -102,29 +103,11 @@ public class ContentImportResource {
             description = "Creates and enqueues a new content import job. Requires a CSV file and a JSON string representing import parameters.",
             tags = {"Content Import"},
             requestBody = @RequestBody(
+                    description = ContentImportDocs.FORM_FIELD_DOC,
                     required = true,
-                    description = "Multipart form data containing the CSV file and JSON import parameters.",
                     content = @Content(
                             mediaType = MediaType.MULTIPART_FORM_DATA,
-                            schema = @Schema(implementation = ContentImportParamsSchema.class),
-                            examples = @ExampleObject(name = "Import Example", summary = "Example content import request", value =
-                                    "--boundary\\n" +
-                                    "Content-Disposition: form-data; name=\"file\"; filename=\"import.csv\"\\n" +
-                                    "Content-Type: text/csv\\n\\n" +
-                                    "title,description\\n" + // Example CSV content line
-                                    "Example Title,Example Description\\n" + // Example CSV content line
-                                    "--boundary\\n" +
-                                    "Content-Disposition: form-data; name=\"form\"\\n" +
-                                    "Content-Type: application/json\\n\\n" +
-                                    "{\\n" +
-                                    "  \\\"contentType\\\": \\\"webPageContent\\\",\\n" +
-                                    "  \\\"language\\\": \\\"en-US\\\",\\n" +
-                                    "  \\\"workflowActionId\\\": \\\"b9d89c80-3d88-4311-8365-187323c96436\\\",\\n" + // Replace with actual valid UUID
-                                    "  \\\"fields\\\": [\\\"title\\\"],\\n" + // Example using field variable name
-                                    "  \\\"stopOnError\\\": false,\\n" +
-                                    "  \\\"commitGranularity\\\": 100\\n" +
-                                    "}\\n" +
-                                    "--boundary--")
+                            schema = @Schema(implementation = ContentImportParamsSchema.class)
                     )
             ),
             responses = {
@@ -190,28 +173,10 @@ public class ContentImportResource {
             tags = {"Content Import"},
             requestBody = @RequestBody(
                     required = true,
-                    description = "Multipart form data containing the CSV file and JSON import parameters for validation.",
+                    description = ContentImportDocs.FORM_FIELD_DOC,
                     content = @Content(
                             mediaType = MediaType.MULTIPART_FORM_DATA,
-                            schema = @Schema(implementation = ContentImportParamsSchema.class),
-                            examples = @ExampleObject(name = "Validation Example", summary = "Example content validation request", value =
-                                    "--boundary\\n" +
-                                    "Content-Disposition: form-data; name=\"file\"; filename=\"validate.csv\"\\n" +
-                                    "Content-Type: text/csv\\n\\n" +
-                                    "title,description\\n" + // Example CSV content line
-                                    "Validation Title,Validation Description\\n" + // Example CSV content line
-                                    "--boundary\\n" +
-                                    "Content-Disposition: form-data; name=\"form\"\\n" +
-                                    "Content-Type: application/json\\n\\n" +
-                                    "{\\n" +
-                                    "  \\\"contentType\\\": \\\"webPageContent\\\",\\n" +
-                                    "  \\\"language\\\": \\\"en-US\\\",\\\n" +
-                                    "  \\\"workflowActionId\\\": \\\"b9d89c80-3d88-4311-8365-187323c96436\\\",\\n" + // Replace with actual valid UUID
-                                    "  \\\"fields\\\": [\\\"title\\\"],\\\n" + // Example using field variable name
-                                    "  \\\"stopOnError\\\": true,\\n" + // Typically true for validation
-                                    "  \\\"commitGranularity\\\": 50\\n" +
-                                    "}\\n" +
-                                    "--boundary--")
+                            schema = @Schema(implementation = ContentImportParamsSchema.class)
                     )
             ),
             responses = {
@@ -277,15 +242,6 @@ public class ContentImportResource {
             summary = "Retrieves the status of a content import job",
             description = "Fetches the detailed current status of a specific content import job identified by its ID.",
             tags = {"Content Import"},
-            parameters = {
-                @Parameter(
-                    name = "jobId",
-                    in = ParameterIn.PATH,
-                    required = true,
-                    description = "The unique identifier (UUID) of the job whose status is to be retrieved.",
-                    schema = @Schema(type = "string", format = "uuid", example = "e6d9bae8-657b-4e2f-8524-c0222db66355")
-                )
-            },
             responses = {
                     @ApiResponse(
                             responseCode = "200",
@@ -304,12 +260,16 @@ public class ContentImportResource {
     public ResponseEntityView<JobView> getJobStatus(
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
-            @PathParam("jobId") @Parameter(
-                required = true,
-                description = "The ID of the job whose status is to be retrieved",
-                schema = @Schema(type = "string")
-            ) final String jobId)
-            throws DotDataException {
+            @PathParam("jobId")
+            @Parameter(
+                    name = "jobId",
+                    in = ParameterIn.PATH,
+                    required = true,
+                    description = "The unique identifier (UUID) of the job whose status is to be retrieved.",
+                    schema = @Schema(type = "string", format = "uuid", example = "e6d9bae8-657b-4e2f-8524-c0222db66355")
+            )
+            final String jobId
+    ) throws DotDataException {
 
         // Initialize the WebResource and set required user information
         final var initDataObject =  new WebResource.InitBuilder(webResource)
@@ -342,15 +302,6 @@ public class ContentImportResource {
             summary = "Cancel a content import job",
             description = "Requests cancellation of a specific content import job identified by its ID. Note that cancellation is asynchronous and may not be immediate.",
             tags = {"Content Import"},
-            parameters = {
-                    @Parameter(
-                            name = "jobId",
-                            in = ParameterIn.PATH,
-                            required = true,
-                            description = "The unique identifier (UUID) of the job to be cancelled.",
-                            schema = @Schema(type = "string", format = "uuid", example = "e6d9bae8-657b-4e2f-8524-c0222db66355")
-                    )
-            },
             responses = {
                     @ApiResponse(
                             responseCode = "200",
@@ -377,11 +328,16 @@ public class ContentImportResource {
     public ResponseEntityView<String> cancelJob(
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
-            @PathParam("jobId") @Parameter(
-                    required = true,
-                    description = "The ID of the job whose status is to be retrieved",
-                    schema = @Schema(type = "string")
-            ) final String jobId) throws DotDataException {
+            @PathParam("jobId")
+            @Parameter(
+                name = "jobId",
+                in = ParameterIn.PATH,
+                required = true,
+                description = "The unique identifier (UUID) of the job to be cancelled.",
+                schema = @Schema(type = "string", format = "uuid", example = "e6d9bae8-657b-4e2f-8524-c0222db66355")
+            )
+            final String jobId
+    ) throws DotDataException {
         // Initialize the WebResource and set required user information
         final var initDataObject = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
@@ -414,22 +370,6 @@ public class ContentImportResource {
             summary = "Retrieves content import jobs",
             description = "Fetches a paginated list of all content import jobs regardless of state. Results can be paginated using query parameters.",
             tags = {"Content Import"},
-            parameters = {
-                    @Parameter(
-                            name = "page",
-                            in = ParameterIn.QUERY,
-                            description = "Page number to retrieve (1-based indexing).",
-                            schema = @Schema(type = "integer", defaultValue = "1", minimum = "1"),
-                            example = "1"
-                    ),
-                    @Parameter(
-                            name = "pageSize",
-                            in = ParameterIn.QUERY,
-                            description = "Number of records per page.",
-                            schema = @Schema(type = "integer", defaultValue = "20", minimum = "1", maximum = "100"),
-                            example = "20"
-                    )
-            },
             responses = {
                     @ApiResponse(
                             responseCode = "200",
@@ -447,7 +387,15 @@ public class ContentImportResource {
     public ResponseEntityView<JobViewPaginatedResult> listJobs(
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
+            @Parameter(
+                    description = "Page number to retrieve (1-based indexing).",
+                    example = "1"
+            )
             @QueryParam("page") @DefaultValue("1") final int page,
+            @Parameter(
+                    description = "Number of records per page.",
+                    example = "20"
+            )
             @QueryParam("pageSize") @DefaultValue("20") final int pageSize) {
 
         // Initialize the WebResource and set required user information
@@ -482,22 +430,6 @@ public class ContentImportResource {
             summary = "Retrieves active content import jobs",
             description = "Fetches a paginated list of active content import jobs (jobs with state NEW, PROCESSING, or WAITING). Results can be paginated using query parameters.",
             tags = {"Content Import"},
-            parameters = {
-                    @Parameter(
-                            name = "page",
-                            in = ParameterIn.QUERY,
-                            description = "Page number to retrieve (1-based indexing).",
-                            schema = @Schema(type = "integer", defaultValue = "1", minimum = "1"),
-                            example = "1"
-                    ),
-                    @Parameter(
-                            name = "pageSize",
-                            in = ParameterIn.QUERY,
-                            description = "Number of records per page.",
-                            schema = @Schema(type = "integer", defaultValue = "20", minimum = "1", maximum = "100"),
-                            example = "20"
-                    )
-            },
             responses = {
                     @ApiResponse(
                             responseCode = "200",
@@ -515,7 +447,15 @@ public class ContentImportResource {
     public ResponseEntityView<JobViewPaginatedResult> activeJobs(
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
+            @Parameter(
+                    description = "Page number to retrieve (1-based indexing).",
+                    example = "1"
+            )
             @QueryParam("page") @DefaultValue("1") final int page,
+            @Parameter(
+                    description = "Number of records per page.",
+                    example = "20"
+            )
             @QueryParam("pageSize") @DefaultValue("20") final int pageSize) {
 
         // Initialize the WebResource and set required user information
@@ -550,22 +490,6 @@ public class ContentImportResource {
             summary = "Retrieves completed content import jobs",
             description = "Fetches a paginated list of completed content import jobs (jobs with state COMPLETED). Results can be paginated using query parameters.",
             tags = {"Content Import"},
-            parameters = {
-                    @Parameter(
-                            name = "page",
-                            in = ParameterIn.QUERY,
-                            description = "Page number to retrieve (1-based indexing).",
-                            schema = @Schema(type = "integer", defaultValue = "1", minimum = "1"),
-                            example = "1"
-                    ),
-                    @Parameter(
-                            name = "pageSize",
-                            in = ParameterIn.QUERY,
-                            description = "Number of records per page.",
-                            schema = @Schema(type = "integer", defaultValue = "20", minimum = "1", maximum = "100"),
-                            example = "20"
-                    )
-            },
             responses = {
                     @ApiResponse(
                             responseCode = "200",
@@ -583,7 +507,15 @@ public class ContentImportResource {
     public ResponseEntityView<JobViewPaginatedResult> completedJobs(
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
+            @Parameter(
+                    description = "Page number to retrieve (1-based indexing).",
+                    example = "1"
+            )
             @QueryParam("page") @DefaultValue("1") final int page,
+            @Parameter(
+                    description = "Number of records per page.",
+                    example = "20"
+            )
             @QueryParam("pageSize") @DefaultValue("20") final int pageSize) {
 
         // Initialize the WebResource and set required user information
@@ -618,22 +550,6 @@ public class ContentImportResource {
             summary = "Retrieves canceled content import jobs",
             description = "Fetches a paginated list of canceled content import jobs (jobs with state CANCELED). Results can be paginated using query parameters.",
             tags = {"Content Import"},
-            parameters = {
-                    @Parameter(
-                            name = "page",
-                            in = ParameterIn.QUERY,
-                            description = "Page number to retrieve (1-based indexing).",
-                            schema = @Schema(type = "integer", defaultValue = "1", minimum = "1"),
-                            example = "1"
-                    ),
-                    @Parameter(
-                            name = "pageSize",
-                            in = ParameterIn.QUERY,
-                            description = "Number of records per page.",
-                            schema = @Schema(type = "integer", defaultValue = "20", minimum = "1", maximum = "100"),
-                            example = "20"
-                    )
-            },
             responses = {
                     @ApiResponse(
                             responseCode = "200",
@@ -651,7 +567,15 @@ public class ContentImportResource {
     public ResponseEntityView<JobViewPaginatedResult> canceledJobs(
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
+            @Parameter(
+                    description = "Page number to retrieve (1-based indexing).",
+                    example = "1"
+            )
             @QueryParam("page") @DefaultValue("1") final int page,
+            @Parameter(
+                    description = "Number of records per page.",
+                    example = "20"
+            )
             @QueryParam("pageSize") @DefaultValue("20") final int pageSize) {
 
         // Initialize the WebResource and set required user information
@@ -686,22 +610,6 @@ public class ContentImportResource {
             summary = "Retrieves failed content import jobs",
             description = "Fetches a paginated list of failed content import jobs (jobs with state FAILED). Results can be paginated using query parameters.",
             tags = {"Content Import"},
-            parameters = {
-                    @Parameter(
-                            name = "page",
-                            in = ParameterIn.QUERY,
-                            description = "Page number to retrieve (1-based indexing).",
-                            schema = @Schema(type = "integer", defaultValue = "1", minimum = "1"),
-                            example = "1"
-                    ),
-                    @Parameter(
-                            name = "pageSize",
-                            in = ParameterIn.QUERY,
-                            description = "Number of records per page.",
-                            schema = @Schema(type = "integer", defaultValue = "20", minimum = "1", maximum = "100"),
-                            example = "20"
-                    )
-            },
             responses = {
                     @ApiResponse(
                             responseCode = "200",
@@ -719,7 +627,15 @@ public class ContentImportResource {
     public ResponseEntityView<JobViewPaginatedResult> failedJobs(
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
+            @Parameter(
+                    description = "Page number to retrieve (1-based indexing).",
+                    example = "1"
+            )
             @QueryParam("page") @DefaultValue("1") final int page,
+            @Parameter(
+                    description = "Number of records per page.",
+                    example = "20"
+            )
             @QueryParam("pageSize") @DefaultValue("20") final int pageSize) {
 
         // Initialize the WebResource and set required user information
@@ -754,22 +670,6 @@ public class ContentImportResource {
             summary = "Retrieves abandoned content import jobs",
             description = "Fetches a paginated list of abandoned content import jobs (jobs with state ABANDONED). Results can be paginated using query parameters.",
             tags = {"Content Import"},
-            parameters = {
-                    @Parameter(
-                            name = "page",
-                            in = ParameterIn.QUERY,
-                            description = "Page number to retrieve (1-based indexing).",
-                            schema = @Schema(type = "integer", defaultValue = "1", minimum = "1"),
-                            example = "1"
-                    ),
-                    @Parameter(
-                            name = "pageSize",
-                            in = ParameterIn.QUERY,
-                            description = "Number of records per page.",
-                            schema = @Schema(type = "integer", defaultValue = "20", minimum = "1", maximum = "100"),
-                            example = "20"
-                    )
-            },
             responses = {
                     @ApiResponse(
                             responseCode = "200",
@@ -787,7 +687,16 @@ public class ContentImportResource {
     public ResponseEntityView<JobViewPaginatedResult> abandonedJobs(
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
+            @Parameter(
+                    description = "Page number to retrieve (1-based indexing).",
+                    example = "1"
+            )
             @QueryParam("page") @DefaultValue("1") final int page,
+
+            @Parameter(
+                    description = "Number of records per page.",
+                    example = "20"
+            )
             @QueryParam("pageSize") @DefaultValue("20") final int pageSize) {
 
         // Initialize the WebResource and set required user information
@@ -822,22 +731,6 @@ public class ContentImportResource {
             summary = "Retrieves successful content import jobs",
             description = "Fetches a paginated list of successful content import jobs (jobs with state COMPLETED and successful result). Results can be paginated using query parameters.",
             tags = {"Content Import"},
-            parameters = {
-                    @Parameter(
-                            name = "page",
-                            in = ParameterIn.QUERY,
-                            description = "Page number to retrieve (1-based indexing).",
-                            schema = @Schema(type = "integer", defaultValue = "1", minimum = "1"),
-                            example = "1"
-                    ),
-                    @Parameter(
-                            name = "pageSize",
-                            in = ParameterIn.QUERY,
-                            description = "Number of records per page.",
-                            schema = @Schema(type = "integer", defaultValue = "20", minimum = "1", maximum = "100"),
-                            example = "20"
-                    )
-            },
             responses = {
                     @ApiResponse(
                             responseCode = "200",
@@ -855,7 +748,15 @@ public class ContentImportResource {
     public ResponseEntityView<JobViewPaginatedResult> successfulJobs(
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
+            @Parameter(
+                    description = "Page number to retrieve (1-based indexing).",
+                    example = "1"
+            )
             @QueryParam("page") @DefaultValue("1") final int page,
+            @Parameter(
+                    description = "Number of records per page.",
+                    example = "20"
+            )
             @QueryParam("pageSize") @DefaultValue("20") final int pageSize) {
 
         // Initialize the WebResource and set required user information
@@ -890,15 +791,6 @@ public class ContentImportResource {
             summary = "Monitor a content import job in real-time",
             description = "Establishes a Server-Sent Events (SSE) connection to monitor the progress of a specific content import job in real-time. This endpoint will continuously send updates as the job progresses, including status changes and completion information.",
             tags = {"Content Import"},
-            parameters = {
-                    @Parameter(
-                            name = "jobId",
-                            in = ParameterIn.PATH,
-                            required = true,
-                            description = "The unique identifier (UUID) of the job to monitor.",
-                            schema = @Schema(type = "string", format = "uuid", example = "e6d9bae8-657b-4e2f-8524-c0222db66355")
-                    )
-            },
             responses = {
                     @ApiResponse(
                             responseCode = "200",
@@ -917,11 +809,16 @@ public class ContentImportResource {
     public EventOutput monitorJob(
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
-            @PathParam("jobId") @Parameter(
+            @PathParam("jobId")
+            @Parameter(
+                    name = "jobId",
+                    in = ParameterIn.PATH,
                     required = true,
-                    description = "The ID of the job whose status is to be retrieved",
-                    schema = @Schema(type = "string")
-            ) final String jobId) {
+                    description = "The unique identifier (UUID) of the job whose status is to be retrieved.",
+                    schema = @Schema(type = "string", format = "uuid", example = "e6d9bae8-657b-4e2f-8524-c0222db66355")
+            )
+            final String jobId
+    ) {
 
         // Initialize the WebResource and set required user information
         final var initDataObject = new WebResource.InitBuilder(webResource)
