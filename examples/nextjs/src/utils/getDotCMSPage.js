@@ -8,11 +8,11 @@ import {
 } from "./queries";
 
 export const getDotCMSPage = cache(async (path, searchParams = {}) => {
-    const { languageId = "1", mode = "LIVE" } = searchParams;
+    // Avoid passing mode if you have a read only auth token
+    const { mode, ...params } = searchParams;
     try {
         const pageData = await dotCMSClient.page.get(path, {
-            languageId,
-            mode,
+            ...params,
             graphql: {
                 content: {
                     blogs: blogQuery,
