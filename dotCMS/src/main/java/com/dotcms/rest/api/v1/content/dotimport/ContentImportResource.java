@@ -388,13 +388,11 @@ public class ContentImportResource {
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             @Parameter(
-                    description = "Page number to retrieve (1-based indexing).",
-                    example = "1"
+                    description = "Page number to retrieve (1-based indexing)."
             )
             @QueryParam("page") @DefaultValue("1") final int page,
             @Parameter(
-                    description = "Number of records per page.",
-                    example = "20"
+                    description = "Number of records per page."
             )
             @QueryParam("pageSize") @DefaultValue("20") final int pageSize) {
 
@@ -448,13 +446,11 @@ public class ContentImportResource {
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             @Parameter(
-                    description = "Page number to retrieve (1-based indexing).",
-                    example = "1"
+                    description = "Page number to retrieve (1-based indexing)."
             )
             @QueryParam("page") @DefaultValue("1") final int page,
             @Parameter(
-                    description = "Number of records per page.",
-                    example = "20"
+                    description = "Number of records per page."
             )
             @QueryParam("pageSize") @DefaultValue("20") final int pageSize) {
 
@@ -508,13 +504,11 @@ public class ContentImportResource {
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             @Parameter(
-                    description = "Page number to retrieve (1-based indexing).",
-                    example = "1"
+                    description = "Page number to retrieve (1-based indexing)."
             )
             @QueryParam("page") @DefaultValue("1") final int page,
             @Parameter(
-                    description = "Number of records per page.",
-                    example = "20"
+                    description = "Number of records per page."
             )
             @QueryParam("pageSize") @DefaultValue("20") final int pageSize) {
 
@@ -568,13 +562,11 @@ public class ContentImportResource {
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             @Parameter(
-                    description = "Page number to retrieve (1-based indexing).",
-                    example = "1"
+                    description = "Page number to retrieve (1-based indexing)."
             )
             @QueryParam("page") @DefaultValue("1") final int page,
             @Parameter(
-                    description = "Number of records per page.",
-                    example = "20"
+                    description = "Number of records per page."
             )
             @QueryParam("pageSize") @DefaultValue("20") final int pageSize) {
 
@@ -628,13 +620,11 @@ public class ContentImportResource {
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             @Parameter(
-                    description = "Page number to retrieve (1-based indexing).",
-                    example = "1"
+                    description = "Page number to retrieve (1-based indexing)."
             )
             @QueryParam("page") @DefaultValue("1") final int page,
             @Parameter(
-                    description = "Number of records per page.",
-                    example = "20"
+                    description = "Number of records per page."
             )
             @QueryParam("pageSize") @DefaultValue("20") final int pageSize) {
 
@@ -688,14 +678,12 @@ public class ContentImportResource {
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             @Parameter(
-                    description = "Page number to retrieve (1-based indexing).",
-                    example = "1"
+                    description = "Page number to retrieve (1-based indexing)."
             )
             @QueryParam("page") @DefaultValue("1") final int page,
 
             @Parameter(
-                    description = "Number of records per page.",
-                    example = "20"
+                    description = "Number of records per page."
             )
             @QueryParam("pageSize") @DefaultValue("20") final int pageSize) {
 
@@ -749,13 +737,11 @@ public class ContentImportResource {
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             @Parameter(
-                    description = "Page number to retrieve (1-based indexing).",
-                    example = "1"
+                    description = "Page number to retrieve (1-based indexing)."
             )
             @QueryParam("page") @DefaultValue("1") final int page,
             @Parameter(
-                    description = "Number of records per page.",
-                    example = "20"
+                    description = "Number of records per page."
             )
             @QueryParam("pageSize") @DefaultValue("20") final int pageSize) {
 
