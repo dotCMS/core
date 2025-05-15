@@ -1,8 +1,8 @@
-import { useEditMode } from "dotcms-react-sdk";
+import { useIsEditMode } from "@/hooks/isEditMode";
 const TRAVEL_BOT_KEY = "908b8a434ad7e539632b8db57f2967c0";
 
 export default function SimpleWidget({ widgetTitle, identifier, code }) {
-    const isEditMode = useEditMode();
+    const isEditMode = useIsEditMode();
     if (TRAVEL_BOT_KEY == identifier) {
         return (
             <div className="bg-white rounded-lg shadow-sm p-8 text-center max-w-lg mx-auto my-6">

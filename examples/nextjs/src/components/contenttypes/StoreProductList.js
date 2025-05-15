@@ -23,13 +23,13 @@ export default function StoreProductList({ widgetTitle, widgetCodeJSON }) {
 }
 
 function ProductCard({ product }) {
-    const { inode, title, retailPrice, salePrice, url } = product;
+    const { inode, title, retailPrice, salePrice } = product;
 
     const hasDiscount =
         salePrice && retailPrice && Number(salePrice) < Number(retailPrice);
 
     return (
-        <Link href={url} className="group">
+        <div className="group" onClick={() => alert("Selected Product: " + title)}>
             <div className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300 flex flex-col h-full">
                 <div className="relative aspect-square w-full overflow-hidden bg-gray-100">
                     <Image
@@ -75,6 +75,6 @@ function ProductCard({ product }) {
                     </div>
                 </div>
             </div>
-        </Link>
+        </div>
     );
 }
