@@ -5,7 +5,6 @@ import static com.dotmarketing.portlets.contentlet.model.Contentlet.STRUCTURE_IN
 import static com.dotmarketing.util.importer.HeaderValidationCodes.HEADERS_NOT_FOUND;
 import static com.dotmarketing.util.importer.ImportLineValidationCodes.LANGUAGE_NOT_FOUND;
 
-import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.elasticsearch.util.ESUtils;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.HostFolderField;
@@ -393,7 +392,7 @@ public class ImportUtil {
 
                         try {
 
-                            Logger.info(ImportUtil.class,
+                            Logger.debug(ImportUtil.class,
                                     "Line " + lineNumber + ": (" + params.csvReader().getRawRecord() + ").");
 
                             // Process language for line
@@ -442,7 +441,7 @@ public class ImportUtil {
                                     counters.incCommits();
                                     savepoint = null;
 
-                                    Logger.info(ImportUtil.class,
+                                    Logger.debug(ImportUtil.class,
                                             "Committed batch at line " + lineNumber + " after " +
                                                     successfulImports + " successful imports.");
                                 }
@@ -475,7 +474,7 @@ public class ImportUtil {
                                 HibernateUtil.rollbackSavepoint(savepoint);
                                 counters.incRollbacks();
 
-                                Logger.info(ImportUtil.class,
+                                Logger.debug(ImportUtil.class,
                                         "Rolled back to savepoint at line " + lineNumber);
                             }
 
@@ -512,7 +511,7 @@ public class ImportUtil {
                             successfulImports % params.commitGranularityOverride() != 0) {
                         handleBatchCommit(params.preview(), lineNumber);
                         counters.incCommits();
-                        Logger.info(ImportUtil.class,
+                        Logger.debug(ImportUtil.class,
                                 "Final commit at line " + lineNumber + " for remaining " +
                                         (successfulImports % params.commitGranularityOverride()) + " records.");
                     }
@@ -2609,31 +2608,6 @@ public class ImportUtil {
      * @throws DotSecurityException If the user does not have permission to access the requested
      *                              contentlet.
      */
-    private static List<Contentlet> searchByIdentifier(
-            final String identifier,
-            final Structure contentType,
-            final User user
-    ) throws DotDataException, DotSecurityException {
-
-        StringBuilder query = new StringBuilder()
-                .append("+structureName:").append(contentType.getVelocityVarName())
-                .append(" +working:true +deleted:false")
-                .append(" +identifier:").append(identifier);
-
-        List<ContentletSearch> contentsSearch = conAPI.searchIndex(query.toString(), 0, -1, null,
-                user, true);
-
-        if (contentsSearch == null || contentsSearch.isEmpty()) {
-            throw ImportLineException.builder()
-                    .message("Content not found with identifier")
-                    .code(ImportLineValidationCodes.CONTENT_NOT_FOUND.name())
-                    .invalidValue(identifier)
-                    .build();
-        }
-
-        return convertSearchResults(contentsSearch, user);
-    }
-
     private static List<Contentlet> searchByIdentifierFromDB(
             final String identifier,
             final Structure contentType,
