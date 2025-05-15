@@ -2,7 +2,7 @@ import { useIsEditMode } from "@/hooks/isEditMode";
 import ContactUs from "../forms/ContactUs";
 
 
-export default function Forms(contentlet) {
+export default function PageForm(contentlet) {
     const { formType } = contentlet;
     const isEditMode = useIsEditMode();
 
