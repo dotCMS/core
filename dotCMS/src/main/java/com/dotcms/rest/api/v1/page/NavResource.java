@@ -119,7 +119,7 @@ public class NavResource {
 
             final String path = (!uri.startsWith("/")) ? "/" + uri : uri;
             //Force NavTool to behave as Live when rendering items
-            PageMode.setPageMode(request, PageMode.LIVE);
+            PageMode.setPageMode(request, PageMode.LIVE, false);
             final NavTool tool = new NavTool();
             tool.init(ctx);
             final NavResult nav = tool.getNav(path, langId);
