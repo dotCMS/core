@@ -176,7 +176,7 @@ add_glowroot_agent() {
           fi
           CATALINA_OPTS="$CATALINA_OPTS -Dglowroot.conf.dir=$GLOWROOT_CONF_DIR"
           # We may want to modify these defaults
-          CATALINA_OPTS="$CATALINA_OPTS -Dglowroot.tmp.dir=${GLOWROOT_TMP_DIR:=$CATALINA_TMPDIR}"
+          CATALINA_OPTS="$CATALINA_OPTS -Dglowroot.tmp.dir=${GLOWROOT_TMP_DIR:=/tmp}"
           # Only used if when not using a collector
           CATALINA_OPTS="$CATALINA_OPTS -Dglowroot.data.dir=${GLOWROOT_DATA_DIR:=$GLOWROOT_SHARED_FOLDER/data}"
 
