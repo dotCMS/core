@@ -1,9 +1,12 @@
 package com.dotmarketing.util;
 
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.IDENTIFIER_KEY;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.STRUCTURE_INODE_KEY;
 import static com.dotmarketing.util.importer.HeaderValidationCodes.HEADERS_NOT_FOUND;
 import static com.dotmarketing.util.importer.ImportLineValidationCodes.LANGUAGE_NOT_FOUND;
 
 import com.dotcms.content.elasticsearch.util.ESUtils;
+import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.HostFolderField;
 import com.dotcms.contenttype.model.type.BaseContentType;
@@ -18,7 +21,6 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotValidationException;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.cache.FieldsCache;
@@ -83,6 +85,7 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.Lazy;
+import io.vavr.control.Try;
 import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
@@ -110,7 +113,6 @@ import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.juli.logging.Log;
 
 /**
  * Provides utility methods to import content into dotCMS. The data source is a
@@ -134,6 +136,7 @@ public class ImportUtil {
     private final static HostAPI hostAPI = APILocator.getHostAPI();
     private final static FolderAPI folderAPI = APILocator.getFolderAPI();
     private final static WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
+    private final static ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
 
     public static final String KEY_WARNINGS = "warnings";
     public static final String KEY_ERRORS = "errors";
@@ -294,8 +297,12 @@ public class ImportUtil {
     public static ImportResult importFileResult(final ImportFileParams params)
             throws DotRuntimeException, DotDataException {
 
-        Structure contentType = CacheLocator.getContentTypeCache()
-                .getStructureByInode(params.contentTypeInode());
+        final ContentType type = Try.of(()->contentTypeAPI.find(params.contentTypeInode())).getOrNull();
+        if (type == null) {
+            throw new DotDataValidationException("Content type not found for inode: " + params.contentTypeInode());
+        }
+        Structure contentType = new StructureTransformer(type).asStructure();
+
         List<Permission> contentTypePermissions = permissionAPI.getPermissions(contentType);
         List<UniqueFieldBean> uniqueFieldBeans = new ArrayList<>();
 
@@ -1666,10 +1673,8 @@ public class ImportUtil {
         fieldResults.categories().forEach(resultBuilder::addCategory);
         uniqueFieldBeans.addAll(fieldResults.uniqueFields());
 
-        final Map<Integer, Object> values = new HashMap<>();
-        final Set<Category> categories = new HashSet<>();
-        values.putAll(fieldResults.values());
-        categories.addAll(fieldResults.categories());
+        final Map<Integer, Object> values = new HashMap<>(fieldResults.values());
+        final Set<Category> categories = new HashSet<>(fieldResults.categories());
 
         if (fieldResults.ignoreLine()) {
             resultBuilder.setIgnoreLine(true);
@@ -1808,7 +1813,7 @@ public class ImportUtil {
             }
         }
 
-        ProcessedContentResult processResult = processContent(
+        final ProcessedContentResult processResult = processContent(
                 lineNumber,
                 contentlets,
                 resultBuilder.isNewContent(),
@@ -2572,7 +2577,7 @@ public class ImportUtil {
 
         if (UtilMethods.isSet(identifier)) {
             contentlets.addAll(
-                    searchByIdentifier(identifier, contentType, user));
+                    searchByIdentifierFromDB(identifier, contentType, user));
         } else if (urlValue != null && keyFields.isEmpty()) {
             // For HTMLPageAsset, we need to search by URL to math existing pages
             contentlets.addAll(searchByUrl(contentType, urlValue, siteAndFolder, language, user));
@@ -2608,21 +2613,19 @@ public class ImportUtil {
      * @throws DotSecurityException If the user does not have permission to access the requested
      *                              contentlet.
      */
-    private static List<Contentlet> searchByIdentifier(
+    private static List<Contentlet> searchByIdentifierFromDB(
             final String identifier,
             final Structure contentType,
             final User user
     ) throws DotDataException, DotSecurityException {
 
-        StringBuilder query = new StringBuilder()
-                .append("+structureName:").append(contentType.getVelocityVarName())
-                .append(" +working:true +deleted:false")
-                .append(" +identifier:").append(identifier);
+        final Contentlet contentlet = new Contentlet(Map.of(
+                IDENTIFIER_KEY, identifier,
+                STRUCTURE_INODE_KEY, contentType.getInode()
+        ));
 
-        List<ContentletSearch> contentsSearch = conAPI.searchIndex(query.toString(), 0, -1, null,
-                user, true);
-
-        if (contentsSearch == null || contentsSearch.isEmpty()) {
+        final List<Contentlet> allLanguages = conAPI.getAllLanguages(contentlet, false, user, true);
+        if (allLanguages == null || allLanguages.isEmpty()) {
             throw ImportLineException.builder()
                     .message("Content not found with identifier")
                     .code(ImportLineValidationCodes.CONTENT_NOT_FOUND.name())
@@ -2630,7 +2633,7 @@ public class ImportUtil {
                     .build();
         }
 
-        return convertSearchResults(contentsSearch, user);
+        return allLanguages.stream().map(Contentlet::new).collect(Collectors.toList());
     }
 
     /**
@@ -3051,7 +3054,7 @@ public class ImportUtil {
             final String[] line
     ) throws DotDataException, DotSecurityException, IOException, LanguageException {
 
-        ProcessedContentResultBuilder resultBuilder = new ProcessedContentResultBuilder();
+        final ProcessedContentResultBuilder resultBuilder = new ProcessedContentResultBuilder();
 
         for (Contentlet cont : contentlets) {
 
@@ -3333,14 +3336,11 @@ public class ImportUtil {
 
         cont.setLowIndexPriority(true);
 
-        final var validationResult = validateWorkflowExecution(lineNumber, wfActionId, cont, user,
-                resultBuilder);
-        if (validationResult.getLeft()) {
-            executeWorkflowAction(cont, categories, validationResult.getRight(), relationships,
-                    user);
+        final var validationResult = validateWorkflowExecution(lineNumber, wfActionId, cont, user, resultBuilder);
+        if (Boolean.TRUE.equals(validationResult.getLeft())) {
+            cont = executeWorkflowAction(cont, categories, validationResult.getRight(), relationships, user);
         } else {
-            cont = runWorkflowIfCould(user, contentTypePermissions, categories, cont,
-                    relationships);
+            cont = runWorkflowIfCould(user, contentTypePermissions, categories, cont, relationships);
         }
 
         processTagFields(cont, headers, values, siteAndFolder);
@@ -3623,7 +3623,7 @@ public class ImportUtil {
      * @throws DotDataException     If an error occurs during workflow execution or processing.
      * @throws DotSecurityException If a security-related exception occurs during execution.
      */
-    private static void executeWorkflowAction(
+    private static Contentlet executeWorkflowAction(
             final Contentlet cont,
             final List<Category> categories,
             final WorkflowAction executeWfAction,
@@ -3635,17 +3635,17 @@ public class ImportUtil {
         cont.setBoolProperty(Contentlet.SKIP_RELATIONSHIPS_VALIDATION,
                 relationships == null || relationships.getRelationshipsRecords().isEmpty());
 
-        workflowAPI.fireContentWorkflow(cont,
-                new ContentletDependencies.Builder()
-                        .respectAnonymousPermissions(Boolean.FALSE)
-                        .modUser(user)
-                        .relationships(relationships)
-                        .workflowActionId(executeWfAction.getId())
-                        .workflowActionComments("")
-                        .workflowAssignKey("")
-                        .categories(categories)
-                        .generateSystemEvent(Boolean.FALSE)
-                        .build());
+        return workflowAPI.fireContentWorkflow(cont,
+                    new ContentletDependencies.Builder()
+                            .respectAnonymousPermissions(Boolean.FALSE)
+                            .modUser(user)
+                            .relationships(relationships)
+                            .workflowActionId(executeWfAction.getId())
+                            .workflowActionComments("")
+                            .workflowAssignKey("")
+                            .categories(categories)
+                            .generateSystemEvent(Boolean.FALSE)
+                            .build());
     }
 
     /**
