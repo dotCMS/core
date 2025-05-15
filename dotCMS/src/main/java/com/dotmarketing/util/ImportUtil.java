@@ -6,6 +6,7 @@ import static com.dotmarketing.util.importer.HeaderValidationCodes.HEADERS_NOT_F
 import static com.dotmarketing.util.importer.ImportLineValidationCodes.LANGUAGE_NOT_FOUND;
 
 import com.dotcms.content.elasticsearch.util.ESUtils;
+import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.HostFolderField;
 import com.dotcms.contenttype.model.type.BaseContentType;
@@ -20,7 +21,6 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotValidationException;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.cache.FieldsCache;
@@ -85,6 +85,7 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.Lazy;
+import io.vavr.control.Try;
 import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
@@ -112,7 +113,6 @@ import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.juli.logging.Log;
 
 /**
  * Provides utility methods to import content into dotCMS. The data source is a
@@ -136,6 +136,7 @@ public class ImportUtil {
     private final static HostAPI hostAPI = APILocator.getHostAPI();
     private final static FolderAPI folderAPI = APILocator.getFolderAPI();
     private final static WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
+    private final static ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
 
     public static final String KEY_WARNINGS = "warnings";
     public static final String KEY_ERRORS = "errors";
@@ -296,8 +297,12 @@ public class ImportUtil {
     public static ImportResult importFileResult(final ImportFileParams params)
             throws DotRuntimeException, DotDataException {
 
-        Structure contentType = CacheLocator.getContentTypeCache()
-                .getStructureByInode(params.contentTypeInode());
+        final ContentType type = Try.of(()->contentTypeAPI.find(params.contentTypeInode())).getOrNull();
+        if (type == null) {
+            throw new DotDataValidationException("Content type not found for inode: " + params.contentTypeInode());
+        }
+        Structure contentType = new StructureTransformer(type).asStructure();
+
         List<Permission> contentTypePermissions = permissionAPI.getPermissions(contentType);
         List<UniqueFieldBean> uniqueFieldBeans = new ArrayList<>();
 
