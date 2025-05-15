@@ -235,7 +235,7 @@ src/
 │   ├── layout.js     # Root layout
 │   └── ...
 ├── components/ 
-│   └── contenttype/  # Components for rendering dotCMS contenttypes
+│   └── content-type/  # Components for rendering dotCMS Content Types
 ├── hooks/            # Custom React hooks
 ├── pages/            # Client-side page templates (can use React hooks)
 └── utils/            # Utility functions
@@ -250,7 +250,7 @@ This project uses Next.js with App Router for server-side rendering, but with so
 1. **App Router (src/app/)**: Contains all server-side rendered pages and routes. These components don't use React hooks directly due to Next.js 13+ restrictions. Learn more about the App Router [here](https://nextjs.org/docs/app).
 
 2. **Components (src/components/)**: 
-   - The `contenttype/` folder contains React components that render dotCMS content.
+   - The `content-type/` folder contains React components that render dotCMS content.
    - In dotCMS, a "Content Type" is like a data model (e.g., "Product", "BlogPost"), while a "Contentlet" is an actual content instance.
    - For each Content Type in dotCMS, you need a corresponding React component to render it.
    - For example, if you have a `MyCustomContent` content type in dotCMS, you would create a matching component in this folder to render it.
@@ -306,7 +306,7 @@ The rendering process for dotCMS content in Next.js involves several key compone
 
 1. **Page Templates**: Define the overall layout and structure
 2. **DotCMSBodyLayout**: A component that renders the page content structure
-3. **ContentType Components**: Custom React components that render specific contenttypes from dotCMS
+3. **Content Type Components**: Custom React components that render specific Content Types from dotCMS
 4. **useEditableDotCMSPage**: A hook that makes the page editable in the UVE
 
 When a page is rendered:
@@ -322,8 +322,8 @@ Here's how this looks in code:
 
 import { DotCMSBodyLayout, useEditableDotCMSPage } from "@dotcms/react/next";
 
-// Define custom components for specific contenttypes
-// The key is the contenttype variable name in dotCMS
+// Define custom components for specific Content Types
+// The key is the Content Type variable name in dotCMS
 const pageComponents = {
     dotCMSProductContent: MyCustomDotCMSProductComponent,
     dotCMSBlogPost: BlogPostComponent
@@ -346,26 +346,26 @@ export function MyPage({ page }) {
 > [!IMPORTANT]
 > - The `useEditableDotCMSPage` hook will not modify the `page` object outside the editor
 > - The `DotCMSBodyLayout` component renders both the page structure and content
-> - Custom components defined in `pageComponents` will be used to render specific contenttypes
+> - Custom components defined in `pageComponents` will be used to render Content Types
 
 Learn more about the `@dotcms/react` package [here](https://www.npmjs.com/package/@dotcms/react/v/next).
 
-#### ContentType to React Component Mapping
+#### Content Type to React Component Mapping
 
-One of the key concepts in this integration is mapping dotCMS contenttypes to React components. This mapping tells the framework which React component should render which type of content from dotCMS.
+One of the key concepts in this integration is mapping dotCMS Content Types to React components. This mapping tells the framework which React component should render which type of content from dotCMS.
 
 **How the mapping works:**
 
-1. Each key in the mapping object must match exactly with a contenttype variable name in dotCMS
-2. Each value is a React component that will be used to render that specific contenttype
+1. Each key in the mapping object must match exactly with a Content Type variable name in dotCMS
+2. Each value is a React component that will be used to render that specific Content Type
 3. When content is rendered, the contentlet data from dotCMS is passed as props to your component
 
 ```js
-// Example of mapping dotCMS contenttypes to React components
+// Example of mapping dotCMS Content Types to React components
 const pageComponents = {
-  // The key "DotCMSProduct" must match a contenttype variable name in dotCMS
+  // The key "DotCMSProduct" must match a Content Type variable name in dotCMS
   DotCMSProduct: ProductComponent,
-  // The key "DotCMSBlogPost" must match a contenttype variable name in dotCMS
+  // The key "DotCMSBlogPost" must match a Content Type variable name in dotCMS
   DotCMSBlogPost: BlogPostComponent
 }
 ```
@@ -375,14 +375,14 @@ const pageComponents = {
 1. When dotCMS content of type "DotCMSProduct" is encountered on a page:
    - The `ProductComponent` is rendered
    - The contentlet data is passed as props to `ProductComponent`
-2. Your component then has access to all fields defined in that contenttype
+2. Your component then has access to all fields defined in that Content Type
 
 Example of a component receiving contentlet data:
 
 ```jsx
 // The props passed to this component will be the contentlet data from dotCMS
 function ProductComponent(props) {
-  // Access fields defined in the DotCMSProduct contenttype
+  // Access fields defined in the DotCMSProduct Content Type
   const { title, price, description, image } = props;
   
   return (
