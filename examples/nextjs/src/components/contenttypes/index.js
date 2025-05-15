@@ -5,13 +5,14 @@ import BannerCarousel from './BannerCarousel';
 import Blog from './Blog';
 import CalendarEvent from './CalendarEvent';
 import CallToAction from './CallToAction';
-import ImageComponent from './Image';
-import Product from './Product';
-import WebPageContent from './WebPageContent';
-import VtlInclude from './VtlInclude';
-import PageForm from './PageForm';
-import StoreProductList from './StoreProductList';
 import CategoryFilter from './CategoryFilter';
+import SimpleWidget from './SimpleWidget';
+import ImageComponent from './Image';
+import PageForm from './PageForm';
+import Product from './Product';
+import StoreProductList from './StoreProductList';
+import VtlInclude from './VtlInclude';
+import WebPageContent from './WebPageContent';
 
 export const pageComponents = {
     Activity: Activity,
@@ -20,12 +21,13 @@ export const pageComponents = {
     Blog: Blog,
     calendarEvent: CalendarEvent,
     CallToAction: CallToAction,
+    CategoryFilter: CategoryFilter,
     CustomNoComponent: CustomNoComponent,
     Image: ImageComponent,
-    Product: Product,
-    webPageContent: WebPageContent,
-    VtlInclude: VtlInclude,
     PageForm: PageForm,
+    Product: Product,
+    SimpleWidget: SimpleWidget,
     StoreProductList: StoreProductList,
-    CategoryFilter: CategoryFilter,
+    VtlInclude: VtlInclude,
+    webPageContent: WebPageContent,
 };
