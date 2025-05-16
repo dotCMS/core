@@ -1,4 +1,4 @@
-import { CommonModule, NgOptimizedImage } from '@angular/common';
+import { NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { DotCMSBasicContentlet } from '@dotcms/types';
 
@@ -11,7 +11,7 @@ interface ImageContentlet extends DotCMSBasicContentlet {
 @Component({
     selector: 'app-image',
     standalone: true,
-    imports: [CommonModule, NgOptimizedImage],
+    imports: [NgOptimizedImage],
     template: `<div class="overflow-hidden relative mb-4 bg-white rounded shadow-lg group">
         <div class="relative w-full h-96 bg-gray-200">
             <img

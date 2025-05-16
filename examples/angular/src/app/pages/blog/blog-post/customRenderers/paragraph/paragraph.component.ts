@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input, signal } from '@angular/core';
+import { Component, Input, OnInit, signal } from '@angular/core';
 import { BlockEditorContent } from '@dotcms/types';
 
 @Component({
@@ -19,7 +19,7 @@ import { BlockEditorContent } from '@dotcms/types';
         }
     `
 })
-export class ParagraphComponent {
+export class ParagraphComponent implements OnInit {
     @Input() content!: BlockEditorContent;
 
     protected $text = signal<string>('');

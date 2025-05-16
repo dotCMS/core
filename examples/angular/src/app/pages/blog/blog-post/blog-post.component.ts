@@ -1,12 +1,4 @@
-import {
-    Component,
-    computed,
-    input,
-    OnChanges,
-    OnInit,
-    signal,
-    SimpleChanges
-} from '@angular/core';
+import { Component, computed, input, OnChanges, signal } from '@angular/core';
 
 import { DotCMSBlockEditorRendererComponent } from '@dotcms/angular/next';
 import { BlogContentlet } from '../blog.component';

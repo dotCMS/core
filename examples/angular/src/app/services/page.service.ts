@@ -20,7 +20,7 @@ export interface PageResponse<TPage extends DotCMSPageAsset, TContent> {
     error?: PageError;
 }
 
-export interface PageWithNavigation<TPage extends DotCMSPageAsset, TContent>
+export interface DotCMSCustomPageResponse<TPage extends DotCMSPageAsset, TContent>
     extends PageResponse<TPage, TContent> {
     nav?: DotcmsNavigationItem;
 }
@@ -42,7 +42,7 @@ export class PageService {
     getPageAsset<TPage extends DotCMSPageAsset, TContent>(
         route: ActivatedRoute,
         extraQueries?: DotCMSPageRequestParams['graphql']
-    ): Observable<PageWithNavigation<TPage, TContent>> {
+    ): Observable<DotCMSCustomPageResponse<TPage, TContent>> {
         const params = route.snapshot.queryParams;
         const url = route.snapshot.url.map((segment) => segment.path).join('/');
         const path = url || '/';

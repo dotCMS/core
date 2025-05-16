@@ -1,4 +1,4 @@
-import { Component, DestroyRef, inject } from '@angular/core';
+import { Component, DestroyRef, inject, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
 import { HeaderComponent } from '../../shared/components/header/header.component';
@@ -9,7 +9,7 @@ import { FooterComponent } from '../../shared/components/footer/footer.component
 import { BlogPostComponent } from './blog-post/blog-post.component';
 import { DotCMSPageAsset, DotCMSURLContentMap } from '@dotcms/types';
 import { EditablePageService } from '../../services/editable-page.service';
-import { ContentletImage, ExtraContent, FileAsset } from '../../shared/models';
+import { ContentletImage, ExtraContent } from '../../shared/models';
 
 export interface BlogContentlet extends DotCMSURLContentMap {
     blogContent: string;
@@ -34,7 +34,7 @@ export interface BlogPageAsset extends DotCMSPageAsset {
     providers: [EditablePageService],
     templateUrl: './blog.component.html'
 })
-export class BlogComponent {
+export class BlogComponent implements OnInit {
     readonly #route = inject(ActivatedRoute);
     readonly #destroyRef = inject(DestroyRef);
 
