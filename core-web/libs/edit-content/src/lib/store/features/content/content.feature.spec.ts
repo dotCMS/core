@@ -400,19 +400,54 @@ describe('ContentFeature', () => {
         });
 
         it('should call updateContentType and navigate to legacy edit page on success', fakeAsync(() => {
-            contentTypeService.updateContentType.mockReturnValue(of(CONTENT_TYPE_MOCK));
+            // Arrange
+            const workflow1 = {
+                archived: false,
+                creationDate: new Date(),
+                defaultScheme: false,
+                description: 'desc',
+                entryActionId: null,
+                id: 'workflow-1',
+                mandatory: false,
+                modDate: new Date(),
+                name: 'Workflow 1',
+                system: false
+            };
+            const workflow2 = {
+                archived: false,
+                creationDate: new Date(),
+                defaultScheme: false,
+                description: 'desc2',
+                entryActionId: null,
+                id: 'workflow-2',
+                mandatory: false,
+                modDate: new Date(),
+                name: 'Workflow 2',
+                system: false
+            };
+            const contentType = {
+                ...CONTENT_TYPE_MOCK,
+                id: 'st-123',
+                workflows: [workflow1, workflow2],
+                metadata: { foo: 'bar', CONTENT_EDITOR2_ENABLED: true }
+            };
+            patchState(store, { contentType });
+            contentTypeService.updateContentType.mockReturnValue(of(contentType));
 
+            // Act
             store.disableNewContentEditor();
             tick();
 
+            // Assert
             expect(contentTypeService.updateContentType).toHaveBeenCalledWith('st-123', {
-                clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
-                name: 'testContentType',
+                ...contentType,
                 metadata: {
+                    ...contentType.metadata,
                     CONTENT_EDITOR2_ENABLED: false
-                }
+                },
+                workflow: contentType.workflows.map((w: any) => w.id)
             });
-            expect(router.navigate).toHaveBeenCalledWith(['/c/content/', '123']);
+            expect(router.navigate).toHaveBeenCalledWith([`/c/content/`, '123']);
         }));
     });
 });
