@@ -1,32 +1,20 @@
-import { ErrorPage } from "@/components/error";
+import NotFound from "@/app/not-found";
+import { DetailPage } from "@/pages/DetailPage";
+import { getDotCMSPage } from "@/utils/getDotCMSPage";
 
-import { handleVanityUrlRedirect } from "@/utils/vanityUrlHandler";
-import { client } from "@/utils/dotcmsClient";
-import { getPageRequestParams } from "@dotcms/client";
-import { fetchNavData, fetchPageData } from "@/utils/page.utils";
-import { MyBlogPage } from "@/components/my-blog-page";
-
-/**
- * Generate metadata
- *
- * @export
- * @param {*} { params, searchParams }
- * @return {*}
- */
-export async function generateMetadata({ params, searchParams }) {
-    const path = params?.slug?.join("/");
-    const pageRequestParams = getPageRequestParams({
-        path: `blog/post/${path}`,
-        params: searchParams,
-    });
-
+export async function generateMetadata(props) {
+    const searchParams = await props.searchParams;
+    const params = await props.params;
     try {
-        const data = await client.page.get(pageRequestParams);
-        const page = data.page;
-        const title = page?.friendlyName || page?.title;
-
+        const path = params.slug[0];
+        const { pageAsset } = await getDotCMSPage(
+            `/blog/post/${path}`,
+            searchParams,
+        );
+        const urlContentMap = pageAsset?.urlContentMap;
+        const title = urlContentMap?.title || "Page not found";
         return {
-            title,
+            title: `${title} - Blog`,
         };
     } catch (e) {
         return {
@@ -35,34 +23,15 @@ export async function generateMetadata({ params, searchParams }) {
     }
 }
 
-export default async function Home({ searchParams, params }) {
-    const getPageData = async () => {
-        const path = params?.slug?.join("/");
-        console.log(path)
-        const pageParams = getPageRequestParams({
-            path: `blog/post/${path}`,
-            params: searchParams,
-        });
+export default async function Home(props) {
+    const params = await props.params;
+    const searchParams = await props.searchParams;
+    const path = params.slug[0];
+    const pageContent = await getDotCMSPage(`/blog/post/${path}`, searchParams);
 
-        const { pageAsset, error: pageError } = await fetchPageData(pageParams);
-        const { nav, error: navError } = await fetchNavData(pageParams.language_id);
-
-        return {
-            nav,
-            pageAsset,
-            error: pageError || navError,
-        };
-    };
-    const { pageAsset, nav, error } = await getPageData();
-
-    // Move this to MyPage
-    if (error) {
-        return <ErrorPage error={error} />;
+    if (!pageContent) {
+        return <NotFound />;
     }
 
-    if (pageAsset?.vanityUrl) {
-        handleVanityUrlRedirect(pageAsset?.vanityUrl);
-    }
-
-    return <MyBlogPage nav={nav?.entity.children} initialPageAsset={pageAsset} />;
+    return <DetailPage pageContent={pageContent} />;
 }

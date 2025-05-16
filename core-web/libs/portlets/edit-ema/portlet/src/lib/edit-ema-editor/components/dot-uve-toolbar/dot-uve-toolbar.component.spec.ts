@@ -741,6 +741,15 @@ describe('DotUveToolbarComponent', () => {
                 });
             });
 
+            it('should change the date to today when button "Today" is clicked', () => {
+                const calendar = spectator.query('p-calendar');
+
+                spectator.triggerEventHandler('p-calendar', 'click', new Event('click'));
+
+                expect(calendar.getAttribute('ng-reflect-model')).toBeDefined();
+                expect(new Date(calendar.getAttribute('ng-reflect-model'))).toEqual(new Date());
+            });
+
             it('should track event on date when date is selected', () => {
                 const spyTrackUVECalendarChange = jest.spyOn(
                     baseUVEState,

@@ -56,7 +56,7 @@ public class NavigationDataFetcher implements DataFetcher<Map<String, Object>>  
 
         final String path = (!uri.startsWith(StringPool.FORWARD_SLASH)) ? StringPool.FORWARD_SLASH + uri : uri;
         //Force NavTool to behave as Live when rendering items
-        PageMode.setPageMode(request, PageMode.LIVE);
+        PageMode.setPageMode(request, PageMode.LIVE, false);
         final NavTool tool = new NavTool();
         tool.init(ctx);
         final NavResult nav = tool.getNav(path, languageId);

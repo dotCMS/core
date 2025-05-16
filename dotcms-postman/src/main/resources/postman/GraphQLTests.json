@@ -1,10 +1,10 @@
 {
 	"info": {
-		"_postman_id": "c3b5b111-fcba-47b0-96d8-dc6415d12098",
+		"_postman_id": "2a46e009-62aa-4844-883c-646ab8123846",
 		"name": "GraphQL",
 		"description": "This suite verifies that the GraphQL REST Endpoint is working as expected.\n\n[GraphQL](https://graphql.org/) is an open query language which allows you to perform real-type dynamic queries which specify exactly what data you want, and in what order. The dotCMS GraphQL content delivery API has a number of advantages over querying content via REST:\n\n- A single endpoint to query all content: `api/v1/graphql`.\n    \n- Self documenting via schema introspection.\n    \n- No over-fetching of data (e.g. unneeded fields).\n    \n- No need for multiple requests to get combined data.\n    \n- Client control over both the query and the data received.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "5403727"
+		"_exporter_id": "781456"
 	},
 	"item": [
 		{
@@ -2155,7 +2155,7 @@
 											"    pm.expect(container1.parentPermissionable.hostName, 'FAILED:[container1.parentPermissionable.hostName]').equal(\"demo.dotcms.com\");",
 											"    pm.expect(container1.path, 'FAILED:[container1.path]').equal(\"//demo.dotcms.com/application/containers/default/\");",
 											"    pm.expect(container1.permissionId, 'FAILED:[container1.permissionId]').equal(\"69b3d24d-7e80-4be6-b04a-d352d16493ee\");",
-											"    pm.expect(container1.permissionType, 'FAILED:[container1.permissionType]').equal(\"com.dotmarketing.portlets.containers.model.FileAssetContainer\");",
+											"    pm.expect(container1.permissionType, 'FAILED:[container1.permissionType]').equal(\"com.dotmarketing.portlets.contentlet.model.Contentlet\");",
 											"    pm.expect(container1.postLoop, 'FAILED:[container1.postLoop]').equal(\"#dotParse(\\\"//demo.dotcms.com/application/containers/default/postloop.vtl\\\")\");",
 											"    pm.expect(container1.preLoop, 'FAILED:[container1.preLoop]').equal(\"#dotParse(\\\"//demo.dotcms.com/application/containers/default/preloop.vtl\\\")\");",
 											"    pm.expect(container1.showOnMenu, 'FAILED:[container1.showOnMenu]').equal(false);",
@@ -2324,7 +2324,7 @@
 											"    pm.expect(container1.parentPermissionable.hostName, 'FAILED:[container1.parentPermissionable.hostName]').equal(\"demo.dotcms.com\");",
 											"    pm.expect(container1.path, 'FAILED:[container1.path]').equal(\"//demo.dotcms.com/application/containers/default/\");",
 											"    pm.expect(container1.permissionId, 'FAILED:[container1.permissionId]').equal(\"69b3d24d-7e80-4be6-b04a-d352d16493ee\");",
-											"    pm.expect(container1.permissionType, 'FAILED:[container1.permissionType]').equal(\"com.dotmarketing.portlets.containers.model.FileAssetContainer\");",
+											"    pm.expect(container1.permissionType, 'FAILED:[container1.permissionType]').equal(\"com.dotmarketing.portlets.contentlet.model.Contentlet\");",
 											"    pm.expect(container1.postLoop, 'FAILED:[container1.postLoop]').equal(\"#dotParse(\\\"//demo.dotcms.com/application/containers/default/postloop.vtl\\\")\");",
 											"    pm.expect(container1.preLoop, 'FAILED:[container1.preLoop]').equal(\"#dotParse(\\\"//demo.dotcms.com/application/containers/default/preloop.vtl\\\")\");",
 											"    pm.expect(container1.showOnMenu, 'FAILED:[container1.showOnMenu]').equal(false);",
