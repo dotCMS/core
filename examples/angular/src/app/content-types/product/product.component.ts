@@ -17,7 +17,7 @@ interface ProductContentlet extends DotCMSBasicContentlet {
     selector: 'app-product',
     standalone: true,
     imports: [RouterLink, NgOptimizedImage],
-    template: ` <div class="overflow-hidden bg-white rounded shadow-lg">
+    template: ` <div class="overflow-hidden bg-white rounded shadow-lg my-2">
         <div class="p-4">
             @if (contentlet().image?.versionPath; as imageVersionPath) {
             <img

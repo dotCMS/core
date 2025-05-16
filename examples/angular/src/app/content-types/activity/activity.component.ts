@@ -16,7 +16,7 @@ interface ActivityContentlet extends DotCMSBasicContentlet {
     selector: 'app-activity',
     standalone: true,
     imports: [RouterLink, NgOptimizedImage],
-    template: ` <article class="overflow-hidden p-4 bg-white rounded-sm shadow-lg mb-4">
+    template: ` <article class="overflow-hidden p-4 bg-white rounded-sm shadow-lg my-2">
         @if (contentlet().image?.identifier; as imageIdentifier) {
         <div class="relative w-full h-56 overflow-hidden">
             <img
