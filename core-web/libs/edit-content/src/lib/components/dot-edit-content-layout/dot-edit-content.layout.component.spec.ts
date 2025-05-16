@@ -208,30 +208,6 @@ describe('EditContentLayoutComponent', () => {
                 expect(spectator.query(byTestId('edit-content-layout__beta-message'))).toBeFalsy();
             }));
 
-            // it('should call $store.disableNewContentEditor and prevent default when beta message link is clicked', fakeAsync(() => {
-            //     spectator.detectChanges();
-            //     tick();
-
-            //     const link = spectator.query(byTestId('edit-content-layout__beta-message-link')) as HTMLAnchorElement;
-            //     expect(link).toBeTruthy();
-
-            //     // Spy on the store method
-            //     const disableNewContentEditorSpy = jest.spyOn(store, 'disableNewContentEditor');
-
-            //     // Create a fake event with preventDefault
-            //     const event = new MouseEvent('click');
-            //     Object.defineProperty(event, 'preventDefault', { value: jest.fn() });
-
-            //     // Dispatch the event
-            //     link.dispatchEvent(event);
-
-            //     expect(event.preventDefault).toHaveBeenCalled();
-            //     expect(disableNewContentEditorSpy).toHaveBeenCalled();
-
-            //     // Flush any remaining timers
-            //     tick(1000); // or just tick() or flush() if available
-            // }));
-
             it('should have correct link to old editor', async () => {
                 // Initialize the content type
                 dotContentTypeService.getContentType.mockReturnValue(of(CONTENT_TYPE_MOCK));
