@@ -1,20 +1,52 @@
-import { Component, Input } from '@angular/core';
-import { BlockEditorContent, Contentlet } from '@dotcms/types';
+import { Component, computed, input, OnChanges, signal } from '@angular/core';
+
 import { DotCMSBlockEditorRendererComponent } from '@dotcms/angular/next';
-import { BlogContentlet } from '../../services/page.service';
-
+import { BlogContentlet } from '../blog.component';
+import { BlockEditorContent, UVE_MODE } from '@dotcms/types';
+import { NgOptimizedImage } from '@angular/common';
+import { enableBlockEditorInline, getUVEState } from '@dotcms/uve';
 @Component({
-  selector: 'app-blog-post',
-  standalone: true,
-  imports: [DotCMSBlockEditorRendererComponent],
-  templateUrl: './blog-post.component.html',
-  styleUrl: './blog-post.component.css'
+    selector: 'app-blog-post',
+    standalone: true,
+    imports: [DotCMSBlockEditorRendererComponent, NgOptimizedImage],
+    templateUrl: './blog-post.component.html',
+    styleUrl: './blog-post.component.css'
 })
-export class BlogPostComponent {
-  @Input() post!: BlogContentlet
+export class BlogPostComponent implements OnChanges {
+    post = input.required<BlogContentlet>();
 
-  customRenderers = {
-    // 'paragraph': import('./customRenderers/paragraph/paragraph.component').then(c => c.ParagraphComponent),
-    'Activity': import('./customRenderers/activity/activity.component').then(c => c.ActivityComponent)
-  }
+    postContent = computed(() => {
+        const content = JSON.parse(this.post().blogContent);
+
+        return content as BlockEditorContent;
+    });
+
+    get isEditMode() {
+        return getUVEState()?.mode === UVE_MODE.EDIT;
+    }
+
+    blockEditorClasses = signal<string>('');
+
+    ngOnChanges(): void {
+        if (this.isEditMode) {
+            this.blockEditorClasses.set(
+                'prose lg:prose-xl prose-a:text-red-500 border-2 border-solid border-red-400 cursor-pointer'
+            );
+        } else {
+            this.blockEditorClasses.set('prose lg:prose-xl prose-a:text-red-500');
+        }
+    }
+
+    customRenderers = {
+        // 'paragraph': import('./customRenderers/paragraph/paragraph.component').then(c => c.ParagraphComponent),
+        Activity: import('./customRenderers/activity/activity.component').then(
+            (c) => c.ActivityComponent
+        )
+    };
+
+    editPost() {
+        if (this.isEditMode) {
+            enableBlockEditorInline(this.post(), 'blogContent');
+        }
+    }
 }

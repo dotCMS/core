@@ -1,15 +1,15 @@
-import { CommonModule } from "@angular/common";
-import { Component, Input, signal } from "@angular/core";
-import { ContentNode } from "@dotcms/uve/types";
+import { CommonModule } from '@angular/common';
+import { Component, Input, OnInit, signal } from '@angular/core';
+import { BlockEditorContent } from '@dotcms/types';
 
 @Component({
     selector: 'app-paragraph',
     standalone: true,
     imports: [CommonModule],
     template: `
-    <p>
-        {{ $text() }}
-    </p>
+        <p>
+            {{ $text() }}
+        </p>
     `,
     styles: `
         p {
@@ -19,18 +19,17 @@ import { ContentNode } from "@dotcms/uve/types";
         }
     `
 })
-export class ParagraphComponent {
-    @Input() content!: ContentNode;
+export class ParagraphComponent implements OnInit {
+    @Input() content!: BlockEditorContent;
 
     protected $text = signal<string>('');
 
     ngOnInit() {
-
-        if(!this.content.content) {   
-            return
+        if (!this.content.content) {
+            return;
         }
 
         const [{ text }] = this.content.content;
         this.$text.set(text ?? '');
     }
-} 
+}

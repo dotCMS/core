@@ -1,0 +1,90 @@
+import { inject, Injectable } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
+import { from, Observable, of } from 'rxjs';
+import { catchError, map } from 'rxjs/operators';
+
+import { getUVEState } from '@dotcms/uve';
+
+import {
+    DotcmsNavigationItem,
+    DotCMSPageAsset,
+    DotCMSPageRequestParams,
+    DotCMSComposedPageResponse
+} from '@dotcms/types';
+
+import { DOTCMS_CLIENT_TOKEN } from '../app.config';
+import { PageError } from '../shared/models';
+
+export interface PageResponse<TPage extends DotCMSPageAsset, TContent> {
+    response?: DotCMSComposedPageResponse<{ pageAsset: TPage; content: TContent }>;
+    error?: PageError;
+}
+
+export interface DotCMSCustomPageResponse<TPage extends DotCMSPageAsset, TContent>
+    extends PageResponse<TPage, TContent> {
+    nav?: DotcmsNavigationItem;
+}
+
+@Injectable({
+    providedIn: 'root'
+})
+export class PageService {
+    private readonly client = inject(DOTCMS_CLIENT_TOKEN);
+
+    /**
+     * Get the page and navigation for the given route and config.
+     *
+     * @param {ActivatedRoute} route
+     * @param {*} config
+     * @return {*}  {(Observable<{ page: DotCMSPageAsset | { error: PageError }; nav: DotcmsNavigationItem }>)}
+     * @memberof PageService
+     */
+    getPageAsset<TPage extends DotCMSPageAsset, TContent>(
+        route: ActivatedRoute,
+        extraQueries?: DotCMSPageRequestParams['graphql']
+    ): Observable<DotCMSCustomPageResponse<TPage, TContent>> {
+        const params = route.snapshot.queryParams;
+        const url = route.snapshot.url.map((segment) => segment.path).join('/');
+        const path = url || '/';
+
+        return from(
+            this.client.page.get<{ pageAsset: TPage; content: TContent }>(path, {
+                ...params,
+                graphql: {
+                    ...extraQueries
+                }
+            })
+        ).pipe(
+            map((response: DotCMSComposedPageResponse<{ pageAsset: TPage; content: TContent }>) => {
+                if (!response?.pageAsset?.layout) {
+                    return {
+                        error: {
+                            message:
+                                'You might be using an advanced template, or your dotCMS instance might lack an enterprise license.',
+                            status: 'Page without layout'
+                        }
+                    };
+                }
+
+                return {
+                    response
+                };
+            }),
+            catchError((error) => {
+                // If the page is not found and we are inside the editor, return an empty object
+                // The editor will get the working/unpublished page
+                if (error.status === 404 && getUVEState()) {
+                    return of({ response: {} } as PageResponse<TPage, TContent>);
+                }
+
+                return of({
+                    response: {} as DotCMSComposedPageResponse<{
+                        pageAsset: TPage;
+                        content: TContent;
+                    }>,
+                    error
+                });
+            })
+        );
+    }
+}

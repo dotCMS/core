@@ -14,7 +14,7 @@ import Footer from "@/components/footer/Footer";
 import Header from "@/components/Header";
 
 export function DetailPage({ pageContent }) {
-    const [twActives, setTwActives] = useState(
+    const [blockEditorClasses, setBlockEditorClasses] = useState(
         "prose lg:prose-xl prose-a:text-blue-600",
     );
     const { pageAsset, content } = useEditableDotCMSPage(pageContent);
@@ -25,7 +25,7 @@ export function DetailPage({ pageContent }) {
 
     useEffect(() => {
         if (isEditMode) {
-            setTwActives((prev) => {
+            setBlockEditorClasses((prev) => {
                 return `${prev} border-2 border-solid border-cyan-400 cursor-pointer`;
             });
         }
@@ -57,7 +57,7 @@ export function DetailPage({ pageContent }) {
                 <div onClick={handleClick}>
                     <DotCMSBlockEditorRenderer
                         blocks={JSON.parse(blogContent)}
-                        className={twActives}
+                        className={blockEditorClasses}
                         customRenderers={customeRenderers}
                     />
                 </div>

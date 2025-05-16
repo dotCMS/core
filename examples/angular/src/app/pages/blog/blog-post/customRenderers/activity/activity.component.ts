@@ -1,4 +1,4 @@
-import { Component, Input } from "@angular/core";
+import { Component, Input } from '@angular/core';
 
 // You can define the type of the contentlet in the component
 interface Activity {
