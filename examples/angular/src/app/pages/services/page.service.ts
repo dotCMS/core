@@ -1,6 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { forkJoin, from, Observable, of, shareReplay } from 'rxjs';
+import { from, Observable, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 
 import { getUVEState } from '@dotcms/uve';
@@ -43,19 +43,6 @@ export class PageService {
         route: ActivatedRoute,
         extraQueries?: DotCMSPageRequestParams['graphql']
     ): Observable<PageWithNavigation<TPage, TContent>> {
-        return this.fetchPage<TPage, TContent>(route, extraQueries).pipe(
-            map((pageAsset) => {
-                const { response, error } = pageAsset;
-
-                return { response, error };
-            })
-        );
-    }
-
-    private fetchPage<TPage extends DotCMSPageAsset, TContent>(
-        route: ActivatedRoute,
-        extraQueries: DotCMSPageRequestParams['graphql'] = {}
-    ): Observable<PageResponse<TPage, TContent>> {
         const params = route.snapshot.queryParams;
         const url = route.snapshot.url.map((segment) => segment.path).join('/');
         const path = url || '/';
@@ -68,7 +55,7 @@ export class PageService {
                 }
             })
         ).pipe(
-            map((response) => {
+            map((response: DotCMSComposedPageResponse<{ pageAsset: TPage; content: TContent }>) => {
                 if (!response?.pageAsset?.layout) {
                     return {
                         error: {
@@ -80,10 +67,7 @@ export class PageService {
                 }
 
                 return {
-                    response: response as DotCMSComposedPageResponse<{
-                        pageAsset: TPage;
-                        content: TContent;
-                    }>
+                    response
                 };
             }),
             catchError((error) => {

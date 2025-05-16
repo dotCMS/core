@@ -5,7 +5,7 @@ import { DotCMSPageAsset, DotCMSPageRequestParams } from '@dotcms/types';
 import { filter, map, startWith, switchMap, tap } from 'rxjs/operators';
 import { PageService } from './page.service';
 import { DotCMSEditablePageService } from '@dotcms/angular/next';
-import { BASE_EXTRA_QUERIES } from '../../shared/constants';
+import { BASE_EXTRA_QUERIES } from '../../shared/queries';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { getUVEState } from '@dotcms/uve';
 import { ComposedPageResponse, ExtraContent, PageRender } from '../../shared/models';
@@ -29,8 +29,6 @@ export class EditablePageService<
         status: 'idle'
     });
 
-    readonly $components = signal<any>({});
-
     /**
      * Initialize page loading for the current route
      * Call this method from a component's ngOnInit
@@ -40,16 +38,12 @@ export class EditablePageService<
     initializePage({
         activateRoute,
         destroyRef,
-        components = DYNAMIC_COMPONENTS,
         extraQuery = BASE_EXTRA_QUERIES
     }: {
         activateRoute: ActivatedRoute;
         destroyRef: DestroyRef;
-        components?: any;
         extraQuery?: DotCMSPageRequestParams['graphql'];
     }): Observable<void> {
-        this.$components.set(components);
-
         this.#setLoading();
 
         return this.#router.events.pipe(
@@ -67,16 +61,17 @@ export class EditablePageService<
                     return;
                 }
 
-                if (getUVEState()) {
-                    this.#dotcmsEditablePageService
-                        .listen(response)
-                        .pipe(takeUntilDestroyed(destroyRef))
-                        .subscribe((page) => {
-                            this.#setPageContent(page as ComposedPageResponse<TPage, TContent>);
-                        });
-                } else {
+                if (!getUVEState()) {
                     this.#setPageContent(response as ComposedPageResponse<TPage, TContent>);
+                    return;
                 }
+
+                this.#dotcmsEditablePageService
+                    .listen(response)
+                    .pipe(takeUntilDestroyed(destroyRef))
+                    .subscribe((page) => {
+                        this.#setPageContent(page as ComposedPageResponse<TPage, TContent>);
+                    });
             }),
             // Transform to void to simplify the API
             map(() => undefined)

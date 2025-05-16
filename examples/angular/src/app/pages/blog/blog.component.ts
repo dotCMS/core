@@ -50,8 +50,7 @@ export class BlogComponent {
         this.#editablePageService
             .initializePage({
                 activateRoute: this.#route,
-                destroyRef: this.#destroyRef,
-                components: DYNAMIC_COMPONENTS
+                destroyRef: this.#destroyRef
             })
             .subscribe();
     }

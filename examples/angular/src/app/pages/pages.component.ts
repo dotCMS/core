@@ -38,14 +38,13 @@ export class DotCMSPagesComponent implements OnInit {
 
     readonly $context = this.#editablePageService.$context;
 
-    readonly $components = this.#editablePageService.$components;
+    readonly components = DYNAMIC_COMPONENTS;
 
     ngOnInit() {
         this.#editablePageService
             .initializePage({
                 activateRoute: this.#activateRoute,
-                destroyRef: this.#destroyRef,
-                components: DYNAMIC_COMPONENTS
+                destroyRef: this.#destroyRef
             })
             .subscribe();
     }

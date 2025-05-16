@@ -1,5 +1,5 @@
 import { NgOptimizedImage } from '@angular/common';
-import { ChangeDetectionStrategy, Component, input, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, OnInit } from '@angular/core';
 
 import { RouterLink } from '@angular/router';
 import { DotCMSBasicContentlet } from '@dotcms/types';
@@ -31,11 +31,11 @@ interface ProductContentlet extends DotCMSBasicContentlet {
         <div class="px-6 py-4 bg-slate-100">
             <div class="mb-2 text-xl font-bold">{{ contentlet().title }}</div>
             @if (contentlet().retailPrice && contentlet().salePrice) {
-            <div class="text-gray-500 line-through">{{ retailPrice }}</div>
-            <div class="text-3xl font-bold">{{ salePrice }}</div>
+            <div class="text-gray-500 line-through">{{ $retailPrice() }}</div>
+            <div class="text-3xl font-bold">{{ $salePrice() }}</div>
             } @else {
             <div class="text-3xl font-bold">
-                {{ contentlet()['retailPrice'] ? retailPrice : salePrice }}
+                {{ contentlet()['retailPrice'] ? $retailPrice() : $salePrice() }}
             </div>
             }
             <a
@@ -51,9 +51,11 @@ interface ProductContentlet extends DotCMSBasicContentlet {
 export class ProductComponent {
     contentlet = input.required<ProductContentlet>();
 
-    protected get salePrice() {
-        return this.formatPrice(this.contentlet().salePrice);
-    }
+
+
+    $salePrice = computed(() => this.formatPrice(this.contentlet().salePrice));
+
+    $retailPrice = computed(() => this.formatPrice(this.contentlet().retailPrice));
 
     protected get retailPrice() {
         return this.formatPrice(this.contentlet().retailPrice);

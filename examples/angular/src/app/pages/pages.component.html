@@ -14,7 +14,7 @@
         } @else if (vm.status === 'error' && vm.error) {
         <app-error [$error]="vm.error" />
         } @else if (vm.status === 'success' && vm.pageResponse) {
-        <dotcms-layout-body [page]="vm.pageResponse.pageAsset" [components]="$components()" />
+        <dotcms-layout-body [page]="vm.pageResponse.pageAsset" [components]="components" />
         } @else {
         <!-- Add a fallback for unexpected states -->
         <p>Unexpected state encountered.</p>
