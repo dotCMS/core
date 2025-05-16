@@ -32,8 +32,7 @@ export interface BlogPageAsset extends DotCMSPageAsset {
         BlogPostComponent
     ],
     providers: [EditablePageService],
-    templateUrl: './blog.component.html',
-    styleUrl: './blog.component.css'
+    templateUrl: './blog.component.html'
 })
 export class BlogComponent {
     readonly #route = inject(ActivatedRoute);
