@@ -4,6 +4,7 @@ import org.apache.commons.io.IOUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.TarUtil;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.util.FileUtil;
 import java.io.BufferedInputStream;
@@ -34,18 +35,9 @@ public class PushUtils {
 		throws IOException
 	{
 		Logger.info(PushUtils.class, "Compressing "+files.size() + " to "+output.getAbsoluteFile());
-	               // Create the output stream for the output file
 
-		// try-with-resources handles close of streams
-		try(OutputStream fos = Files.newOutputStream(output.toPath());
-			// Wrap the output file stream in streams that will tar and gzip everything
-			TarArchiveOutputStream taos = new TarArchiveOutputStream(
-				new GZIPOutputStream(new BufferedOutputStream(fos))) ) {
-
-			taos.setBigNumberMode(TarArchiveOutputStream.BIGNUMBER_STAR);
-			// TAR originally didn't support long file names, so enable the support for it
-			taos.setLongFileMode(TarArchiveOutputStream.LONGFILE_GNU);
-
+		// Use TarUtil to create a secured TAR.GZ output stream
+		try(TarArchiveOutputStream taos = TarUtil.createTarGzOutputStream(output)) {
 			// Get to putting all the files in the compressed output file
 			for (File f : files) {
 				addFilesToCompression(taos, f, ".", bundleRoot);
@@ -71,18 +63,9 @@ public class PushUtils {
         final List<File> files = FileUtil.listFilesRecursively(directory);
 
         Logger.info(PushUtils.class, "Compressing " + files.size() + " to " + tempFile.getAbsoluteFile());
-        // Create the output stream for the output file
 
-        // try-with-resources handles close of streams
-        try (final OutputStream fileOutputStream = Files.newOutputStream(tempFile.toPath());
-                        // Wrap the output file stream in streams that will tar and gzip everything
-                        final TarArchiveOutputStream tarArchiveOutputStream = new TarArchiveOutputStream(
-                                        new GZIPOutputStream(new BufferedOutputStream(fileOutputStream)))) {
-
-			tarArchiveOutputStream.setBigNumberMode(TarArchiveOutputStream.BIGNUMBER_STAR);
-            // TAR originally didn't support long file names, so enable the support for it
-			tarArchiveOutputStream.setLongFileMode(TarArchiveOutputStream.LONGFILE_GNU);
-
+        // Use TarUtil to create a secured TAR.GZ output stream
+        try (TarArchiveOutputStream tarArchiveOutputStream = TarUtil.createTarGzOutputStream(tempFile)) {
             // Get to putting all the files in the compressed output file
             for (final File file : files) {
                 addFilesToCompression(tarArchiveOutputStream, file, ".", directory.getAbsolutePath());
@@ -99,7 +82,8 @@ public class PushUtils {
 	 *
 	 * @param taos The archive
 	 * @param file The file to add to the archive
-	        * @param dir The directory that should serve as the parent directory in the archivew
+	 * @param dir The directory that should serve as the parent directory in the archive
+	 * @param bundleRoot The root directory path to check for directory traversal
 	 * @throws IOException
 	 */
 	private static void addFilesToCompression(TarArchiveOutputStream taos, File file, String dir, String bundleRoot)
@@ -109,35 +93,39 @@ public class PushUtils {
 	        throw new DotRuntimeException("Directory Traversal Warning: You can only tar files that are under the directory:" + bundleRoot + " found " + file.getAbsolutePath() );
 	    }
 	    
-	    
-	    
-	    	if(!file.isHidden()) {
-	    		// Create an entry for the file
-	    		if(!dir.equals("."))
-	    			if(File.separator.equals("\\")){
-	    				dir = dir.replaceAll("\\\\", "/");
-	    			}
-	    			taos.putArchiveEntry(new TarArchiveEntry(file, dir + "/" + file.getName()));
-				if (file.isFile()) {
-			        // Add the file to the archive
-					try(BufferedInputStream bis = new BufferedInputStream(Files.newInputStream(file.toPath()))) {
-						IOUtils.copy(bis, taos);
-						taos.closeArchiveEntry();
-					}
-				} else if (file.isDirectory()) {
-					//Logger.info(this.getClass(),file.getPath().substring(bundleRoot.length()));
-			         // close the archive entry
-					if(!dir.equals("."))
-						taos.closeArchiveEntry();
-			         // go through all the files in the directory and using recursion, add them to the archive
-					for (File childFile : file.listFiles()) {
-						addFilesToCompression(taos, childFile, file.getPath().substring(bundleRoot.length()), bundleRoot);
-					}
-				}
-	    	}
-	    
+	    if(!file.isHidden()) {
+	        // Create an entry for the file
+	        if(!dir.equals(".")) {
+	            if(File.separator.equals("\\")) {
+	                dir = dir.replaceAll("\\\\", "/");
+	            }
+	            
+	            // Use TarUtil to create a safe entry name
+	            String entryName = dir + "/" + file.getName();
+	            
+	            if (file.isFile()) {
+	                // Add the file to the archive using TarUtil for path sanitization
+	                TarUtil.addFileToTar(taos, file, entryName);
+	            } else if (file.isDirectory()) {
+	                // Add directory entry
+	                TarArchiveEntry dirEntry = TarUtil.createSafeTarEntry(entryName + "/");
+	                taos.putArchiveEntry(dirEntry);
+	                taos.closeArchiveEntry();
+	                
+	                // Recurse into the directory
+	                for (File childFile : file.listFiles()) {
+	                    addFilesToCompression(taos, childFile, file.getPath().substring(bundleRoot.length()), bundleRoot);
+	                }
+	            }
+	        } else if (file.isDirectory()) {
+	            // Root directory - just recurse into it
+	            for (File childFile : file.listFiles()) {
+	                addFilesToCompression(taos, childFile, file.getPath().substring(bundleRoot.length()), bundleRoot);
+	            }
+	        } else {
+	            // Root file
+	            TarUtil.addFileToTar(taos, file, file.getName());
+	        }
+	    }
 	}
-	
-	
-	
 }

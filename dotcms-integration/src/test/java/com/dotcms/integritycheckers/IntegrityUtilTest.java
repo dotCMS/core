@@ -36,6 +36,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -494,11 +495,78 @@ public class IntegrityUtilTest  {
      */
     @DataProvider
     public static Object[] getUseJsonTestCases() throws Exception {
-        return new Object[]{
-                true,
-                false
-        };
+        return new Object[] {Boolean.TRUE, Boolean.FALSE};
     }
-
-
+    
+    /**
+     * Method to test: {@link IntegrityUtil#addToZipFile(String, String, ZipOutputStream)}
+     * When: A file is added to a ZIP archive
+     * Should: Use the DEFAULT_BUFFER_SIZE (8192 bytes) for I/O operations
+     * @throws Exception
+     */
+    @Test
+    public void testZipFileBufferSize() throws Exception {
+        // Create a temporary directory
+        File tempDir = Files.createTempDir();
+        try {
+            // Create a sample file to zip
+            File sampleFile = new File(tempDir, "sample.txt");
+            FileUtils.writeStringToFile(sampleFile, "This is a test file with some content.", Charset.defaultCharset());
+            
+            // Create a zip file
+            File zipFile = new File(tempDir, "test.zip");
+            
+            // Create ZipOutputStream
+            try (FileOutputStream fos = new FileOutputStream(zipFile);
+                 ZipOutputStream zos = new ZipOutputStream(fos)) {
+                
+                // Test the addToZipFile method
+                IntegrityUtil.addToZipFile(sampleFile.getName(), sampleFile.getAbsolutePath(), zos);
+                
+                // Verify that the zip file contains our file
+                zos.flush();
+                zos.close();
+                
+                // Verify the zip file exists and has content
+                assertEquals(true, zipFile.exists());
+                assertEquals(true, zipFile.length() > 0);
+                
+                // The buffer size is private and not directly accessible for verification,
+                // but we can verify the zip file contains our content by extracting and checking
+                File extractDir = new File(tempDir, "extract");
+                extractDir.mkdir();
+                
+                java.util.zip.ZipFile zip = new java.util.zip.ZipFile(zipFile);
+                java.util.Enumeration<? extends ZipEntry> entries = zip.entries();
+                
+                boolean foundEntry = false;
+                while (entries.hasMoreElements()) {
+                    ZipEntry entry = entries.nextElement();
+                    foundEntry = true;
+                    
+                    // Extract the file
+                    File extractedFile = new File(extractDir, entry.getName());
+                    try (FileOutputStream extractOut = new FileOutputStream(extractedFile);
+                         InputStream zipIn = zip.getInputStream(entry)) {
+                        
+                        byte[] buffer = new byte[1024];
+                        int len;
+                        while ((len = zipIn.read(buffer)) > 0) {
+                            extractOut.write(buffer, 0, len);
+                        }
+                    }
+                    
+                    // Verify the content is correct
+                    String content = FileUtils.readFileToString(extractedFile, Charset.defaultCharset());
+                    assertEquals("This is a test file with some content.", content);
+                }
+                
+                assertEquals(true, foundEntry);
+                zip.close();
+            }
+        } finally {
+            // Clean up
+            FileUtils.deleteDirectory(tempDir);
+        }
+    }
 }

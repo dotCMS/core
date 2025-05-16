@@ -1,4 +1,3 @@
-
 package com.dotcms.util;
 
 import com.dotmarketing.business.APILocator;
@@ -7,10 +6,10 @@ import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
+import com.dotmarketing.util.TarUtil;
 import com.liferay.util.FileUtil;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
-import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.apache.commons.io.IOUtils;
 
@@ -21,6 +20,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.zip.GZIPOutputStream;
@@ -84,32 +85,37 @@ public class AssetExporterUtil {
      */
      public static void exportAssets(final OutputStream out) throws IOException {
          synchronized (AssetExporterUtil.class) {
-             try (final TarArchiveOutputStream taos =
-                          new TarArchiveOutputStream(new GZIPOutputStream(new BufferedOutputStream(out)))) {
-                 taos.setBigNumberMode(TarArchiveOutputStream.BIGNUMBER_STAR);
-                 taos.setLongFileMode(TarArchiveOutputStream.LONGFILE_GNU);
-
+             // Use TarUtil to create a secure TAR.GZ output stream
+             try (final TarArchiveOutputStream taos = TarUtil.createTarGzOutputStream(out)) {
                  FileUtil.listFilesRecursively(PARENT.get(), FILE_FILTER)
                          .stream()
                          .filter(File::isFile)
                          .forEach(file -> {
-                             final String relativeFilePath = file.getPath().replace(PARENT.get().getPath(), "assets");
-                             Logger.info(
-                                     AssetExporterUtil.class,
-                                     String.format(
-                                             "Adding file %s (%s) to zip output stream",
-                                             file.getName(),
-                                             relativeFilePath));
-                             final TarArchiveEntry tarEntry = new TarArchiveEntry(file, relativeFilePath);
-                             tarEntry.setSize(file.length());
+                             // Get canonical paths for proper path handling
                              try {
-                                 taos.putArchiveEntry(tarEntry);
-                                 try (InputStream in = Files.newInputStream(file.toPath())) {
-                                     taos.write(IOUtils.toByteArray(in));
-                                 }
-                                 taos.closeArchiveEntry();
+                                 // Convert to Path objects for more robust handling
+                                 Path parentPath = PARENT.get().toPath().toRealPath();
+                                 Path filePath = file.toPath().toRealPath();
+                                 
+                                 // Create relative path using Path operations
+                                 Path relativePath = parentPath.relativize(filePath);
+                                 // Prepend "assets/" prefix to the relative path
+                                 String entryPath = "assets/" + relativePath.toString().replace('\\', '/');
+                                 
+                                 Logger.info(
+                                         AssetExporterUtil.class,
+                                         String.format(
+                                                 "Adding file %s (%s) to tar archive",
+                                                 file.getName(),
+                                                 entryPath));
+                                 
+                                 // Use TarUtil to safely add the file to the archive
+                                 TarUtil.addFileToTar(taos, file, entryPath);
+                             } catch (IOException e) {
+                                 Logger.error(AssetExporterUtil.class, "Error generating assets file path", e);
+                                 throw new DotRuntimeException(e);
                              } catch (Exception e) {
-                                 Logger.error(AssetExporterUtil.class, "Error generating assets zip file", e);
+                                 Logger.error(AssetExporterUtil.class, "Error generating assets tar file", e);
                                  throw new DotRuntimeException(e);
                              }
                          });

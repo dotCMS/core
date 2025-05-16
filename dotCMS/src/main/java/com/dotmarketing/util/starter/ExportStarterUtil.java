@@ -118,7 +118,7 @@ public class ExportStarterUtil {
     private static final Lazy<Integer> QUEUE_CAPACITY =
             Lazy.of(() -> Config.getIntProperty(STARTER_GENERATION_QUEUE_CAPACITY_PROP, 1000));
     private static final Lazy<String> ZIP_FILE_ASSETS_FOLDER =
-            Lazy.of(() -> Config.getStringProperty(STARTER_GENERATION_ASSETS_FOLDER_PROP, "/assets/"));
+            Lazy.of(() -> Config.getStringProperty(STARTER_GENERATION_ASSETS_FOLDER_PROP, "assets"));
 
     private static final String JSON_FILE_EXT = ".json";
 
@@ -248,15 +248,14 @@ public class ExportStarterUtil {
      */
     private void addFilesToZip(final List<FileEntry> fileEntries, final ZipOutputStream zip) {
         fileEntries.stream().forEach(entry -> {
-
             try {
+                // Use the centralized ZipUtil method for consistent sanitization
                 ZipUtil.addZipEntry(zip, entry.fileName(), entry.getInputStream(), true);
             } catch (final IOException e) {
                 Logger.error(this, String.format("An error occurred when streaming file '%s' into starter file: " +
                                                          "%s", entry.fileName(), e.getMessage()), e);
                 throw new DotRuntimeException(e);
             }
-
         });
     }
 
@@ -298,7 +297,7 @@ public class ExportStarterUtil {
         final List<FileEntry> starterFiles = new ArrayList<>();
         HibernateUtil hibernateUtil;
         DotConnect dc;
-        List<?> resultList;
+        List<?> resultList = null;
         final ObjectMapper defaultObjectMapper = ContentletJsonHelper.INSTANCE.get().objectMapper();
         try {
             Logger.debug(this, String.format("Retrieving data from tables: %s", dbTablesAsClasses));
@@ -307,7 +306,9 @@ public class ExportStarterUtil {
                 int step = EXPORTED_RECORDS_PAGE_SIZE;
                 int total = 0;
                 for (i = 0; i < MAX_EXPORTED_RECORDS; i = i + step) {
+                    resultList = new ArrayList<>();
                     hibernateUtil = new HibernateUtil(clazz);
+                    hibernateUtil.setQuery("from " + clazz.getName());
                     hibernateUtil.setFirstResult(i);
                     hibernateUtil.setMaxResults(step);
                     dc = new DotConnect();
@@ -335,7 +336,7 @@ public class ExportStarterUtil {
                                           + " on contentlet_1_.inode = contentlet.inode ORDER BY contentlet.inode").setStartRow(i).setMaxRows(step);
                     } else if (Category.class.equals(clazz)) {
                         dc.setSQL("SELECT * FROM category ORDER BY inode").setStartRow(i).setMaxRows(step);
-                    } else if (Folder.class.equals(clazz)) {
+                    } else if(Folder.class.equals(clazz)) {
                         dc.setSQL("SELECT * FROM folder ORDER BY inode").setStartRow(i).setMaxRows(step);
                     } else {
                         hibernateUtil.setQuery("FROM " + clazz.getName() + " ORDER BY 1");
@@ -411,29 +412,30 @@ public class ExportStarterUtil {
         final List<FileEntry> starterFiles = new ArrayList<>();
         final ObjectMapper defaultObjectMapper = DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
         try {
-            List resultList = List.of(APILocator.getCompanyAPI().getDefaultCompany());
-            String contentAsJson = defaultObjectMapper.writeValueAsString(resultList);
+            // Company data
+            String contentAsJson = defaultObjectMapper.writeValueAsString(List.of(APILocator.getCompanyAPI().getDefaultCompany()));
             starterFiles.add(new FileEntry(Company.class.getName() + JSON_FILE_EXT, contentAsJson));
 
-            resultList = APILocator.getUserAPI().findAllUsers();
-            resultList.add(APILocator.getUserAPI().getDefaultUser());
-            contentAsJson = defaultObjectMapper.writeValueAsString(resultList);
+            // User data
+            List<User> users = APILocator.getUserAPI().findAllUsers();
+            users.add(APILocator.getUserAPI().getDefaultUser());
+            contentAsJson = defaultObjectMapper.writeValueAsString(users);
             starterFiles.add(new FileEntry(User.class.getName() + JSON_FILE_EXT, contentAsJson));
 
             final DotConnect dc = new DotConnect();
 
+            // Counter data
             dc.setSQL("select * from counter");
-            resultList = dc.loadResults();
-            contentAsJson = defaultObjectMapper.writeValueAsString(resultList);
+            contentAsJson = defaultObjectMapper.writeValueAsString(dc.loadResults());
             starterFiles.add(new FileEntry("Counter" + JSON_FILE_EXT, contentAsJson));
 
-            resultList = ImageLocalManagerUtil.getImages();
-            contentAsJson = defaultObjectMapper.writeValueAsString(resultList);
+            // Images data
+            contentAsJson = defaultObjectMapper.writeValueAsString(ImageLocalManagerUtil.getImages());
             starterFiles.add(new FileEntry("Image" + JSON_FILE_EXT, contentAsJson));
 
+            // Portlet data
             dc.setSQL("select * from portlet");
-            resultList = dc.loadResults();
-            contentAsJson = defaultObjectMapper.writeValueAsString(resultList);
+            contentAsJson = defaultObjectMapper.writeValueAsString(dc.loadResults());
             starterFiles.add(new FileEntry("Portlet" + JSON_FILE_EXT, contentAsJson));
 
             final List<FileEntry> jsonFileEntries = new ContentTypeImportExportUtil().exportContentTypes();
@@ -484,13 +486,15 @@ public class ExportStarterUtil {
             return;
         }
         FileUtil.listFilesRecursively(source, fileFilter).stream().filter(File::isFile).forEach(file -> {
-            final String filePath = file.getPath().replace(ConfigUtils.getAssetPath(), ZIP_FILE_ASSETS_FOLDER.get());
+            // Get path relative to assets directory and remove the leading slash
+            String filePath = file.getPath().replace(ConfigUtils.getAssetPath(), ZIP_FILE_ASSETS_FOLDER.get());
+            filePath = filePath.replaceAll("^/+", "");
             Logger.debug(this, String.format("-> File path: %s", filePath));
+            
+            // Create a file entry and add it to the zip
             final FileEntry entry = new FileEntry(filePath, file);
             this.addFileToZip(entry, zip);
         });
-
-
     }
 
 

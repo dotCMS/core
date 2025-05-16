@@ -32,6 +32,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 import com.liferay.util.lang.FastStringBuffer;
+import com.dotmarketing.util.ZipUtil;
 
 /**
  * <a href="ZipCollection.java.html"><b><i>View Source</i></b></a>
@@ -60,20 +61,8 @@ public class ZipCollection implements Serializable {
 	}
 
 	public void addEntry(String name, byte[] byteArray) throws IOException {
-		ZipEntry entry = new ZipEntry(name);
-
-		_zos.putNextEntry(entry);
-
-		BufferedInputStream bis = new BufferedInputStream(
-			new ByteArrayInputStream(byteArray), _BUFFER);
-
-		int count;
-
-		while ((count = bis.read(_data, 0, _BUFFER)) != -1) {
-			_zos.write(_data, 0, count);
-		}
-
-		bis.close();
+		// Use the centralized ZipUtil method to add an entry with proper sanitization
+		ZipUtil.addZipEntry(_zos, name, new ByteArrayInputStream(byteArray), false);
 	}
 
 	public byte[] finish() throws IOException {

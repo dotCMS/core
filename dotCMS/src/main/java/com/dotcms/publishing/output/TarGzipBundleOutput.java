@@ -5,6 +5,7 @@ import org.apache.commons.io.IOUtils;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
+import com.dotmarketing.util.TarUtil;
 import com.dotmarketing.util.UtilMethods;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
@@ -33,12 +34,9 @@ public class TarGzipBundleOutput extends BundleOutput {
     @Override
     public void create() throws IOException {
         final OutputStream outputStream = Files.newOutputStream(tarGzipFile.toPath());
-
-        tarArchiveOutputStream = new TarArchiveOutputStream(new GZIPOutputStream(outputStream, GZIP_OUTPUT_STREAM_BUFFER_SIZE));
-
-        tarArchiveOutputStream.setBigNumberMode(TarArchiveOutputStream.BIGNUMBER_STAR);
-        // TAR originally didn't support long file names, so enable the support for it
-        tarArchiveOutputStream.setLongFileMode(TarArchiveOutputStream.LONGFILE_GNU);
+        
+        // Use TarUtil to create a properly configured TAR output stream
+        tarArchiveOutputStream = TarUtil.createTarGzOutputStream(outputStream);
     }
 
     public static File getBundleTarGzipFile(final String bundleId) {
@@ -91,7 +89,8 @@ public class TarGzipBundleOutput extends BundleOutput {
     public void innerCopyFile(final File source, final String destinationPath) throws IOException {
         synchronized (tarArchiveOutputStream) {
             try {
-                final TarArchiveEntry tarArchiveEntry = new TarArchiveEntry(destinationPath);
+                // Use TarUtil to create a safe entry
+                final TarArchiveEntry tarArchiveEntry = TarUtil.createSafeTarEntry(destinationPath);
                 tarArchiveEntry.setSize(source.length());
 
                 tarArchiveOutputStream.putArchiveEntry(tarArchiveEntry);
@@ -103,7 +102,8 @@ public class TarGzipBundleOutput extends BundleOutput {
     }
 
     public void mkdirs(final String path) {
-        final TarArchiveEntry tarArchiveEntry = new TarArchiveEntry(path);
+        // Use TarUtil to create a safe entry
+        final TarArchiveEntry tarArchiveEntry = TarUtil.createSafeTarEntry(path);
 
         synchronized (tarArchiveOutputStream) {
             try {
@@ -131,22 +131,16 @@ public class TarGzipBundleOutput extends BundleOutput {
 
             final byte[] bytes = this.toByteArray();
 
-            final TarArchiveEntry tarArchiveEntry = new TarArchiveEntry(filePath);
-            tarArchiveEntry.setSize(bytes.length);
-
-            putEntry(bytes, tarArchiveEntry);
+            // Use TarUtil to add bytes to tar safely
+            putEntry(bytes, this.filePath);
 
             this.closed = true;
         }
 
-        private void putEntry(byte[] bytes, TarArchiveEntry tarArchiveEntry) throws IOException {
+        private void putEntry(byte[] bytes, String filePath) throws IOException {
             synchronized (tarArchiveOutputStream) {
-                try {
-                    tarArchiveOutputStream.putArchiveEntry(tarArchiveEntry);
-                    IOUtils.copy(new ByteArrayInputStream(bytes), tarArchiveOutputStream);
-                } finally {
-                    tarArchiveOutputStream.closeArchiveEntry();
-                }
+                // Use TarUtil's addBytesToTar method instead of custom implementation
+                TarUtil.addBytesToTar(tarArchiveOutputStream, bytes, filePath);
             }
         }
 

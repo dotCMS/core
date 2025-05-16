@@ -1,0 +1,75 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# DotCMS Build System Rules
+
+## Build System Overview
+
+DotCMS uses Maven as its primary build tool via the Maven wrapper (`./mvnw`). The project also provides a `justfile` with common build commands and utilities for easier development.
+
+## Key Build Commands
+
+### Basic Build Commands
+
+- **Quick Build (no tests):** `./mvnw -DskipTests clean install` or `just build`
+- **Build with Tests:** `./mvnw clean install` or `just build-test`
+- **Production Build:** `./mvnw -DskipTests clean install -Pprod` or `just build-prod`
+
+### Module-Specific Builds
+
+- **Build Core Module:** `./mvnw install -pl :dotcms-core -DskipTests=true` or `just build-core-only`
+- **Build Core with Dependencies:** `./mvnw install -pl :dotcms-core --am -DskipTests=true` or `just build-core-with-deps`
+
+### Development Commands
+
+- **Run in Development Mode:** `just dev-run`
+- **Run in Debug Mode:** `just dev-run-debug`
+- **Run on Specific Port:** `just dev-start-on-port 8082`
+- **Stop Development Environment:** `just dev-stop`
+
+## Testing Commands
+
+- **Run Unit Tests:** Include in regular build with `./mvnw clean install`
+- **Run Integration Tests:** `just test-integration`
+- **Run Postman Tests:** `just test-postman collections='ai'`
+- **Run Karate Tests:** `just test-karate`
+- **Run E2E Tests:** `just test-e2e-node` or `just test-e2e-java`
+
+## Docker Commands
+
+- **Run Published Docker Image:** `just docker-ext-run tag='latest'`
+- **Stop Docker Container:** `just docker-ext-stop tag='latest'`
+
+## Important Notes
+
+1. **Do not use Gradle** - The project has migrated from Gradle to Maven
+2. **Use Maven Wrapper** - Always use `./mvnw` instead of directly calling `mvn`
+3. **Prefer justfile commands** - Use the `just` command when possible to ensure consistent builds
+
+## Troubleshooting
+
+1. If Maven build fails with memory errors, try setting:
+   ```
+   export MAVEN_OPTS="-Xmx2g -XX:MaxPermSize=512m"
+   ```
+
+2. If you encounter dependency issues, try:
+   ```
+   just maven-dependencies
+   ```
+   
+3. For Docker-related issues:
+   ```
+   just dev-clean-volumes
+   ```
+
+## Environment Setup
+
+For first-time setup:
+```
+just install-all-mac-deps
+```
+
+This will install or verify necessary dependencies like JDK, Docker, and Git.

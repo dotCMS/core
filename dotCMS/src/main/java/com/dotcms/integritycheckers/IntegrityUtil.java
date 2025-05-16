@@ -76,6 +76,9 @@ public class IntegrityUtil {
     public static final String INTEGRITY_DATA_STATUS_FILENAME = "DataStatus.properties";
     public static final String REQUESTER_KEY = "requesterKey";
     public static final String INTEGRITY_DATA_REQUEST_ID = "integrityDataRequestId";
+    
+    /** Default buffer size for file operations (8KB) */
+    private static final int DEFAULT_BUFFER_SIZE = 8192;
 
     private File generateDataToFixCSV(String outputPath, String endpointId, IntegrityType type)
             throws DotDataException, IOException {
@@ -182,23 +185,17 @@ public class IntegrityUtil {
         return csvFile;
     }
 
-    private static void addToZipFile(String fileName, ZipOutputStream zos, String zipEntryName)
-            throws Exception {
+    public static void addToZipFile(final String zipEntryName, final String fileName, ZipOutputStream zos) throws Exception {
         try {
             Logger.info(IntegrityUtil.class, "Writing '" + fileName + "' to zip file");
 
             File file = new File(fileName);
             try (InputStream fis = Files.newInputStream(file.toPath())) {
-                ZipEntry zipEntry = new ZipEntry(zipEntryName);
-                zos.putNextEntry(zipEntry);
-
-                byte[] bytes = new byte[1024];
-                int length;
-                while ((length = fis.read(bytes)) >= 0) {
-                    zos.write(bytes, 0, length);
-                }
-
-                zos.closeEntry();
+                // Use the centralized ZipUtil methods for consistent sanitization
+                // Use ABORT mode for adding entries to integrity check zip files since these are
+                // generated internally and should never contain suspicious paths
+                com.dotmarketing.util.ZipUtil.addZipEntry(zos, zipEntryName, fis, true,
+                    com.dotmarketing.util.ZipUtil.SuspiciousEntryHandling.ABORT);
             } catch (FileNotFoundException f) {
                 Logger.error(IntegrityUtil.class, "Could not find file " + fileName, f);
                 throw new Exception("Could not find file " + fileName, f);
@@ -393,15 +390,14 @@ public class IntegrityUtil {
             }
 
             zipFile = new File(getIntegrityDataFilePath(endpointId, INTEGRITY_DATA_TO_CHECK_ZIP_FILENAME));
-            try(OutputStream outputStream = Files.newOutputStream(zipFile.toPath());
-                ZipOutputStream zipOutputStream = new ZipOutputStream(outputStream)) {
+            try(ZipOutputStream zipOutputStream = ZipUtil.createZipOutputStream(zipFile)) {
                 final IntegrityType[] types = IntegrityType.values();
                 for (IntegrityType integrityType : types) {
                     File fileToCheckCsvFile = null;
 
                     try {
                         fileToCheckCsvFile = integrityType.getIntegrityChecker().generateCSVFile(outputPath);
-                        addToZipFile(fileToCheckCsvFile.getAbsolutePath(), zipOutputStream, integrityType.getDataToCheckCSVName());
+                        addToZipFile(integrityType.getDataToCheckCSVName(), fileToCheckCsvFile.getAbsolutePath(), zipOutputStream);
                     } finally {
                         if (fileToCheckCsvFile != null && fileToCheckCsvFile.exists()) {
                             fileToCheckCsvFile.delete();
@@ -434,12 +430,11 @@ public class IntegrityUtil {
             }
 
             zipFile = new File(getIntegrityDataFilePath(endpointId, INTEGRITY_DATA_TO_FIX_ZIP_FILENAME));
-            try (OutputStream outputStream = Files.newOutputStream(zipFile.toPath());
-                 ZipOutputStream zipOutputStream = new ZipOutputStream(outputStream)) {
+            try (ZipOutputStream zipOutputStream = ZipUtil.createZipOutputStream(zipFile)) {
                 // create Folders CSV
                 dataToFixCsvFile = generateDataToFixCSV(outputPath, endpointId, type);
 
-                addToZipFile(dataToFixCsvFile.getAbsolutePath(), zipOutputStream, type.getDataToFixCSVName());
+                addToZipFile(dataToFixCsvFile.getAbsolutePath(), type.getDataToFixCSVName(), zipOutputStream);
             }
         } catch (Exception e) {
             Logger.error(getClass(), "Error generating fix for remote", e);
@@ -516,8 +511,9 @@ public class IntegrityUtil {
             throws Exception {
         final String outputDir = ConfigUtils.getIntegrityPath() + File.separator + key;
 
-        // lets first unzip the given file
-        ZipUtil.extract(dataToFix, outputDir);
+        // When extracting integrity fix data, we'll use SKIP_AND_CONTINUE mode
+        // so that if there are any malformed entries, we can still process the valid ones
+        ZipUtil.safeExtract(dataToFix, outputDir, ZipUtil.SuspiciousEntryHandling.SKIP_AND_CONTINUE);
 
         // lets generate the tables with the data to be fixed
         generateDataToFixTable(key, type);

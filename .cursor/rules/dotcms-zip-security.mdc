@@ -1,0 +1,94 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# DotCMS Zip Security Guidelines
+
+## Overview
+
+The DotCMS codebase has been enhanced with comprehensive zip file security measures to prevent zip slip vulnerabilities. These security measures follow modern best practices for handling zip files safely.
+
+## Key Security Features
+
+### Centralized ZipUtil
+
+All zip-related operations should use the `ZipUtil` class, which provides secure methods for:
+- Creating zip entries
+- Extracting zip files
+- Sanitizing paths
+- Adding files to zip archives
+
+### Path Sanitization
+
+All zip entries have paths sanitized to prevent directory traversal attacks:
+- Leading slashes are removed
+- Path traversal sequences (`../`) are detected and handled
+- Canonical paths are verified to be within the target directory
+
+### Configurable Security Handling
+
+The system offers two modes for handling suspicious zip entries:
+- `ABORT` - Immediately stops processing and throws a `SecurityException` (default mode)
+- `SKIP_AND_CONTINUE` - Logs a warning, skips the suspicious entry, and continues processing
+
+## Usage Guidelines
+
+### Creating Zip Files
+
+```java
+// Creating a zip file with safe entries
+try (ZipOutputStream zipOut = ZipUtil.createZipOutputStream(outputFile)) {
+    // Add an entry with default ABORT handling for suspicious paths
+    ZipUtil.addZipEntry(zipOut, "path/to/file.txt", inputStream, true);
+    
+    // Or with explicit handling mode
+    ZipUtil.addZipEntry(zipOut, "path/to/file.txt", inputStream, true, 
+                        ZipUtil.SuspiciousEntryHandling.ABORT);
+}
+```
+
+### Extracting Zip Files
+
+```java
+// Extract with default ABORT handling
+ZipUtil.safeExtract(zipInputStream, outputDirectory);
+
+// Extract with SKIP_AND_CONTINUE to process valid entries even if some are malicious
+ZipUtil.safeExtract(zipInputStream, outputDirectory, 
+                   ZipUtil.SuspiciousEntryHandling.SKIP_AND_CONTINUE);
+
+// Extract a specific entry
+ZipUtil.safeExtractEntry(zipFile, zipEntry, outputDirectory);
+```
+
+### Sanitizing Paths
+
+```java
+// Sanitize path with default handling (throws exception for suspicious paths)
+String safePath = ZipUtil.sanitizePath(originalPath);
+
+// Sanitize with SKIP_AND_CONTINUE (returns sanitized path even if suspicious)
+String safePath = ZipUtil.sanitizePath(originalPath, ZipUtil.SuspiciousEntryHandling.SKIP_AND_CONTINUE);
+```
+
+### Creating Safe Zip Entries
+
+```java
+// Create a sanitized ZipEntry
+ZipEntry entry = ZipUtil.createSafeZipEntry(entryName);
+```
+
+## Default vs. Configurable Handling
+
+When importing data from untrusted sources, use the `SKIP_AND_CONTINUE` mode to process as many valid entries as possible.
+
+When exporting or generating data internally, use the `ABORT` mode (default) to ensure high security standards.
+
+## Best Practices
+
+1. Always use `ZipUtil` methods instead of direct JDK zip classes
+2. Verify all paths are sanitized before processing
+3. Use the appropriate security handling mode based on the context
+4. Log suspicious entries for security auditing
+5. Add unit tests for zip operations to verify security measures
