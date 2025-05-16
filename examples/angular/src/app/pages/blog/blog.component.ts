@@ -11,10 +11,11 @@ import { FooterComponent } from '../components/footer/footer.component';
 import { BlogPostComponent } from './blog-post/blog-post.component';
 import { DotCMSPageAsset, DotCMSURLContentMap } from '@dotcms/types';
 import { EditablePageService } from '../services/editable-page.service';
-import { ExtraContent } from '../../shared/models';
+import { ContentletImage, ExtraContent, FileAsset } from '../../shared/models';
 
 export interface BlogContentlet extends DotCMSURLContentMap {
     blogContent: string;
+    image: ContentletImage;
 }
 
 export interface BlogPageAsset extends DotCMSPageAsset {
