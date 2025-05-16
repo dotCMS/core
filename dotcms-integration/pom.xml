@@ -526,6 +526,61 @@
                     </execution>
                 </executions>
             </plugin>
+            
+            <!-- Add the exec-maven-plugin to sanitize the test starter.zip file -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>${version.exec.plugin}</version>
+                <executions>
+                    <execution>
+                        <id>sanitize-starter-zip</id>
+                        <phase>generate-test-resources</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>${maven.multiModuleProjectDirectory}/sanitize-zip.sh</executable>
+                            <arguments>
+                                <argument>${starter.download.folder}/${starter.run.filename}</argument>
+                                <argument>${starter.download.folder}/sanitized-${starter.run.filename}</argument>
+                            </arguments>
+                            <workingDirectory>${maven.multiModuleProjectDirectory}</workingDirectory>
+                            <successCodes>
+                                <successCode>0</successCode>
+                            </successCodes>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            
+            <!-- Add plugin to replace original starter.zip with sanitized version -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>replace-with-sanitized-starter</id>
+                        <phase>generate-test-resources</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <target>
+                                <echo message="Checking for sanitized test ZIP: ${starter.download.folder}/sanitized-${starter.run.filename}" />
+                                <available file="${starter.download.folder}/sanitized-${starter.run.filename}" 
+                                           property="sanitized.file.exists" />
+                                <echo message="Sanitized test file exists: ${sanitized.file.exists}" />
+                                <fail unless="sanitized.file.exists" 
+                                      message="Sanitized test file does not exist: ${starter.download.folder}/sanitized-${starter.run.filename}" />
+                                <move file="${starter.download.folder}/sanitized-${starter.run.filename}" 
+                                      tofile="${starter.download.folder}/${starter.run.filename}" 
+                                      overwrite="true"/>
+                            </target>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 
