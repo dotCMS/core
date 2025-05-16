@@ -16,14 +16,16 @@ interface ActivityContentlet extends DotCMSBasicContentlet {
     selector: 'app-activity',
     standalone: true,
     imports: [RouterLink, NgOptimizedImage],
-    template: ` <article class="overflow-hidden p-4 bg-white rounded shadow-lg">
+    template: ` <article class="overflow-hidden p-4 bg-white rounded-sm shadow-lg mb-4">
         @if (contentlet().image?.identifier; as imageIdentifier) {
-        <img
-            class="w-full"
-            [ngSrc]="imageIdentifier"
-            width="100"
-            height="100"
-            alt="Activity Image" />
+        <div class="relative w-full h-56 overflow-hidden">
+            <img
+                class="object-cover w-full h-full"
+                [ngSrc]="imageIdentifier"
+                width="100"
+                height="100"
+                alt="Activity Image" />
+        </div>
         }
         <div class="px-6 py-4">
             <p class="mb-2 text-xl font-bold">{{ contentlet().title }}</p>

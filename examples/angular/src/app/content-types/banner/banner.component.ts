@@ -36,7 +36,7 @@ interface BannerContentlet extends DotCMSBasicContentlet {
             </h2>
             <p class="mb-4 text-xl text-shadow">{{ contentlet().caption }}</p>
             <a
-                class="p-4 text-xl bg-red-400 rounded transition duration-300 hover:bg-red-500"
+                class="p-4 text-xl bg-red-400 rounded-sm transition duration-300 hover:bg-red-500"
                 [routerLink]="contentlet().link">
                 {{ contentlet().buttonText }}
             </a>
