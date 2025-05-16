@@ -7,30 +7,30 @@ set -e
 INPUT_FILE="$1"
 OUTPUT_FILE="$2"
 
+echo "==== SANITIZE ZIP DEBUG INFO ===="
+echo "Current directory: $(pwd)"
+echo "Input file path: $INPUT_FILE"
+echo "Output file path: $OUTPUT_FILE"
+
 # Make sure input file exists
 if [ ! -f "$INPUT_FILE" ]; then
   echo "ERROR: Input file does not exist: $INPUT_FILE"
   exit 1
 fi
 
-# Get absolute path of input file
-INPUT_FILE=$(realpath "$INPUT_FILE")
-
-# Ensure output file is in target directory
-if [[ "$OUTPUT_FILE" != *"/target/"* ]]; then
-  echo "WARNING: Output file should be in target directory to avoid git tracking"
-  # This is a safety check but we'll continue as the build script should provide correct paths
-fi
-
-# Create output directory if it doesn't exist
+# Create the output directory if it doesn't exist
 OUTPUT_DIR=$(dirname "$OUTPUT_FILE")
 mkdir -p "$OUTPUT_DIR"
+echo "Created output directory: $OUTPUT_DIR"
+
+# Get absolute paths
+INPUT_FILE=$(realpath "$INPUT_FILE")
 OUTPUT_DIR=$(realpath "$OUTPUT_DIR")
 OUTPUT_FILE="$OUTPUT_DIR/$(basename "$OUTPUT_FILE")"
 
 echo "Sanitizing ZIP file"
-echo "Input:  $INPUT_FILE"
-echo "Output: $OUTPUT_FILE"
+echo "Absolute input path:  $INPUT_FILE"
+echo "Absolute output path: $OUTPUT_FILE"
 
 # Create temp directory
 TEMP_DIR=$(mktemp -d)
@@ -57,4 +57,5 @@ ls -la "$OUTPUT_FILE"
 
 # Clean up
 rm -rf "$TEMP_DIR"
-echo "ZIP sanitization complete." 
+echo "ZIP sanitization complete."
+echo "==== END SANITIZE ZIP DEBUG INFO ====" 

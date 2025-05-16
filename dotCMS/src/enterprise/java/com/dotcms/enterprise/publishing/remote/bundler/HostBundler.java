@@ -390,8 +390,7 @@ public class HostBundler implements IBundler {
 		}
 		String assetName = APILocator.getFileAssetAPI().isFileAsset(hostContentlet)?(File.separator + hostContentlet.getInode() + HOST_EXTENSION):uri;
 
-		String myFileUrl = File.separator
-				+liveworking + File.separator
+		String myFileUrl = liveworking + File.separator
 				+ host.getHostname() + File.separator
 				+ hostContentlet.getLanguageId() + assetName;
 
