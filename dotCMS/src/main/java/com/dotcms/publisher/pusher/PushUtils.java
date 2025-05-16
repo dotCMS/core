@@ -3,6 +3,7 @@ package com.dotcms.publisher.pusher;
 import org.apache.commons.io.IOUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.util.ArchiveUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.TarUtil;
 import com.dotmarketing.util.UUIDGenerator;
@@ -28,104 +29,54 @@ public class PushUtils {
 	 *
 	 * @param files The files to compress
 	 * @param output The resulting output file (should end in .tar.gz)
-	 * @param bundleRoot
-	 * @throws IOException
+	 * @param bundleRoot The root directory path to check for directory traversal
+	 * @throws IOException If an error occurs during the operation
+	 * @return The compressed file
 	 */
 	public static File compressFiles(Collection<File> files, File output, String bundleRoot)
 		throws IOException
 	{
 		Logger.info(PushUtils.class, "Compressing "+files.size() + " to "+output.getAbsoluteFile());
-
-		// Use TarUtil to create a secured TAR.GZ output stream
-		try(TarArchiveOutputStream taos = TarUtil.createTarGzOutputStream(output)) {
-			// Get to putting all the files in the compressed output file
-			for (File f : files) {
-				addFilesToCompression(taos, f, ".", bundleRoot);
+		
+		// First verify all files are within the bundleRoot directory for security
+		File bundleRootDir = new File(bundleRoot);
+		for (File file : files) {
+			if (!ArchiveUtil.validateFileWithinDirectory(bundleRootDir, file, 
+					ArchiveUtil.SuspiciousEntryHandling.ABORT)) {
+				throw new DotRuntimeException(
+					"Directory Traversal Warning: You can only tar files that are under the directory:" + 
+					bundleRoot + " found " + file.getAbsolutePath());
 			}
 		}
-
-		return output;
+		
+		// Now use the high-level TarUtil method to create the archive
+		// This takes care of all the I/O operations internally
+		return TarUtil.tarGzFiles(files, output, null);
 	}
 	
 
 	/**
 	 * Tar and GZIPs a directory on the asset path
-	 * @param directory
-	 * @return
-	 * @throws IOException
+	 * 
+	 * @param directory The directory to compress
+	 * @return The compressed tar.gz file
+	 * @throws IOException If an error occurs during the operation
 	 */
     public static File tarGzipDirectory(final File directory) throws IOException {
         if (directory == null || !directory.exists() || !directory.isDirectory()) {
             throw new DotRuntimeException("Unable to compress directory:" + directory);
         }
+        
         final String tempFileId = directory.getName() + UUIDGenerator.shorty();
-        final File tempFile = new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary() +File.separator + tempFileId + ".tar.gz");
-        final List<File> files = FileUtil.listFilesRecursively(directory);
-
-        Logger.info(PushUtils.class, "Compressing " + files.size() + " to " + tempFile.getAbsoluteFile());
-
-        // Use TarUtil to create a secured TAR.GZ output stream
-        try (TarArchiveOutputStream tarArchiveOutputStream = TarUtil.createTarGzOutputStream(tempFile)) {
-            // Get to putting all the files in the compressed output file
-            for (final File file : files) {
-                addFilesToCompression(tarArchiveOutputStream, file, ".", directory.getAbsolutePath());
-            }
-        }
-
-        return tempFile;
+        final File tempFile = new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary() + 
+                                      File.separator + tempFileId + ".tar.gz");
+        
+        Logger.info(PushUtils.class, "Compressing directory " + directory.getAbsolutePath() + 
+                                    " to " + tempFile.getAbsoluteFile());
+        
+        // Use TarUtil's high-level method to compress the directory
+        // This takes care of all the I/O operations internally
+        // We set includeBaseDirName to false to maintain backwards compatibility
+        return TarUtil.compressDirectoryToTarGz(directory, tempFile, false);
     }
-
-	/**
-	 * Does the work of compression and going recursive for nested directories
-	 * <p/>
-	 *
-	 *
-	 * @param taos The archive
-	 * @param file The file to add to the archive
-	 * @param dir The directory that should serve as the parent directory in the archive
-	 * @param bundleRoot The root directory path to check for directory traversal
-	 * @throws IOException
-	 */
-	private static void addFilesToCompression(TarArchiveOutputStream taos, File file, String dir, String bundleRoot)
-		throws IOException
-	{
-	    if(!file.getAbsolutePath().contains(bundleRoot)) {
-	        throw new DotRuntimeException("Directory Traversal Warning: You can only tar files that are under the directory:" + bundleRoot + " found " + file.getAbsolutePath() );
-	    }
-	    
-	    if(!file.isHidden()) {
-	        // Create an entry for the file
-	        if(!dir.equals(".")) {
-	            if(File.separator.equals("\\")) {
-	                dir = dir.replaceAll("\\\\", "/");
-	            }
-	            
-	            // Use TarUtil to create a safe entry name
-	            String entryName = dir + "/" + file.getName();
-	            
-	            if (file.isFile()) {
-	                // Add the file to the archive using TarUtil for path sanitization
-	                TarUtil.addFileToTar(taos, file, entryName);
-	            } else if (file.isDirectory()) {
-	                // Add directory entry
-	                TarArchiveEntry dirEntry = TarUtil.createSafeTarEntry(entryName + "/");
-	                taos.putArchiveEntry(dirEntry);
-	                taos.closeArchiveEntry();
-	                
-	                // Recurse into the directory
-	                for (File childFile : file.listFiles()) {
-	                    addFilesToCompression(taos, childFile, file.getPath().substring(bundleRoot.length()), bundleRoot);
-	                }
-	            }
-	        } else if (file.isDirectory()) {
-	            // Root directory - just recurse into it
-	            for (File childFile : file.listFiles()) {
-	                addFilesToCompression(taos, childFile, file.getPath().substring(bundleRoot.length()), bundleRoot);
-	            }
-	        } else {
-	            // Root file
-	            TarUtil.addFileToTar(taos, file, file.getName());
-	        }
-	    }
-	}
 }

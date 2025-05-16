@@ -11,7 +11,8 @@ ArchiveUtil implements the following core security measures:
 1. **Path sanitization** - Removes path traversal sequences like `../` and resolves relative paths
 2. **Canonical path verification** - Ensures that extracted files remain within the target directory
 3. **Configurable handling modes** - Choose between ABORT (strict security) or SKIP_AND_CONTINUE (lenient)
-4. **DoS protections**:
+4. **Path validation** - Provides robust validation to guarantee files stay within a designated directory
+5. **DoS protections**:
    - Maximum total extracted size limit
    - Maximum individual file size limit
    - Maximum entry count limit
@@ -19,6 +20,92 @@ ArchiveUtil implements the following core security measures:
 ## Usage
 
 ArchiveUtil is designed to be used internally by ZipUtil and TarUtil, not called directly by application code. The proper way to use these security features is through the ZipUtil and TarUtil APIs.
+
+## Higher-Level Utility Methods
+
+Both ZipUtil and TarUtil provide a set of higher-level utility methods that encapsulate common archive operations, eliminating the need to manually handle I/O streams:
+
+### ZipUtil High-Level Methods
+
+- `addFileToZip(zipOut, file, entryName)` - Adds a single file to a ZIP with proper I/O handling
+- `addDirectoryToZip(zipOut, directory, baseEntryPath)` - Adds a directory and its contents to a ZIP
+- `zipSingleFile(sourceFile, targetZipFile)` - Creates a ZIP containing a single file
+- `zipFiles(sources, targetZipFile)` - Creates a ZIP from multiple files/directories
+
+### TarUtil High-Level Methods
+
+- `addFileToTar(taos, file, relativePath)` - Adds a single file to a TAR with proper I/O handling
+- `addDirectoryToTar(taos, directory, basePath, baseDirectory)` - Adds a directory to a TAR
+- `tarGzSingleFile(sourceFile, targetTarGzFile)` - Creates a TAR.GZ containing a single file
+- `tarGzFiles(sources, targetTarGzFile)` - Creates a TAR.GZ from multiple files/directories
+- `compressDirectoryToTarGz(directory, targetTarGzFile, includeBaseDirName)` - Compresses a directory to TAR.GZ
+
+Using these methods ensures:
+1. Proper security checks
+2. Consistent error handling
+3. Resource cleanup (all streams are properly closed)
+4. DRY code with less boilerplate
+
+## Lambda-Based File Processing
+
+Both ZipUtil and TarUtil now support lambda functions for flexible file processing, allowing you to:
+
+1. **Filter files** - Include or exclude files based on custom criteria
+2. **Process file contents** - Transform file data before adding to the archive
+3. **Customize entry names** - Control how files are named within the archive
+
+### Lambda Interface Types
+
+Three functional interfaces are provided:
+
+1. **FileFilter** - Determines which files to include in the archive
+   ```java
+   boolean accept(File file);
+   ```
+
+2. **FileProcessor** - Transforms file contents before archiving
+   ```java
+   InputStream process(File file, String entryName) throws IOException;
+   ```
+
+3. **EntryNameMapper** - Customizes archive entry names
+   ```java
+   String mapEntryName(File file, String basePath);
+   ```
+
+### Example Usage
+
+```java
+// Filter: Only include .java files
+ZipUtil.FileFilter filter = file -> 
+    file.isDirectory() || file.getName().endsWith(".java");
+
+// Processor: Add file header comments to Java files
+ZipUtil.FileProcessor processor = (file, entryName) -> {
+    if (file.getName().endsWith(".java")) {
+        String content = Files.readString(file.toPath());
+        String processed = "// Auto-generated archive - " + new Date() + "\n" + content;
+        return new ByteArrayInputStream(processed.getBytes(StandardCharsets.UTF_8));
+    }
+    return Files.newInputStream(file.toPath());
+};
+
+// Name mapper: Convert entry paths to lowercase
+ZipUtil.EntryNameMapper nameMapper = (file, basePath) ->
+    (basePath + file.getName()).toLowerCase();
+
+// Create the archive with custom processing
+ZipUtil.zipFilesWithCustomProcessing(
+    files,           // Collection of files to archive
+    outputFile,      // Target ZIP file
+    "src/",          // Base path within the archive
+    filter,          // Custom file filter
+    processor,       // Custom processor
+    nameMapper       // Custom name mapper
+);
+```
+
+These lambda-based methods provide maximum flexibility while maintaining all security protections and resource management benefits of the utility classes.
 
 ## Configuration
 
@@ -80,6 +167,20 @@ ArchiveUtil implements algorithms for:
 
 - Path sanitization and validation
 - Destination path safety checks
+- Robust directory containment validation
 - DoS protection through size and count limits
 
-These are fundamental security measures that apply equally to ZIP and TAR archive formats, despite their implementation differences. 
+These are fundamental security measures that apply equally to ZIP and TAR archive formats, despite their implementation differences.
+
+## Directory Containment Validation
+
+One of the most critical security features of ArchiveUtil is ensuring that files cannot be extracted to or created outside of a specific target directory. This prevents path traversal attacks where malicious archive entries try to escape the intended extraction directory.
+
+The `validatePathWithinDirectory` and `validateFileWithinDirectory` methods provide robust protection by:
+
+1. Converting all paths to canonical form (resolving all symlinks and relative paths)
+2. Checking that file paths only exist within the target directory
+3. Providing configurable handling modes to either abort the operation or skip problematic files
+4. Properly logging security issues to both regular and security logs
+
+These methods should be used in any code that works with archives or paths where there's a risk of path traversal attacks. 

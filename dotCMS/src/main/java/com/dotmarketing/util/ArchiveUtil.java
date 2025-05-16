@@ -3,6 +3,12 @@ package com.dotmarketing.util;
 import com.dotcms.util.SizeUtil;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -38,6 +44,78 @@ public class ArchiveUtil {
          */
         SKIP_AND_CONTINUE
     }
+    
+    /**
+     * Functional interfaces for common archive operations
+     */
+    @FunctionalInterface
+    public interface FileFilter {
+        /**
+         * Determines whether a file should be included in the archive.
+         * 
+         * @param file The file to check
+         * @return true if the file should be included, false if it should be skipped
+         */
+        boolean accept(File file);
+    }
+    
+    @FunctionalInterface
+    public interface FileProcessor {
+        /**
+         * Processes a file before it's added to the archive.
+         * This can be used to transform file contents or perform other operations.
+         * 
+         * @param file The file to process
+         * @param entryName The proposed entry name in the archive
+         * @return A processed input stream containing the data to archive
+         * @throws IOException If an error occurs during processing
+         */
+        InputStream process(File file, String entryName) throws IOException;
+    }
+    
+    @FunctionalInterface
+    public interface EntryNameMapper {
+        /**
+         * Maps a file to its corresponding entry name in the archive.
+         * This allows custom naming logic for archive entries.
+         * 
+         * @param file The file being added to the archive
+         * @param basePath The base path within the archive (if any)
+         * @return The entry name to use in the archive
+         */
+        String mapEntryName(File file, String basePath);
+    }
+    
+    /**
+     * Common file filter that accepts all files
+     */
+    public static final FileFilter ACCEPT_ALL_FILTER = file -> true;
+    
+    /**
+     * Common file filter that accepts only regular files (not directories)
+     */
+    public static final FileFilter REGULAR_FILES_ONLY = File::isFile;
+    
+    /**
+     * Common file filter that accepts only directories
+     */
+    public static final FileFilter DIRECTORIES_ONLY = File::isDirectory;
+    
+    /**
+     * Common entry name mapper that uses the file's name without any path manipulation
+     */
+    public static final EntryNameMapper DEFAULT_NAME_MAPPER = (file, basePath) -> {
+        String path = basePath == null ? "" : basePath;
+        if (!path.isEmpty() && !path.endsWith("/")) {
+            path += "/";
+        }
+        return path + file.getName();
+    };
+    
+    /**
+     * Common file processor that returns the file as is without processing
+     */
+    public static final FileProcessor NO_PROCESSING = (file, entryName) -> java.nio.file.Files.newInputStream(file.toPath());
     
     /**
      * Sanitizes a path to prevent path traversal and archive slip vulnerabilities.
@@ -126,27 +204,7 @@ public class ArchiveUtil {
      * @throws SecurityException If handlingMode is ABORT and the path is suspicious
      */
     public static boolean checkSecurity(final File parentDir, final File newFile, SuspiciousEntryHandling handlingMode) throws IOException {
-        if (!isNewFileDestinationSafe(parentDir, newFile)) {
-            //Log detailed info into the security logger
-            if(!parentDir.delete()){
-                SecurityLogger.logInfo(ArchiveUtil.class, String.format(
-                        "An attempt to extract entry '%s' under an illegal destination has been made. The injected directory [%s] couldn't get removed.",
-                        parentDir.getCanonicalPath(), newFile.getCanonicalPath()));
-            } else {
-                SecurityLogger.logInfo(ArchiveUtil.class, String.format(
-                        "An attempt to extract entry '%s' under an illegal destination has been made. The injected directory [%s] was successfully removed.",
-                        parentDir.getCanonicalPath(), newFile.getCanonicalPath()));
-            }
-            
-            if (handlingMode == SuspiciousEntryHandling.ABORT) {
-                // and expose the minimum to the user
-                throw new SecurityException("Illegal extraction attempt");
-            }
-            
-            Logger.warn(ArchiveUtil.class, "Skipping entry with illegal destination: " + newFile.getPath());
-            return false;
-        }
-        return true;
+        return validateFileWithinDirectory(parentDir, newFile, handlingMode);
     }
     
     /**
@@ -158,9 +216,12 @@ public class ArchiveUtil {
      * @throws IOException If an error occurs during path resolution
      */
     static boolean isNewFileDestinationSafe(final File parentDir, final File newFile) throws IOException {
-        final String dirCanonicalPath = parentDir.getCanonicalPath();
-        final String newFileCanonicalPath = newFile.getCanonicalPath();
-        return newFileCanonicalPath.startsWith(dirCanonicalPath);
+        try {
+            return validateFileWithinDirectory(parentDir, newFile, SuspiciousEntryHandling.SKIP_AND_CONTINUE);
+        } catch (SecurityException e) {
+            // This should never happen with SKIP_AND_CONTINUE mode, but added for compatibility
+            return false;
+        }
     }
     
     /**
@@ -254,5 +315,324 @@ public class ArchiveUtil {
             Logger.warn(ArchiveUtil.class, "Error parsing size value: " + sizeStr + ", using default: " + defaultValue);
             return defaultValue;
         }
+    }
+
+    /**
+     * Validates that a file path is safely contained within a target directory.
+     * 
+     * @param targetDirectory The directory that should contain the path
+     * @param filePath The path to validate
+     * @param handlingMode How to handle invalid paths
+     * @return true if the path is within the target directory, false otherwise
+     * @throws SecurityException If the path isn't safe and handling mode is ABORT
+     */
+    public static boolean validatePathWithinDirectory(File targetDirectory, 
+                                                      String filePath, 
+                                                      SuspiciousEntryHandling handlingMode) {
+        try {
+            // Ensure target directory exists
+            if (!targetDirectory.exists()) {
+                if (!targetDirectory.mkdirs()) {
+                    Logger.error(ArchiveUtil.class, "Failed to create target directory: " + targetDirectory);
+                    return false;
+                }
+            }
+            
+            // Quick check for common path traversal patterns before any further processing
+            boolean isSuspicious = filePath.contains("../") || filePath.contains("..\\") || 
+                                   filePath.startsWith("/") || filePath.startsWith("\\") ||
+                                   filePath.contains(":/") || filePath.contains(":\\");
+                
+            if (isSuspicious) {
+                String message = String.format(
+                    "Suspicious path detected: '%s'", filePath);
+                
+                SecurityLogger.logInfo(ArchiveUtil.class, message);
+                
+                if (handlingMode == SuspiciousEntryHandling.ABORT) {
+                    throw new SecurityException(message);
+                }
+                
+                Logger.warn(ArchiveUtil.class, "Path contains suspicious patterns: " + filePath);
+                return false;
+            }
+            
+            // Convert to absolute canonical paths for comparison
+            String targetDirPath = targetDirectory.getCanonicalPath();
+            
+            // Sanitize the file path to remove any path traversal attempts
+            String sanitizedPath = sanitizePath(filePath, handlingMode);
+            
+            // Create a file representing the combined path
+            File fullPath = new File(targetDirectory, sanitizedPath);
+            
+            // Ensure parent directories exist
+            File parentDir = fullPath.getParentFile();
+            if (parentDir != null && !parentDir.exists()) {
+                if (!parentDir.mkdirs()) {
+                    Logger.warn(ArchiveUtil.class, "Failed to create parent directories for: " + fullPath);
+                }
+            }
+            
+            String canonicalPath = fullPath.getCanonicalPath();
+            
+            // Verify the file's canonical path starts with the target directory's canonical path
+            boolean isSafe = canonicalPath.startsWith(targetDirPath);
+            
+            if (!isSafe) {
+                String message = String.format(
+                    "Path traversal attempt detected. Path '%s' would escape target directory '%s'",
+                    filePath, targetDirPath);
+                
+                SecurityLogger.logInfo(ArchiveUtil.class, message);
+                
+                if (handlingMode == SuspiciousEntryHandling.ABORT) {
+                    throw new SecurityException(message);
+                }
+                
+                Logger.warn(ArchiveUtil.class, "Invalid path blocked: " + filePath);
+                return false;
+            }
+            
+            return true;
+        } catch (IOException e) {
+            // If we can't resolve canonical paths, assume it's unsafe
+            Logger.error(ArchiveUtil.class, "Error validating path security: " + e.getMessage(), e);
+            
+            if (handlingMode == SuspiciousEntryHandling.ABORT) {
+                throw new SecurityException("Unable to verify path safety: " + e.getMessage());
+            }
+            
+            return false;
+        }
+    }
+    
+    /**
+     * Validates that a file is safely contained within a target directory.
+     * 
+     * @param targetDirectory The directory that should contain the file
+     * @param file The file to validate
+     * @param handlingMode How to handle invalid paths
+     * @return true if the file is within the target directory, false otherwise
+     * @throws SecurityException If the file isn't safe and handling mode is ABORT
+     */
+    public static boolean validateFileWithinDirectory(File targetDirectory, 
+                                                     File file, 
+                                                     SuspiciousEntryHandling handlingMode) {
+        try {
+            // Convert to absolute canonical paths for comparison
+            String targetDirPath = targetDirectory.getCanonicalPath();
+            String filePath = file.getCanonicalPath();
+            
+            // Verify the file's canonical path starts with the target directory's canonical path
+            boolean isSafe = filePath.startsWith(targetDirPath);
+            
+            if (!isSafe) {
+                String message = String.format(
+                    "Path traversal attempt detected. File '%s' is outside target directory '%s'",
+                    filePath, targetDirPath);
+                
+                SecurityLogger.logInfo(ArchiveUtil.class, message);
+                
+                if (handlingMode == SuspiciousEntryHandling.ABORT) {
+                    throw new SecurityException(message);
+                }
+                
+                Logger.warn(ArchiveUtil.class, "Invalid file path blocked: " + filePath);
+                return false;
+            }
+            
+            return true;
+        } catch (IOException e) {
+            // If we can't resolve canonical paths, assume it's unsafe
+            Logger.error(ArchiveUtil.class, "Error validating file security: " + e.getMessage(), e);
+            
+            if (handlingMode == SuspiciousEntryHandling.ABORT) {
+                throw new SecurityException("Unable to verify file safety: " + e.getMessage());
+            }
+            
+            return false;
+        }
+    }
+    
+    /**
+     * Normalizes a base path for archive entries.
+     * Ensures the path ends with a slash if it's not empty.
+     * 
+     * @param basePath The base path to normalize
+     * @return A normalized base path ending with a slash if not empty
+     */
+    public static String normalizeBasePath(String basePath) {
+        if (basePath == null || basePath.isEmpty()) {
+            return "";
+        }
+        
+        if (!basePath.endsWith("/")) {
+            return basePath + "/";
+        }
+        
+        return basePath;
+    }
+    
+    /**
+     * Creates parent directories for a file if they don't exist.
+     * 
+     * @param file The file whose parent directories should be created
+     * @return true if parent directories exist or were created successfully, false otherwise
+     */
+    public static boolean createParentDirectories(File file) {
+        File parent = file.getParentFile();
+        if (parent != null && !parent.exists()) {
+            return parent.mkdirs();
+        }
+        return true;
+    }
+    
+    /**
+     * Creates a filter that combines multiple filters with AND logic.
+     * A file must be accepted by all filters to be included.
+     * 
+     * @param filters The filters to combine
+     * @return A filter that applies all the provided filters
+     */
+    public static FileFilter and(FileFilter... filters) {
+        return file -> {
+            for (FileFilter filter : filters) {
+                if (filter != null && !filter.accept(file)) {
+                    return false;
+                }
+            }
+            return true;
+        };
+    }
+    
+    /**
+     * Creates a filter that combines multiple filters with OR logic.
+     * A file will be included if any filter accepts it.
+     * 
+     * @param filters The filters to combine
+     * @return A filter that applies any of the provided filters
+     */
+    public static FileFilter or(FileFilter... filters) {
+        return file -> {
+            for (FileFilter filter : filters) {
+                if (filter != null && filter.accept(file)) {
+                    return true;
+                }
+            }
+            return filters.length == 0; // If no filters, accept all
+        };
+    }
+    
+    /**
+     * Creates a filter that inverts another filter's logic.
+     * 
+     * @param filter The filter to invert
+     * @return A filter that returns the opposite of the provided filter
+     */
+    public static FileFilter not(FileFilter filter) {
+        return file -> filter == null || !filter.accept(file);
+    }
+    
+    /**
+     * Creates a filter that accepts files with specific extensions.
+     * 
+     * @param extensions The file extensions to accept (without the dot)
+     * @return A filter that accepts files with the specified extensions
+     */
+    public static FileFilter byExtension(String... extensions) {
+        if (extensions == null || extensions.length == 0) {
+            return ACCEPT_ALL_FILTER;
+        }
+        
+        // Convert extensions to lowercase for case-insensitive comparison
+        final String[] lowerExtensions = Arrays.stream(extensions)
+            .map(ext -> ext.toLowerCase())
+            .toArray(String[]::new);
+        
+        return file -> {
+            if (!file.isFile()) {
+                return false;
+            }
+            
+            String fileName = file.getName().toLowerCase();
+            // Check if file name ends with any of the extensions
+            return Arrays.stream(lowerExtensions)
+                .anyMatch(ext -> {
+                    // Handle multiple extensions (e.g. .txt.sh)
+                    String[] fileExts = fileName.split("\\.");
+                    if (fileExts.length > 1) {
+                        // Check if any of the file's extensions match
+                        for (int i = 1; i < fileExts.length; i++) {
+                            if (fileExts[i].equals(ext)) {
+                                return true;
+                            }
+                        }
+                    }
+                    // Also check the last extension
+                    return fileName.endsWith("." + ext);
+                });
+        };
+    }
+    
+    /**
+     * Creates a filter that accepts files based on a name pattern.
+     * 
+     * @param pattern The regex pattern to match file names
+     * @return A filter that accepts files with names matching the pattern
+     */
+    public static FileFilter byNamePattern(String pattern) {
+        return file -> file.getName().matches(pattern);
+    }
+    
+    /**
+     * Creates an EntryNameMapper that prefixes entry names with a path.
+     * 
+     * @param prefix The prefix to add to entry names
+     * @return An EntryNameMapper that adds the prefix to entry names
+     */
+    public static EntryNameMapper withPrefix(String prefix) {
+        final String normalizedPrefix = normalizeBasePath(prefix);
+        return (file, basePath) -> normalizedPrefix + DEFAULT_NAME_MAPPER.mapEntryName(file, basePath);
+    }
+    
+    /**
+     * Creates an EntryNameMapper that replaces the file extension.
+     * 
+     * @param newExtension The new extension to use (without the dot)
+     * @return An EntryNameMapper that changes file extensions
+     */
+    public static EntryNameMapper withExtension(String newExtension) {
+        return (file, basePath) -> {
+            String name = file.getName();
+            int dotIndex = name.lastIndexOf('.');
+            String newName;
+            
+            if (dotIndex < 0 || dotIndex == name.length() - 1) {
+                // No extension or dot at the end, add the new one
+                newName = name + (name.endsWith(".") ? "" : ".") + newExtension;
+            } else {
+                // Replace the existing extension with the new one
+                newName = name.substring(0, dotIndex) + "." + newExtension;
+            }
+            
+            // Apply the base path if provided
+            String path = basePath == null ? "" : basePath;
+            if (!path.isEmpty() && !path.endsWith("/")) {
+                path += "/";
+            }
+            
+            return path + newName;
+        };
+    }
+    
+    /**
+     * Creates a collection containing a single file for archive methods that expect collections.
+     * 
+     * @param file The file to include in the collection
+     * @return A collection containing only the specified file
+     */
+    public static Collection<File> singleFileCollection(File file) {
+        return Arrays.asList(file);
     }
 } 

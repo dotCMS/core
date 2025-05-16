@@ -24,32 +24,24 @@ public class CSVManifestReader implements ManifestReader{
 
     final static String COMMENTED_LINE_START = "#";
 
-    public CSVManifestReader(final Reader manifestReader){
+    public CSVManifestReader(final Reader manifestReader) throws IOException {
         init(manifestReader);
     }
 
-    public CSVManifestReader(final File csvManifestFile){
-        init(csvManifestFile);
-    }
-
-    private void init(final File csvManifestFile){
-        try{
+    public CSVManifestReader(final File csvManifestFile) {
+        try {
             init(new FileReader(csvManifestFile));
         } catch (IOException e) {
             throw new IllegalArgumentException("Not valid " + csvManifestFile.getAbsolutePath(), e);
         }
     }
 
-    private void init(final Reader manifestReader){
-        try {
-            final List<String> lines = IOUtils.readLines(manifestReader);
+    private void init(final Reader manifestReader) throws IOException {
+        final List<String> lines = IOUtils.readLines(manifestReader);
 
-            this.manifestItemsIncluded = getManifestInfos(lines, "INCLUDED");
-            this.manifestItemsExcluded = getManifestInfos(lines, "EXCLUDED");
-            this.metaData = getAllMetaData(lines);
-        } catch (IOException e) {
-            throw new IllegalArgumentException("Not valid InputStream manifest: " + e.getMessage(), e);
-        }
+        this.manifestItemsIncluded = getManifestInfos(lines, "INCLUDED");
+        this.manifestItemsExcluded = getManifestInfos(lines, "EXCLUDED");
+        this.metaData = getAllMetaData(lines);
     }
 
     private Map<String, String> getAllMetaData(final List<String> lines) {

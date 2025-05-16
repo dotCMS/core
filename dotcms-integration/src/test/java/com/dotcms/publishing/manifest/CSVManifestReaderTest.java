@@ -343,7 +343,7 @@ public class CSVManifestReaderTest {
      * should: Return just the asset with the reason requested
      */
     @Test
-    public void createCSVManifestReaderWithInputStream() throws FileNotFoundException {
+    public void createCSVManifestReaderWithInputStream() throws IOException {
         final String includeReason1 = ManifestReason.INCLUDE_BY_USER.getMessage();
         final String includeReason2 = ManifestReason.INCLUDE_AUTOMATIC_BY_DOTCMS.getMessage();
 

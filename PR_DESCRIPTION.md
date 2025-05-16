@@ -24,6 +24,7 @@ This PR refactors the ZIP and TAR file handling security mechanisms in dotCMS to
 ## Security Benefits
 - **Consistent Protection**: Both file formats now use exactly the same security checks
 - **Single Source of Truth**: Security fixes need to be implemented only once
+- **Enhanced Path Traversal Protection**: Added robust validation to guarantee files can't escape target directories
 - **Complete DoS Protection**: Both implementations have the same protections:
   - Max total size limits
   - Max individual file size limits
@@ -31,6 +32,18 @@ This PR refactors the ZIP and TAR file handling security mechanisms in dotCMS to
 
 ## Technical Details
 The implementation maintains the distinct configuration keys for each file format (`ZIP_*` and `TAR_*`) while sharing the underlying security logic. This allows for different security thresholds for each format if needed, while ensuring the actual security mechanisms are identical.
+
+Higher-level utility methods have been added to both ZipUtil and TarUtil that encapsulate common archive operations and eliminate the need for clients to manually handle I/O operations. These methods improve code quality by:
+1. Reducing duplication and boilerplate code
+2. Ensuring proper resource management (streams are always closed)
+3. Applying consistent security checks
+4. Providing simpler, more intuitive APIs
+
+Additionally, lambda-based processing has been implemented to allow for maximum flexibility in archive operations:
+1. Custom file filtering to control which files get included
+2. Content transformation via file processors to modify files before archiving
+3. Entry name customization to control paths within archives
+4. All while maintaining security and proper resource management
 
 Size handling has been improved by leveraging the existing `SizeUtil` class instead of custom parsing. This provides a consistent, well-tested approach to parsing human-readable size strings (like "5GB" or "1.5MB") across the codebase.
 
