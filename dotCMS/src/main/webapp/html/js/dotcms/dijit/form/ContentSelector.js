@@ -366,7 +366,6 @@ dojo.declare(
 
             var fieldVelocityVarName = field['fieldVelocityVarName'];
             var fieldContentlet = field['fieldContentlet'];
-            this.structureVelVar = field['fieldStructureVarName'];
             var value = '';
 
             var type = field['fieldFieldType'];
