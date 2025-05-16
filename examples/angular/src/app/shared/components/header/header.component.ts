@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
-import { ReorderButtonComponent } from '../../../shared/reorder-button/reorder-button.component';
+import { ReorderButtonComponent } from '../reorder-button/reorder-button.component';
 
 @Component({
     selector: 'app-header',

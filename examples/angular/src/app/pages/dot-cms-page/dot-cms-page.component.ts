@@ -2,17 +2,17 @@ import { Component, DestroyRef, OnInit, inject } from '@angular/core';
 
 import { ActivatedRoute } from '@angular/router';
 
-import { ErrorComponent } from './components/error/error.component';
-import { LoadingComponent } from './components/loading/loading.component';
-import { HeaderComponent } from './components/header/header.component';
-import { NavigationComponent } from './components/navigation/navigation.component';
-import { FooterComponent } from './components/footer/footer.component';
+import { ErrorComponent } from '../../shared/components/error/error.component';
+import { LoadingComponent } from '../../shared/components/loading/loading.component';
+import { HeaderComponent } from '../../shared/components/header/header.component';
+import { NavigationComponent } from '../../shared/components/navigation/navigation.component';
+import { FooterComponent } from '../../shared/components/footer/footer.component';
 
 import { DotCMSLayoutBodyComponent } from '@dotcms/angular/next';
 import { DotCMSPageAsset } from '@dotcms/types';
-import { ExtraContent, FooterContent } from '../shared/models';
-import { EditablePageService } from './services/editable-page.service';
-import { DYNAMIC_COMPONENTS } from './components';
+import { ExtraContent, FooterContent } from '../../shared/models';
+import { EditablePageService } from '../../services/editable-page.service';
+import { DYNAMIC_COMPONENTS } from '../../shared/components';
 
 @Component({
     selector: 'app-dotcms-page',
@@ -26,10 +26,9 @@ import { DYNAMIC_COMPONENTS } from './components';
         LoadingComponent
     ],
     providers: [EditablePageService],
-    templateUrl: './pages.component.html',
-    styleUrl: './pages.component.css'
+    templateUrl: './dot-cms-page.component.html'
 })
-export class DotCMSPagesComponent implements OnInit {
+export class DotCMSPageComponent implements OnInit {
     readonly #editablePageService =
         inject<EditablePageService<DotCMSPageAsset, ExtraContent>>(EditablePageService);
 

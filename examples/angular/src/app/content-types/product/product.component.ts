@@ -1,5 +1,5 @@
 import { NgOptimizedImage } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, input, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
 import { RouterLink } from '@angular/router';
 import { DotCMSBasicContentlet } from '@dotcms/types';
@@ -50,8 +50,6 @@ interface ProductContentlet extends DotCMSBasicContentlet {
 })
 export class ProductComponent {
     contentlet = input.required<ProductContentlet>();
-
-
 
     $salePrice = computed(() => this.formatPrice(this.contentlet().salePrice));
 

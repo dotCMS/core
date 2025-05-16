@@ -1,8 +1,8 @@
 import { Component, input } from '@angular/core';
 
-import { RecommendedCardComponent } from '../../../../shared/recommended-card/recommended-card.component';
+import { RecommendedCardComponent } from '../../recommended-card/recommended-card.component';
 
-import { Destination } from '../../../../shared/models';
+import { Destination } from '../../../models';
 
 @Component({
     selector: 'app-destinations',

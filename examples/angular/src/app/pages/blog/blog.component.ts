@@ -1,16 +1,14 @@
 import { Component, DestroyRef, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
-import { DYNAMIC_COMPONENTS } from '../components';
-
-import { HeaderComponent } from '../components/header/header.component';
-import { NavigationComponent } from '../components/navigation/navigation.component';
-import { LoadingComponent } from '../components/loading/loading.component';
-import { ErrorComponent } from '../components/error/error.component';
-import { FooterComponent } from '../components/footer/footer.component';
+import { HeaderComponent } from '../../shared/components/header/header.component';
+import { NavigationComponent } from '../../shared/components/navigation/navigation.component';
+import { LoadingComponent } from '../../shared/components/loading/loading.component';
+import { ErrorComponent } from '../../shared/components/error/error.component';
+import { FooterComponent } from '../../shared/components/footer/footer.component';
 import { BlogPostComponent } from './blog-post/blog-post.component';
 import { DotCMSPageAsset, DotCMSURLContentMap } from '@dotcms/types';
-import { EditablePageService } from '../services/editable-page.service';
+import { EditablePageService } from '../../services/editable-page.service';
 import { ContentletImage, ExtraContent, FileAsset } from '../../shared/models';
 
 export interface BlogContentlet extends DotCMSURLContentMap {

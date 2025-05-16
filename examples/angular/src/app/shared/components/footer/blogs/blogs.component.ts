@@ -1,6 +1,6 @@
 import { Component, input } from '@angular/core';
-import { RecommendedCardComponent } from '../../../../shared/recommended-card/recommended-card.component';
-import { Blog } from '../../../../shared/models';
+import { RecommendedCardComponent } from '../../recommended-card/recommended-card.component';
+import { Blog } from '../../../models';
 @Component({
     selector: 'app-blogs',
     standalone: true,

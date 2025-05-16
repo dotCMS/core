@@ -2,7 +2,7 @@ import { Component, HostBinding, input } from '@angular/core';
 
 import { DatePipe, NgOptimizedImage } from '@angular/common';
 
-import { Contentlet } from '../models';
+import { Contentlet } from '../../models';
 import { DotCMSShowWhenDirective } from '@dotcms/angular/next';
 import { editContentlet } from '@dotcms/uve';
 import { UVE_MODE } from '@dotcms/types';

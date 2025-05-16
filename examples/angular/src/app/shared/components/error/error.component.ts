@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { PageError } from '../../../shared/models';
+import { PageError } from '../../models';
 @Component({
     selector: 'app-error',
     standalone: true,

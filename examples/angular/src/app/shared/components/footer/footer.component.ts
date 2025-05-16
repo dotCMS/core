@@ -4,7 +4,7 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { DestinationsComponent } from './destinations/destinations.component';
 import { NgOptimizedImage } from '@angular/common';
 import { BlogsComponent } from './blogs/blogs.component';
-import { FooterContent } from '../../../shared/models';
+import { FooterContent } from '../../models';
 
 @Component({
     selector: 'app-footer',
