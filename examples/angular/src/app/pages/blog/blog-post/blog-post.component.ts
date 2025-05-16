@@ -38,7 +38,7 @@ export class BlogPostComponent implements OnChanges {
     ngOnChanges(): void {
         if (this.isEditMode) {
             this.blockEditorClasses.set(
-                'prose lg:prose-xl prose-a:text-red-500 border-2 border-solid border-cyan-400 cursor-pointer'
+                'prose lg:prose-xl prose-a:text-red-500 border-2 border-solid border-red-400 cursor-pointer'
             );
         } else {
             this.blockEditorClasses.set('prose lg:prose-xl prose-a:text-red-500');
