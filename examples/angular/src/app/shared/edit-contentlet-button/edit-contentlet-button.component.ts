@@ -20,7 +20,7 @@ import { UVE_MODE } from '@dotcms/types';
     template: `<ng-template [dotCMSShowWhen]="uveMode.EDIT">
         <button
             (click)="editContentlet(contentlet())"
-            class="bg-red-400 text-white rounded-md py-2 px-4 shadow-md hover:bg-red-500">
+            class="bg-red-400 text-white text-sm rounded-md py-1 px-3 shadow-md hover:bg-red-500 cursor-pointer">
             Edit
         </button>
     </ng-template> `
