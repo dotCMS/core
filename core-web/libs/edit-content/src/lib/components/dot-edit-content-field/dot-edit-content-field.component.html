@@ -72,6 +72,7 @@
         @defer (on immediate) {
             <ng-container [ngTemplateOutlet]="labelTemplate" />
             <dot-edit-content-calendar-field
+                [utcTimezone]="$systemTimezone()"
                 [field]="field"
                 [attr.data-testId]="'field-' + field.variable" />
         }

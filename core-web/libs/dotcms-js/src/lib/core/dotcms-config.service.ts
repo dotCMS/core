@@ -27,6 +27,12 @@ export interface DotUiColors {
     background: string;
 }
 
+export interface SystemTimezone {
+    id: string;
+    label: string;
+    offset: string;
+}
+
 export interface ConfigParams {
     colors: DotUiColors;
     emailRegex: string;
@@ -48,6 +54,7 @@ export interface ConfigParams {
         version: string;
     };
     websocket: WebSocketConfigParams;
+    systemTimezone: SystemTimezone;
 }
 
 export interface WebSocketConfigParams {
@@ -61,7 +68,9 @@ export interface DotTimeZone {
     offset: string;
 }
 
-@Injectable()
+@Injectable({
+    providedIn: 'root'
+})
 export class DotcmsConfigService {
     private configParamsSubject: BehaviorSubject<ConfigParams> = new BehaviorSubject(null);
     private configUrl: string;
@@ -112,7 +121,8 @@ export class DotcmsConfigService {
                         websocketReconnectTime:
                             res.config.websocket[DOTCMS_WEBSOCKET_RECONNECT_TIME],
                         disabledWebsockets: res.config.websocket[DOTCMS_DISABLE_WEBSOCKET_PROTOCOL]
-                    }
+                    },
+                    systemTimezone: res.config.systemTimezone
                 };
 
                 this.configParamsSubject.next(configParams);
