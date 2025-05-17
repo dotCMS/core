@@ -34,11 +34,18 @@ public interface ApiMetricFactory {
             "as overall FROM metrics_temp";
 
     /**
-     * Save request on the metrics_temp
+     * Save a single metric request in the metrics_temp table
      *
-     * @param apiMetricRequest request
+     * @param apiMetricRequest request to save
      */
     void save(final ApiMetricRequest apiMetricRequest);
+    
+    /**
+     * Save multiple metrics in a batch operation for improved performance
+     *
+     * @param apiMetricRequests collection of requests to save
+     */
+    void saveBatch(final Collection<ApiMetricRequest> apiMetricRequests);
 
     /**
      * Save a register with just the current time as timestamp, it is used to mark when we start
@@ -64,15 +71,19 @@ public interface ApiMetricFactory {
      * @throws DotDataException if something wrong happened
      */
     void dropTemporaryTable() throws DotDataException;
-
+    
     /**
-     * Return all the summary from the temporal table
-     *
-     * @return a collection of maps with the summary data.
-     *
-     * @see ApiMetricFactory
-     * @see ApiMetricAPI
+     * Get the collection of metric data from the temporary table
+     * 
+     * @return Collection of Maps with the summary data
      */
     Collection<Map<String, Object>> getMetricTemporaryTableData();
-
+    
+    /**
+     * Return the amount of hours between when we started collecting data until now
+     *
+     * @return the amount of hours
+     * @throws DotDataException if there was an error accessing the database
+     */
+    double getOverallHours() throws DotDataException;
 }
