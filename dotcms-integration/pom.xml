@@ -535,7 +535,7 @@
                 <executions>
                     <execution>
                         <id>sanitize-starter-zip</id>
-                        <phase>generate-test-resources</phase>
+                        <phase>process-test-resources</phase>
                         <goals>
                             <goal>exec</goal>
                         </goals>
@@ -561,7 +561,7 @@
                 <executions>
                     <execution>
                         <id>replace-with-sanitized-starter</id>
-                        <phase>generate-test-resources</phase>
+                        <phase>process-test-resources</phase>
                         <goals>
                             <goal>run</goal>
                         </goals>

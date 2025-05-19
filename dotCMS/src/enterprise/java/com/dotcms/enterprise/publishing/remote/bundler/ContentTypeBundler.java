@@ -144,8 +144,7 @@ public class ContentTypeBundler implements IBundler {
 		}
 
 		final Host host        = APILocator.getHostAPI().find(structure.getHost(), systemUser, false);
-		final String myFileUrl = File.separator
-				+liveWorking + File.separator
+		final String myFileUrl = liveWorking + File.separator
 				+ host.getHostname() +File.separator + uri;
 
 		try (final OutputStream outputStream = bundleOutput.addFile(myFileUrl)) {
