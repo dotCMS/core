@@ -1,5 +1,4 @@
 import { ChangeDetectionStrategy, Component, inject, model } from '@angular/core';
-import { RouterLink } from '@angular/router';
 
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
@@ -34,7 +33,6 @@ import { DotEditContentSidebarComponent } from '../dot-edit-content-sidebar/dot-
         ButtonModule,
         ToastModule,
         MessagesModule,
-        RouterLink,
         DotEditContentFormComponent,
         DotEditContentSidebarComponent,
         ConfirmDialogModule
