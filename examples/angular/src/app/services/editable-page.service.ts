@@ -71,8 +71,6 @@ export class EditablePageService<T extends DotCMSExtendedPageResponse> {
                     return;
                 }
 
-                console.log(response);
-
                 // If UVE is not enabled, set the page content
                 if (!getUVEState()) {
                     this.#setPageContent(response as ComposedPageResponse<T>);
