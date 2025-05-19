@@ -133,6 +133,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
 import com.liferay.portal.util.PortalUtil;
+import com.liferay.portal.util.WebKeys;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.input.ReaderInputStream;
 import org.apache.commons.lang.RandomStringUtils;
@@ -2409,7 +2410,50 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
     }
 
 
+    /**
+     * Method to test: {@link WorkflowResource#fireActionByNameSinglePart(HttpServletRequest, String, String, String, String, FireActionByNameForm)}
+     * Given Scenario: Fires a save with a limited user
+     * ExpectedResult: The action should be ran ok
+     *
+     */
+    @Test
+    public void testFireActionByName_by_limited_user() throws Exception {
 
+        // Create limited user
+        final Role beRole = APILocator.getRoleAPI().loadBackEndUserRole();
+        final User limitedUser = new UserDataGen().roles(beRole).nextPersisted();
+        //Create Content
+        final String titlePropertyKey = "title";
+        final String titlePropertyValue = "Test1";
+        final String bodyPropertyKey = "body";
+        final String bodyPropertyValue = "Body1";
+        final FireActionByNameForm.Builder builder1 = new FireActionByNameForm.Builder();
+        final Map<String, Object> contentletFormData = new HashMap<>();
+        contentletFormData.put("contentHost", APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false).getHostname());
+        contentletFormData.put(titlePropertyKey, titlePropertyValue);
+        contentletFormData.put(bodyPropertyKey, bodyPropertyValue);
+        builder1.contentlet(contentletFormData);
+        builder1.actionName("Save");
+        final FireActionByNameForm fireActionForm1 = new FireActionByNameForm(builder1);
+        final HttpServletRequest request1 = getHttpRequest();
+        request1.setAttribute(WebKeys.USER, limitedUser);
+        final Response response1 = workflowResource
+                .fireActionByNameSinglePart(request1 , null, null,
+                        "FORCE",
+                        String.valueOf(languageAPI.getDefaultLanguage().getId()),
+                        fireActionForm1);
+        final int statusCode1 = response1.getStatus();
+        assertEquals(Status.OK.getStatusCode(), statusCode1);
+        final ResponseEntityView fireEntityView1 = ResponseEntityView.class
+                .cast(response1.getEntity());
+        final Contentlet contentlet = new Contentlet(
+                Map.class.cast(fireEntityView1.getEntity()));
+        assertNotNull(contentlet);
+        assertEquals(titlePropertyValue,
+                contentlet.getMap().get(titlePropertyKey));
+        assertEquals(bodyPropertyValue,
+                contentlet.getMap().get(bodyPropertyKey));
+    }
 
     private ContentType createCategoryFieldContentType(final String parentCategoryInode)
             throws Exception {
