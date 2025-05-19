@@ -9,7 +9,8 @@ import { FooterComponent } from '../../shared/components/footer/footer.component
 import { BlogPostComponent } from './blog-post/blog-post.component';
 import { DotCMSPageAsset, DotCMSURLContentMap } from '@dotcms/types';
 import { EditablePageService } from '../../services/editable-page.service';
-import { ContentletImage, ExtraContent } from '../../shared/models';
+import { ContentletImage, ExtraContent } from '../../shared/contentlet.model';
+import { BASE_EXTRA_QUERIES } from '../../shared/queries';
 
 export interface BlogContentlet extends DotCMSURLContentMap {
     blogContent: string;
@@ -35,9 +36,6 @@ export interface BlogPageAsset extends DotCMSPageAsset {
     templateUrl: './blog.component.html'
 })
 export class BlogComponent implements OnInit {
-    readonly #route = inject(ActivatedRoute);
-    readonly #destroyRef = inject(DestroyRef);
-
     readonly #editablePageService =
         inject<EditablePageService<BlogPageAsset, ExtraContent>>(EditablePageService);
 
@@ -46,8 +44,9 @@ export class BlogComponent implements OnInit {
     ngOnInit() {
         this.#editablePageService
             .initializePage({
-                activateRoute: this.#route,
-                destroyRef: this.#destroyRef
+                graphql: {
+                    ...BASE_EXTRA_QUERIES
+                }
             })
             .subscribe();
     }

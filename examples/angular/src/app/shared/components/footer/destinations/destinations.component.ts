@@ -2,7 +2,7 @@ import { Component, input } from '@angular/core';
 
 import { RecommendedCardComponent } from '../../recommended-card/recommended-card.component';
 
-import { Destination } from '../../../models';
+import { Destination } from '../../../contentlet.model';
 
 @Component({
     selector: 'app-destinations',

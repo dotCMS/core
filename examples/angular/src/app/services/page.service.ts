@@ -1,5 +1,5 @@
 import { inject, Injectable } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRouteSnapshot } from '@angular/router';
 import { from, Observable, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 
@@ -32,27 +32,20 @@ export class PageService {
     private readonly client = inject(DOTCMS_CLIENT_TOKEN);
 
     /**
-     * Get the page and navigation for the given route and config.
+     * Get the page and navigation for the given url and params.
      *
-     * @param {ActivatedRoute} route
-     * @param {*} config
-     * @return {*}  {(Observable<{ page: DotCMSPageAsset | { error: PageError }; nav: DotcmsNavigationItem }>)}
+     * @param {string} url
+     * @param {DotCMSPageRequestParams} params
+     * @return {*}  {Observable<DotCMSCustomPageResponse<TPage, TContent>>}
      * @memberof PageService
      */
     getPageAsset<TPage extends DotCMSPageAsset, TContent>(
-        route: ActivatedRoute,
-        extraQueries?: DotCMSPageRequestParams['graphql']
+        url: string,
+        params: DotCMSPageRequestParams
     ): Observable<DotCMSCustomPageResponse<TPage, TContent>> {
-        const params = route.snapshot.queryParams;
-        const url = route.snapshot.url.map((segment) => segment.path).join('/');
-        const path = url || '/';
-
         return from(
-            this.client.page.get<{ pageAsset: TPage; content: TContent }>(path, {
-                ...params,
-                graphql: {
-                    ...extraQueries
-                }
+            this.client.page.get<{ pageAsset: TPage; content: TContent }>(url, {
+                ...params
             })
         ).pipe(
             map((response: DotCMSComposedPageResponse<{ pageAsset: TPage; content: TContent }>) => {

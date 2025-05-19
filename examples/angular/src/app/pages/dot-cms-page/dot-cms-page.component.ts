@@ -1,6 +1,4 @@
-import { Component, DestroyRef, OnInit, inject } from '@angular/core';
-
-import { ActivatedRoute } from '@angular/router';
+import { Component, OnInit, inject } from '@angular/core';
 
 import { ErrorComponent } from '../../shared/components/error/error.component';
 import { LoadingComponent } from '../../shared/components/loading/loading.component';
@@ -10,9 +8,10 @@ import { FooterComponent } from '../../shared/components/footer/footer.component
 
 import { DotCMSLayoutBodyComponent } from '@dotcms/angular/next';
 import { DotCMSPageAsset } from '@dotcms/types';
-import { ExtraContent, FooterContent } from '../../shared/models';
 import { EditablePageService } from '../../services/editable-page.service';
 import { DYNAMIC_COMPONENTS } from '../../shared/components';
+import { BASE_EXTRA_QUERIES } from '../../shared/queries';
+import { ExtraContent } from '../../shared/contentlet.model';
 
 @Component({
     selector: 'app-dotcms-page',
@@ -32,9 +31,6 @@ export class DotCMSPageComponent implements OnInit {
     readonly #editablePageService =
         inject<EditablePageService<DotCMSPageAsset, ExtraContent>>(EditablePageService);
 
-    readonly #destroyRef = inject(DestroyRef);
-    readonly #activateRoute = inject(ActivatedRoute);
-
     readonly $context = this.#editablePageService.$context;
 
     readonly components = DYNAMIC_COMPONENTS;
@@ -42,8 +38,9 @@ export class DotCMSPageComponent implements OnInit {
     ngOnInit() {
         this.#editablePageService
             .initializePage({
-                activateRoute: this.#activateRoute,
-                destroyRef: this.#destroyRef
+                graphql: {
+                    ...BASE_EXTRA_QUERIES
+                }
             })
             .subscribe();
     }

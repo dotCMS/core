@@ -1,15 +1,14 @@
 import { DestroyRef, inject, Injectable, signal } from '@angular/core';
 import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
-import { DYNAMIC_COMPONENTS } from '../shared/components';
 import { DotCMSPageAsset, DotCMSPageRequestParams } from '@dotcms/types';
 import { filter, map, startWith, switchMap, tap } from 'rxjs/operators';
 import { PageService } from './page.service';
 import { DotCMSEditablePageService } from '@dotcms/angular/next';
-import { BASE_EXTRA_QUERIES } from '../shared/queries';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { getUVEState } from '@dotcms/uve';
-import { ComposedPageResponse, ExtraContent, PageRender } from '../shared/models';
+import { ComposedPageResponse, PageRender } from '../shared/models';
 import { Observable } from 'rxjs';
+import { ExtraContent } from '../shared/contentlet.model';
 
 /**
  * Service that handles page loading and management for DotCMS pages
@@ -24,6 +23,8 @@ export class EditablePageService<
     #router = inject(Router);
     #pageService = inject(PageService);
     #dotcmsEditablePageService = inject(DotCMSEditablePageService);
+    #destroyRef = inject(DestroyRef);
+    #activatedRoute = inject(ActivatedRoute);
 
     readonly $context = signal<PageRender<TPage, TContent>>({
         status: 'idle'
@@ -35,25 +36,37 @@ export class EditablePageService<
      * @param route Optional override for the current route
      * @returns Observable that completes when initial page load is done
      */
-    initializePage({
-        activateRoute,
-        destroyRef,
-        extraQuery = BASE_EXTRA_QUERIES
-    }: {
-        activateRoute: ActivatedRoute;
-        destroyRef: DestroyRef;
-        extraQuery?: DotCMSPageRequestParams['graphql'];
-    }): Observable<void> {
+    initializePage(extraParams?: DotCMSPageRequestParams): Observable<void> {
         this.#setLoading();
 
+        // Wait for the router to navigate to the page
         return this.#router.events.pipe(
             filter((event): event is NavigationEnd => event instanceof NavigationEnd),
             startWith(null), // Trigger initial load
             tap(() => {
                 this.#setLoading();
             }),
+            takeUntilDestroyed(this.#destroyRef),
             switchMap(() => {
-                return this.#pageService.getPageAsset<TPage, TContent>(activateRoute, extraQuery);
+                // Get the path from the current route
+                const path = this.#activatedRoute.snapshot.url
+                    .map((segment) => segment.path)
+                    .join('/');
+
+                // If the path is empty, use the root path
+                const url = path || '/';
+
+                // Get the query params from the current route
+                const queryParams = this.#activatedRoute.snapshot.queryParams;
+
+                // Combine the query params with the extra params
+                const fullParams = {
+                    ...queryParams,
+                    ...extraParams
+                };
+
+                // Fetch the page asset
+                return this.#pageService.getPageAsset<TPage, TContent>(url, fullParams);
             }),
             tap(({ response, error }) => {
                 if (error) {
@@ -61,15 +74,18 @@ export class EditablePageService<
                     return;
                 }
 
+                // If UVE is not enabled, set the page content
                 if (!getUVEState()) {
                     this.#setPageContent(response as ComposedPageResponse<TPage, TContent>);
                     return;
                 }
 
+                // If UVE is enabled, listen for changes
                 this.#dotcmsEditablePageService
                     .listen(response)
-                    .pipe(takeUntilDestroyed(destroyRef))
+                    .pipe(takeUntilDestroyed(this.#destroyRef))
                     .subscribe((page) => {
+                        // Set the page content every time it changes
                         this.#setPageContent(page as ComposedPageResponse<TPage, TContent>);
                     });
             }),
@@ -78,6 +94,10 @@ export class EditablePageService<
         );
     }
 
+    /**
+     * Set the page content
+     * @param page
+     */
     #setPageContent(page?: ComposedPageResponse<TPage, TContent>) {
         this.$context.set({
             pageResponse: page,
@@ -86,6 +106,9 @@ export class EditablePageService<
         });
     }
 
+    /**
+     * Set the loading state
+     */
     #setLoading() {
         this.$context.update((state) => ({
             ...state,
@@ -94,6 +117,10 @@ export class EditablePageService<
         }));
     }
 
+    /**
+     * Set the error state
+     * @param error
+     */
     #setError(error: PageRender<TPage, TContent>['error']) {
         this.$context.update((state) => ({
             ...state,
