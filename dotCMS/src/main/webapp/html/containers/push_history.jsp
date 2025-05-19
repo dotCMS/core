@@ -18,7 +18,7 @@
     final String containerId = httpServletRequest.getParameter("containerId");
     Container container =  APILocator.getContainerAPI().getWorkingContainerById(containerId, user, true);
     request.setAttribute(com.dotmarketing.util.WebKeys.VERSIONS_INODE_EDIT, container);
-    request.setAttribute("hideBringBack", true);
+    request.setAttribute("hideBringBack", false);
 %>
 	<%@ include file="/html/portlet/ext/common/edit_versions_inc.jsp" %>
 
@@ -43,4 +43,37 @@
 		});
 		document.dispatchEvent(customEvent);
 	}
+
+    let isBringBack = false;
+    function bringBackTemplateVersion(inode){
+        if(!isBringBack && confirm('<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "folder.replace.container.working.version"))%>')){
+            setIsBringBack(true);
+            fetch(`/api/v1/versionables/${inode}/_bringback`, {
+                method: 'PUT'
+            })
+            .then(response => response.json())
+            .then(({ entity }) => {
+                const customEvent = document.createEvent('CustomEvent');
+                customEvent.initCustomEvent('ng-event', false, false, {
+                    name: 'bring-back-version',
+                    data: {
+                        id: entity.versionId,
+                        inode: entity.inode,
+                        type: 'container'
+                    }
+                })
+                document.dispatchEvent(customEvent);
+            })
+            .catch((error) => {
+                console.error('Error bringing back version: ', error);
+            })
+            .finally(() => setIsBringBack(false));
+        }
+    }
+
+    function setIsBringBack(isBringBack){
+        const element = document.querySelector("[data-messageId='bring-back-message']");
+        element.style.display = isBringBack ? 'flex' : 'none';
+        isBringBack = isBringBack
+    }
 </script>
