@@ -25,6 +25,7 @@ import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import org.apache.commons.io.FilenameUtils;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -71,6 +72,13 @@ public class FileMetadataAPITest {
     private static FileMetadataAPI fileMetadataAPI;
     private static TempFileAPI tempFileAPI;
 
+    @BeforeClass
+    public static void prepare() throws Exception {
+        IntegrationTestInitService.getInstance().init();
+        fileMetadataAPI = APILocator.getFileMetadataAPI();
+        tempFileAPI = APILocator.getTempFileAPI();
+    }
+
     /**
      * if we have a code that requires some environment initialization required to run prior to our dataProvider Methods the @BeforeClass annotation won't do
      * See https://github.com/TNG/junit-dataprovider/issues/114
@@ -79,12 +87,19 @@ public class FileMetadataAPITest {
      * @throws Exception
      */
     private static void prepareIfNecessary() throws Exception {
-       if(null == fileMetadataAPI){
-          IntegrationTestInitService.getInstance().init();
-          fileMetadataAPI = APILocator.getFileMetadataAPI();
-       }
-       if(null == tempFileAPI){
-          tempFileAPI = APILocator.getTempFileAPI();
+       try {
+           if(null == fileMetadataAPI){
+              IntegrationTestInitService.getInstance().init();
+              fileMetadataAPI = APILocator.getFileMetadataAPI();
+           }
+           if(null == tempFileAPI){
+              tempFileAPI = APILocator.getTempFileAPI();
+           }
+       } catch (Exception e) {
+           // If initialization fails, try one more time
+           IntegrationTestInitService.getInstance().init();
+           fileMetadataAPI = APILocator.getFileMetadataAPI();
+           tempFileAPI = APILocator.getTempFileAPI();
        }
     }
 
