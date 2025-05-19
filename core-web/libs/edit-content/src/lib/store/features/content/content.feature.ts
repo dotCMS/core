@@ -280,6 +280,46 @@ export function withContent() {
                             );
                         })
                     )
+                ),
+
+                /**
+                 * Disables the new content editor for the current content type by updating the CONTENT_EDITOR2_ENABLED flag to false in the content type's metadata.
+                 *
+                 * This method retrieves the current contentlet from the store, constructs the appropriate payload, and calls the content type update API.
+                 * On success, it redirects the user to the legacy edit content page for the content type with the configuration panel open.
+                 * On error, it displays an error message using the DotHttpErrorManagerService.
+                 */
+                disableNewContentEditor: rxMethod<void>(
+                    pipe(
+                        switchMap(() => {
+                            // Access the contentlet from the store and its id before calling the API
+                            const contentlet = store.contentlet();
+                            const contentType = store.contentType();
+
+                            const payload = {
+                                ...contentType,
+                                metadata: {
+                                    ...contentType.metadata,
+                                    CONTENT_EDITOR2_ENABLED: false
+                                },
+                                workflow: contentType.workflows.map((workflow) => workflow.id) // The Content Types endpoint returns workflows (plural) but receive workflow (singular)
+                            };
+
+                            return dotContentTypeService
+                                .updateContentType(contentType.id, payload)
+                                .pipe(
+                                    tapResponse({
+                                        next: () => {
+                                            // Redirect to legacy edit content page
+                                            router.navigate([`/c/content/`, contentlet.inode]);
+                                        },
+                                        error: (error: HttpErrorResponse) => {
+                                            dotHttpErrorManagerService.handle(error);
+                                        }
+                                    })
+                                );
+                        })
+                    )
                 )
             })
         )
