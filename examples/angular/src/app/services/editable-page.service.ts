@@ -1,4 +1,4 @@
-import { DestroyRef, inject, Injectable, signal } from '@angular/core';
+import { DestroyRef, inject, Injectable, Signal, signal } from '@angular/core';
 import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
 import { DotCMSExtendedPageResponse, DotCMSPageRequestParams } from '@dotcms/types';
 import { filter, map, startWith, switchMap, tap } from 'rxjs/operators';
@@ -6,7 +6,7 @@ import { PageService } from './page.service';
 import { DotCMSEditablePageService } from '@dotcms/angular/next';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { getUVEState } from '@dotcms/uve';
-import { ComposedPageResponse, PageRender } from '../shared/models';
+import { ComposedPageResponse, PageState } from '../shared/models';
 import { Observable } from 'rxjs';
 
 /**
@@ -22,7 +22,7 @@ export class EditablePageService<T extends DotCMSExtendedPageResponse> {
     #destroyRef = inject(DestroyRef);
     #activatedRoute = inject(ActivatedRoute);
 
-    readonly $context = signal<PageRender<T>>({
+    readonly #context = signal<PageState<T>>({
         status: 'idle'
     });
 
@@ -32,39 +32,41 @@ export class EditablePageService<T extends DotCMSExtendedPageResponse> {
      * @param route Optional override for the current route
      * @returns Observable that completes when initial page load is done
      */
-    initializePage(extraParams?: DotCMSPageRequestParams): Observable<void> {
+    initializePage(extraParams?: DotCMSPageRequestParams): Signal<PageState<T>> {
         this.#setLoading();
 
         // Wait for the router to navigate to the page
-        return this.#router.events.pipe(
-            filter((event): event is NavigationEnd => event instanceof NavigationEnd),
-            startWith(null), // Trigger initial load
-            tap(() => {
-                this.#setLoading();
-            }),
-            takeUntilDestroyed(this.#destroyRef),
-            switchMap(() => {
-                // Get the path from the current route
-                const path = this.#activatedRoute.snapshot.url
-                    .map((segment) => segment.path)
-                    .join('/');
+        this.#router.events
+            .pipe(
+                filter((event): event is NavigationEnd => event instanceof NavigationEnd),
+                startWith(null), // Trigger initial load
+                tap(() => {
+                    this.#setLoading();
+                }),
+                takeUntilDestroyed(this.#destroyRef),
+                switchMap(() => {
+                    // Get the path from the current route
+                    const path = this.#activatedRoute.snapshot.url
+                        .map((segment) => segment.path)
+                        .join('/');
 
-                // If the path is empty, use the root path
-                const url = path || '/';
+                    // If the path is empty, use the root path
+                    const url = path || '/';
 
-                // Get the query params from the current route
-                const queryParams = this.#activatedRoute.snapshot.queryParams;
+                    // Get the query params from the current route
+                    const queryParams = this.#activatedRoute.snapshot.queryParams;
 
-                // Combine the query params with the extra params
-                const fullParams = {
-                    ...queryParams,
-                    ...extraParams
-                };
+                    // Combine the query params with the extra params
+                    const fullParams = {
+                        ...queryParams,
+                        ...extraParams
+                    };
 
-                // Fetch the page asset
-                return this.#pageService.getPageAsset<T>(url, fullParams);
-            }),
-            tap(({ response, error }) => {
+                    // Fetch the page asset
+                    return this.#pageService.getPageAsset<T>(url, fullParams);
+                })
+            )
+            .subscribe(({ response, error }) => {
                 if (error) {
                     this.#setError(error);
                     return;
@@ -84,10 +86,9 @@ export class EditablePageService<T extends DotCMSExtendedPageResponse> {
                         // Set the page content every time it changes
                         this.#setPageContent(page as ComposedPageResponse<T>);
                     });
-            }),
-            // Transform to void to simplify the API
-            map(() => undefined)
-        );
+            });
+
+        return this.#context.asReadonly();
     }
 
     /**
@@ -95,7 +96,7 @@ export class EditablePageService<T extends DotCMSExtendedPageResponse> {
      * @param page
      */
     #setPageContent(page?: ComposedPageResponse<T>) {
-        this.$context.set({
+        this.#context.set({
             pageResponse: page,
             status: 'success',
             error: undefined
@@ -106,7 +107,7 @@ export class EditablePageService<T extends DotCMSExtendedPageResponse> {
      * Set the loading state
      */
     #setLoading() {
-        this.$context.update((state) => ({
+        this.#context.update((state) => ({
             ...state,
             status: 'loading',
             error: undefined
@@ -117,8 +118,8 @@ export class EditablePageService<T extends DotCMSExtendedPageResponse> {
      * Set the error state
      * @param error
      */
-    #setError(error: PageRender<T>['error']) {
-        this.$context.update((state) => ({
+    #setError(error: PageState<T>['error']) {
+        this.#context.update((state) => ({
             ...state,
             error: error,
             status: 'error'

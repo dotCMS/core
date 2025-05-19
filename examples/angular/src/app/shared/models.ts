@@ -12,7 +12,7 @@ export type PageError = {
 export type ComposedPageResponse<T extends DotCMSExtendedPageResponse> =
     DotCMSComposedPageResponse<T>;
 
-export type PageRender<T extends DotCMSExtendedPageResponse> = {
+export type PageState<T extends DotCMSExtendedPageResponse> = {
     pageResponse?: ComposedPageResponse<T> | null;
     nav?: DotcmsNavigationItem;
     error?: PageError;

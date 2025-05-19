@@ -1,4 +1,4 @@
-import { Component, DestroyRef, inject, OnInit } from '@angular/core';
+import { Component, DestroyRef, inject, OnInit, Signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
 import { HeaderComponent } from '../../shared/components/header/header.component';
@@ -11,6 +11,7 @@ import { DotCMSPageAsset, DotCMSURLContentMap } from '@dotcms/types';
 import { EditablePageService } from '../../services/editable-page.service';
 import { ContentletImage, ExtraContent } from '../../shared/contentlet.model';
 import { BASE_EXTRA_QUERIES } from '../../shared/queries';
+import { PageState } from '../../shared/models';
 
 export interface BlogContentlet extends DotCMSURLContentMap {
     blogContent: string;
@@ -43,15 +44,13 @@ type BlogPage = {
 export class BlogComponent implements OnInit {
     readonly #editablePageService = inject<EditablePageService<BlogPage>>(EditablePageService);
 
-    readonly $context = this.#editablePageService.$context;
+    $pageState!: Signal<PageState<BlogPage>>;
 
     ngOnInit() {
-        this.#editablePageService
-            .initializePage({
-                graphql: {
-                    ...BASE_EXTRA_QUERIES
-                }
-            })
-            .subscribe();
+        this.$pageState = this.#editablePageService.initializePage({
+            graphql: {
+                ...BASE_EXTRA_QUERIES
+            }
+        });
     }
 }
