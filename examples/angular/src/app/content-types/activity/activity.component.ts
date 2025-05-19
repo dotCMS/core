@@ -17,14 +17,9 @@ interface ActivityContentlet extends DotCMSBasicContentlet {
     standalone: true,
     imports: [RouterLink, NgOptimizedImage],
     template: ` <article class="overflow-hidden p-4 bg-white rounded-sm shadow-lg my-2">
-        @if (contentlet().image?.identifier; as imageIdentifier) {
+        @if (contentlet().inode; as inode) {
         <div class="relative w-full h-56 overflow-hidden">
-            <img
-                class="object-cover w-full h-full"
-                [ngSrc]="imageIdentifier"
-                width="100"
-                height="100"
-                alt="Activity Image" />
+            <img class="object-cover w-full h-full" [ngSrc]="inode" fill alt="Activity Image" />
         </div>
         }
         <div class="px-6 py-4">
