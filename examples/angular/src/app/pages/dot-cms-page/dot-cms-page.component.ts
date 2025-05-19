@@ -13,6 +13,11 @@ import { DYNAMIC_COMPONENTS } from '../../shared/components';
 import { BASE_EXTRA_QUERIES } from '../../shared/queries';
 import { ExtraContent } from '../../shared/contentlet.model';
 
+type DotCMSPage = {
+    pageAsset: DotCMSPageAsset;
+    content: ExtraContent;
+};
+
 @Component({
     selector: 'app-dotcms-page',
     standalone: true,
@@ -28,8 +33,7 @@ import { ExtraContent } from '../../shared/contentlet.model';
     templateUrl: './dot-cms-page.component.html'
 })
 export class DotCMSPageComponent implements OnInit {
-    readonly #editablePageService =
-        inject<EditablePageService<DotCMSPageAsset, ExtraContent>>(EditablePageService);
+    readonly #editablePageService = inject<EditablePageService<DotCMSPage>>(EditablePageService);
 
     readonly $context = this.#editablePageService.$context;
 

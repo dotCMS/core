@@ -9,20 +9,16 @@ import {
     DotcmsNavigationItem,
     DotCMSPageAsset,
     DotCMSPageRequestParams,
-    DotCMSComposedPageResponse
+    DotCMSComposedPageResponse,
+    DotCMSExtendedPageResponse
 } from '@dotcms/types';
 
 import { DOTCMS_CLIENT_TOKEN } from '../app.config';
 import { PageError } from '../shared/models';
 
-export interface PageResponse<TPage extends DotCMSPageAsset, TContent> {
-    response?: DotCMSComposedPageResponse<{ pageAsset: TPage; content: TContent }>;
+export interface CustomPageResponse<T extends DotCMSExtendedPageResponse> {
+    response?: DotCMSComposedPageResponse<T>;
     error?: PageError;
-}
-
-export interface DotCMSCustomPageResponse<TPage extends DotCMSPageAsset, TContent>
-    extends PageResponse<TPage, TContent> {
-    nav?: DotcmsNavigationItem;
 }
 
 @Injectable({
@@ -39,16 +35,16 @@ export class PageService {
      * @return {*}  {Observable<DotCMSCustomPageResponse<TPage, TContent>>}
      * @memberof PageService
      */
-    getPageAsset<TPage extends DotCMSPageAsset, TContent>(
+    getPageAsset<T extends DotCMSExtendedPageResponse>(
         url: string,
         params: DotCMSPageRequestParams
-    ): Observable<DotCMSCustomPageResponse<TPage, TContent>> {
+    ): Observable<CustomPageResponse<T>> {
         return from(
-            this.client.page.get<{ pageAsset: TPage; content: TContent }>(url, {
+            this.client.page.get<T>(url, {
                 ...params
             })
         ).pipe(
-            map((response: DotCMSComposedPageResponse<{ pageAsset: TPage; content: TContent }>) => {
+            map((response) => {
                 if (!response?.pageAsset?.layout) {
                     return {
                         error: {
@@ -67,16 +63,13 @@ export class PageService {
                 // If the page is not found and we are inside the editor, return an empty object
                 // The editor will get the working/unpublished page
                 if (error.status === 404 && getUVEState()) {
-                    return of({ response: {} } as PageResponse<TPage, TContent>);
+                    return of({ response: {} } as CustomPageResponse<T>);
                 }
 
                 return of({
-                    response: {} as DotCMSComposedPageResponse<{
-                        pageAsset: TPage;
-                        content: TContent;
-                    }>,
+                    response: {},
                     error
-                });
+                } as CustomPageResponse<T>);
             })
         );
     }

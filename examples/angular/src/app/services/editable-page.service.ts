@@ -1,6 +1,10 @@
 import { DestroyRef, inject, Injectable, signal } from '@angular/core';
 import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
-import { DotCMSPageAsset, DotCMSPageRequestParams } from '@dotcms/types';
+import {
+    DotCMSExtendedPageResponse,
+    DotCMSPageAsset,
+    DotCMSPageRequestParams
+} from '@dotcms/types';
 import { filter, map, startWith, switchMap, tap } from 'rxjs/operators';
 import { PageService } from './page.service';
 import { DotCMSEditablePageService } from '@dotcms/angular/next';
@@ -16,17 +20,14 @@ import { ExtraContent } from '../shared/contentlet.model';
  * to ensure each page component has its own isolated instance.
  */
 @Injectable()
-export class EditablePageService<
-    TPage extends DotCMSPageAsset = DotCMSPageAsset,
-    TContent = ExtraContent
-> {
+export class EditablePageService<T extends DotCMSExtendedPageResponse> {
     #router = inject(Router);
     #pageService = inject(PageService);
     #dotcmsEditablePageService = inject(DotCMSEditablePageService);
     #destroyRef = inject(DestroyRef);
     #activatedRoute = inject(ActivatedRoute);
 
-    readonly $context = signal<PageRender<TPage, TContent>>({
+    readonly $context = signal<PageRender<T>>({
         status: 'idle'
     });
 
@@ -66,7 +67,7 @@ export class EditablePageService<
                 };
 
                 // Fetch the page asset
-                return this.#pageService.getPageAsset<TPage, TContent>(url, fullParams);
+                return this.#pageService.getPageAsset<T>(url, fullParams);
             }),
             tap(({ response, error }) => {
                 if (error) {
@@ -76,7 +77,7 @@ export class EditablePageService<
 
                 // If UVE is not enabled, set the page content
                 if (!getUVEState()) {
-                    this.#setPageContent(response as ComposedPageResponse<TPage, TContent>);
+                    this.#setPageContent(response as ComposedPageResponse<T>);
                     return;
                 }
 
@@ -86,7 +87,7 @@ export class EditablePageService<
                     .pipe(takeUntilDestroyed(this.#destroyRef))
                     .subscribe((page) => {
                         // Set the page content every time it changes
-                        this.#setPageContent(page as ComposedPageResponse<TPage, TContent>);
+                        this.#setPageContent(page as ComposedPageResponse<T>);
                     });
             }),
             // Transform to void to simplify the API
@@ -98,7 +99,7 @@ export class EditablePageService<
      * Set the page content
      * @param page
      */
-    #setPageContent(page?: ComposedPageResponse<TPage, TContent>) {
+    #setPageContent(page?: ComposedPageResponse<T>) {
         this.$context.set({
             pageResponse: page,
             status: 'success',
@@ -121,7 +122,7 @@ export class EditablePageService<
      * Set the error state
      * @param error
      */
-    #setError(error: PageRender<TPage, TContent>['error']) {
+    #setError(error: PageRender<T>['error']) {
         this.$context.update((state) => ({
             ...state,
             error: error,

@@ -21,6 +21,11 @@ export interface BlogPageAsset extends DotCMSPageAsset {
     urlContentMap: BlogContentlet;
 }
 
+type BlogPage = {
+    pageAsset: BlogPageAsset;
+    content: ExtraContent;
+};
+
 @Component({
     selector: 'app-blog',
     standalone: true,
@@ -36,8 +41,7 @@ export interface BlogPageAsset extends DotCMSPageAsset {
     templateUrl: './blog.component.html'
 })
 export class BlogComponent implements OnInit {
-    readonly #editablePageService =
-        inject<EditablePageService<BlogPageAsset, ExtraContent>>(EditablePageService);
+    readonly #editablePageService = inject<EditablePageService<BlogPage>>(EditablePageService);
 
     readonly $context = this.#editablePageService.$context;
 
