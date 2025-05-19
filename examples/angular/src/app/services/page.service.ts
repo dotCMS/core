@@ -1,13 +1,10 @@
 import { inject, Injectable } from '@angular/core';
-import { ActivatedRouteSnapshot } from '@angular/router';
 import { from, Observable, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 
 import { getUVEState } from '@dotcms/uve';
 
 import {
-    DotcmsNavigationItem,
-    DotCMSPageAsset,
     DotCMSPageRequestParams,
     DotCMSComposedPageResponse,
     DotCMSExtendedPageResponse

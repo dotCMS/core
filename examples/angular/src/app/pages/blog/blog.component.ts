@@ -1,5 +1,4 @@
-import { Component, DestroyRef, inject, OnInit, Signal } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { Component, inject, OnInit, Signal } from '@angular/core';
 
 import { HeaderComponent } from '../../shared/components/header/header.component';
 import { NavigationComponent } from '../../shared/components/navigation/navigation.component';

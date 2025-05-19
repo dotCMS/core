@@ -1,4 +1,4 @@
-import { Component, input } from '@angular/core';
+import { Component } from '@angular/core';
 
 import { DotCMSShowWhenDirective } from '@dotcms/angular/next';
 import { reorderMenu } from '@dotcms/uve';

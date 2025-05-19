@@ -1,13 +1,12 @@
 import { DestroyRef, inject, Injectable, Signal, signal } from '@angular/core';
 import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
 import { DotCMSExtendedPageResponse, DotCMSPageRequestParams } from '@dotcms/types';
-import { filter, map, startWith, switchMap, tap } from 'rxjs/operators';
+import { filter, startWith, switchMap, tap } from 'rxjs/operators';
 import { PageService } from './page.service';
 import { DotCMSEditablePageService } from '@dotcms/angular/next';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { getUVEState } from '@dotcms/uve';
 import { ComposedPageResponse, PageState } from '../shared/models';
-import { Observable } from 'rxjs';
 
 /**
  * Service that handles page loading and management for DotCMS pages
@@ -71,6 +70,8 @@ export class EditablePageService<T extends DotCMSExtendedPageResponse> {
                     this.#setError(error);
                     return;
                 }
+
+                console.log(response);
 
                 // If UVE is not enabled, set the page content
                 if (!getUVEState()) {
