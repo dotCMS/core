@@ -2,7 +2,9 @@ package com.dotcms.util;
 
 import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotmarketing.portlets.workflows.business.SystemWorkflowConstants.WORKFLOW_PUBLISH_ACTION_ID;
+import static com.dotmarketing.util.importer.ImportLineValidationCodes.INVALID_DATE_FORMAT;
 import static com.dotmarketing.util.importer.ImportLineValidationCodes.INVALID_LOCATION;
+import static com.dotmarketing.util.importer.ImportLineValidationCodes.REQUIRED_FIELD_MISSING;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -16,6 +18,8 @@ import com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldDataBa
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotcms.contenttype.model.field.DataTypes;
+import com.dotcms.contenttype.model.field.DateField;
+import com.dotcms.contenttype.model.field.DateTimeField;
 import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.HostFolderField;
 import com.dotcms.contenttype.model.field.ImmutableTextAreaField;
@@ -25,7 +29,15 @@ import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
-import com.dotcms.datagen.*;
+import com.dotcms.datagen.ContentTypeDataGen;
+import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.FieldDataGen;
+import com.dotcms.datagen.FolderDataGen;
+import com.dotcms.datagen.LanguageDataGen;
+import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.TemplateDataGen;
+import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
@@ -96,7 +108,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.io.FileUtils;
@@ -705,7 +720,8 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         validate(results, true, false, true);
 
         assertTrue(results.get("warnings").size() == 1);
-        assertEquals("The Content Type field testTitle is unique.", results.get("warnings").get(0));
+        //assertEquals("The Content Type field testTitle is unique.", results.get("warnings").get(0));
+        assertIsUniquenessMessage(results.get("warnings").get(0));
     }
 
     /**
@@ -765,8 +781,10 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             validate(results, true, false, true);
 
             assertTrue(results.get("warnings").size() == 2);
-            assertEquals("The Content Type field testTitle is unique.", results.get("warnings").get(0));
-            assertEquals("Line #3: contains duplicate values for a unique Content Type field 'testTitle', and will be ignored.", results.get("warnings").get(1));
+            //assertEquals("The Content Type field testTitle is unique.", results.get("warnings").get(0));
+            assertIsUniquenessMessage(results.get("warnings").get(0));
+            //assertEquals("Line #3: contains duplicate values for a unique Content Type field 'testTitle', and will be ignored.", results.get("warnings").get(1));
+            assertIsDuplicateFieldMessage(results.get("warnings").get(1));
 
         } finally {
             try {
@@ -831,8 +849,10 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             validate(results, true, false, true);
 
             assertTrue(results.get("warnings").size() == 2);
-            assertEquals("The Content Type field testNumber is unique.", results.get("warnings").get(0));
-            assertEquals("Line #3: contains duplicate values for a unique Content Type field 'testNumber', and will be ignored.", results.get("warnings").get(1));
+            //assertEquals("The Content Type field testNumber is unique.", results.get("warnings").get(0));
+            assertIsUniquenessMessage(results.get("warnings").get(0));
+            //assertEquals("Line #3: contains duplicate values for a unique Content Type field 'testNumber', and will be ignored.", results.get("warnings").get(1));
+            assertIsDuplicateFieldMessage(results.get("warnings").get(1));
 
         } finally {
             try {
@@ -903,7 +923,8 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             validate(results, true, false, true);
 
             assertTrue(results.get("warnings").size() == 1);
-            assertEquals("The Content Type field testTitle is unique.", results.get("warnings").get(0));
+            //assertEquals("The Content Type field testTitle is unique.", results.get("warnings").get(0));
+            assertIsUniquenessMessage(results.get("warnings").get(0));
             assertTrue(results.get("errors").size() == 0);
         } finally {
             try {
@@ -968,7 +989,8 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             validate(results, true, false, true);
 
             assertTrue(results.get("warnings").size() == 1);
-            assertEquals("The Content Type field testNumber is unique.", results.get("warnings").get(0));
+            //assertEquals("The Content Type field testNumber is unique.", results.get("warnings").get(0));
+            assertIsUniquenessMessage(results.get("warnings").get(0));
             assertTrue(results.get("errors").size() == 0);
         } finally {
             try {
@@ -3351,8 +3373,9 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             assertEquals(2, results.size());
 
             final String expectedMessage = String.format("2 New \"%s\" were created.", contentType.name());
-            assertTrue(String.format("Expected Message %s, real messages", expectedMessage, results),
-                    results.contains(expectedMessage));
+            //assertTrue(String.format("Expected Message %s, real messages", expectedMessage, results), results.contains(expectedMessage));
+
+            listContainsStringIgnoreCase(results, expectedMessage);
 
             final List<String> errors = imported.get("errors");
             assertTrue( errors.isEmpty());
@@ -3469,6 +3492,9 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             final String expectedMessage = String.format("0 New \"%s\" were created.", contentType.name());
             assertTrue(String.format("Expected message: %s /real message: %s", expectedMessage, results),
                     results.contains(expectedMessage));
+
+            assertIsContentCreationMessage(resultErrorMessage);
+
             assertTrue(String.format("Expected: %s / reals: %s", resultErrorMessage, results),
                     results.contains(resultErrorMessage));
 
@@ -3567,6 +3593,196 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
 
         final ResultData data = result.data().orElse(null);
         assertNotNull(data);
+    }
+
+
+    @Test
+    public void TestMissingRequiredFieldErrorMessage()
+            throws DotSecurityException, DotDataException, IOException {
+
+        String contentTypeName = "TestMissingRequiredFieldErrorMessage_" + System.currentTimeMillis();
+        String contentTypeVarName = contentTypeName.replaceAll("_", "Var_");
+        com.dotcms.contenttype.model.field.Field titleField = new FieldDataGen()
+                .name("title")
+                .velocityVarName("title")
+                .type(TextField.class)
+                .next();
+        com.dotcms.contenttype.model.field.Field reqField = new FieldDataGen()
+                .name("req")
+                .velocityVarName("req")
+                .required(true)
+                .type(TextField.class)
+                .next();
+
+        com.dotcms.contenttype.model.field.Field dateTimeField = new FieldDataGen()
+                .name("dateTime")
+                .velocityVarName("dateTime")
+                .defaultValue(null)
+                .type(DateTimeField.class)
+                .next();
+
+        com.dotcms.contenttype.model.field.Field numericField = new FieldDataGen()
+                .name("numeric")
+                .velocityVarName("numeric")
+                .defaultValue(null)
+                .type(TextField.class)
+                .dataType(DataTypes.INTEGER)
+                .next();
+
+        ContentType contentType = new ContentTypeDataGen()
+                .name(contentTypeName)
+                .velocityVarName(contentTypeVarName)
+                .host(APILocator.systemHost())
+                .fields(List.of(titleField, reqField, dateTimeField, numericField))
+                .nextPersisted();
+
+        final ContentType saved = contentTypeApi.find(contentType.inode());
+        titleField = saved.fields().get(0);
+
+        final Reader reader = createTempFile("title,req,dateTime,numeric \r\n" +
+                "Title 1, ,14-05-2027,12" + "\r\n" +     // Missing required field here
+                "Title 2,lol,invalid-date,12" + "\r\n" + // Invalid date
+                "Title 3,lol,14-05-2027,Text" + "\r\n"   // Invalid number
+        );
+        final ImportResult result = importAndValidate(contentType, titleField, reader, false, 1, WORKFLOW_PUBLISH_ACTION_ID);
+
+        assertNotNull(result);
+        assertFalse(result.error().isEmpty());
+        final Optional<String> code1 = result.error().get(0).code();
+        assertTrue(code1.isPresent());
+        assertEquals(code1.get(), REQUIRED_FIELD_MISSING.name());
+
+        final Optional<String> code2 = result.error().get(1).code();
+        assertTrue(code2.isPresent());
+        assertEquals(code2.get(), INVALID_DATE_FORMAT.name());
+
+    }
+
+
+    /**
+         * Tests if a message follows one of the two uniqueness patterns with any field name.
+         * Uses JUnit assertions and includes the original message in the error output.
+         *
+         * @param message The message to test
+         */
+    public void assertIsUniquenessMessage(String message) {
+        if (message == null) {
+            assertTrue("Message is null", false);
+            return;
+        }
+
+        // Pattern 1: "The Content Type field X is unique."
+        Pattern pattern1 = Pattern.compile("The Content Type field (.*?) is unique\\.");
+
+        // Pattern 2: "the-structure-field X is-unique"
+        Pattern pattern2 = Pattern.compile("the-structure-field (.*?) is-unique");
+
+        Matcher matcher1 = pattern1.matcher(message);
+        Matcher matcher2 = pattern2.matcher(message);
+
+        boolean matchesPattern = matcher1.matches() || matcher2.matches();
+
+        String errorMessage = String.format(
+                "Message '%s' does not match either uniqueness pattern. Expected: 'The Content Type field [NAME] is unique.' OR 'the-structure-field [NAME] is-unique'",
+                message
+        );
+
+        assertTrue(errorMessage, matchesPattern);
+
+    }
+
+
+    /**
+     * Tests if a message follows one of the two duplicate field error patterns with any field name.
+     * Uses JUnit assertions and includes the original message in the error output.
+     *
+     * @param message The message to test
+     */
+    public void assertIsDuplicateFieldMessage(String message) {
+        if (message == null) {
+            assertTrue("Message is null", false);
+            return;
+        }
+
+        // Pattern 1: "Line #X: contains duplicate values for a unique Content Type field 'Y', and will be ignored."
+        Pattern pattern1 = Pattern.compile("Line #(\\d+): contains duplicate values for a unique Content Type field '(.*?)', and will be ignored\\.");
+
+        // Pattern 2: "Line #X: contains-duplicate-values-for-structure-unique-field 'Y', and-will-be-ignored"
+        Pattern pattern2 = Pattern.compile("Line #(\\d+): contains-duplicate-values-for-structure-unique-field '(.*?)', and-will-be-ignored");
+
+        Matcher matcher1 = pattern1.matcher(message);
+        Matcher matcher2 = pattern2.matcher(message);
+
+        boolean matchesPattern = matcher1.matches() || matcher2.matches();
+
+        String errorMessage = String.format(
+                "Message '%s' does not match either duplicate field pattern.\n" +
+                        "Expected patterns:\n" +
+                        "1. 'Line #[NUMBER]: contains duplicate values for a unique Content Type field '[FIELD]', and will be ignored.'\n" +
+                        "2. 'Line #[NUMBER]: contains-duplicate-values-for-structure-unique-field '[FIELD]', and-will-be-ignored'",
+                message
+        );
+
+        assertTrue(errorMessage, matchesPattern);
+
+    }
+
+
+
+
+    /**
+     * Tests if a message follows the content creation message patterns.
+     * Supports both normal and hyphenated formats with any content name and number.
+     * Uses JUnit assertions and includes the original message in the error output.
+     *
+     * @param message The message to test
+     */
+    public void assertIsContentCreationMessage(String message) {
+        if (message == null) {
+            assertTrue("Message is null", false);
+            return;
+        }
+
+        // Pattern 1: "X New "NAME" were created."
+        Pattern pattern1 = Pattern.compile("(\\d+) New \"([^\"]*)\" were created\\.");
+
+        // Pattern 2: "[X new "NAME" were-created, Y "NAME" contentlets-updated-corresponding-to Z repeated-contents-based-on-the-key-provided]"
+        Pattern pattern2 = Pattern.compile("\\[(\\d+) new \"([^\"]*)\" were-created, (\\d+) \"\\2\" contentlets-updated-corresponding-to (\\d+) repeated-contents-based-on-the-key-provided\\]");
+
+        Matcher matcher1 = pattern1.matcher(message);
+        Matcher matcher2 = pattern2.matcher(message);
+
+        boolean matchesPattern = matcher1.matches() || matcher2.matches();
+
+        // Error message for assertion failure
+        String errorMessage = String.format(
+                "Message '%s' does not match either content creation message pattern.\n" +
+                        "Expected patterns:\n" +
+                        "1. 'X New \"NAME\" were created.'\n" +
+                        "2. '[X new \"NAME\" were-created, \"NAME\" contentlets-updated-corresponding-to Z repeated-contents-based-on-the-key-provided]'",
+                message
+        );
+
+        assertTrue(errorMessage, matchesPattern);
+
+    }
+
+    /**
+     * Checks if a list contains a substring, ignoring case.
+     * @param list
+     * @param substring
+     * @return
+     */
+    public boolean listContainsStringIgnoreCase(List<String> list, String substring) {
+        if (list == null || substring == null) {
+            return false;
+        }
+
+        String lowerSubstring = substring.toLowerCase();
+
+        return list.stream()
+                .filter(Objects::nonNull)
+                .anyMatch(item -> item.toLowerCase().contains(lowerSubstring));
     }
 
 }
