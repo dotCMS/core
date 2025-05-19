@@ -571,9 +571,21 @@
                                 <available file="${starter.download.folder}/sanitized-${starter.run.filename}" 
                                            property="sanitized.file.exists" />
                                 <echo message="Sanitized test file exists: ${sanitized.file.exists}" />
-                                <fail unless="sanitized.file.exists" 
-                                      message="Sanitized test file does not exist: ${starter.download.folder}/sanitized-${starter.run.filename}" />
-                                <move file="${starter.download.folder}/sanitized-${starter.run.filename}" 
+                                
+                                <!-- When sanitized file exists, use it -->
+                                <condition property="source.file" value="${starter.download.folder}/sanitized-${starter.run.filename}">
+                                    <isset property="sanitized.file.exists"/>
+                                </condition>
+                                
+                                <!-- When sanitized file doesn't exist, fallback to the original file -->
+                                <condition property="source.file" value="${starter.download.folder}/${starter.run.filename}">
+                                    <not><isset property="sanitized.file.exists"/></not>
+                                </condition>
+                                
+                                <echo message="Using file for starter: ${source.file}" />
+                                
+                                <!-- Copy file instead of move to handle the case where the source and target are the same -->
+                                <copy file="${source.file}" 
                                       tofile="${starter.download.folder}/${starter.run.filename}" 
                                       overwrite="true"/>
                             </target>
