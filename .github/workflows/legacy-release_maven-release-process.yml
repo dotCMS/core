@@ -26,7 +26,7 @@ on:
       update_github_labels:
         description: 'Update GitHub labels'
         type: boolean
-        default: false
+        default: true
         required: false
       notify_slack:
         description: 'Notify Slack'
