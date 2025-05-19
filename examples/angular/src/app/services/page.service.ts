@@ -16,6 +16,7 @@ import {
 import { DOTCMS_CLIENT_TOKEN } from '../app.config';
 import { PageError } from '../shared/models';
 
+// We extend the DotCMSComposedPageResponse to add an error property
 export interface CustomPageResponse<T extends DotCMSExtendedPageResponse> {
     response?: DotCMSComposedPageResponse<T>;
     error?: PageError;

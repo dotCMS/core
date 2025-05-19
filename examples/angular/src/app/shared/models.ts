@@ -1,7 +1,6 @@
 import {
     DotCMSComposedPageResponse,
     DotcmsNavigationItem,
-    DotCMSPageAsset,
     DotCMSExtendedPageResponse
 } from '@dotcms/types';
 

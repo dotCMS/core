@@ -1,10 +1,6 @@
 import { DestroyRef, inject, Injectable, signal } from '@angular/core';
 import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
-import {
-    DotCMSExtendedPageResponse,
-    DotCMSPageAsset,
-    DotCMSPageRequestParams
-} from '@dotcms/types';
+import { DotCMSExtendedPageResponse, DotCMSPageRequestParams } from '@dotcms/types';
 import { filter, map, startWith, switchMap, tap } from 'rxjs/operators';
 import { PageService } from './page.service';
 import { DotCMSEditablePageService } from '@dotcms/angular/next';
@@ -12,7 +8,6 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { getUVEState } from '@dotcms/uve';
 import { ComposedPageResponse, PageRender } from '../shared/models';
 import { Observable } from 'rxjs';
-import { ExtraContent } from '../shared/contentlet.model';
 
 /**
  * Service that handles page loading and management for DotCMS pages
