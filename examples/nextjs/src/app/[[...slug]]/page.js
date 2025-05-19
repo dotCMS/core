@@ -1,28 +1,16 @@
-import { MyPage } from "@/components/my-page";
-import { ErrorPage } from "@/components/error";
+import { cache } from "react";
 
-import { handleVanityUrlRedirect } from "@/utils/vanityUrlHandler";
-import { client } from "@/utils/dotcmsClient";
-import { getPageRequestParams } from "@dotcms/client";
-import { fetchNavData, fetchPageData } from "@/utils/page.utils";
+import NotFound from "@/app/not-found";
+import { Page } from "@/pages/Page";
+import { getDotCMSPage } from "@/utils/getDotCMSPage";
 
-/**
- * Generate metadata
- *
- * @export
- * @param {*} { params, searchParams }
- * @return {*}
- */
-export async function generateMetadata({ params, searchParams }) {
-    const path = params?.slug?.join("/") || "/";
-    const pageRequestParams = getPageRequestParams({
-        path,
-        params: searchParams,
-    });
-
+export async function generateMetadata(props) {
+    const searchParams = await props.searchParams;
+    const params = await props.params;
     try {
-        const data = await client.page.get(pageRequestParams);
-        const page = data.page;
+        const path = params?.slug?.join("/") || "/";
+        const { pageAsset } = await getDotCMSPage(path, searchParams);
+        const page = pageAsset.page;
         const title = page?.friendlyName || page?.title;
 
         return {
@@ -35,33 +23,15 @@ export async function generateMetadata({ params, searchParams }) {
     }
 }
 
-export default async function Home({ searchParams, params }) {
-    const getPageData = async () => {
-        const path = params?.slug?.join("/") || "/";
-        const pageParams = getPageRequestParams({
-            path,
-            params: searchParams,
-        });
+export default async function Home(props) {
+    const searchParams = await props.searchParams;
+    const params = await props.params;
+    const path = params?.slug?.join("/") || "/";
+    const pageContent = await getDotCMSPage(path, searchParams);
 
-        const { pageAsset, error: pageError } = await fetchPageData(pageParams);
-        const { nav, error: navError } = await fetchNavData(pageParams.language_id);
-
-        return {
-            nav,
-            pageAsset,
-            error: pageError || navError,
-        };
-    };
-    const { pageAsset, nav, error } = await getPageData();
-
-    // Move this to MyPage
-    if (error) {
-        return <ErrorPage error={error} />;
+    if (!pageContent) {
+        return <NotFound />;
     }
 
-    if (pageAsset?.vanityUrl) {
-        handleVanityUrlRedirect(pageAsset?.vanityUrl);
-    }
-
-    return <MyPage nav={nav?.entity.children} pageAsset={pageAsset} />;
+    return <Page pageContent={pageContent} />;
 }

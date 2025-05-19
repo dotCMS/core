@@ -158,6 +158,23 @@ export class DotContentTypeService {
             .pipe(pluck('entity'));
     }
 
+    /**
+     * Updates a content type by its ID with the provided payload.
+     *
+     * This method allows updating any property of a content type by sending a partial or full payload.
+     * The payload should match the expected structure for the content type update API.
+     *
+     * @param id The unique identifier of the content type to update.
+     * @param payload The data to update the content type with. This can be a partial or full content type object.
+     * @returns Observable<DotCMSContentType> The updated content type.
+     * @memberof DotContentTypeService
+     */
+    updateContentType(id: string, payload: unknown): Observable<DotCMSContentType> {
+        return this.#httpClient
+            .put<{ entity: DotCMSContentType }>(`/api/v1/contenttype/id/${id}`, payload)
+            .pipe(pluck('entity'));
+    }
+
     private isRecentContentType(type: StructureTypeView): boolean {
         return type.name.startsWith('RECENT');
     }

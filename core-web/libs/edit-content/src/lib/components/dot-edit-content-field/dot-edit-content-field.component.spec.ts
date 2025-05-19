@@ -1,4 +1,5 @@
 import { describe } from '@jest/globals';
+import { MonacoEditorModule, MonacoEditorLoaderService } from '@materia-ui/ngx-monaco-editor';
 import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
 import { EditorComponent } from '@tinymce/tinymce-angular';
 import { MockComponent } from 'ng-mocks';
@@ -7,7 +8,7 @@ import { of } from 'rxjs';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Provider, signal, Type } from '@angular/core';
-import { ControlContainer, FormGroupDirective } from '@angular/forms';
+import { ControlContainer, FormGroupDirective, ReactiveFormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 
 import { BlockEditorModule, DotBlockEditorComponent } from '@dotcms/block-editor';
@@ -19,7 +20,8 @@ import {
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
 import { DotCMSFieldTypes } from '@dotcms/dotcms-models';
-import { DotKeyValueComponent } from '@dotcms/ui';
+import { DotKeyValueComponent, DotLanguageVariableSelectorComponent } from '@dotcms/ui';
+import { monacoMock } from '@dotcms/utils-testing';
 
 import { DotEditContentFieldComponent } from './dot-edit-content-field.component';
 
@@ -42,6 +44,7 @@ import { DotEditContentTextAreaComponent } from '../../fields/dot-edit-content-t
 import { DotEditContentTextFieldComponent } from '../../fields/dot-edit-content-text-field/dot-edit-content-text-field.component';
 import { DotEditContentWYSIWYGFieldComponent } from '../../fields/dot-edit-content-wysiwyg-field/dot-edit-content-wysiwyg-field.component';
 import { DotEditContentService } from '../../services/dot-edit-content.service';
+import { DotEditContentMonacoEditorControlComponent } from '../../shared/dot-edit-content-monaco-editor-control/dot-edit-content-monaco-editor-control.component';
 import { DotEditContentStore } from '../../store/edit-content.store';
 import {
     BINARY_FIELD_CONTENTLET,
@@ -69,6 +72,9 @@ declare module '@tiptap/core' {
         };
     }
 }
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+(global as any).monaco = monacoMock;
 
 // This holds the mapping between the field type and the component that should be used to render it.
 // We need to hold this record here, because for some reason the references just fall to undefined.
@@ -175,7 +181,15 @@ const FIELD_TYPES_COMPONENTS: Record<DotCMSFieldTypes, DotEditFieldTestBed> = {
     },
     [DotCMSFieldTypes.JSON]: {
         component: DotEditContentJsonFieldComponent,
-        declarations: [MockComponent(DotEditContentJsonFieldComponent)]
+        imports: [ReactiveFormsModule, MonacoEditorModule],
+        providers: [
+            mockProvider(DotMessageDisplayService),
+            { provide: MonacoEditorLoaderService, useValue: { isMonacoLoaded$: of(true) } }
+        ],
+        declarations: [
+            MockComponent(DotLanguageVariableSelectorComponent),
+            MockComponent(DotEditContentMonacoEditorControlComponent)
+        ]
     },
     [DotCMSFieldTypes.KEY_VALUE]: {
         component: DotEditContentKeyValueComponent,

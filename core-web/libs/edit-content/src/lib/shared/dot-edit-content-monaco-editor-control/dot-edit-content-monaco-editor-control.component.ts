@@ -89,6 +89,12 @@ export class DotEditContentMonacoEditorControlComponent implements OnDestroy, On
     $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
 
     /**
+     * Input property to force a specific language for the Monaco editor.
+     * If provided, this overrides the automatic language detection.
+     */
+    $forcedLanguage = input<AvailableLanguageMonaco | null>(null, { alias: 'forceLanguage' });
+
+    /**
      * A computed property that retrieves and parses custom Monaco properties that comes from
      * Field Variable with the name `monacoOptions`
      *
@@ -117,7 +123,7 @@ export class DotEditContentMonacoEditorControlComponent implements OnDestroy, On
         return {
             ...DEFAULT_MONACO_CONFIG,
             ...this.$customPropsContentField(),
-            language: this.$language()
+            language: this.$forcedLanguage() || this.$language()
         };
     });
 
@@ -290,6 +296,13 @@ export class DotEditContentMonacoEditorControlComponent implements OnDestroy, On
      * Detects the language of the content in the Monaco editor and sets the appropriate language.
      */
     private detectLanguage() {
+        // Skip language detection if a forced language is provided
+        if (this.$forcedLanguage()) {
+            this.setLanguage(this.$forcedLanguage());
+
+            return;
+        }
+
         const content = this.#editor.getValue().trim();
 
         if (!content) {

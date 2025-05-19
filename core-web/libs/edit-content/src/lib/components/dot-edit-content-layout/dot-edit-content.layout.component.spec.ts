@@ -132,6 +132,8 @@ describe('EditContentLayoutComponent', () => {
             activeSidebarTab: 0,
             isBetaMessageVisible: true
         });
+
+        dotContentTypeService.updateContentType.mockReturnValue(of(CONTENT_TYPE_MOCK));
     });
 
     it('should have p-confirmDialog component', () => {
@@ -218,9 +220,22 @@ describe('EditContentLayoutComponent', () => {
                 await spectator.fixture.whenStable();
                 spectator.detectChanges();
 
-                expect(
-                    spectator.query(byTestId('edit-content-layout__beta-message-link'))
-                ).toExist();
+                // Create a fake event with preventDefault
+                const event = new MouseEvent('click');
+                Object.defineProperty(event, 'preventDefault', { value: jest.fn() });
+
+                // Spy on the store method
+                const disableNewContentEditorSpy = jest.spyOn(store, 'disableNewContentEditor');
+
+                const link = spectator.query(
+                    byTestId('edit-content-layout__beta-message-link')
+                ) as HTMLAnchorElement;
+
+                // Dispatch the event
+                link.dispatchEvent(event);
+
+                expect(event.preventDefault).toHaveBeenCalled();
+                expect(disableNewContentEditorSpy).toHaveBeenCalled();
             });
         });
 
