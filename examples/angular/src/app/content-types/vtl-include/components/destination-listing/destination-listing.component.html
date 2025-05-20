@@ -18,7 +18,7 @@
                     class="w-full h-full object-cover transition-transform duration-300 hover:scale-105" />
                 @if (destination.selectValue) {
                 <div
-                    class="absolute top-4 left-4 bg-teal-500 text-white text-sm font-bold px-4 py-1 rounded">
+                    class="absolute top-4 left-4 bg-orange-500 text-white text-sm font-bold px-4 py-1 rounded">
                     {{ destination.selectValue.toUpperCase() }}
                 </div>
                 }
@@ -27,7 +27,7 @@
                 <h2 class="text-2xl font-bold mb-3 text-gray-800">
                     <a
                         [routerLink]="destination.url"
-                        class="hover:text-teal-500 transition-colors duration-300">
+                        class="hover:text-orange-500 transition-colors duration-300">
                         {{ destination.title }}
                     </a>
                 </h2>
@@ -43,7 +43,7 @@
                         <span class="inline-block">
                             {{ activity }}
                             @if ($index < destination.activities.length - 1) {
-                            <span class="mx-1 text-teal-400">,</span>
+                            <span class="mx-1 text-orange-400">,</span>
                             }
                         </span>
                         }
