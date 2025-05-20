@@ -116,7 +116,7 @@ export class PageClient {
         url: string,
         options?: DotCMSPageRequestParams
     ): Promise<DotCMSComposedPageResponse<T>> {
-        return this.#getPageFromGraphQL(url, options) as Promise<DotCMSComposedPageResponse<T>>;
+        return this.#getPageFromGraphQL(url, options);
     }
 
     /**
@@ -126,12 +126,12 @@ export class PageClient {
      * @private
      * @param {string} url - The URL of the page to retrieve
      * @param {DotCMSPageRequestParams} [options] - Options including languageId, mode, and GraphQL parameters
-     * @returns {Promise<DotCMSPageResponse>} A Promise that resolves to the page data
+     * @returns {Promise<DotCMSComposedPageResponse<T>>} A Promise that resolves to the page data
      */
-    async #getPageFromGraphQL(
+    async #getPageFromGraphQL<T extends DotCMSExtendedPageResponse = DotCMSPageResponse>(
         url: string,
         options?: DotCMSPageRequestParams
-    ): Promise<DotCMSPageResponse> {
+    ): Promise<DotCMSComposedPageResponse<T>> {
         const {
             languageId = '1',
             mode = 'LIVE',
