@@ -426,87 +426,95 @@ public class TarUtil {
             getMaxTotalSize(), convertHandlingMode(handlingMode))) {
             return false;
         }
-        // Sanitize the entry name
-        String sanitizedName = ArchiveUtil.sanitizePath(entry.getName(), convertHandlingMode(handlingMode));
-        if (!sanitizedName.equals(entry.getName())) {
-            Logger.warn(TarUtil.class, "Potentially malicious tar entry renamed: " + 
-                    entry.getName() + " -> " + sanitizedName);
-        }
-        // Create the full path to the target file/directory
-        File targetFile = new File(outputDir, sanitizedName);
         
-        // Ensure all parent directories are directories
-        ensureParentDirectoriesAreDirectories(targetFile);
-        
-        // Check security using shared implementation
-        if (!ArchiveUtil.checkSecurity(outputDir, targetFile, convertHandlingMode(handlingMode))) {
-            return false;
-        }
-        
-        // Handle directory/file conflicts
-        if (targetFile.exists()) {
-            if (entry.isDirectory() && targetFile.isFile()) {
-                Logger.warn(TarUtil.class, "Replacing file with directory during extraction: " + targetFile.getAbsolutePath());
-                if (!targetFile.delete()) {
-                    throw new IOException("Failed to delete file to create directory: " + targetFile);
-                }
-            } else if (!entry.isDirectory() && targetFile.isDirectory()) {
-                Logger.warn(TarUtil.class, "Replacing directory with file during extraction: " + targetFile.getAbsolutePath());
-                if (!deleteDirectory(targetFile)) {
-                    throw new IOException("Failed to delete directory to create file: " + targetFile);
-                }
+        try {
+            // Sanitize the entry name
+            String sanitizedName = ArchiveUtil.sanitizePath(entry.getName(), convertHandlingMode(handlingMode), "extract");
+            if (!sanitizedName.equals(entry.getName())) {
+                Logger.warn(TarUtil.class, "Potentially malicious tar entry renamed: " + 
+                        entry.getName() + " -> " + sanitizedName);
             }
-        }
-        
-        // Create directories or extract files
-        if (entry.isDirectory()) {
-            if (!targetFile.exists() && !targetFile.mkdirs()) {
-                Logger.error(TarUtil.class, "Failed to create directory: " + targetFile.getAbsolutePath());
+            
+            // Create the full path to the target file/directory
+            File targetFile = new File(outputDir, sanitizedName);
+            
+            // Ensure all parent directories are directories
+            ensureParentDirectoriesAreDirectories(targetFile);
+            
+            // Check security using shared implementation
+            if (!ArchiveUtil.checkSecurity(outputDir, targetFile, convertHandlingMode(handlingMode))) {
                 return false;
             }
-        } else {
-            // Ensure parent directory exists
-            File parent = targetFile.getParentFile();
-            if (parent != null && !parent.exists() && !parent.mkdirs()) {
-                Logger.error(TarUtil.class, "Failed to create parent directory: " + parent.getAbsolutePath());
-                return false;
-            }
-            // Extract file
-            try (OutputStream out = Files.newOutputStream(targetFile.toPath())) {
-                byte[] buffer = new byte[DEFAULT_BUFFER_SIZE];
-                int bytesRead;
-                long totalRead = 0;
-                while ((bytesRead = tarIn.read(buffer)) != -1) {
-                    totalRead += bytesRead;
-                    // Check if we exceed max file size during extraction
-                    if (totalRead > getMaxFileSize()) {
-                        out.close();
-                        targetFile.delete();
-                        String message = String.format(
-                            "Entry '%s' exceeded maximum allowed file size during extraction", 
-                            entry.getName());
-                        if (handlingMode == SuspiciousEntryHandling.ABORT) {
-                            throw new SecurityException(message);
-                        }
-                        Logger.warn(TarUtil.class, message);
-                        return false;
+            
+            // Handle directory/file conflicts
+            if (targetFile.exists()) {
+                if (entry.isDirectory() && targetFile.isFile()) {
+                    Logger.warn(TarUtil.class, "Replacing file with directory during extraction: " + targetFile.getAbsolutePath());
+                    if (!targetFile.delete()) {
+                        throw new IOException("Failed to delete file to create directory: " + targetFile);
                     }
-                    out.write(buffer, 0, bytesRead);
+                } else if (!entry.isDirectory() && targetFile.isDirectory()) {
+                    Logger.warn(TarUtil.class, "Replacing directory with file during extraction: " + targetFile.getAbsolutePath());
+                    if (!deleteDirectory(targetFile)) {
+                        throw new IOException("Failed to delete directory to create file: " + targetFile);
+                    }
                 }
-                // Update total size counter
-                totalSizeCounter.addAndGet(totalRead);
             }
-            // Set executable bit for executable files
-            if ((entry.getMode() & 0100) != 0) {
-                targetFile.setExecutable(true, false);
+            
+            // Create directories or extract files
+            if (entry.isDirectory()) {
+                if (!targetFile.exists() && !targetFile.mkdirs()) {
+                    Logger.error(TarUtil.class, "Failed to create directory: " + targetFile.getAbsolutePath());
+                    return false;
+                }
+            } else {
+                // Ensure parent directory exists (double-check, since we already tried to create them above)
+                File parent = targetFile.getParentFile();
+                if (parent != null && !parent.exists() && !parent.mkdirs()) {
+                    Logger.error(TarUtil.class, "Failed to create parent directory: " + parent.getAbsolutePath());
+                    return false;
+                }
+                
+                // Extract file
+                try (OutputStream out = Files.newOutputStream(targetFile.toPath())) {
+                    byte[] buffer = new byte[DEFAULT_BUFFER_SIZE];
+                    int bytesRead;
+                    long totalRead = 0;
+                    while ((bytesRead = tarIn.read(buffer)) != -1) {
+                        totalRead += bytesRead;
+                        // Check if we exceed max file size during extraction
+                        if (totalRead > getMaxFileSize()) {
+                            out.close();
+                            targetFile.delete();
+                            String message = String.format(
+                                "Entry '%s' exceeded maximum allowed file size during extraction", 
+                                entry.getName());
+                            if (handlingMode == SuspiciousEntryHandling.ABORT) {
+                                throw new SecurityException(message);
+                            }
+                            Logger.warn(TarUtil.class, message);
+                            return false;
+                        }
+                        out.write(buffer, 0, bytesRead);
+                    }
+                    // Update total size counter
+                    totalSizeCounter.addAndGet(totalRead);
+                }
+                // Set executable bit for executable files
+                if ((entry.getMode() & 0100) != 0) {
+                    targetFile.setExecutable(true, false);
+                }
             }
+            // Set last modified time if available
+            long modTime = entry.getModTime().getTime();
+            if (modTime > 0) {
+                targetFile.setLastModified(modTime);
+            }
+            return true;
+        } catch (IOException e) {
+            Logger.error(TarUtil.class, "Error extracting entry " + entry.getName() + ": " + e.getMessage(), e);
+            throw e;
         }
-        // Set last modified time if available
-        long modTime = entry.getModTime().getTime();
-        if (modTime > 0) {
-            targetFile.setLastModified(modTime);
-        }
-        return true;
     }
     
     // Helper to recursively delete a directory
@@ -528,7 +536,9 @@ public class TarUtil {
     private static void ensureParentDirectoriesAreDirectories(File file) throws IOException {
         File parent = file.getParentFile();
         if (parent == null) return;
+        
         ensureParentDirectoriesAreDirectories(parent);
+        
         if (parent.exists() && !parent.isDirectory()) {
             Logger.warn(TarUtil.class, "Replacing file with directory during extraction: " + parent.getAbsolutePath());
             if (!parent.delete()) {
@@ -536,6 +546,12 @@ public class TarUtil {
             }
             if (!parent.mkdirs()) {
                 throw new IOException("Failed to create directory: " + parent);
+            }
+        } else if (!parent.exists()) {
+            // Create directory if it doesn't exist
+            Logger.debug(TarUtil.class, "Creating parent directory during extraction: " + parent.getAbsolutePath());
+            if (!parent.mkdirs()) {
+                throw new IOException("Failed to create parent directory: " + parent);
             }
         }
     }

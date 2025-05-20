@@ -424,17 +424,12 @@ public class ZipUtil {
 				}
 			}
 			// Sanitize the entry name
-			String sanitizedName = sanitizePath(zipEntry.getName(), handlingMode);
+			String sanitizedName = sanitizePath(zipEntry.getName(), handlingMode, "extract");
 			File outputFile = new File(toDir, sanitizedName);
+			
 			// Ensure all parent directories are directories
 			ensureParentDirectoriesAreDirectories(outputFile);
-			// Always create parent directory before writing a file
-			File parent = outputFile.getParentFile();
-			if (parent != null && !parent.exists()) {
-				if (!parent.mkdirs()) {
-					throw new IOException("Failed to create directory: " + parent);
-				}
-			}
+			
 			// Handle file/directory conflicts
 			if (zipEntry.isDirectory()) {
 				if (outputFile.exists() && outputFile.isFile()) {
@@ -461,6 +456,13 @@ public class ZipUtil {
 				if (!checkSecurity(toDir, outputFile, handlingMode)) {
 					return false;
 				}
+				
+				// Double check parent directories exist before creating file
+				File parent = outputFile.getParentFile();
+				if (parent != null && !parent.exists() && !parent.mkdirs()) {
+					throw new IOException("Failed to create parent directory: " + parent);
+				}
+				
 				try (InputStream is = zipFile.getInputStream(zipEntry);
 					 OutputStream os = Files.newOutputStream(outputFile.toPath())) {
 					byte[] buffer = new byte[DEFAULT_BUFFER_SIZE];
@@ -485,12 +487,9 @@ public class ZipUtil {
 				}
 			}
 			return true;
-		} catch (SecurityException e) {
-			if (handlingMode == SuspiciousEntryHandling.ABORT) {
-				throw e;
-			}
-			Logger.warn(ZipUtil.class, "Skipped suspicious entry: " + zipEntry.getName() + " - " + e.getMessage());
-			return false;
+		} catch (IOException e) {
+			Logger.error(ZipUtil.class, "Error extracting entry " + zipEntry.getName() + ": " + e.getMessage(), e);
+			throw e;
 		}
 	}
 	
@@ -1127,7 +1126,9 @@ public class ZipUtil {
 	private static void ensureParentDirectoriesAreDirectories(File file) throws IOException {
 		File parent = file.getParentFile();
 		if (parent == null) return;
+		
 		ensureParentDirectoriesAreDirectories(parent);
+		
 		if (parent.exists() && !parent.isDirectory()) {
 			Logger.warn(ZipUtil.class, "Replacing file with directory during extraction: " + parent.getAbsolutePath());
 			if (!parent.delete()) {
@@ -1136,6 +1137,12 @@ public class ZipUtil {
 			if (!parent.mkdirs()) {
 				throw new IOException("Failed to create directory: " + parent);
 			}
-		}
+		} else if (!parent.exists()) {
+            // Create directory if it doesn't exist
+            Logger.debug(ZipUtil.class, "Creating parent directory during extraction: " + parent.getAbsolutePath());
+            if (!parent.mkdirs()) {
+                throw new IOException("Failed to create parent directory: " + parent);
+            }
+        }
 	}
 }
