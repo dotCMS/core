@@ -108,7 +108,7 @@ public class PageDataFetcher implements DataFetcher<Contentlet> {
                 }
             }
 
-            // Add vanity URL resolution
+            // Vanity URL resolution
             String resolvedUri = url;
             final Language language = UtilMethods.isSet(languageId) ?
                     APILocator.getLanguageAPI().getLanguage(languageId) : APILocator.getLanguageAPI().getDefaultLanguage();
@@ -120,12 +120,14 @@ public class PageDataFetcher implements DataFetcher<Contentlet> {
             if (cachedVanityUrlOpt.isPresent()) {
                 response.setHeader(VanityUrlAPI.VANITY_URL_RESPONSE_HEADER,
                         cachedVanityUrlOpt.get().vanityUrlId);
-                
+
+                // Store the CachedVanityUrl in the context
+                context.addParam("cachedVanityUrl", cachedVanityUrlOpt.get());
+
                 if (cachedVanityUrlOpt.get().isTemporaryRedirect() || 
                     cachedVanityUrlOpt.get().isPermanentRedirect()) {
                     // For redirects, return an empty page with vanity URL info
                     final Contentlet emptyPage = new Contentlet();
-                    emptyPage.getMap().put("originalUrl", url);
                     emptyPage.setLanguageId(language.getId());
                     emptyPage.setHost(host.getIdentifier());
                     return emptyPage;
@@ -165,11 +167,7 @@ public class PageDataFetcher implements DataFetcher<Contentlet> {
             final HTMLPageAsset pageAsset = pageUrl.getHTMLPage();
             context.addParam("page", pageAsset);
             pageAsset.getMap().put("URLMapContent", pageUrl.getUrlMapInfo());
-            
-            // Set the original URL for the VanityURLFetcher to use
-            if (cachedVanityUrlOpt.isPresent()) {
-                pageAsset.getMap().put("originalUrl", url);
-            }
+
 
             if(fireRules) {
                 Logger.info(this, "Rules will be fired");
