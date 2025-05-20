@@ -1,16 +1,27 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, HostBinding, input } from '@angular/core';
 import { DotCMSBasicContentlet } from '@dotcms/types';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
 @Component({
     selector: 'app-web-page-content',
     standalone: true,
     imports: [CommonModule],
-    template: `<h1 class="text-xl font-bold">{{ contentlet().title }}</h1>
-        <div [innerHTML]="contentlet().body"></div> `,
+    template: '',
     styleUrl: './web-page-content.component.css',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class WebPageContentComponent {
     contentlet = input.required<DotCMSBasicContentlet>();
+
+    constructor(private sanitizer: DomSanitizer) {}
+
+    innerHTML = computed((): SafeHtml => {
+        return this.sanitizer.bypassSecurityTrustHtml(this.contentlet().body || '');
+    });
+
+    @HostBinding('innerHTML')
+    get hostInnerHTML(): SafeHtml {
+        return this.innerHTML();
+    }
 }

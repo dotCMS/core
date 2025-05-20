@@ -9,6 +9,7 @@ export interface FileAsset {
 export interface ContentletImage extends FileAsset {
     identifier: string;
     fileName: string;
+    versionPath?: string;
 }
 
 export interface Contentlet extends DotCMSBasicContentlet {
@@ -34,6 +35,19 @@ export interface Blog extends Contentlet {
     author: Author;
 }
 
+export interface Banner extends Contentlet {
+    title: string;
+    caption: string;
+    link: string;
+    buttonText: string;
+}
+
+export interface BannerCarousel extends Contentlet {
+    widgetCodeJSON: {
+        banners: Banner[];
+    };
+}
+
 export interface Destination extends Contentlet {
     title: string;
     identifier: string;
@@ -42,6 +56,19 @@ export interface Destination extends Contentlet {
     modDate: string;
     url: string;
 }
+
+export interface Product extends Contentlet {
+    salePrice: number;
+    retailPrice: number;
+    urlTitle: string;
+}
+
+export interface Activity extends Contentlet {
+    title: string;
+    description: string;
+    urlTitle: string;
+}
+
 export interface FooterContent {
     logoImage: FileAsset[];
     blogs: Blog[];
