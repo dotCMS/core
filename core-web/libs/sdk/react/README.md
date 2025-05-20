@@ -389,7 +389,7 @@ function ContentDisplay({ contentlet }) {
 
 #### `DotCMSEditableText`
 
-The `DotCMSEditableText` component allows inline editing of text content pulled from dotCMS API using the TinyMCE editor. This component is specifically designed for edit mode and falls back to a simple display in other modes.
+The `DotCMSEditableText` component allows inline editing of text content pulled from dotCMS API using the TinyMCE editor. This component enables content editors to directly edit text without opening the full content editor dialog.
 
 ##### Props
 
@@ -400,11 +400,40 @@ The `DotCMSEditableText` component allows inline editing of text content pulled 
 | `mode` | `string` | No | `'plain'` | Editor mode. Can be `'plain'` or `'full'`. |
 | `format` | `string` | No | `'text'` | Content format. Can be `'text'` or `'html'`. |
 
-##### Usage
+##### Implementation Notes
+
+This component can be used with multiple types of dotCMS fields:
+
+- **Text fields**: Simple text input fields (`mode="plain"`, `format="text"`)
+- **Text area fields**: Multi-line text fields (`mode="plain"`, `format="text"`)
+- **WYSIWYG fields**: Rich text editor fields (`mode="full"`, `format="html"`)
+
+The component behavior changes based on the field type:
+
+1. In non-edit modes, it renders the field content as plain text or HTML
+2. In edit mode, it transforms into an editable TinyMCE field when clicked
+3. For WYSIWYG fields, it provides full formatting controls when `mode="full"` is specified
+
+##### Integration with dotCMS Editor
+
+When used within the dotCMS Universal Visual Editor (UVE):
+
+1. The component automatically detects when it's in edit mode
+2. It adds necessary markup for the editor to identify editable regions
+3. When a user clicks on text rendered by this component:
+   - The text becomes editable directly on the page
+   - Changes are automatically saved when the user clicks away
+   - No need to open the full content editor dialog
+4. It handles multi-language content correctly, editing the content in the current language
+
+This creates a seamless editing experience that feels more like editing a document than a database record.
+
+##### Basic Usage
 
 ```jsx
 import { DotCMSEditableText } from '@dotcms/react/next';
 
+// Simple title field (plain text)
 const MyContentletWithTitle = ({ contentlet }) => (
   <h2>
     <DotCMSEditableText contentlet={contentlet} fieldName="title" />
@@ -412,11 +441,65 @@ const MyContentletWithTitle = ({ contentlet }) => (
 );
 ```
 
+##### Advanced Usage
+
+```jsx
+import { DotCMSEditableText } from '@dotcms/react/next';
+
+// WYSIWYG content with full rich text editing 
+const ArticleBody = ({ article }) => (
+  <div className="article-content">
+    <h1 className="article-title">
+      <DotCMSEditableText 
+        contentlet={article} 
+        fieldName="title" 
+      />
+    </h1>
+    
+    <div className="article-body">
+      <DotCMSEditableText 
+        contentlet={article} 
+        fieldName="body" 
+        mode="full" 
+        format="html" 
+      />
+    </div>
+    
+    <div className="article-footnote">
+      <small>
+        <DotCMSEditableText 
+          contentlet={article} 
+          fieldName="footnote"
+        />
+      </small>
+    </div>
+  </div>
+);
+```
+
+##### Limitations
+
+1. **Field Type Matching**: The `mode` and `format` props must match the actual field type in dotCMS
+   - Using `mode="full"` with a plain text field will cause errors
+   - Using `format="html"` with a non-WYSIWYG field may cause unpredictable results
+   
+2. **Incompatible with Block Editor Fields**: 
+   - This component should NOT be used with Block Editor fields
+   - For Block Editor content, use the `DotCMSBlockEditorRenderer` component instead
+   
+3. **Styling Considerations**: 
+   - The component inherits styles from its parent elements
+   - When in edit mode, some parent styles may be overridden by the editor
+
+4. **Content Limits**:
+   - Very large content fields may experience performance issues
+   - For large WYSIWYG content, consider breaking it into smaller sections
+
 ### Hooks
 
 #### `useDotCMSShowWhen`
 
-The `useDotCMSShowWhen` hook provides the same functionality as the `DotCMSShow` component but in hook form. It determines if the current Universal Visual Editor (UVE) mode matches a specified mode.
+The `useDotCMSShowWhen` hook provides the same core functionality as the `DotCMSShow` component but in hook form, allowing for more programmatic usage. It returns a boolean indicating if the current Universal Visual Editor (UVE) mode matches the specified mode.
 
 ##### Parameters
 
@@ -424,7 +507,18 @@ The `useDotCMSShowWhen` hook provides the same functionality as the `DotCMSShow`
 |-----------|------|----------|---------|-------------|
 | `when` | `UVE_MODE` | Yes | --- | The UVE mode to check against. Can be `UVE_MODE.EDIT`, `UVE_MODE.PREVIEW`, or `UVE_MODE.LIVE`. |
 
-##### Usage
+##### Implementation Details
+
+Unlike the `DotCMSShow` component which only affects rendering, this hook:
+
+- Returns a boolean value that can be used in any JavaScript expression
+- Can be used inside event handlers, other hooks, or conditional logic
+- Allows for more complex mode-based behavior beyond simple conditional rendering
+- Works outside of the render tree, enabling programmatic responses to mode changes
+
+The hook uses `getUVEState()` internally to check the current mode of the Universal Visual Editor.
+
+##### Basic Usage
 
 ```jsx
 import { useDotCMSShowWhen } from '@dotcms/react/next';
@@ -448,6 +542,48 @@ const MyConditionalComponent = ({ children }) => {
 };
 ```
 
+##### Advanced Usage
+
+```jsx
+import { useEffect } from 'react';
+import { useDotCMSShowWhen } from '@dotcms/react/next';
+import { UVE_MODE } from '@dotcms/uve';
+
+const EnhancedContentViewer = ({ contentlet }) => {
+  const isEditMode = useDotCMSShowWhen(UVE_MODE.EDIT);
+  const isLiveMode = useDotCMSShowWhen(UVE_MODE.LIVE);
+  
+  // Use the mode in event handlers
+  const handleClick = () => {
+    if (isEditMode) {
+      // Show edit options
+      openEditorPanel(contentlet);
+    } else {
+      // Show visitor interaction
+      trackContentInteraction(contentlet.identifier);
+    }
+  };
+  
+  // Use with useEffect for side effects
+  useEffect(() => {
+    if (isLiveMode) {
+      // In live view mode, simulate what users will see
+      highlightNewContent(contentlet.inode);
+    }
+  }, [isLiveMode, contentlet]);
+  
+  return (
+    <div 
+      className={`content-viewer ${isEditMode ? 'editable' : ''}`}
+      onClick={handleClick}
+    >
+      <h2>{contentlet.title}</h2>
+      <div>{contentlet.body}</div>
+    </div>
+  );
+};
+```
+
 #### `useEditableDotCMSPage`
 
 The `useEditableDotCMSPage` hook handles the communication with the Universal Visual Editor (UVE) and updates your page content in real-time when changes are made in the editor. This is the core hook for making your dotCMS pages editable in a React application.
@@ -457,6 +593,31 @@ The `useEditableDotCMSPage` hook handles the communication with the Universal Vi
 | Parameter | Type | Required | Default | Description |
 |-----------|------|----------|---------|-------------|
 | `pageResponse` | `DotCMSPageResponse` | Yes | --- | The initial page data returned from `client.page.get()`. |
+
+##### Implementation Details
+
+This hook works by:
+
+1. Taking the page asset from the `pageResponse` parameter
+2. Initializing the Universal Visual Editor (UVE) with the parameters from the page asset
+3. Setting up event listeners for the UVE to detect content changes
+4. Retrieving and returning the updated page asset whenever changes are made in the editor
+
+Important note: This hook only has an effect when your application is running inside the dotCMS editor. When running outside the editor (e.g., on the published site), it simply returns the original page asset without any additional processing.
+
+##### Integration with dotCMS
+
+The `useEditableDotCMSPage` hook is a critical integration point with dotCMS:
+
+1. **Enables Real-Time Editing**: Allows content editors to see changes instantly reflected in the page without refreshing
+2. **Handles Layout Management**: Processes all aspects of dotCMS page structure:
+   - Rows and their configurations
+   - Columns and their widths
+   - Container positions and references
+   - Content positioning within the page layout
+3. **Simplifies Development**: Developers only need to focus on creating components for their content types, rather than implementing the entire editing infrastructure
+
+When combined with `DotCMSLayoutBody`, this hook provides a complete solution for rendering and editing dotCMS pages in React applications.
 
 ##### Usage
 
@@ -505,13 +666,49 @@ export async function getServerSideProps() {
 }
 ```
 
+##### Limitations and Pitfalls
+
+1. **@dotcms/client Dependency**: 
+   - This hook is designed specifically to work with page data retrieved via the `@dotcms/client` SDK
+   - If you fetch page data using a different method or directly from dotCMS endpoints, the hook may not function correctly
+   - The expected structure from `client.page.get()` is required for proper UVE integration
+
+2. **Editor-Only Functionality**:
+   - This hook only provides additional functionality when your app is running inside the dotCMS editor
+   - In production/published environments, it acts as a pass-through for the page data
+
+3. **Language Handling**:
+   - The hook maintains the language ID of the initial page response
+   - To support multi-language editing, ensure you fetch the page with the correct language ID
+
+For custom implementations or alternative approaches to making pages editable, please refer to the [FAQ section](#faq) which includes examples of creating custom hooks for editable pages.
+```
+
 ## Documentation
+
+### Getting Started
+
+The quickest way to start using the dotCMS React SDK is to explore our [Next.js example project](https://github.com/dotCMS/core/tree/main/examples/nextjs). This repository includes:
+
+* Complete working example with React and Next.js
+* Step-by-step instructions for setup and configuration
+* Practical implementations of all core components
+* Best practices for integrating with dotCMS
+
+Clone the example repository to get up and running quickly:
+
+```bash
+git clone https://github.com/dotCMS/core.git
+cd core/examples/nextjs
+# Follow the instructions in the README.md
+```
+
+### Additional Resources
 
 For more information about working with the dotCMS React SDK:
 
-* **Getting Started**: Visit our [React SDK Quick Start Guide](https://dev.dotcms.com/docs/javascript-sdk-react-library)
+* **Quick Start Guide**: Visit our [React SDK documentation](https://dev.dotcms.com/docs/javascript-sdk-react-library)
 * **API Reference**: Browse the complete [API documentation](https://dev.dotcms.com/docs/javascript-sdk)
-* **Example Projects**: Check out our [sample applications](https://github.com/dotCMS/core/tree/main/examples/nextjs) built with the React SDK
 
 Always refer to the official [dotCMS documentation](https://dev.dotcms.com/) for comprehensive guides and API references.
 
