@@ -355,12 +355,84 @@ try {
 }
 ```
 
+### Navigation API: `client.navigation.get()`
+
+#### Description:
+
+The Navigation API allows you to retrieve navigation information from your dotCMS instance. This method returns a structured response containing the navigation data.
+
+#### Method Signature:
+
+```typescript
+get(path: string, options?: DotCMSNavigationRequestParams): Promise<unknown>
+```
+
+#### Parameters:
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `path` | `string` | Yes | The path/URL of the navigation to retrieve (e.g., '/about-us') |
+| `options` | `DotCMSNavigationRequestParams` | No | Configuration options for the navigation request |
+
+#### DotCMSNavigationRequestParams Options:
+
+| Option | Type | Required | Default | Description |
+|--------|------|----------|---------|-------------|
+| `depth` | `number` | No | 0 | Depth of the navigation to retrieve |
+| `languageId` | `number` | No | 1 | Language ID for content localization |
+
+#### Return Value:
+
+The method returns a Promise that resolves to the navigation data.
+
+#### Basic Usage:
+
+```javascript
+const navigationData = await client.navigation.get('/about-us');
+console.log(navigationData);
+```
+
+#### Error Handling:
+
+```javascript
+try {
+    const navigationData = await client.navigation.get('/invalid-path');
+} catch (error) {
+    console.error('Failed to fetch navigation:', error.message);
+}
+```
 
 
+## dotCMS Support 
+
+We offer multiple channels to get help with the dotCMS React SDK:
+
+* **GitHub Issues**: For bug reports and feature requests, please [open an issue](https://github.com/dotCMS/core/issues/new/choose) in the GitHub repository.
+* **Community Forum**: Join our [community discussions](https://community.dotcms.com/) to ask questions and share solutions.
+* **Stack Overflow**: Use the tag `dotcms-react` when posting questions.
+
+When reporting issues, please include:
+- SDK version you're using
+- React version
+- Minimal reproduction steps
+- Expected vs. actual behavior
+
+Enterprise customers can access premium support through the [dotCMS Support Portal](https://dev.dotcms.com/docs/help).
 
 
+## How To Contribute
+
+GitHub pull requests are the preferred method to contribute code to dotCMS. We welcome contributions to the DotCMS UVE SDK! If you'd like to contribute, please follow these steps:
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+Please ensure your code follows the existing style and includes appropriate tests.
 
 
+## Licensing Information
 
-
-
+dotCMS comes in multiple editions and as such is dual licensed. The dotCMS Community Edition is licensed under the GPL 3.0 and is freely available for download, customization and deployment for use within organizations of all stripes. dotCMS Enterprise Editions (EE) adds a number of enterprise features and is available via a supported, indemnified commercial license from dotCMS. For the differences between the editions, see [the feature page](http://www.dotcms.com/cms-platform/features).

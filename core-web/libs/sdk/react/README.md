@@ -58,9 +58,9 @@ pnpm create next-app dotcms-nextjs-demo --example https://github.com/dotCMS/core
     - [useEditableDotCMSPage](#useeditabledotcmspage)
 - [Additional Resources](#additional-resources)
 - [FAQ](#faq)
+- [dotCMS Support](#dotcms-support)
 - [How To Contribute](#how-to-contribute)
 - [Licensing Information](#licensing-information)
-- [dotCMS Support](#dotcms-support)
 
 
 ## How To Install
@@ -734,6 +734,23 @@ Always refer to the official [dotCMS documentation](https://dev.dotcms.com/) for
 ## FAQ
 
 
+## dotCMS Support 
+
+We offer multiple channels to get help with the dotCMS React SDK:
+
+* **GitHub Issues**: For bug reports and feature requests, please [open an issue](https://github.com/dotCMS/core/issues/new/choose) in the GitHub repository.
+* **Community Forum**: Join our [community discussions](https://community.dotcms.com/) to ask questions and share solutions.
+* **Stack Overflow**: Use the tag `dotcms-react` when posting questions.
+
+When reporting issues, please include:
+- SDK version you're using
+- React version
+- Minimal reproduction steps
+- Expected vs. actual behavior
+
+Enterprise customers can access premium support through the [dotCMS Support Portal](https://dev.dotcms.com/docs/help).
+
+
 ## How To Contribute
 
 GitHub pull requests are the preferred method to contribute code to dotCMS. We welcome contributions to the DotCMS UVE SDK! If you'd like to contribute, please follow these steps:
@@ -750,20 +767,3 @@ Please ensure your code follows the existing style and includes appropriate test
 ## Licensing Information
 
 dotCMS comes in multiple editions and as such is dual licensed. The dotCMS Community Edition is licensed under the GPL 3.0 and is freely available for download, customization and deployment for use within organizations of all stripes. dotCMS Enterprise Editions (EE) adds a number of enterprise features and is available via a supported, indemnified commercial license from dotCMS. For the differences between the editions, see [the feature page](http://www.dotcms.com/cms-platform/features).
-
-
-## dotCMS Support 
-
-We offer multiple channels to get help with the dotCMS React SDK:
-
-* **GitHub Issues**: For bug reports and feature requests, please [open an issue](https://github.com/dotCMS/core/issues/new/choose) in the GitHub repository.
-* **Community Forum**: Join our [community discussions](https://community.dotcms.com/) to ask questions and share solutions.
-* **Stack Overflow**: Use the tag `dotcms-react` when posting questions.
-
-When reporting issues, please include:
-- SDK version you're using
-- React version
-- Minimal reproduction steps
-- Expected vs. actual behavior
-
-Enterprise customers can access premium support through the [dotCMS Support Portal](https://support.dotcms.com/).

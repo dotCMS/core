@@ -19,6 +19,7 @@ Whether you're building a custom solution or working with a specific framework, 
   - [3. Content Editing](#3-content-editing)
   - [4. Navigation & Layout](#4-navigation--layout)
   - [5. Communication Utilities](#5-communication-utilities)
+- [dotCMS Support](#dotcms-support)
 - [How to Contribute](#how-to-contribute)
 - [Licensing Information](#licensing-information)
 
@@ -492,7 +493,25 @@ function notifyUVEOfCustomEvent(eventType, eventData) {
 
 **Note:** This is an advanced utility function primarily intended for internal use or creating custom integrations with the Universal Visual Editor. Most use cases are better served by the higher-level functions documented in previous sections.
 
-## How to Contribute
+
+## dotCMS Support 
+
+We offer multiple channels to get help with the dotCMS React SDK:
+
+* **GitHub Issues**: For bug reports and feature requests, please [open an issue](https://github.com/dotCMS/core/issues/new/choose) in the GitHub repository.
+* **Community Forum**: Join our [community discussions](https://community.dotcms.com/) to ask questions and share solutions.
+* **Stack Overflow**: Use the tag `dotcms-react` when posting questions.
+
+When reporting issues, please include:
+- SDK version you're using
+- React version
+- Minimal reproduction steps
+- Expected vs. actual behavior
+
+Enterprise customers can access premium support through the [dotCMS Support Portal](https://dev.dotcms.com/docs/help).
+
+
+## How To Contribute
 
 GitHub pull requests are the preferred method to contribute code to dotCMS. We welcome contributions to the DotCMS UVE SDK! If you'd like to contribute, please follow these steps:
 
@@ -503,6 +522,7 @@ GitHub pull requests are the preferred method to contribute code to dotCMS. We w
 5. Open a Pull Request
 
 Please ensure your code follows the existing style and includes appropriate tests.
+
 
 ## Licensing Information
 
