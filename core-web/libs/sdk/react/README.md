@@ -15,13 +15,36 @@ Whether you're building a simple marketing site or a complex web application, th
 
 > **See it in action:** Check out our [live demo of a Next.js site](https://nextjs-example-sigma-five.vercel.app/) built with the dotCMS React SDK.
 
+## Getting Started
+
+The quickest way to start using the dotCMS React SDK is to explore our [Next.js example project](https://github.com/dotCMS/core/tree/main/examples/nextjs). This repository includes:
+
+* Complete working example with React and Next.js
+* Step-by-step instructions for setup and configuration
+* Practical implementations of all core components
+* Best practices for integrating with dotCMS
+
+You can setup a NextJS project with this starter project by running the following command:
+
+```bash
+# Using npm
+npx create-next-app dotcms-nextjs-demo --example https://github.com/dotCMS/core/tree/main/examples/nextjs
+
+# Using Yarn
+yarn create next-app dotcms-nextjs-demo --example https://github.com/dotCMS/core/tree/main/examples/nextjs
+
+# Using pnpm
+pnpm create next-app dotcms-nextjs-demo --example https://github.com/dotCMS/core/tree/main/examples/nextjs
+```
+
 ## Table of Contents
 
 - [What is it?](#what-is-it)
+- [Getting Started](#getting-started)
 - [How To Install](#how-to-install)
 - [Dependencies](#dependencies)
 - [Browser Compatibility](#browser-compatibility)
-- [Detailed API Documentation](#detailed-api-documentation)
+- [API Reference](#detailed-api-documentation)
   - [Components](#components)
     - [DotCMSLayoutBody](#dotcmslayoutbody)
     - [DotCMSShow](#dotcmsshow)
@@ -30,7 +53,7 @@ Whether you're building a simple marketing site or a complex web application, th
   - [Hooks](#hooks)
     - [useDotCMSShowWhen](#usedotcmsshowwhen)
     - [useEditableDotCMSPage](#useeditabledotcmspage)
-- [Documentation](#documentation)
+- [Additional Resources](#additional-resources)
 - [FAQ](#faq)
 - [How To Contribute](#how-to-contribute)
 - [Licensing Information](#licensing-information)
@@ -84,7 +107,7 @@ The `@dotcms/react` package is compatible with the following browsers:
 | Edge    | Latest 2 versions | TLS 1.2+ |
 | Firefox | Latest 2 versions | TLS 1.2+ |
 
-## Detailed API Documentation
+## API Reference
 
 This section provides detailed documentation for all components, hooks, and types in the @dotcms/react Next API.
 
@@ -682,28 +705,8 @@ export async function getServerSideProps() {
    - To support multi-language editing, ensure you fetch the page with the correct language ID
 
 For custom implementations or alternative approaches to making pages editable, please refer to the [FAQ section](#faq) which includes examples of creating custom hooks for editable pages.
-```
 
-## Documentation
-
-### Getting Started
-
-The quickest way to start using the dotCMS React SDK is to explore our [Next.js example project](https://github.com/dotCMS/core/tree/main/examples/nextjs). This repository includes:
-
-* Complete working example with React and Next.js
-* Step-by-step instructions for setup and configuration
-* Practical implementations of all core components
-* Best practices for integrating with dotCMS
-
-Clone the example repository to get up and running quickly:
-
-```bash
-git clone https://github.com/dotCMS/core.git
-cd core/examples/nextjs
-# Follow the instructions in the README.md
-```
-
-### Additional Resources
+## Additional Resources
 
 For more information about working with the dotCMS React SDK:
 
