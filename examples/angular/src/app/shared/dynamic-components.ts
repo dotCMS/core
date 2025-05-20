@@ -18,5 +18,11 @@ export const DYNAMIC_COMPONENTS: { [key: string]: DynamicComponentEntity } = {
     ),
     VtlInclude: import('../content-types/vtl-include/vtl-include.component').then(
         (c) => c.VtlIncludeComponent
-    )
+    ),
+    CategoryFilter: import('../content-types/category-filter/category-filter.component').then(
+        (c) => c.CategoryFilterComponent
+    ),
+    StoreProductList: import(
+        '../content-types/store-product-list/store-product-list.component'
+    ).then((c) => c.StoreProductListComponent)
 };

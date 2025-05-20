@@ -90,6 +90,28 @@ export interface VTLIncludeDestinationListing extends VTLInclude {
 
 export type VTLIncludeWithVariations = VTLIncludeDestinationListing | VTLInclude;
 
+export interface Category {
+    title: string;
+    url: string;
+}
+
+export interface CategoryFilter extends DotCMSBasicContentlet {
+    widgetCodeJSON: CategoryFilterWidgetJSON;
+}
+
+export interface CategoryFilterWidgetJSON {
+    categories: Category[];
+}
+
+export interface StoreProductList extends DotCMSBasicContentlet {
+    widgetTitle: string;
+    widgetCodeJSON: StoreProductListWidgetJSON;
+}
+
+export interface StoreProductListWidgetJSON {
+    products: Product[];
+}
+
 export interface FooterContent {
     logoImage: FileAsset[];
     blogs: Blog[];
