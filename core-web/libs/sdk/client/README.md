@@ -17,6 +17,49 @@ The `@dotcms/client` library serves as a specialized connector between your appl
 
 Whether you're building a headless frontend that consumes dotCMS content or a server-side application that needs to interact with your content repository, this client SDK eliminates boilerplate code and standardizes how you work with the dotCMS APIs.
 
+## Table of Contents
+
+- [Module Formats](#module-formats)
+  - [ES Modules](#es-modules)
+  - [CommonJS](#commonjs)
+- [How to Install](#how-to-install)
+- [Dev Dependencies](#dev-dependencies)
+- [Browser Compatibility](#browser-compatibility)
+- [Detailed API Documentation](#detailed-api-documentation)
+  - [Initialization: createDotCMSClient](#initialization-createdotcmsclient)
+  - [Page API: client.page.get()](#page-api-clientpageget)
+    - [Parameters](#parameters)
+    - [DotCMSPageRequestParams Options](#dotcmspagerequestparams-options)
+    - [GraphQL Options](#graphql-options)
+    - [Return Value](#return-value)
+    - [Basic Usage](#basic-usage)
+    - [With Custom Options](#with-custom-options)
+    - [Advanced Usage with GraphQL](#advanced-usage-with-graphql)
+    - [TypeScript Example with Typed Content](#typescript-example-with-typed-content)
+    - [Error Handling](#error-handling)
+  - [Navigation API: client.navigation.get()](#navigation-api-clientnavigationget)
+    - [Parameters](#parameters-1)
+    - [DotCMSNavigationRequestParams Options](#dotcmsnavigationrequestparams-options)
+    - [Return Value](#return-value-1)
+    - [Basic Usage](#basic-usage-1)
+    - [Error Handling](#error-handling-1)
+  - [Content API: client.content.getCollection()](#content-api-clientcontentgetcollection)
+    - [Parameters](#parameters-2)
+    - [Return Value](#return-value-2)
+    - [CollectionBuilder Methods](#collectionbuilder-methods)
+    - [Basic Usage](#basic-usage-2)
+    - [With TypeScript](#with-typescript)
+    - [Pagination Example](#pagination-example)
+    - [Filtering with Query Builder](#filtering-with-query-builder)
+    - [Sorting Example](#sorting-example)
+    - [Language Filtering](#language-filtering)
+    - [Combining Multiple Methods](#combining-multiple-methods)
+    - [Error Handling](#error-handling-2)
+    - [Advanced: Getting Related Content](#advanced-getting-related-content)
+- [dotCMS Support](#dotcms-support)
+- [How To Contribute](#how-to-contribute)
+- [Licensing Information](#licensing-information)
+
 ## Module Formats
 `@dotcms/client` supports both ES modules and CommonJS. You can import it using either syntax:
 
@@ -402,6 +445,184 @@ try {
 }
 ```
 
+### Content API: `client.content.getCollection()`
+
+#### Description:
+
+The Content API allows you to retrieve collections of content from your dotCMS instance using a powerful fluent builder pattern. This approach lets you construct complex queries step by step, making it easier to filter, sort, and paginate content.
+
+#### Method Signature:
+
+```typescript
+getCollection<T = unknown>(contentType: string): CollectionBuilder<T>
+```
+
+#### Parameters:
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `contentType` | `string` | Yes | The name of the content type to retrieve (e.g., 'Blog', 'Product', 'News') |
+
+#### Return Value:
+
+Returns a `CollectionBuilder<T>` instance that provides methods for configuring and executing the query.
+
+### CollectionBuilder Methods
+
+The CollectionBuilder offers a fluent interface for building content queries:
+
+| Method | Description |
+|--------|-------------|
+| `query(buildFn)` | Filters content using a query builder function or raw Lucene query string |
+| `language(id)` | Sets the language ID for content localization |
+| `limit(n)` | Sets the maximum number of items to return (pagination) |
+| `page(n)` | Sets the page number to retrieve (pagination) |
+| `depth(n)` | Sets the depth for retrieving related content (0-3) |
+| `sortBy(fields)` | Specifies fields and order for sorting results |
+| `draft()` | Retrieves only draft content |
+| `render()` | Renders velocity templates in content |
+| `fetch()` | Executes the query and returns results |
+
+#### Basic Usage:
+
+Retrieve a collection of content items with default settings:
+
+```typescript
+const response = await client.content
+    .getCollection('Blog')
+    .fetch();
+
+console.log(response.contentlets); // Array of blog items
+```
+
+#### With TypeScript:
+
+```typescript
+// Define your content type interface
+interface BlogPost {
+    title: string;
+    publishDate: string;
+    author: string;
+    blogContent: {
+        json: string;
+    };
+    urlTitle: string;
+    tags: string[];
+}
+
+// Use the generic type parameter for type safety
+const response = await client.content
+    .getCollection<BlogPost>('Blog')
+    .fetch();
+
+// Now you get full TypeScript support
+response.contentlets.forEach(post => {
+    console.log(post.title);       // TypeScript knows this exists
+    console.log(post.author);      // TypeScript knows this exists
+    console.log(post.tags.join(', ')); // Type-safe array access
+});
+```
+
+#### Pagination Example:
+
+```typescript
+// Get the second page of blog posts, 10 items per page
+const response = await client.content
+    .getCollection('Blog')
+    .limit(10)
+    .page(2)
+    .fetch();
+
+console.log(`Showing items ${(response.page - 1) * response.limit + 1} to ${response.page * response.limit}`);
+console.log(`Total items: ${response.totalRecords}`);
+```
+
+#### Filtering with Query Builder:
+
+```typescript
+// Find blogs by a specific author published after a certain date
+const response = await client.content
+    .getCollection('Blog')
+    .query(qb => 
+        qb.field('author').equals('John Doe')
+          .and()
+          .field('publishDate').greaterThan('2023-01-01')
+    )
+    .fetch();
+```
+
+#### Sorting Example:
+
+```typescript
+// Sort blog posts by publish date (newest first) and then by title
+const response = await client.content
+    .getCollection('Blog')
+    .sortBy([
+        { field: 'publishDate', order: 'desc' },
+        { field: 'title', order: 'asc' }
+    ])
+    .fetch();
+```
+
+#### Language Filtering:
+
+```typescript
+// Get content in Spanish (assuming language ID 2 is Spanish)
+const response = await client.content
+    .getCollection('Blog')
+    .language(2)
+    .fetch();
+```
+
+#### Combining Multiple Methods:
+
+```typescript
+// Complex query combining multiple filters and options
+const response = await client.content
+    .getCollection('Blog')
+    .query(qb => 
+        qb.field('tags').contains('technology')
+          .and()
+          .parenthesis(
+              subQb => subQb.field('featured').equals('true')
+                    .or()
+                    .field('views').greaterThan('1000')
+          )
+    )
+    .sortBy([{ field: 'publishDate', order: 'desc' }])
+    .limit(5)
+    .page(1)
+    .language(1)
+    .depth(1)
+    .fetch();
+```
+
+#### Error Handling:
+
+```typescript
+try {
+    const response = await client.content
+        .getCollection('InvalidContentType')
+        .fetch();
+} catch (error) {
+    console.error('Failed to fetch content:', error.message);
+}
+```
+
+#### Advanced: Getting Related Content:
+
+```typescript
+// Fetch blog posts with related authors (depth=1)
+const response = await client.content
+    .getCollection('Blog')
+    .depth(1)  // Include first level of related content
+    .fetch();
+
+// Access the related content
+response.contentlets.forEach((post) => {
+    console.log(post.author);
+});
+```
 
 ## dotCMS Support 
 
