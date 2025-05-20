@@ -66,23 +66,24 @@ public class ArchiveUtilTest {
     @Test
     public void testSanitizePath() {
         // Test normal paths
-        assertEquals("file.txt", ArchiveUtil.sanitizePath("file.txt", ArchiveUtil.SuspiciousEntryHandling.ABORT));
-        assertEquals("dir/file.txt", ArchiveUtil.sanitizePath("dir/file.txt", ArchiveUtil.SuspiciousEntryHandling.ABORT));
+        assertEquals("file.txt", ArchiveUtil.sanitizePath("file.txt", ArchiveUtil.SuspiciousEntryHandling.ABORT, "test.zip"));
+        assertEquals("dir/file.txt", ArchiveUtil.sanitizePath("dir/file.txt", ArchiveUtil.SuspiciousEntryHandling.ABORT, "test.zip"));
         
         // Test leading slashes removal
-        assertEquals("path/file.txt", ArchiveUtil.sanitizePath("/path/file.txt", ArchiveUtil.SuspiciousEntryHandling.SKIP_AND_CONTINUE));
-        assertEquals("path/file.txt", ArchiveUtil.sanitizePath("//path/file.txt", ArchiveUtil.SuspiciousEntryHandling.SKIP_AND_CONTINUE));
+        assertEquals("path/file.txt", ArchiveUtil.sanitizePath("/path/file.txt", ArchiveUtil.SuspiciousEntryHandling.SKIP_AND_CONTINUE, "test.zip"));
+        assertEquals("path/file.txt", ArchiveUtil.sanitizePath("//path/file.txt", ArchiveUtil.SuspiciousEntryHandling.SKIP_AND_CONTINUE, "test.zip"));
         
         // Test path traversal handling
         try {
-            ArchiveUtil.sanitizePath("../file.txt", ArchiveUtil.SuspiciousEntryHandling.ABORT);
+            ArchiveUtil.sanitizePath("../file.txt", ArchiveUtil.SuspiciousEntryHandling.ABORT, "test.zip");
             fail("Should throw SecurityException for path traversal with ABORT mode");
         } catch (SecurityException e) {
             // Expected
+            assertTrue("Exception message should mention archive path", e.getMessage().contains("test.zip"));
         }
         
-        assertEquals("file.txt", ArchiveUtil.sanitizePath("../file.txt", ArchiveUtil.SuspiciousEntryHandling.SKIP_AND_CONTINUE));
-        assertEquals("etc/passwd", ArchiveUtil.sanitizePath("../../../etc/passwd", ArchiveUtil.SuspiciousEntryHandling.SKIP_AND_CONTINUE));
+        assertEquals("file.txt", ArchiveUtil.sanitizePath("../file.txt", ArchiveUtil.SuspiciousEntryHandling.SKIP_AND_CONTINUE, "test.zip"));
+        assertEquals("etc/passwd", ArchiveUtil.sanitizePath("../../../etc/passwd", ArchiveUtil.SuspiciousEntryHandling.SKIP_AND_CONTINUE, "test.zip"));
     }
     
     @Test

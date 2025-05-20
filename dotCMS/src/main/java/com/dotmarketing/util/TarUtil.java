@@ -1144,4 +1144,48 @@ public class TarUtil {
                 processor,
                 nameMapper);
     }
+
+    /**
+     * Sanitizes a path to prevent path traversal and tar slip vulnerabilities.
+     * Delegate to shared ArchiveUtil implementation.
+     * 
+     * @param entryName The path to sanitize
+     * @param handlingMode How to handle suspicious entries
+     * @param archivePath The path to the tar file containing this entry
+     * @return A sanitized path safe for tar file entries
+     * @throws SecurityException If the path contains malicious path traversal attempts
+     *                           and handling mode is ABORT
+     */
+    public static String sanitizePath(String entryName, SuspiciousEntryHandling handlingMode, String archivePath) {
+        return ArchiveUtil.sanitizePath(entryName, convertHandlingMode(handlingMode), archivePath);
+    }
+
+    /**
+     * Sanitizes a path to prevent path traversal and tar slip vulnerabilities.
+     * Delegate to shared ArchiveUtil implementation.
+     * 
+     * @param entryName The path to sanitize
+     * @param handlingMode How to handle suspicious entries
+     * @return A sanitized path safe for tar file entries
+     * @throws SecurityException If the path contains malicious path traversal attempts
+     *                           and handling mode is ABORT
+     * @deprecated Use {@link #sanitizePath(String, SuspiciousEntryHandling, String)} instead
+     */
+    @Deprecated
+    public static String sanitizePath(String entryName, SuspiciousEntryHandling handlingMode) {
+        return sanitizePath(entryName, handlingMode, "unknown tar file");
+    }
+
+    /**
+     * Sanitizes a path to prevent path traversal and tar slip vulnerabilities using
+     * the default handling mode.
+     * 
+     * @param entryName The path to sanitize
+     * @return A sanitized path safe for tar file entries
+     * @throws SecurityException If the path contains malicious path traversal attempts
+     *                           and default handling mode is ABORT
+     */
+    public static String sanitizePath(String entryName) {
+        return sanitizePath(entryName, defaultHandlingMode.get(), "unknown tar file");
+    }
 } 

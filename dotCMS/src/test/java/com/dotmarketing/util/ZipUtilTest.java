@@ -303,37 +303,37 @@ public class ZipUtilTest  {
      @Test
      public void testSanitizePath() {
           // Test normal valid paths that shouldn't throw exceptions
-          assertEquals("path/file.txt", ZipUtil.sanitizePath("path/file.txt"));
-          assertEquals("path/file.txt", ZipUtil.sanitizePath("path//file.txt"));
-          assertEquals("file.txt", ZipUtil.sanitizePath("./file.txt"));
+          assertEquals("path/file.txt", ZipUtil.sanitizePath("path/file.txt", ZipUtil.SuspiciousEntryHandling.ABORT, "test.zip"));
+          assertEquals("path/file.txt", ZipUtil.sanitizePath("path//file.txt", ZipUtil.SuspiciousEntryHandling.ABORT, "test.zip"));
+          assertEquals("file.txt", ZipUtil.sanitizePath("./file.txt", ZipUtil.SuspiciousEntryHandling.ABORT, "test.zip"));
           
-          // Test potentially malicious paths - these should throw SecurityExceptions now
-          try {
-               ZipUtil.sanitizePath("/path/to/file.txt");
-               fail("Should have thrown SecurityException for path with leading slash");
-          } catch (SecurityException e) {
-               // Expected
-          }
+          // Test paths with leading slashes - these should be sanitized but not throw exceptions
+          assertEquals("path/to/file.txt", ZipUtil.sanitizePath("/path/to/file.txt", ZipUtil.SuspiciousEntryHandling.SKIP_AND_CONTINUE, "test.zip"));
+          assertEquals("path/to/file.txt", ZipUtil.sanitizePath("//path/to/file.txt", ZipUtil.SuspiciousEntryHandling.SKIP_AND_CONTINUE, "test.zip"));
           
+          // Test potentially malicious paths - these should throw SecurityExceptions
           try {
-               ZipUtil.sanitizePath("../safe/file.txt");
+               ZipUtil.sanitizePath("../safe/file.txt", ZipUtil.SuspiciousEntryHandling.ABORT, "test.zip");
                fail("Should have thrown SecurityException for path with traversal");
           } catch (SecurityException e) {
                // Expected
+               assertTrue("Exception message should mention archive path", e.getMessage().contains("test.zip"));
           }
           
           try {
-               ZipUtil.sanitizePath("../../../../safe/file.txt");
+               ZipUtil.sanitizePath("../../../../safe/file.txt", ZipUtil.SuspiciousEntryHandling.ABORT, "test.zip");
                fail("Should have thrown SecurityException for path with multiple traversals");
           } catch (SecurityException e) {
                // Expected
+               assertTrue("Exception message should mention archive path", e.getMessage().contains("test.zip"));
           }
           
           try {
-               ZipUtil.sanitizePath("safe/../../safe/file.txt");
+               ZipUtil.sanitizePath("safe/../../safe/file.txt", ZipUtil.SuspiciousEntryHandling.ABORT, "test.zip");
                fail("Should have thrown SecurityException for path with embedded traversals");
           } catch (SecurityException e) {
                // Expected
+               assertTrue("Exception message should mention archive path", e.getMessage().contains("test.zip"));
           }
      }
      

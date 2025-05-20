@@ -36,7 +36,7 @@ public class PushUtils {
 	public static File compressFiles(Collection<File> files, File output, String bundleRoot)
 		throws IOException
 	{
-		Logger.info(PushUtils.class, "Compressing "+files.size() + " to "+output.getAbsoluteFile());
+		Logger.info(PushUtils.class, "Compressing "+files.size() + " to "+output.getCanonicalPath());
 		
 		// First verify all files are within the bundleRoot directory for security
 		File bundleRootDir = new File(bundleRoot);
@@ -45,7 +45,7 @@ public class PushUtils {
 					ArchiveUtil.SuspiciousEntryHandling.ABORT)) {
 				throw new DotRuntimeException(
 					"Directory Traversal Warning: You can only tar files that are under the directory:" + 
-					bundleRoot + " found " + file.getAbsolutePath());
+					bundleRoot + " found " + file.getCanonicalPath());
 			}
 		}
 		

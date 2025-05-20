@@ -150,7 +150,7 @@ public class ArchiveUtil {
         // Remove any leading slashes that would make the path absolute
         String sanitized = entryName.replaceAll("^/+", "");
         
-        // Split path into components
+        // Split path into components and normalize
         String[] parts = sanitized.split("/");
         java.util.List<String> safePathParts = new java.util.ArrayList<>();
         
@@ -175,7 +175,7 @@ public class ArchiveUtil {
                     continue;
                 }
                 
-                // Skip parent directory references and remove last path part if exists
+                // For legitimate ".." references, remove the last path part if it exists
                 if (!safePathParts.isEmpty()) {
                     safePathParts.remove(safePathParts.size() - 1);
                 }
@@ -184,7 +184,7 @@ public class ArchiveUtil {
             safePathParts.add(part);
         }
         
-        // If the sanitized path is different from original, it might be malicious
+        // Join the normalized path parts
         String result = String.join("/", safePathParts);
         
         // Log warning for leading slashes only once per path
@@ -192,16 +192,21 @@ public class ArchiveUtil {
             Logger.warn(ArchiveUtil.class, "Path contains leading slash in " + archivePath + ": " + entryName + " -> " + result);
         }
         
-        if (isSuspicious && !result.equals(entryName)) {
-            SecurityLogger.logInfo(ArchiveUtil.class, String.format(
-                    "Possible archive slip attack detected in '%s'. Entry '%s' was sanitized to '%s'.",
-                    archivePath, entryName, result));
-                    
-            if (handlingMode == SuspiciousEntryHandling.ABORT) {
-                throw new SecurityException("Illegal entry path in " + archivePath + ": " + entryName);
+        // If the path was modified during sanitization, log it
+        if (!result.equals(entryName)) {
+            if (isSuspicious) {
+                SecurityLogger.logInfo(ArchiveUtil.class, String.format(
+                        "Possible archive slip attack detected in '%s'. Entry '%s' was sanitized to '%s'.",
+                        archivePath, entryName, result));
+                        
+                if (handlingMode == SuspiciousEntryHandling.ABORT) {
+                    throw new SecurityException("Illegal entry path in " + archivePath + ": " + entryName);
+                }
+                
+                Logger.warn(ArchiveUtil.class, "Sanitized suspicious path in " + archivePath + ": " + entryName + " to: " + result);
+            } else {
+                Logger.debug(ArchiveUtil.class, "Normalized path in " + archivePath + ": " + entryName + " to: " + result);
             }
-            
-            Logger.warn(ArchiveUtil.class, "Sanitized suspicious path in " + archivePath + ": " + entryName + " to: " + result);
         }
         
         return result;

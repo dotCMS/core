@@ -65,7 +65,7 @@ public class TarUtilTest {
     @Test
     public void testSanitizingPathWithLeadingSlash() {
         String path = "/file.txt";
-        String sanitized = ZipUtil.sanitizePath(path, ZipUtil.SuspiciousEntryHandling.SKIP_AND_CONTINUE);
+        String sanitized = TarUtil.sanitizePath(path, TarUtil.SuspiciousEntryHandling.SKIP_AND_CONTINUE, "test.tar.gz");
         assertEquals("file.txt", sanitized);
     }
 
