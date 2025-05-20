@@ -1,4 +1,4 @@
-# @dotcms/react
+# dotCMS React SDK
 
 `@dotcms/react` is the official set of React components and hooks designed to work seamlessly with dotCMS, making it easy to render dotCMS pages and use the page builder.
 
@@ -22,6 +22,7 @@
 - [Hooks](#hooks)
   - [useDotCMSShowWhen](#usedotcmsshowwhen)
   - [usePageAsset](#usepageasset)
+  - [useEditableDotCMSPage](#useeditabledotcmspage)
 - [Making Your Page Editable](#making-your-page-editable)
 - [Contributing](#contributing)
 - [Licensing](#licensing)
@@ -91,148 +92,90 @@ The @dotcms/react package is compatible with the following browsers:
 | Edge    | Latest 2 versions | TLS 1.2+ |
 | Firefox | Latest 2 versions | TLS 1.2+ |
 
-## Components
+## Detailed API Documentation
 
-### `DotCMSLayoutBody`
+This section provides detailed documentation for all components, hooks, and types in the @dotcms/react Next API.
 
-The `DotCMSLayoutBody` component renders the layout body for a DotCMS page.
+### Components
 
-#### Props
+#### `DotCMSLayoutBody`
+
+The `DotCMSLayoutBody` component renders the layout body for a DotCMS page. It utilizes the dotCMS page asset's layout body to render the page structure with rows and columns.
+
+##### Props
 
 | Prop | Type | Required | Description |
 |------|------|----------|-------------|
-| `page` | Object | Yes | The DotCMS page asset containing the layout information |
-| `components` | Object | Yes | A mapping of custom components for content rendering |
-| `mode` | String | No | The renderer mode; defaults to `'production'` |
+| `page` | `DotCMSPageAsset` | Yes | The DotCMS page asset containing the layout information |
+| `components` | `Object` | Yes | A mapping of custom components for content rendering. Keys should match content types in dotCMS |
+| `mode` | `String` | No | The renderer mode; defaults to `'production'`. Can be either `'production'` or `'development'` |
 
-#### Usage
+> **Note:** Using `'development'` mode enhances troubleshooting by showing missing components and empty containers in your page. This helps identify issues with page composition. When your page is opened in the dotCMS editor, the development mode is automatically applied regardless of what you've explicitly set.
 
-```javascript
+##### Usage
+
+```jsx
 import { DotCMSLayoutBody } from '@dotcms/react/next';
 
-const MyPage = ({ page }) => {
-    return <DotCMSLayoutBody page={page} components={components} />;
+// Your custom components mapped to content types
+const components = {
+  'Blog': BlogComponent,
+  'Product': ProductComponent,
+  // Add more components as needed
 };
+
+const MyPage = ({ pageData }) => {
+  return (
+    <DotCMSLayoutBody 
+      page={pageData} 
+      components={components} 
+    />
+  );
+};
+
+export default MyPage;
 ```
 
-### `DotCMSShow`
+#### `DotCMSShow`
 
-The `DotCMSShow` component conditionally renders content based on dotCMS conditions. It uses the UVE_MODE from `@dotcms/uve` which can be one of: `EDIT`, `PREVIEW`, or `LIVE`.
+The `DotCMSShow` component conditionally renders its children based on the Universal Visual Editor (UVE) mode. This is useful for displaying different content in different editing modes.
 
-#### Props
+##### Props
 
 | Prop | Type | Required | Description |
 |------|------|----------|-------------|
-| `when` | String | Yes | The condition that determines if the content should be shown (EDIT, PREVIEW, LIVE) |
-| `children` | ReactNode | Yes | The content to be rendered when the condition is met |
+| `children` | `React.ReactNode` | Yes | The content to be rendered when the condition is met |
+| `when` | `UVE_MODE` | No | The UVE mode in which the children should be rendered. Can be `UVE_MODE.EDIT`, `UVE_MODE.PREVIEW`, or `UVE_MODE.LIVE`. Defaults to `UVE_MODE.EDIT` |
 
-#### Usage
+##### Usage
 
-```javascript
+```jsx
 import { DotCMSShow } from '@dotcms/react/next';
 import { UVE_MODE } from '@dotcms/uve';
+import { editContentlet } from '@dotcms/uve';
 
-const MyComponent = () => {
-    return (
-        <DotCMSShow when={UVE_MODE.EDIT}>
-            <div>This content is only visible in edit mode</div>
-        </DotCMSShow>
-    );
-};
-```
+// This component creates an edit button for any contentlet, even if it doesn't belong to the current page
+export function EditButton({ contentlet }) {
+  return (
+    <DotCMSShow when={UVE_MODE.EDIT}>
+      <button
+        className="dotcms-edit-button"
+        onClick={() => editContentlet(contentlet)}>
+        Edit Contentlet
+      </button>
+    </DotCMSShow>
+  );
+}
 
-### `BlockEditorRenderer`
-
-The `BlockEditorRenderer` component renders content from a Block Editor Content Type in dotCMS.
-
-#### Props
-
-| Prop | Type | Required | Description |
-|------|------|----------|-------------|
-| `blocks` | Block | Yes | The block editor content structure to render |
-| `customRenderers` | CustomRenderer | No | Optional custom renderers for specific block types |
-| `className` | String | No | Optional CSS class name to apply to the container |
-| `style` | React.CSSProperties | No | Optional inline styles to apply to the container |
-| `contentlet` | DotCMSContentlet | Only when editable is true | Contentlet object containing the field to be edited |
-| `fieldName` | String | Only when editable is true | Name of the field in the contentlet that contains the block editor content |
-
-## Hooks
-
-### `useDotCMSShowWhen`
-
-A custom hook that provides the same functionality as the `DotCMSShow` component in a hook form. It uses the UVE_MODE from `@dotcms/uve` which can be one of: `EDIT`, `PREVIEW`, or `LIVE`.
-
-#### Parameters
-
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `mode` | String | Yes | The UVE mode to check against (EDIT, PREVIEW, LIVE) |
-
-#### Usage
-
-```javascript
-import { useDotCMSShowWhen } from '@dotcms/react/next';
-import { UVE_MODE } from '@dotcms/uve';
-
-const MyComponent = () => {
-    const isVisible = useDotCMSShowWhen(UVE_MODE.EDIT);
-
-    return isVisible ? <div>Visible content</div> : null;
-};
-```
-
-### `usePageAsset`
-
-A custom hook that handles the communication with the Universal View Editor (UVE) and updates your page content in real-time when changes are made in the editor.
-
-> **Note:** This hook will be built into the SDK in the stable version - the example below is a temporary workaround for the beta release.
->
-> You need to save this hook in your project as a custom hook file.
-
-#### Parameters
-
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `currentPageAsset` | Object | Yes | The initial page asset from the server |
-
-#### Implementation
-
-```typescript
-import { useEffect, useState } from 'react';
-
-import { getUVEState, sendMessageToEditor, createUVESubscription} from '@dotcms/uve';
-import { DotCMSUVEAction, UVEEventType} from '@dotcms/types';
-
-export const usePageAsset = (currentPageAsset) => {
-    const [pageAsset, setPageAsset] = useState(null);
-    useEffect(() => {
-        if (!getUVEState()) {
-            return;
-        }
-
-        // Note: If using plain JavaScript instead of TypeScript, you can use the string literals directly
-        sendMessageToEditor({ action: DotCMSUVEAction.CLIENT_READY || "client-ready" });
-        const subscription = createUVESubscription(UVEEventType.CONTENT_CHANGES || "changes", (pageAsset) => setPageAsset(pageAsset));
-
-        return () => {
-            subscription.unsubscribe();
-        };
-    }, [currentPageAsset]);
-
-    return pageAsset ?? currentPageAsset;
-};
-```
-
-#### Usage
-
-```typescript
-// Import the hook from where you saved it in your project
-import { usePageAsset } from './hooks/usePageAsset';
-
-const MyPage = ({ initialPageAsset }) => {
-    const pageAsset = usePageAsset(initialPageAsset);
-
-    return <DotCMSLayoutBody page={pageAsset} components={components} />;
+// Usage example in a component that displays related content
+const RelatedArticle = ({ article }) => {
+  return (
+    <div className="related-article">
+      <h3>{article.title}</h3>
+      <p>{article.summary}</p>
+      <EditButton contentlet={article} />
+    </div>
+  );
 };
 ```
 
