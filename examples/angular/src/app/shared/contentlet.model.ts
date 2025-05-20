@@ -112,6 +112,12 @@ export interface StoreProductListWidgetJSON {
     products: Product[];
 }
 
+export interface SimpleWidget extends DotCMSBasicContentlet {
+    widgetTitle: string;
+    identifier: string;
+    code?: string;
+}
+
 export interface FooterContent {
     logoImage: FileAsset[];
     blogs: Blog[];
