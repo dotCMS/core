@@ -1,15 +1,17 @@
 import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
 
 export interface DateOptions {
-    showTime?: boolean;
-    timeOnly?: boolean;
-    icon?: string;
+    showTime: boolean;
+    timeOnly: boolean;
+    icon: string;
 }
 
 export type CalendarTypes = FIELD_TYPES.DATE_AND_TIME | FIELD_TYPES.DATE | FIELD_TYPES.TIME;
 
+export type CalendarConfig = Record<CalendarTypes, DateOptions>;
+
 // Object to hold the options of the calendar component per field type
-export const CALENDAR_OPTIONS_PER_TYPE: Record<CalendarTypes, DateOptions> = {
+export const CALENDAR_OPTIONS_PER_TYPE: CalendarConfig = {
     [FIELD_TYPES.DATE_AND_TIME]: {
         showTime: true,
         timeOnly: false,

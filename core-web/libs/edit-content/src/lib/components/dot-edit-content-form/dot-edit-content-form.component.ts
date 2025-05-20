@@ -10,7 +10,7 @@ import {
     OnInit,
     output
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import {
     FormBuilder,
     FormGroup,
@@ -33,6 +33,7 @@ import {
     DotWizardService,
     DotWorkflowEventHandlerService
 } from '@dotcms/data-access';
+import { DotcmsConfigService } from '@dotcms/dotcms-js';
 import {
     DotCMSContentlet,
     DotCMSContentTypeField,
@@ -118,6 +119,9 @@ export class DotEditContentFormComponent implements OnInit {
     readonly #dotWorkflowEventHandlerService = inject(DotWorkflowEventHandlerService);
     readonly #dotWizardService = inject(DotWizardService);
     readonly #dotMessageService = inject(DotMessageService);
+    readonly #dotcmsConfigService = inject(DotcmsConfigService);
+    #globalSystemConfig = toSignal(this.#dotcmsConfigService.getConfig());
+
     /**
      * Output event emitter that informs when the form has changed.
      * Emits an object of type Record<string, string> containing the updated form values.
@@ -172,6 +176,11 @@ export class DotEditContentFormComponent implements OnInit {
      * @memberof DotEditContentFormComponent
      */
     $tabs = this.$store.tabs;
+
+    /**
+     * The system timezone.
+     */
+    $systemTimezone = computed(() => this.#globalSystemConfig()?.systemTimezone);
 
     ngOnInit(): void {
         if (this.$store.tabs().length) {
