@@ -118,26 +118,34 @@ public class ArchiveUtil {
     public static final FileProcessor NO_PROCESSING = (file, entryName) -> java.nio.file.Files.newInputStream(file.toPath());
     
     /**
+     * Set to track paths that have already logged leading slash warnings
+     */
+    private static final java.util.Set<String> loggedLeadingSlashPaths = new java.util.concurrent.ConcurrentHashMap<String, Boolean>().newKeySet();
+
+    /**
      * Sanitizes a path to prevent path traversal and archive slip vulnerabilities.
      * Removes leading slashes and resolves any relative paths to ensure they cannot
      * escape the target directory.
      * 
      * @param entryName The path to sanitize
      * @param handlingMode How to handle suspicious entries
+     * @param archivePath The path to the archive file (zip or tar.gz) containing this entry
      * @return A sanitized path safe for archive entries
      * @throws SecurityException If the path contains malicious path traversal attempts
      *                           and handling mode is ABORT
      */
-    public static String sanitizePath(String entryName, SuspiciousEntryHandling handlingMode) {
+    public static String sanitizePath(String entryName, SuspiciousEntryHandling handlingMode, String archivePath) {
         if (entryName == null) {
             throw new IllegalArgumentException("Entry name cannot be null");
         }
         
         // First check if the path is suspicious
-        boolean isSuspicious = entryName.startsWith("/") || entryName.startsWith("\\") || 
-            entryName.contains("../") || entryName.contains("..\\") || 
+        boolean isSuspicious = entryName.contains("../") || entryName.contains("..\\") || 
             entryName.contains("/..") || entryName.contains("\\..") ||
             entryName.contains(":/") || entryName.contains(":\\");
+        
+        // Check for leading slashes
+        boolean hasLeadingSlash = entryName.startsWith("/") || entryName.startsWith("\\");
         
         // Remove any leading slashes that would make the path absolute
         String sanitized = entryName.replaceAll("^/+", "");
@@ -155,15 +163,15 @@ public class ArchiveUtil {
                 // For tests, throw SecurityException if we detect path traversal attempts
                 if (isSuspicious) {
                     SecurityLogger.logInfo(ArchiveUtil.class, String.format(
-                            "Archive slip attack detected. Entry '%s' contains path traversal.",
-                            entryName));
+                            "Possible archive slip attack detected in '%s'. Entry '%s' contains path traversal.",
+                            archivePath, entryName));
                     
                     if (handlingMode == SuspiciousEntryHandling.ABORT) {
-                        throw new SecurityException("Illegal entry path: " + entryName);
+                        throw new SecurityException("Illegal entry path in " + archivePath + ": " + entryName);
                     }
                     
                     // If we're not aborting, skip this part but log the warning
-                    Logger.warn(ArchiveUtil.class, "Skipping suspicious path component '..' in: " + entryName);
+                    Logger.warn(ArchiveUtil.class, "Skipping suspicious path component '..' in " + archivePath + ": " + entryName);
                     continue;
                 }
                 
@@ -178,19 +186,42 @@ public class ArchiveUtil {
         
         // If the sanitized path is different from original, it might be malicious
         String result = String.join("/", safePathParts);
+        
+        // Log warning for leading slashes only once per path
+        if (hasLeadingSlash && loggedLeadingSlashPaths.add(entryName)) {
+            Logger.warn(ArchiveUtil.class, "Path contains leading slash in " + archivePath + ": " + entryName + " -> " + result);
+        }
+        
         if (isSuspicious && !result.equals(entryName)) {
             SecurityLogger.logInfo(ArchiveUtil.class, String.format(
-                    "Archive slip attack detected. Entry '%s' was sanitized to '%s'.",
-                    entryName, result));
+                    "Possible archive slip attack detected in '%s'. Entry '%s' was sanitized to '%s'.",
+                    archivePath, entryName, result));
                     
             if (handlingMode == SuspiciousEntryHandling.ABORT) {
-                throw new SecurityException("Illegal entry path: " + entryName);
+                throw new SecurityException("Illegal entry path in " + archivePath + ": " + entryName);
             }
             
-            Logger.warn(ArchiveUtil.class, "Sanitized suspicious path: " + entryName + " to: " + result);
+            Logger.warn(ArchiveUtil.class, "Sanitized suspicious path in " + archivePath + ": " + entryName + " to: " + result);
         }
         
         return result;
+    }
+
+    /**
+     * Sanitizes a path to prevent path traversal and archive slip vulnerabilities.
+     * Removes leading slashes and resolves any relative paths to ensure they cannot
+     * escape the target directory.
+     * 
+     * @param entryName The path to sanitize
+     * @param handlingMode How to handle suspicious entries
+     * @return A sanitized path safe for archive entries
+     * @throws SecurityException If the path contains malicious path traversal attempts
+     *                           and handling mode is ABORT
+     * @deprecated Use {@link #sanitizePath(String, SuspiciousEntryHandling, String)} instead
+     */
+    @Deprecated
+    public static String sanitizePath(String entryName, SuspiciousEntryHandling handlingMode) {
+        return sanitizePath(entryName, handlingMode, "unknown archive");
     }
 
     /**

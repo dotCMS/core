@@ -1891,7 +1891,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>${version.compiler.plugin}</version>
             </plugin>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
@@ -1960,61 +1959,6 @@
                                     <directory>${project.build.directory}/generated-sources/annotations</directory>
                                 </fileSet>
                             </fileSets>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            
-            <!-- Add the exec-maven-plugin to sanitize the starter.zip file -->
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>exec-maven-plugin</artifactId>
-                <version>${version.exec.plugin}</version>
-                <executions>
-                    <execution>
-                        <id>sanitize-starter-zip</id>
-                        <phase>generate-resources</phase>
-                        <goals>
-                            <goal>exec</goal>
-                        </goals>
-                        <configuration>
-                            <executable>${maven.multiModuleProjectDirectory}/sanitize-zip.sh</executable>
-                            <arguments>
-                                <argument>${starter.download.folder}/${starter.deploy.filename}</argument>
-                                <argument>${starter.download.folder}/sanitized-${starter.deploy.filename}</argument>
-                            </arguments>
-                            <workingDirectory>${maven.multiModuleProjectDirectory}</workingDirectory>
-                            <successCodes>
-                                <successCode>0</successCode>
-                            </successCodes>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            
-            <!-- Add plugin to replace original starter.zip with sanitized version -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-antrun-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>replace-with-sanitized-starter</id>
-                        <phase>generate-resources</phase>
-                        <goals>
-                            <goal>run</goal>
-                        </goals>
-                        <configuration>
-                            <target>
-                                <echo message="Checking for sanitized ZIP: ${starter.download.folder}/sanitized-${starter.deploy.filename}" />
-                                <available file="${starter.download.folder}/sanitized-${starter.deploy.filename}" 
-                                           property="sanitized.file.exists" />
-                                <echo message="Sanitized file exists: ${sanitized.file.exists}" />
-                                <fail unless="sanitized.file.exists" 
-                                      message="Sanitized file does not exist: ${starter.download.folder}/sanitized-${starter.deploy.filename}" />
-                                <move file="${starter.download.folder}/sanitized-${starter.deploy.filename}" 
-                                      tofile="${starter.download.folder}/${starter.deploy.filename}" 
-                                      overwrite="true"/>
-                            </target>
                         </configuration>
                     </execution>
                 </executions>
