@@ -2,10 +2,10 @@
 
 ## Introduction & Overview
 
-This project demonstrates how to build dynamic, fully editable pages using [dotCMS](https://dotcms.com/) as a Universal CMS with a [Next.js](https://nextjs.org/) frontend. By combining these technologies, you can:
+This project demonstrates how to build dynamic, fully editable pages using [dotCMS](https://dotcms.com/) as a headless CMS with a [Next.js](https://nextjs.org/) front end. By combining these technologies, you can:
 
 - **Create content in dotCMS** and deliver it headlessly to your Next.js application
-- **Edit content visually** using dotCMS's Universal Visual Editor (UVE) directly on your Next.js frontend
+- **Edit content visually** using dotCMS's Universal Visual Editor (UVE) directly on your Next.js front end
 - **Build high-performance pages** leveraging Next.js's server-side rendering capabilities
 - **Maintain content separation** between your CMS and presentation layer
 
@@ -15,7 +15,7 @@ This project demonstrates how to build dynamic, fully editable pages using [dotC
 ┌───────────────┐      ┌───────────────┐      ┌───────────────┐
 │               │      │               │      │               │
 │    dotCMS     │──────▶   Next.js     │──────▶   Browser     │
-│  (Content)    │      │  (Frontend)   │      │  (Viewing)    │
+│  (Content)    │      │  (Front end)  │      │  (Viewing)    │
 │               │      │               │      │               │
 └───────────────┘      └───────────────┘      └───────────────┘
         ▲                      │                      │
@@ -29,7 +29,9 @@ The integration uses dotCMS APIs to fetch content and the Universal Visual Edito
 
 ### Demo
 
-See a live example at [https://nextjs-example-sigma-five.vercel.app/](https://nextjs-example-sigma-five.vercel.app/)
+See a live example at **[https://nextjs-example-sigma-five.vercel.app/](https://nextjs-example-sigma-five.vercel.app/)**.
+
+The example above is a Next.js front end for the [dotCMS demo site](https://demo.dotcms.com/), and changes to pages and content on the latter will be reflected, there. For more information on the demo site, see [the relevant section below](#a-get-a-dotcms-site).
 
 ## Table of Contents
 
@@ -149,13 +151,13 @@ To set up the Universal Visual Editor:
 4. Add the following configuration:
 
 ```json
-{ 
-    "config":[ 
-        { 
-            "pattern":"(.*)", 
+{
+    "config":[
+        {
+            "pattern":"(.*)",
             "url":"http://localhost:3000"
         }
-    ] 
+    ]
 }
 ```
 
@@ -177,12 +179,12 @@ cp .env.local.example .env.local
 Then set each variable in the `.env.local` file:
 
 - `NEXT_PUBLIC_DOTCMS_HOST`: The URL of your dotCMS site.
-- `NEXT_PUBLIC_DOTCMS_API_KEY`: The API Key you created in Step 2B.
-- `NEXT_PUBLIC_DOTCMS_SITE_ID`: The ID of the site you want to use. 
+- `NEXT_PUBLIC_DOTCMS_AUTH_TOKEN`: The API Key you created in Step 2B.
+- `NEXT_PUBLIC_DOTCMS_SITE_ID`: The site key of the site you want to use.
 
-The Site ID refers to the site that will be used to pull content into your Next.js app. dotCMS is a multi-site CMS, meaning a single instance can manage multiple websites, the site ID specifies which specific site's content should be pulled into your Next.js app. If incorrect, content requests will fail. If left empty, content will be pulled from the default site configured in dotCMS.
+The site ID variable refers to the site that will be used to pull content into your Next.js app. dotCMS is a multi-site CMS, meaning a single instance can manage multiple websites; the site ID specifies which site's content should be pulled into your Next.js app. If left empty or given an incorrect value, content will be pulled from the default site configured in dotCMS.
 
-You can find your site ID in the dotCMS admin panel under System > Sites. Learn more about [dotCMS Multi-Site management here](https://dev.dotcms.com/docs/multi-site-management#multi-site-management).
+You can find the values for this variable — site keys or identifiers both work, though keys are simpler and more recommended — under System > Sites. Learn more about [dotCMS Multi-Site management here](https://dev.dotcms.com/docs/multi-site-management#multi-site-management).
 
 ### Step 4: Run the Application
 
@@ -207,9 +209,9 @@ You should see a message in your terminal indicating that the Next.js app is run
 After setting up the Universal Visual Editor and running your Next.js application, you can edit your page in the Universal Visual Editor:
 
 1. Log in to the dotCMS admin panel
-2. Go to the page you want to edit
-3. Click on the "Edit" button
-4. The page will be rendered in the editor with your Next.js frontend
+2. Browse to Site > Pages
+3. Open the page you want to edit
+4. The page will be rendered in the editor with your Next.js front end
 5. Make changes directly on the page
 
 Learn more about the Universal Visual Editor [here](https://dev.dotcms.com/docs/universal-visual-editor).
@@ -229,17 +231,21 @@ The integration between dotCMS and Next.js works by:
 
 ```bash
 src/
-├── app/              # App Router components (Server-Side Rendered pages)
-│   ├── [[...slug]]/  # Dynamic routing
-│   ├── blog/         # Blog pages
-│   ├── layout.js     # Root layout
+├── app/                       # App Router components (Server-Side Rendered pages)
+│   ├── [[...slug]]/           # Dynamic routing
+│   │   └── page.js            # Rendering rules for the specified route
+│   ├── blog/                  # Blog pages
+│   │   ├── post/[[...slug]]   # Further dynamic routing
+│   │   │        └── page.js   # Rendering rules for the specified route
+│   │   └── page.js            # Rendering for `blog/` root page
+│   ├── layout.js              # Root layout
 │   └── ...
-├── components/ 
-│   └── content-type/  # Components for rendering dotCMS Content Types
-├── hooks/            # Custom React hooks
-├── pages/            # Client-side page templates (can use React hooks)
-└── utils/            # Utility functions
-    ├── dotCMSClient.js  # dotCMS API client initialization
+├── components/
+│   └── content-type/          # Components for rendering dotCMS Content Types
+├── hooks/                     # Custom React hooks
+├── pages/                     # Client-side page templates (can use React hooks)
+└── utils/                     # Utility functions
+    ├── dotCMSClient.js        # dotCMS API client initialization
     └── ...
 ```
 
@@ -249,7 +255,7 @@ This project uses Next.js with App Router for server-side rendering, but with so
 
 1. **App Router (src/app/)**: Contains all server-side rendered pages and routes. These components don't use React hooks directly due to Next.js 13+ restrictions. Learn more about the App Router [here](https://nextjs.org/docs/app).
 
-2. **Components (src/components/)**: 
+2. **Components (src/components/)**:
    - The `content-type/` folder contains React components that render dotCMS content.
    - In dotCMS, a "Content Type" is like a data model (e.g., "Product", "BlogPost"), while a "Contentlet" is an actual content instance.
    - For each Content Type in dotCMS, you need a corresponding React component to render it.
@@ -384,7 +390,7 @@ Example of a component receiving contentlet data:
 function ProductComponent(props) {
   // Access fields defined in the DotCMSProduct Content Type
   const { title, price, description, image } = props;
-  
+
   return (
     <div className="product">
       <h2>{title}</h2>
@@ -407,7 +413,7 @@ This mapping should be passed to the `DotCMSBodyLayout` component as shown in th
 
 ## Conclusion
 
-This example demonstrates the powerful integration between dotCMS and Next.js, enabling fully editable and dynamic web pages. By leveraging dotCMS as a Universal CMS and Next.js for frontend rendering, you can create high-performance websites that offer both developer flexibility and content editor ease-of-use.
+This example demonstrates the powerful integration between dotCMS and Next.js, enabling fully editable and dynamic web pages. By leveraging dotCMS as a headless CMS and Next.js for front-end rendering, you can create high-performance websites that offer both developer flexibility and content editor ease-of-use.
 
 Key benefits of this approach include:
 
