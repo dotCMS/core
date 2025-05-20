@@ -121,9 +121,13 @@ export class DotEditContentCalendarFieldComponent {
             const value = this.$currentValue();
 
             if (control && timezone && value) {
-                const date = new Date(value);
-                const adjustedDate = this.adjustDateToServerTimezone(date);
-                control.setValue(adjustedDate, { emitEvent: false });
+                try {
+                    const date = new Date(value);
+                    const adjustedDate = this.adjustDateToServerTimezone(date);
+                    control.setValue(adjustedDate, { emitEvent: false });
+                } catch (error) {
+                    console.error('Error adjusting date timezone:', error);
+                }
             }
         });
     }
@@ -138,19 +142,25 @@ export class DotEditContentCalendarFieldComponent {
 
         if (!timezone) return localDate;
 
-        // Get the local timezone offset in milliseconds
-        const localOffset = localDate.getTimezoneOffset() * 60 * 1000;
+        try {
+            // Get the local timezone offset in milliseconds
+            const localOffset = localDate.getTimezoneOffset() * 60 * 1000;
 
-        // Get server offset in milliseconds
-        const serverOffset = Number(timezone.offset);
+            // Get server offset in milliseconds
+            const serverOffset = Number(timezone.offset);
 
-        // Calculate the difference between server and local
-        const offsetDiff = serverOffset + localOffset;
+            // Calculate the difference between server and local
+            const offsetDiff = serverOffset + localOffset;
 
-        // Apply the offset difference to get the server time
-        const serverTimestamp = localDate.getTime() + offsetDiff;
+            // Apply the offset difference to get the server time
+            const serverTimestamp = localDate.getTime() + offsetDiff;
 
-        return new Date(serverTimestamp);
+            return new Date(serverTimestamp);
+        } catch (error) {
+            console.error('Error adjusting timezone:', error);
+
+            return localDate;
+        }
     }
 
     /**
