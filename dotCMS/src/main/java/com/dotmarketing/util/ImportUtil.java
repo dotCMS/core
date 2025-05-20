@@ -3170,7 +3170,7 @@ public class ImportUtil {
      * @return The mapped error code as a string.
      */
     private static String getMappedCode(final DotContentletValidationException ex) {
-        String code = null;
+        String code = ImportLineValidationCodes.UNKNOWN_ERROR.name();
         if (null != ex.getNotValidRelationship() && !ex.getNotValidRelationship().isEmpty()) {
             code = ImportLineValidationCodes.RELATIONSHIP_VALIDATION_ERROR.name();
         } else if (null != ex.getNotValidFields()){
@@ -3187,9 +3187,6 @@ public class ImportUtil {
             if(notValidFields.containsKey(DotContentletValidationException.VALIDATION_FAILED_BADTYPE)) {
                 code = ImportLineValidationCodes.INVALID_FIELD_TYPE.name();
             }
-        }
-        if(code == null) {
-            code = ImportLineValidationCodes.UNKNOWN_ERROR.name();
         }
         return code;
     }

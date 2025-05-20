@@ -2,6 +2,7 @@ package com.dotcms.util;
 
 import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotmarketing.portlets.workflows.business.SystemWorkflowConstants.WORKFLOW_PUBLISH_ACTION_ID;
+import static com.dotmarketing.util.importer.ImportLineValidationCodes.INVALID_BINARY_URL;
 import static com.dotmarketing.util.importer.ImportLineValidationCodes.INVALID_DATE_FORMAT;
 import static com.dotmarketing.util.importer.ImportLineValidationCodes.INVALID_LOCATION;
 import static com.dotmarketing.util.importer.ImportLineValidationCodes.REQUIRED_FIELD_MISSING;
@@ -3643,11 +3644,11 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         assertFalse(result.error().isEmpty());
         final Optional<String> code1 = result.error().get(0).code();
         assertTrue(code1.isPresent());
-        assertEquals(code1.get(), REQUIRED_FIELD_MISSING.name());
+        assertEquals(REQUIRED_FIELD_MISSING.name(),code1.get());
 
         final Optional<String> code2 = result.error().get(1).code();
         assertTrue(code2.isPresent());
-        assertEquals(code2.get(), INVALID_DATE_FORMAT.name());
+        assertEquals(INVALID_DATE_FORMAT.name(),code2.get());
 
     }
 
@@ -3689,13 +3690,18 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         titleField = saved.fields().get(0);
 
         final Reader reader = createTempFile("title,bin \r\n" +
-                "Company Logo, https://www.dotcms.com/assets/logo.svg?w=3840 " + "\r\n"
+                "Company Logo, https://www.dotcms.com/assets/logo.svg?w=3840 " + "\r\n" +
+                "Non-Existing file path, /fake/path" + "\r\n" +
+                "Non-Existing url, https://demo.dotcms.com/lol.jpg" + "\r\n"
         );
         final ImportResult result = importAndValidate(contentType, titleField, reader, false, 1, WORKFLOW_PUBLISH_ACTION_ID);
 
         assertNotNull(result);
-        assertTrue(result.error().isEmpty());
-
+        assertFalse(result.error().isEmpty());
+        assertTrue(result.error().get(0).code().isPresent());
+        assertEquals(INVALID_BINARY_URL.name(), result.error().get(0).code().get());
+        assertTrue(result.error().get(1).code().isPresent());
+        assertEquals(INVALID_BINARY_URL.name(), result.error().get(1).code().get());
     }
 
 }
