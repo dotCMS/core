@@ -15,5 +15,8 @@ export const DYNAMIC_COMPONENTS: { [key: string]: DynamicComponentEntity } = {
     ).then((c) => c.CustomNoComponent),
     BannerCarousel: import('../content-types/banner-carousel/banner-carousel.component').then(
         (c) => c.BannerCarouselComponent
+    ),
+    VtlInclude: import('../content-types/vtl-include/vtl-include.component').then(
+        (c) => c.VtlIncludeComponent
     )
 };

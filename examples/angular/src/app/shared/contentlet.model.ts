@@ -42,10 +42,12 @@ export interface Banner extends Contentlet {
     buttonText: string;
 }
 
+export interface BannerWidgetCodeJSON {
+    banners: Banner[];
+}
+
 export interface BannerCarousel extends Contentlet {
-    widgetCodeJSON: {
-        banners: Banner[];
-    };
+    widgetCodeJSON: BannerWidgetCodeJSON;
 }
 
 export interface Destination extends Contentlet {
@@ -55,6 +57,9 @@ export interface Destination extends Contentlet {
     urlMap: string;
     modDate: string;
     url: string;
+    shortDescription?: string;
+    activities?: string[];
+    selectValue?: string;
 }
 
 export interface Product extends Contentlet {
@@ -68,6 +73,22 @@ export interface Activity extends Contentlet {
     description: string;
     urlTitle: string;
 }
+
+export interface VTLInclude extends Contentlet {
+    componentType: string | 'destinationListing';
+    widgetCodeJSON: unknown;
+}
+
+export interface DestinationListingWidgetJSON {
+    destinations: Destination[];
+}
+
+export interface VTLIncludeDestinationListing extends VTLInclude {
+    componentType: 'destinationListing';
+    widgetCodeJSON: DestinationListingWidgetJSON;
+}
+
+export type VTLIncludeWithVariations = VTLIncludeDestinationListing | VTLInclude;
 
 export interface FooterContent {
     logoImage: FileAsset[];
