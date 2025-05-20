@@ -162,24 +162,6 @@ const MyPage = ({ pageData }) => {
 export default MyPage;
 ```
 
-##### Common Pitfalls and Limitations
-
-1. **Missing Content Type Components**
-   - If your `components` object doesn't have a mapping for a content type used in the page, that content won't render.
-   - Always ensure all content types used in your pages have corresponding components registered.
-
-2. **Layout Structure Modifications**
-   - Modifying the layout structure directly may break the editor's ability to track changes.
-   - Always use the layout data as provided by the API without structural modifications.
-
-3. **Performance Considerations**
-   - For pages with many content items, consider implementing component lazy loading.
-   - Avoid expensive operations in content type components as they may render multiple times.
-
-4. **Sidebar Rendering**
-   - The sidebar content requires special handling if using custom grid systems.
-   - Sidebar location ('left', 'right') and width ('small', 'medium', 'large') should be translated to your CSS framework.
-
 ##### Advanced Usage
 
 ```jsx
@@ -245,9 +227,27 @@ export default MyAdvancedPage;
 
 > **Note:** For a more detailed explanation of how to build React applications with dotCMS, see the [developer tutorial on using dotCMS with React](https://www.dotcms.com/blog/developer-tutorial-how-to-use-dotcms-and-react-to-build-single-page-apps).
 
+##### Common Pitfalls and Limitations
+
+1. **Missing Content Type Components**
+   - If your `components` object doesn't have a mapping for a content type used in the page, that content won't render.
+   - Always ensure all content types used in your pages have corresponding components registered.
+
+2. **Layout Structure Modifications**
+   - Modifying the layout structure directly may break the editor's ability to track changes.
+   - Always use the layout data as provided by the API without structural modifications.
+
+3. **Performance Considerations**
+   - For pages with many content items, consider implementing component lazy loading.
+   - Avoid expensive operations in content type components as they may render multiple times.
+
+4. **Sidebar Rendering**
+   - The sidebar content requires special handling if using custom grid systems.
+   - Sidebar location ('left', 'right') and width ('small', 'medium', 'large') should be translated to your CSS framework.
+
 #### `DotCMSShow`
 
-The `DotCMSShow` component conditionally renders its children based on the Universal Visual Editor (UVE) mode. This is useful for displaying different content in different editing modes.
+The `DotCMSShow` component conditionally renders its children based on the Universal Visual Editor (UVE) mode. This allows you to create UI elements that only appear in specific contexts, such as edit controls in the editor or special preview-only content.
 
 ##### Props
 
@@ -255,6 +255,27 @@ The `DotCMSShow` component conditionally renders its children based on the Unive
 |------|------|----------|---------|-------------|
 | `children` | `React.ReactNode` | Yes | --- | The content to be rendered when the condition is met. |
 | `when` | `UVE_MODE` | No | `UVE_MODE.EDIT` | The UVE mode in which the children should be rendered. Can be `UVE_MODE.EDIT`, `UVE_MODE.PREVIEW`, or `UVE_MODE.LIVE`. |
+
+##### UVE Mode Integration
+
+The `DotCMSShow` component integrates directly with the dotCMS Universal Visual Editor's mode system to conditionally render content:
+
+1. **EDIT Mode (`UVE_MODE.EDIT`)**
+   - Content is visible only when editing a page within the dotCMS editor's draft mode
+   - Perfect for edit controls, guidelines, and administrative UI elements
+   - Appears only to content editors with appropriate permissions
+
+2. **PREVIEW Mode (`UVE_MODE.PREVIEW`)**
+   - Content is visible in the editor's preview mode
+   - Useful for showing preview-specific messages or UI elements
+   - Can be used to highlight content that is staged but not yet published
+
+3. **LIVE Mode (`UVE_MODE.LIVE`)**
+   - Content is visible in the editor's "Published View" mode
+   - This mode lets editors see how content appears to end users
+   - Note: This is NOT for content that should only appear on the actual published site
+
+The component automatically detects the current UVE mode and handles the conditional rendering accordingly, making it easy to create context-specific UI without manual mode checking.
 
 ##### Usage
 
@@ -264,6 +285,7 @@ import { UVE_MODE } from '@dotcms/uve';
 import { editContentlet } from '@dotcms/uve';
 
 // This component creates an edit button for any contentlet, even if it doesn't belong to the current page
+// Component that only appears in edit mode
 export function EditButton({ contentlet }) {
   return (
     <DotCMSShow when={UVE_MODE.EDIT}>
@@ -276,21 +298,68 @@ export function EditButton({ contentlet }) {
   );
 }
 
-// Usage example in a component that displays related content
-const RelatedArticle = ({ article }) => {
+// Mode-specific content for different viewing contexts
+const ModeAwareContent = ({ article }) => {
   return (
-    <div className="related-article">
-      <h3>{article.title}</h3>
-      <p>{article.summary}</p>
-      <EditButton contentlet={article} />
+    <div className="article-container">
+      {/* Content visible in all modes */}
+      <h2>{article.title}</h2>
+      
+      {/* Edit mode only: editing tools */}
+      <DotCMSShow when={UVE_MODE.EDIT}>
+        <div className="edit-tools">
+          <EditButton contentlet={article} />
+          <span className="edit-hint">Click to edit this article</span>
+        </div>
+      </DotCMSShow>
+      
+      {/* Preview mode only: status information */}
+      <DotCMSShow when={UVE_MODE.PREVIEW}>
+        <div className="preview-banner">
+          {article.live ? 
+            <span className="status published">Published</span> : 
+            <span className="status draft">Draft - Not Yet Published</span>
+          }
+        </div>
+      </DotCMSShow>
+      
+      {/* Live view mode only: simulation of published view */}
+      <DotCMSShow when={UVE_MODE.LIVE}>
+        <div className="live-view-indicator">
+          <span>Viewing as published content</span>
+        </div>
+      </DotCMSShow>
+      
+      {/* Content visible in all modes */}
+      <div className="article-body">{article.body}</div>
     </div>
   );
 };
 ```
 
+##### Common Pitfalls and Limitations
+
+1. **UVE Mode Detection Timing**
+   - The UVE mode is detected when the component mounts
+   - Mode changes while the component is mounted will not trigger re-rendering
+   - For dynamic mode response, use the `useDotCMSShowWhen` hook instead
+
+2. **Nesting Considerations**
+   - Deeply nested `DotCMSShow` components may impact performance
+   - Consider consolidating mode-specific UI into dedicated components
+
+3. **Content Editor Experience**
+   - Be mindful of how conditional content affects the editing experience
+   - Too many edit-only UI elements can make the page cluttered for editors
+
+4. **Mode Clarification**
+   - Remember that `UVE_MODE.LIVE` is just a view mode within the editor
+   - To target the actual published site outside the editor, use additional rendering logic
+   - For functionality that should only appear on the real published site (like analytics), use environment detection
+
 #### `DotCMSBlockEditorRenderer`
 
-The `DotCMSBlockEditorRenderer` component renders content from a Block Editor Content Type in dotCMS. It supports custom renderers for different block types, allowing for flexible content display.
+The `DotCMSBlockEditorRenderer` component renders rich content created with the Block Editor Content Type in dotCMS. It handles various block types out of the box and supports custom renderers for advanced use cases.
 
 ##### Props
 
@@ -316,7 +385,7 @@ function ContentDisplay({ contentlet }) {
 }
 ```
 
-> **Note:** For advanced usage including custom renderers, inline editing capabilities, and best practices, please refer to the [detailed Block Editor documentation](https://dev.dotcms.com/docs/javascript-sdk-react-library/block-editor).
+> **Note:** This component has a comprehensive dedicated documentation file with examples, custom renderers, and best practices. Please refer to the [component's README](https://github.com/dotCMS/core/tree/master/core-web/libs/sdk/react/src/lib/next/components/DotCMSBlockEditorRenderer) for full documentation.
 
 #### `DotCMSEditableText`
 
