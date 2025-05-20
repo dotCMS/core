@@ -24,7 +24,6 @@ public class VanityURLFetcher implements DataFetcher<CachedVanityUrl> {
 
     @Override
     public CachedVanityUrl get(final DataFetchingEnvironment environment) throws Exception {
-
         final DotGraphQLContext context = environment.getContext();
         final User user = context.getUser();
         final Contentlet page = environment.getSource();
@@ -33,12 +32,17 @@ public class VanityURLFetcher implements DataFetcher<CachedVanityUrl> {
         );
         final Language language = APILocator.getLanguageAPI().getLanguage(page.getLanguageId());
 
-        // Resolve the vanity URL based on the page's URI, host, and language.
-        // Try "pageURI" first, fallback to "url" if not set
-        String uri = page.getStringProperty("pageURI");
+        // Try originalUrl first (set by PageDataFetcher for vanity URLs)
+        String uri = page.getStringProperty("originalUrl");
+
+        // If not found, try pageURI, then fallback to url
+        if (!UtilMethods.isSet(uri)) {
+            uri = page.getStringProperty("pageURI");
+        }
         if (!UtilMethods.isSet(uri)) {
             uri = page.getStringProperty("url");
         }
+
         if (UtilMethods.isSet(uri)) {
             final Optional<CachedVanityUrl> vanityUrlOpt = APILocator.getVanityUrlAPI().
                     resolveVanityUrl(uri, host, language);
@@ -49,5 +53,4 @@ public class VanityURLFetcher implements DataFetcher<CachedVanityUrl> {
 
         return null;
     }
-
 }
