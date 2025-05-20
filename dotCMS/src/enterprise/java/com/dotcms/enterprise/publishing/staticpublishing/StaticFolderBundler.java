@@ -31,7 +31,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-
+/**
+ * This bundler will generate the corresponding folder tree for the bundle when trying to Static Publish a folder
+ */
 public class StaticFolderBundler implements IBundler {
     private PublisherConfig config;
     private User systemUser;
@@ -141,13 +143,6 @@ public class StaticFolderBundler implements IBundler {
                 File fsFolder = new File(myFolderUrl);
                 bundleOutput.mkdirs(myFolderUrl);
 
-                FolderWrapper wrapper = folderWrappers.remove(0);
-                String myFileUrl = fsFolder.getParent() + File.separator +
-                        wrapper.getFolder().getIdentifier()+FOLDER_EXTENSION;
-
-                try (final OutputStream outputStream = bundleOutput.addFile(myFileUrl)) {
-                    BundlerUtil.objectToXML(wrapper, outputStream);
-                }
             }
         }
 

@@ -368,6 +368,11 @@ public class StaticPublisherIntegrationTest {
         return FileTestUtil.removeContent(fileContentExpected, toRemove);
     }
 
+    /**
+     * Method to Test: {@link PublisherAPIImpl#publish(PublisherConfig)}
+     * Given Scenario: A folder without any files is static push published
+     * Expected Result: A bundle should be generated with the folder info
+    * */
     @Test
     public void createStaticBundleWithoutFiles()
             throws DotPublishingException, DotPublisherException {
@@ -406,27 +411,14 @@ public class StaticPublisherIntegrationTest {
             final PublishStatus publish = publisherAPI.publish(config);
 
             final File bundleRoot = BundlerUtil.getBundleRoot(config);
-
-            final List<File> files = FileUtil.listFilesRecursively(bundleRoot)
+            final boolean isFolderCreated = FileUtil.listFilesRecursively(bundleRoot)
                     .stream()
-                    .filter(file -> file.getName().contains("folder.xml"))
-                    .filter(file -> file.isFile())
-                    .collect(Collectors.toList());
+                    .anyMatch(file -> file.getPath().contains(name));
 
-
-            assertFalse(files.isEmpty());
+            assertTrue(isFolderCreated);
         } finally {
             FolderDataGen.remove(folder);
-
         }
-//        final File bundleXMLFile = new File(bundleRoot, BUNDLE_METADA_FILE_NAME);
-//        assertTrue(bundleXMLFile.exists());
-//
-//        for (File file : files) {
-//            assertFile(testCase, file);
-//        }
-
-
     }
 
 
