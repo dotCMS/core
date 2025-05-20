@@ -1,6 +1,24 @@
-# DotCMS UVE SDK
+# dotCMS UVE SDK
 
 A JavaScript library to connect your dotCMS pages with the Universal Visual Editor (UVE) and enable content authors to edit pages in real time.
+
+The UVE SDK is designed as a flexible, high-level library that provides core functionality for custom implementations across any JavaScript project. While you can use this SDK directly in any environment, we also offer framework-specific libraries for popular JavaScript frameworks like Angular and React. These specialized libraries build upon the UVE SDK to provide optimized, streamlined integration with their respective frameworks, reducing development time and ensuring best practices.
+
+Whether you're building a custom solution or working with a specific framework, the UVE SDK provides a robust foundation for creating editable pages with dotCMS.
+
+## Table of Contents
+
+- [Installation](#installation)
+- [Examples](#examples)
+- [Browser Compatibility](#browser-compatibility)
+- [API Reference](#api-reference)
+  - [1. Editor Initialization](#1-editor-initialization)
+  - [2. Core UVE Functionality](#2-core-uve-functionality)
+  - [3. Content Editing](#3-content-editing)
+  - [4. Navigation & Layout](#4-navigation--layout)
+  - [5. Communication Utilities](#5-communication-utilities)
+- [Contributing](#contributing)
+- [Licensing](#licensing)
 
 ## Installation
 
@@ -16,6 +34,26 @@ yarn add @dotcms/uve-sdk
 # Using pnpm
 pnpm add @dotcms/uve-sdk
 ```
+
+## Examples
+
+To help you get started with the UVE SDK, we provide several example projects demonstrating integration with different frameworks:
+
+- [Angular Example](https://github.com/dotCMS/core/tree/main/examples/angular) - Integration with Angular
+- [Next.js Example](https://github.com/dotCMS/core/tree/main/examples/nextjs) - Integration with Next.js
+- [Astro Example](https://github.com/dotCMS/core/tree/main/examples/astro) - Integration with Astro
+
+These examples show how to initialize the UVE, handle content editing, and implement navigation synchronization within each framework's specific patterns and lifecycle methods.
+
+## Browser Compatibility
+
+The DotCMS UVE SDK is compatible with:
+
+| Browser | Supported Versions |
+|---------|-------------------|
+| Chrome  | Latest 3 versions |
+| Firefox | Latest 3 versions |
+| Edge    | Latest 3 versions |
 
 ## API Reference
 
