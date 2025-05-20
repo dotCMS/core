@@ -3,7 +3,6 @@ package com.dotmarketing.filters;
 import com.dotcms.analytics.track.AnalyticsTrackWebInterceptor;
 import com.dotcms.business.SystemTableUpdatedKeyEvent;
 import com.dotcms.ema.EMAWebInterceptor;
-import com.dotcms.featureflag.FeatureFlagName;
 import com.dotcms.filters.interceptor.AbstractWebInterceptorSupportFilter;
 import com.dotcms.filters.interceptor.WebInterceptorDelegate;
 import com.dotcms.filters.interceptor.meta.ResponseMetaDataWebInterceptor;
@@ -11,11 +10,9 @@ import com.dotcms.graphql.GraphqlCacheWebInterceptor;
 import com.dotcms.jitsu.EventLogWebInterceptor;
 import com.dotcms.prerender.PreRenderSEOWebInterceptor;
 import com.dotcms.security.multipart.MultiPartRequestSecurityWebInterceptor;
-import com.dotcms.telemetry.collectors.api.ApiMetricWebInterceptor;
 import com.dotcms.variant.business.web.CurrentVariantWebInterceptor;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Config;
-import io.vavr.Lazy;
 
 import javax.servlet.FilterConfig;
 import javax.servlet.ServletException;
@@ -29,12 +26,6 @@ import javax.servlet.ServletException;
  * @author jsanca
  */
 public class InterceptorFilter extends AbstractWebInterceptorSupportFilter {
-
-    private static final Lazy<Boolean> ENABLE_TELEMETRY_FROM_CORE = Lazy.of(() ->
-            Config.getBooleanProperty(FeatureFlagName.FEATURE_FLAG_TELEMETRY_CORE_ENABLED, true));
-
-    private static final Lazy<Boolean> TELEMETRY_API_METRICS_ENABLED = Lazy.of(() ->
-            Config.getBooleanProperty(FeatureFlagName.TELEMETRY_API_METRICS_ENABLED, true));
 
     @Override
     public void init(final FilterConfig config) throws ServletException {
@@ -64,9 +55,6 @@ public class InterceptorFilter extends AbstractWebInterceptorSupportFilter {
         delegate.add(new EventLogWebInterceptor());
         delegate.add(new CurrentVariantWebInterceptor());
         delegate.add(analyticsTrackWebInterceptor);
-        if (Boolean.TRUE.equals(ENABLE_TELEMETRY_FROM_CORE.get()) && Boolean.TRUE.equals(TELEMETRY_API_METRICS_ENABLED.get())) {
-            delegate.add(new ApiMetricWebInterceptor());
-        }
         APILocator.getLocalSystemEventsAPI().subscribe(SystemTableUpdatedKeyEvent.class, analyticsTrackWebInterceptor);
     } // addInterceptors.
 
