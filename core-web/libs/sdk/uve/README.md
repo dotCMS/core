@@ -28,13 +28,13 @@ The UVE SDK is automatically included in DotCMS installations. For external usag
 
 ```bash
 # Using npm
-npm install @dotcms/uve-sdk
+npm install @dotcms/uve@next
 
 # Using yarn
-yarn add @dotcms/uve-sdk
+yarn add @dotcms/uve@next
 
 # Using pnpm
-pnpm add @dotcms/uve-sdk
+pnpm add @dotcms/uve@next
 ```
 
 ## Quick Examples

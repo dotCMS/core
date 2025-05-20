@@ -2,6 +2,7 @@
 
 `@dotcms/react` is the official React integration library for dotCMS, designed to empower React developers to build powerful, editable websites and applications with minimal effort.
 
+
 ## What is it?
 
 This SDK bridges the gap between React's component-based architecture and dotCMS's powerful content management capabilities. It provides a suite of ready-to-use components and hooks that enable you to:
@@ -14,6 +15,7 @@ This SDK bridges the gap between React's component-based architecture and dotCMS
 Whether you're building a simple marketing site or a complex web application, the dotCMS React SDK streamlines your development process, allowing you to launch faster while maintaining full editability within dotCMS.
 
 > **See it in action:** Check out our [live demo of a Next.js site](https://nextjs-example-sigma-five.vercel.app/) built with the dotCMS React SDK.
+
 
 ## Getting Started
 
@@ -37,6 +39,7 @@ yarn create next-app dotcms-nextjs-demo --example https://github.com/dotCMS/core
 pnpm create next-app dotcms-nextjs-demo --example https://github.com/dotCMS/core/tree/main/examples/nextjs
 ```
 
+
 ## Table of Contents
 
 - [What is it?](#what-is-it)
@@ -59,20 +62,22 @@ pnpm create next-app dotcms-nextjs-demo --example https://github.com/dotCMS/core
 - [Licensing Information](#licensing-information)
 - [dotCMS Support](#dotcms-support)
 
+
 ## How To Install
 
 The React SDK is automatically included in DotCMS installations. For external usage:
 
 ```bash
 # Using npm
-npm install @dotcms/react
+npm install @dotcms/react@next
 
 # Using yarn
-yarn add @dotcms/react
+yarn add @dotcms/react@next
 
 # Using pnpm
-pnpm add @dotcms/react
+pnpm add @dotcms/react@next
 ```
+
 
 ## Dependencies
 
@@ -82,20 +87,22 @@ This package has the following peer dependencies that you'll need to install in 
 |------------|---------|-------------|
 | `@dotcms/uve` | latest | Required for page editing functionality |
 | `@dotcms/client` | latest | Required for page fetching functionality |
+| `@dotcms/types` | latest | Required for type definitions |
 | `@tinymce/tinymce-react` | ^6.0.0 | Required for TinyMCE integration |
 
 Install peer dependencies:
 
 ```bash
 # Using npm
-npm install @dotcms/uve @dotcms/client @tinymce/tinymce-react
+npm install @dotcms/uve @dotcms/client @dotcms/types @tinymce/tinymce-react
 
 # Using yarn
-yarn add @dotcms/uve @dotcms/client @tinymce/tinymce-react
+yarn add @dotcms/uve @dotcms/client @dotcms/types @tinymce/tinymce-react
 
 # Using pnpm
-pnpm add @dotcms/uve @dotcms/client @tinymce/tinymce-react
+pnpm add @dotcms/uve @dotcms/client @dotcms/types @tinymce/tinymce-react
 ```
+
 
 ## Browser Compatibility
 
@@ -107,9 +114,11 @@ The `@dotcms/react` package is compatible with the following browsers:
 | Edge    | Latest 2 versions | TLS 1.2+ |
 | Firefox | Latest 2 versions | TLS 1.2+ |
 
+
 ## API Reference
 
 This section provides detailed documentation for all components, hooks, and types in the @dotcms/react Next API.
+
 
 ### Components
 
@@ -268,6 +277,7 @@ export default MyAdvancedPage;
    - The sidebar content requires special handling if using custom grid systems.
    - Sidebar location ('left', 'right') and width ('small', 'medium', 'large') should be translated to your CSS framework.
 
+
 #### `DotCMSShow`
 
 The `DotCMSShow` component conditionally renders its children based on the Universal Visual Editor (UVE) mode. This allows you to create UI elements that only appear in specific contexts, such as edit controls in the editor or special preview-only content.
@@ -380,6 +390,7 @@ const ModeAwareContent = ({ article }) => {
    - To target the actual published site outside the editor, use additional rendering logic
    - For functionality that should only appear on the real published site (like analytics), use environment detection
 
+
 #### `DotCMSBlockEditorRenderer`
 
 The `DotCMSBlockEditorRenderer` component renders rich content created with the Block Editor Content Type in dotCMS. It handles various block types out of the box and supports custom renderers for advanced use cases.
@@ -409,6 +420,7 @@ function ContentDisplay({ contentlet }) {
 ```
 
 > **Note:** This component has a comprehensive dedicated documentation file with examples, custom renderers, and best practices. Please refer to the [component's README](https://github.com/dotCMS/core/tree/master/core-web/libs/sdk/react/src/lib/next/components/DotCMSBlockEditorRenderer) for full documentation.
+
 
 #### `DotCMSEditableText`
 
@@ -518,6 +530,7 @@ const ArticleBody = ({ article }) => (
    - Very large content fields may experience performance issues
    - For large WYSIWYG content, consider breaking it into smaller sections
 
+
 ### Hooks
 
 #### `useDotCMSShowWhen`
@@ -606,6 +619,7 @@ const EnhancedContentViewer = ({ contentlet }) => {
   );
 };
 ```
+
 
 #### `useEditableDotCMSPage`
 
@@ -706,6 +720,7 @@ export async function getServerSideProps() {
 
 For custom implementations or alternative approaches to making pages editable, please refer to the [FAQ section](#faq) which includes examples of creating custom hooks for editable pages.
 
+
 ## Additional Resources
 
 For more information about working with the dotCMS React SDK:
@@ -715,7 +730,9 @@ For more information about working with the dotCMS React SDK:
 
 Always refer to the official [dotCMS documentation](https://dev.dotcms.com/) for comprehensive guides and API references.
 
+
 ## FAQ
+
 
 ## How To Contribute
 
@@ -729,9 +746,11 @@ GitHub pull requests are the preferred method to contribute code to dotCMS. We w
 
 Please ensure your code follows the existing style and includes appropriate tests.
 
+
 ## Licensing Information
 
 dotCMS comes in multiple editions and as such is dual licensed. The dotCMS Community Edition is licensed under the GPL 3.0 and is freely available for download, customization and deployment for use within organizations of all stripes. dotCMS Enterprise Editions (EE) adds a number of enterprise features and is available via a supported, indemnified commercial license from dotCMS. For the differences between the editions, see [the feature page](http://www.dotcms.com/cms-platform/features).
+
 
 ## dotCMS Support 
 
