@@ -150,66 +150,93 @@ public class ArchiveUtil {
         // Remove any leading slashes that would make the path absolute
         String sanitized = entryName.replaceAll("^/+", "");
         
-        // Split path into components and normalize
-        String[] parts = sanitized.split("/");
-        java.util.List<String> safePathParts = new java.util.ArrayList<>();
-        
-        for (String part : parts) {
-            if (part.isEmpty() || ".".equals(part)) {
-                // Skip empty parts or current directory references
-                continue;
-            }
-            if ("..".equals(part)) {
-                // For tests, throw SecurityException if we detect path traversal attempts
-                if (isSuspicious) {
-                    SecurityLogger.logInfo(ArchiveUtil.class, String.format(
-                            "Possible archive slip attack detected in '%s'. Entry '%s' contains path traversal.",
-                            archivePath, entryName));
-                    
-                    if (handlingMode == SuspiciousEntryHandling.ABORT) {
-                        throw new SecurityException("Illegal entry path in " + archivePath + ": " + entryName);
-                    }
-                    
-                    // If we're not aborting, skip this part but log the warning
-                    Logger.warn(ArchiveUtil.class, "Skipping suspicious path component '..' in " + archivePath + ": " + entryName);
-                    continue;
-                }
-                
-                // For legitimate ".." references, remove the last path part if it exists
-                if (!safePathParts.isEmpty()) {
-                    safePathParts.remove(safePathParts.size() - 1);
-                }
-                continue;
-            }
-            safePathParts.add(part);
-        }
-        
-        // Join the normalized path parts
-        String result = String.join("/", safePathParts);
-        
-        // Log warning for leading slashes only once per path
-        if (hasLeadingSlash && loggedLeadingSlashPaths.add(entryName)) {
-            Logger.warn(ArchiveUtil.class, "Path contains leading slash in " + archivePath + ": " + entryName + " -> " + result);
-        }
-        
-        // If the path was modified during sanitization, log it
-        if (!result.equals(entryName)) {
-            if (isSuspicious) {
+        try {
+            // Create a temporary file to resolve the path
+            File tempFile = new File(sanitized);
+            String canonicalPath = tempFile.getCanonicalPath();
+            
+            // If the path was modified during canonicalization, it might be suspicious
+            if (!canonicalPath.equals(sanitized)) {
                 SecurityLogger.logInfo(ArchiveUtil.class, String.format(
-                        "Possible archive slip attack detected in '%s'. Entry '%s' was sanitized to '%s'.",
-                        archivePath, entryName, result));
-                        
+                        "Path in '%s' was canonicalized: '%s' -> '%s'",
+                        archivePath, entryName, canonicalPath));
+                
                 if (handlingMode == SuspiciousEntryHandling.ABORT) {
                     throw new SecurityException("Illegal entry path in " + archivePath + ": " + entryName);
                 }
                 
-                Logger.warn(ArchiveUtil.class, "Sanitized suspicious path in " + archivePath + ": " + entryName + " to: " + result);
-            } else {
-                Logger.debug(ArchiveUtil.class, "Normalized path in " + archivePath + ": " + entryName + " to: " + result);
+                Logger.warn(ArchiveUtil.class, "Path was canonicalized in " + archivePath + ": " + entryName + " -> " + canonicalPath);
             }
+            
+            // Convert back to forward slashes and remove any leading/trailing slashes
+            String result = canonicalPath.replace('\\', '/').replaceAll("^/+|/+$", "");
+            
+            // Log warning for leading slashes only once per path
+            if (hasLeadingSlash && loggedLeadingSlashPaths.add(entryName)) {
+                Logger.warn(ArchiveUtil.class, "Path contains leading slash in " + archivePath + ": " + entryName + " -> " + result);
+            }
+            
+            return result;
+        } catch (IOException e) {
+            // If we can't resolve the canonical path, fall back to the old method
+            Logger.warn(ArchiveUtil.class, "Failed to resolve canonical path for " + entryName + " in " + archivePath + ", using fallback method");
+            
+            // Split path into components and normalize
+            String[] parts = sanitized.split("/");
+            java.util.List<String> safePathParts = new java.util.ArrayList<>();
+            
+            for (String part : parts) {
+                if (part.isEmpty() || ".".equals(part)) {
+                    // Skip empty parts or current directory references
+                    continue;
+                }
+                if ("..".equals(part)) {
+                    // For tests, throw SecurityException if we detect path traversal attempts
+                    if (isSuspicious) {
+                        SecurityLogger.logInfo(ArchiveUtil.class, String.format(
+                                "Possible archive slip attack detected in '%s'. Entry '%s' contains path traversal.",
+                                archivePath, entryName));
+                        
+                        if (handlingMode == SuspiciousEntryHandling.ABORT) {
+                            throw new SecurityException("Illegal entry path in " + archivePath + ": " + entryName);
+                        }
+                        
+                        // If we're not aborting, skip this part but log the warning
+                        Logger.warn(ArchiveUtil.class, "Skipping suspicious path component '..' in " + archivePath + ": " + entryName);
+                        continue;
+                    }
+                    
+                    // For legitimate ".." references, remove the last path part if it exists
+                    if (!safePathParts.isEmpty()) {
+                        safePathParts.remove(safePathParts.size() - 1);
+                    }
+                    continue;
+                }
+                safePathParts.add(part);
+            }
+            
+            // Join the normalized path parts
+            String result = String.join("/", safePathParts);
+            
+            // If the path was modified during sanitization, log it
+            if (!result.equals(entryName)) {
+                if (isSuspicious) {
+                    SecurityLogger.logInfo(ArchiveUtil.class, String.format(
+                            "Possible archive slip attack detected in '%s'. Entry '%s' was sanitized to '%s'.",
+                            archivePath, entryName, result));
+                            
+                    if (handlingMode == SuspiciousEntryHandling.ABORT) {
+                        throw new SecurityException("Illegal entry path in " + archivePath + ": " + entryName);
+                    }
+                    
+                    Logger.warn(ArchiveUtil.class, "Sanitized suspicious path in " + archivePath + ": " + entryName + " to: " + result);
+                } else {
+                    Logger.debug(ArchiveUtil.class, "Normalized path in " + archivePath + ": " + entryName + " to: " + result);
+                }
+            }
+            
+            return result;
         }
-        
-        return result;
     }
 
     /**

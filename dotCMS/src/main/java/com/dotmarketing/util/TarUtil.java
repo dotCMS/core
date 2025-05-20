@@ -434,31 +434,37 @@ public class TarUtil {
         }
         // Create the full path to the target file/directory
         File targetFile = new File(outputDir, sanitizedName);
+        
         // Ensure all parent directories are directories
         ensureParentDirectoriesAreDirectories(targetFile);
+        
         // Check security using shared implementation
         if (!ArchiveUtil.checkSecurity(outputDir, targetFile, convertHandlingMode(handlingMode))) {
             return false;
         }
-        // Create directories or extract files
-        if (entry.isDirectory()) {
-            if (targetFile.exists() && targetFile.isFile()) {
+        
+        // Handle directory/file conflicts
+        if (targetFile.exists()) {
+            if (entry.isDirectory() && targetFile.isFile()) {
                 Logger.warn(TarUtil.class, "Replacing file with directory during extraction: " + targetFile.getAbsolutePath());
                 if (!targetFile.delete()) {
                     throw new IOException("Failed to delete file to create directory: " + targetFile);
                 }
-            }
-            if (!targetFile.exists() && !targetFile.mkdirs()) {
-                Logger.error(TarUtil.class, "Failed to create directory: " + targetFile.getAbsolutePath());
-                return false;
-            }
-        } else {
-            if (targetFile.exists() && targetFile.isDirectory()) {
+            } else if (!entry.isDirectory() && targetFile.isDirectory()) {
                 Logger.warn(TarUtil.class, "Replacing directory with file during extraction: " + targetFile.getAbsolutePath());
                 if (!deleteDirectory(targetFile)) {
                     throw new IOException("Failed to delete directory to create file: " + targetFile);
                 }
             }
+        }
+        
+        // Create directories or extract files
+        if (entry.isDirectory()) {
+            if (!targetFile.exists() && !targetFile.mkdirs()) {
+                Logger.error(TarUtil.class, "Failed to create directory: " + targetFile.getAbsolutePath());
+                return false;
+            }
+        } else {
             // Ensure parent directory exists
             File parent = targetFile.getParentFile();
             if (parent != null && !parent.exists() && !parent.mkdirs()) {
