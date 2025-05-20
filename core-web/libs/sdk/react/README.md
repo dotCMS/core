@@ -13,10 +13,12 @@ This SDK bridges the gap between React's component-based architecture and dotCMS
 
 Whether you're building a simple marketing site or a complex web application, the dotCMS React SDK streamlines your development process, allowing you to launch faster while maintaining full editability within dotCMS.
 
+> **See it in action:** Check out our [live demo of a Next.js site](https://nextjs-example-sigma-five.vercel.app/) built with the dotCMS React SDK.
+
 ## Table of Contents
 
 - [What is it?](#what-is-it)
-- [How to Install](#how-to-install)
+- [How To Install](#how-to-install)
 - [Dependencies](#dependencies)
 - [Browser Compatibility](#browser-compatibility)
 - [Detailed API Documentation](#detailed-api-documentation)
@@ -30,11 +32,11 @@ Whether you're building a simple marketing site or a complex web application, th
     - [useEditableDotCMSPage](#useeditabledotcmspage)
 - [Documentation](#documentation)
 - [FAQ](#faq)
-- [How to Contribute](#how-to-contribute)
+- [How To Contribute](#how-to-contribute)
 - [Licensing Information](#licensing-information)
 - [dotCMS Support](#dotcms-support)
 
-## How to Install
+## How To Install
 
 The React SDK is automatically included in DotCMS installations. For external usage:
 
@@ -94,11 +96,11 @@ The `DotCMSLayoutBody` component renders the layout body for a DotCMS page. It u
 
 ##### Props
 
-| Prop | Type | Required | Description |
-|------|------|----------|-------------|
-| `page` | `DotCMSPageAsset` | Yes | The DotCMS page asset containing the layout information |
-| `components` | `Object` | Yes | A mapping of custom components for content rendering. Keys should match content types in dotCMS |
-| `mode` | `String` | No | The renderer mode; defaults to `'production'`. Can be either `'production'` or `'development'` |
+| Prop | Type | Required | Default | Description |
+|------|------|----------|---------|-------------|
+| `page` | `DotCMSPageAsset` | Yes | --- | The DotCMS page asset containing the layout information. |
+| `components` | `Record<string, React.ComponentType>` | Yes | --- | A mapping of custom components for content rendering. Keys should match content types in dotCMS. |
+| `mode` | `string` | No | `'production'` | The renderer mode. Can be either `'production'` or `'development'`. |
 
 > **Note:** Using `'development'` mode enhances troubleshooting by showing missing components and empty containers in your page. This helps identify issues with page composition. When your page is opened in the dotCMS editor, the development mode is automatically applied regardless of what you've explicitly set.
 
@@ -132,10 +134,10 @@ The `DotCMSShow` component conditionally renders its children based on the Unive
 
 ##### Props
 
-| Prop | Type | Required | Description |
-|------|------|----------|-------------|
-| `children` | `React.ReactNode` | Yes | The content to be rendered when the condition is met |
-| `when` | `UVE_MODE` | No | The UVE mode in which the children should be rendered. Can be `UVE_MODE.EDIT`, `UVE_MODE.PREVIEW`, or `UVE_MODE.LIVE`. Defaults to `UVE_MODE.EDIT` |
+| Prop | Type | Required | Default | Description |
+|------|------|----------|---------|-------------|
+| `children` | `React.ReactNode` | Yes | --- | The content to be rendered when the condition is met. |
+| `when` | `UVE_MODE` | No | `UVE_MODE.EDIT` | The UVE mode in which the children should be rendered. Can be `UVE_MODE.EDIT`, `UVE_MODE.PREVIEW`, or `UVE_MODE.LIVE`. |
 
 ##### Usage
 
@@ -175,12 +177,12 @@ The `DotCMSBlockEditorRenderer` component renders content from a Block Editor Co
 
 ##### Props
 
-| Prop | Type | Required | Description |
-|------|------|----------|-------------|
-| `blocks` | `BlockEditorContent` | Yes | The block editor content structure to render |
-| `customRenderers` | `CustomRenderer` | No | Optional custom renderers for specific block types |
-| `className` | `String` | No | Optional CSS class name to apply to the container |
-| `style` | `React.CSSProperties` | No | Optional inline styles to apply to the container |
+| Prop | Type | Required | Default | Description |
+|------|------|----------|---------|-------------|
+| `blocks` | `BlockEditorContent` | Yes | --- | The block editor content structure to render. |
+| `customRenderers` | `CustomRenderer` | No | `{}` | Custom renderers for specific block types. |
+| `className` | `string` | No | `''` | CSS class name to apply to the container. |
+| `style` | `React.CSSProperties` | No | `{}` | Inline styles to apply to the container. |
 
 ##### Basic Usage
 
@@ -205,10 +207,12 @@ The `DotCMSEditableText` component allows inline editing of text content pulled 
 
 ##### Props
 
-| Prop | Type | Required | Description |
-|------|------|----------|-------------|
-| `contentlet` | `Object` | Yes | The contentlet object containing the field to be edited |
-| `fieldName` | `String` | Yes | Name of the field in the contentlet that contains the text content |
+| Prop | Type | Required | Default | Description |
+|------|------|----------|---------|-------------|
+| `contentlet` | `object` | Yes | --- | The contentlet object containing the field to be edited. |
+| `fieldName` | `string` | Yes | --- | Name of the field in the contentlet that contains the text content. |
+| `mode` | `string` | No | `'plain'` | Editor mode. Can be `'plain'` or `'full'`. |
+| `format` | `string` | No | `'text'` | Content format. Can be `'text'` or `'html'`. |
 
 ##### Usage
 
@@ -230,9 +234,9 @@ The `useDotCMSShowWhen` hook provides the same functionality as the `DotCMSShow`
 
 ##### Parameters
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `when` | `UVE_MODE` | Yes | The UVE mode to check against (EDIT, PREVIEW, LIVE) |
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `when` | `UVE_MODE` | Yes | --- | The UVE mode to check against. Can be `UVE_MODE.EDIT`, `UVE_MODE.PREVIEW`, or `UVE_MODE.LIVE`. |
 
 ##### Usage
 
@@ -264,9 +268,9 @@ The `useEditableDotCMSPage` hook handles the communication with the Universal Vi
 
 ##### Parameters
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `pageResponse` | `DotCMSPageResponse` | Yes | The initial page data returned from `client.page.get()` |
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `pageResponse` | `DotCMSPageResponse` | Yes | --- | The initial page data returned from `client.page.get()`. |
 
 ##### Usage
 
@@ -327,7 +331,7 @@ Always refer to the official [dotCMS documentation](https://dev.dotcms.com/) for
 
 ## FAQ
 
-## How to Contribute
+## How To Contribute
 
 GitHub pull requests are the preferred method to contribute code to dotCMS. We welcome contributions to the DotCMS UVE SDK! If you'd like to contribute, please follow these steps:
 
