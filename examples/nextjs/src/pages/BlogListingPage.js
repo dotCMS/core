@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { dotCMSClient } from "@/utils/dotCMSClient";
 
-import { useDebounce } from "@/hooks/usDebounce";
+import { useDebounce } from "@/hooks/useDebounce";
 import { useEditableDotCMSPage } from "@dotcms/react/next";
 import Header from "@/components/Header";
 import BlogCard from "@/components/BlogCard";
