@@ -27,5 +27,8 @@ export const DYNAMIC_COMPONENTS: { [key: string]: DynamicComponentEntity } = {
     ).then((c) => c.StoreProductListComponent),
     SimpleWidget: import('../content-types/simple-widget/simple-widget.component').then(
         (c) => c.SimpleWidgetComponent
+    ),
+    PageForm: import('../content-types/page-form/page-form.component').then(
+        (c) => c.PageFormComponent
     )
 };

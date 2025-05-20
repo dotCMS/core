@@ -118,6 +118,11 @@ export interface SimpleWidget extends DotCMSBasicContentlet {
     code?: string;
 }
 
+export interface PageForm extends DotCMSBasicContentlet {
+    formType: string;
+    description?: string;
+}
+
 export interface FooterContent {
     logoImage: FileAsset[];
     blogs: Blog[];
