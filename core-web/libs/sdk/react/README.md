@@ -104,7 +104,41 @@ The `DotCMSLayoutBody` component renders the layout body for a DotCMS page. It u
 
 > **Note:** Using `'development'` mode enhances troubleshooting by showing missing components and empty containers in your page. This helps identify issues with page composition. When your page is opened in the dotCMS editor, the development mode is automatically applied regardless of what you've explicitly set.
 
-##### Usage
+##### Implementation Details
+
+The `DotCMSLayoutBody` component works by parsing the dotCMS page asset structure, which contains:
+
+- **Layout information**: Rows, columns, and their sizing/positioning
+- **Container references**: Identifiers that link to content containers
+- **Content mapping**: How containers map to actual content
+
+The component renders the page in this order:
+1. Parses the layout body from the page asset
+2. Renders each row in the layout
+3. Renders columns within each row according to specified widths
+4. Identifies containers within each column
+5. Maps content from the page's contentlets to these containers
+6. Renders each content item using the appropriate component from your `components` prop
+
+When a container has no matching component for a content type, the component will:
+- In `development` mode: Show a warning message with the missing content type
+- In `production` mode: Silently skip rendering that content
+
+##### Integration with dotCMS Page Editor
+
+When used with the dotCMS Universal Visual Editor (UVE):
+
+1. The component automatically detects when it's being rendered inside the editor
+2. It adds necessary markup for the editor to identify editable regions
+3. When content is edited in the UVE, changes are reflected in real-time
+4. The editor can rearrange the layout structure, and the component will adapt accordingly
+
+For this integration to work correctly, make sure to:
+- Use the `useEditableDotCMSPage` hook to make the page editable
+- Register all content types used in your page in the `components` prop
+- Avoid manually modifying the layout structure received from the API
+
+##### Basic Usage
 
 ```jsx
 import { DotCMSLayoutBody } from '@dotcms/react/next';
@@ -127,6 +161,89 @@ const MyPage = ({ pageData }) => {
 
 export default MyPage;
 ```
+
+##### Common Pitfalls and Limitations
+
+1. **Missing Content Type Components**
+   - If your `components` object doesn't have a mapping for a content type used in the page, that content won't render.
+   - Always ensure all content types used in your pages have corresponding components registered.
+
+2. **Layout Structure Modifications**
+   - Modifying the layout structure directly may break the editor's ability to track changes.
+   - Always use the layout data as provided by the API without structural modifications.
+
+3. **Performance Considerations**
+   - For pages with many content items, consider implementing component lazy loading.
+   - Avoid expensive operations in content type components as they may render multiple times.
+
+4. **Sidebar Rendering**
+   - The sidebar content requires special handling if using custom grid systems.
+   - Sidebar location ('left', 'right') and width ('small', 'medium', 'large') should be translated to your CSS framework.
+
+##### Advanced Usage
+
+```jsx
+import { useState, useEffect } from 'react';
+import { DotCMSLayoutBody, useEditableDotCMSPage } from '@dotcms/react/next';
+import { createDotCMSClient } from '@dotcms/client';
+
+// Dynamically register components based on content type
+const getComponents = () => {
+  // Core components
+  const baseComponents = {
+    'Blog': BlogComponent,
+    'Product': ProductComponent,
+    'Banner': BannerComponent
+  };
+  
+  // Conditionally add components
+  if (process.env.FEATURE_EVENTS_ENABLED) {
+    return {
+      ...baseComponents,
+      'CalendarEvent': EventComponent,
+      'EventRegistration': EventRegistrationComponent
+    };
+  }
+  
+  return baseComponents;
+};
+
+// Custom wrapper component for specific content type
+const ProductWithAnalytics = (props) => {
+  useEffect(() => {
+    // Track product impressions
+    analytics.trackImpression(props.identifier);
+  }, [props.identifier]);
+  
+  return <ProductComponent {...props} />;
+};
+
+const MyAdvancedPage = ({ initialPageData }) => {
+  // Register components with special handling for certain content types
+  const [components] = useState(() => ({
+    ...getComponents(),
+    // Override standard Product component with analytics-enhanced version
+    'Product': ProductWithAnalytics
+  }));
+  
+  // Make the page editable with UVE
+  const editablePage = useEditableDotCMSPage(initialPageData);
+  
+  return (
+    <div className="page-wrapper">
+      <DotCMSLayoutBody 
+        page={editablePage.pageAsset} 
+        components={components}
+        mode={process.env.NODE_ENV}
+      />
+    </div>
+  );
+};
+
+export default MyAdvancedPage;
+```
+
+> **Note:** For a more detailed explanation of how to build React applications with dotCMS, see the [developer tutorial on using dotCMS with React](https://www.dotcms.com/blog/developer-tutorial-how-to-use-dotcms-and-react-to-build-single-page-apps).
 
 #### `DotCMSShow`
 
