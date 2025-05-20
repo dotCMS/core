@@ -1,6 +1,7 @@
 package com.dotcms.enterprise.publishing.staticpublishing;
 
 import com.dotcms.datagen.BundleDataGen;
+import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper.FileExpected;
 import com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper.TestCase;
 import com.dotcms.publisher.bundle.bean.Bundle;
@@ -9,6 +10,7 @@ import com.dotcms.publisher.business.PublishAuditAPI;
 import com.dotcms.publisher.business.PublishAuditHistory;
 import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
+import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publishing.BundlerUtil;
 import com.dotcms.publishing.DotPublishingException;
 import com.dotcms.publishing.PublishStatus;
@@ -23,6 +25,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.WebAssetException;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.FileUtil;
@@ -65,8 +68,7 @@ import static com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherI
 import static com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper.getWorkingFileAsset;
 import static com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper.getWorkingPage;
 import static com.dotcms.util.CollectionsUtils.list;
-import static junit.framework.TestCase.assertEquals;
-import static junit.framework.TestCase.assertTrue;
+import static junit.framework.TestCase.*;
 
 @RunWith(DataProviderRunner.class)
 public class StaticPublisherIntegrationTest {
@@ -365,6 +367,68 @@ public class StaticPublisherIntegrationTest {
                 arguments);
         return FileTestUtil.removeContent(fileContentExpected, toRemove);
     }
+
+    @Test
+    public void createStaticBundleWithoutFiles()
+            throws DotPublishingException, DotPublisherException {
+        String name = "testFolder" + String.valueOf(System.currentTimeMillis());
+
+        final Folder folder = new FolderDataGen().name(name).nextPersisted();
+        try {
+
+            final Class<? extends Publisher> publisher = StaticPublisher.class;
+
+            final PublisherAPIImpl publisherAPI = new PublisherAPIImpl();
+
+            final PushPublisherConfig config = new PushPublisherConfig();
+            config.setPublishers(list(publisher));
+            config.setOperation(PublisherConfig.Operation.PUBLISH);
+            config.setLuceneQueries(list());
+            config.setId("StaticPublisher" + System.currentTimeMillis());
+            config.setStatic(true);
+
+
+
+            config.setLanguages(Set.of("1", "2"));
+
+            final Bundle bundle = new BundleDataGen()
+                    .pushPublisherConfig(config)
+                    .addAssets(list(folder))
+                    .nextPersisted();
+
+            final PublishAuditStatus status = new PublishAuditStatus(bundle.getId());
+
+            final PublishAuditHistory historyPojo = new PublishAuditHistory();
+            historyPojo.setAssets(Map.of(folder.getIdentifier(), PusheableAsset.FOLDER.getType()));
+            status.setStatusPojo(historyPojo);
+            PublishAuditAPI.getInstance().insertPublishAuditStatus(status);
+
+            final PublishStatus publish = publisherAPI.publish(config);
+
+            final File bundleRoot = BundlerUtil.getBundleRoot(config);
+
+            final List<File> files = FileUtil.listFilesRecursively(bundleRoot)
+                    .stream()
+                    .filter(file -> file.getName().contains("folder.xml"))
+                    .filter(file -> file.isFile())
+                    .collect(Collectors.toList());
+
+
+            assertFalse(files.isEmpty());
+        } finally {
+            FolderDataGen.remove(folder);
+
+        }
+//        final File bundleXMLFile = new File(bundleRoot, BUNDLE_METADA_FILE_NAME);
+//        assertTrue(bundleXMLFile.exists());
+//
+//        for (File file : files) {
+//            assertFile(testCase, file);
+//        }
+
+
+    }
+
 
     private static List<String> getXMLFileToRemove() {
         return list(
