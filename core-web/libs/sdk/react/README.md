@@ -1,34 +1,38 @@
 # dotCMS React SDK
 
-`@dotcms/react` is the official set of React components and hooks designed to work seamlessly with dotCMS, making it easy to render dotCMS pages and use the page builder.
+`@dotcms/react` is the official React integration library for dotCMS, designed to empower React developers to build powerful, editable websites and applications with minimal effort.
 
-> **⚠️ IMPORTANT:** Versions published under the `next` tag (`npm install @dotcms/react@next`) are experimental, in beta, and not code complete. For the current stable and functional version, please use `latest` (`npm install @dotcms/react@latest`). Once we release the stable version, we will provide a migration guide from the alpha to stable version. The current alpha version (under `latest`) will continue to work, allowing you to migrate progressively at your own pace.
+## What is it?
+
+This SDK bridges the gap between React's component-based architecture and dotCMS's powerful content management capabilities. It provides a suite of ready-to-use components and hooks that enable you to:
+
+- **Build editable pages** that work seamlessly with dotCMS's Universal Visual Editor (UVE)
+- **Render dynamic content** from your dotCMS instance with minimal boilerplate code
+- **Create interactive editing experiences** that content editors will love
+- **Focus on your application logic** rather than API integration details
+
+Whether you're building a simple marketing site or a complex web application, the dotCMS React SDK streamlines your development process, allowing you to launch faster while maintaining full editability within dotCMS.
 
 ## Table of Contents
 
-- [What's New](#whats-new)
-- [Installation](#installation)
+- [What is it?](#what-is-it)
+- [How to Install](#how-to-install)
 - [Dependencies](#dependencies)
 - [Browser Compatibility](#browser-compatibility)
-- [Components](#components)
-  - [DotCMSLayoutBody](#dotcmslayoutbody)
-  - [DotCMSShow](#dotcmsshow)
-  - [BlockEditorRenderer](#blockeditorrenderer)
-- [Hooks](#hooks)
-  - [useDotCMSShowWhen](#usedotcmsshowwhen)
-  - [usePageAsset](#usepageasset)
-  - [useEditableDotCMSPage](#useeditabledotcmspage)
-- [Contributing](#contributing)
-- [Licensing](#licensing)
-- [Support](#support)
+- [Detailed API Documentation](#detailed-api-documentation)
+  - [Components](#components)
+    - [DotCMSLayoutBody](#dotcmslayoutbody)
+    - [DotCMSShow](#dotcmsshow)
+    - [DotCMSBlockEditorRenderer](#dotcmsblockeditoenderer)
+    - [DotCMSEditableText](#dotcmseditabletext)
+  - [Hooks](#hooks)
+    - [useDotCMSShowWhen](#usedotcmsshowwhen)
+    - [useEditableDotCMSPage](#useeditabledotcmspage)
 - [Documentation](#documentation)
-
-## What's New?
-
-- **Refactored Components (v0.0.1-beta.13):** Improved structure for better maintainability and performance.
-- **New `DotCMSLayoutBody` Component (v0.0.1-beta.13):** Replaces `DotcmsLayout`, providing a more flexible approach to rendering page layouts.
-- **Enhanced Block Editor Support (v0.0.1-beta.13):** The `BlockEditorRenderer` now supports advanced custom renderers.
-- **Improved TypeScript Support (v0.0.1-beta.13):** Comprehensive typings for better developer experience.
+- [FAQ](#faq)
+- [How to Contribute](#how-to-contribute)
+- [Licensing Information](#licensing-information)
+- [dotCMS Support](#dotcms-support)
 
 ## How to Install
 
@@ -321,6 +325,8 @@ For more information about working with the dotCMS React SDK:
 
 Always refer to the official [dotCMS documentation](https://dev.dotcms.com/) for comprehensive guides and API references.
 
+## FAQ
+
 ## How to Contribute
 
 GitHub pull requests are the preferred method to contribute code to dotCMS. We welcome contributions to the DotCMS UVE SDK! If you'd like to contribute, please follow these steps:
@@ -337,7 +343,7 @@ Please ensure your code follows the existing style and includes appropriate test
 
 dotCMS comes in multiple editions and as such is dual licensed. The dotCMS Community Edition is licensed under the GPL 3.0 and is freely available for download, customization and deployment for use within organizations of all stripes. dotCMS Enterprise Editions (EE) adds a number of enterprise features and is available via a supported, indemnified commercial license from dotCMS. For the differences between the editions, see [the feature page](http://www.dotcms.com/cms-platform/features).
 
-## Support
+## dotCMS Support 
 
 We offer multiple channels to get help with the dotCMS React SDK:
 
