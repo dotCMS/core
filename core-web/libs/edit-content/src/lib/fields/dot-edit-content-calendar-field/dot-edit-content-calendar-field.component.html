@@ -4,15 +4,15 @@
 @let defaultDate = $defaultDate();
 @let showHints = systemTimezone || $showSystemTimezoneLabel();
 
-<div class="calendar-field">
+<div class="w-full" data-testid="calendar-field-container">
     <p-calendar
-        class="calendar-field__input"
+        class="w-full"
         [formControlName]="field.variable"
         [timeOnly]="fieldTypeConfig.timeOnly"
         [showTime]="fieldTypeConfig.showTime"
         [id]="'calendar-id-' + field.variable"
         [inputId]="field.variable"
-        [attr.data-testId]="field.variable"
+        [attr.data-testid]="'calendar-input-' + field.variable"
         [showIcon]="true"
         [icon]="fieldTypeConfig.icon"
         [showButtonBar]="true"
@@ -22,19 +22,21 @@
         [attr.aria-describedby]="field.hint ? 'hint-' + field.variable : null" />
 
     @if (showHints) {
-        <div class="calendar-field__hints flex" data-testId="hint-container">
+        <div
+            class="flex justify-content-between align-items-center"
+            data-testid="calendar-field-hints">
             <div class="flex-grow-1">
                 @if (field.hint) {
                     <small
                         id="hint-{{ field.variable }}"
-                        class="calendar-field__hint"
-                        [attr.data-testId]="'hint-' + field.variable">
+                        [attr.data-testId]="'hint-' + field.variable"
+                        data-testid="calendar-field-hint">
                         {{ field.hint }}
                     </small>
                 }
             </div>
             @if (systemTimezone && $showSystemTimezoneLabel()) {
-                <small class="calendar-field__timezone" data-testId="hint-timezone-label">
+                <small data-testid="calendar-field-timezone" role="status" aria-live="polite">
                     {{ systemTimezone.label }}
                 </small>
             }
