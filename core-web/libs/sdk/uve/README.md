@@ -2,25 +2,27 @@
 
 A JavaScript library to connect your dotCMS pages with the Universal Visual Editor (UVE) and enable content authors to edit pages in real time.
 
+## SDK Architecture
+
 The UVE SDK is designed as a flexible, high-level library that provides core functionality for custom implementations across any JavaScript project. While you can use this SDK directly in any environment, we also offer framework-specific libraries for popular JavaScript frameworks like Angular and React. These specialized libraries build upon the UVE SDK to provide optimized, streamlined integration with their respective frameworks, reducing development time and ensuring best practices.
 
 Whether you're building a custom solution or working with a specific framework, the UVE SDK provides a robust foundation for creating editable pages with dotCMS.
 
 ## Table of Contents
 
-- [Installation](#installation)
-- [Examples](#examples)
-- [Browser Compatibility](#browser-compatibility)
-- [API Reference](#api-reference)
+- [How to Install](#how-to-install)
+- [Quick Examples](#quick-examples)
+- [Supported Environments](#supported-environments)
+- [Detailed API Documentation](#detailed-api-documentation)
   - [1. Editor Initialization](#1-editor-initialization)
   - [2. Core UVE Functionality](#2-core-uve-functionality)
   - [3. Content Editing](#3-content-editing)
   - [4. Navigation & Layout](#4-navigation--layout)
   - [5. Communication Utilities](#5-communication-utilities)
-- [Contributing](#contributing)
-- [Licensing](#licensing)
+- [How to Contribute](#how-to-contribute)
+- [Licensing Information](#licensing-information)
 
-## Installation
+## How to Install
 
 The UVE SDK is automatically included in DotCMS installations. For external usage:
 
@@ -35,7 +37,7 @@ yarn add @dotcms/uve-sdk
 pnpm add @dotcms/uve-sdk
 ```
 
-## Examples
+## Quick Examples
 
 To help you get started with the UVE SDK, we provide several example projects demonstrating integration with different frameworks:
 
@@ -45,7 +47,7 @@ To help you get started with the UVE SDK, we provide several example projects de
 
 These examples show how to initialize the UVE, handle content editing, and implement navigation synchronization within each framework's specific patterns and lifecycle methods.
 
-## Browser Compatibility
+## Supported Environments
 
 The DotCMS UVE SDK is compatible with:
 
@@ -55,7 +57,7 @@ The DotCMS UVE SDK is compatible with:
 | Firefox | Latest 3 versions |
 | Edge    | Latest 3 versions |
 
-## API Reference
+## Detailed API Documentation
 
 ### 1. Editor Initialization
 
@@ -490,7 +492,7 @@ function notifyUVEOfCustomEvent(eventType, eventData) {
 
 **Note:** This is an advanced utility function primarily intended for internal use or creating custom integrations with the Universal Visual Editor. Most use cases are better served by the higher-level functions documented in previous sections.
 
-## Contributing
+## How to Contribute
 
 GitHub pull requests are the preferred method to contribute code to dotCMS. We welcome contributions to the DotCMS UVE SDK! If you'd like to contribute, please follow these steps:
 
@@ -502,6 +504,6 @@ GitHub pull requests are the preferred method to contribute code to dotCMS. We w
 
 Please ensure your code follows the existing style and includes appropriate tests.
 
-## Licensing
+## Licensing Information
 
 dotCMS comes in multiple editions and as such is dual licensed. The dotCMS Community Edition is licensed under the GPL 3.0 and is freely available for download, customization and deployment for use within organizations of all stripes. dotCMS Enterprise Editions (EE) adds a number of enterprise features and is available via a supported, indemnified commercial license from dotCMS. For the differences between the editions, see [the feature page](http://www.dotcms.com/cms-platform/features).
