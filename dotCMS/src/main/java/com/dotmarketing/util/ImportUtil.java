@@ -3158,7 +3158,7 @@ public class ImportUtil {
                     .message(ex.getMessage())
                     .code(code)
                     .lineNumber(lineNumber)
-                    .field(getOffendingFields(ex))
+                    .field(getOffendingFieldsAsString(ex))
                     .build();
         }
 
@@ -3199,7 +3199,7 @@ public class ImportUtil {
      * @param ex The exception to extract the fields from.
      * @return A string representation of the offending fields.
      */
-    private static String getOffendingFields(final DotContentletValidationException ex) {
+    private static String getOffendingFieldsAsString(final DotContentletValidationException ex) {
         final StringBuilder sb = new StringBuilder();
         final Map<String, List<Field>> errors = ex.getNotValidFields();
         final Set<String> keys = errors.keySet();
@@ -3230,7 +3230,7 @@ public class ImportUtil {
      * @param cont    The Contentlet object to which field values will be set.
      * @param headers A map of column indices to their corresponding Field definitions.
      * @param values  A map of processed field values indexed by column.
-     * @param request The HTTP request object (may be used for additional context).
+     * @param request The HTTP request object (maybe used for additional context).
      * @param preview Boolean flag indicating whether this is a preview operation.
      */
     private static void processContentFields(

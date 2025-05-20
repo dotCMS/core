@@ -3651,4 +3651,51 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
 
     }
 
+
+    /**
+     * Method to test: {@link ImportUtil#importFile(Long, String, String, String[], boolean, boolean, User, long, String[], CsvReader, int, int, Reader, String, HttpServletRequest)}
+     * Given scenario: We try to import a file with a valid binary image URL including query parameters
+     * Expected behavior: The import should NOT fail
+     * @throws DotSecurityException
+     * @throws DotDataException
+     * @throws IOException
+     */
+    @Test
+    public void TestImportBinaryImageExpectNoError()
+            throws DotSecurityException, DotDataException, IOException {
+
+        String contentTypeName = "TestImportBinaryImageErrorMessage_" + System.currentTimeMillis();
+        String contentTypeVarName = contentTypeName.replaceAll("_", "Var_");
+        com.dotcms.contenttype.model.field.Field titleField = new FieldDataGen()
+                .name("title")
+                .velocityVarName("title")
+                .type(TextField.class)
+                .next();
+        com.dotcms.contenttype.model.field.Field reqField = new FieldDataGen()
+                .name("bin")
+                .velocityVarName("bin")
+                .required(true)
+                .type(BinaryField.class)
+                .next();
+
+        ContentType contentType = new ContentTypeDataGen()
+                .name(contentTypeName)
+                .velocityVarName(contentTypeVarName)
+                .host(APILocator.systemHost())
+                .fields(List.of(titleField, reqField))
+                .nextPersisted();
+
+        final ContentType saved = contentTypeApi.find(contentType.inode());
+        titleField = saved.fields().get(0);
+
+        final Reader reader = createTempFile("title,bin \r\n" +
+                "Company Logo, https://www.dotcms.com/assets/logo.svg?w=3840 " + "\r\n"
+        );
+        final ImportResult result = importAndValidate(contentType, titleField, reader, false, 1, WORKFLOW_PUBLISH_ACTION_ID);
+
+        assertNotNull(result);
+        assertTrue(result.error().isEmpty());
+
+    }
+
 }
