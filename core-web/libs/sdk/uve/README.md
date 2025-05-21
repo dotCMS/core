@@ -1,44 +1,52 @@
 # dotCMS UVE SDK
 
-A JavaScript library to connect your dotCMS pages with the Universal Visual Editor (UVE) and enable content authors to edit pages in real time.
+The `@dotcms/uve` SDK enables live editing in your JavaScript app by connecting it to the **dotCMS Universal Visual Editor (UVE)**. Use it to support in-place editing, layout updates, and real-time content previews.
 
-## SDK Architecture
-
-The UVE SDK is designed as a flexible, high-level library that provides core functionality for custom implementations across any JavaScript project. While you can use this SDK directly in any environment, we also offer framework-specific libraries for popular JavaScript frameworks like Angular and React. These specialized libraries build upon the UVE SDK to provide optimized, streamlined integration with their respective frameworks, reducing development time and ensuring best practices.
-
-Whether you're building a custom solution or working with a specific framework, the UVE SDK provides a robust foundation for creating editable pages with dotCMS.
+---
 
 ## Table of Contents
 
-- [How to Install](#how-to-install)
-- [Quick Examples](#quick-examples)
+- [What Is It?](#what-is-it)
+- [Starter Examples](#starter-examples)
+- [Installation](#installation)
 - [Supported Environments](#supported-environments)
-- [Detailed API Documentation](#detailed-api-documentation)
-  - [1. Editor Initialization](#1-editor-initialization)
-  - [2. Core UVE Functionality](#2-core-uve-functionality)
-  - [3. Content Editing](#3-content-editing)
-  - [4. Navigation & Layout](#4-navigation--layout)
-  - [5. Communication Utilities](#5-communication-utilities)
+- [Example Integrations](#example-integrations)
+- [Common Patterns](#common-patterns)
+- [API Reference](#api-reference)
+  - [Initialization & State](#initialization--state)
+  - [Subscriptions & Events](#subscriptions--events)
+  - [Content Editing](#content-editing)
+  - [Navigation & Menu](#navigation--menu)
+  - [Communication Utilities](#communication-utilities)
+- [TypeScript Support](#typescript-support)
 - [dotCMS Support](#dotcms-support)
-- [How to Contribute](#how-to-contribute)
+- [How To Contribute](#how-to-contribute)
 - [Licensing Information](#licensing-information)
 
-## How to Install
+---
 
-The UVE SDK is automatically included in DotCMS installations. For external usage:
+## What Is It?
 
-```bash
-# Using npm
-npm install @dotcms/uve@next
+The `@dotcms/uve` package provides a low-level API to interface with the dotCMS Universal Visual Editor (UVE). Use it to:
 
-# Using yarn
-yarn add @dotcms/uve@next
+- Make pages and contentlets editable
+- Respond to editor events (content updates, mode changes)
+- Trigger modal or inline editing experiences
+- Sync app routing with the dotCMS editor
 
-# Using pnpm
-pnpm add @dotcms/uve@next
-```
+### SDK Architecture
 
-## Quick Examples
+The UVE SDK is designed with flexibility in mind:
+
+- **Core SDK (`@dotcms/uve`)**: A low-level, framework-agnostic library that provides core functionality for custom implementations. Use this when you need complete control over the integration or are working with an unsupported framework.
+
+- **Framework-Specific Libraries**: We provide optimized implementations for popular frameworks that handle common patterns and offer a more streamlined developer experience:
+  - `@dotcms/uve-react` for React applications
+  - `@dotcms/uve-angular` for Angular applications
+
+Choose the framework-specific library when available for your project - they're built on top of the core SDK and provide framework-specific features and optimizations. If you're using a different framework or need more control, the core SDK gives you all the tools needed for a custom implementation.
+
+## Starter Examples
 
 To help you get started with the UVE SDK, we provide several example projects demonstrating integration with different frameworks:
 
@@ -48,459 +56,434 @@ To help you get started with the UVE SDK, we provide several example projects de
 
 These examples show how to initialize the UVE, handle content editing, and implement navigation synchronization within each framework's specific patterns and lifecycle methods.
 
+---
+
+## Installation
+
+```bash
+npm install @dotcms/uve@next
+```
+
+---
+
 ## Supported Environments
 
-The DotCMS UVE SDK is compatible with:
-
 | Browser | Supported Versions |
-|---------|-------------------|
-| Chrome  | Latest 3 versions |
-| Firefox | Latest 3 versions |
-| Edge    | Latest 3 versions |
+| ------- | ------------------ |
+| Chrome  | Latest 3 versions  |
+| Firefox | Latest 3 versions  |
+| Edge    | Latest 3 versions  |
 
-## Detailed API Documentation
+---
 
-### 1. Editor Initialization
+## Example Integrations
+
+Want to see UVE in action with real frameworks?
+
+* [Next.js Example](https://github.com/dotCMS/core/tree/main/examples/nextjs)
+* [Angular Example](https://github.com/dotCMS/core/tree/main/examples/angular)
+* [Astro Example](https://github.com/dotCMS/core/tree/main/examples/astro)
+
+Each shows how to:
+
+* Initialize the UVE
+* Listen to editor events
+* Edit external or dynamic content
+
+---
+
+## Common Patterns
+
+### 1. Enable page editing in React
+
+```tsx
+useEffect(() => {
+  const { destroyUVESubscriptions } = initUVE();
+  const subscription = createUVESubscription(UVEEventType.CONTENT_CHANGES, updatePage);
+  return () => {
+    destroyUVESubscriptions();
+    subscription.unsubscribe();
+  };
+}, []);
+```
+
+---
+
+### 2. Trigger inline block editor editing
+
+```tsx
+<div onClick={() => enableBlockEditorInline(contentlet, 'bodyContent')} />
+```
+
+---
+
+## API Reference
+
+### Initialization & State
 
 #### `initUVE(config?: DotCMSUVEConfig)`
 
-**Description:**  
-Initializes the Universal Visual Editor (UVE) with required handlers and event listeners. This is the first function that should be called before using any other UVE functionality, as it establishes the connection between your application and the editor.
+**Overview**
 
-**Parameters:**
-- `config` (optional): `DotCMSUVEConfig` - Configuration options for the UVE initialization
-  ```typescript
-  interface DotCMSUVEConfig {
-    graphql?: {
-      query: string;
-      variables: Record<string, string>;
-    };
-    params?: Record<string, PageAPIParams>;
-  }
-  ```
+Initializes UVE and sets up communication between your app and the editor.
 
-  The `params` object can include the following optional properties:
-  - `languageId`: The ID of the language variant to retrieve
-  - `personaId`: The ID of the persona variant to retrieve
-  - `siteId`: The ID of the site
-  - `mode`: The content mode to use
-  - `fireRules`: Boolean value indicating whether to fire rules set on the page
-  - `depth`: Value between 0-3 to control access to related content
+**Parameters**:
 
-  For more details on these parameters, see the [Page REST API documentation](https://dev.dotcms.com/docs/page-rest-api-layout-as-a-service-laas#Parameters).
+| Name      | Type              | Required | Description                              |
+|-----------|-------------------|----------|------------------------------------------|
+| `config`  | `DotCMSUVEConfig` | ❌       | Optional setup for language, persona, etc |
 
-**Returns:**
-- Object containing:
-  - `destroyUVESubscriptions`: Function to clean up all UVE event subscriptions and handlers
+**Returns**: `{ destroyUVESubscriptions: () => void }`
 
-**What it does:**
-- Sets up empty contentlet styling
-- Notifies the editor that the client is ready
-- Registers UVE event subscriptions
-- Sets up scroll handling
-- Configures block editor inline event listening
-
-**Example:**
-
-```typescript
-// Basic initialization
+```ts
 const { destroyUVESubscriptions } = initUVE({ params });
-
-// Later, when you're done with UVE (e.g., component unmount)
-destroyUVESubscriptions();
 ```
 
-**Usage in React component:**
+#### DotCMSUVEConfig
 
-```tsx
-import { useEffect } from 'react';
-import { initUVE } from '@dotcms/sdk/uve';
+- `graphql` (object - optional): The graphql query to execute
+  - `query` (string): The graphql query to execute
+  - `variables` (object): The variables to pass to the graphql query.
+- `params` (object - optional): The parameters to pass to the page API
+  - `languageId` (string): The language ID of the current page set on the UVE.
+  - `personaId` (string): The persona ID of the current page set on the UVE.
+  - `publishDate` (string): The publish date of the current page set on the UVE.
+  - `depth` (0-3): The depth of the current page set on the UVE.
+  - `fireRules` (boolean): Indicates whether you want to fire the rules set on the page.
+  - `variantName` (string): The name of the current variant.
 
-function MyUVEComponent(dotCMSUVEConfig?: DotCMSUVEConfig) {
-  useEffect(() => {
-    // Initialize UVE when component mounts
-    const { destroyUVESubscriptions } = initUVE(dotCMSUVEConfig);
-    
-    // Clean up when component unmounts
-    return () => {
-      destroyUVESubscriptions();
-    };
-  }, []);
-  
-  return (
-    <div>
-      {/* Your UVE-enabled component content */}
-    </div>
-  );
-}
-```
+**Editor Integration**
 
-### 2. Core UVE Functionality
+* Required to enable all UVE features like editing, subscriptions, and navigation sync.
+* Should be called once per page mount.
+
+**Common Issues**
+
+* Failing to call destroyUVESubscriptions() on unmount may lead to memory leaks.
+
+---
 
 #### `getUVEState()`
 
-**Description:**  
-Gets the current state of the Universal Visual Editor (UVE). This function checks if the code is running inside the DotCMS Universal Visual Editor and returns information about its current state, including the editor mode.
+**Overview**
 
-**Parameters:**
-- None
+Returns current editor state if UVE is active.
+
 
 **Returns:**
+
 - `UVEState | undefined` - Returns the UVE state object if running inside the editor, undefined otherwise.
 
-The UVE state includes:
-- `mode`: The current editor mode (`'preview'`, `'edit'`, `'live'`)
-- `languageId`: The language ID of the current page set on the UVE
-- `persona`: The persona of the current page set on the UVE
-- `variantName`: The name of the current variant
-- `experimentId`: The ID of the current experiment
-- `publishDate`: The publish date of the current page set on the UVE
-- `dotCMSHost`: The host URL of the DotCMS instance
 
-**Example:**
-
-```typescript
-import { getUVEState } from '@dotcms/sdk/uve';
-
-// Check if running in edit mode
-const editorState = getUVEState();
-if (editorState?.mode === 'edit') {
-  // Enable editing features
-  enableEditableRegions();
-}
-
-// Access other state properties
-if (editorState?.languageId) {
-  console.log(`Current language: ${editorState.languageId}`);
-}
+```ts
+const state = getUVEState();
+if (state?.mode === 'edit') { showEditorUI(); }
 ```
+
+**UVE State**
+
+- `dotCMSHost`: The host URL of the DotCMS instance
+- `experimentId`: The ID of the current experiment
+- `languageId`: The language ID of the current page set on the UVE
+- `mode`: The current editor mode (`'preview'`, `'edit'`, `'live'`)
+- `persona`: The persona of the current page set on the UVE
+- `publishDate`: The publish date of the current page set on the UVE
+- `variantName`: The name of the current variant
+
+**Editor Integration**
+
+* Returns undefined when not running inside the dotCMS editor.
+
+**Common Issues**
+
+* Do not rely on getUVEState() outside the editor context.
+
+
+
+
+---
+
+### Subscriptions & Events
 
 #### `createUVESubscription(eventType, callback)`
 
-**Description:**  
-Creates a subscription to a UVE event. Use this to listen for and respond to various events triggered by the Universal Visual Editor.
+**Overview**
 
-**Parameters:**
-- `eventType`: `UVEEventType` - The type of event to subscribe to
-- `callback`: `Function` - The callback function that will be called when the event occurs
+Subscribes to UVE events like content changes or navigation updates.
 
-**Returns:**
-- `UVEEventSubscription` - An event subscription object with an `unsubscribe()` method
+**Parameters**:
 
-**Example:**
+| Name        | Type           | Required | Description                        |
+| ----------- | -------------- | -------- | ---------------------------------- |
+| `eventType` | `UVEEventType` | ✅       | The event to subscribe to          |
+| `callback`  | `Function`     | ✅       | Called when the event is triggered |
 
-```typescript
-import { createUVESubscription, UVEEventType } from '@dotcms/sdk/uve';
 
-// Subscribe to content changes
-const subscription = createUVESubscription(UVEEventType.CONTENT_CHANGES, (changes) => {
-  console.log('Content changes detected:', changes);
-  
-  // Update your component/page based on the changes
-  if (changes.contentlets) {
-    updateContentlets(changes.contentlets);
-  }
-});
-
-// Later, unsubscribe when no longer needed
-subscription.unsubscribe();
+```ts
+const sub = createUVESubscription(UVEEventType.CONTENT_CHANGES, updateFn);
+sub.unsubscribe();
 ```
 
-**Usage in React component:**
+**Event Types**
 
-```tsx
-import { useEffect, useState } from 'react';
-import { createUVESubscription, UVEEventType, initUVE } from '@dotcms/uve';
-import { DotCMSPageResponse } from '@dotcms/types';  
+- `UVEEventType.CONTENT_CHANGES`: Triggered when the content of the page changes.
+- `UVEEventType.PAGE_RELOAD`: Triggered when the page is reloaded.
+- `UVEEventType.REQUEST_BOUNDS`: Triggered when the editor requests the bounds of the page.
+- `UVEEventType.IFRAME_SCROLL`: Triggered when the iframe is scrolled.
+- `UVEEventType.IFRAME_SCROLL_END`: Triggered when the iframe has stopped scrolling.
+- `UVEEventType.CONTENTLET_HOVERED`: Triggered when a contentlet is hovered.
 
-/**
- * Custom hook for UVE page editing functionality
- * @param config Optional UVE configuration
- */
-const useCustomEditablePage = (config?: DotCMSUVEConfig, page?: DotCMSPageResponse) => {
-  const [pageData, setPageData] = useState(page);
+**Editor Integration**
 
-  useEffect(() => {
-    const { destroyUVESubscriptions } = initUVE(config);
-    const subscription = createUVESubscription(UVEEventType.CONTENT_CHANGES, (page: DotCMSPageResponse) => {
-      setPageData(page);
-    });
+* Only triggers when your app is rendered inside the UVE.
 
-    return () => {
-      destroyUVESubscriptions();
-      subscription.unsubscribe();
-    };
-  }, [config]);
+**Common Issues**
 
-  return { pageData };
-};
-```
+* Always unsubscribe to prevent memory leaks.
 
-### 3. Content Editing
+
+---
+
+### Content Editing
 
 #### `editContentlet(contentlet)`
 
-**Description:**  
-Opens the contentlet edit dialog in the Universal Visual Editor. Use this function to allow content editors to modify contentlets directly from your application.
+**Overview**
 
-This function is particularly useful for editing contentlets that don't belong to the main page response. For example, if your application fetches the page content but also separately fetches content for global elements like headers, footers, or sidebars, you can make these external contentlets editable using this function.
+Opens the dotCMS modal editor for any contentlet in or out of page area.
 
-**Parameters:**
-- `contentlet`: `Contentlet<T>` - The contentlet object to edit
+**Parameters**:
 
-**Returns:**
-- None
+| Name         | Type            | Required | Description                        |
+| ------------ | --------------- | -------- | ---------------------------------- |
+| `contentlet` | `Contentlet<T>` | ✅        | The contentlet to open for editing |
 
-**Example:**
 
-```typescript
-import { editContentlet } from '@dotcms/uve';
-
-// Edit a contentlet when a button is clicked
-function handleEditClick(contentlet) {
-  editContentlet(contentlet);
-}
-
-// Usage in a component
-<button onClick={() => handleEditClick(myContentlet)}>
-  Edit Content
-</button>
+```ts
+editContentlet(myContentlet);
 ```
+
+**Editor Integration**
+
+* Works inside UVE even if the contentlet is not part of the page.
+
+**Common Issues**
+
+* Fails silently if run outside the editor.
+
+---
 
 #### `initInlineEditing(type, data)`
 
-**Description:**  
-Initializes inline editing for content in the editor. This function is used to enable various types of inline editing experiences in the Universal Visual Editor.
+**Overview**
 
-**Parameters:**
-- `type`: `DotCMSInlineEditingType` - The type of inline editing to initialize
-  - `'BLOCK_EDITOR'` - For Block Editor field types in dotCMS
-  - `'WYSIWYG'` - For WYSIWYG Editor field types in dotCMS
-- `data`: `DotCMSInlineEditingPayload` - Data required for the inline editing
+Triggers inline editing for supported field types (WYSIWYG or Block Editor).
+
+**Parameters**:
+
+| Name   | Type                         | Required | Description                     |
+| ------ | ---------------------------- | -------- | ------------------------------- |
+| `type` | `DotCMSInlineEditingType`    | ✅        | `'BLOCK_EDITOR'` or `'WYSIWYG'` |
+| `data` | `DotCMSInlineEditingPayload` | ✅        | Field data and config           |
 
 **Returns:**
-- None
 
-**Example:**
+- `void` - Returns nothing.
 
-```typescript
-import { initInlineEditing } from '@dotcms/uve';
-import { DotCMSInlineEditingType } from '@dotcms/types';
-
-// Initialize inline editing for a content element
-function enableInlineEditing(elementData) {
-  initInlineEditing(DotCMSInlineEditingType.WYSIWYG, {
-    inode: elementData.inode,
-    languageId: elementData.languageId,
-    contentType: elementData.contentType,
-    fieldName: 'bodyText',
-    content: elementData.bodyText
-  });
-}
-
-// HTML usage example
-<div 
-  onClick={() => enableInlineEditing(contentletData)}
-  dangerouslySetInnerHTML={{ __html: contentletData.bodyText }}
-></div>
+```ts
+initInlineEditing('WYSIWYG', {
+  inode,
+  contentType,
+  fieldName: 'body',
+  content
+});
 ```
+
+**Editor Integration**
+
+* Automatically detects UVE and applies inline editing UI.
+
+**Common Issues**
+
+* Requires valid contentlet and field name.
+
+---
 
 #### `enableBlockEditorInline(contentlet, fieldName)`
 
-**Description:**  
-Initializes the block editor inline editing for a specific contentlet field. This is a specialized helper function that simplifies the process of enabling block editor inline editing.
+**Overview**
 
-This function has the same behavior as `initInlineEditing` but is specifically focused on Block Editor fields. It's essentially a convenience wrapper around `initInlineEditing` that automatically sets the type to 'BLOCK_EDITOR' and constructs the required payload from the contentlet and fieldName parameters.
+Shortcut to enable inline block editing for a field.
 
-**Parameters:**
-- `contentlet`: `DotCMSBasicContentlet` - The contentlet object containing the field to edit
-- `fieldName`: `string` - The name of the field to edit with the block editor
+**Parameters**:
+
+| Name         | Type                    | Required | Description                     |
+| ------------ | ----------------------- | -------- | ------------------------------- |
+| `contentlet` | `DotCMSBasicContentlet` | ✅        | The target contentlet           |
+| `fieldName`  | `string`                | ✅        | Name of the block field to edit |
 
 **Returns:**
-- None
 
-**Example:**
+- `void` - Returns nothing.
 
-```typescript
-import { enableBlockEditorInline } from '@dotcms/uve';
+**Editor Integration**
 
-// Enable block editor inline editing for a content field
-function handleBlockEditorClick(contentlet) {
-  enableBlockEditorInline(contentlet, 'blockContent');
-}
+* Only works with Block Editor fields.
 
-// Usage in a component
-<div 
-  onClick={() => handleBlockEditorClick(contentlet)}
-  dangerouslySetInnerHTML={{ __html: contentlet.blockContent }}
-></div>
+**Common Issues**
+
+* Will not work with invalid field names or non-block content.
+
+```ts
+enableBlockEditorInline(contentlet, 'blockContent');
 ```
 
-**React Component Example:**
+---
 
-```tsx
-import React from 'react';
-import { enableBlockEditorInline } from '@dotcms/uve';
-
-interface ContentBlockProps {
-  contentlet: {
-    inode: string;
-    languageId: string;
-    contentType: string;
-    blockContent: string;
-  };
-}
-
-const ContentBlock: React.FC<ContentBlockProps> = ({ contentlet }) => {
-  const handleClick = () => {
-    enableBlockEditorInline(contentlet, 'blockContent');
-  };
-
-  return (
-    <div 
-      className="editable-block"
-      onClick={handleClick}
-      dangerouslySetInnerHTML={{ __html: contentlet.blockContent }}
-    />
-  );
-};
-```
-
-### 4. Navigation & Layout
+### Navigation & Menu
 
 #### `updateNavigation(pathname)`
 
-**Description:**  
-Updates the navigation in the Universal Visual Editor. This function allows you to synchronize the UVE's internal navigation state with your application's routing, ensuring that editing tools and context remain consistent when navigation occurs within your single-page application.
+**Overview**
 
-**Parameters:**
-- `pathname`: `string` - The pathname to update the navigation with
+Notifies UVE that navigation has changed (e.g., in SPAs).
 
-**Returns:**
-- None
+**Parameters**:
 
-**Example:**
-
-```typescript
-import { updateNavigation } from '@dotcms/uve';
-
-// Update navigation when route changes
-function handleRouteChange(newRoute) {
-  updateNavigation(newRoute);
-}
-
-// Usage with React Router
-import { useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
-
-function NavigationSynchronizer() {
-  const location = useLocation();
-  
-  useEffect(() => {
-    // Keep UVE navigation in sync with React Router
-    updateNavigation(location.pathname);
-  }, [location.pathname]);
-  
-  return null; // This component doesn't render anything
-}
-```
-
-#### `reorderMenu(config)`
-
-**Description:**  
-Reorders the menu based on the provided configuration. This function allows content editors to reorganize the site navigation structure directly within the Universal Visual Editor.
-
-**Parameters:**
-- `config`: `DotCMSReorderMenuConfig` (optional) - Configuration for reordering the menu
-  - `startLevel`: `number` - The starting level of the menu to reorder (default: 1)
-  - `depth`: `number` - The depth of the menu to reorder (default: 2)
+| Name        | Type     | Required | Description                        |
+| ----------- | -------- | -------- | ---------------------------------- |
+| `pathname`  | `string` | ✅        | The new pathname to update         |
 
 **Returns:**
-- None
 
-**Example:**
+- `void` - Returns nothing.
 
-```typescript
-import { reorderMenu } from '@dotcms/uve';
-
-// Basic usage with default options
-function handleReorderMenuClick() {
-  reorderMenu();
-}
-
-// Usage with custom configuration
-function handleReorderClick() {
-  reorderMenu({
-    startLevel: 2,  // Start at second level of navigation
-    depth: 3        // Go three levels deep
-  });
-}
-
-// In a React component
-function MenuEditorButton() {
-  return (
-    <button onClick={() => reorderMenu()}>
-      Reorder Navigation Menu
-    </button>
-  );
-}
+```ts
+useEffect(() => {
+  updateNavigation(location.pathname);
+}, [location.pathname]);
 ```
 
-### 5. Communication Utilities
+**Editor Integration**
+
+* Required to sync routing with the editor's current page.
+
+**Common Issues**
+
+* Without this, navigation may break content sync in UVE.
+
+---
+
+#### `reorderMenu(config?)`
+
+**Overview**
+
+Triggers the UVE menu editor to reorder navigation links.
+
+**Parameters**:
+
+| Name     | Type     | Required | Description                        |
+| -------- | -------- | -------- | ---------------------------------- |
+| `config` | `DotCMSReorderMenuConfig` | ❌       | Optional config for reordering     |
+
+**Returns:**
+
+- `void` - Returns nothing.
+
+```ts
+reorderMenu({ startLevel: 2, depth: 3 });
+```
+
+**DotCMSReorderMenuConfig**
+
+- `startLevel` (number): The level to start reordering from
+- `depth` (number): The depth of the menu to reorder
+
+**Editor Integration**
+
+* Opens the navigation panel within UVE.
+
+**Common Issues**
+
+* Must be called from a UI action — cannot auto-trigger.
+
+
+---
+
+### Communication Utilities
 
 #### `sendMessageToUVE(message)`
 
-**Description:**  
-Posts a message to the DotCMS Universal Visual Editor. This is a low-level communication function that allows you to send custom messages directly to the UVE. Most developers won't need to use this function directly as the other API functions (like `editContentlet`, `updateNavigation`, etc.) use it internally.
+**Overview**
 
-**Parameters:**
-- `message`: `DotCMSUVEMessage<T>` - The message to send to the UVE
-  ```typescript
-  interface DotCMSUVEMessage<T = unknown> {
-    action: DotCMSUVEAction;
-    payload: T;
-  }
-  ```
+Low-level function to send custom messages to UVE.
 
-**Returns:**
-- None
+**Parameters**:
 
-**Example:**
+| Name      | Type                  | Required | Description                  |
+| --------- | --------------------- | -------- | ---------------------------- |
+| `message` | `DotCMSUVEMessage<T>` | ✅        | Object with action + payload |
 
-```typescript
-import { sendMessageToUVE } from '@dotcms/uve';
-import { DotCMSUVEAction } from '@dotcms/types';
 
-// Send a custom message to the UVE
-function sendCustomMessage(data) {
-  sendMessageToUVE({
-    action: DotCMSUVEAction.CUSTOM_ACTION,
-    payload: data
-  });
-}
-
-// Advanced usage for custom integration
-function notifyUVEOfCustomEvent(eventType, eventData) {
-  sendMessageToUVE({
-    action: DotCMSUVEAction.CUSTOM_EVENT,
-    payload: {
-      type: eventType,
-      data: eventData
-    }
-  });
-}
+```ts
+sendMessageToUVE({
+  action: DotCMSUVEAction.CUSTOM_EVENT,
+  payload: { type: 'MyEvent', data: {...} }
+});
 ```
 
-**Note:** This is an advanced utility function primarily intended for internal use or creating custom integrations with the Universal Visual Editor. Most use cases are better served by the higher-level functions documented in previous sections.
+**DotCMSUVEMessage<T>**
+
+- `action` (DotCMSUVEAction): The action to perform
+- `payload` (T): The payload for the action
 
 
-## dotCMS Support 
 
-We offer multiple channels to get help with the dotCMS React SDK:
+**Editor Integration**
 
-* **GitHub Issues**: For bug reports and feature requests, please [open an issue](https://github.com/dotCMS/core/issues/new/choose) in the GitHub repository.
-* **Community Forum**: Join our [community discussions](https://community.dotcms.com/) to ask questions and share solutions.
-* **Stack Overflow**: Use the tag `dotcms-react` when posting questions.
+* Primarily for advanced cases — use higher-level APIs when possible.
+
+**Common Issues**
+
+* Incorrect payload structure may silently fail.
+
+---
+
+## TypeScript Support
+
+The UVE SDK is written in TypeScript and provides comprehensive type definitions. All interfaces and types are available through the `@dotcms/types` package:
+
+```bash
+npm install @dotcms/types@next
+```
+
+### Common Types
+
+The SDK uses several key types from `@dotcms/types`:
+
+```typescript
+import { 
+  DotCMSContentlet,
+  DotCMSPageResponse,
+  DotCMSUVEConfig,
+  DotCMSInlineEditingType,
+  UVEEventType,
+  UVEState
+} from '@dotcms/types';
+```
+
+For a complete reference of all available types and interfaces, please refer to the [@dotcms/types documentation](https://www.npmjs.com/package/@dotcms/types).
+
+---
+
+## dotCMS Support
+
+Need help? We offer multiple channels to get help with the dotCMS React SDK:
+
+* 🐛 **GitHub Issues**: For bug reports and feature requests, please [open an issue](https://github.com/dotCMS/core/issues/new/choose) in the GitHub repository.
+* 🧠 **Community Forum**: Join our [community discussions](https://community.dotcms.com/) to ask questions and share solutions.
+* ❓ **Stack Overflow**: Use the tag `dotcms-react` when posting questions.
+* 🛠️ **Enterprise Support**: Available via the [Support Portal](https://helpdesk.dotcms.com/).
 
 When reporting issues, please include:
 - SDK version you're using
@@ -508,21 +491,23 @@ When reporting issues, please include:
 - Minimal reproduction steps
 - Expected vs. actual behavior
 
-Enterprise customers can access premium support through the [dotCMS Support Portal](https://dev.dotcms.com/docs/help).
+Enterprise customers can access premium support through the [dotCMS Support Portal](https://helpdesk.dotcms.com/).
 
+---
 
 ## How To Contribute
 
 GitHub pull requests are the preferred method to contribute code to dotCMS. We welcome contributions to the DotCMS UVE SDK! If you'd like to contribute, please follow these steps:
 
-1. Fork the repository
+1. Fork the repository [dotCMS/core](https://github.com/dotCMS/core)
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
 3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
+4. Push to the branch (`git push origin feature/amazing-feature`) 
 5. Open a Pull Request
 
-Please ensure your code follows the existing style and includes appropriate tests.
+✅ Please include relevant tests and follow the coding style.
 
+---
 
 ## Licensing Information
 
