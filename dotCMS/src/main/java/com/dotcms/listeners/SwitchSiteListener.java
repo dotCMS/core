@@ -10,11 +10,14 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 
 
+import io.vavr.Lazy;
+import java.io.Serializable;
 import javax.servlet.http.HttpSession;
 import javax.servlet.http.HttpSessionAttributeListener;
 import javax.servlet.http.HttpSessionBindingEvent;
@@ -26,12 +29,30 @@ import java.util.Objects;
 public class SwitchSiteListener implements HttpSessionAttributeListener {
     
     private final String CMS_SELECTED_HOST_ID_PREVIOUS="CMS_SELECTED_HOST_ID_PREVIOUS";
-    
-    
+    private final Lazy<Boolean> THROW_WHEN_SESSION_NOT_SERIALIZABLE = Lazy.of(()-> Config.getBooleanProperty("THROW_WHEN_SESSION_NOT_SERIALIZABLE", false));
+
+    private void checkSerializable(HttpSessionBindingEvent httpSessionBindingEvent){
+        String name =httpSessionBindingEvent.getName();
+        Object sessionObject = httpSessionBindingEvent.getValue();
+        if(sessionObject ==null || sessionObject instanceof Serializable) {
+            return;
+        }
+        DotRuntimeException dotRuntimeException = new DotRuntimeException("Session object is not serializable:" + name + ", object:" + sessionObject.getClass());
+        if(THROW_WHEN_SESSION_NOT_SERIALIZABLE.get()){
+
+            throw dotRuntimeException;
+        }
+
+        Logger.warnEveryAndDebug(this.getClass(),dotRuntimeException,5000);
+
+
+    }
+
     
     
     @Override
     public void attributeAdded(final HttpSessionBindingEvent httpSessionBindingEvent) {
+        checkSerializable(httpSessionBindingEvent);
         if (WebKeys.CMS_SELECTED_HOST_ID.equals(httpSessionBindingEvent.getName())) {
             final String value = (String) httpSessionBindingEvent.getValue();
             Logger.debug(this.getClass(),"selected site Added:" + value);
@@ -49,6 +70,7 @@ public class SwitchSiteListener implements HttpSessionAttributeListener {
 
     @Override
     public void attributeReplaced(final HttpSessionBindingEvent httpSessionBindingEvent) {
+        checkSerializable(httpSessionBindingEvent);
         if (WebKeys.CMS_SELECTED_HOST_ID.equals(httpSessionBindingEvent.getName())) {
             final String value = (String) httpSessionBindingEvent.getValue();
             Logger.debug(this.getClass(),"selected site replace -> " + value);
