@@ -8,7 +8,9 @@ import {
     inject,
     input,
     output,
-    viewChildren
+    viewChildren,
+    ChangeDetectorRef,
+    signal
 } from '@angular/core';
 import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 
@@ -29,7 +31,6 @@ import {
 import { Activity, DotContentletState } from '../../../../models/dot-edit-content.model';
 import { DotEditContentSidebarActivitiesSkeletonComponent } from '../dot-edit-content-sidebar-activities-skeleton/dot-edit-content-sidebar-activities-skeleton.component';
 
-const COMMENT_MIN_LENGTH = 3;
 const COMMENT_MAX_LENGTH = 500;
 
 /**
@@ -79,23 +80,9 @@ export class DotEditContentSidebarActivitiesComponent {
                         return null;
                     }
 
-                    // Otherwise apply min/max length validators
-                    if (value.length < COMMENT_MIN_LENGTH) {
-                        return {
-                            minlength: {
-                                requiredLength: COMMENT_MIN_LENGTH,
-                                actualLength: value.length
-                            }
-                        };
-                    }
-
+                    // Otherwise apply max length validator
                     if (value.length > COMMENT_MAX_LENGTH) {
-                        return {
-                            maxlength: {
-                                requiredLength: COMMENT_MAX_LENGTH,
-                                actualLength: value.length
-                            }
-                        };
+                        return { invalid: true };
                     }
 
                     return null;
@@ -161,6 +148,35 @@ export class DotEditContentSidebarActivitiesComponent {
      * Determines if the comment form should be hidden
      */
     protected readonly $hideForm = computed(() => this.$initialContentletState() === 'new');
+
+    /**
+     * Expose the comment max length for template use
+     */
+    readonly commentMaxLength = COMMENT_MAX_LENGTH;
+
+    // Use writable signals for live updates
+    readonly commentLength = signal(0);
+    readonly isAtMaxLength = signal(false);
+
+    #cdRef = inject(ChangeDetectorRef);
+
+    constructor() {
+        // Listen to comment control changes to update the character counter
+        this.commentControl.valueChanges.subscribe((value: string) => {
+            const length = value ? value.length : 0;
+            this.commentLength.set(length);
+            this.isAtMaxLength.set(length >= this.commentMaxLength);
+        });
+
+        // Effect to disable/enable comment control based on $isSaving
+        effect(() => {
+            if (this.$isSaving()) {
+                this.commentControl.disable({ emitEvent: false });
+            } else {
+                this.commentControl.enable({ emitEvent: false });
+            }
+        });
+    }
 
     /**
      * Resets the comment form to its initial state

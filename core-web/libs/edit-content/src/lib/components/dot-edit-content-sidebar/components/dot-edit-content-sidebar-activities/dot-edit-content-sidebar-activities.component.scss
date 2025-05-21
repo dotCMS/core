@@ -109,6 +109,8 @@
     color: $color-palette-gray-800;
     font-size: $font-size-md;
     line-height: 1.4;
+    word-wrap: break-word;
+    white-space: pre-line;
 }
 
 .activities__empty {
@@ -146,6 +148,18 @@
     display: flex;
     justify-content: flex-end;
     gap: $spacing-2;
+}
+
+.activities__char-counter {
+    margin-top: $spacing-1;
+    font-size: $font-size-sm;
+    color: $color-palette-gray-600;
+    text-align: left;
+    transition: color $basic-speed;
+
+    &--limit {
+        color: $color-palette-red;
+    }
 }
 
 // PrimeNG Component Overrides
