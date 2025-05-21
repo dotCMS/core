@@ -1,5 +1,4 @@
 import { Component, input, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
 interface FormData {
@@ -19,7 +18,7 @@ const initialFormData: FormData = {
 @Component({
     selector: 'app-contact-us',
     standalone: true,
-    imports: [CommonModule, FormsModule],
+    imports: [FormsModule],
     templateUrl: './contact-us.component.html'
 })
 export class ContactUsComponent {

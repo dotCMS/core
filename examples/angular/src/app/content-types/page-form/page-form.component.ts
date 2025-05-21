@@ -1,5 +1,4 @@
 import { Component, computed, input } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { DotCMSShowWhenDirective } from '@dotcms/angular/next';
 import { UVE_MODE } from '@dotcms/types';
 import { ContactUsComponent } from './components/contact-us/contact-us.component';
@@ -7,7 +6,7 @@ import { PageForm } from '../../shared/contentlet.model';
 @Component({
     selector: 'app-page-form',
     standalone: true,
-    imports: [CommonModule, DotCMSShowWhenDirective, ContactUsComponent],
+    imports: [DotCMSShowWhenDirective, ContactUsComponent],
     template: `
         @if (formType() === 'contact-us') {
         <app-contact-us [description]="description()"></app-contact-us>

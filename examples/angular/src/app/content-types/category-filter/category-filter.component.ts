@@ -1,12 +1,11 @@
 import { Component, computed, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { CommonModule } from '@angular/common';
 import { CategoryFilter } from '../../shared/contentlet.model';
 
 @Component({
     selector: 'app-category-filter',
     standalone: true,
-    imports: [CommonModule, RouterLink],
+    imports: [RouterLink],
     template: `
         @if (hasCategories()) {
         <div class="bg-white rounded-lg shadow-sm p-4">

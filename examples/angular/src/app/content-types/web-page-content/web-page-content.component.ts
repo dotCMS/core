@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, HostBinding, input } from '@angular/core';
 import { DotCMSBasicContentlet } from '@dotcms/types';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
@@ -6,7 +5,7 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 @Component({
     selector: 'app-web-page-content',
     standalone: true,
-    imports: [CommonModule],
+    imports: [],
     template: '',
     styleUrl: './web-page-content.component.css',
     changeDetection: ChangeDetectionStrategy.OnPush

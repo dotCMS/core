@@ -1,5 +1,5 @@
 import { Component, computed, input } from '@angular/core';
-import { NgIf, NgOptimizedImage } from '@angular/common';
+import { NgOptimizedImage } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { editContentlet } from '@dotcms/uve';
 import { Blog } from '../../../../shared/contentlet.model';
