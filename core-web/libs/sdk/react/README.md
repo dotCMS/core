@@ -94,13 +94,13 @@ Install peer dependencies:
 
 ```bash
 # Using npm
-npm install @dotcms/uve @dotcms/client @dotcms/types @tinymce/tinymce-react
+npm install @dotcms/uve@next @dotcms/client@next @dotcms/types @tinymce/tinymce-react
 
 # Using yarn
-yarn add @dotcms/uve @dotcms/client @dotcms/types @tinymce/tinymce-react
+yarn add @dotcms/uve@next @dotcms/client@next @dotcms/types @tinymce/tinymce-react
 
 # Using pnpm
-pnpm add @dotcms/uve @dotcms/client @dotcms/types @tinymce/tinymce-react
+pnpm add @dotcms/uve@next @dotcms/client@next @dotcms/types @tinymce/tinymce-react
 ```
 
 
@@ -683,9 +683,13 @@ const MyPage = ({ initialPageData }) => {
   const { pageAsset } = editablePage;
 
   return (
-    <main>
-      <DotCMSLayoutBody page={pageAsset} components={components} />
-    </main>
+    <div>
+      <DotCMSLayoutBody 
+        page={pageAsset}
+        components={components}
+        mode="development"
+      />
+    </div>
   );
 };
 
@@ -733,8 +737,170 @@ Always refer to the official [dotCMS documentation](https://dev.dotcms.com/) for
 
 ## FAQ
 
+### How do I use dotCMS React components with Next.js App Router?
 
-## dotCMS Support 
+> **IMPORTANT:** When using the dotCMS React SDK with Next.js App Router, you must use the `'use client'` directive for components like `DotCMSLayoutBody` which are React class components.
+
+In Next.js App Router, all components are Server Components by default. However, React class components (including `DotCMSLayoutBody` and other dotCMS React components) can only be rendered in Client Components.
+
+#### Solution: Create a Client Component for Rendering DotCMS Pages
+
+The recommended pattern is to create a dedicated client component with the `'use client'` directive:
+
+```jsx
+// pages/dotCMSPage.js
+'use client'
+
+import { DotCMSLayoutBody } from '@dotcms/react/next';
+
+// Define your content type components
+const components = {
+  Banner: ({ title, description, imageUrl }) => (
+    <div className="banner">
+      <h2>{title}</h2>
+      <p>{description}</p>
+      {imageUrl && <img src={imageUrl} alt={title} />}
+    </div>
+  ),
+  // Add more components as needed
+};
+
+export default function DotCMSPage({ pageAsset }) {
+  if (!pageAsset) {
+    return <div className="p-8">No page data available.</div>;
+  }
+
+  return (
+    <div>
+      <DotCMSLayoutBody 
+        page={pageAsset}
+        components={components}
+        mode="development"
+      />
+    </div>
+  );
+}
+```
+
+Then use this Client Component in your Server Component page:
+
+```jsx
+// app/page.js (Server Component)
+import dotCMSClient from "../utils/dotCMSClient";
+import DotCMSPage from "../pages/dotCMSPage";
+
+export default async function Home() {
+  // Fetch the page data on the server
+  const { pageAsset } = await dotCMSClient.page.get('/index');
+  
+  // Pass the fetched page data to the Client Component
+  return <DotCMSPage pageAsset={pageAsset} />;
+}
+```
+
+#### What's Happening:
+
+1. The server component (page.js) fetches the page data using the dotCMS client
+2. The page data is passed as a prop to the Client Component (dotCMSPage.js)
+3. The Client Component handles all the React class components from dotCMS
+4. This pattern maintains the benefits of both Server Components (data fetching) and Client Components (interactivity)
+
+#### Common Mistakes to Avoid:
+
+- Do not try to use `DotCMSLayoutBody` or other class components directly in a Server Component
+- Do not move all page logic to a Client Component, as you'll lose the benefits of server-side data fetching
+- Remember that all props passed to Client Components must be serializable
+
+Learn more about the distinction between Server and Client Components in the [Next.js documentation](https://nextjs.org/docs/app/building-your-application/rendering/client-components).
+
+
+### How do I ensure my page renders correctly AND is editable in the Universal Visual Editor?
+
+When integrating with the Universal Visual Editor (UVE), you need to use both the correct component structure AND the `useEditableDotCMSPage` hook. A common mistake is passing only the `pageAsset` to your client component instead of the full `pageResponse`.
+
+#### Incorrect Implementation:
+```jsx
+// Server component (app/page.js)
+export default async function Home() {
+  const { pageAsset } = await dotCMSClient.page.get('/index');
+  return <DotCMSPage pageAsset={pageAsset} />; // WRONG: only passing pageAsset
+}
+
+// Client component (pages/dotCMSPage.js)
+export default function DotCMSPage({ pageAsset }) {
+  // No editability hook
+  return <DotCMSLayoutBody page={pageAsset} components={componentsMap} />;
+}
+```
+
+#### Correct Implementation:
+```jsx
+// Server component (app/page.js)
+export default async function Home() {
+  const pageResponse = await dotCMSClient.page.get('/index');
+  return <DotCMSPage pageResponse={pageResponse} />; // RIGHT: passing full pageResponse
+}
+
+// Client component (pages/dotCMSPage.js)
+export default function DotCMSPage({ pageResponse }) {
+  // Make the page editable with UVE
+  const editablePage = useEditableDotCMSPage(pageResponse);
+  const { pageAsset } = editablePage;
+  
+  return <DotCMSLayoutBody page={pageAsset} components={componentsMap} />;
+}
+```
+
+The key differences are:
+1. Pass the complete `pageResponse` (not just `pageAsset`)
+2. Use the `useEditableDotCMSPage` hook to enable real-time editing
+3. Extract the updated `pageAsset` from the hook's result
+
+### How do I properly handle images in dotCMS components?
+
+A common issue with dotCMS image handling is not checking for image existence before constructing URLs. Always verify the image property exists before creating image URLs:
+
+```jsx
+function ContentTypeComponent({ contentlet }) {
+  // IMPORTANT: Always check if image exists first
+  const hasImage = !!contentlet.image;
+  
+  // Only construct image URL if image exists
+  const imageUrl = hasImage ? `/dA/${contentlet.inode}` : null;
+  
+  return (
+    <div>
+      <h2>{contentlet.title}</h2>
+      {hasImage && (
+        <img 
+          src={imageUrl}
+          alt={contentlet.title || 'Content image'}
+          className="content-image"
+        />
+      )}
+    </div>
+  );
+}
+```
+
+Remember to set up a proxy in your Next.js configuration to redirect image requests:
+
+```js
+// next.config.mjs
+export default {
+  async rewrites() {
+    return [
+      {
+        source: '/dA/:path*',
+        destination: 'http://localhost:8080/dA/:path*', // Adjust to your dotCMS URL
+      },
+    ];
+  },
+};
+```
+
+
+## dotCMS Support
 
 We offer multiple channels to get help with the dotCMS React SDK:
 
