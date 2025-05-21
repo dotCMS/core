@@ -15,7 +15,10 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeIf;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.util.DotPreconditions;
+import com.dotcms.contenttype.business.FieldAPI; // Added for APILocator.getFieldAPI()
+import com.dotcms.featureflag.FeatureFlag;
 import com.dotmarketing.beans.Tree;
+import java.util.ArrayList; // Needed for byParentUsingFieldFactory
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
@@ -49,6 +52,249 @@ public class RelationshipAPIImpl implements RelationshipAPI {
         this.relationshipFactory = FactoryLocator.getRelationshipFactory();
     }
 
+    @CloseDBIfOpened
+    @Override
+    public Relationship byInodeUsingFieldFactory(final String inode) throws DotDataException, DotSecurityException {
+        final com.dotcms.contenttype.model.field.Field field = APILocator.getFieldAPI().byId(inode);
+
+        if (field instanceof com.dotcms.contenttype.model.field.RelationshipField) {
+            final com.dotcms.contenttype.model.field.RelationshipField relationshipField = (com.dotcms.contenttype.model.field.RelationshipField) field;
+            final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
+
+            final ContentType parentContentType = contentTypeAPI.find(relationshipField.contentTypeId());
+            if (parentContentType == null) {
+                Logger.warn(this, "Parent ContentType not found for id: " + relationshipField.contentTypeId() + " when trying to build Relationship from RelationshipField " + relationshipField.id());
+                return null; // Or throw new DotDataException("Parent ContentType not found for id: " + relationshipField.contentTypeId());
+            }
+
+            final ContentType childContentType = contentTypeAPI.findByName(relationshipField.relationType());
+            if (childContentType == null) {
+                 Logger.warn(this, "Child ContentType not found for variable: " + relationshipField.relationType() + " when trying to build Relationship from RelationshipField " + relationshipField.id());
+                return null; // Or throw new DotDataException("Child ContentType not found for variable: " + relationshipField.relationType());
+            }
+
+            final Relationship newRelationship = new Relationship();
+            newRelationship.setInode(relationshipField.id());
+            // Construct relationTypeValue as per convention: parentType.variable + "." + field.variable
+            newRelationship.setRelationTypeValue(parentContentType.variable() + StringPool.PERIOD + relationshipField.variable());
+            newRelationship.setParentStructureInode(parentContentType.id());
+            newRelationship.setChildStructureInode(childContentType.id());
+            newRelationship.setParentRelationName(null); // Mimicking Relationship(ContentType, ContentType, Field) constructor
+            newRelationship.setChildRelationName(relationshipField.variable()); // Mimicking Relationship(ContentType, ContentType, Field) constructor
+
+            try {
+                // RelationshipField.values() stores the enum name like "ONE_TO_ONE"
+                // Relationship.cardinality is an int (ordinal)
+                WebKeys.Relationship.RELATIONSHIP_CARDINALITY cardinalityEnum = WebKeys.Relationship.RELATIONSHIP_CARDINALITY.valueOf(relationshipField.values());
+                newRelationship.setCardinality(cardinalityEnum.ordinal());
+            } catch (IllegalArgumentException | NullPointerException e) {
+                // Log error and either return null or throw exception, depending on desired strictness
+                Logger.error(this, "Invalid or null cardinality value in RelationshipField: " + relationshipField.values() + " for field " + relationshipField.id(), e);
+                throw new DotDataException("Invalid or null cardinality value in RelationshipField: " + relationshipField.values() + " for field " + relationshipField.id(), e);
+            }
+            
+            newRelationship.setParentRequired(false); // Mimicking Relationship(ContentType, ContentType, Field) constructor
+            newRelationship.setChildRequired(relationshipField.required());
+            // Relationship.fixed is not directly on RelationshipField, default from Field is false.
+            // Relationship.setFixed() is also a no-op in the provided source.
+            newRelationship.setFixed(relationshipField.fixed()); 
+            newRelationship.setModDate(relationshipField.modDate());
+
+            return newRelationship;
+        } else if (field != null) {
+            Logger.info(this, "Field with inode " + inode + " is not a RelationshipField, it is a " + field.getClass().getName());
+        } else {
+            Logger.info(this, "No Field found for inode " + inode);
+        }
+        return null;
+    }
+
+    @CloseDBIfOpened
+    // Assuming this method is intended to be part of the public API,
+    // it would ideally be added to RelationshipAPI interface.
+    // For now, implementing as public method in RelationshipAPIImpl.
+    // @Override // Add if method is added to RelationshipAPI interface
+    public Relationship byTypeValueUsingFieldFactory(final String typeValue) throws DotDataException, DotSecurityException {
+        if (!UtilMethods.isSet(typeValue) || !typeValue.contains(StringPool.PERIOD)) {
+            Logger.warn(this, "Invalid typeValue provided to byTypeValueUsingFieldFactory: " + typeValue);
+            return null;
+        }
+
+        final String parentContentTypeVariable;
+        final String relationshipFieldVariable;
+
+        int lastDot = typeValue.lastIndexOf(StringPool.PERIOD);
+        parentContentTypeVariable = typeValue.substring(0, lastDot);
+        relationshipFieldVariable = typeValue.substring(lastDot + 1);
+
+        if (!UtilMethods.isSet(parentContentTypeVariable) || !UtilMethods.isSet(relationshipFieldVariable)) {
+            Logger.warn(this, "Could not parse parentContentTypeVariable or relationshipFieldVariable from typeValue: " + typeValue);
+            return null;
+        }
+
+        final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
+        final ContentType parentContentType = contentTypeAPI.findByName(parentContentTypeVariable);
+
+        if (parentContentType == null) {
+            Logger.warn(this, "Parent ContentType not found for variable: " + parentContentTypeVariable + " from typeValue: " + typeValue);
+            return null;
+        }
+
+        final FieldAPI fieldAPI = APILocator.getFieldAPI();
+        final com.dotcms.contenttype.model.field.Field field = fieldAPI.byContentTypeIdFieldVar(parentContentType.id(), relationshipFieldVariable);
+
+        if (!(field instanceof com.dotcms.contenttype.model.field.RelationshipField)) {
+            if (field == null) {
+                Logger.info(this, "No RelationshipField found for parentContentTypeId: " + parentContentType.id() + " and fieldVariable: " + relationshipFieldVariable);
+            } else {
+                Logger.info(this, "Field found is not a RelationshipField for parentContentTypeId: " + parentContentType.id() + " and fieldVariable: " + relationshipFieldVariable + ". Field type: " + field.getClass().getName());
+            }
+            return null;
+        }
+
+        final com.dotcms.contenttype.model.field.RelationshipField relationshipField = (com.dotcms.contenttype.model.field.RelationshipField) field;
+        final ContentType childContentType = contentTypeAPI.findByName(relationshipField.relationType());
+
+        if (childContentType == null) {
+            Logger.error(this, "Child ContentType not found for variable: " + relationshipField.relationType() + " (from RelationshipField " + relationshipField.id() + " with typeValue " + typeValue + ")");
+            throw new DotDataException("Child ContentType not found for variable: " + relationshipField.relationType());
+        }
+
+        final Relationship newRelationship = new Relationship();
+        newRelationship.setInode(relationshipField.id());
+        newRelationship.setRelationTypeValue(typeValue); // The key used for lookup
+        newRelationship.setParentStructureInode(parentContentType.id());
+        newRelationship.setChildStructureInode(childContentType.id());
+        newRelationship.setParentRelationName(null); 
+        newRelationship.setChildRelationName(relationshipField.variable());
+
+        try {
+            WebKeys.Relationship.RELATIONSHIP_CARDINALITY cardinalityEnum = WebKeys.Relationship.RELATIONSHIP_CARDINALITY.valueOf(relationshipField.values());
+            newRelationship.setCardinality(cardinalityEnum.ordinal());
+        } catch (IllegalArgumentException | NullPointerException e) {
+            Logger.error(this, "Invalid or null cardinality value in RelationshipField: " + relationshipField.values() + " for field " + relationshipField.id() + " with typeValue " + typeValue, e);
+            throw new DotDataException("Invalid or null cardinality value in RelationshipField: " + relationshipField.values() + " for field " + relationshipField.id(), e);
+        }
+            
+        newRelationship.setParentRequired(false); 
+        newRelationship.setChildRequired(relationshipField.required());
+        newRelationship.setFixed(relationshipField.fixed()); 
+        newRelationship.setModDate(relationshipField.modDate());
+
+        return newRelationship;
+    }
+
+    @CloseDBIfOpened
+    // @Override // Add if method is added to RelationshipAPI interface
+    public List<Relationship> byParentUsingFieldFactory(final ContentTypeIf parent) throws DotDataException, DotSecurityException {
+        if (parent == null || !UtilMethods.isSet(parent.id())) {
+            Logger.warn(this, "Null or invalid parent ContentTypeIf provided to byParentUsingFieldFactory.");
+            return new ArrayList<>(); // Return empty list for invalid input
+        }
+
+        final List<Relationship> resultList = new ArrayList<>();
+        final FieldAPI fieldAPI = APILocator.getFieldAPI();
+        final List<com.dotcms.contenttype.model.field.Field> fields = fieldAPI.findByContentTypeId(parent.id());
+        final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
+
+        for (final com.dotcms.contenttype.model.field.Field field : fields) {
+            if (field instanceof com.dotcms.contenttype.model.field.RelationshipField) {
+                final com.dotcms.contenttype.model.field.RelationshipField relationshipField = (com.dotcms.contenttype.model.field.RelationshipField) field;
+
+                // A RelationshipField on a "parent" ContentType defines a relationship *to* a "child" ContentType.
+                // The parent of this relationship is the ContentType passed to this method.
+                // The child is determined by relationshipField.relationType() (which is child's variable name)
+
+                final ContentType childContentType = contentTypeAPI.findByName(relationshipField.relationType());
+                if (childContentType == null) {
+                    Logger.warn(this, "Child ContentType not found for variable: " + relationshipField.relationType() + 
+                                      " (from RelationshipField " + relationshipField.id() + " in parent " + parent.variable() + "). Skipping this relationship.");
+                    continue; // Skip this relationship, proceed to the next field
+                }
+
+                final Relationship newRelationship = new Relationship();
+                newRelationship.setInode(relationshipField.id());
+                newRelationship.setRelationTypeValue(parent.variable() + StringPool.PERIOD + relationshipField.variable());
+                newRelationship.setParentStructureInode(parent.id()); // The 'parent' argument is the parent
+                newRelationship.setChildStructureInode(childContentType.id());
+                newRelationship.setParentRelationName(null); // Field is on parent, describes child. No separate parent relation name on the field itself.
+                newRelationship.setChildRelationName(relationshipField.variable()); // The field's variable name is the child relation name
+
+                try {
+                    WebKeys.Relationship.RELATIONSHIP_CARDINALITY cardinalityEnum = WebKeys.Relationship.RELATIONSHIP_CARDINALITY.valueOf(relationshipField.values());
+                    newRelationship.setCardinality(cardinalityEnum.ordinal());
+                } catch (IllegalArgumentException | NullPointerException e) {
+                    Logger.warn(this, "Invalid or null cardinality value in RelationshipField: " + relationshipField.values() + 
+                                       " for field " + relationshipField.id() + " in parent " + parent.variable() + ". Skipping this relationship.", e);
+                    continue; // Skip this relationship
+                }
+            
+                newRelationship.setParentRequired(false); // The existence of the field on parent does not make parent required in a relationship sense
+                newRelationship.setChildRequired(relationshipField.required()); // If the field itself is required, the child end must be populated
+                newRelationship.setFixed(relationshipField.fixed()); 
+                newRelationship.setModDate(relationshipField.modDate());
+
+                resultList.add(newRelationship);
+            }
+        }
+        return resultList;
+    }
+
+    @CloseDBIfOpened
+    // @Override // Add if method is added to RelationshipAPI interface
+    public List<Relationship> byChildUsingFieldFactory(final ContentTypeIf child) throws DotDataException, DotSecurityException {
+        if (child == null || !UtilMethods.isSet(child.id()) || !UtilMethods.isSet(child.variable())) {
+            Logger.warn(this, "Null or invalid child ContentTypeIf (or missing ID/variable) provided to byChildUsingFieldFactory.");
+            return new ArrayList<>(); // Return empty list for invalid input
+        }
+
+        final List<Relationship> resultList = new ArrayList<>();
+        final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
+        final FieldAPI fieldAPI = APILocator.getFieldAPI();
+        final String childVariable = child.variable();
+
+        final List<ContentType> allTypes = contentTypeAPI.findAll();
+
+        for (final ContentType potentialParentType : allTypes) {
+            final List<com.dotcms.contenttype.model.field.Field> fields = fieldAPI.findByContentTypeId(potentialParentType.id());
+
+            for (final com.dotcms.contenttype.model.field.Field field : fields) {
+                if (field instanceof com.dotcms.contenttype.model.field.RelationshipField) {
+                    final com.dotcms.contenttype.model.field.RelationshipField relationshipField = (com.dotcms.contenttype.model.field.RelationshipField) field;
+
+                    // Check if this RelationshipField on the potentialParentType points to our 'child' ContentType's variable
+                    if (childVariable.equals(relationshipField.relationType())) {
+                        final Relationship newRelationship = new Relationship();
+                        newRelationship.setInode(relationshipField.id());
+                        newRelationship.setRelationTypeValue(potentialParentType.variable() + StringPool.PERIOD + relationshipField.variable());
+                        newRelationship.setParentStructureInode(potentialParentType.id());
+                        newRelationship.setChildStructureInode(child.id());
+                        newRelationship.setParentRelationName(null); 
+                        newRelationship.setChildRelationName(relationshipField.variable());
+
+                        try {
+                            WebKeys.Relationship.RELATIONSHIP_CARDINALITY cardinalityEnum = WebKeys.Relationship.RELATIONSHIP_CARDINALITY.valueOf(relationshipField.values());
+                            newRelationship.setCardinality(cardinalityEnum.ordinal());
+                        } catch (IllegalArgumentException | NullPointerException e) {
+                            Logger.warn(this, "Invalid or null cardinality value in RelationshipField: " + relationshipField.values() + 
+                                               " for field " + relationshipField.id() + " on parent " + potentialParentType.variable() + 
+                                               " targeting child " + childVariable + ". Skipping this relationship.", e);
+                            continue; // Skip this relationship
+                        }
+                    
+                        newRelationship.setParentRequired(false);
+                        newRelationship.setChildRequired(relationshipField.required());
+                        newRelationship.setFixed(relationshipField.fixed()); 
+                        newRelationship.setModDate(relationshipField.modDate());
+
+                        resultList.add(newRelationship);
+                    }
+                }
+            }
+        }
+        return resultList;
+    }
+    
     @WrapInTransaction
     @Override
     public void deleteByContentType(ContentTypeIf type) throws DotDataException {
@@ -58,13 +304,35 @@ public class RelationshipAPIImpl implements RelationshipAPI {
     @CloseDBIfOpened
     @Override
     public Relationship byInode(String inode) {
-        return this.relationshipFactory.byInode(inode);
+        if (FeatureFlag.isEnabled("useFieldFactoryForRelationshipByInode", false)) {
+            try {
+                return byInodeUsingFieldFactory(inode);
+            } catch (DotDataException | DotSecurityException e) {
+                // Log the exception and wrap it in a runtime exception,
+                // as the byInode method signature does not allow these checked exceptions.
+                Logger.error(this, "Exception in byInodeUsingFieldFactory for inode: " + inode, e);
+                throw new DotRuntimeException("Error retrieving relationship by inode using FieldFactory", e);
+            }
+        } else {
+            return this.relationshipFactory.byInode(inode);
+        }
     }
 
     @CloseDBIfOpened
     @Override
     public Relationship byTypeValue(final String typeValue) {
-        return this.relationshipFactory.byTypeValue(typeValue);
+        if (FeatureFlag.isEnabled("useFieldFactoryForRelationshipByTypeValue", false)) {
+            try {
+                return byTypeValueUsingFieldFactory(typeValue);
+            } catch (DotDataException | DotSecurityException e) {
+                // Log the exception and wrap it in a runtime exception,
+                // as the byTypeValue method signature does not allow these checked exceptions.
+                Logger.error(this, "Exception in byTypeValueUsingFieldFactory for typeValue: " + typeValue, e);
+                throw new DotRuntimeException("Error retrieving relationship by typeValue using FieldFactory", e);
+            }
+        } else {
+            return this.relationshipFactory.byTypeValue(typeValue);
+        }
     }
 
     @CloseDBIfOpened
@@ -83,7 +351,19 @@ public class RelationshipAPIImpl implements RelationshipAPI {
     @CloseDBIfOpened
     @Override
     public List<Relationship> byParent(ContentTypeIf parent) throws DotDataException {
-        return this.relationshipFactory.byParent(parent);
+        if (FeatureFlag.isEnabled("useFieldFactoryForRelationshipByParent", false)) {
+            try {
+                return byParentUsingFieldFactory(parent);
+            } catch (DotSecurityException e) {
+                // Log the DotSecurityException and wrap it in a runtime exception,
+                // as the byParent method signature does not allow DotSecurityException.
+                Logger.error(this, "DotSecurityException in byParentUsingFieldFactory for parent: " + (parent != null ? parent.variable() : "null"), e);
+                throw new DotRuntimeException("Security error retrieving relationships by parent using FieldFactory", e);
+            }
+            // DotDataException from byParentUsingFieldFactory can be thrown directly as it's in the signature.
+        } else {
+            return this.relationshipFactory.byParent(parent);
+        }
     }
 
     @CloseDBIfOpened
