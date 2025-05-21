@@ -102,6 +102,7 @@ These examples demonstrate how to use the client SDK as part of a complete web a
 - [dotCMS Support](#dotcms-support)
 - [How To Contribute](#how-to-contribute)
 - [Licensing Information](#licensing-information)
+- [FAQ](#faq)
 
 ## Module Formats
 `@dotcms/client` supports both ES modules and CommonJS. You can import it using either syntax:
@@ -333,6 +334,34 @@ The method returns a Promise that resolves to an object with the following struc
     query: string, // The GraphQL query that was executed
     variables: Record<string, unknown> // The variables used in the query
   }
+}
+```
+
+##### Page Asset Structure
+
+The `pageAsset` object returned from dotCMS contains several important properties:
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `pageAsset.title` | `string` | The title of the page |
+| `pageAsset.layout` | `object` | Contains layout-related settings and configurations |
+| `pageAsset.layout.header` | `boolean` | Indicates whether the page should display a header |
+| `pageAsset.layout.footer` | `boolean` | Indicates whether the page should display a footer |
+| `pageAsset.layout.body` | `object` | Contains the rows, columns, and containers of the page |
+
+These properties allow you to make decisions about page rendering based on the CMS configuration:
+
+```javascript
+// Example of checking page properties
+const { pageAsset } = await client.page.get('/about-us');
+
+// Check if page should have header and footer
+if (pageAsset.layout?.header) {
+  console.log('This page should display a header');
+}
+
+if (pageAsset.layout?.footer) {
+  console.log('This page should display a footer');
 }
 ```
 
@@ -874,3 +903,196 @@ Please ensure your code follows the existing style and includes appropriate test
 ## Licensing Information
 
 dotCMS comes in multiple editions and as such is dual licensed. The dotCMS Community Edition is licensed under the GPL 3.0 and is freely available for download, customization and deployment for use within organizations of all stripes. dotCMS Enterprise Editions (EE) adds a number of enterprise features and is available via a supported, indemnified commercial license from dotCMS. For the differences between the editions, see [the feature page](http://www.dotcms.com/cms-platform/features).
+
+## FAQ
+
+### How do I handle conditional header and footer rendering based on page layout properties?
+
+dotCMS pages can include layout properties that determine whether headers and footers should be displayed. These properties are accessible through the `pageAsset.layout` object.
+
+#### Accessing Layout Properties
+
+You can access layout properties in your page component:
+
+```jsx
+function DotCMSPage({ pageResponse }) {
+  const editablePage = useEditableDotCMSPage(pageResponse);
+  const { pageAsset } = editablePage;
+  
+  // Check if layout properties exist and if header/footer should be shown
+  const showHeader = pageAsset.layout?.header;
+  const showFooter = pageAsset.layout?.footer;
+  
+  return (
+    <div className="flex flex-col min-h-screen">
+      {/* Conditional Header */}
+      {showHeader && <Header />}
+      
+      <main>
+        <DotCMSLayoutBody page={pageAsset} components={componentsMap} />
+      </main>
+      
+      {/* Conditional Footer */}
+      {showFooter && <Footer />}
+    </div>
+  );
+}
+```
+
+#### Available Layout Properties
+
+Common layout properties include:
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `header` | boolean | Whether to display the site header |
+| `footer` | boolean | Whether to display the site footer |
+| `sidebar` | boolean | Whether to display a sidebar |
+| `sidebarPosition` | string | Position of the sidebar ('left' or 'right') |
+| `sidebarWidth` | string | Width of the sidebar ('small', 'medium', 'large') |
+
+#### Setting Layout Properties
+
+Content editors can set these properties when creating or editing pages in dotCMS. They are typically configured in the page properties dialog under the "Layout" tab.
+
+To make these properties editable, ensure your templates include the appropriate layout settings and that your front-end components respect these settings.
+
+### How do I fetch navigation data alongside my page content?
+
+You can use the GraphQL options in the `page.get()` method to fetch both page content and navigation data in a single request. This is more efficient than making separate API calls.
+
+#### Basic Navigation Query
+
+```javascript
+const pageResponse = await client.page.get('/index', {
+  graphql: {
+    content: {
+      // Add navigation query to fetch site navigation
+      siteNavigation: `
+        DotNavigation(uri: "/", depth: 2) {
+          folder
+          hash
+          href
+          target
+          title
+          children {
+            folder
+            hash
+            href
+            target
+            title
+          }
+        }
+      `
+    }
+  }
+});
+
+// Access the navigation data
+const navigation = pageResponse.content.siteNavigation;
+```
+
+#### TypeScript Interface
+
+If you're using TypeScript, you can define interfaces for type safety:
+
+```typescript
+interface NavigationItem {
+  code: string;
+  folder: boolean;
+  hash: string;
+  host: string;
+  href: string;
+  languageId: string;
+  order: number;
+  target: string;
+  title: string;
+  type: string;
+  children?: NavigationItem[];
+}
+
+interface PageResponseWithNav {
+  pageAsset: DotCMSPageAsset;
+  content: {
+    siteNavigation: NavigationItem;
+  };
+}
+
+// Use with type safety
+const pageResponse = await client.page.get<PageResponseWithNav>('/index', {
+  // ... GraphQL options as shown above
+});
+```
+
+#### Customizing Navigation Depth
+
+You can adjust the depth parameter to control how many levels of navigation to fetch:
+
+```javascript
+// Fetch only top-level items
+siteNavigation: `
+  DotNavigation(uri: "/", depth: 1) {
+    ...NavProps
+  }
+`
+
+// Fetch three levels of navigation
+siteNavigation: `
+  DotNavigation(uri: "/", depth: 3) {
+    ...NavProps
+    children {
+      ...NavProps
+      children {
+        ...NavProps
+      }
+    }
+  }
+`
+```
+
+#### Common Use Cases
+
+1. **Site-wide Navigation**: Fetch the main menu structure
+```javascript
+siteNavigation: `
+  DotNavigation(uri: "/", depth: 2) {
+    ...NavProps
+    children {
+      ...NavProps
+    }
+  }
+`
+```
+
+2. **Section-specific Navigation**: Fetch navigation for a specific section
+```javascript
+sectionNav: `
+  DotNavigation(uri: "/products", depth: 2) {
+    ...NavProps
+    children {
+      ...NavProps
+    }
+  }
+`
+```
+
+3. **Breadcrumb Navigation**: Fetch the current page's ancestors
+```javascript
+breadcrumb: `
+  DotNavigation(uri: "/products/category/item", ancestors: true) {
+    ...NavProps
+  }
+`
+```
+
+This approach allows you to:
+- Reduce the number of API calls
+- Ensure navigation and content stay in sync
+- Improve performance by fetching all needed data in one request
+- Maintain type safety when using TypeScript
+
+Remember to handle cases where the navigation data might be empty or undefined in your components:
+
+```javascript
+const navigation = pageResponse?.content?.siteNavigation || [];
+```
