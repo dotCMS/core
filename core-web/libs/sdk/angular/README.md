@@ -286,7 +286,7 @@ export class YourComponent {
 import { DotCMSBasicContentlet } from '@dotcms/types';
 import { DotCMSBlockEditorRenderer } from '@dotcms/angular/next';
 
-const myCustomRenderers: CustomRenderers = {
+const myCustomRenderers = {
     customBlock: import('./custom-block.component').then(c => c.CustomBlockComponent)
 };
 

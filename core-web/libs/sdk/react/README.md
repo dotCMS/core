@@ -209,9 +209,16 @@ const MyPage = ({ pageAsset }: { pageAsset: DotCMSPageAsset }) => {
 **Usage**:
 
 ```tsx
-<DotCMSShow when={UVE_MODE.EDIT}>
-  <div>This will only render in UVE EDIT mode</div>
-</DotCMSShow>
+import { UVE_MODE } from '@dotcms/types';
+import { DotCMSShow } from '@dotcms/react/next';
+
+const MyComponent = () => {
+  return (
+    <DotCMSShow when={UVE_MODE.EDIT}>
+      <div>This will only render in UVE EDIT mode</div>
+    </DotCMSShow>
+  );
+};
 ```
 
 **Editor Integration**:
@@ -243,7 +250,17 @@ const MyPage = ({ pageAsset }: { pageAsset: DotCMSPageAsset }) => {
 **Usage**:
 
 ```tsx
-<DotCMSBlockEditorRenderer blocks={contentlet["YOUR_BLOCK_EDITOR_FIELD"]} />
+import { DotCMSBlockEditorRenderer } from '@dotcms/react/next';
+
+const customRenderers = {
+  customBlockType: ({ block }) => {
+    return <div>{block.title}</div>;
+  },
+};
+
+const DetailPage = () => {
+  return <DotCMSBlockEditorRenderer blocks={contentlet["YOUR_BLOCK_EDITOR_FIELD"]} customRenderers={customRenderers}/>;
+};
 ```
 
 **Editor Integration**:
@@ -277,7 +294,12 @@ const MyPage = ({ pageAsset }: { pageAsset: DotCMSPageAsset }) => {
 **Usage**:
 
 ```tsx
-<DotCMSEditableText contentlet={item} fieldName="title" />
+import type { DotCMSBasicContentlet } from '@dotcms/types';
+import { DotCMSEditableText } from '@dotcms/react/next';
+
+const MyComponent = ({ contentlet }: { contentlet: DotCMSBasicContentlet }) => {
+  return <DotCMSEditableText contentlet={contentlet} fieldName="title" />;
+};
 ```
 
 **Editor Integration**:
@@ -354,7 +376,18 @@ const MyPage = ({ pageResponse }) => {
 **Usage**:
 
 ```tsx
-const isEditMode = useDotCMSShowWhen(UVE_MODE.EDIT);
+import { UVE_MODE } from '@dotcms/types';
+import { useDotCMSShowWhen } from '@dotcms/react/next';
+
+const MyPage = () => {
+  const isEditMode = useDotCMSShowWhen(UVE_MODE.EDIT);
+  
+  if (isEditMode) {
+    return <div>This will only render in UVE EDIT mode</div>;
+  }
+
+  return <div>This will render in all other modes</div>;
+};
 ```
 
 **Editor Integration**:
