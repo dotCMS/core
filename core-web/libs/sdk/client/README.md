@@ -132,6 +132,8 @@ The Client Initialization is the first step in using the dotCMS Client SDK. It a
 **Usage:**
 
 ```typescript
+import { createDotCMSClient } from '@dotcms/client/next';
+
 const client = createDotCMSClient({
     dotcmsUrl: 'https://your-dotcms-instance.com',
     authToken: 'your-auth-token',
@@ -369,7 +371,12 @@ const getPage = async () => {
 
 1. Use the cache option in requestOptions:
 ```typescript
+import { createDotCMSClient } from '@dotcms/client/next';
+
 const client = createDotCMSClient({
+    dotcmsUrl: 'https://your-dotcms-instance.com',
+    authToken: 'your-auth-token',
+    siteId: 'your-site-id',
     requestOptions: { cache: 'default' }
 });
 ```
