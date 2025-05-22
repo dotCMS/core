@@ -20,7 +20,7 @@ export function Page({ pageContent }) {
                 <DotCMSLayoutBody
                     page={pageAsset}
                     components={pageComponents}
-                    mode={"development"}
+                    mode={process.env.NEXT_PUBLIC_DOTCMS_MODE}
                 />
             </main>
 
