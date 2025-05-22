@@ -10,15 +10,12 @@ The `@dotcms/react` SDK is the official React integration library for dotCMS, de
 * [Installation](#installation)
 * [Key Concepts](#key-concepts)
 * [API Reference](#api-reference)
-
   * [Components](#components)
-
     * [DotCMSLayoutBody](#dotcmslayoutbody)
     * [DotCMSShow](#dotcmsshow)
     * [DotCMSBlockEditorRenderer](#dotcmsblockeditorrenderer)
     * [DotCMSEditableText](#dotcmseditabletext)
   * [Hooks](#hooks)
-
     * [useEditableDotCMSPage](#useeditabledotcmspage)
     * [useDotCMSShowWhen](#usedotcmsshowwhen)
 * [FAQ](#faq)
