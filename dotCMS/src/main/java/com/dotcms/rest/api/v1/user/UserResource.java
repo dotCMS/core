@@ -1056,7 +1056,7 @@ public class UserResource implements Serializable {
 
 			ResponseUtil.handleAsyncResponse(() -> {
 				try {
-					this.userAPI.delete(userToUpdated, modUser, false);
+					this.userAPI.delete(userToUpdated, replacementUser, modUser, false);
 					return new ResponseUserDeletedEntityView(new UserDeletedView("success", userIdToDelete, finalReplacementUserId)); // 200
 				} catch (Exception e) {
 					asyncResponse.resume(ResponseUtil.mapExceptionResponse(e));
