@@ -36,6 +36,17 @@ Install the SDK and required dependencies:
 ```bash
 npm install @dotcms/react@next @dotcms/uve@next @dotcms/client@next @dotcms/types @tinymce/tinymce-react
 ```
+Set up your dotCMS configuration:
+
+```ts
+import { createDotCMSClient } from '@dotcms/client/next';
+
+const dotCMSClient = createDotCMSClient({
+    dotcmsUrl: process.env.DOTCMS_URL,
+    authToken: process.env.DOTCMS_AUTH_TOKEN,
+    siteId: process.env.DOTCMS_SITE_ID
+});
+```
 
 Render a dotCMS page:
 
@@ -47,6 +58,10 @@ const components = {
   'Product': ProductComponent,
 };
 
+// Get the page response from the server
+const pageResponse = await dotCMSClient.page.get("/");
+
+// Render the page
 const MyPage = ({ pageResponse }) => {
   const { pageAsset } = useEditableDotCMSPage(pageResponse);
   return (
@@ -166,7 +181,7 @@ const MyPage = ({ pageAsset }) => {
 **Editor Integration**:
 
 * Automatically detects if it's inside dotCMS UVE
-* Works with useEditableDotCMSPage() for real-time updates
+* Works with `useEditableDotCMSPage()` for real-time updates
 
 **Common Issues**:
 
