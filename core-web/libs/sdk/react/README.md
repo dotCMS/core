@@ -25,6 +25,7 @@ The `@dotcms/react` SDK is the official React integration library for dotCMS, de
   * [What are the differences between UVE modes?](#what-are-the-differences-between-uve-modes)
   * [What if my components don’t render?](#what-if-my-components-dont-render)
   * [How do I use dotCMS React components with Next.js App Router?](#how-do-i-use-dotcms-react-components-with-nextjs-app-router)
+  * [How do I properly handle images in dotCMS components?](#how-do-i-properly-handle-images-in-dotcms-components)
 * [dotCMS Support](#dotcms-support)
 * [How To Contribute](#how-to-contribute)
 * [Licensing Information](#licensing-information)
@@ -162,7 +163,10 @@ npm install @dotcms/uve@next @dotcms/client@next @dotcms/types @tinymce/tinymce-
 **Usage**:
 
 ```tsx
-const MyPage = ({ pageAsset }) => {
+import type { DotCMSPageAsset } from '@dotcms/types';
+import { DotCMSLayoutBody } from '@dotcms/react/next';
+
+const MyPage = ({ pageAsset }: { pageAsset: DotCMSPageAsset }) => {
   return <DotCMSLayoutBody page={pageAsset} components={{ Blog: BlogComponent }} />;
 };
 ```
@@ -432,6 +436,53 @@ export default function DotCMSPage({ pageResponse }) {
 * Do not render `DotCMSLayoutBody` directly in a Server Component
 * Avoid passing only `pageAsset`; pass the full `pageResponse` to enable editing
 
+
+### How do I properly handle images in dotCMS components?
+
+In dotCMS, assets are stored in the `dA` directory. You can use the `inode` property to construct the image URL. Example:
+
+```jsx
+function ContentTypeComponent({ contentlet }) {
+  // IMPORTANT: Always check if image exists first
+  const hasImage = !!contentlet.image;
+
+  return (
+    <div>
+      <h2>{contentlet.title}</h2>
+      {hasImage && (
+        <img 
+          src={`/dA/${contentlet.inode}`}
+          alt={contentlet.title || 'Content image'}
+          className="content-image"
+        />
+      )}
+    </div>
+  );
+}
+```
+
+Remember to set up a proxy in your Vite configuration to redirect image requests to the dotCMS server:
+
+```js
+// vite.config.js
+/// <reference types="vite/client" />
+
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+
+// https://vitejs.dev/config/
+export default defineConfig({
+  plugins: [react()],
+  server: {
+      proxy: {
+        '/dA': {
+          target: 'http://localhost:8080',
+          changeOrigin: true
+        },
+      },
+    },
+});
+```
 
 ## dotCMS Support
 
