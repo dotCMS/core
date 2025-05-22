@@ -1051,7 +1051,7 @@ public class UserResource implements Serializable {
 			final User replacementUser = Try.of(()->this.userAPI.loadUserById(finalReplacementUserId)).getOrNull();
 			if (Objects.isNull(replacementUser)) {
 
-				throw new BadRequestException("User replacement with id " + replacementUser + " does not exist");
+				throw new BadRequestException("User replacement with id " + finalReplacementUserId + " does not exist");
 			}
 
 			ResponseUtil.handleAsyncResponse(() -> {
