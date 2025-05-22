@@ -1863,7 +1863,6 @@
 											"    var jsonData = pm.response.json();",
 											"    var page = jsonData.data.page;",
 											"    var urlmappedContent = page.urlContentMap;",
-											"    var vanityUrlContent = page.vanityUrl;",
 											"    ",
 											"    // Validate properties 'page'",
 											"    pm.expect(page.url, 'FAILED:[page.url]').equal(\"/store/product-detail\");",
@@ -1877,12 +1876,6 @@
 											"    pm.expect(urlmappedContent.productNumber, 'FAILED:[urlmappedContent.productNumber]').equal(\"9315054521506-1280000\");",
 											"    pm.expect(urlmappedContent.image.idPath, 'FAILED:[urlmappedContent.image.idPath]').equal(\"/dA/46e52dc2e7/image/hammock-1.jpg?language_id=1\");",
 											"",
-											"",
-											"    // Validate 'vanityUrl' properties",
-											"    pm.expect(vanityUrlContent.action, 'FAILED:[vanityUrlContent.action]').equal(200);",
-											"    pm.expect(vanityUrlContent.languageId, 'FAILED:[vanityUrlContent.languageId]').equal(1);",
-											"    pm.expect(vanityUrlContent.forwardTo, 'FAILED:[vanityUrlContent.forwardTo]').equal(\"/destinations/costa-rica\");",
-											"    pm.expect(vanityUrlContent.uri, 'FAILED:[vanityUrlContent.uri]').equal(\"/store/products/eagles-nest-outfitters-doublenest-hammock-patriot\");",
 											"});"
 										],
 										"type": "text/javascript",
@@ -1942,7 +1935,957 @@
 							"response": []
 						}
 					],
-					"description": "Veifies that the URL Map properties are present."
+					"description": "Verifies that the URL Map properties are present."
+				},
+				{
+					"name": "Checking VanityUrl resolution",
+					"item": [
+						{
+							"name": "Matching existing page uri",
+							"item": [
+								{
+									"name": "Create Forward Vanity URL",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Test Forward Vanity URL was created successfully\", function () {",
+													"    var jsonData = pm.response.json().entity;",
+													"    pm.expect(jsonData.summary.failCount).to.eql(0, \"An error occurred when creating the test Vanity URL\");",
+													"    pm.expect(jsonData.summary.successCount).to.eql(1, \"One piece of content should have been created\");",
+													"    var firstResult = jsonData.results[0];",
+													"    var identifier = Object.keys(firstResult)[0]",
+													"    pm.collectionVariables.set(\"forwardVanityUrlId\", identifier)",
+													"});",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"contentlets\": [\n        {\n            \"contentType\": \"Vanityurl\",\n            \"languageId\": 1,\n            \"title\": \"Test Forward Vanity URL\",\n            \"site\": \"demo.dotcms.com\",\n            \"uri\": \"/store/products/eagles-nest-outfitters-doublenest-hammock-patriot\",\n            \"action\": 200,\n            \"forwardTo\": \"/destinations/costa-rica\",\n            \"order\": 2\n        }\n    ]\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"workflow",
+												"actions",
+												"default",
+												"fire",
+												"PUBLISH"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "GivenRequestByURI_CheckVanityUrlResolution_Forward",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"let checker = (arr, target) => target.every(v => arr.includes(v));",
+													"",
+													"pm.test(\"Status code is 200\", function () {",
+													"    pm.response.to.have.status(200);",
+													"});",
+													"",
+													"pm.test(\"'Page' includes all properties\", function () {",
+													"    var jsonData = pm.response.json();",
+													"    var page = jsonData.data.page;",
+													"    var urlmappedContent = page.urlContentMap;",
+													"    var vanityUrlContent = page.vanityUrl;",
+													"    ",
+													"    // Validate properties 'page'",
+													"    pm.expect(page.url, 'FAILED:[page.url]').equal(\"/destinations/costa-rica\");",
+													"    pm.expect(page.pageURI, 'FAILED:[page.pageURI]').equal(\"/destinations/costa-rica\");",
+													"    ",
+													"    // Validate 'urlContentMap' properties",
+													"    pm.expect(urlmappedContent, 'FAILED:[urlmappedContent]').equal(null);",
+													"",
+													"    // Validate 'vanityUrl' properties",
+													"    pm.expect(vanityUrlContent.action, 'FAILED:[vanityUrlContent.action]').equal(200);",
+													"    pm.expect(vanityUrlContent.languageId, 'FAILED:[vanityUrlContent.languageId]').equal(1);",
+													"    pm.expect(vanityUrlContent.forwardTo, 'FAILED:[vanityUrlContent.forwardTo]').equal(\"/destinations/costa-rica\");",
+													"    pm.expect(vanityUrlContent.uri, 'FAILED:[vanityUrlContent.uri]').equal(\"/store/products/eagles-nest-outfitters-doublenest-hammock-patriot\");",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										},
+										{
+											"listen": "prerequest",
+											"script": {
+												"exec": [
+													"setTimeout(function(){}, 5000);"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"protocolProfileBehavior": {
+										"disabledSystemHeaders": {
+											"user-agent": true
+										}
+									},
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Cookie",
+												"value": "JSESSIONID=1DF38761AD8B360EF1AD42C4AF07EC35",
+												"type": "text",
+												"disabled": true
+											},
+											{
+												"key": "User-Agent",
+												"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "graphql",
+											"graphql": {
+												"query": "{\n  page(url: \"/store/products/eagles-nest-outfitters-doublenest-hammock-patriot\") {\n    title\n    url\n    pageURI\n    vanityUrl {\n      action\n      languageId\n      siteId\n      forwardTo\n      id\n      uri\n      order\n    }\n    urlContentMap {\n      ... on Product {\n        title\n        tags\n        urlTitle\n        identifier\n        urlMap\n        contentType\n        productNumber\n        image {\n          idPath\n        }\n      }\n    }\n  }\n}\n",
+												"variables": ""
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/graphql",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"graphql"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Create Permanent Redirect Vanity URL",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Test Permanent Vanity URL was created successfully\", function () {",
+													"    var jsonData = pm.response.json().entity;",
+													"    pm.expect(jsonData.summary.failCount).to.eql(0, \"An error occurred when creating the test Vanity URL\");",
+													"    pm.expect(jsonData.summary.successCount).to.eql(1, \"One piece of content should have been created\");",
+													"    var firstResult = jsonData.results[0];",
+													"    var identifier = Object.keys(firstResult)[0]",
+													"    pm.collectionVariables.set(\"permanentRedirectVanityUrlId\", identifier)",
+													"});",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"contentlets\": [\n        {\n            \"contentType\": \"Vanityurl\",\n            \"languageId\": 1,\n            \"title\": \"Test Permanent Redirect Vanity URL\",\n            \"site\": \"demo.dotcms.com\",\n            \"uri\": \"/store/products/eagles-nest-outfitters-doublenest-hammock-patriot\",\n            \"action\": 301,\n            \"forwardTo\": \"/destinations/costa-rica\",\n            \"order\": 1\n        }\n    ]\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"workflow",
+												"actions",
+												"default",
+												"fire",
+												"PUBLISH"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "GivenRequestByURI_CheckVanityUrlResolution_PermanentRedirect",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"let checker = (arr, target) => target.every(v => arr.includes(v));",
+													"",
+													"pm.test(\"Status code is 200\", function () {",
+													"    pm.response.to.have.status(200);",
+													"});",
+													"",
+													"pm.test(\"'Page' includes all properties\", function () {",
+													"    var jsonData = pm.response.json();",
+													"    var page = jsonData.data.page;",
+													"    var urlmappedContent = page.urlContentMap;",
+													"    var vanityUrlContent = page.vanityUrl;",
+													"    ",
+													"    // Validate properties 'page'",
+													"    pm.expect(page.url, 'FAILED:[page.url]').equal(null);",
+													"    pm.expect(page.pageURI, 'FAILED:[page.pageURI]').equal(null);",
+													"    ",
+													"    // Validate 'urlContentMap' properties",
+													"    pm.expect(urlmappedContent, 'FAILED:[urlmappedContent]').equal(null);",
+													"",
+													"    // Validate 'vanityUrl' properties",
+													"    pm.expect(vanityUrlContent.action, 'FAILED:[vanityUrlContent.action]').equal(301);",
+													"    pm.expect(vanityUrlContent.languageId, 'FAILED:[vanityUrlContent.languageId]').equal(1);",
+													"    pm.expect(vanityUrlContent.forwardTo, 'FAILED:[vanityUrlContent.forwardTo]').equal(\"/destinations/costa-rica\");",
+													"    pm.expect(vanityUrlContent.uri, 'FAILED:[vanityUrlContent.uri]').equal(\"/store/products/eagles-nest-outfitters-doublenest-hammock-patriot\");",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										},
+										{
+											"listen": "prerequest",
+											"script": {
+												"exec": [
+													"setTimeout(function(){}, 5000);"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"protocolProfileBehavior": {
+										"disabledSystemHeaders": {
+											"user-agent": true
+										}
+									},
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Cookie",
+												"value": "JSESSIONID=1DF38761AD8B360EF1AD42C4AF07EC35",
+												"type": "text",
+												"disabled": true
+											},
+											{
+												"key": "User-Agent",
+												"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "graphql",
+											"graphql": {
+												"query": "{\n  page(url: \"/store/products/eagles-nest-outfitters-doublenest-hammock-patriot\") {\n    title\n    url\n    pageURI\n    vanityUrl {\n      action\n      languageId\n      siteId\n      forwardTo\n      id\n      uri\n      order\n    }\n    urlContentMap {\n      ... on Product {\n        title\n        tags\n        urlTitle\n        identifier\n        urlMap\n        contentType\n        productNumber\n        image {\n          idPath\n        }\n      }\n    }\n  }\n}\n",
+												"variables": ""
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/graphql",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"graphql"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Create Temporary Redirect Vanity URL",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Test Temporary Vanity URL was created successfully\", function () {",
+													"    var jsonData = pm.response.json().entity;",
+													"    pm.expect(jsonData.summary.failCount).to.eql(0, \"An error occurred when creating the test Vanity URL\");",
+													"    pm.expect(jsonData.summary.successCount).to.eql(1, \"One piece of content should have been created\");",
+													"    var firstResult = jsonData.results[0];",
+													"    var identifier = Object.keys(firstResult)[0]",
+													"    pm.collectionVariables.set(\"temporaryRedirectVanityUrlId\", identifier)",
+													"});",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"contentlets\": [\n        {\n            \"contentType\": \"Vanityurl\",\n            \"languageId\": 1,\n            \"title\": \"Test Temporary Redirect Vanity URL\",\n            \"site\": \"demo.dotcms.com\",\n            \"uri\": \"/store/products/eagles-nest-outfitters-doublenest-hammock-patriot\",\n            \"action\": 302,\n            \"forwardTo\": \"/destinations/costa-rica\",\n            \"order\": 0\n        }\n    ]\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"workflow",
+												"actions",
+												"default",
+												"fire",
+												"PUBLISH"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "GivenRequestByURI_CheckVanityUrlResolution_TemporaryRedirect",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"let checker = (arr, target) => target.every(v => arr.includes(v));",
+													"",
+													"pm.test(\"Status code is 200\", function () {",
+													"    pm.response.to.have.status(200);",
+													"});",
+													"",
+													"pm.test(\"'Page' includes all properties\", function () {",
+													"    var jsonData = pm.response.json();",
+													"    var page = jsonData.data.page;",
+													"    var urlmappedContent = page.urlContentMap;",
+													"    var vanityUrlContent = page.vanityUrl;",
+													"    ",
+													"    // Validate properties 'page'",
+													"    pm.expect(page.url, 'FAILED:[page.url]').equal(null);",
+													"    pm.expect(page.pageURI, 'FAILED:[page.pageURI]').equal(null);",
+													"    ",
+													"    // Validate 'urlContentMap' properties",
+													"    pm.expect(urlmappedContent, 'FAILED:[urlmappedContent]').equal(null);",
+													"",
+													"    // Validate 'vanityUrl' properties",
+													"    pm.expect(vanityUrlContent.action, 'FAILED:[vanityUrlContent.action]').equal(302);",
+													"    pm.expect(vanityUrlContent.languageId, 'FAILED:[vanityUrlContent.languageId]').equal(1);",
+													"    pm.expect(vanityUrlContent.forwardTo, 'FAILED:[vanityUrlContent.forwardTo]').equal(\"/destinations/costa-rica\");",
+													"    pm.expect(vanityUrlContent.uri, 'FAILED:[vanityUrlContent.uri]').equal(\"/store/products/eagles-nest-outfitters-doublenest-hammock-patriot\");",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										},
+										{
+											"listen": "prerequest",
+											"script": {
+												"exec": [
+													"setTimeout(function(){}, 5000);"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"protocolProfileBehavior": {
+										"disabledSystemHeaders": {
+											"user-agent": true
+										}
+									},
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Cookie",
+												"value": "JSESSIONID=1DF38761AD8B360EF1AD42C4AF07EC35",
+												"type": "text",
+												"disabled": true
+											},
+											{
+												"key": "User-Agent",
+												"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "graphql",
+											"graphql": {
+												"query": "{\n  page(url: \"/store/products/eagles-nest-outfitters-doublenest-hammock-patriot\") {\n    title\n    url\n    pageURI\n    vanityUrl {\n      action\n      languageId\n      siteId\n      forwardTo\n      id\n      uri\n      order\n    }\n    urlContentMap {\n      ... on Product {\n        title\n        tags\n        urlTitle\n        identifier\n        urlMap\n        contentType\n        productNumber\n        image {\n          idPath\n        }\n      }\n    }\n  }\n}\n",
+												"variables": ""
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/graphql",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"graphql"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Clean Up Created VanityUrls",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"contentlets\": [\n        {\n            \"identifier\": \"{{forwardVanityUrlId}}\"\n        },\n        {\n            \"identifier\": \"{{permanentRedirectVanityUrlId}}\"\n        },\n        {\n            \"identifier\": \"{{temporaryRedirectVanityUrlId}}\"\n        }\n\n    ]\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/UNPUBLISH",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"workflow",
+												"actions",
+												"default",
+												"fire",
+												"UNPUBLISH"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "Fantasy VanityUrls",
+							"item": [
+								{
+									"name": "Create Forward Vanity URL",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Test Forward Vanity URL was created successfully\", function () {",
+													"    var jsonData = pm.response.json().entity;",
+													"    pm.expect(jsonData.summary.failCount).to.eql(0, \"An error occurred when creating the test Vanity URL\");",
+													"    pm.expect(jsonData.summary.successCount).to.eql(1, \"One piece of content should have been created\");",
+													"    var firstResult = jsonData.results[0];",
+													"    var identifier = Object.keys(firstResult)[0]",
+													"    pm.collectionVariables.set(\"forwardVanityUrlId\", identifier)",
+													"});",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"contentlets\": [\n        {\n            \"contentType\": \"Vanityurl\",\n            \"languageId\": 1,\n            \"title\": \"Test Forward Fantasy Vanity URL\",\n            \"site\": \"demo.dotcms.com\",\n            \"uri\": \"/my-fantasy-url\",\n            \"action\": 200,\n            \"forwardTo\": \"/destinations/costa-rica\",\n            \"order\": 2\n        }\n    ]\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"workflow",
+												"actions",
+												"default",
+												"fire",
+												"PUBLISH"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "GivenRequestByURI_CheckFantasyVanityUrlResolution_Forward",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"let checker = (arr, target) => target.every(v => arr.includes(v));",
+													"",
+													"pm.test(\"Status code is 200\", function () {",
+													"    pm.response.to.have.status(200);",
+													"});",
+													"",
+													"pm.test(\"'Page' includes all properties\", function () {",
+													"    var jsonData = pm.response.json();",
+													"    var page = jsonData.data.page;",
+													"    var urlmappedContent = page.urlContentMap;",
+													"    var vanityUrlContent = page.vanityUrl;",
+													"    ",
+													"    // Validate properties 'page'",
+													"    pm.expect(page.url, 'FAILED:[page.url]').equal(\"/destinations/costa-rica\");",
+													"    pm.expect(page.pageURI, 'FAILED:[page.pageURI]').equal(\"/destinations/costa-rica\");",
+													"    ",
+													"    // Validate 'urlContentMap' properties",
+													"    pm.expect(urlmappedContent, 'FAILED:[urlmappedContent]').equal(null);",
+													"",
+													"    // Validate 'vanityUrl' properties",
+													"    pm.expect(vanityUrlContent.action, 'FAILED:[vanityUrlContent.action]').equal(200);",
+													"    pm.expect(vanityUrlContent.languageId, 'FAILED:[vanityUrlContent.languageId]').equal(1);",
+													"    pm.expect(vanityUrlContent.forwardTo, 'FAILED:[vanityUrlContent.forwardTo]').equal(\"/destinations/costa-rica\");",
+													"    pm.expect(vanityUrlContent.uri, 'FAILED:[vanityUrlContent.uri]').equal(\"/my-fantasy-url\");",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										},
+										{
+											"listen": "prerequest",
+											"script": {
+												"exec": [
+													"setTimeout(function(){}, 5000);"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"protocolProfileBehavior": {
+										"disabledSystemHeaders": {
+											"user-agent": true
+										}
+									},
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Cookie",
+												"value": "JSESSIONID=1DF38761AD8B360EF1AD42C4AF07EC35",
+												"type": "text",
+												"disabled": true
+											},
+											{
+												"key": "User-Agent",
+												"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "graphql",
+											"graphql": {
+												"query": "{\n  page(url: \"/my-fantasy-url\") {\n    title\n    url\n    pageURI\n    vanityUrl {\n      action\n      languageId\n      siteId\n      forwardTo\n      id\n      uri\n      order\n    }\n    urlContentMap {\n      ... on Product {\n        title\n        tags\n        urlTitle\n        identifier\n        urlMap\n        contentType\n        productNumber\n        image {\n          idPath\n        }\n      }\n    }\n  }\n}\n",
+												"variables": ""
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/graphql",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"graphql"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Create Permanent Redirect Vanity URL",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Test Permanent Vanity URL was created successfully\", function () {",
+													"    var jsonData = pm.response.json().entity;",
+													"    pm.expect(jsonData.summary.failCount).to.eql(0, \"An error occurred when creating the test Vanity URL\");",
+													"    pm.expect(jsonData.summary.successCount).to.eql(1, \"One piece of content should have been created\");",
+													"    var firstResult = jsonData.results[0];",
+													"    var identifier = Object.keys(firstResult)[0]",
+													"    pm.collectionVariables.set(\"permanentRedirectVanityUrlId\", identifier)",
+													"});",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"contentlets\": [\n        {\n            \"contentType\": \"Vanityurl\",\n            \"languageId\": 1,\n            \"title\": \"Test Permanent Redirect Fantasy Vanity URL\",\n            \"site\": \"demo.dotcms.com\",\n            \"uri\": \"/my-fantasy-url\",\n            \"action\": 301,\n            \"forwardTo\": \"/destinations/costa-rica\",\n            \"order\": 1\n        }\n    ]\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"workflow",
+												"actions",
+												"default",
+												"fire",
+												"PUBLISH"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "GivenRequestByURI_CheckFantasyVanityUrlResolution_PermanentRedirect",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"let checker = (arr, target) => target.every(v => arr.includes(v));",
+													"",
+													"pm.test(\"Status code is 200\", function () {",
+													"    pm.response.to.have.status(200);",
+													"});",
+													"",
+													"pm.test(\"'Page' includes all properties\", function () {",
+													"    var jsonData = pm.response.json();",
+													"    var page = jsonData.data.page;",
+													"    var urlmappedContent = page.urlContentMap;",
+													"    var vanityUrlContent = page.vanityUrl;",
+													"    ",
+													"    // Validate properties 'page'",
+													"    pm.expect(page.url, 'FAILED:[page.url]').equal(null);",
+													"    pm.expect(page.pageURI, 'FAILED:[page.pageURI]').equal(null);",
+													"    ",
+													"    // Validate 'urlContentMap' properties",
+													"    pm.expect(urlmappedContent, 'FAILED:[urlmappedContent]').equal(null);",
+													"",
+													"    // Validate 'vanityUrl' properties",
+													"    pm.expect(vanityUrlContent.action, 'FAILED:[vanityUrlContent.action]').equal(301);",
+													"    pm.expect(vanityUrlContent.languageId, 'FAILED:[vanityUrlContent.languageId]').equal(1);",
+													"    pm.expect(vanityUrlContent.forwardTo, 'FAILED:[vanityUrlContent.forwardTo]').equal(\"/destinations/costa-rica\");",
+													"    pm.expect(vanityUrlContent.uri, 'FAILED:[vanityUrlContent.uri]').equal(\"/my-fantasy-url\");",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										},
+										{
+											"listen": "prerequest",
+											"script": {
+												"exec": [
+													"setTimeout(function(){}, 5000);"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"protocolProfileBehavior": {
+										"disabledSystemHeaders": {
+											"user-agent": true
+										}
+									},
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Cookie",
+												"value": "JSESSIONID=1DF38761AD8B360EF1AD42C4AF07EC35",
+												"type": "text",
+												"disabled": true
+											},
+											{
+												"key": "User-Agent",
+												"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "graphql",
+											"graphql": {
+												"query": "{\n  page(url: \"/my-fantasy-url\") {\n    title\n    url\n    pageURI\n    vanityUrl {\n      action\n      languageId\n      siteId\n      forwardTo\n      id\n      uri\n      order\n    }\n    urlContentMap {\n      ... on Product {\n        title\n        tags\n        urlTitle\n        identifier\n        urlMap\n        contentType\n        productNumber\n        image {\n          idPath\n        }\n      }\n    }\n  }\n}\n",
+												"variables": ""
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/graphql",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"graphql"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Create Fantasy Temporary Redirect Vanity URL",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Test Temporary Vanity URL was created successfully\", function () {",
+													"    var jsonData = pm.response.json().entity;",
+													"    pm.expect(jsonData.summary.failCount).to.eql(0, \"An error occurred when creating the test Vanity URL\");",
+													"    pm.expect(jsonData.summary.successCount).to.eql(1, \"One piece of content should have been created\");",
+													"    var firstResult = jsonData.results[0];",
+													"    var identifier = Object.keys(firstResult)[0]",
+													"    pm.collectionVariables.set(\"temporaryRedirectVanityUrlId\", identifier)",
+													"});",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"contentlets\": [\n        {\n            \"contentType\": \"Vanityurl\",\n            \"languageId\": 1,\n            \"title\": \"Test Temporary Redirect Fantasy Vanity URL\",\n            \"site\": \"demo.dotcms.com\",\n            \"uri\": \"/my-fantasy-url\",\n            \"action\": 302,\n            \"forwardTo\": \"/destinations/costa-rica\",\n            \"order\": 0\n        }\n    ]\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"workflow",
+												"actions",
+												"default",
+												"fire",
+												"PUBLISH"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "GivenRequestByURI_CheckFantasyVanityUrlResolution_TemporaryRedirect",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"let checker = (arr, target) => target.every(v => arr.includes(v));",
+													"",
+													"pm.test(\"Status code is 200\", function () {",
+													"    pm.response.to.have.status(200);",
+													"});",
+													"",
+													"pm.test(\"'Page' includes all properties\", function () {",
+													"    var jsonData = pm.response.json();",
+													"    var page = jsonData.data.page;",
+													"    var urlmappedContent = page.urlContentMap;",
+													"    var vanityUrlContent = page.vanityUrl;",
+													"    ",
+													"    // Validate properties 'page'",
+													"    pm.expect(page.url, 'FAILED:[page.url]').equal(null);",
+													"    pm.expect(page.pageURI, 'FAILED:[page.pageURI]').equal(null);",
+													"    ",
+													"    // Validate 'urlContentMap' properties",
+													"    pm.expect(urlmappedContent, 'FAILED:[urlmappedContent]').equal(null);",
+													"",
+													"    // Validate 'vanityUrl' properties",
+													"    pm.expect(vanityUrlContent.action, 'FAILED:[vanityUrlContent.action]').equal(302);",
+													"    pm.expect(vanityUrlContent.languageId, 'FAILED:[vanityUrlContent.languageId]').equal(1);",
+													"    pm.expect(vanityUrlContent.forwardTo, 'FAILED:[vanityUrlContent.forwardTo]').equal(\"/destinations/costa-rica\");",
+													"    pm.expect(vanityUrlContent.uri, 'FAILED:[vanityUrlContent.uri]').equal(\"/my-fantasy-url\");",
+													"});"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										},
+										{
+											"listen": "prerequest",
+											"script": {
+												"exec": [
+													"setTimeout(function(){}, 5000);"
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"protocolProfileBehavior": {
+										"disabledSystemHeaders": {
+											"user-agent": true
+										}
+									},
+									"request": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Cookie",
+												"value": "JSESSIONID=1DF38761AD8B360EF1AD42C4AF07EC35",
+												"type": "text",
+												"disabled": true
+											},
+											{
+												"key": "User-Agent",
+												"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "graphql",
+											"graphql": {
+												"query": "{\n  page(url: \"/my-fantasy-url\") {\n    title\n    url\n    pageURI\n    vanityUrl {\n      action\n      languageId\n      siteId\n      forwardTo\n      id\n      uri\n      order\n    }\n    urlContentMap {\n      ... on Product {\n        title\n        tags\n        urlTitle\n        identifier\n        urlMap\n        contentType\n        productNumber\n        image {\n          idPath\n        }\n      }\n    }\n  }\n}\n",
+												"variables": ""
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/graphql",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"graphql"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Clean Up Created VanityUrls",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"contentlets\": [\n        {\n            \"identifier\": \"{{forwardVanityUrlId}}\"\n        },\n        {\n            \"identifier\": \"{{permanentRedirectVanityUrlId}}\"\n        },\n        {\n            \"identifier\": \"{{temporaryRedirectVanityUrlId}}\"\n        }\n\n    ]\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/UNPUBLISH",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"workflow",
+												"actions",
+												"default",
+												"fire",
+												"UNPUBLISH"
+											]
+										}
+									},
+									"response": []
+								}
+							],
+							"description": "Test behavior of vanity URLs created with URIs that do not correspond to existing pages."
+						}
+					]
 				},
 				{
 					"name": "Checking Layout and Container Properties",
