@@ -2017,7 +2017,7 @@
 										"body": {
 											"mode": "graphql",
 											"graphql": {
-												"query": "{\n  page(url: \"/store/products/eagles-nest-outfitters-doublenest-hammock-patriot\") {\n    title\n    url\n    pageURI\n    vanityUrl {\n      action\n      languageId\n      siteId\n      forwardTo\n      id\n      uri\n      order\n    }\n    urlContentMap {\n      ... on Product {\n        title\n        tags\n        urlTitle\n        identifier\n        urlMap\n        contentType\n        productNumber\n        image {\n          idPath\n        }\n      }\n    }\n  }\n}\n",
+												"query": "{\n  page(url: \"/store/products/eagles-nest-outfitters-doublenest-hammock-patriot\") {\n    url\n    pageURI\n    vanityUrl {\n      action\n      languageId\n      siteId\n      forwardTo\n      id\n      uri\n      order\n    }\n    urlContentMap {\n      ... on Product {\n        title\n        tags\n        urlTitle\n        identifier\n        urlMap\n        contentType\n        productNumber\n        image {\n          idPath\n        }\n      }\n    }\n  }\n}\n",
 												"variables": ""
 											}
 										},
