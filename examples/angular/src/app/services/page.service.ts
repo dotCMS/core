@@ -60,12 +60,19 @@ export class PageService {
             catchError((error) => {
                 // If the page is not found and we are inside the editor, return an empty object
                 // The editor will get the working/unpublished page
-                if (error.status === 404 && getUVEState()) {
-                    return of({ response: {} } as CustomPageResponse<T>);
+                if (error && getUVEState()) {
+                    return of({
+                        error,
+                        response: {
+                            graphql: error.graphql
+                        }
+                    } as CustomPageResponse<T>);
                 }
 
                 return of({
-                    response: {},
+                    response: {
+                        graphql: error.graphql
+                    },
                     error
                 } as CustomPageResponse<T>);
             })
