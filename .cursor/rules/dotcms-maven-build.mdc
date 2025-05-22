@@ -1,0 +1,164 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# DotCMS Maven Build Guide
+
+This guide provides instructions for building and working with the DotCMS multi-module Maven project.
+
+## Project Overview
+
+DotCMS is a multi-module Maven project with the following structure:
+
+- `parent/`: Contains the parent POM with common dependencies, properties, and plugin configurations
+- `bom/`: Bill of Materials defining dependency versions
+- `build-parent/`: Build configuration
+- `dotCMS/`: The core server module
+- `core-web/`: Web UI components
+- `osgi-base/`: OSGI-related functionality
+- Various test modules
+
+## Build Commands
+
+Always use the Maven wrapper (`mvnw`) instead of relying on locally installed Maven:
+
+```bash
+# Basic build (no tests)
+./mvnw -DskipTests clean install
+
+# Build with tests
+./mvnw clean install
+
+# Quick build (no tests)
+./mvnw -DskipTests install
+
+# Build specific module
+./mvnw -pl :dotcms-core -DskipTests install
+
+# Build specific module with dependencies
+./mvnw -pl :dotcms-core --am -DskipTests install
+```
+
+## Run Commands
+
+```bash
+# Run in development mode
+./mvnw -pl :dotcms-core -Pdocker-start
+
+# Run in debug mode
+./mvnw -pl :dotcms-core -Pdocker-start,debug
+
+# Run with suspended debug mode
+./mvnw -pl :dotcms-core -Pdocker-start,debug-suspend
+
+# Run on specific port
+./mvnw -pl :dotcms-core -Pdocker-start -Dtomcat.port=8082
+
+# Stop Docker container
+./mvnw -pl :dotcms-core -Pdocker-stop
+```
+
+## Testing
+
+```bash
+# Run integration tests
+./mvnw -pl :dotcms-integration verify -Dcoreit.test.skip=false
+
+# Run Postman tests
+./mvnw -pl :dotcms-postman verify -Dpostman.test.skip=false
+
+# Run Karate tests
+./mvnw -pl :dotcms-test-karate verify -Dkarate.test.skip=false -Dit.test=KarateCITests#defaults
+
+# Run E2E Java tests
+./mvnw -pl :dotcms-e2e-java verify -De2e.test.skip=false
+
+# Run E2E Node tests
+./mvnw -pl :dotcms-e2e-node verify -De2e.test.skip=false
+```
+
+## Using Just
+
+If you have the [Just](mdc:https:/github.com/casey/just) command runner installed, you can use predefined commands:
+
+```bash
+# List all available commands
+just
+
+# Basic build
+just build
+
+# Build with tests
+just build-test
+
+# Quick build
+just build-quick
+
+# Run in development mode
+just dev-run
+
+# Run in debug mode
+just dev-run-debug
+
+# Run tests
+just test-integration
+just test-postman
+just test-karate
+```
+
+## Project Structure
+
+- The project uses Maven's CI-friendly versions: `${revision}${sha1}${changelist}`
+- Dependencies are managed in the parent POM and BOMs
+- Docker builds are configured via profiles
+- Test modules have separate configurations
+
+## Environment Setup
+
+```bash
+# Install all dependencies (Mac)
+just install-all-mac-deps
+
+# Install JDK with SDKMAN
+just install-jdk-mac
+```
+
+## Best Practices
+
+1. Always use `./mvnw` instead of `mvn` to ensure consistent Maven version
+2. Don't modify the flatten.mode or flatten.skip properties unless necessary
+3. When running specific module builds, use the `-pl` and `--am` flags as needed
+4. Use `-DskipTests` to skip tests during development
+5. For Docker-related operations, use the appropriate profiles
+
+## Maven Dependency Management
+
+```bash
+# Check for dependency updates
+./mvnw versions:display-dependency-updates
+
+# Generate dependency tree
+./mvnw dependency:tree -Dscope=compile > dependencies.txt
+
+# Check for plugin updates
+./mvnw versions:display-plugin-updates
+```
+
+## Customizing Builds
+
+Use properties to customize your build:
+
+```bash
+# Custom port
+./mvnw -pl :dotcms-core -Pdocker-start -Dtomcat.port=8080
+
+# Enable Glowroot for profiling
+./mvnw -pl :dotcms-core -Pdocker-start -Ddocker.glowroot.enabled=true
+```
+
+## Troubleshooting
+
+- If Docker fails to start, check Docker is running with `docker info`
+- For debug mode issues, verify port availability with `lsof -i :5005`
+- License issues can be resolved by placing a license file at `~/.dotcms/license/license.dat`

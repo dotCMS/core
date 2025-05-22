@@ -19,6 +19,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import javax.ws.rs.ApplicationPath;
 import org.glassfish.jersey.media.multipart.MultiPartFeature;
 import org.glassfish.jersey.server.ResourceConfig;
+import java.lang.reflect.Method;
 
 /**
  * This class provides the list of all the REST end-points in dotCMS. Every new
@@ -89,10 +90,9 @@ public class DotRestApplication extends ResourceConfig {
 			Logger.warn(DotRestApplication.class, "Bypassing activation of Telemetry REST Endpoint from OSGi");
 			return;
 		}
-		if (Boolean.TRUE.equals(customClasses.computeIfAbsent(clazz,c -> true))) {
-			final Optional<ContainerReloader> reloader = CDIUtils.getBean(ContainerReloader.class);
-            reloader.ifPresent(ContainerReloader::reload);
-		}
+		// Just add the class to customClasses without triggering a container reload
+		customClasses.computeIfAbsent(clazz, c -> true);
+		Logger.info(DotRestApplication.class, "Added REST resource: " + clazz.getName() + " (container reload skipped)");
 	}
 
 	/**
@@ -103,10 +103,74 @@ public class DotRestApplication extends ResourceConfig {
 		if(clazz==null){
 			return;
 		}
-		if(customClasses.remove(clazz) != null){
-			final Optional<ContainerReloader> reloader = CDIUtils.getBean(ContainerReloader.class);
-			reloader.ifPresent(ContainerReloader::reload);
+		
+		boolean removed = customClasses.remove(clazz) != null;
+		
+		if(removed) {
+            Logger.info(DotRestApplication.class, "Removing REST resource: " + clazz.getName());
+            
+            // Get plugin package prefix from class name for cleanup
+            String className = clazz.getName();
+            String packagePrefix = getPackagePrefix(className);
+            
+            // Clean up all resources related to this plugin package
+            try {
+                // Use reflection to avoid direct dependency
+                Class<?> cleanupClass = Class.forName("com.dotcms.rest.config.DirectJerseyInteraction");
+                Method cleanupMethod = cleanupClass.getMethod("cleanPluginResourcesByPackage", String.class);
+                cleanupMethod.invoke(null, packagePrefix);
+                Logger.info(DotRestApplication.class, "Cleaned up resources for package: " + packagePrefix);
+            } catch (Exception e) {
+                Logger.error(DotRestApplication.class, "Error cleaning plugin resources: " + e.getMessage(), e);
+            }
+            
+            // Also directly unregister this specific resource class
+            try {
+                // Use reflection to avoid direct dependency
+                Class<?> cleanupClass = Class.forName("com.dotcms.rest.config.DirectJerseyInteraction");
+                Method cleanupMethod = cleanupClass.getMethod("unregisterRestResource", String.class);
+                cleanupMethod.invoke(null, className);
+                Logger.info(DotRestApplication.class, "Successfully unregistered REST resource: " + className);
+            } catch (Exception e) {
+                Logger.error(DotRestApplication.class, "Error unregistering REST resource: " + e.getMessage(), e);
+            }
 		}
 	}
-
+    
+    /**
+     * Helper method to extract the package prefix from a class name
+     * This attempts to extract a meaningful plugin package name (up to 3 segments)
+     * 
+     * @param className The fully qualified class name
+     * @return A package prefix suitable for plugin resource cleanup
+     */
+    private static String getPackagePrefix(String className) {
+        if (className == null || className.isEmpty()) {
+            return "";
+        }
+        
+        // Check for common plugin package patterns
+        if (className.contains(".dotcdn")) {
+            return "com.dotcms.dotcdn";
+        }
+        
+        // For other plugins, try to extract a reasonable package prefix
+        String[] parts = className.split("\\.");
+        if (parts.length <= 1) {
+            return className; // No package structure
+        }
+        
+        // Build a package prefix with up to 3 segments
+        int segments = Math.min(3, parts.length - 1); // Exclude the class name
+        StringBuilder packagePrefix = new StringBuilder();
+        
+        for (int i = 0; i < segments; i++) {
+            if (i > 0) {
+                packagePrefix.append(".");
+            }
+            packagePrefix.append(parts[i]);
+        }
+        
+        return packagePrefix.toString();
+    }
 }
