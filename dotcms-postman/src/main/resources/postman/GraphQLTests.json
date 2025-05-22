@@ -2062,7 +2062,7 @@
 										"header": [],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n    \"contentlets\": [\n        {\n            \"contentType\": \"Vanityurl\",\n            \"languageId\": 1,\n            \"title\": \"Test Permanent Redirect Vanity URL\",\n            \"site\": \"demo.dotcms.com\",\n            \"uri\": \"/store/products/eagles-nest-outfitters-doublenest-hammock-patriot\",\n            \"action\": 301,\n            \"forwardTo\": \"/destinations/costa-rica\",\n            \"order\": 1\n        }\n    ]\n}",
+											"raw": "{\n    \"contentlets\": [\n        {\n            \"contentType\": \"Vanityurl\",\n            \"languageId\": 1,\n            \"title\": \"Test Permanent Redirect Vanity URL\",\n            \"site\": \"demo.dotcms.com\",\n            \"uri\": \"/pp-test\",\n            \"action\": 301,\n            \"forwardTo\": \"/destinations/costa-rica\",\n            \"order\": 1\n        }\n    ]\n}",
 											"options": {
 												"raw": {
 													"language": "json"
@@ -2117,7 +2117,7 @@
 													"    pm.expect(vanityUrlContent.action, 'FAILED:[vanityUrlContent.action]').equal(301);",
 													"    pm.expect(vanityUrlContent.languageId, 'FAILED:[vanityUrlContent.languageId]').equal(1);",
 													"    pm.expect(vanityUrlContent.forwardTo, 'FAILED:[vanityUrlContent.forwardTo]').equal(\"/destinations/costa-rica\");",
-													"    pm.expect(vanityUrlContent.uri, 'FAILED:[vanityUrlContent.uri]').equal(\"/store/products/eagles-nest-outfitters-doublenest-hammock-patriot\");",
+													"    pm.expect(vanityUrlContent.uri, 'FAILED:[vanityUrlContent.uri]').equal(\"/pp-test\");",
 													"});"
 												],
 												"type": "text/javascript",
@@ -2128,7 +2128,7 @@
 											"listen": "prerequest",
 											"script": {
 												"exec": [
-													"setTimeout(function(){}, 5000);"
+													""
 												],
 												"type": "text/javascript",
 												"packages": {}
@@ -2158,7 +2158,7 @@
 										"body": {
 											"mode": "graphql",
 											"graphql": {
-												"query": "{\n  page(url: \"/store/products/eagles-nest-outfitters-doublenest-hammock-patriot\") {\n    title\n    url\n    pageURI\n    vanityUrl {\n      action\n      languageId\n      siteId\n      forwardTo\n      id\n      uri\n      order\n    }\n    urlContentMap {\n      ... on Product {\n        title\n        tags\n        urlTitle\n        identifier\n        urlMap\n        contentType\n        productNumber\n        image {\n          idPath\n        }\n      }\n    }\n  }\n}\n",
+												"query": "{\n  page(url: \"/pp-test\") {\n    title\n    url\n    pageURI\n    vanityUrl {\n      action\n      languageId\n      siteId\n      forwardTo\n      id\n      uri\n      order\n    }\n    urlContentMap {\n      ... on Product {\n        title\n        tags\n        urlTitle\n        identifier\n        urlMap\n        contentType\n        productNumber\n        image {\n          idPath\n        }\n      }\n    }\n  }\n}\n",
 												"variables": ""
 											}
 										},
@@ -2203,7 +2203,7 @@
 										"header": [],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n    \"contentlets\": [\n        {\n            \"contentType\": \"Vanityurl\",\n            \"languageId\": 1,\n            \"title\": \"Test Temporary Redirect Vanity URL\",\n            \"site\": \"demo.dotcms.com\",\n            \"uri\": \"/store/products/eagles-nest-outfitters-doublenest-hammock-patriot\",\n            \"action\": 302,\n            \"forwardTo\": \"/destinations/costa-rica\",\n            \"order\": 0\n        }\n    ]\n}",
+											"raw": "{\n    \"contentlets\": [\n        {\n            \"contentType\": \"Vanityurl\",\n            \"languageId\": 1,\n            \"title\": \"Test Temporary Redirect Vanity URL\",\n            \"site\": \"demo.dotcms.com\",\n            \"uri\": \"/blog/index\",\n            \"action\": 302,\n            \"forwardTo\": \"/destinations/costa-rica\",\n            \"order\": 0\n        }\n    ]\n}",
 											"options": {
 												"raw": {
 													"language": "json"
@@ -2258,7 +2258,7 @@
 													"    pm.expect(vanityUrlContent.action, 'FAILED:[vanityUrlContent.action]').equal(302);",
 													"    pm.expect(vanityUrlContent.languageId, 'FAILED:[vanityUrlContent.languageId]').equal(1);",
 													"    pm.expect(vanityUrlContent.forwardTo, 'FAILED:[vanityUrlContent.forwardTo]').equal(\"/destinations/costa-rica\");",
-													"    pm.expect(vanityUrlContent.uri, 'FAILED:[vanityUrlContent.uri]').equal(\"/store/products/eagles-nest-outfitters-doublenest-hammock-patriot\");",
+													"    pm.expect(vanityUrlContent.uri, 'FAILED:[vanityUrlContent.uri]').equal(\"/blog/index\");",
 													"});"
 												],
 												"type": "text/javascript",
@@ -2269,7 +2269,7 @@
 											"listen": "prerequest",
 											"script": {
 												"exec": [
-													"setTimeout(function(){}, 5000);"
+													""
 												],
 												"type": "text/javascript",
 												"packages": {}
@@ -2299,7 +2299,7 @@
 										"body": {
 											"mode": "graphql",
 											"graphql": {
-												"query": "{\n  page(url: \"/store/products/eagles-nest-outfitters-doublenest-hammock-patriot\") {\n    title\n    url\n    pageURI\n    vanityUrl {\n      action\n      languageId\n      siteId\n      forwardTo\n      id\n      uri\n      order\n    }\n    urlContentMap {\n      ... on Product {\n        title\n        tags\n        urlTitle\n        identifier\n        urlMap\n        contentType\n        productNumber\n        image {\n          idPath\n        }\n      }\n    }\n  }\n}\n",
+												"query": "{\n  page(url: \"/blog/index\") {\n    title\n    url\n    pageURI\n    vanityUrl {\n      action\n      languageId\n      siteId\n      forwardTo\n      id\n      uri\n      order\n    }\n    urlContentMap {\n      ... on Product {\n        title\n        tags\n        urlTitle\n        identifier\n        urlMap\n        contentType\n        productNumber\n        image {\n          idPath\n        }\n      }\n    }\n  }\n}\n",
 												"variables": ""
 											}
 										},
@@ -2425,31 +2425,29 @@
 											"listen": "test",
 											"script": {
 												"exec": [
-													"let checker = (arr, target) => target.every(v => arr.includes(v));",
+													"    pm.test(\"Status code is 200\", function () {",
+													"        pm.response.to.have.status(200);",
+													"    });",
 													"",
-													"pm.test(\"Status code is 200\", function () {",
-													"    pm.response.to.have.status(200);",
-													"});",
+													"    pm.test(\"'Page' includes all properties\", function () {",
+													"        var jsonData = pm.response.json();",
+													"        var page = jsonData.data.page;",
+													"        var urlmappedContent = page.urlContentMap;",
+													"        var vanityUrlContent = page.vanityUrl;",
 													"",
-													"pm.test(\"'Page' includes all properties\", function () {",
-													"    var jsonData = pm.response.json();",
-													"    var page = jsonData.data.page;",
-													"    var urlmappedContent = page.urlContentMap;",
-													"    var vanityUrlContent = page.vanityUrl;",
-													"    ",
-													"    // Validate properties 'page'",
-													"    pm.expect(page.url, 'FAILED:[page.url]').equal(\"/destinations/costa-rica\");",
-													"    pm.expect(page.pageURI, 'FAILED:[page.pageURI]').equal(\"/destinations/costa-rica\");",
-													"    ",
-													"    // Validate 'urlContentMap' properties",
-													"    pm.expect(urlmappedContent, 'FAILED:[urlmappedContent]').equal(null);",
+													"        // Validate properties 'page'",
+													"        pm.expect(page.url, 'FAILED:[page.url]').to.equal(\"/destinations/costa-rica\");",
+													"        pm.expect(page.pageURI, 'FAILED:[page.pageURI]').to.equal(\"/destinations/costa-rica\");",
 													"",
-													"    // Validate 'vanityUrl' properties",
-													"    pm.expect(vanityUrlContent.action, 'FAILED:[vanityUrlContent.action]').equal(200);",
-													"    pm.expect(vanityUrlContent.languageId, 'FAILED:[vanityUrlContent.languageId]').equal(1);",
-													"    pm.expect(vanityUrlContent.forwardTo, 'FAILED:[vanityUrlContent.forwardTo]').equal(\"/destinations/costa-rica\");",
-													"    pm.expect(vanityUrlContent.uri, 'FAILED:[vanityUrlContent.uri]').equal(\"/my-fantasy-url\");",
-													"});"
+													"        // Validate 'urlContentMap' properties",
+													"        pm.expect(urlmappedContent, 'FAILED:[urlmappedContent]').to.equal(null);",
+													"",
+													"        // Validate 'vanityUrl' properties",
+													"        pm.expect(vanityUrlContent.action, 'FAILED:[vanityUrlContent.action]').to.equal(200);",
+													"        pm.expect(vanityUrlContent.languageId, 'FAILED:[vanityUrlContent.languageId]').to.equal(1);",
+													"        pm.expect(vanityUrlContent.forwardTo, 'FAILED:[vanityUrlContent.forwardTo]').to.equal(\"/destinations/costa-rica\");",
+													"        pm.expect(vanityUrlContent.uri, 'FAILED:[vanityUrlContent.uri]').to.equal(\"/my-fantasy-url\");",
+													"    });"
 												],
 												"type": "text/javascript",
 												"packages": {}
@@ -2459,7 +2457,7 @@
 											"listen": "prerequest",
 											"script": {
 												"exec": [
-													"setTimeout(function(){}, 5000);"
+													""
 												],
 												"type": "text/javascript",
 												"packages": {}
@@ -2534,7 +2532,7 @@
 										"header": [],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n    \"contentlets\": [\n        {\n            \"contentType\": \"Vanityurl\",\n            \"languageId\": 1,\n            \"title\": \"Test Permanent Redirect Fantasy Vanity URL\",\n            \"site\": \"demo.dotcms.com\",\n            \"uri\": \"/my-fantasy-url\",\n            \"action\": 301,\n            \"forwardTo\": \"/destinations/costa-rica\",\n            \"order\": 1\n        }\n    ]\n}",
+											"raw": "{\n    \"contentlets\": [\n        {\n            \"contentType\": \"Vanityurl\",\n            \"languageId\": 1,\n            \"title\": \"Test Permanent Redirect Fantasy Vanity URL\",\n            \"site\": \"demo.dotcms.com\",\n            \"uri\": \"/my-fantasy-url2\",\n            \"action\": 301,\n            \"forwardTo\": \"/destinations/costa-rica\",\n            \"order\": 1\n        }\n    ]\n}",
 											"options": {
 												"raw": {
 													"language": "json"
@@ -2566,8 +2564,6 @@
 											"listen": "test",
 											"script": {
 												"exec": [
-													"let checker = (arr, target) => target.every(v => arr.includes(v));",
-													"",
 													"pm.test(\"Status code is 200\", function () {",
 													"    pm.response.to.have.status(200);",
 													"});",
@@ -2589,7 +2585,7 @@
 													"    pm.expect(vanityUrlContent.action, 'FAILED:[vanityUrlContent.action]').equal(301);",
 													"    pm.expect(vanityUrlContent.languageId, 'FAILED:[vanityUrlContent.languageId]').equal(1);",
 													"    pm.expect(vanityUrlContent.forwardTo, 'FAILED:[vanityUrlContent.forwardTo]').equal(\"/destinations/costa-rica\");",
-													"    pm.expect(vanityUrlContent.uri, 'FAILED:[vanityUrlContent.uri]').equal(\"/my-fantasy-url\");",
+													"    pm.expect(vanityUrlContent.uri, 'FAILED:[vanityUrlContent.uri]').equal(\"/my-fantasy-url2\");",
 													"});"
 												],
 												"type": "text/javascript",
@@ -2600,7 +2596,7 @@
 											"listen": "prerequest",
 											"script": {
 												"exec": [
-													"setTimeout(function(){}, 5000);"
+													""
 												],
 												"type": "text/javascript",
 												"packages": {}
@@ -2630,7 +2626,7 @@
 										"body": {
 											"mode": "graphql",
 											"graphql": {
-												"query": "{\n  page(url: \"/my-fantasy-url\") {\n    title\n    url\n    pageURI\n    vanityUrl {\n      action\n      languageId\n      siteId\n      forwardTo\n      id\n      uri\n      order\n    }\n    urlContentMap {\n      ... on Product {\n        title\n        tags\n        urlTitle\n        identifier\n        urlMap\n        contentType\n        productNumber\n        image {\n          idPath\n        }\n      }\n    }\n  }\n}\n",
+												"query": "{\n  page(url: \"/my-fantasy-url2\") {\n    title\n    url\n    pageURI\n    vanityUrl {\n      action\n      languageId\n      siteId\n      forwardTo\n      id\n      uri\n      order\n    }\n    urlContentMap {\n      ... on Product {\n        title\n        tags\n        urlTitle\n        identifier\n        urlMap\n        contentType\n        productNumber\n        image {\n          idPath\n        }\n      }\n    }\n  }\n}\n",
 												"variables": ""
 											}
 										},
@@ -2675,7 +2671,7 @@
 										"header": [],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n    \"contentlets\": [\n        {\n            \"contentType\": \"Vanityurl\",\n            \"languageId\": 1,\n            \"title\": \"Test Temporary Redirect Fantasy Vanity URL\",\n            \"site\": \"demo.dotcms.com\",\n            \"uri\": \"/my-fantasy-url\",\n            \"action\": 302,\n            \"forwardTo\": \"/destinations/costa-rica\",\n            \"order\": 0\n        }\n    ]\n}",
+											"raw": "{\n    \"contentlets\": [\n        {\n            \"contentType\": \"Vanityurl\",\n            \"languageId\": 1,\n            \"title\": \"Test Temporary Redirect Fantasy Vanity URL\",\n            \"site\": \"demo.dotcms.com\",\n            \"uri\": \"/my-fantasy-url3\",\n            \"action\": 302,\n            \"forwardTo\": \"/destinations/costa-rica\",\n            \"order\": 0\n        }\n    ]\n}",
 											"options": {
 												"raw": {
 													"language": "json"
@@ -2707,8 +2703,6 @@
 											"listen": "test",
 											"script": {
 												"exec": [
-													"let checker = (arr, target) => target.every(v => arr.includes(v));",
-													"",
 													"pm.test(\"Status code is 200\", function () {",
 													"    pm.response.to.have.status(200);",
 													"});",
@@ -2730,7 +2724,7 @@
 													"    pm.expect(vanityUrlContent.action, 'FAILED:[vanityUrlContent.action]').equal(302);",
 													"    pm.expect(vanityUrlContent.languageId, 'FAILED:[vanityUrlContent.languageId]').equal(1);",
 													"    pm.expect(vanityUrlContent.forwardTo, 'FAILED:[vanityUrlContent.forwardTo]').equal(\"/destinations/costa-rica\");",
-													"    pm.expect(vanityUrlContent.uri, 'FAILED:[vanityUrlContent.uri]').equal(\"/my-fantasy-url\");",
+													"    pm.expect(vanityUrlContent.uri, 'FAILED:[vanityUrlContent.uri]').equal(\"/my-fantasy-url3\");",
 													"});"
 												],
 												"type": "text/javascript",
@@ -2741,7 +2735,7 @@
 											"listen": "prerequest",
 											"script": {
 												"exec": [
-													"setTimeout(function(){}, 5000);"
+													""
 												],
 												"type": "text/javascript",
 												"packages": {}
@@ -2771,7 +2765,7 @@
 										"body": {
 											"mode": "graphql",
 											"graphql": {
-												"query": "{\n  page(url: \"/my-fantasy-url\") {\n    title\n    url\n    pageURI\n    vanityUrl {\n      action\n      languageId\n      siteId\n      forwardTo\n      id\n      uri\n      order\n    }\n    urlContentMap {\n      ... on Product {\n        title\n        tags\n        urlTitle\n        identifier\n        urlMap\n        contentType\n        productNumber\n        image {\n          idPath\n        }\n      }\n    }\n  }\n}\n",
+												"query": "{\n  page(url: \"/my-fantasy-url3\") {\n    title\n    url\n    pageURI\n    vanityUrl {\n      action\n      languageId\n      siteId\n      forwardTo\n      id\n      uri\n      order\n    }\n    urlContentMap {\n      ... on Product {\n        title\n        tags\n        urlTitle\n        identifier\n        urlMap\n        contentType\n        productNumber\n        image {\n          idPath\n        }\n      }\n    }\n  }\n}\n",
 												"variables": ""
 											}
 										},
