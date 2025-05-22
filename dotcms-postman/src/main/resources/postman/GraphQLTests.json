@@ -1798,55 +1798,6 @@
 							"response": []
 						},
 						{
-							"name": "Create Vanity URL",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.test(\"Test Forward Vanity URL was created successfully\", function () {",
-											"    var jsonData = pm.response.json().entity;",
-											"    pm.expect(jsonData.summary.failCount).to.eql(0, \"An error occurred when creating the test Vanity URL\");",
-											"    pm.expect(jsonData.summary.successCount).to.eql(1, \"One piece of content should have been created\");",
-											"});",
-											""
-										],
-										"type": "text/javascript",
-										"packages": {}
-									}
-								}
-							],
-							"request": {
-								"method": "POST",
-								"header": [],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n    \"contentlets\": [\n        {\n            \"contentType\": \"Vanityurl\",\n            \"languageId\": 1,\n            \"title\": \"Test Forward Vanity URL\",\n            \"site\": \"demo.dotcms.com\",\n            \"uri\": \"/store/products/eagles-nest-outfitters-doublenest-hammock-patriot\",\n            \"action\": 200,\n            \"forwardTo\": \"/destinations/costa-rica\",\n            \"order\": 0\n        }\n    ]\n}",
-									"options": {
-										"raw": {
-											"language": "json"
-										}
-									}
-								},
-								"url": {
-									"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
-									"host": [
-										"{{serverURL}}"
-									],
-									"path": [
-										"api",
-										"v1",
-										"workflow",
-										"actions",
-										"default",
-										"fire",
-										"PUBLISH"
-									]
-								}
-							},
-							"response": []
-						},
-						{
 							"name": "GivenRequestByURI_PageContainsUrlMappedContentField",
 							"event": [
 								{
