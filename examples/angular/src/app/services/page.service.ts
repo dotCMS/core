@@ -70,9 +70,6 @@ export class PageService {
                 }
 
                 return of({
-                    response: {
-                        graphql: error.graphql
-                    },
                     error
                 } as CustomPageResponse<T>);
             })
