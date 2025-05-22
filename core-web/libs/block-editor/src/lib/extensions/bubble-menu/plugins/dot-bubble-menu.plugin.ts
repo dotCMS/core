@@ -9,6 +9,8 @@ import { filter, take } from 'rxjs/operators';
 import { posToDOMRect } from '@tiptap/core';
 import { BubbleMenuView } from '@tiptap/extension-bubble-menu';
 
+import { DotContentTypeService, DotMessageService } from '@dotcms/data-access';
+import { FeaturedFlags } from '@dotcms/dotcms-models';
 import { ImageNode } from '../../../nodes';
 import {
     changeToItems,
@@ -33,8 +35,6 @@ import {
     popperModifiers,
     setBubbleMenuCoords
 } from '../utils';
-import { DotContentTypeService, DotMessageService } from '@dotcms/data-access';
-import { FeaturedFlags } from '@dotcms/dotcms-models';
 
 export const DotBubbleMenuPlugin = (options: DotBubbleMenuPluginProps) => {
     const component = options.component.instance;
@@ -168,14 +168,13 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
 
         // this.shouldShowProp = this.shouldShow?.({
         //     editor: this.editor,
+        //     element: this.element,
         //     view,
         //     state,
         //     oldState,
         //     from,
         //     to
         // });
-
-        this.shouldShowProp = true;
 
         if (!this.shouldShowProp) {
             this.hide();

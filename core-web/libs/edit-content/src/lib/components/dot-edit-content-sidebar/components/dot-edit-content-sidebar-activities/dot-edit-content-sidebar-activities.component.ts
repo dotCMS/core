@@ -8,15 +8,11 @@ import {
     inject,
     input,
     output,
-    viewChildren
+    viewChildren,
+    ChangeDetectorRef,
+    signal
 } from '@angular/core';
-import {
-    FormBuilder,
-    FormControl,
-    FormGroup,
-    ReactiveFormsModule,
-    Validators
-} from '@angular/forms';
+import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 
 import { AvatarModule } from 'primeng/avatar';
 import { ButtonModule } from 'primeng/button';
@@ -35,7 +31,6 @@ import {
 import { Activity, DotContentletState } from '../../../../models/dot-edit-content.model';
 import { DotEditContentSidebarActivitiesSkeletonComponent } from '../dot-edit-content-sidebar-activities-skeleton/dot-edit-content-sidebar-activities-skeleton.component';
 
-const COMMENT_MIN_LENGTH = 3;
 const COMMENT_MAX_LENGTH = 500;
 
 /**
@@ -76,9 +71,22 @@ export class DotEditContentSidebarActivitiesComponent {
         comment: [
             '',
             [
-                Validators.required,
-                Validators.minLength(COMMENT_MIN_LENGTH),
-                Validators.maxLength(COMMENT_MAX_LENGTH)
+                // Custom validator: only validate when field has value
+                (control: FormControl) => {
+                    const value = control.value?.trim() || '';
+
+                    // If empty, no validation needed
+                    if (!value) {
+                        return null;
+                    }
+
+                    // Otherwise apply max length validator
+                    if (value.length > COMMENT_MAX_LENGTH) {
+                        return { invalid: true };
+                    }
+
+                    return null;
+                }
             ]
         ]
     });
@@ -142,6 +150,35 @@ export class DotEditContentSidebarActivitiesComponent {
     protected readonly $hideForm = computed(() => this.$initialContentletState() === 'new');
 
     /**
+     * Expose the comment max length for template use
+     */
+    readonly commentMaxLength = COMMENT_MAX_LENGTH;
+
+    // Use writable signals for live updates
+    readonly commentLength = signal(0);
+    readonly isAtMaxLength = signal(false);
+
+    #cdRef = inject(ChangeDetectorRef);
+
+    constructor() {
+        // Listen to comment control changes to update the character counter
+        this.commentControl.valueChanges.subscribe((value: string) => {
+            const length = value ? value.length : 0;
+            this.commentLength.set(length);
+            this.isAtMaxLength.set(length >= this.commentMaxLength);
+        });
+
+        // Effect to disable/enable comment control based on $isSaving
+        effect(() => {
+            if (this.$isSaving()) {
+                this.commentControl.disable({ emitEvent: false });
+            } else {
+                this.commentControl.enable({ emitEvent: false });
+            }
+        });
+    }
+
+    /**
      * Resets the comment form to its initial state
      */
     clearComment(): void {
@@ -155,16 +192,23 @@ export class DotEditContentSidebarActivitiesComponent {
      * Validates the form and emits the comment if valid
      */
     onSubmit(): void {
+        const comment = this.commentControl.value?.trim();
+
+        // Check for empty comment and mark as touched to trigger validation
+        if (!comment) {
+            this.commentControl.setErrors({ required: true });
+            this.commentControl.markAsDirty();
+            this.commentControl.markAsTouched();
+
+            return;
+        }
+
+        // Check for other validation errors
         if (this.form.invalid) {
             this.commentControl.markAsDirty();
             this.commentControl.markAsTouched();
             this.commentControl.updateValueAndValidity({ onlySelf: true });
 
-            return;
-        }
-
-        const comment = this.commentControl.value?.trim();
-        if (!comment) {
             return;
         }
 
