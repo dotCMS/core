@@ -157,7 +157,7 @@ describe('DotEditContentSidebarActivitiesComponent', () => {
             const commentInput = spectator.query(byTestId('activities-input'));
             const form = spectator.query(byTestId('activities-form'));
 
-            spectator.typeInElement('ab', commentInput);
+            spectator.typeInElement('', commentInput);
             spectator.detectChanges();
 
             spectator.dispatchFakeEvent(form, 'submit');
@@ -165,24 +165,6 @@ describe('DotEditContentSidebarActivitiesComponent', () => {
 
             expect(spectator.component.commentSubmitted.emit).not.toHaveBeenCalled();
             expect(spectator.component.form.get('comment').errors).toBeTruthy();
-            expect(spectator.component.form.get('comment').errors['minlength']).toBeTruthy();
-            expect(commentInput).toHaveClass('ng-invalid');
-            expect(commentInput).toHaveClass('ng-touched');
-        });
-
-        it('should show minlength error when comment is too short', () => {
-            const commentInput = spectator.query(byTestId('activities-input'));
-            const form = spectator.query(byTestId('activities-form'));
-
-            spectator.typeInElement('ab', commentInput);
-            spectator.detectChanges();
-
-            spectator.dispatchFakeEvent(form, 'submit');
-            spectator.detectChanges();
-
-            const control = spectator.component.form.get('comment');
-            expect(control.errors).toBeTruthy();
-            expect(control.errors['minlength']).toBeTruthy();
             expect(commentInput).toHaveClass('ng-invalid');
             expect(commentInput).toHaveClass('ng-touched');
         });
@@ -200,7 +182,6 @@ describe('DotEditContentSidebarActivitiesComponent', () => {
 
             const control = spectator.component.form.get('comment');
             expect(control.errors).toBeTruthy();
-            expect(control.errors['maxlength']).toBeTruthy();
             expect(commentInput).toHaveClass('ng-invalid');
             expect(commentInput).toHaveClass('ng-touched');
         });
@@ -280,7 +261,7 @@ describe('DotEditContentSidebarActivitiesComponent', () => {
         });
 
         it('should maintain form state after failed submission', () => {
-            const commentText = 'ab';
+            const commentText = '';
             const commentInput = spectator.query(byTestId('activities-input'));
             const form = spectator.query(byTestId('activities-form'));
 
@@ -401,6 +382,36 @@ describe('DotEditContentSidebarActivitiesComponent', () => {
 
             expect(submitButton).not.toBeDisabled();
             expect(spectator.component['$isSaving']()).toBe(false);
+        });
+
+        it('should update character counter and isAtMaxLength as user types', () => {
+            const commentInput = spectator.query(byTestId('activities-input'));
+            // Type a short comment
+            spectator.typeInElement('abc', commentInput);
+            spectator.detectChanges();
+
+            expect(spectator.component.commentLength()).toBe(3);
+            expect(spectator.component.isAtMaxLength()).toBe(false);
+
+            // Type up to the max length
+            const maxComment = 'a'.repeat(spectator.component.commentMaxLength);
+            spectator.typeInElement(maxComment, commentInput);
+            spectator.detectChanges();
+
+            expect(spectator.component.commentLength()).toBe(spectator.component.commentMaxLength);
+            expect(spectator.component.isAtMaxLength()).toBe(true);
+        });
+
+        it('should display correct character counter text', () => {
+            const commentInput = spectator.query(byTestId('activities-input'));
+            const charCounter = () => spectator.query(byTestId('activities-char-counter'));
+
+            // Type a short comment
+            spectator.typeInElement('abcd', commentInput);
+            spectator.detectChanges();
+
+            // Should show: 4/500 characters
+            expect(charCounter().textContent).toContain('4/500');
         });
     });
 

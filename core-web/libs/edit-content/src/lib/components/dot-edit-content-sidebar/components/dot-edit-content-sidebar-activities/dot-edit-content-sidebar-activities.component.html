@@ -30,11 +30,11 @@
                                         {{ activity.createdDate | dotRelativeDate }}
                                     </span>
                                 </div>
-                                <span
+                                <div
                                     class="activities__description"
                                     data-testid="activity-description">
                                     {{ activity.commentDescription }}
-                                </span>
+                                </div>
                             </div>
                         </div>
                     }
@@ -63,6 +63,28 @@
                             class="activities__input"></textarea>
 
                         <dot-field-validation-message [field]="form.get('comment')" />
+
+                        <!-- Character Counter -->
+                        <div
+                            class="activities__char-counter"
+                            [class.activities__char-counter--limit]="isAtMaxLength()"
+                            data-testid="activities-char-counter">
+                            @if (!isAtMaxLength()) {
+                                {{ commentLength() }}/{{ commentMaxLength }}
+                                {{ 'edit.content.sidebar.activities.characters' | dm }}
+                            } @else {
+                                <span>
+                                    {{
+                                        'edit.content.sidebar.activities.char.counter'
+                                            | dm
+                                                : [
+                                                      commentLength().toString(),
+                                                      commentMaxLength.toString()
+                                                  ]
+                                    }}
+                                </span>
+                            }
+                        </div>
                     </div>
 
                     <div class="activities__actions">
