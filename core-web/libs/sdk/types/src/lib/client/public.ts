@@ -1,8 +1,32 @@
 /**
- * The parameters for the Page API.
+ * The GraphQL parameters for a page request.
  * @public
  */
-export interface DotCMSPageRequestParams {
+export interface DotCMSGraphQLParams<TVars = Record<string, unknown>> {
+    /**
+     * The GraphQL query for the page.
+     */
+    page?: string;
+    /**
+     * A record of GraphQL queries for content.
+     */
+    content?: Record<string, string>;
+    /**
+     * Variables for the GraphQL queries.
+     */
+    variables?: TVars;
+    /**
+     * An array of GraphQL fragment strings.
+     */
+    fragments?: string[];
+}
+
+/**
+ * The parameters for the Page API.
+ * @public
+ * @template TGraphQLVars - Type for the GraphQL variables.
+ */
+export interface DotCMSPageRequestParams<TGraphQLVars = Record<string, unknown>> {
     /**
      * The id of the site you want to interact with. Defaults to the one from the config if not provided.
      */
@@ -45,12 +69,7 @@ export interface DotCMSPageRequestParams {
     /**
      * The GraphQL options for the page.
      */
-    graphql?: {
-        page?: string;
-        content?: Record<string, string>;
-        variables?: Record<string, string>;
-        fragments?: string[];
-    };
+    graphql?: DotCMSGraphQLParams<TGraphQLVars>;
 }
 
 /**
