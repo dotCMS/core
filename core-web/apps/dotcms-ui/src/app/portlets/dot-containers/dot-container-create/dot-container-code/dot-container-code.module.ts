@@ -3,7 +3,7 @@ import { NgModule } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
-import { DialogService, DynamicDialogModule } from 'primeng/dynamicdialog';
+import { DialogService, DynamicDialog } from 'primeng/dynamicdialog';
 import { MenuModule } from 'primeng/menu';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TabViewModule } from 'primeng/tabview';
@@ -24,7 +24,7 @@ import { DotContentEditorComponent } from './dot-container-code.component';
         DotMessagePipe,
         ReactiveFormsModule,
         ButtonModule,
-        DynamicDialogModule,
+        DynamicDialog,
         DotAddVariableModule,
         DotIconModule,
         SkeletonModule,

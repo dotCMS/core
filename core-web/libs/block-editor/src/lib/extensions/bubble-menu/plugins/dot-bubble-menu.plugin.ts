@@ -166,15 +166,15 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
         const from = Math.min(...ranges.map((range) => range.$from.pos));
         const to = Math.max(...ranges.map((range) => range.$to.pos));
 
-        this.shouldShowProp = this.shouldShow?.({
-            editor: this.editor,
-            element: this.element,
-            view,
-            state,
-            oldState,
-            from,
-            to
-        });
+        // this.shouldShowProp = this.shouldShow?.({
+        //     editor: this.editor,
+        //     element: this.element,
+        //     view,
+        //     state,
+        //     oldState,
+        //     from,
+        //     to
+        // });
 
         if (!this.shouldShowProp) {
             this.hide();

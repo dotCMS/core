@@ -10,7 +10,7 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogModule } from 'primeng/dialog';
 import { DropdownModule } from 'primeng/dropdown';
 import { InputTextModule } from 'primeng/inputtext';
-import { InputTextareaModule } from 'primeng/inputtextarea';
+import { TextareaModule } from 'primeng/textarea';
 import { MultiSelectModule } from 'primeng/multiselect';
 import { PasswordModule } from 'primeng/password';
 import { RadioButtonModule } from 'primeng/radiobutton';
@@ -73,7 +73,7 @@ export const NGFACES_MODULES = [
     DialogModule,
     DropdownModule,
     InputTextModule,
-    InputTextareaModule,
+    TextareaModule,
     MultiSelectModule,
     PasswordModule,
     RadioButtonModule,

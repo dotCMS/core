@@ -19,7 +19,9 @@ import { DecorationSet } from 'prosemirror-view';
 export type toJSONFn = (this: { node: ProseMirrorNode }) => Record<string, unknown>;
 
 @Component({ template: '' })
-export class AngularNodeViewComponent implements NodeViewProps {
+export class AngularNodeViewComponent {
+    @Input() view!: NodeViewProps['view'];
+
     @Input() editor!: NodeViewProps['editor'];
     @Input() node!: NodeViewProps['node'];
     @Input() decorations!: readonly DecorationWithType[];
@@ -51,7 +53,7 @@ class AngularNodeView extends NodeView<
     override mount() {
         const injector = this.options.injector as Injector;
 
-        const props: NodeViewProps = {
+        const props = {
             editor: this.editor,
             node: this.node,
             decorations: this.decorations as readonly DecorationWithType[],
