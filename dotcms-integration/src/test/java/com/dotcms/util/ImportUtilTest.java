@@ -2,7 +2,10 @@ package com.dotcms.util;
 
 import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotmarketing.portlets.workflows.business.SystemWorkflowConstants.WORKFLOW_PUBLISH_ACTION_ID;
+import static com.dotmarketing.util.importer.ImportLineValidationCodes.INVALID_BINARY_URL;
+import static com.dotmarketing.util.importer.ImportLineValidationCodes.INVALID_DATE_FORMAT;
 import static com.dotmarketing.util.importer.ImportLineValidationCodes.INVALID_LOCATION;
+import static com.dotmarketing.util.importer.ImportLineValidationCodes.REQUIRED_FIELD_MISSING;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -16,6 +19,7 @@ import com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldDataBa
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotcms.contenttype.model.field.DataTypes;
+import com.dotcms.contenttype.model.field.DateTimeField;
 import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.HostFolderField;
 import com.dotcms.contenttype.model.field.ImmutableTextAreaField;
@@ -25,7 +29,15 @@ import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
-import com.dotcms.datagen.*;
+import com.dotcms.datagen.ContentTypeDataGen;
+import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.FieldDataGen;
+import com.dotcms.datagen.FolderDataGen;
+import com.dotcms.datagen.LanguageDataGen;
+import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.TemplateDataGen;
+import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
@@ -3567,6 +3579,129 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
 
         final ResultData data = result.data().orElse(null);
         assertNotNull(data);
+    }
+
+
+    /**
+     * Method to test: {@link ImportUtil#importFile(Long, String, String, String[], boolean, boolean, User, long, String[], CsvReader, int, int, Reader, String, HttpServletRequest)}
+     * Given scenario: We try to import a file with different errors e.g. missing required fields, invalid date formats, etc.
+     * Expected behavior: The import should fail with appropriate error messages for each error
+     * @throws DotSecurityException
+     * @throws DotDataException
+     * @throws IOException
+     */
+    @Test
+    public void TestMissingRequiredFieldErrorMessage()
+            throws DotSecurityException, DotDataException, IOException {
+
+        String contentTypeName = "TestMissingRequiredFieldErrorMessage_" + System.currentTimeMillis();
+        String contentTypeVarName = contentTypeName.replaceAll("_", "Var_");
+        com.dotcms.contenttype.model.field.Field titleField = new FieldDataGen()
+                .name("title")
+                .velocityVarName("title")
+                .type(TextField.class)
+                .next();
+        com.dotcms.contenttype.model.field.Field reqField = new FieldDataGen()
+                .name("req")
+                .velocityVarName("req")
+                .required(true)
+                .type(TextField.class)
+                .next();
+
+        com.dotcms.contenttype.model.field.Field dateTimeField = new FieldDataGen()
+                .name("dateTime")
+                .velocityVarName("dateTime")
+                .defaultValue(null)
+                .type(DateTimeField.class)
+                .next();
+
+        com.dotcms.contenttype.model.field.Field numericField = new FieldDataGen()
+                .name("numeric")
+                .velocityVarName("numeric")
+                .defaultValue(null)
+                .type(TextField.class)
+                .dataType(DataTypes.INTEGER)
+                .next();
+
+        ContentType contentType = new ContentTypeDataGen()
+                .name(contentTypeName)
+                .velocityVarName(contentTypeVarName)
+                .host(APILocator.systemHost())
+                .fields(List.of(titleField, reqField, dateTimeField, numericField))
+                .nextPersisted();
+
+        final ContentType saved = contentTypeApi.find(contentType.inode());
+        titleField = saved.fields().get(0);
+
+        final Reader reader = createTempFile("title,req,dateTime,numeric \r\n" +
+                "Title 1, ,14-05-2027,12" + "\r\n" +     // Missing required field here
+                "Title 2,lol,invalid-date,12" + "\r\n" + // Invalid date
+                "Title 3,lol,14-05-2027,Text" + "\r\n"   // Invalid number
+        );
+        final ImportResult result = importAndValidate(contentType, titleField, reader, false, 1, WORKFLOW_PUBLISH_ACTION_ID);
+
+        assertNotNull(result);
+        assertFalse(result.error().isEmpty());
+        final Optional<String> code1 = result.error().get(0).code();
+        assertTrue(code1.isPresent());
+        assertEquals(REQUIRED_FIELD_MISSING.name(),code1.get());
+
+        final Optional<String> code2 = result.error().get(1).code();
+        assertTrue(code2.isPresent());
+        assertEquals(INVALID_DATE_FORMAT.name(),code2.get());
+
+    }
+
+
+    /**
+     * Method to test: {@link ImportUtil#importFile(Long, String, String, String[], boolean, boolean, User, long, String[], CsvReader, int, int, Reader, String, HttpServletRequest)}
+     * Given scenario: We try to import a file with a valid binary image URL including query parameters
+     * Expected behavior: The import should NOT fail
+     * @throws DotSecurityException
+     * @throws DotDataException
+     * @throws IOException
+     */
+    @Test
+    public void TestImportBinaryImageExpectNoError()
+            throws DotSecurityException, DotDataException, IOException {
+
+        String contentTypeName = "TestImportBinaryImageErrorMessage_" + System.currentTimeMillis();
+        String contentTypeVarName = contentTypeName.replaceAll("_", "Var_");
+        com.dotcms.contenttype.model.field.Field titleField = new FieldDataGen()
+                .name("title")
+                .velocityVarName("title")
+                .type(TextField.class)
+                .next();
+        com.dotcms.contenttype.model.field.Field reqField = new FieldDataGen()
+                .name("bin")
+                .velocityVarName("bin")
+                .required(true)
+                .type(BinaryField.class)
+                .next();
+
+        ContentType contentType = new ContentTypeDataGen()
+                .name(contentTypeName)
+                .velocityVarName(contentTypeVarName)
+                .host(APILocator.systemHost())
+                .fields(List.of(titleField, reqField))
+                .nextPersisted();
+
+        final ContentType saved = contentTypeApi.find(contentType.inode());
+        titleField = saved.fields().get(0);
+
+        final Reader reader = createTempFile("title,bin \r\n" +
+                "Company Logo, https://www.dotcms.com/assets/logo.svg?w=3840 " + "\r\n" +
+                "Non-Existing file path, /fake/path" + "\r\n" +
+                "Non-Existing url, https://demo.dotcms.com/lol.jpg" + "\r\n"
+        );
+        final ImportResult result = importAndValidate(contentType, titleField, reader, false, 1, WORKFLOW_PUBLISH_ACTION_ID);
+
+        assertNotNull(result);
+        assertFalse(result.error().isEmpty());
+        assertTrue(result.error().get(0).code().isPresent());
+        assertEquals(INVALID_BINARY_URL.name(), result.error().get(0).code().get());
+        assertTrue(result.error().get(1).code().isPresent());
+        assertEquals(INVALID_BINARY_URL.name(), result.error().get(1).code().get());
     }
 
 }

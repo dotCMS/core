@@ -1,5 +1,9 @@
 package com.dotcms.rest.api.v1.user;
 
+/**
+ * User Deleted view
+ * @author jsanca
+ */
 public class UserDeletedView {
 
     private final String status;
