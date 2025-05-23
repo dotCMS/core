@@ -13,7 +13,7 @@ export const routes: Routes = [
     },
     {
         path: 'blog/index',
-        component: BlogListingComponent
+        redirectTo: 'blog'
     },
     {
         path: '**',
