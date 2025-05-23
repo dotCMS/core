@@ -3719,6 +3719,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             CacheLocator.getHTMLPageCache().remove(contentlet.getInode());
         }
+        final Set<String> inodes = Stream.of(contentlet).map(Contentlet::getInode).collect(Collectors.toSet());
+        updateModDate(inodes, user);
         invalidateLanguageVariableCache(contentlet);
         HibernateUtil.addCommitListener(
                 () -> this.contentletSystemEventUtil.pushArchiveEvent(workingContentlet), 1000);
@@ -4153,6 +4155,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             this.cleanFileAssetCache(contentlet, user, false);
         }
+
+        final Set<String> inodes = Stream.of(contentlet).map(Contentlet::getInode).collect(Collectors.toSet());
+        updateModDate(inodes, user);
 
         invalidateLanguageVariableCache(contentlet);
 
