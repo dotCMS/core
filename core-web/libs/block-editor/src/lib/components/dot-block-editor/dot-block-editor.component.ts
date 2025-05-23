@@ -33,7 +33,7 @@ import { Underline } from '@tiptap/extension-underline';
 import { Youtube } from '@tiptap/extension-youtube';
 import StarterKit, { StarterKitOptions } from '@tiptap/starter-kit';
 
-import { DotPropertiesService, DotAiService, DotMessageService } from '@dotcms/data-access';
+import { DotAiService, DotMessageService, DotPropertiesService } from '@dotcms/data-access';
 import {
     DotCMSContentlet,
     DotCMSContentTypeField,
@@ -60,7 +60,8 @@ import {
     DotTableHeaderExtension,
     DragHandler,
     FREEZE_SCROLL_KEY,
-    FreezeScroll
+    FreezeScroll,
+    IndentExtension
 } from '../../extensions';
 import { DotPlaceholder } from '../../extensions/dot-placeholder/dot-placeholder-plugin';
 import { AIContentNode, ContentletBlock, ImageNode, LoaderNode, VideoNode } from '../../nodes';
@@ -457,7 +458,8 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
             TableRow,
             FreezeScroll,
             CharacterCount,
-            AssetUploader(this.#injector, this.viewContainerRef)
+            AssetUploader(this.#injector, this.viewContainerRef),
+            IndentExtension
         ];
 
         if (isAIPluginInstalled) {
