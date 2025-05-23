@@ -84,7 +84,7 @@ public class StaticDependencyBundler implements IBundler {
         List<String> includes = (config.getIncludePatterns() == null) ? new ArrayList<>() : config.getIncludePatterns();
         Set<Host> hosts = (config.getHosts() == null) ? new HashSet<>() : new HashSet<>(config.getHosts());
         Set<String> languages = config.getLanguages();
-
+        Set<String> folders = config.getFolders();
         if (languages == null || languages.isEmpty()) {
             for (Language l : languageAPI.getLanguages()) {
                 languages.add(l.getId() + "");
@@ -108,6 +108,7 @@ public class StaticDependencyBundler implements IBundler {
                 hosts.add(h);
 
                 includes.add(folder.getPath() + "*");
+                folders.add(folder.getIdentifier());
                 //If Asset is CONTENTLET
             } else{
                 // everything care about is going to have an id
@@ -142,6 +143,7 @@ public class StaticDependencyBundler implements IBundler {
         config.setHosts(Lists.newArrayList(hosts));
         config.setIncludePatterns(includes);
         config.setLanguages(languages);
+        config.setFolders(folders);
     }
 
     @Override

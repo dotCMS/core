@@ -424,6 +424,7 @@ public class StaticPublisher extends Publisher {
         list.add(BinaryExporterBundler.class);
         list.add(CSSExporterBundler.class);
         list.add(ShortyBundler.class);
+        list.add(StaticFolderBundler.class);
 
         return list;
     } //getBundlers.
