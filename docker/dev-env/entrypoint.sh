@@ -3,14 +3,15 @@
 ASSETS_BACKUP_FILE=/data/assets.zip
 DB_BACKUP_FILE=/data/dotcms_db.sql.gz
 STARTER_ZIP=/data/starter.zip
-DEV_LICENSE_SRC=/srv/dev_licensepack.zip
-DEV_LICENSE_DEST=/data/shared/assets/licensepack.zip
 export JAVA_HOME=/java
 export ES_JAVA_OPTS=${ES_JAVA_OPTS:-"-Xmx512m"}
 export DOTCMS_CLONE_TYPE=${DOTCMS_CLONE_TYPE:-"dump"}
-export DOWNLOAD_ALL_ASSETS=${ALL_ASSETS:-"false"}
+export ALL_ASSETS=${ALL_ASSETS:-"false"}
+export MAX_ASSET_SIZE=${MAX_ASSET_SIZE:-"100mb"}
 export PG_VERSION=${PG_VERSION:-"16"}
 export PATH=$PATH:$JAVA_HOME/bin:/usr/local/pgsql/bin:/usr/lib/postgresql/$PG_VERSION/bin/
+
+
 
 setup_postgres () {
     echo "Starting Postgres Database"
@@ -70,7 +71,7 @@ pull_dotcms_starter_zip () {
     if [ ! -f "$STARTER_ZIP" ]; then
         su -c "rm -rf $STARTER_ZIP.tmp"
         echo "- Downloading Starter"
-        su -c "wget --no-check-certificate --header=\"$AUTH_HEADER\" -t 1 -O $STARTER_ZIP.tmp  $DOTCMS_SOURCE_ENVIRONMENT/api/v1/maintenance/_downloadStarterWithAssets\?oldAssets=$DOWNLOAD_ALL_ASSETS" dotcms
+        su -c "wget --no-check-certificate --header=\"$AUTH_HEADER\" -t 1 -O $STARTER_ZIP.tmp  $DOTCMS_SOURCE_ENVIRONMENT/api/v1/maintenance/_downloadStarterWithAssets\?oldAssets=$ALL_ASSETS\&maxSize=$MAX_ASSET_SIZE" dotcms
         if [ -s $STARTER_ZIP.tmp ]; then
           su -c "mv $STARTER_ZIP.tmp $STARTER_ZIP"
           export DOT_STARTER_DATA_LOAD=$STARTER_ZIP
@@ -145,7 +146,7 @@ pull_dotcms_backups () {
     if [ ! -f "$ASSETS_BACKUP_FILE" ]; then
         su -c "rm -rf $ASSETS_BACKUP_FILE.tmp"
         echo "- Downloading ASSETS"
-        su -c "wget --no-check-certificate --header=\"$AUTH_HEADER\" -t 1 -O $ASSETS_BACKUP_FILE.tmp  $DOTCMS_SOURCE_ENVIRONMENT/api/v1/maintenance/_downloadAssets\?oldAssets=$DOWNLOAD_ALL_ASSETS " dotcms
+        su -c "wget --no-check-certificate --header=\"$AUTH_HEADER\" -t 1 -O $ASSETS_BACKUP_FILE.tmp  $DOTCMS_SOURCE_ENVIRONMENT/api/v1/maintenance/_downloadAssets\?oldAssets=$ALL_ASSETS\&maxSize=$MAX_ASSET_SIZE" dotcms
         if [ -s $ASSETS_BACKUP_FILE.tmp ]; then
           su -c "mv $ASSETS_BACKUP_FILE.tmp $ASSETS_BACKUP_FILE"
         else
@@ -210,29 +211,10 @@ start_dotcms () {
     . /srv/entrypoint.sh dotcms
 }
 
-## Moves the dev license to the correct location
-apply_license () {
-  if [ ! -f "$DEV_LICENSE_SRC" ]; then
-    echo "No Dev License found: skipping"
-    return 0
-  fi
-  if [  -f "$DEV_LICENSE_DEST" ]; then
-    echo "Dev License Already Present: skipping"
-    return 0
-  fi
 
-  if [ ! -d "/data/shared/assets" ]; then
-    mkdir -p /data/shared/assets
-  fi
-
-  mv $DEV_LICENSE_SRC $DEV_LICENSE_DEST
-  chown dotcms.dotcms $DEV_LICENSE_DEST
-  echo "Dev License Applied"
-}
 
 pull_dotcms_backups && echo ""
 setup_postgres && echo ""
 unpack_assets && echo ""
 setup_opensearch && echo ""
-apply_license && echo ""
 start_dotcms
