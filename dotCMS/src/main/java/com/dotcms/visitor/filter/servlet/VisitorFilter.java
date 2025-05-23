@@ -1,4 +1,3 @@
-
 package com.dotcms.visitor.filter.servlet;
 
 import com.dotcms.enterprise.LicenseUtil;
@@ -25,6 +24,8 @@ import com.dotmarketing.util.Logger;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
@@ -37,9 +38,13 @@ import javax.servlet.http.HttpServletResponse;
 
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
+import org.glassfish.hk2.api.MultiException;
 
 public class VisitorFilter implements Filter {
 
+    private static final String SERVICE_LOCATOR_SHUTDOWN_PATTERN = 
+            ".*DotServiceLocatorImpl\\(__HK2_Generated_\\d+,\\d+,\\d+\\) has been shut down.*";
+    private static final Pattern SERVICE_LOCATOR_PATTERN = Pattern.compile(SERVICE_LOCATOR_SHUTDOWN_PATTERN);
 
     private final CMSUrlUtil urlUtil;
 
@@ -69,6 +74,38 @@ public class VisitorFilter implements Filter {
         Logger.info(this.getClass(), "VisitorLogger Filter Started");
     }
 
+    /**
+     * Check if the exception is a service locator shutdown exception
+     * 
+     * @param exception The exception to check
+     * @return true if the exception is a service locator shutdown
+     */
+    private boolean isServiceLocatorShutdownException(Throwable exception) {
+        if (exception == null) {
+            return false;
+        }
+        
+        // Check if this is a MultiException with a single cause
+        if (exception instanceof MultiException) {
+            MultiException multiException = (MultiException) exception;
+            if (multiException.getErrors() != null && multiException.getErrors().size() == 1) {
+                return isServiceLocatorShutdownException(multiException.getErrors().get(0));
+            }
+        }
+        
+        // Check if this is an IllegalStateException with the right message
+        if (exception instanceof IllegalStateException) {
+            String message = exception.getMessage();
+            if (message != null) {
+                Matcher matcher = SERVICE_LOCATOR_PATTERN.matcher(message);
+                return matcher.matches();
+            }
+        }
+        
+        // Check the cause recursively
+        return isServiceLocatorShutdownException(exception.getCause());
+    }
+
     public void doFilter(final ServletRequest req, final ServletResponse res, final FilterChain chain)
             throws IOException, ServletException {
 
@@ -84,6 +121,14 @@ public class VisitorFilter implements Filter {
                         System.currentTimeMillis() - startTime);
                 VisitorLogger.log(request, response);
             } catch (Exception e) {
+                // Check if this is a service locator shutdown exception, which we can safely ignore during undeployment
+                if (isServiceLocatorShutdownException(e)) {
+                    Logger.info(this.getClass(), 
+                        "ServiceLocator shutdown exception caught and handled during OSGI plugin undeploy: " + e.getMessage());
+                    return;
+                }
+                
+                // For all other exceptions, log and continue with normal error handling
                 Logger.error(this.getClass(), e.getMessage(), e);
                 return;
             } finally {

@@ -343,3 +343,161 @@ Remember:
 - Include mock files (*.mock.ts) when needed
 - Group related mocks in a `__mocks__` directory
 - Use `__tests__` directory for complex test scenarios
+
+# DotCMS Unit Test Guide
+
+This guide provides instructions for running and writing unit tests for the DotCMS multi-module Maven project.
+
+## Running Unit Tests
+
+### Basic Test Commands
+
+Always use the Maven wrapper (`mvnw`):
+
+```bash
+# Run all tests
+./mvnw clean test
+
+# Run tests in a specific module
+./mvnw -pl :dotcms-core test
+
+# Run a specific test class
+./mvnw -pl :dotcms-core test -Dtest=MyTestClass
+
+# Run a specific test method
+./mvnw -pl :dotcms-core test -Dtest=MyTestClass#myTestMethod
+
+# Skip tests
+./mvnw -DskipTests clean install
+```
+
+### Integration Tests
+
+```bash
+# Run core integration tests
+./mvnw -pl :dotcms-integration verify -Dcoreit.test.skip=false
+
+# Run Postman tests
+./mvnw -pl :dotcms-postman verify -Dpostman.test.skip=false
+
+# Run Karate tests
+./mvnw -pl :dotcms-test-karate verify -Dkarate.test.skip=false
+```
+
+### E2E Tests
+
+```bash
+# Run E2E Java tests
+./mvnw -pl :dotcms-e2e-java verify -De2e.test.skip=false
+
+# Run E2E Node tests
+./mvnw -pl :dotcms-e2e-node verify -De2e.test.skip=false
+
+# Run specific E2E Node tests
+./mvnw -pl :dotcms-e2e-node verify -De2e.test.skip=false -De2e.test.specific="login.spec.ts"
+```
+
+### Just Commands for Testing
+
+If you have `just` installed:
+
+```bash
+# Full test suite
+just build-test
+
+# Integration tests
+just test-integration
+
+# Postman tests
+just test-postman collections='ai'
+
+# Karate tests
+just test-karate
+
+# E2E tests
+just test-e2e-java
+just test-e2e-node
+```
+
+## Debug Testing
+
+### Debug Integration Tests
+
+```bash
+# Debug with suspended execution
+just test-integration-debug-suspend
+
+# Or using mvnw directly
+./mvnw -pl :dotcms-integration verify -Dcoreit.test.skip=false -Pdebug-suspend
+```
+
+### Debug E2E Tests
+
+```bash
+# Debug Java E2E tests
+just test-e2e-java-debug-suspend
+
+# Debug Node E2E tests with UI mode
+just test-e2e-node-debug-ui test="login.spec.ts"
+
+# Debug Node E2E tests with inspector
+just test-e2e-node-debug test="login.spec.ts"
+```
+
+## Test Environment Setup
+
+```bash
+# Prepare for running integration tests in an IDE
+just test-integration-ide
+
+# Prepare for running Postman tests in an IDE
+just test-postman-ide
+
+# Prepare for running Karate tests in an IDE
+just test-karate-ide
+```
+
+## Best Practices for Writing Tests
+
+1. Follow the standard Maven test directory structure:
+   - Unit tests: `src/test/java`
+   - Integration tests: In the dedicated integration test modules
+
+2. Use appropriate test naming conventions:
+   - Unit test classes should end with `Test`
+   - Integration test classes should end with `IT`
+
+3. Keep tests independent:
+   - Don't rely on test execution order
+   - Clean up resources after tests
+
+4. Write focused tests:
+   - Test one behavior per test method
+   - Use descriptive test method names
+
+5. Use test fixtures and utilities:
+   - Reuse test setup code
+   - Leverage existing test utilities
+
+## JMeter Performance Tests
+
+```bash
+# Run JMeter tests
+just run-jmeter-tests
+
+# Or using mvnw
+./mvnw verify -Djmeter.test.skip=false -pl :dotcms-test-jmeter
+```
+
+## Stopping Test Environments
+
+```bash
+# Stop integration test services
+just test-integration-stop
+
+# Stop Postman test services
+just postman-stop
+
+# Stop E2E test services
+just test-e2e-stop
+```
