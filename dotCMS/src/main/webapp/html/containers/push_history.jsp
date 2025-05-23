@@ -45,15 +45,19 @@
 	}
 
     let isBringBack = false;
+    const message = '<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "folder.replace.container.working.version"))%>'
     function bringBackTemplateVersion(inode){
-        if(!isBringBack && confirm('<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "folder.replace.container.working.version"))%>')){
+        if(!isBringBack && confirm(message)){
+
             setIsBringBack(true);
+
             fetch(`/api/v1/versionables/${inode}/_bringback`, {
                 method: 'PUT'
             })
             .then(response => response.json())
             .then(({ entity }) => {
                 const customEvent = document.createEvent('CustomEvent');
+
                 customEvent.initCustomEvent('ng-event', false, false, {
                     name: 'bring-back-version',
                     data: {
@@ -62,12 +66,20 @@
                         type: 'container'
                     }
                 })
+
                 document.dispatchEvent(customEvent);
+
+
+
             })
             .catch((error) => {
                 console.error('Error bringing back version: ', error);
             })
-            .finally(() => setIsBringBack(false));
+            .finally(() => {
+                setIsBringBack(false)
+                // Redirect in the top window
+                window.top.location.href = `/dotAdmin/#/containers`;
+            });
         }
     }
 
