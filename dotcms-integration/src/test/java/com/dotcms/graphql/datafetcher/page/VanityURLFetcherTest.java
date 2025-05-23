@@ -9,6 +9,7 @@ import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.graphql.DotGraphQLContext;
 import com.dotcms.util.FiltersUtil;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotcms.vanityurl.model.CachedVanityUrl;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
@@ -153,4 +154,38 @@ public class VanityURLFetcherTest {
         assertNull(cachedVanityUrl);
     }
 
+    /**
+     * MethodToTest: {@link VanityURLFetcher#get(DataFetchingEnvironment)}
+     * Given Scenario: Context already includes a cached vanity URL
+     * Expected Result: Should return the cached vanity URL without resolving it again
+     */
+    @Test
+    public void testGet_WithCachedVanityUrlInContext() throws Exception {
+        final var fetcher = new VanityURLFetcher();
+
+        final var environment = Mockito.mock(DataFetchingEnvironment.class);
+        final var preCachedVanityUrl = new CachedVanityUrl(
+                "vanity-123",
+                "/pre-cached-url",
+                defaultLanguage.getId(),
+                defaultHost.getIdentifier(),
+                "/forwarded-destination",
+                301,
+                1
+        );
+
+        final var context = DotGraphQLContext.createServletContext()
+                .with(APILocator.systemUser())
+                .build();
+        context.addParam("cachedVanityUrl", preCachedVanityUrl);
+
+        Mockito.when(environment.getContext()).thenReturn(context);
+        Mockito.when(environment.getSource()).thenReturn(TestDataUtils.getPageContent(true, defaultLanguage.getId()));
+
+        final var cachedVanityUrl = fetcher.get(environment);
+        assertNotNull(cachedVanityUrl);
+        assertEquals("/pre-cached-url", cachedVanityUrl.url);
+        assertEquals("/forwarded-destination", cachedVanityUrl.forwardTo);
+        assertEquals(301, cachedVanityUrl.response);
+    }
 }

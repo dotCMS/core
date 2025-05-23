@@ -1,11 +1,15 @@
 package com.dotcms.graphql.datafetcher.page;
 
+import com.dotcms.contenttype.model.type.ImmutablePageContentType;
 import com.dotcms.graphql.DotGraphQLContext;
 import com.dotcms.graphql.exception.PermissionDeniedGraphQLException;
 import com.dotcms.rest.api.v1.page.PageResource;
-import com.dotcms.variant.VariantAPI;
+import com.dotcms.vanityurl.business.VanityUrlAPI;
+import com.dotcms.vanityurl.model.CachedVanityUrl;
+import com.dotcms.vanityurl.model.VanityUrlResult;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.transform.DotContentletTransformer;
@@ -15,6 +19,7 @@ import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRend
 import com.dotmarketing.portlets.htmlpageasset.business.render.PageContext;
 import com.dotmarketing.portlets.htmlpageasset.business.render.PageContextBuilder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.rules.business.RulesEngine;
 import com.dotmarketing.portlets.rules.model.Rule.FireOn;
 import com.dotmarketing.util.DateUtil;
@@ -31,6 +36,7 @@ import java.time.Instant;
 import java.util.Date;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.util.Optional;
 
 /**
  * This DataFetcher returns a {@link HTMLPageAsset} given an URL. It also takes optional parameters
@@ -102,11 +108,42 @@ public class PageDataFetcher implements DataFetcher<Contentlet> {
                 }
             }
 
+            // Vanity URL resolution
+            String resolvedUri = url;
+            final Language language = UtilMethods.isSet(languageId) ?
+                    APILocator.getLanguageAPI().getLanguage(languageId) : APILocator.getLanguageAPI().getDefaultLanguage();
+            final Host host = WebAPILocator.getHostWebAPI().getHost(request);
+
+            final Optional<CachedVanityUrl> cachedVanityUrlOpt = APILocator.getVanityUrlAPI()
+                    .resolveVanityUrl(url, host, language);
+
+            if (cachedVanityUrlOpt.isPresent()) {
+                response.setHeader(VanityUrlAPI.VANITY_URL_RESPONSE_HEADER,
+                        cachedVanityUrlOpt.get().vanityUrlId);
+
+                // Store the CachedVanityUrl in the context
+                context.addParam("cachedVanityUrl", cachedVanityUrlOpt.get());
+
+                if (cachedVanityUrlOpt.get().isTemporaryRedirect() || 
+                    cachedVanityUrlOpt.get().isPermanentRedirect()) {
+                    // For redirects, return an empty page with vanity URL info
+                    final Contentlet emptyPage = new Contentlet();
+                    emptyPage.setLanguageId(language.getId());
+                    emptyPage.setHost(host.getIdentifier());
+                    return emptyPage;
+                } else {
+                    // For forwards, use the resolved URI
+                    final VanityUrlResult vanityUrlResult = cachedVanityUrlOpt.get()
+                            .handle(url);
+                    resolvedUri = vanityUrlResult.getRewrite();
+                }
+            }
+
             Logger.debug(this, ()-> "Fetching page for URL: " + url);
 
             final PageContext pageContext = PageContextBuilder.builder()
                     .setUser(user)
-                    .setPageUri(url)
+                    .setPageUri(resolvedUri)
                     .setPageMode(mode)
                     .setGraphQL(true)
                     .build();
@@ -130,6 +167,8 @@ public class PageDataFetcher implements DataFetcher<Contentlet> {
             final HTMLPageAsset pageAsset = pageUrl.getHTMLPage();
             context.addParam("page", pageAsset);
             pageAsset.getMap().put("URLMapContent", pageUrl.getUrlMapInfo());
+
+
             if(fireRules) {
                 Logger.info(this, "Rules will be fired");
                 request.setAttribute("fireRules", true);
