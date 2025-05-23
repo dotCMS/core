@@ -1,9 +1,45 @@
-<p-calendar
-    [formControlName]="field.variable"
-    [timeOnly]="calendarOptions[field.fieldType].timeOnly"
-    [showTime]="calendarOptions[field.fieldType].showTime"
-    [id]="'calendar-id-' + field.variable"
-    [inputId]="field.variable"
-    [attr.data-testId]="field.variable"
-    [showIcon]="true"
-    [icon]="calendarOptions[field.fieldType].icon" />
+@let field = $field();
+@let fieldTypeConfig = $fieldTypeConfig();
+@let systemTimezone = $systemTimezone();
+@let defaultDate = $defaultDate();
+@let showHints = systemTimezone || $showSystemTimezoneLabel();
+
+<div class="w-full" data-testid="calendar-field-container">
+    <p-calendar
+        class="w-full"
+        [formControlName]="field.variable"
+        [timeOnly]="fieldTypeConfig.timeOnly"
+        [showTime]="fieldTypeConfig.showTime"
+        [id]="'calendar-id-' + field.variable"
+        [inputId]="field.variable"
+        [attr.data-testid]="'calendar-input-' + field.variable"
+        [showIcon]="true"
+        [icon]="fieldTypeConfig.icon"
+        [showButtonBar]="true"
+        [dataType]="'string'"
+        [defaultDate]="defaultDate"
+        [attr.aria-label]="field.name"
+        [attr.aria-describedby]="field.hint ? 'hint-' + field.variable : null" />
+
+    @if (showHints) {
+        <div
+            class="flex justify-content-between align-items-center"
+            data-testid="calendar-field-hints">
+            <div class="flex-grow-1">
+                @if (field.hint) {
+                    <small
+                        id="hint-{{ field.variable }}"
+                        [attr.data-testId]="'hint-' + field.variable"
+                        data-testid="calendar-field-hint">
+                        {{ field.hint }}
+                    </small>
+                }
+            </div>
+            @if (systemTimezone && $showSystemTimezoneLabel()) {
+                <small data-testid="calendar-field-timezone" role="status" aria-live="polite">
+                    {{ systemTimezone.label }}
+                </small>
+            }
+        </div>
+    }
+</div>
