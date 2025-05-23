@@ -1,12 +1,15 @@
 # dotCMS Client SDK
 
-The `@dotcms/client` is a JavaScript/TypeScript library for interacting with a dotCMS instance. It provides a streamlined, promise-based interface to fetch pages, content, and navigation information in JSON format.
+The `@dotcms/client` is a powerful JavaScript/TypeScript SDK that unlocks the full potential of dotCMS in your applications. Build dynamic pages, manage content, and create engaging experiences with an intuitive API that makes working with dotCMS content seamless and type-safe.
 
 ## Table of Contents
 
+* [What Is It?](#what-is-it)
+* [Prerequisites & Setup](#prerequisites--setup)
+  * [dotCMS Instance](#dotcms-instance)
+  * [Create a dotCMS API Key](#create-a-dotcms-api-key)
 * [Quickstart](#quickstart)
 * [Example Projects](#example-projects)
-* [What Is It?](#what-is-it)
 * [Installation](#installation)
 * [Key Concepts](#key-concepts)
 * [API Reference](#api-reference)
@@ -14,11 +17,70 @@ The `@dotcms/client` is a JavaScript/TypeScript library for interacting with a d
   * [Page API](#page-api)
   * [Content API](#content-api)
   * [Navigation API](#navigation-api)
-* [Common Use Cases](#common-use-cases)
-* [FAQ](#faq)
+* [Best Practices](#best-practices)
+  * [Fetching Content and Navigation](#fetching-content-and-navigation)
+  * [Page and Content Types](#page-and-content-types)
 * [dotCMS Support](#dotcms-support)
 * [How To Contribute](#how-to-contribute)
 * [Licensing Information](#licensing-information)
+
+## What Is It?
+
+The `@dotcms/client` SDK solves the complexity of integrating dotCMS content into your applications. Whether you need to build a dynamic website, create a content-driven app, or manage your content programmatically, this SDK is your solution.
+
+### When to Use It:
+- Building headless frontends that need dotCMS content
+- Creating server-side applications that manage content
+- Developing multi-language or personalized experiences
+- Implementing dynamic navigation and page structures
+- Automating content workflows and operations
+
+### Key Benefits:
+- **Simplified Development**: Write less code with intuitive methods and builders
+- **Type Safety**: Built-in TypeScript definitions prevent runtime errors
+- **Universal Compatibility**: Works in both browser and Node.js environments
+- **Performance Optimized**: Built-in caching and efficient data fetching
+- **Security First**: Handles authentication and requests securely
+- **Developer Experience**: Rich autocompletion and documentation
+
+No more wrestling with complex REST APIs or managing authentication flows, the SDK handles the heavy lifting so you can focus on building great experiences.
+
+## Prerequisites & Setup
+
+### dotCMS Instance
+
+#### Version Requirements
+- **Recommended**: dotCMS Evergreen
+- **Minimum**: dotCMS v25.05
+- **Best Experience**: Latest Evergreen release
+
+#### Getting an Instance
+
+**For Production Use:**
+- ☁️ [Cloud hosting options](https://www.dotcms.com/pricing) - managed solutions with SLA
+- 🛠️ [Self-hosted options](https://dev.dotcms.com/docs/current-releases) - deploy on your infrastructure
+
+**For Testing & Development:**
+- 📝 [dotCMS demo site](https://dev.dotcms.com/docs/demo-site) - perfect for trying out the SDK
+- 📝 Read-only access, ideal for building proof-of-concepts
+
+**For Local Development:**
+- 🐳 [Docker setup guide](https://github.com/dotCMS/core/tree/main/docker/docker-compose-examples/single-node-demo-site)
+- 💻 [Local installation guide](https://dev.dotcms.com/docs/quick-start-guide)
+
+### Create a dotCMS API Key
+
+> [!TIP]
+> Make your API Token had read-only permissions for Pages, Folders, Assets, and Content. Using a key with minimal permissions follows security best practices.
+
+This integration requires an API Key with read-only permissions for security best practices:
+
+1. Go to the **dotCMS admin panel**.
+2. Click on **System** > **Users**.
+3. Select the user you want to create the API Key for.
+4. Go to **API Access Key** and generate a new key.
+
+For detailed instructions, please refer to the [dotCMS API Documentation - Read-only token](https://dev.dotcms.com/docs/rest-api-authentication#ReadOnlyToken).
 
 ## Quickstart
 
@@ -55,18 +117,6 @@ While there isn't a dedicated example project specifically for the client SDK, y
 
 These examples demonstrate how to use the client SDK as part of a complete web application.
 
-## What Is It?
-
-The `@dotcms/client` library serves as a specialized connector between your applications and dotCMS. This SDK:
-
-- **Simplifies API interactions** with dotCMS by providing intuitive methods and builders
-- **Handles authentication and requests** securely across all API endpoints
-- **Works universally** in both browser-based applications and Node.js environments
-- **Abstracts complexity** of the underlying REST APIs into developer-friendly interfaces
-- **Provides type definitions** for enhanced developer experience and code completion
-
-Whether you're building a headless frontend that consumes dotCMS content or a server-side application that needs to interact with your content repository, this client SDK eliminates boilerplate code and standardizes how you work with the dotCMS APIs.
-
 ## Installation
 
 ```bash
@@ -82,7 +132,7 @@ pnpm add @dotcms/client@next
 
 ### Dev Dependencies
 
-This package has the following dev dependencies:
+This package has the following dev dependencies for type definitions:
 
 | Dependency | Version | Description |
 |------------|---------|-------------|
@@ -106,12 +156,12 @@ The `@dotcms/client` package is compatible with:
 
 ## Key Concepts
 
-| Term | Description |
-|------|-------------|
-| `pageAsset` | The page data structure containing layout and content |
-| `contentlet` | A single piece of content in dotCMS |
-| `collection` | A group of contentlets of the same type |
-| `graphql` | Query language used to extend API responses |
+| Term | Description | Documentation |
+|------|-------------|---------------|
+| `pageAsset` | The page data structure containing layout and content | [Page API](https://dev.dotcms.com/docs/page-rest-api-layout-as-a-service-laas) |
+| `contentlet` | A single piece of content in dotCMS | [Content API](https://dev.dotcms.com/docs/content) |
+| `collection` | A group of contentlets of the same type | [Content API](https://dev.dotcms.com/docs/search) |
+| `graphql` | Query language used to extend API responses | [GraphQL](https://dev.dotcms.com/docs/graphql) |
 
 ## API Reference
 
@@ -126,8 +176,8 @@ The Client Initialization is the first step in using the dotCMS Client SDK. It a
 |--------|------|----------|-------------|
 | `dotcmsUrl` | string | ✅ | Your dotCMS instance URL |
 | `authToken` | string | ✅ | Authentication token |
-| `siteId` | string | ❌ | Site identifier |
-| `requestOptions` | object | ❌ | Additional fetch options |
+| `siteId` | string | ❌ | Site identifier (falls back to default site if not specified) |
+| `requestOptions` | RequestOptions | ❌ | Additional fetch options |
 
 **Usage:**
 
@@ -160,7 +210,6 @@ The [Page API](https://dev.dotcms.com/docs/page-rest-api-layout-as-a-service-laa
 | `languageId` | string\|number | ❌ | Site default | Language ID for content localization |
 | `personaId` | string | ❌ | — | ID of the persona for personalized content |
 | `fireRules` | boolean\|string | ❌ | false | Whether to execute rules set on the page |
-| `depth` | 0\|1\|2\|3 | ❌ | 0 | Depth of related content to retrieve via Relationship fields |
 | `publishDate` | string | ❌ | — | Publication date for the requested page |
 | `variantName` | string | ❌ | — | Name of the specific page variant to retrieve |
 | `graphql` | object | ❌ | — | GraphQL options for extending the response |
@@ -173,6 +222,14 @@ The [Page API](https://dev.dotcms.com/docs/page-rest-api-layout-as-a-service-laa
 | `content` | Record<string, string> | Named GraphQL queries to fetch additional content |
 | `variables` | Record<string, string> | Variables to use in GraphQL queries |
 | `fragments` | string[] | GraphQL fragments for reuse across queries |
+
+The GraphQL options allow you to create powerful, flexible queries that can fetch exactly the data you need in a single request. With GraphQL, you can:
+- Deeply traverse relationships between content
+- Combine multiple content types in a single query
+- Specify precise field selection to optimize response size
+- Use fragments for reusable query parts
+
+For detailed information about GraphQL capabilities, query syntax, and best practices, refer to the [official dotCMS GraphQL documentation](https://dev.dotcms.com/docs/graphql).
 
 **Usage:**
 
@@ -232,19 +289,19 @@ get<T extends DotCMSExtendedPageResponse = DotCMSPageResponse>(
 ### Content API
 
 **Overview:**
-The [Content API](https://dev.dotcms.com/docs/search) allows you to fetch content collections from dotCMS. It provides a builder pattern for constructing complex queries and filtering content based on various criteria.
+The Content API allows you to fetch content collections from dotCMS. It provides a builder pattern for constructing complex queries and filtering content based on various criteria.
 
 The `getCollection` method uses immutable patterns, so each method call returns a new instance. This means you can reuse partial queries by storing them before adding additional filters.
 
 **Builder Methods:**
 
-| Method | Description |
-|--------|-------------|
-| `query()` | Filter content |
-| `limit()` | Set page size |
-| `page()` | Set page number |
-| `sortBy()` | Order results |
-| `language()` | Set content language |
+| Method | Arguments | Description |
+|--------|-----------|-------------|
+| `query()` | `string` \| `BuildQuery` | Filter content using query builder |
+| `limit()` | `number` | Set page size |
+| `page()` | `number` | Set page number |
+| `sortBy()` | `SortBy[]` | Order results |
+| `language()` | `number \| string` | Set content language |
 
 **Usage:**
 
@@ -264,8 +321,10 @@ const blogs = await client.content
 **With TypeScript:**
 
 ```typescript
+import { DotCMSBasicContentlet } from '@dotcms/types';
+
 // Define your content type interface
-interface BlogPost {
+interface BlogPost extends DotCMSBasicContentlet {
     title: string;
     publishDate: string;
     author: string;
@@ -282,7 +341,7 @@ const response = await client.content
     .fetch();
 
 // Now you get full TypeScript support
-response.contentlets.forEach(post => {
+response.contentlets.forEach((post: BlogPost) => {
     console.log(post.title);       // TypeScript knows this exists
     console.log(post.author);      // TypeScript knows this exists
     console.log(post.tags.join(', ')); // Type-safe array access
@@ -311,87 +370,45 @@ const nav = await client.navigation.get('/', {
 | `depth` | number | Levels of children to include |
 | `languageId` | number | Navigation language |
 
-## Common Use Cases
+## Best Practices
 
-### Content Listing with Search
+### Fetching Content and Navigation
+
+While the Content and Navigation APIs can be called independently, it's recommended to fetch this data as part of your page requests using GraphQL options. This approach:
+
+- **Reduces API Calls**: Get all needed data in a single request
+- **Improves Performance**: Less network overhead and faster page loads
+- **Maintains Consistency**: Data is fetched at the same time as the page
 
 ```typescript
-// Initial content load
-const { content } = await client.page.get('/blog', {
+// ✅ Recommended: Single API call with GraphQL
+const { pageAsset, content } = await client.page.get('/about', {
     graphql: {
         content: {
-            featuredPosts: `
-                BlogCollection(limit: 5) {
-                    title
-                    urlTitle
-                }
-            `
+            blogs: 'BlogCollection(limit: 3) { ... }',
+            navigation: 'DotNavigation(uri: "/", depth: 2) { ... }'
         }
     }
 });
 
-// Handle search
-const searchResults = await client.content
-    .getCollection('Blog')
-    .query(qb => qb.field('title').contains(searchTerm))
-    .limit(10)
-    .fetch();
+// ❌ Not Recommended: Multiple separate API calls
+const { pageAsset } = await client.page.get('/about');
+const blogs = await client.content.getCollection('Blog').fetch();
+const nav = await client.navigation.get('/');
 ```
 
-### Multilingual Content
+Only use standalone API calls when you need to:
+- Fetch data independently from pages
+- Update content collections dynamically
+- Handle navigation changes without page reloads
 
-```typescript
-// Get page in different languages
-const spanishPage = await client.page.get('/about-us', {
-    languageId: '2'  // Spanish
-});
-
-const englishPage = await client.page.get('/about-us', {
-    languageId: '1'  // English
-});
-```
-
-## FAQ
-
-### How do I handle errors from the API?
-
-Use try/catch blocks and check response status:
-
-```typescript
-const getPage = async () => {
-    try {
-        return await client.page.get('/invalid-page');
-    } catch (error) {
-        console.error('Failed to fetch page: ', error.message);
-    }
-}
-```
-
-### How can I optimize performance?
-
-1. Use the cache option in requestOptions:
-```typescript
-import { createDotCMSClient } from '@dotcms/client/next';
-
-const client = createDotCMSClient({
-    dotcmsUrl: 'https://your-dotcms-instance.com',
-    authToken: 'your-auth-token',
-    siteId: 'your-site-id',
-    requestOptions: { cache: 'default' }
-});
-```
-
-2. Limit GraphQL queries to needed fields
-3. Use pagination for large collections
-4. Consider using the Content API separately for data not needed immediately
-
-### How to correctly type a page response?
+### Page and Content Types
 
 When using TypeScript, you can leverage generic types to get proper typing for your page and content data:
 
 ```typescript
 // Import the base DotCMS types
-import { DotCMSPageAsset } from '@dotcms/types';
+import { DotCMSPageAsset, DotCMSBasicContentlet } from '@dotcms/types';
 
 // Define the page structure by extending the base DotCMSPageAsset
 interface AboutUsPage extends DotCMSPageAsset {
@@ -401,7 +418,7 @@ interface AboutUsPage extends DotCMSPageAsset {
 }
 
 // Define interfaces for your content types
-interface BlogPost {
+interface BlogPost extends DotCMSBasicContentlet {
     title: string;
     identifier: string;
     urlTitle: string;
@@ -470,61 +487,6 @@ console.log(pageAsset.vanityUrl.url);        // TypeScript knows this exists
 console.log(content.blogPosts[0].title);     // TypeScript knows this exists
 console.log(content.teamMembers[0].position); // TypeScript knows this exists
 ```
-
-### How do I build complex content queries?
-
-The Content API provides a powerful builder pattern that allows you to create sophisticated queries with multiple conditions, sorting, and pagination:
-
-```typescript
-// Complex query combining multiple filters and options
-const response = await client.content
-    .getCollection('Blog')
-    .query(qb => 
-        qb.field('tags').contains('technology')
-          .and()
-          .parenthesis(
-              subQb => subQb.field('featured').equals('true')
-                    .or()
-                    .field('views').greaterThan('1000')
-          )
-    )
-    .sortBy([{ field: 'publishDate', order: 'desc' }])
-    .limit(5)
-    .page(1)
-    .language(1)
-    .depth(1)
-    .fetch();
-```
-
-This query demonstrates several features:
-- Nested conditions using `parenthesis()`
-- Logical operators (`and()`, `or()`)
-- Field comparisons (`contains`, `equals`, `greaterThan`)
-- Result ordering with `sortBy()`
-- Pagination with `limit()` and `page()`
-- Language filtering with `language()`
-- Relationship depth with `depth()`
-
-### How do I sort content using multiple fields?
-
-The Content API allows you to sort results using multiple field variables from your content type. Each field in the `sortBy` array corresponds to a field variable defined in your content type:
-
-```typescript
-// Sort blog posts by publish date (newest first) and then by title
-const response = await client.content
-    .getCollection('Blog')
-    .sortBy([
-        { field: 'publishDate', order: 'desc' },  // publishDate is a field variable in Blog content type
-        { field: 'title', order: 'asc' }         // title is a field variable in Blog content type
-    ])
-    .fetch();
-```
-
-Note that:
-- The `field` parameter must match a field variable name from your content type
-- Multiple sort criteria are applied in order (first by publishDate, then by title)
-- Each field can be sorted in ascending (`'asc'`) or descending (`'desc'`) order
-- This works with any field variable type (text, date, number, etc.)
 
 ## dotCMS Support
 
