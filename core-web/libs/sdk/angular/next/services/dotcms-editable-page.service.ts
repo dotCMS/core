@@ -16,16 +16,16 @@ export class DotCMSEditablePageService {
      * Used internally to track changes to the page data.
      *
      * @private
-     * @type {Subject<DotCMSPageResponse | null>}
+     * @type {Subject<DotCMSPageResponse | undefined>}
      */
-    #responseSubject = new Subject<DotCMSPageResponse | null>();
+    #responseSubject = new Subject<DotCMSPageResponse | undefined>();
 
     /**
      * Observable stream of the page asset changes.
      * Exposes the pageAssetSubject as an Observable for subscribers.
      *
      * @private
-     * @type {Observable<DotCMSPageResponse | null>}
+     * @type {Observable<DotCMSPageResponse | undefined>}
      */
     #response$ = this.#responseSubject.asObservable();
 
@@ -57,11 +57,11 @@ export class DotCMSEditablePageService {
      * ```
      *
      * @param response Optional initial page data
-     * @returns Observable that emits the updated page data or null
+     * @returns Observable that emits the updated page data or undefined
      */
-    listen(response?: DotCMSPageResponse): Observable<DotCMSPageResponse | null> {
+    listen(response?: DotCMSPageResponse): Observable<DotCMSPageResponse | undefined> {
         if (!getUVEState()) {
-            return of(response || null);
+            return of(response || undefined);
         }
 
         const pageURI = response?.pageAsset?.page?.pageURI ?? '/';

@@ -1,8 +1,8 @@
-import type { DotcmsNavigationItem } from "@dotcms/types";
+import type { DotCMSNavigationItem } from "@dotcms/types";
 import type { FC } from "react";
 
 export type NavigationProps = {
-  items?: DotcmsNavigationItem[];
+  items?: DotCMSNavigationItem[];
   className?: string;
 };
 

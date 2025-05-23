@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 
-import { DotCMSPageResponse, UVEEventType } from '@dotcms/types';
+import { DotCMSPageResponse, DotCMSComposedPageResponse, UVEEventType } from '@dotcms/types';
 import { getUVEState, initUVE, createUVESubscription, updateNavigation } from '@dotcms/uve';
 
 /**
@@ -91,9 +91,9 @@ import { getUVEState, initUVE, createUVESubscription, updateNavigation } from '@
  * @returns {DotCMSPageResponse} The updated editable page state that reflects any changes made in the UVE.
  * The structure includes page data and any GraphQL content that was requested.
  */
-export const useEditableDotCMSPage = (pageResponse: DotCMSPageResponse): DotCMSPageResponse => {
+export const useEditableDotCMSPage = (pageResponse: DotCMSComposedPageResponse): DotCMSComposedPageResponse => {
     const [updatedPageResponse, setUpdatedPageResponse] =
-        useState<DotCMSPageResponse>(pageResponse);
+        useState<DotCMSComposedPageResponse>(pageResponse);
 
     useEffect(() => {
         if (!getUVEState()) {
@@ -113,7 +113,7 @@ export const useEditableDotCMSPage = (pageResponse: DotCMSPageResponse): DotCMSP
     }, [pageResponse]);
 
     useEffect(() => {
-        const { unsubscribe } = createUVESubscription(UVEEventType.CONTENT_CHANGES, (payload) => {
+        const { unsubscribe } = createUVESubscription(UVEEventType.CONTENT_CHANGES, (payload: DotCMSComposedPageResponse) => {
             setUpdatedPageResponse(payload);
         });
 

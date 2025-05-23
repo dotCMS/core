@@ -1,5 +1,5 @@
 import { DotCmsClient, getPageRequestParams } from "@dotcms/client";
-import type { DotcmsNavigationItem, DotCMSPageAsset } from "@dotcms/types";
+import type { DotCMSNavigationItem, DotCMSPageAsset } from "@dotcms/types";
 
 export const client = DotCmsClient.init({
   authToken: import.meta.env.PUBLIC_DOTCMS_AUTH_TOKEN,
@@ -13,7 +13,7 @@ export const client = DotCmsClient.init({
 
 export type GetPageDataResponse = {
   pageAsset?: DotCMSPageAsset;
-  nav?: DotcmsNavigationItem;
+  nav?: DotCMSNavigationItem;
   error?: unknown;
 };
 
@@ -60,7 +60,7 @@ const fetchNavData = async (languageId = 1) => {
       path: "/",
       depth: 2,
       languageId,
-    })) as { entity: DotcmsNavigationItem };
+    })) as { entity: DotCMSNavigationItem };
 
     return { nav: entity };
   } catch (error) {
