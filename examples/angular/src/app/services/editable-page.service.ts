@@ -65,9 +65,12 @@ export class EditablePageService<T extends DotCMSExtendedPageResponse> {
                     return this.#pageService.getPageAsset<T>(url, fullParams);
                 })
             )
-            .subscribe(({ response, error }) => {
-                if (error && !getUVEState()) {
-                    this.#setError(error);
+            .subscribe((response) => {
+                if (response.errors && !getUVEState()) {
+                    this.#setError({
+                        message: response.errors.message,
+                        status: 'Error'
+                    });
                     return;
                 }
 

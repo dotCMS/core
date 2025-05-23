@@ -1,8 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { from, Observable, of } from 'rxjs';
-import { catchError, map } from 'rxjs/operators';
-
-import { getUVEState } from '@dotcms/uve';
+import { catchError } from 'rxjs/operators';
 
 import {
     DotCMSPageRequestParams,
@@ -11,13 +9,6 @@ import {
 } from '@dotcms/types';
 
 import { DOTCMS_CLIENT_TOKEN } from '../app.config';
-import { PageError } from '../shared/models';
-
-// We extend the DotCMSComposedPageResponse to add an error property
-export interface CustomPageResponse<T extends DotCMSExtendedPageResponse> {
-    response?: DotCMSComposedPageResponse<T>;
-    error?: PageError;
-}
 
 @Injectable({
     providedIn: 'root'
@@ -30,48 +21,21 @@ export class PageService {
      *
      * @param {string} url
      * @param {DotCMSPageRequestParams} params
-     * @return {*}  {Observable<DotCMSCustomPageResponse<TPage, TContent>>}
+     * @return {*}  {Observable<DotCMSComposedPageResponse<T>>}
      * @memberof PageService
      */
     getPageAsset<T extends DotCMSExtendedPageResponse>(
         url: string,
         params: DotCMSPageRequestParams
-    ): Observable<CustomPageResponse<T>> {
+    ): Observable<DotCMSComposedPageResponse<T>> {
         return from(
             this.client.page.get<T>(url, {
                 ...params
             })
         ).pipe(
-            map((response) => {
-                if (!response?.pageAsset?.layout) {
-                    return {
-                        error: {
-                            message:
-                                'You might be using an advanced template, or your dotCMS instance might lack an enterprise license.',
-                            status: 'Page without layout'
-                        }
-                    };
-                }
-
-                return {
-                    response
-                };
-            }),
-            catchError((error) => {
-                // If the page is not found and we are inside the editor, return an empty object
-                // The editor will get the working/unpublished page
-                if (error && getUVEState()) {
-                    return of({
-                        error,
-                        response: {
-                            graphql: error.graphql
-                        }
-                    } as CustomPageResponse<T>);
-                }
-
-                return of({
-                    error
-                } as CustomPageResponse<T>);
+            // To prevent the error from being swallowed by the pipe, we need to catch it
+            catchError((error: DotCMSComposedPageResponse<T>) => {
+                return of(error);
             })
         );
     }
