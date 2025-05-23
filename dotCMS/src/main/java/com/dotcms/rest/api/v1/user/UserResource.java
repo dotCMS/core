@@ -952,117 +952,6 @@ public class UserResource implements Serializable {
 	} // active.
 
 	/**
-	 * Activate an existing user.
-	 *
-	 * Only Admin User or have access to Users and Roles Portlets can update an existing user
-	 *
-	 * @param httpServletRequest
-	 * @return User Deleted
-	 * @throws Exception
-	 */
-	@Operation(summary = "Deletes an existing user.",
-			responses = {
-					@ApiResponse(
-							responseCode = "200",
-							content = @Content(mediaType = "application/json",
-									schema = @Schema(implementation =
-											ResponseUserMapEntityView.class)),
-							description = "If success returns a map with the user + user id."),
-					@ApiResponse(
-							responseCode = "403",
-							content = @Content(mediaType = "application/json",
-									schema = @Schema(implementation =
-											ResponseUserMapEntityView.class)),
-							description = "If the user is not an admin or access to the role + user layouts or does have permission, it will return a 403."),
-					@ApiResponse(
-							responseCode = "404",
-							content = @Content(mediaType = "application/json",
-									schema = @Schema(implementation =
-											ResponseUserMapEntityView.class)),
-							description = "If the user to update does not exist"),
-					@ApiResponse(
-							responseCode = "400",
-							content = @Content(mediaType = "application/json",
-									schema = @Schema(implementation =
-											ResponseUserMapEntityView.class)),
-							description = "If the user information is not valid"),
-			})
-	@DELETE
-	@Path("/{userId}")
-	@JSONP
-	@NoCache
-	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-	public final void delete(@Context final HttpServletRequest httpServletRequest,
-												  @Suspended final AsyncResponse asyncResponse,
-												  @PathParam("userId") @Parameter(
-														  required = true,
-														  description = "Identifier of an user.\n\n" +
-																  "Example value: `b9d89c80-3d88-4311-8365-187323c96436` ",
-														  schema = @Schema(type = "string"))
-												  final String userIdToDelete,
-												  @QueryParam("replacementUserId") @Parameter(
-														  required = true,
-														  description = "Identifier of an user.\n\n" +
-																  "Example value: `b9d89c80-3d88-4311-8365-187323c96436` ",
-														  schema = @Schema(type = "string"))
-													  final String replacementUserId)
-			throws Exception {
-
-		final User modUser = new WebResource.InitBuilder(webResource)
-				.requiredBackendUser(true)
-				.requiredFrontendUser(false)
-				.requestAndResponse(httpServletRequest, new EmptyHttpResponse())
-				.rejectWhenNoUser(true)
-				.init().getUser();
-
-		Logger.debug(this, ()-> "Deleting user " + userIdToDelete + " by the user id " + modUser.getUserId()
-				+ " will the replacement: " + replacementUserId);
-
-		final boolean isRoleAdministrator = modUser.isAdmin() ||
-				(
-						APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.ROLES.toString(), modUser) &&
-								APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.USERS.toString(), modUser)
-				);
-
-		if (isRoleAdministrator) {
-
-			final String finalReplacementUserId = Objects.nonNull(replacementUserId)?replacementUserId:modUser.getUserId();
-
-			Logger.debug(this, ()-> "Deleting user " + userIdToDelete + " replacement the user id " + finalReplacementUserId);
-
-			if (modUser.getUserId().equals(userIdToDelete)) {
-
-				throw new IllegalAccessException(USER_MSG + modUser.getUserId() + " can not remove itself");
-			}
-
-			final User userToUpdated = this.userAPI.loadUserById(userIdToDelete);
-			if (Objects.isNull(userToUpdated)) {
-
-				throw new NoSuchUserException("User with id " + userIdToDelete + " does not exist");
-			}
-
-			final User replacementUser = this.userAPI.loadUserById(finalReplacementUserId);
-			if (Objects.isNull(userToUpdated)) {
-
-				throw new BadRequestException("User replacement with id " + userIdToDelete + " does not exist");
-			}
-
-			ResponseUtil.handleAsyncResponse(() -> {
-				try {
-					this.userAPI.delete(userToUpdated, modUser, false);
-					return new ResponseUserDeletedEntityView(new UserDeletedView("success", userIdToDelete, finalReplacementUserId)); // 200
-				} catch (Exception e) {
-					asyncResponse.resume(ResponseUtil.mapExceptionResponse(e));
-				}
-				return null;
-			}, asyncResponse);
-
-		}
-
-		throw new ForbiddenException(USER_MSG + modUser.getUserId() + " does not have permissions to update users");
-	} // active.
-
-	/**
 	 * Deactivate an existing user.
 	 *
 	 * Only Admin User or have access to Users and Roles Portlets can update an existing user
@@ -1350,5 +1239,5 @@ public class UserResource implements Serializable {
 
 			throw new ForbiddenException(USER_MSG + modUser.getUserId() + " does not have permissions to update users");
 		}
-	} // active.
+	} // delete.
 }
