@@ -9,7 +9,7 @@ import { FooterComponent } from '../../shared/components/footer/footer.component
 import { DotCMSLayoutBodyComponent } from '@dotcms/angular/next';
 import { DotCMSPageAsset } from '@dotcms/types';
 import { EditablePageService } from '../../services/editable-page.service';
-import { DYNAMIC_COMPONENTS } from '../../shared/components';
+import { DYNAMIC_COMPONENTS } from '../../shared/dynamic-components';
 import { BASE_EXTRA_QUERIES } from '../../shared/queries';
 import { ExtraContent } from '../../shared/contentlet.model';
 import { PageState } from '../../shared/models';

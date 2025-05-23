@@ -29,7 +29,7 @@ export class EditContentletButtonComponent {
     uveMode = UVE_MODE;
 
     @HostBinding('class')
-    hostClass = 'absolute bottom-0 right-2 z-10';
+    hostClass = 'absolute bottom-2 right-2 z-10';
 
     editContentlet(contentlet: Contentlet) {
         editContentlet(contentlet);

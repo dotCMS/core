@@ -2,16 +2,7 @@ import { NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
 import { RouterLink } from '@angular/router';
-import { DotCMSBasicContentlet } from '@dotcms/types';
-
-interface ProductContentlet extends DotCMSBasicContentlet {
-    image?: {
-        versionPath: string;
-    };
-    salePrice: number;
-    retailPrice: number;
-    urlTitle: string;
-}
+import { Product } from '../../shared/contentlet.model';
 
 @Component({
     selector: 'app-product',
@@ -19,7 +10,7 @@ interface ProductContentlet extends DotCMSBasicContentlet {
     imports: [RouterLink, NgOptimizedImage],
     template: ` <div class="overflow-hidden bg-white rounded shadow-lg my-2">
         <div class="p-4">
-            @if (contentlet().image?.versionPath; as imageVersionPath) {
+            @if (contentlet().image.versionPath; as imageVersionPath) {
             <img
                 class="w-full"
                 [ngSrc]="imageVersionPath"
@@ -49,7 +40,7 @@ interface ProductContentlet extends DotCMSBasicContentlet {
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ProductComponent {
-    contentlet = input.required<ProductContentlet>();
+    contentlet = input.required<Product>();
 
     $salePrice = computed(() => this.formatPrice(this.contentlet().salePrice));
 

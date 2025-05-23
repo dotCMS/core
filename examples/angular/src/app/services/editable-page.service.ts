@@ -52,8 +52,8 @@ export class EditablePageService<T extends DotCMSExtendedPageResponse> {
                     // If the path is empty, use the root path
                     const url = path || '/';
 
-                    // Get the query params from the current route
-                    const queryParams = this.#activatedRoute.snapshot.queryParams;
+                    // Get the query params from the current route, avoid passing mode to let the UVE handle it
+                    const { mode, ...queryParams } = this.#activatedRoute.snapshot.queryParams;
 
                     // Combine the query params with the extra params
                     const fullParams = {
@@ -65,9 +65,12 @@ export class EditablePageService<T extends DotCMSExtendedPageResponse> {
                     return this.#pageService.getPageAsset<T>(url, fullParams);
                 })
             )
-            .subscribe(({ response, error }) => {
-                if (error) {
-                    this.#setError(error);
+            .subscribe((response) => {
+                if (response.errors && !getUVEState()) {
+                    this.#setError({
+                        message: response.errors.message,
+                        status: 'Error'
+                    });
                     return;
                 }
 

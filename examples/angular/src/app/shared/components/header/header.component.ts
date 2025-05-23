@@ -1,10 +1,11 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { ReorderButtonComponent } from '../reorder-button/reorder-button.component';
 
 @Component({
     selector: 'app-header',
     standalone: true,
-    imports: [ReorderButtonComponent],
+    imports: [ReorderButtonComponent, RouterLink],
     template: `
         <header class="flex items-center justify-between p-4 bg-red-400">
             <div class="flex items-center">

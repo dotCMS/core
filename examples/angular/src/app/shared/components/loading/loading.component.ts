@@ -1,10 +1,9 @@
 import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
 
 @Component({
     selector: 'app-loading',
     standalone: true,
-    imports: [CommonModule],
+    imports: [],
     template: `
         <div class="loading-container">
             <!-- Layout 1 -->
@@ -15,7 +14,9 @@ import { CommonModule } from '@angular/common';
                 <div class="loading-hero-cta"></div>
             </div>
             <div class="loading-articles">
-                <div class="loading-article" *ngFor="let i of [1, 2, 3, 4]"></div>
+                @for (i of [1, 2, 3, 4]; track i) {
+                <div class="loading-article"></div>
+                }
             </div>
             }
 
@@ -38,7 +39,9 @@ import { CommonModule } from '@angular/common';
             <!-- Layout 3 -->
             @if (selectedLayout === 3) {
             <div class="loading-card-grid">
-                <div class="loading-card" *ngFor="let i of [1, 2, 3, 4, 5, 6, 7, 8]"></div>
+                @for (i of [1, 2, 3, 4, 5, 6, 7, 8]; track i) {
+                <div class="loading-card"></div>
+                }
             </div>
             }
         </div>

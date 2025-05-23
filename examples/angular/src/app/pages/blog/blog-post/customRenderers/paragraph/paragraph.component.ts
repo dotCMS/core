@@ -1,11 +1,10 @@
-import { CommonModule } from '@angular/common';
 import { Component, Input, OnInit, signal } from '@angular/core';
 import { BlockEditorContent } from '@dotcms/types';
 
 @Component({
     selector: 'app-paragraph',
     standalone: true,
-    imports: [CommonModule],
+    imports: [],
     template: `
         <p>
             {{ $text() }}
