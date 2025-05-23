@@ -316,10 +316,9 @@ public class BundlePublisher extends Publisher {
      */
     private void untar(InputStream bundle, String path, String fileName) throws DotPublishingException {
         Logger.debug(BundlePublisher.class, "Untaring bundle: " + fileName);
-        TarArchiveEntry entry;
-        TarArchiveInputStream inputStream = null;
-        OutputStream outputStream = null;
         File baseBundlePath = new File(ConfigUtils.getBundlePath());
+        File outputDir = null;
+        
         try {
             //Clean the bundler folder if exist to clean dirty data
             String previousFolderPath = path.replace(fileName, "");
@@ -327,82 +326,43 @@ public class BundlePublisher extends Publisher {
             if (previousFolder.exists()) {
                 FileUtils.cleanDirectory(previousFolder);
             }
-            // get a stream to tar file
-            InputStream gstream = new GZIPInputStream(bundle);
-            inputStream =
-                new TarArchiveInputStream(gstream, TarBuffer.DEFAULT_BLKSIZE, TarBuffer.DEFAULT_RCDSIZE,
-                    UtilMethods.getCharsetConfiguration());
-
-            // For each entry in the tar, extract and save the entry to the file
-            // system
-            while (null != (entry = inputStream.getNextTarEntry())) {
-                // for each entry to be extracted
-                int bytesRead;
-
-                String pathWithoutName = path.substring(0, path.indexOf(fileName));
-                File fileOrDir = new File(pathWithoutName + entry.getName());
-                
-                // if the logFile is outside of of the logFolder, die
-                if ( !fileOrDir.getCanonicalPath().startsWith(baseBundlePath.getCanonicalPath())) {
-
-                    SecurityLogger.logInfo(this.getClass(),  "Invalid Bundle writing file outside of bundlePath"  );
-                    SecurityLogger.logInfo(this.getClass(),  " Bundle path "  + baseBundlePath );
-                    SecurityLogger.logInfo(this.getClass(),  " Evil File"  + fileOrDir );
-                    throw new DotPublishingException("Bundle trying to write outside of proper path:" + fileOrDir);
-                }
-                
-                
-                // if the entry is a directory, create the directory
-                if (entry.isDirectory()) {
-                    fileOrDir.mkdirs();
-                    continue;
-                }
-
-
-                
-                // We will ignore symlinks
-                if(entry.isLink() || entry.isSymbolicLink()){
-                  SecurityLogger.logInfo(this.getClass(),  "Invalid Bundle writing symlink (or some non-file) inside a bundle"  );
-                  SecurityLogger.logInfo(this.getClass(),  " Bundle path "  + baseBundlePath );
-                  SecurityLogger.logInfo(this.getClass(),  " Evil entry"  + entry );
-                  throw new DotPublishingException("Bundle contains a symlink:" + fileOrDir);
-                }
-
-                fileOrDir.getParentFile().mkdirs();
-
-                // write to file
-                byte[] buf = new byte[1024];
-                outputStream = Files.newOutputStream(fileOrDir.toPath());
-                while ((bytesRead = inputStream.read(buf, 0, 1024)) > -1) {
-                    outputStream.write(buf, 0, bytesRead);
-                }
-                try {
-                    if (null != outputStream) {
-                        outputStream.close();
-                    }
-                } catch (Exception e) {
-                    Logger.warn(this.getClass(), "Error Closing Stream.", e);
-                }
-            }// while
+            
+            // Create the output directory
+            outputDir = new File(path.substring(0, path.indexOf(fileName)));
+            
+            // Use TarUtil for safely extracting TAR.GZ files with proper path sanitization
+            com.dotmarketing.util.TarUtil.safeExtractTarGz(bundle, outputDir, com.dotmarketing.util.TarUtil.SuspiciousEntryHandling.ABORT);
+            
             Logger.debug(BundlePublisher.class, "Untaring bundle finished");
+        } catch (SecurityException e) {
+            // Enhanced security exception handling
+            SecurityLogger.logInfo(this.getClass(), 
+                "Security exception during bundle extraction: " + e.getMessage() + 
+                ". Bundle name: " + fileName);
+            
+            // Clean up partially extracted content for security
+            if (outputDir != null && outputDir.exists()) {
+                try {
+                    FileUtils.deleteDirectory(outputDir);
+                    Logger.info(BundlePublisher.class, 
+                        "Removed partially extracted content due to security violation for bundle: " + fileName);
+                } catch (IOException cleanupException) {
+                    Logger.error(BundlePublisher.class, 
+                        "Unable to clean up after security violation for bundle: " + fileName, cleanupException);
+                }
+            }
+            
+            throw new DotPublishingException("Security violation detected during bundle extraction: " + e.getMessage(), e);
+        } catch (IOException e) {
+            // Enhanced IO exception handling with more context
+            Logger.error(BundlePublisher.class, 
+                "IO error during bundle extraction: " + e.getMessage() + " - Bundle: " + fileName, e);
+            throw new DotPublishingException("Error extracting bundle: " + e.getMessage(), e);
         } catch (Exception e) {
-            throw new DotPublishingException(e.getMessage(),e);
-
-        } finally { // close your streams
-            if (inputStream != null) {
-                try {
-                    inputStream.close();
-                } catch (IOException e) {
-                    Logger.warn(this.getClass(), "Error Closing Stream.", e);
-                }
-            }
-            if (outputStream != null) {
-                try {
-                    outputStream.close();
-                } catch (IOException e) {
-                    Logger.warn(this.getClass(), "Error Closing Stream.", e);
-                }
-            }
+            // Generic error handling
+            Logger.error(BundlePublisher.class, 
+                "Unexpected error during bundle extraction: " + e.getMessage() + " - Bundle: " + fileName, e);
+            throw new DotPublishingException(e.getMessage(), e);
         }
     }
 

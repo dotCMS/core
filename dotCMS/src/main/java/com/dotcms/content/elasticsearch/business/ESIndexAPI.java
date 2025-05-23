@@ -33,6 +33,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.io.BufferedInputStream;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.net.URL;
 import java.nio.file.Files;
 import java.util.ArrayList;
@@ -118,6 +121,7 @@ public class ESIndexAPI {
     private  final String MAPPING_MARKER = "mapping=";
     private  final String JSON_RECORD_DELIMITER = "---+||+-+-";
     private static final ESMappingAPIImpl mappingAPI = new ESMappingAPIImpl();
+    private static final int SIZE = 8192; // 8KB buffer size for I/O operations
 
     public static final String BACKUP_REPOSITORY = "backup";
     private final String REPOSITORY_PATH = "path.repo";
@@ -281,12 +285,12 @@ public class ESIndexAPI {
 		}
 
 		BufferedWriter bw;
-		try (final ZipOutputStream zipOut = new ZipOutputStream(Files.newOutputStream(toFile.toPath()))){
-		    zipOut.setLevel(9);
-		    zipOut.putNextEntry(new ZipEntry(toFile.getName()));
+		try (final ZipOutputStream zipOut = ZipUtil.createZipOutputStream(toFile)) {
+		    // Use ABORT mode for generated entries since these are internal operations that should never have suspicious paths
+		    zipOut.putNextEntry(ZipUtil.createSafeZipEntry(toFile.getName(), ZipUtil.SuspiciousEntryHandling.ABORT));
 
 			bw = new BufferedWriter(
-			        new OutputStreamWriter(zipOut), 500000); // 500K buffer
+			        new OutputStreamWriter(zipOut), SIZE); // 8KB buffer
 
 			final String type=index.startsWith("sitesearch_") ? SiteSearchAPI.ES_SITE_SEARCH_MAPPING
 					: "content";
@@ -999,10 +1003,20 @@ public class ESIndexAPI {
 		String fileName = indexName + "_" + DateUtil.format(new Date(), "yyyy-MM-dd_hh-mm-ss");
 
 		File toZipFile = new File(toFile.getParent() + File.separator + fileName + ".zip");
-		try (ZipOutputStream zipOut = new ZipOutputStream(Files.newOutputStream(toZipFile.toPath()))) {
-			ZipUtil.zipDirectory(toFile.getAbsolutePath(), zipOut);
-			return toZipFile;
+		try (
+			ZipOutputStream zipOut = ZipUtil.createZipOutputStream(toZipFile);
+			final FileInputStream in = new FileInputStream(toFile);
+			final BufferedInputStream buffIn = new BufferedInputStream(in)
+		) {
+			zipOut.putNextEntry(ZipUtil.createSafeZipEntry(toFile.getName()));
+			
+			byte[] data = new byte[SIZE];
+			int len;
+			while ((len = buffIn.read(data)) > 0) {
+				zipOut.write(data, 0, len);
+			}
 		}
+		return toZipFile;
 	}
 
 	
@@ -1174,7 +1188,9 @@ public class ESIndexAPI {
 	@Deprecated
 	public boolean uploadSnapshot(ZipFile zip, String toDirectory, boolean cleanRepository)
 			throws InterruptedException, ExecutionException, ZipException, IOException {
-		ZipUtil.extract(zip, new File(toDirectory));
+		// Use SKIP_AND_CONTINUE mode for extraction to allow processing valid entries even if some are suspicious
+		ZipUtil.safeExtractAll(zip, new File(toDirectory), ZipUtil.SuspiciousEntryHandling.SKIP_AND_CONTINUE);
+		
 		File zipDirectory = null;
 		try{
 			zipDirectory = new File(toDirectory);
