@@ -14,6 +14,11 @@ module.exports = {
             }
         }
     },
+    process: {
+        env: {
+            TZ: 'EST' // Set timezone to Eastern Time
+        }
+    },
     coverageDirectory: '../../coverage/apps/dotcdn',
     snapshotSerializers: [
         'jest-preset-angular/build/AngularNoNgAttributesSnapshotSerializer.js',
