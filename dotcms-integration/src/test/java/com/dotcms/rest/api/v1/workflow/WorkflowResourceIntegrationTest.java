@@ -2427,13 +2427,27 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
         final String titlePropertyValue = "Test1";
         final String bodyPropertyKey = "body";
         final String bodyPropertyValue = "Body1";
+        final String richTextContentTypeVarName = "webPageContent";
         final FireActionByNameForm.Builder builder1 = new FireActionByNameForm.Builder();
         final Map<String, Object> contentletFormData = new HashMap<>();
-        contentletFormData.put("contentHost", APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false).getHostname());
+        final Host defaultHost = APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false);
+        contentletFormData.put("contentHost", defaultHost.getHostname());
         contentletFormData.put(titlePropertyKey, titlePropertyValue);
         contentletFormData.put(bodyPropertyKey, bodyPropertyValue);
+        contentletFormData.put("contentType", richTextContentTypeVarName);
         builder1.contentlet(contentletFormData);
         builder1.actionName("Save");
+        final ContentType richTextContentType = APILocator.getContentTypeAPI(APILocator.systemUser()).find(richTextContentTypeVarName);
+        final int permissionType = PermissionAPI.PERMISSION_USE | PermissionAPI.PERMISSION_EDIT |
+                PermissionAPI.PERMISSION_PUBLISH | PermissionAPI.PERMISSION_EDIT_PERMISSIONS;
+
+        final List<Permission> newSetOfPermissions = new ArrayList<>();
+        // this is the individual permission
+        newSetOfPermissions.add(new Permission(richTextContentType.getPermissionId(), beRole.getId(), permissionType, true));
+        // this is the inheritance permission
+        newSetOfPermissions.add(new Permission(Contentlet.class.getCanonicalName(), richTextContentType.getPermissionId(),  beRole.getId(), permissionType, true));
+        APILocator.getPermissionAPI().assignPermissions(newSetOfPermissions, richTextContentType, APILocator.systemUser(), false);
+
         final FireActionByNameForm fireActionForm1 = new FireActionByNameForm(builder1);
         final HttpServletRequest request1 = getHttpRequest();
         request1.setAttribute(WebKeys.USER, limitedUser);
