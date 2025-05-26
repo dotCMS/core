@@ -10,7 +10,7 @@ dojo.declare("dotcms.dojo.data.TemplateReadStore", null, {
 	DEFAULT_PER_PAGE: 15,
 	MIN_COUNT_VALUE: 1,
 	API_BASE_URL: "/api/v1/templates/",
-	DEBUG_MODE: false, // Set to true for development
+	DEBUG_MODE: false,
 
 	// Properties
 	hostId: '',
@@ -78,13 +78,12 @@ dojo.declare("dotcms.dojo.data.TemplateReadStore", null, {
 			url += "&orderby=" + encodeURIComponent(query.sort);
 		}
 
-		return url;
-	},
-
-	_addHostParameter: function(url, hostId) {
+		// Add host parameter if specified
+		const hostId = query.hostId;
 		if (hostId !== undefined && hostId !== "") {
-			return url + "&host=" + encodeURIComponent(hostId);
+			url += "&host=" + encodeURIComponent(hostId);
 		}
+
 		return url;
 	},
 
@@ -226,17 +225,9 @@ dojo.declare("dotcms.dojo.data.TemplateReadStore", null, {
 			const perPage = count;
 
 			const pagination = { page, perPage };
-			let url = this._buildApiUrl(keywordArgs.query, pagination);
+			const url = this._buildApiUrl(keywordArgs.query, pagination);
 
 			this._log('Pagination params:', { start, count, page, perPage });
-
-			// Add host parameter if specified
-			const hostId = keywordArgs.query.hostId;
-			if (hostId !== undefined && hostId !== "") {
-				url = this._addHostParameter(url, hostId);
-				this._log('Added host parameter:', hostId);
-			}
-
 			this._log('Fetching URL:', url);
 
 			// Make the API call
@@ -298,7 +289,7 @@ dojo.declare("dotcms.dojo.data.TemplateReadStore", null, {
 			}
 
 			this._log('Processed response with', responseEntity.entity.length, 'templates');
-			this.fetchTemplatesCallback(keywordArgs, responseEntity);
+			this._processSuccessCallback(keywordArgs, responseEntity);
 
 		} catch (error) {
 			this._error('Error processing API response:', error);
@@ -315,9 +306,9 @@ dojo.declare("dotcms.dojo.data.TemplateReadStore", null, {
 		}
 	},
 
-	fetchTemplatesCallback: function (keywordArgs, templatesEntity) {
+	_processSuccessCallback: function (keywordArgs, templatesEntity) {
 		try {
-			this._log('fetchTemplatesCallback called');
+			this._log('Processing success callback');
 
 			const scope = keywordArgs.scope;
 
@@ -343,17 +334,11 @@ dojo.declare("dotcms.dojo.data.TemplateReadStore", null, {
 			}
 
 		} catch (error) {
-			this._error('Error in fetchTemplatesCallback:', error);
+			this._error('Error in success callback:', error);
 			if (keywordArgs.onError) {
 				keywordArgs.onError.call(keywordArgs.scope || dojo.global, error);
 			}
 		}
-	},
-
-	fetchCallback: function (keywordArgs, templatesEntity) {
-		// Legacy method - consider deprecating
-		this._warn('fetchCallback method is deprecated, use fetchTemplatesCallback instead');
-		this.fetchTemplatesCallback(keywordArgs, templatesEntity);
 	},
 
 	fetchItemByIdentity: function (request) {
@@ -371,7 +356,7 @@ dojo.declare("dotcms.dojo.data.TemplateReadStore", null, {
 			.then(async (response) => {
 				if (response.ok) {
 					const result = await response.json();
-					this.fetchItemByIdentityCallback(request, result.entity);
+					this._processIdentityCallback(request, result.entity);
 				} else {
 					throw new Error(`HTTP error! status: ${response.status}`);
 				}
@@ -384,14 +369,14 @@ dojo.declare("dotcms.dojo.data.TemplateReadStore", null, {
 			});
 	},
 
-	fetchItemByIdentityCallback: function (request, template) {
+	_processIdentityCallback: function (request, template) {
 		try {
 			const scope = request.scope;
 			if (request.onItem) {
 				request.onItem.call(scope || dojo.global, template, this.currentRequest);
 			}
 		} catch (error) {
-			this._error('Error in fetchItemByIdentityCallback:', error);
+			this._error('Error in identity callback:', error);
 		}
 	},
 
