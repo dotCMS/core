@@ -133,7 +133,7 @@ dotCMS stores all media assets (images, documents, etc.) in the `/dA` directory.
 
 #### 1. Configure Vite
 
-```typescript
+```ts
 // vite.config.ts
 import { defineConfig } from 'vite';
 import dns from 'node:dns';
@@ -383,8 +383,9 @@ const DetailPage = ({ contentlet }: { contentlet: DotCMSBasicContentlet }) => {
 **Overview**: Component for conditionally rendering content based on the current UVE mode. Useful for mode-based behaviors outside of render logic.
 
 **Props**:
+
 | Input | Type | Required | Description |
-| ------ | ---------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+|-------|------|----------|-------------|
 | `children` | `ReactNode` | ✅ | Content to be conditionally rendered |
 | `when` | `UVE_MODE` | ✅ | The `UVE` mode when content should be displayed: <br/> `UVE_MODE.EDIT`: Only visible in edit mode <br/> `UVE_MODE.PREVIEW`: Only visible in preview mode <br/> `UVE_MODE.PUBLISHED`: Only visible in published mode |
 
@@ -413,7 +414,7 @@ const MyComponent = () => {
 
 **Service Lifecycle & Operations**
 
-When you use the hook, it
+When you use the hook, it:
 
 1. 🔄 Initializes the UVE with your page data
 2. 📡 Sets up communication channels with the editor
@@ -427,42 +428,27 @@ When you use the hook, it
 
 **Parameters**:
 
-| Param          | Type                 | Required | Description                                   |
-| -------------- | -------------------- | -------- | --------------------------------------------- |
-| `pageResponse` | `DotCMSPageResponse` | ✅       | The page data object from `client.page.get()` |
+| Param | Type | Required | Description |
+|-------|------|----------|-------------|
+| `pageResponse` | `DotCMSPageResponse` | ✅ | The page data object from `client.page.get()` |
 
 **Usage**:
 
 ```tsx
-import { useState, useEffect } from 'react';
-import { DotCMSLayoutBody, useEditableDotCMSPage } from '@dotcms/react/next';
-import { DotCMSPageResponse } from '@dotcms/types';
+'use client';
 
-import { dotCMSClient } from './dotCMSClient';
-import { BlogComponent } from './BlogComponent';
+import { useEditableDotCMSPage, DotCMSLayoutBody } from '@dotcms/react/next';
+import type { DotCMSPageResponse } from '@dotcms/types';
 
 const COMPONENTS_MAP = {
-    Blog: BlogComponent
+    Blog: BlogComponent,
+    Product: ProductComponent
 };
 
-const MyPage = () => {
-    const [response, setResponse] = useState<DotCMSPageResponse | null>(null);
-    const { pageAsset } = useEditableDotCMSPage(response);
-
-    useEffect(() => {
-        dotCMSClient.page.get('/').then((response) => {
-            setResponse(response);
-        });
-    }, []);
-
-    if (!response) {
-        return <div>Loading...</div>;
-    }
-
-    return <DotCMSLayoutBody page={pageAsset} components={COMPONENTS_MAP} mode="development" />;
-};
-
-export default MyPage;
+export function DotCMSPage({ pageResponse }: { pageResponse: DotCMSPageResponse }) {
+    const { pageAsset } = useEditableDotCMSPage(pageResponse);
+    return <DotCMSLayoutBody pageAsset={pageAsset} components={COMPONENTS_MAP} />;
+}
 ```
 
 #### useDotCMSShowWhen
@@ -576,9 +562,14 @@ const MyEditButton = () => {
              import { useEditableDotCMSPage, DotCMSLayoutBody } from '@dotcms/react/next';
              import type { DotCMSPageResponse } from '@dotcms/types';
 
+             const COMPONENTS_MAP = {
+                 Blog: BlogComponent,
+                 Product: ProductComponent
+             };
+
              export function DotCMSPage({ pageResponse }: { pageResponse: DotCMSPageResponse }) {
                  const { pageAsset } = useEditableDotCMSPage(pageResponse);
-                 return <DotCMSLayoutBody page={pageAsset} components={...} />;
+                 return <DotCMSLayoutBody pageAsset={pageAsset} components={COMPONENTS_MAP} />;
              }
             ```
 
@@ -616,8 +607,8 @@ const MyEditButton = () => {
 ### Version Compatibility
 
 | dotCMS Version | SDK Version | React Version |
-| -------------- | ----------- | ------------- |
-| 25.05+         | @next       | 19.x          |
+|----------------|-------------|---------------|
+| 25.05+         | @next       | 19.x         |
 
 > [!TIP]
 > Always check version compatibility when upgrading any component of your stack.

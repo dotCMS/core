@@ -17,7 +17,7 @@ The `@dotcms/angular` SDK is the DotCMS official Angular library. It empowers An
     -   [Components](#components)
         -   [DotCMSLayoutBody](#dotcmslayoutbody)
         -   [DotCMSEditableText](#dotcmseditabletext)
-        -   [DotCMSBlockEditorRenderer](#dotcmsblockeeditorrenderer)
+        -   [DotCMSBlockEditorRenderer](#dotcmsblockeditorrenderer)
     -   [Directives](#directives)
         -   [DotCMSShowWhen](#dotcmsshowwhen)
     -   [Services](#services)
@@ -296,8 +296,8 @@ All components, directives, and services should be imported from `@dotcms/angula
 **Inputs**:
 
 | Input        | Type                     | Required | Default        | Description                                    |
-| ------------ | ------------------------ | -------- | -------------- | ---------------------------------------------- |
-| `page`       | `DotCMSPageAsset`        | ✅       | -              | The page asset containing the layout to render |
+|--------------|--------------------------|----------|----------------|------------------------------------------------|
+| `page`       | `DotCMSPageAsset`       | ✅       | -              | The page asset containing the layout to render |
 | `components` | `DotCMSPageComponent`    | ✅       | `{}`           | Map of content type → Angular component        |
 | `mode`       | `DotCMSPageRendererMode` | ❌       | `'production'` | Rendering mode ('production' or 'development') |
 
@@ -361,7 +361,7 @@ export class MyPageComponent {
 **Inputs**:
 
 | Input        | Type                | Required | Description                                                                                                                                                                                                                 |
-| ------------ | ------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+|--------------|---------------------|----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `contentlet` | `DotCMSContentlet`  | ✅       | The contentlet containing the editable field                                                                                                                                                                                |
 | `fieldName`  | `string`            | ✅       | Name of the field to edit                                                                                                                                                                                                   |
 | `mode`       | `'plain' \| 'full'` | ❌       | `plain` (default): Support text editing. Does not show style controls. <br/> `full`: Enables a bubble menu with style options. This mode only works with [`WYSIWYG` fields](https://dev.dotcms.com/docs/the-wysiwyg-field). |
@@ -417,10 +417,10 @@ export class MyBannerComponent {
 **Inputs**:
 
 | Input             | Type                 | Required | Description                                                                                                |
-| ----------------- | -------------------- | -------- | ---------------------------------------------------------------------------------------------------------- |
+|-------------------|----------------------|----------|------------------------------------------------------------------------------------------------------------|
 | `blocks`          | `BlockEditorContent` | ✅       | The [Block Editor](https://dev.dotcms.com/docs/block-editor) content to render                             |
-| `customRenderers` | `CustomRenderers`    | ❌       | Custom rendering functions for specific [block types](https://dev.dotcms.com/docs/block-editor#BlockTypes) |
-| `className`       | `string`             | ❌       | CSS class to apply to the container                                                                        |
+| `customRenderers` | `CustomRenderer`     | ❌       | Custom rendering functions for specific [block types](https://dev.dotcms.com/docs/block-editor#BlockTypes) |
+| `className`       | `string`            | ❌       | CSS class to apply to the container                                                                        |
 | `style`           | `CSSProperties`      | ❌       | Inline styles for the container                                                                            |
 
 **Usage**:
@@ -466,7 +466,7 @@ export class MyBannerComponent {
 **Input**:
 
 | Input  | Type       | Required | Description                                                                                                                                                                                                         |
-| ------ | ---------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+|--------|------------|----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `when` | `UVE_MODE` | ✅       | The `UVE` mode when content should be displayed: <br/> `UVE_MODE.EDIT`: Only visible in edit mode <br/> `UVE_MODE.PREVIEW`: Only visible in preview mode <br/> `UVE_MODE.PUBLISHED`: Only visible in published mode |
 
 **Usage**:
@@ -510,7 +510,7 @@ When you use the `listen` method, the service:
 **Parameters**:
 
 | Param          | Type                 | Required | Description                                   |
-| -------------- | -------------------- | -------- | --------------------------------------------- |
+|----------------|----------------------|----------|-----------------------------------------------|
 | `pageResponse` | `DotCMSPageResponse` | ✅       | The page data object from `client.page.get()` |
 
 **Usage**:
@@ -646,9 +646,8 @@ export class PageComponent implements OnInit, OnDestroy {
 ### Version Compatibility
 
 | dotCMS Version | SDK Version | Angular Version |
-| -------------- | ----------- | --------------- |
-| 25.05+         | @next       | 18.x            |
-| 24.x           | 1.x         | 16.x            |
+|----------------|-------------|-----------------|
+| 25.05+         | @next       | 19.x            |
 
 > [!TIP]
 > Always check version compatibility when upgrading any component of your stack.
