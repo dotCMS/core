@@ -417,7 +417,18 @@ public class HostFactoryImpl implements HostFactory {
         try {
             deleteSite(site, user, respectFrontendRoles);
             HibernateUtil.addCommitListener
-                    (() -> generateNotification(site, user));
+                    (() -> {
+                                try {
+                                    APILocator.getReindexQueueAPI().addIdentifierDelete(site.getIdentifier());
+                                    generateNotification(site, user);
+                                } catch (DotDataException e) {
+                                    Logger.error(HostAPIImpl.class, String.format(
+                                            "An error occurred when adding Site '%s' to the " +
+                                                    "Reindex Queue: %s", site.getHostname(),
+                                            ExceptionUtil.getErrorMessage(e)), e);
+                                }
+                            }
+                    );
         } catch (final Exception e) {
             try {
                 APILocator.getNotificationAPI().generateNotification(
