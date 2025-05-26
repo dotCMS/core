@@ -8,10 +8,9 @@ The `@dotcms/angular` SDK is the DotCMS official Angular library. It empowers An
     -   [dotCMS Instance](#dotcms-instance)
     -   [Create a dotCMS API Key](#create-a-dotcms-api-key)
     -   [Configure The Universal Visual Editor App](#configure-the-universal-visual-editor-app)
-    -   [Install Dependencies](#install-dependencies)
+    -   [Installation](#installation)
     -   [dotCMS Client Configuration](#dotcms-client-configuration)
     -   [Proxy Setup for Assets](#proxy-setup-for-assets)
--   [Installation](#installation)
 -   [Quickstart](#quickstart)
     -   [Example Project](#example-project)
 -   [API Reference](#api-reference)
@@ -24,9 +23,8 @@ The `@dotcms/angular` SDK is the DotCMS official Angular library. It empowers An
     -   [Services](#services)
         -   [DotCMSEditablePageService](#dotcmseditablepageservice)
 -   [Troubleshooting](#troubleshooting)
-    -   [Universal Visual Editor (UVE)](#universal-visual-editor-uve)
-    -   [Missing Content](#missing-content)
-    -   [Development Setup](#development-setup)
+    -   [Common Issues & Solutions](#common-issues--solutions)
+    -   [Debugging Tips](#debugging-tips)
     -   [Version Compatibility](#version-compatibility)
     -   [Still Having Issues?](#still-having-issues)
 -   [dotCMS Support](#dotcms-support)
@@ -99,7 +97,7 @@ This integration requires an API Key with read-only permissions for security bes
 
 For detailed instructions, please refer to the [dotCMS API Documentation - Read-only token](https://dev.dotcms.com/docs/rest-api-authentication#ReadOnlyToken).
 
-### Install Dependencies
+### Installation
 
 The `@dotcms/angular` package provides Angular-specific components, directives, and services for building dotCMS applications. However, to create a fully functional dotCMS application, you'll need to install additional core packages:
 
@@ -202,12 +200,6 @@ class MyDotCMSImageComponent {
 📚 Learn more about simple image pathing in dotCMS [here](https://dev.dotcms.com/docs/file-assets-and-dotassets).
 
 ---
-
-## Installation
-
-```bash
-npm install @dotcms/angular@next
-```
 
 ---
 
@@ -391,8 +383,8 @@ import { DotCMSEditableTextComponent } from '@dotcms/angular/next';
         <div
             class="flex overflow-hidden relative justify-center items-center w-full h-96 bg-gray-200">
             <img
-                [src]="'/dA/' + contentlet().inode"
                 class="object-cover w-full"
+                [src]="'/dA/' + contentlet().inode"
                 [alt]="contentlet().title" />
             <div
                 class="flex absolute inset-0 flex-col justify-center items-center p-4 text-center text-white">
@@ -514,6 +506,14 @@ When you use the `listen` method, the service:
     - Layout changes are made
     - Components are moved
 5. 🧹 Cleans up all listeners and connections on destroy
+
+**Parameters**:
+
+| Param          | Type                 | Required | Description                                   |
+| -------------- | -------------------- | -------- | --------------------------------------------- |
+| `pageResponse` | `DotCMSPageResponse` | ✅       | The page data object from `client.page.get()` |
+
+**Usage**:
 
 ```typescript
 import { Subscription } from 'rxjs';
@@ -647,7 +647,7 @@ export class PageComponent implements OnInit, OnDestroy {
 
 | dotCMS Version | SDK Version | Angular Version |
 | -------------- | ----------- | --------------- |
-| 25.05+         | @next       | 17.x            |
+| 25.05+         | @next       | 18.x            |
 | 24.x           | 1.x         | 16.x            |
 
 > [!TIP]
