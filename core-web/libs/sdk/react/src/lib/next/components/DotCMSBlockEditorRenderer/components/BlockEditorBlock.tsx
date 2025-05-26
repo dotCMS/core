@@ -1,5 +1,6 @@
 import { BlockEditorNode } from '@dotcms/types';
 import { BlockEditorDefaultBlocks } from '@dotcms/types/internal';
+import { getUVEState } from '@dotcms/uve';
 
 import { BlockQuote, CodeBlock } from './blocks/Code';
 import { DotContent } from './blocks/Contentlet';
@@ -143,7 +144,21 @@ export const BlockEditorBlock = ({ content, customRenderers }: BlockEditorBlockP
                 );
 
             default:
-                return <div key={`${node.type}-${index}`}>Unknown Block Type {node.type}</div>;
+                return <UnknownBlock node={node} />;
         }
     });
+};
+
+/**
+ * Renders an unknown block type with a warning message in development mode.
+ *
+ * @param node - The block editor node to render.
+ * @returns The rendered block or null if in production mode.
+ */
+const UnknownBlock = ({ node }: { node: BlockEditorNode }) => {
+    if (getUVEState()) {
+        return <div>Unknown Block Type {node.type}</div>;
+    }
+
+    return null;
 };

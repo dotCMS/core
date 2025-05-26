@@ -1,5 +1,7 @@
 import { BlockEditorNode } from '@dotcms/types';
 
+import { UnknownContentType } from './UnknownContentType';
+
 import { useIsDevMode } from '../../../../hooks/useIsDevMode';
 import { CustomRenderer } from '../../DotCMSBlockEditorRenderer';
 
@@ -7,6 +9,12 @@ interface DotContentProps {
     customRenderers: CustomRenderer;
     node: BlockEditorNode;
 }
+
+const DOT_CONTENT_NO_DATA_MESSAGE =
+    '[DotCMSBlockEditorRenderer]: No data provided for Contentlet Block. Try to add a contentlet to the block editor. If the error persists, please contact the DotCMS support team.';
+
+const DOT_CONTENT_NO_MATCHING_COMPONENT_MESSAGE = (contentType: string) =>
+    `[DotCMSBlockEditorRenderer]: No matching component found for content type: ${contentType}. Provide a custom renderer for this content type to fix this error.`;
 
 /**
  * Renders a DotContent component.
@@ -20,7 +28,7 @@ export const DotContent = ({ customRenderers, node }: DotContentProps) => {
     const data = attrs.data;
 
     if (!data) {
-        console.error('DotContent: No data provided');
+        console.error(DOT_CONTENT_NO_DATA_MESSAGE);
 
         return null;
     }
@@ -30,12 +38,12 @@ export const DotContent = ({ customRenderers, node }: DotContentProps) => {
 
     // In dev mode, show a helpful message for unknown content types
     if (isDevMode && !Component) {
-        return <div>Unknown ContentType: {contentType}</div>;
+        return <UnknownContentType contentType={contentType} />;
     }
 
     // In production, use default component if no matching component found
     if (!Component) {
-        console.error('DotContent: No matching component found for content type', contentType);
+        console.warn(DOT_CONTENT_NO_MATCHING_COMPONENT_MESSAGE(contentType));
 
         return null;
     }
