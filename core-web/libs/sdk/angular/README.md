@@ -199,10 +199,6 @@ class MyDotCMSImageComponent {
 
 📚 Learn more about simple image pathing in dotCMS [here](https://dev.dotcms.com/docs/file-assets-and-dotassets).
 
----
-
----
-
 ## Quickstart
 
 The following example demonstrates how to quickly set up a basic dotCMS page renderer in your Angular application. This example shows how to:
@@ -280,8 +276,6 @@ Looking to get started quickly? We've got you covered! Our [Angular starter proj
 
 > [!TIP]
 > This starter project is more than just an example, it follows all our best practices. We highly recommend using it as the base for your next dotCMS + Angular project!
-
----
 
 ## API Reference
 
