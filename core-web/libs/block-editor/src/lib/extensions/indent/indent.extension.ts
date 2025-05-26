@@ -152,7 +152,7 @@ export const IndentExtension = Extension.create<IndentOptions>({
         return {
             indent:
                 () =>
-                ({ tr, state, dispatch, editor }) => {
+                ({ state, dispatch }) => {
                     // Only for paragraphs, headings, blockquotes - NO lists
                     const { selection } = state;
                     const newTr = state.tr.setSelection(selection);
@@ -168,7 +168,7 @@ export const IndentExtension = Extension.create<IndentOptions>({
 
             outdent:
                 () =>
-                ({ tr, state, dispatch, editor }) => {
+                ({ state, dispatch }) => {
                     // Only for paragraphs, headings, blockquotes - NO lists
                     const { selection } = state;
                     const newTr = state.tr.setSelection(selection);
