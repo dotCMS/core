@@ -960,7 +960,7 @@ public class UserResource implements Serializable {
 	 * @return User Updated
 	 * @throws Exception
 	 */
-	@Operation(summary = "Active an existing user.",
+	@Operation(summary = "Deactivate an existing user.",
 			responses = {
 					@ApiResponse(
 							responseCode = "200",
