@@ -276,12 +276,20 @@ public class ResourceCollectorUtil {
         while(e.hasMoreElements()){
             final ZipEntry ze = (ZipEntry) e.nextElement();
             final String fileName = ze.getName();
-            final boolean accept = pattern.matcher(fileName).matches();
+            
+            // Validate the zip entry name to protect against zip slip using centralized method
+            final String sanitizedName = ZipUtil.sanitizePath(fileName);
+            if (!sanitizedName.equals(fileName)) {
+                // If the path was modified during sanitization, it might be malicious
+                Logger.warn(ResourceCollectorUtil.class, "Potentially malicious zip entry renamed: " + fileName + " -> " + sanitizedName);
+            }
+            
+            final boolean accept = pattern.matcher(sanitizedName).matches();
             if(accept){
                 try {
                     //Zip entries have '/' as separator on all platforms
-                    retval.add( fileName.substring( 0, fileName.lastIndexOf( "/" ) ) );
-                } catch ( StringIndexOutOfBoundsException e1 ) {
+                    retval.add(sanitizedName.substring(0, sanitizedName.lastIndexOf("/")));
+                } catch (StringIndexOutOfBoundsException e1) {
                     //do nothing
                 }
             }
