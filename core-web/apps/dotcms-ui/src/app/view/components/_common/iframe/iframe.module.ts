@@ -3,6 +3,8 @@ import { NgModule } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 
+import { DialogService } from 'primeng/dynamicdialog';
+
 import { DotOverlayMaskModule } from '@components/_common/dot-overlay-mask/dot-overlay-mask.module';
 import { DotSafeUrlPipe } from '@components/_common/iframe/pipes/dot-safe-url/dot-safe-url.pipe';
 import { DotCustomEventHandlerService } from '@dotcms/app/api/services/dot-custom-event-handler/dot-custom-event-handler.service';
@@ -14,6 +16,7 @@ import { IframePortletLegacyComponent } from './iframe-porlet-legacy';
 import { DotIframePortletLegacyResolver } from './service/dot-iframe-porlet-legacy-resolver.service';
 import { IframeOverlayService } from './service/iframe-overlay.service';
 
+import { MessageService } from 'primeng/api';
 import { SearchableDropDownModule } from '../searchable-dropdown/searchable-dropdown.module';
 
 @NgModule({
@@ -30,6 +33,6 @@ import { SearchableDropDownModule } from '../searchable-dropdown/searchable-drop
         DotSafeHtmlPipe,
         DotSafeUrlPipe
     ],
-    providers: [IframeOverlayService, DotCustomEventHandlerService, DotIframePortletLegacyResolver]
+    providers: [IframeOverlayService, DotCustomEventHandlerService, DotIframePortletLegacyResolver, DialogService, MessageService]
 })
-export class IFrameModule {}
+export class IFrameModule { }

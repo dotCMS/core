@@ -14,6 +14,9 @@ import { DotExperimentClassDirective } from '@portlets/shared/directives/dot-exp
 
 import { DotEditPageMainComponent } from './dot-edit-page-main.component';
 
+import { DotEditContentOrchestratorService } from '@dotcms/edit-content';
+import { MessageService } from 'primeng/api';
+import { DialogService } from 'primeng/dynamicdialog';
 import { DotEditPageNavModule } from '../dot-edit-page-nav/dot-edit-page-nav.module';
 
 @NgModule({
@@ -28,7 +31,7 @@ import { DotEditPageNavModule } from '../dot-edit-page-nav/dot-edit-page-nav.mod
         OverlayPanelModule,
         DialogModule
     ],
-    providers: [DotRouterService, DotCustomEventHandlerService],
+    providers: [DotRouterService, DotCustomEventHandlerService, DialogService, MessageService, DotEditContentOrchestratorService],
     declarations: [DotEditPageMainComponent]
 })
-export class DotEditPageMainModule {}
+export class DotEditPageMainModule { }

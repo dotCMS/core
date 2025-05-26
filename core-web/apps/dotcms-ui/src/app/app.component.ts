@@ -21,7 +21,7 @@ export class AppComponent implements OnInit {
         private dotMessageService: DotMessageService,
         private dotNavLogoService: DotNavLogoService,
         private dotLicense: DotLicenseService
-    ) {}
+    ) { }
 
     ngOnInit() {
         this.dotCmsConfigService
