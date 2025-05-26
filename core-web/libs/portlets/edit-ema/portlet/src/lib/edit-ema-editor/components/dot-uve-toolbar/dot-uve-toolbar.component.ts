@@ -11,8 +11,7 @@ import {
     Output,
     viewChild,
     Signal,
-    signal,
-    untracked
+    signal
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
@@ -120,7 +119,7 @@ export class DotUveToolbarComponent {
 
     protected readonly $pageParams = this.#store.pageParams;
     protected readonly $previewDate = computed<Date>(() => {
-        const publishDate = untracked(() => this.$pageParams().publishDate);
+        const publishDate = this.$pageParams().publishDate;
 
         const previewDate = publishDate ? new Date(publishDate) : new Date();
 

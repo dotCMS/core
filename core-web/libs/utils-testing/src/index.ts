@@ -49,3 +49,4 @@ export * from './lib/push-publish.mock';
 export * from './lib/dot-license-service.mock';
 export * from './lib/monaco-editor.mock';
 export * from './lib/dot-site.mock';
+export * from './lib/resize-observer.mock';

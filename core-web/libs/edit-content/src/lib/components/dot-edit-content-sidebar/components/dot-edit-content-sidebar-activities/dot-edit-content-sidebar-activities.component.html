@@ -30,11 +30,11 @@
                                         {{ activity.createdDate | dotRelativeDate }}
                                     </span>
                                 </div>
-                                <span
+                                <div
                                     class="activities__description"
                                     data-testid="activity-description">
                                     {{ activity.commentDescription }}
-                                </span>
+                                </div>
                             </div>
                         </div>
                     }
@@ -63,13 +63,35 @@
                             class="activities__input"></textarea>
 
                         <dot-field-validation-message [field]="form.get('comment')" />
+
+                        <!-- Character Counter -->
+                        <div
+                            class="activities__char-counter"
+                            [class.activities__char-counter--limit]="isAtMaxLength()"
+                            data-testid="activities-char-counter">
+                            @if (!isAtMaxLength()) {
+                                {{ commentLength() }}/{{ commentMaxLength }}
+                                {{ 'edit.content.sidebar.activities.characters' | dm }}
+                            } @else {
+                                <span>
+                                    {{
+                                        'edit.content.sidebar.activities.char.counter'
+                                            | dm
+                                                : [
+                                                      commentLength().toString(),
+                                                      commentMaxLength.toString()
+                                                  ]
+                                    }}
+                                </span>
+                            }
+                        </div>
                     </div>
 
                     <div class="activities__actions">
                         <button
                             pButton
                             type="button"
-                            [disabled]="!form.dirty || $isSaving()"
+                            [disabled]="!form.dirty || !commentControl.value?.trim() || $isSaving()"
                             class="p-button-sm p-button-secondary activities__clear"
                             data-testid="activities-clear"
                             (click)="clearComment()">
@@ -79,6 +101,7 @@
                             pButton
                             type="submit"
                             [loading]="$isSaving()"
+                            [disabled]="$isSaving()"
                             class="p-button-sm p-button-primary activities__submit"
                             data-testid="activities-submit">
                             {{ 'edit.content.sidebar.activities.send' | dm }}
