@@ -1,10 +1,16 @@
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 
 import { INotification, NotificationIcons } from '@models/notifications';
+import { DotCustomTimeModule } from '../../../../../_common/dot-custom-time.component/dot-custom-time.module';
+import { Button } from 'primeng/button';
+import { LowerCasePipe } from '@angular/common';
+import { DotMessagePipe } from '../../../../../../../../../../../libs/ui/src/lib/dot-message/dot-message.pipe';
 @Component({
     selector: 'dot-notifications-item',
     styleUrls: ['./dot-notifications-item.component.scss'],
-    templateUrl: 'dot-notifications-item.component.html'
+    templateUrl: 'dot-notifications-item.component.html',
+    standalone: true,
+    imports: [DotCustomTimeModule, Button, LowerCasePipe, DotMessagePipe]
 })
 export class DotNotificationsItemComponent implements OnInit {
     @Input() data;
@@ -52,7 +58,9 @@ export class DotNotificationsItemComponent implements OnInit {
 @Component({
     selector: 'dot-notifications-list',
     styleUrls: ['./dot-notifications-list.component.scss'],
-    templateUrl: 'dot-notifications-list.component.html'
+    templateUrl: 'dot-notifications-list.component.html',
+    standalone: true,
+    imports: [DotNotificationsItemComponent]
 })
 export class DotNotificationsListComponent {
     @Input() notifications: INotification[];

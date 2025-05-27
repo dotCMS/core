@@ -23,7 +23,9 @@ import { DotToolbarNotificationsComponent } from './dot-toolbar-notifications.co
 
 @Component({
     selector: 'dot-dropdown-component',
-    template: ''
+    template: '',
+    standalone: true,
+    imports: [DotSafeHtmlPipe, DotMessagePipe, ButtonModule, HttpClientTestingModule]
 })
 class MockDotDropDownComponent {
     @Input()
@@ -32,7 +34,9 @@ class MockDotDropDownComponent {
 
 @Component({
     selector: 'dot-notifications-list',
-    template: ''
+    template: '',
+    standalone: true,
+    imports: [DotSafeHtmlPipe, DotMessagePipe, ButtonModule, HttpClientTestingModule]
 })
 class MockDotNotificationsListComponent {
     @Input()
@@ -90,12 +94,15 @@ describe('DotToolbarNotificationsComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [
+            imports: [
+                DotSafeHtmlPipe,
+                DotMessagePipe,
+                ButtonModule,
+                HttpClientTestingModule,
                 DotToolbarNotificationsComponent,
                 MockDotDropDownComponent,
                 MockDotNotificationsListComponent
             ],
-            imports: [DotSafeHtmlPipe, DotMessagePipe, ButtonModule, HttpClientTestingModule],
             providers: [
                 { provide: DotMessageService, useValue: messageServiceMock },
                 { provide: IframeOverlayService, useClass: IframeOverlayService },

@@ -1,20 +1,37 @@
 import { Component, inject, OnInit, ViewChild, ViewEncapsulation } from '@angular/core';
 
+import { ButtonModule } from 'primeng/button';
+
 import { DotDropdownComponent } from '@components/_common/dot-dropdown-component/dot-dropdown.component';
+import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
 import { AnnouncementsStore } from '@components/dot-toolbar/components/dot-toolbar-announcements/store/dot-announcements.store';
 import { NotificationsService } from '@dotcms/app/api/services/notifications-service';
+import { DotShowHideFeatureDirective } from '@dotcms/app/shared/directives/dot-show-hide-feature/dot-show-hide-feature.directive';
 import { DotcmsEventsService, LoginService } from '@dotcms/dotcms-js';
 import { FeaturedFlags } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 import { INotification } from '@models/notifications';
 
-import { IframeOverlayService } from '../../../_common/iframe/service/iframe-overlay.service';
+
+import { DotNotificationsListComponent } from './components/dot-notifications/dot-notifications.component';
+
 import { DotToolbarAnnouncementsComponent } from '../dot-toolbar-announcements/dot-toolbar-announcements.component';
 
 @Component({
     encapsulation: ViewEncapsulation.Emulated,
     selector: 'dot-toolbar-notifications',
     styleUrls: ['./dot-toolbar-notifications.component.scss'],
-    templateUrl: 'dot-toolbar-notifications.component.html'
+    templateUrl: 'dot-toolbar-notifications.component.html',
+    standalone: true,
+    imports: [
+        DotShowHideFeatureDirective,
+        ButtonModule,
+        DotToolbarAnnouncementsComponent,
+        DotDropdownComponent,
+        DotNotificationsListComponent,
+        DotMessagePipe
+    ],
+    providers: [AnnouncementsStore]
 })
 export class DotToolbarNotificationsComponent implements OnInit {
     readonly #announcementsStore = inject(AnnouncementsStore);
