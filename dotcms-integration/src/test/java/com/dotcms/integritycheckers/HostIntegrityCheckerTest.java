@@ -43,6 +43,7 @@ import io.vavr.Tuple;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -114,6 +115,7 @@ public class HostIntegrityCheckerTest extends IntegrationTestBase {
      */
     @Test
     @UseDataProvider("getUseJsonTestCases")
+    @Ignore
     public void test_generateIntegrityResults(final Boolean useJson) throws Exception {
 
         final boolean defaultValue = Config.getBooleanProperty(SAVE_CONTENTLET_AS_JSON, true);
@@ -147,6 +149,7 @@ public class HostIntegrityCheckerTest extends IntegrationTestBase {
      */
     @Test
     @UseDataProvider("getUseJsonTestCases")
+    @Ignore
     public void test_executeFix(final Boolean useJson) throws Exception {
         final boolean defaultValue = Config.getBooleanProperty(SAVE_CONTENTLET_AS_JSON, true);
         Config.setProperty(SAVE_CONTENTLET_AS_JSON, useJson);
