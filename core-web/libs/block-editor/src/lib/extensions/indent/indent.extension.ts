@@ -48,12 +48,10 @@ function clamp(val: number, min: number, max: number): number {
     return val;
 }
 
-enum IndentProps {
-    min = 0,
-    max = 400, // Maximum limit of 400px
-    more = 40, // Increment of 40px
-    less = -40
-}
+const INDENT_MIN = 0;
+const INDENT_MAX = 400; // Maximum limit of 400px
+const INDENT_MORE = 40; // Increment of 40px
+const INDENT_LESS = -40;
 
 function setNodeIndentMarkup(tr: Transaction, pos: number, delta: number): Transaction {
     if (!tr.doc) return tr;
@@ -61,8 +59,8 @@ function setNodeIndentMarkup(tr: Transaction, pos: number, delta: number): Trans
     const node = tr.doc.nodeAt(pos);
     if (!node) return tr;
 
-    const minIndent = IndentProps.min;
-    const maxIndent = IndentProps.max;
+    const minIndent = INDENT_MIN;
+    const maxIndent = INDENT_MAX;
     const indent = clamp((node.attrs.indent || 0) + delta, minIndent, maxIndent);
 
     if (indent === node.attrs.indent) return tr;
@@ -156,7 +154,7 @@ export const IndentExtension = Extension.create<IndentOptions>({
                     // Only for paragraphs, headings, blockquotes - NO lists
                     const { selection } = state;
                     const newTr = state.tr.setSelection(selection);
-                    const updatedTr = updateIndentLevel(newTr, IndentProps.more);
+                    const updatedTr = updateIndentLevel(newTr, INDENT_MORE);
 
                     if (updatedTr.docChanged && dispatch) {
                         dispatch(updatedTr);
@@ -172,7 +170,7 @@ export const IndentExtension = Extension.create<IndentOptions>({
                     // Only for paragraphs, headings, blockquotes - NO lists
                     const { selection } = state;
                     const newTr = state.tr.setSelection(selection);
-                    const updatedTr = updateIndentLevel(newTr, IndentProps.less);
+                    const updatedTr = updateIndentLevel(newTr, INDENT_LESS);
 
                     if (updatedTr.docChanged && dispatch) {
                         dispatch(updatedTr);
