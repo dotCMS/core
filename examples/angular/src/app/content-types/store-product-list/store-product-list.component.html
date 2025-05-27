@@ -21,7 +21,7 @@
                     </h3>
 
                     <div class="mt-auto pt-2 flex items-center justify-between">
-                        @if (product.hasDiscount) {
+                        @if (product?.hasDiscount) {
                         <div>
                             <span class="text-red-600 font-semibold mr-2">
                                 ${{ product.salePrice }}
@@ -32,7 +32,7 @@
                         </div>
                         } @else {
                         <span class="text-gray-900 font-semibold">${{ product.retailPrice }}</span>
-                        } @if (product.hasDiscount) {
+                        } @if (product?.hasDiscount) {
                         <span class="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full">
                             {{ product.discountPercentage }}% OFF
                         </span>
