@@ -72,19 +72,21 @@ dojo.declare("dotcms.dojo.data.TemplateReadStore", null, {
 		const { page, perPage } = pagination;
 		const filter = query.fullTitle ? query.fullTitle.replace('*', '') : '';
 
-		let url = `${this.API_BASE_URL}?filter=${encodeURIComponent(filter)}&page=${page}&per_page=${perPage}`;
+		const url = new URL(this.API_BASE_URL, window.location.origin);
 
-		if (query.sort && query.sort !== "") {
-			url += "&orderby=" + encodeURIComponent(query.sort);
+		url.searchParams.set('filter', filter);
+		url.searchParams.set('page', page);
+		url.searchParams.set('per_page', perPage);
+
+		if (query.sort) {
+			url.searchParams.set('orderby', query.sort);
 		}
 
-		// Add host parameter if specified
-		const hostId = query.hostId;
-		if (hostId !== undefined && hostId !== "") {
-			url += "&host=" + encodeURIComponent(hostId);
+		if (query.hostId) {
+			url.searchParams.set('host', query.hostId);
 		}
 
-		return url;
+		return url.toString();
 	},
 
 	_createLightTemplate: function(template) {
