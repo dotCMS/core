@@ -1,29 +1,28 @@
-@if ($context(); as vm) { @if (vm.status !== 'idle') {
-    <div class="flex flex-col gap-6 min-h-screen bg-neutral-50">
-        @if (vm.page?.layout?.header) {
-        <app-header>
-            @if (vm.nav?.children) {
-            <app-navigation [items]="vm.nav?.children || []" />
-            }
-        </app-header>
+@if ($pageState(); as vm) { @if (vm.status !== 'idle') {
+<div class="flex flex-col gap-6 min-h-screen bg-neutral-50">
+    @if (vm.pageResponse?.pageAsset?.layout?.header) {
+    <app-header>
+        @if (vm.pageResponse?.content?.navigation?.children) {
+        <app-navigation [items]="vm.pageResponse?.content?.navigation?.children || []" />
         }
-    
-        <main class="container m-auto">
-            @if (vm.status === 'loading') {
-            <app-loading />
-            } @else if (vm.status === 'error' && vm.error) {
-            <app-error [$error]="vm.error" />
-            } @else if (vm.status === 'success' && vm.page) {
-                <app-blog-post [post]="vm.page.urlContentMap" />
-            } @else {
-            <!-- Add a fallback for unexpected states -->
-            <p>Unexpected state encountered.</p>
-            }
-        </main>
-    
-        @if (vm.page?.layout?.footer) {
-        <app-footer />
+    </app-header>
+    }
+
+    <main class="container m-auto">
+        @if (vm.status === 'loading') {
+        <app-loading />
+        } @else if (vm.status === 'error' && vm.error) {
+        <app-error [$error]="vm.error" />
+        } @else if (vm.status === 'success' && vm.pageResponse) {
+        <app-blog-post [post]="vm.pageResponse.pageAsset.urlContentMap" />
+        } @else {
+        <!-- Add a fallback for unexpected states -->
+        <p>Unexpected state encountered.</p>
         }
-    </div>
-    } }
-    
+    </main>
+
+    @if (vm.pageResponse?.pageAsset?.layout?.footer) {
+    <app-footer [content]="vm.pageResponse?.content" />
+    }
+</div>
+} }

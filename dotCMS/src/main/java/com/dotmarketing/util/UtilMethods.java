@@ -244,18 +244,38 @@ public class UtilMethods {
     }
 
     /**
-     * Takes the file name and attempts to determine whether it belongs to an image or not based on
-     * its extension.
+     * Checks if a file path corresponds to an image based on its extension.
+     * If the input appears to be a URL, query parameters are removed before checking the extension.
      *
-     * @param fileName The name of the file to check.
-     *
-     * @return If the file is an image, returns {@code true}.
+     * @param fileName The file path or name to check
+     * @return true if the file has an image extension, false otherwise
      */
     public static boolean isImage(final String fileName) {
         if (UtilMethods.isEmpty(fileName)) {
             return false;
         }
-        final String imageName = fileName.toLowerCase();
+
+        String cleanFileName = fileName;
+
+        // Check if fileName appears to be a URL
+        boolean isLikelyUrl = cleanFileName.matches("^(https?://|www\\.).+") ||
+                (cleanFileName.contains("/") && cleanFileName.contains("."));
+
+        // Remove query parameters only if it looks like a URL
+        if (isLikelyUrl) {
+            int queryIndex = cleanFileName.indexOf('?');
+            if (queryIndex > 0) {
+                cleanFileName = cleanFileName.substring(0, queryIndex);
+            }
+
+            // Also remove URL fragments as they're not part of the file
+            int fragmentIndex = cleanFileName.indexOf('#');
+            if (fragmentIndex > 0) {
+                cleanFileName = cleanFileName.substring(0, fragmentIndex);
+            }
+        }
+
+        final String imageName = cleanFileName.toLowerCase();
         for (final String ext : FileUtil.IMAGE_EXTENSIONS.get()) {
             if (imageName.endsWith(ext)) {
                 return true;
