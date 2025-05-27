@@ -3,7 +3,6 @@ package com.dotcms.enterprise.publishing.staticpublishing;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.publisher.business.DotPublisherException;
-import com.dotcms.publisher.business.PublishAuditAPI;
 import com.dotcms.publisher.business.PublisherAPI;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publisher.pusher.wrapper.FolderWrapper;
@@ -26,7 +25,6 @@ import com.liferay.portal.model.User;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -37,12 +35,11 @@ import java.util.Set;
 public class StaticFolderBundler implements IBundler {
     private PublisherConfig config;
     private User systemUser;
-    ContentletAPI conAPI = null;
-    UserAPI uAPI = null;
-    com.dotcms.publisher.business.PublisherAPI pubAPI = null;
-    PublishAuditAPI pubAuditAPI = PublishAuditAPI.getInstance();
-    FolderAPI fAPI = APILocator.getFolderAPI();
-    LanguageAPI langAPI = APILocator.getLanguageAPI();
+    ContentletAPI contentletAPI = null;
+    UserAPI userAPI = null;
+    com.dotcms.publisher.business.PublisherAPI publisherAPI = null;
+    FolderAPI folderAPI = APILocator.getFolderAPI();
+    LanguageAPI languageAPI = APILocator.getLanguageAPI();
 
     public final static String FOLDER_EXTENSION = ".folder.xml" ;
 
@@ -54,12 +51,12 @@ public class StaticFolderBundler implements IBundler {
     @Override
     public void setConfig(PublisherConfig pc) {
         config = pc;
-        conAPI = APILocator.getContentletAPI();
-        uAPI = APILocator.getUserAPI();
-        pubAPI = PublisherAPI.getInstance();
+        contentletAPI = APILocator.getContentletAPI();
+        userAPI = APILocator.getUserAPI();
+        publisherAPI = PublisherAPI.getInstance();
 
         try {
-            systemUser = uAPI.getSystemUser();
+            systemUser = userAPI.getSystemUser();
         } catch (DotDataException e) {
             Logger.fatal(StaticFolderBundler.class,e.getMessage(),e);
         }
@@ -79,7 +76,7 @@ public class StaticFolderBundler implements IBundler {
 
         try {
             for (String folder : folders) {
-                final long defaultLanguage = this.langAPI.getDefaultLanguage().getId();
+                final long defaultLanguage = this.languageAPI.getDefaultLanguage().getId();
 
                 for (final Long langId : getSortedConfigLanguages(this.config, defaultLanguage)) {
 
@@ -98,35 +95,21 @@ public class StaticFolderBundler implements IBundler {
 
 
     private void writeFolderTree(BundleOutput bundleOutput, String idFolder, Long languageId)
-            throws IOException, DotBundleException, DotDataException,
-            DotSecurityException, DotPublisherException
+            throws DotDataException, DotSecurityException
     {
         //Get Folder tree
-        Folder folder = fAPI.find(idFolder, systemUser, false);
+        Folder folder = folderAPI.find(idFolder, systemUser, false);
         String folderName = folder.getName();
         List<String> path = new ArrayList<>();
-        List<FolderWrapper> folderWrappers = new ArrayList<>();
+
         Host site = folder.getHost();
         while(folder != null && !folder.isSystemFolder()) {
             path.add(folder.getName());
-
-            // include parent folders only when publishing
-            if(config.getOperation().equals(PushPublisherConfig.Operation.PUBLISH) || folder.getName().equals(folderName)) {
-
-                Host host =  APILocator.getHostAPI().find(folder.getHostId(), systemUser, false);
-                folderWrappers.add(
-                        new FolderWrapper(folder,
-                                APILocator.getIdentifierAPI().find(folder.getIdentifier()),
-                                host,
-                                APILocator.getIdentifierAPI().find(host.getIdentifier()),config.getOperation()));
-            }
-
-            folder = fAPI.findParentFolder(folder, systemUser, false);
+            folder = folderAPI.findParentFolder(folder, systemUser, false);
         }
 
         if(path.size() > 0) {
             Collections.reverse(path);
-            Collections.reverse(folderWrappers);
             StringBuilder b = new StringBuilder(File.separator);
             for (String f : path) {
                 b.append(f);
@@ -140,9 +123,7 @@ public class StaticFolderBundler implements IBundler {
 
                 String myFolderUrl = File.separator + "live" + File.separator + site.getHostname() + File.separator + languageId +
                         b.toString();
-                File fsFolder = new File(myFolderUrl);
                 bundleOutput.mkdirs(myFolderUrl);
-
             }
         }
 
