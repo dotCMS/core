@@ -105,6 +105,7 @@ export const useEditableDotCMSPage = (pageResponse: DotCMSPageResponse): DotCMSP
 
             return;
         }
+
         const pageURI = pageResponse?.pageAsset?.page?.pageURI;
 
         const { destroyUVESubscriptions } = initUVE(pageResponse);

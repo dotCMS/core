@@ -11,17 +11,7 @@ import { CustomRenderer } from '../dotcms-block-editor-renderer.component';
     selector: 'dotcms-unknown-content-type',
     standalone: true,
     template: `
-        <div
-            data-testId="unknown-content-type"
-            style="
-                background-color: #fffaf0;
-                color: #333;
-                padding: 1rem;
-                border-radius: 0.5rem;
-                margin-bottom: 1rem;
-                margin-top: 1rem;
-                border: 1px solid #ed8936;
-            ">
+        <div data-testId="unknown-content-type" [style]="style">
             <strong style="color: #c05621">Dev Warning</strong>
             : The content type
             <strong style="color: #c05621">{{ contentType || 'Unknown' }}</strong>
@@ -41,6 +31,15 @@ import { CustomRenderer } from '../dotcms-block-editor-renderer.component';
 })
 export class UnknownContentTypeComponent {
     @Input() contentType: string | undefined;
+    protected readonly style = {
+        backgroundColor: '#fffaf0',
+        color: '#333',
+        padding: '1rem',
+        borderRadius: '0.5rem',
+        marginBottom: '1rem',
+        marginTop: '1rem',
+        border: '1px solid #ed8936'
+    };
 }
 
 /**
