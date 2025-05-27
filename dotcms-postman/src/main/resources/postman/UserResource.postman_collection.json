@@ -11,19 +11,6 @@
 			"name": "Users Validations",
 			"item": [
 				{
-					"name": "DeleteUser",
-					"item": [
-						{
-							"name": "GetCurrentUser",
-							"request": {
-								"method": "GET",
-								"header": []
-							},
-							"response": []
-						}
-					]
-				},
-				{
 					"name": "Get Users Include Anon and Default User",
 					"event": [
 						{
@@ -1001,7 +988,7 @@
 			]
 		},
 		{
-			"name": "DeleteUser Copy",
+			"name": "DeleteUser",
 			"item": [
 				{
 					"name": "CreateTestUser",
