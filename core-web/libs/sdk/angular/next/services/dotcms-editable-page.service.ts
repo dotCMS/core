@@ -64,10 +64,16 @@ export class DotCMSEditablePageService {
             return of(response || null);
         }
 
-        const pageURI = response?.pageAsset?.page?.pageURI ?? '/';
+        const pageURI = response?.pageAsset?.page?.pageURI;
 
         initUVE(response);
-        updateNavigation(pageURI);
+
+        // Update the navigation to the pageURI, when we have a pageURI
+        // Sometimes the page is null due to permissions, so we don't want to update the navigation
+        // And wait for the UVE to resolve the page
+        if (pageURI) {
+            updateNavigation(pageURI);
+        }
 
         const unsubscribeUVEChanges = this.#listenUVEChanges();
 
