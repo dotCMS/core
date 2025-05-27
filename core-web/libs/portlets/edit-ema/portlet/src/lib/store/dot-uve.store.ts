@@ -110,7 +110,10 @@ export const UVEStore = signalStore(
                                 id: 'rules',
                                 href: `rules/${page?.identifier}`,
                                 isDisabled:
-                                    !page?.canSeeRules || !page?.canEdit || !isEnterpriseLicense
+                                    // Check if the page has the canSeeRules property, GraphQL query does suppport this property
+                                    ('canSeeRules' in page && !page.canSeeRules) ||
+                                    !page?.canEdit ||
+                                    !isEnterpriseLicense
                             },
                             {
                                 iconURL: 'experiments',
