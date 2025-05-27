@@ -1,3 +1,5 @@
+import { UVE_MODE } from '../editor/public';
+
 /**
  * The GraphQL parameters for a page request.
  * @public
@@ -35,7 +37,7 @@ export interface DotCMSPageRequestParams<TGraphQLVars = Record<string, unknown>>
     /**
      * The mode of the page you want to retrieve. Defaults to the site's default mode if not provided.
      */
-    mode?: 'EDIT_MODE' | 'PREVIEW_MODE' | 'LIVE';
+    mode?: keyof typeof UVE_MODE;
 
     /**
      * The language id of the page you want to retrieve. Defaults to the site's default language if not provided.

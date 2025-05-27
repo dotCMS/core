@@ -1,7 +1,7 @@
 import { Editor } from '@tinymce/tinymce-react';
 import { useEffect, useRef, useState } from 'react';
 
-import { DotCMSUVEAction, UVE_MODE } from '@dotcms/types';
+import { DotCMSBasicContentlet, DotCMSUVEAction, UVE_MODE } from '@dotcms/types';
 import { __DOTCMS_UVE_EVENT__ } from '@dotcms/types/internal';
 import { sendMessageToUVE, getUVEState } from '@dotcms/uve';
 import { __TINYMCE_PATH_ON_DOTCMS__ } from '@dotcms/uve/internal';
@@ -44,7 +44,9 @@ export function DotCMSEditableText({
     const editorRef = useRef<Editor['editor'] | null>(null);
     const [scriptSrc, setScriptSrc] = useState('');
     const [initEditor, setInitEditor] = useState(false);
-    const [content, setContent] = useState(contentlet?.[fieldName] || '');
+    const [content, setContent] = useState(
+        contentlet?.[fieldName as keyof DotCMSBasicContentlet] || ''
+    );
 
     useEffect(() => {
         const state = getUVEState();
@@ -77,7 +79,7 @@ export function DotCMSEditableText({
         const createURL = new URL(__TINYMCE_PATH_ON_DOTCMS__, state.dotCMSHost);
         setScriptSrc(createURL.toString());
 
-        const content = contentlet?.[fieldName] || '';
+        const content = contentlet?.[fieldName as keyof DotCMSBasicContentlet] || '';
         editorRef.current?.setContent(content, { format });
         setContent(content);
     }, [format, fieldName, contentlet]);

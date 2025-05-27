@@ -1,4 +1,9 @@
-import { DotCMSClientConfig, DotCMSNavigationRequestParams, RequestOptions, DotCMSNavigationItem } from '@dotcms/types';
+import {
+    DotCMSClientConfig,
+    DotCMSNavigationRequestParams,
+    RequestOptions,
+    DotCMSNavigationItem
+} from '@dotcms/types';
 
 export class NavigationClient {
     private requestOptions: RequestOptions;
@@ -16,7 +21,10 @@ export class NavigationClient {
      * @returns {Promise<DotCMSNavigationItem[]>} - A Promise that resolves to the response from the DotCMS API.
      * @throws {Error} - Throws an error if the options are not valid.
      */
-    async get(path: string, params?: DotCMSNavigationRequestParams): Promise<DotCMSNavigationItem[]> {
+    async get(
+        path: string,
+        params?: DotCMSNavigationRequestParams
+    ): Promise<DotCMSNavigationItem[]> {
         if (!path) {
             throw new Error("The 'path' parameter is required for the Navigation API");
         }

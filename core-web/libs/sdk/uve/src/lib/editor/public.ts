@@ -125,7 +125,7 @@ export function enableBlockEditorInline(
     contentlet: DotCMSBasicContentlet,
     fieldName: string
 ): void {
-    if (!contentlet?.[fieldName]) {
+    if (!contentlet?.[fieldName as keyof DotCMSBasicContentlet]) {
         console.error(`Contentlet ${contentlet?.identifier} does not have field ${fieldName}`);
 
         return;
@@ -136,7 +136,7 @@ export function enableBlockEditorInline(
         inode: contentlet.inode,
         language: contentlet.languageId,
         contentType: contentlet.contentType,
-        content: contentlet[fieldName]
+        content: contentlet[fieldName as keyof DotCMSBasicContentlet]
     };
 
     initInlineEditing('BLOCK_EDITOR', data);

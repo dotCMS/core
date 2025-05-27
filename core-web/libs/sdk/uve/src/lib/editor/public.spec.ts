@@ -11,6 +11,10 @@ import {
 
 import * as utils from '../../script/utils';
 
+interface TestContentlet extends DotCMSBasicContentlet {
+    testField: string;
+}
+
 describe('UVE Public Functions', () => {
     let postMessageSpy: jest.SpyInstance;
 
@@ -202,7 +206,7 @@ describe('UVE Public Functions', () => {
                 identifier: 'test-identifier',
                 contentType: 'test-content-type',
                 testField: 'test content'
-            } as unknown as DotCMSBasicContentlet;
+            } as unknown as TestContentlet;
 
             const fieldName = 'testField';
 
@@ -213,7 +217,7 @@ describe('UVE Public Functions', () => {
                     inode: contentlet.inode,
                     language: contentlet.languageId,
                     contentType: contentlet.contentType,
-                    content: contentlet['testField']
+                    content: contentlet.testField
                 }
             };
 

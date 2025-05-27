@@ -179,7 +179,7 @@ export class DotCMSEditableTextComponent implements OnInit, OnChanges {
     }
 
     ngOnChanges() {
-        this.content = this.contentlet[this.fieldName] || '';
+        this.content = this.contentlet[this.fieldName as keyof DotCMSBasicContentlet] || '';
         if (this.editor) {
             this.editor.setContent(this.content, { format: this.format });
         }

@@ -70,7 +70,7 @@ export const PageResponseMock: DotCMSPageAsset = {
                         sortOrder: 0,
                         modUser: 'dotcms.org.1',
                         onNumberOfPages: '3'
-                    }
+                    } as unknown as DotCMSBasicContentlet
                 ]
             },
             container: {
@@ -190,7 +190,7 @@ export const PageResponseMock: DotCMSPageAsset = {
                         sortOrder: 0,
                         modUser: 'dotcms.org.1',
                         onNumberOfPages: '1'
-                    }
+                    } as unknown as DotCMSBasicContentlet
                 ]
             },
             container: {
