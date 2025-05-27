@@ -1,6 +1,6 @@
 import { BlockEditorNode } from '@dotcms/types';
 
-import { UnknownContentType } from './UnknownContentType';
+import { NoComponentProvided } from './NoComponentProvided';
 
 import { useIsDevMode } from '../../../../hooks/useIsDevMode';
 import { CustomRenderer } from '../../DotCMSBlockEditorRenderer';
@@ -38,7 +38,7 @@ export const DotContent = ({ customRenderers, node }: DotContentProps) => {
 
     /* In dev mode, show a helpful message for unknown content types */
     if (isDevMode && !Component) {
-        return <UnknownContentType contentType={contentType} />;
+        return <NoComponentProvided contentType={contentType} />;
     }
 
     /* In production, use default component if no matching component found */

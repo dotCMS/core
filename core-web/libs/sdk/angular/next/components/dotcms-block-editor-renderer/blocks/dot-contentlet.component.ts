@@ -8,28 +8,28 @@ import { DynamicComponentEntity } from '../../../models';
 import { CustomRenderer } from '../dotcms-block-editor-renderer.component';
 
 @Component({
-    selector: 'dotcms-unknown-content-type',
+    selector: 'dotcms-no-component-provided',
     standalone: true,
     template: `
-        <div data-testId="unknown-content-type" [style]="style">
+        <div data-testid="no-component-provided" [style]="style">
             <strong style="color: #c05621">Dev Warning</strong>
-            : The content type
+            : No component or custom renderer provided for content type
             <strong style="color: #c05621">{{ contentType || 'Unknown' }}</strong>
-            is not recognized. Please ensure a custom renderer is provided for this content type.
+            .
             <br />
-            Learn more about how to create a custom renderer in the
+            Please refer to the
             <a
                 href="https://dev.dotcms.com/docs/block-editor"
                 target="_blank"
                 rel="noopener noreferrer"
                 style="color: #c05621">
-                Block Editor Custom Renderers
+                Block Editor Custom Renderers Documentation
             </a>
-            .
+            for guidance.
         </div>
     `
 })
-export class UnknownContentTypeComponent {
+export class NoComponentProvided {
     @Input() contentType: string | undefined;
     protected readonly style = {
         backgroundColor: '#fffaf0',
@@ -48,7 +48,7 @@ export class UnknownContentTypeComponent {
 @Component({
     selector: 'dotcms-block-editor-renderer-contentlet',
     standalone: true,
-    imports: [NgComponentOutlet, AsyncPipe, UnknownContentTypeComponent],
+    imports: [NgComponentOutlet, AsyncPipe, NoComponentProvided],
     changeDetection: ChangeDetectionStrategy.OnPush,
     template: `
         @if (contentComponent) {
@@ -58,7 +58,7 @@ export class UnknownContentTypeComponent {
                     inputs: { contentlet: $data() }
                 "></ng-container>
         } @else if (isDevMode) {
-            <dotcms-unknown-content-type [contentType]="$data()?.contentType" />
+            <dotcms-no-component-provided [contentType]="$data()?.contentType" />
         }
     `
 })

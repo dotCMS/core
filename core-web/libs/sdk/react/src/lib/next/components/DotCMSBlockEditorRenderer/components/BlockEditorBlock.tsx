@@ -158,8 +158,30 @@ export const BlockEditorBlock = ({ content, customRenderers }: BlockEditorBlockP
  * @returns The rendered block or null if in production mode.
  */
 const UnknownBlock = ({ node }: { node: BlockEditorNode }) => {
+    const style = {
+        backgroundColor: '#fff5f5',
+        color: '#333',
+        padding: '1rem',
+        borderRadius: '0.5rem',
+        marginBottom: '1rem',
+        marginTop: '1rem',
+        border: '1px solid #fc8181'
+    };
+
     if (getUVEState()) {
-        return <div>Unknown Block Type {node.type}</div>;
+        return (
+            <div style={style}>
+                <strong style={{ color: '#c53030' }}>Warning:</strong> The block type{' '}
+                <strong>{node.type}</strong> is not recognized. Please check your{' '}
+                <a
+                    href="https://dev.dotcms.com/docs/block-editor"
+                    target="_blank"
+                    rel="noopener noreferrer">
+                    configuration
+                </a>{' '}
+                or contact support for assistance.
+            </div>
+        );
     }
 
     return null;

@@ -5,7 +5,7 @@ import { Component, Input } from '@angular/core';
 import { BlockEditorNode, DotCMSBasicContentlet, UVE_MODE } from '@dotcms/types';
 import { getUVEState } from '@dotcms/uve';
 
-import { DotContentletBlock, UnknownContentTypeComponent } from './dot-contentlet.component';
+import { DotContentletBlock, NoComponentProvided } from './dot-contentlet.component';
 
 import { CustomRenderer } from '../dotcms-block-editor-renderer.component';
 
@@ -49,7 +49,7 @@ describe('DotContentletBlock', () => {
     const createComponent = createComponentFactory({
         component: DotContentletBlock,
         imports: [],
-        mocks: [UnknownContentTypeComponent],
+        mocks: [NoComponentProvided],
         detectChanges: false
     });
 
@@ -77,7 +77,7 @@ describe('DotContentletBlock', () => {
         );
     });
 
-    it('should use UnknownContentTypeComponent in dev mode if no component is found', () => {
+    it('should use NoComponentProvided in dev mode if no component is found', () => {
         jest.spyOn(console, 'error').mockImplementation(() => {
             /* empty */
         });
@@ -87,7 +87,7 @@ describe('DotContentletBlock', () => {
         getUVEStateMock.mockReturnValue(MOCK_UVE_STATE_EDIT);
         spectator.setInput('customRenderers', {});
         spectator.detectChanges();
-        const unknownContentType = spectator.query(byTestId('unknown-content-type'));
+        const unknownContentType = spectator.query(byTestId('no-component-provided'));
         expect(unknownContentType).toBeTruthy();
     });
 
@@ -108,7 +108,7 @@ describe('DotContentletBlock', () => {
 
         await spectator.fixture.whenStable();
 
-        const unknownContentType = spectator.query(byTestId('unknown-content-type'));
+        const unknownContentType = spectator.query(byTestId('no-component-provided'));
         expect(unknownContentType).toBeFalsy();
 
         spectator.detectChanges();

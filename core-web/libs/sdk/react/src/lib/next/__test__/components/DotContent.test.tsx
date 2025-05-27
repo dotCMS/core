@@ -44,7 +44,7 @@ describe('DotContent Component', () => {
     it('should call the UnknownContentType component in dev mode when there is no component', () => {
         const { container } = render(<DotContent customRenderers={{}} node={mockNode} />);
         const unknownContentType = container.querySelector(
-            "div[data-testId='unknown-content-type']"
+            "div[data-testid='no-component-provided']"
         );
         expect(unknownContentType).toBeInTheDocument();
     });
