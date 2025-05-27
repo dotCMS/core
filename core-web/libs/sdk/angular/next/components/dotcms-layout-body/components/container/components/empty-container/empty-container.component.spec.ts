@@ -37,6 +37,12 @@ describe('EmptyContainerComponent', () => {
         expect(element?.textContent).toBe('This container is empty.');
     });
 
+    it('should have data-dot-object="empty-content"', () => {
+        spectator.detectChanges();
+        const element = spectator.query(byTestId('empty-container-message'));
+        expect(element?.getAttribute('data-dot-object')).toBe('empty-content');
+    });
+
     it('should not display anything in production mode', () => {
         jest.spyOn(dotcmsContextService, '$isDevMode').mockReturnValue(false);
         spectator.detectChanges();
