@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, computed, HostBinding, input } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    computed,
+    HostBinding,
+    inject,
+    input
+} from '@angular/core';
 import { DotCMSBasicContentlet } from '@dotcms/types';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
@@ -13,7 +20,7 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 export class WebPageContentComponent {
     contentlet = input.required<DotCMSBasicContentlet>();
 
-    constructor(private sanitizer: DomSanitizer) {}
+    sanitizer = inject(DomSanitizer);
 
     innerHTML = computed((): SafeHtml => {
         return this.sanitizer.bypassSecurityTrustHtml(this.contentlet().body || '');
