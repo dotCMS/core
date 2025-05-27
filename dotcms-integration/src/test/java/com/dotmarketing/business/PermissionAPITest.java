@@ -17,7 +17,6 @@ import com.dotcms.datagen.UserDataGen;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.variant.VariantAPI;
-import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.PermissionAPI.PermissionableType;
@@ -62,7 +61,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import org.xbill.DNS.dnssec.R;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -83,7 +81,7 @@ import static org.junit.Assert.fail;
 public class PermissionAPITest extends IntegrationTestBase {
 
     private static PermissionAPI permissionAPI;
-    private static Host host;
+    private static Host site;
     private static User sysuser;
     private static Template template;
     private static int permissionCacheSize = 0;
@@ -96,31 +94,32 @@ public class PermissionAPITest extends IntegrationTestBase {
 
         permissionAPI =APILocator.getPermissionAPI();
         sysuser=APILocator.getUserAPI().getSystemUser();
-        host = new Host();
-        host.setHostname(System.currentTimeMillis() + "testhost.demo.dotcms.com");
+        site = new Host();
+        site.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
+        site.setHostname(System.currentTimeMillis() + "testhost.demo.dotcms.com");
         try{
         	HibernateUtil.startTransaction();
-            host=APILocator.getHostAPI().save(host, sysuser, false);
+            site =APILocator.getHostAPI().save(site, sysuser, false);
         	HibernateUtil.closeAndCommitTransaction();
         }catch(Exception e){
         	HibernateUtil.rollbackTransaction();
-        	host = APILocator.getHostAPI().findByName(host.getHostname(), sysuser, false);
+        	site = APILocator.getHostAPI().findByName(site.getHostname(), sysuser, false);
         	Logger.error(PermissionAPITest.class, e.getMessage());
         } finally {
             HibernateUtil.closeSessionSilently();
         }
  
         try{
-            permissionAPI.permissionIndividually(host.getParentPermissionable(), host, sysuser);
+            permissionAPI.permissionIndividually(site.getParentPermissionable(), site, sysuser);
         }catch(DotDataException e){
             Logger.warn(PermissionAPITest.class, "Host Individual Permissions were already set. Reaplying permissions.");
-            permissionAPI.removePermissions(host);
-            permissionAPI.permissionIndividually(host.getParentPermissionable(), host, sysuser);
+            permissionAPI.removePermissions(site);
+            permissionAPI.permissionIndividually(site.getParentPermissionable(), site, sysuser);
         }
         template =new Template();
         template.setTitle("testtemplate");
         template.setBody("<html><head></head><body>en empty template just for test</body></html>");
-        APILocator.getTemplateAPI().saveTemplate(template, host, sysuser, false);
+        APILocator.getTemplateAPI().saveTemplate(template, site, sysuser, false);
 
         permissionCacheSize = Config.getIntProperty("cache.permissionshortlived.size", 0);
         Config.setProperty("cache.permissionshortlived.size", 0);
@@ -135,8 +134,8 @@ public class PermissionAPITest extends IntegrationTestBase {
     public static void deleteTestHost() throws DotContentletStateException, DotDataException, DotSecurityException {
         try{
         	HibernateUtil.startTransaction();
-            APILocator.getHostAPI().archive(host, sysuser, false);
-            APILocator.getHostAPI().delete(host, sysuser, false);
+            APILocator.getHostAPI().archive(site, sysuser, false);
+            APILocator.getHostAPI().delete(site, sysuser, false);
         	HibernateUtil.closeAndCommitTransaction();
         }catch(Exception e){
         	HibernateUtil.rollbackTransaction();
@@ -156,12 +155,12 @@ public class PermissionAPITest extends IntegrationTestBase {
         Permission p=new Permission();
         p.setPermission(PermissionAPI.PERMISSION_EDIT);
         p.setRoleId(nrole.getId());
-        p.setInode(host.getIdentifier());
-        permissionAPI.save(p, host, sysuser, false);
+        p.setInode(site.getIdentifier());
+        permissionAPI.save(p, site, sysuser, false);
 
-        assertTrue(permissionAPI.doesRoleHavePermission(host, PermissionAPI.PERMISSION_EDIT, nrole));
-        assertFalse(permissionAPI.doesRoleHavePermission(host, PermissionAPI.PERMISSION_PUBLISH, nrole));
-        assertFalse(permissionAPI.doesRoleHavePermission(host, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, nrole));
+        assertTrue(permissionAPI.doesRoleHavePermission(site, PermissionAPI.PERMISSION_EDIT, nrole));
+        assertFalse(permissionAPI.doesRoleHavePermission(site, PermissionAPI.PERMISSION_PUBLISH, nrole));
+        assertFalse(permissionAPI.doesRoleHavePermission(site, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, nrole));
     }
 
     @Test
@@ -176,12 +175,12 @@ public class PermissionAPITest extends IntegrationTestBase {
         Permission p=new Permission();
         p.setPermission(PermissionAPI.PERMISSION_EDIT);
         p.setRoleId(nrole.getId());
-        p.setInode(host.getIdentifier());
-        permissionAPI.save(p, host, sysuser, false);
+        p.setInode(site.getIdentifier());
+        permissionAPI.save(p, site, sysuser, false);
 
-        assertTrue(permissionAPI.doesUserHavePermission(host, PermissionAPI.PERMISSION_EDIT, user));
-        assertFalse(permissionAPI.doesUserHavePermission(host, PermissionAPI.PERMISSION_PUBLISH, user));
-        assertFalse(permissionAPI.doesUserHavePermission(host, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user));
+        assertTrue(permissionAPI.doesUserHavePermission(site, PermissionAPI.PERMISSION_EDIT, user));
+        assertFalse(permissionAPI.doesUserHavePermission(site, PermissionAPI.PERMISSION_PUBLISH, user));
+        assertFalse(permissionAPI.doesUserHavePermission(site, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user));
 
         /*should throw an error if the permissionable is null*/
         boolean throwException = false;
@@ -336,15 +335,15 @@ public class PermissionAPITest extends IntegrationTestBase {
 
     @Test
     public void copyPermissions() throws DotDataException, DotSecurityException {
-        APILocator.getFolderAPI().createFolders("/f1/", host, sysuser, false);
-        APILocator.getFolderAPI().createFolders("/f2/", host, sysuser, false);
-        Folder f1=APILocator.getFolderAPI().findFolderByPath("/f1/", host, sysuser, false);
-        Folder f2=APILocator.getFolderAPI().findFolderByPath("/f2/", host, sysuser, false);
+        APILocator.getFolderAPI().createFolders("/f1/", site, sysuser, false);
+        APILocator.getFolderAPI().createFolders("/f2/", site, sysuser, false);
+        Folder f1=APILocator.getFolderAPI().findFolderByPath("/f1/", site, sysuser, false);
+        Folder f2=APILocator.getFolderAPI().findFolderByPath("/f2/", site, sysuser, false);
 
         Role nrole=getRole("TestingRole3");
 
-        permissionAPI.permissionIndividually(host, f1, sysuser);
-        permissionAPI.permissionIndividually(host, f2, sysuser);
+        permissionAPI.permissionIndividually(site, f1, sysuser);
+        permissionAPI.permissionIndividually(site, f2, sysuser);
 
         Permission p1=new Permission();
         p1.setPermission(PermissionAPI.PERMISSION_READ);
@@ -371,9 +370,9 @@ public class PermissionAPITest extends IntegrationTestBase {
     public void getPermissions() throws DotDataException, DotSecurityException {
         Role nrole=getRole("TestingRole4");
 
-        APILocator.getFolderAPI().createFolders("/f1/", host, sysuser, false);
-        Folder f = APILocator.getFolderAPI().findFolderByPath("/f1/", host, sysuser, false);
-        permissionAPI.permissionIndividually(host, f, sysuser, false);
+        APILocator.getFolderAPI().createFolders("/f1/", site, sysuser, false);
+        Folder f = APILocator.getFolderAPI().findFolderByPath("/f1/", site, sysuser, false);
+        permissionAPI.permissionIndividually(site, f, sysuser, false);
 
         Permission p1=new Permission();
         p1.setPermission(PermissionAPI.PERMISSION_READ);
@@ -400,9 +399,9 @@ public class PermissionAPITest extends IntegrationTestBase {
     public void getRolesWithPermission() throws DotDataException, DotSecurityException {
         Role nrole=getRole("TestingRole6");
 
-        APILocator.getFolderAPI().createFolders("/f2/", host, sysuser, false);
-        Folder f = APILocator.getFolderAPI().findFolderByPath("/f2/", host, sysuser, false);
-        permissionAPI.permissionIndividually(host, f, sysuser, false);
+        APILocator.getFolderAPI().createFolders("/f2/", site, sysuser, false);
+        Folder f = APILocator.getFolderAPI().findFolderByPath("/f2/", site, sysuser, false);
+        permissionAPI.permissionIndividually(site, f, sysuser, false);
 
         Permission p1=new Permission();
         p1.setPermission(PermissionAPI.PERMISSION_READ);
@@ -431,9 +430,9 @@ public class PermissionAPITest extends IntegrationTestBase {
         if(!APILocator.getRoleAPI().doesUserHaveRole(user, nrole))
             APILocator.getRoleAPI().addRoleToUser(nrole, user);
 
-        APILocator.getFolderAPI().createFolders("/f3/", host, sysuser, false);
-        Folder f = APILocator.getFolderAPI().findFolderByPath("/f3/", host, sysuser, false);
-        permissionAPI.permissionIndividually(host, f, sysuser, false);
+        APILocator.getFolderAPI().createFolders("/f3/", site, sysuser, false);
+        Folder f = APILocator.getFolderAPI().findFolderByPath("/f3/", site, sysuser, false);
+        permissionAPI.permissionIndividually(site, f, sysuser, false);
 
         Permission p1=new Permission();
         p1.setPermission(PermissionAPI.PERMISSION_READ);
@@ -457,9 +456,9 @@ public class PermissionAPITest extends IntegrationTestBase {
     public void save() throws DotStateException, DotDataException, DotSecurityException {
         Role nrole=getRole("TestingRole7");
 
-        APILocator.getFolderAPI().createFolders("/f4/", host, sysuser, false);
-        Folder f = APILocator.getFolderAPI().findFolderByPath("/f4/", host, sysuser, false);
-        permissionAPI.permissionIndividually(host, f, sysuser, false);
+        APILocator.getFolderAPI().createFolders("/f4/", site, sysuser, false);
+        Folder f = APILocator.getFolderAPI().findFolderByPath("/f4/", site, sysuser, false);
+        permissionAPI.permissionIndividually(site, f, sysuser, false);
 
         ArrayList<Permission> permissions=new ArrayList<>(permissionAPI.getPermissions(f));
 
@@ -820,9 +819,9 @@ public class PermissionAPITest extends IntegrationTestBase {
     @Test
     public void issue1073() throws Exception {
 
-    	Folder m1 = APILocator.getFolderAPI().createFolders("/m1/", host, sysuser, false);
-    	Folder m2 = APILocator.getFolderAPI().createFolders("/m1/m2/", host, sysuser, false);
-    	Folder m3 = APILocator.getFolderAPI().createFolders("/m1/m2/m3/", host, sysuser, false);
+    	Folder m1 = APILocator.getFolderAPI().createFolders("/m1/", site, sysuser, false);
+    	Folder m2 = APILocator.getFolderAPI().createFolders("/m1/m2/", site, sysuser, false);
+    	Folder m3 = APILocator.getFolderAPI().createFolders("/m1/m2/m3/", site, sysuser, false);
 
     	permissionAPI.permissionIndividually(permissionAPI.findParentPermissionable(m1), m1, sysuser, false);
     	permissionAPI.permissionIndividually(permissionAPI.findParentPermissionable(m2), m2, sysuser, false);
@@ -911,8 +910,8 @@ public class PermissionAPITest extends IntegrationTestBase {
             APILocator.getRoleAPI().addRoleToUser(nrole, user);
         }
 
-        APILocator.getFolderAPI().createFolders("/f11/", host, sysuser, false);
-        Folder f = APILocator.getFolderAPI().findFolderByPath("/f11/", host, sysuser, false);
+        APILocator.getFolderAPI().createFolders("/f11/", site, sysuser, false);
+        Folder f = APILocator.getFolderAPI().findFolderByPath("/f11/", site, sysuser, false);
 
         Permission p1 = new Permission();
         p1.setPermission(PermissionAPI.PERMISSION_READ);
@@ -940,8 +939,8 @@ public class PermissionAPITest extends IntegrationTestBase {
             APILocator.getRoleAPI().addRoleToUser(nrole, user);
         }
 
-        APILocator.getFolderAPI().createFolders("/f11/", host, sysuser, false);
-        Folder f = APILocator.getFolderAPI().findFolderByPath("/f11/", host, sysuser, false);
+        APILocator.getFolderAPI().createFolders("/f11/", site, sysuser, false);
+        Folder f = APILocator.getFolderAPI().findFolderByPath("/f11/", site, sysuser, false);
 
         Permission p1 = new Permission();
         p1.setPermission(PermissionAPI.PERMISSION_READ);
@@ -969,8 +968,8 @@ public class PermissionAPITest extends IntegrationTestBase {
             APILocator.getRoleAPI().addRoleToUser(nrole, user);
         }
 
-        APILocator.getFolderAPI().createFolders("/f11/", host, sysuser, false);
-        Folder f = APILocator.getFolderAPI().findFolderByPath("/f11/", host, sysuser, false);
+        APILocator.getFolderAPI().createFolders("/f11/", site, sysuser, false);
+        Folder f = APILocator.getFolderAPI().findFolderByPath("/f11/", site, sysuser, false);
 
         Permission p1 = new Permission();
         p1.setPermission(PermissionAPI.PERMISSION_READ);
@@ -996,8 +995,8 @@ public class PermissionAPITest extends IntegrationTestBase {
             APILocator.getRoleAPI().addRoleToUser(nrole, user);
         }
 
-        APILocator.getFolderAPI().createFolders("/f11/", host, sysuser, false);
-        Folder f = APILocator.getFolderAPI().findFolderByPath("/f11/", host, sysuser, false);
+        APILocator.getFolderAPI().createFolders("/f11/", site, sysuser, false);
+        Folder f = APILocator.getFolderAPI().findFolderByPath("/f11/", site, sysuser, false);
 
         Permission p1 = new Permission();
         p1.setPermission(PermissionAPI.PERMISSION_READ);
@@ -1023,8 +1022,8 @@ public class PermissionAPITest extends IntegrationTestBase {
             APILocator.getRoleAPI().addRoleToUser(nrole, user);
         }
 
-        APILocator.getFolderAPI().createFolders("/f11/", host, sysuser, false);
-        Folder f = APILocator.getFolderAPI().findFolderByPath("/f11/", host, sysuser, false);
+        APILocator.getFolderAPI().createFolders("/f11/", site, sysuser, false);
+        Folder f = APILocator.getFolderAPI().findFolderByPath("/f11/", site, sysuser, false);
 
         Permission p1 = new Permission();
         p1.setPermission(PermissionAPI.PERMISSION_READ);
@@ -1050,8 +1049,8 @@ public class PermissionAPITest extends IntegrationTestBase {
             APILocator.getRoleAPI().addRoleToUser(nrole, user);
         }
 
-        APILocator.getFolderAPI().createFolders("/f11/", host, sysuser, false);
-        Folder f = APILocator.getFolderAPI().findFolderByPath("/f11/", host, sysuser, false);
+        APILocator.getFolderAPI().createFolders("/f11/", site, sysuser, false);
+        Folder f = APILocator.getFolderAPI().findFolderByPath("/f11/", site, sysuser, false);
 
         Permission p1 = new Permission();
         p1.setPermission(PermissionAPI.PERMISSION_READ);
@@ -1386,7 +1385,7 @@ public class PermissionAPITest extends IntegrationTestBase {
         final Contentlet working = ContentletDataGen.checkin(
             new ContentletDataGen(contentType)
                     .languageId(1)
-                    .host(host)
+                    .host(site)
                     .setProperty("title", "working")
                     .next()
         );
