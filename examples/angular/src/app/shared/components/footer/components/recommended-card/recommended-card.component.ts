@@ -4,8 +4,8 @@ import { DatePipe, NgOptimizedImage } from '@angular/common';
 
 import { editContentlet } from '@dotcms/uve';
 import { UVE_MODE } from '@dotcms/types';
-import { EditContentletButtonComponent } from '../edit-contentlet-button/edit-contentlet-button.component';
-import { Contentlet } from '../../contentlet.model';
+import { EditContentletButtonComponent } from '../../../edit-contentlet-button/edit-contentlet-button.component';
+import { Contentlet } from '../../../../contentlet.model';
 
 /**
  * Local component for rendering a recommended card.
