@@ -100,6 +100,12 @@ export const useEditableDotCMSPage = (pageResponse: DotCMSPageResponse): DotCMSP
             return;
         }
 
+        if (!pageResponse) {
+            console.warn('[useEditableDotCMSPage]: No DotCMSPageResponse provided');
+
+            return;
+        }
+
         const pageURI = pageResponse?.pageAsset?.page?.pageURI ?? '/';
 
         const { destroyUVESubscriptions } = initUVE(pageResponse);
