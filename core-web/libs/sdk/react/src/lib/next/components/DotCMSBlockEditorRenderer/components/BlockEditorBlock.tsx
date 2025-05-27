@@ -3,7 +3,7 @@ import { BlockEditorDefaultBlocks } from '@dotcms/types/internal';
 import { getUVEState } from '@dotcms/uve';
 
 import { BlockQuote, CodeBlock } from './blocks/Code';
-import { DotContent } from './blocks/Contentlet';
+import { DotContent } from './blocks/DotContent';
 import { DotCMSImage } from './blocks/Image';
 import { BulletList, ListItem, OrderedList } from './blocks/Lists';
 import { TableRenderer } from './blocks/Table';

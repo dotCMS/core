@@ -1,6 +1,7 @@
 export const UnknownContentType = ({ contentType }: { contentType: string }) => {
     return (
         <div
+            data-testId="unknown-content-type"
             style={{
                 backgroundColor: '#f9fafb',
                 color: '#1f2937',

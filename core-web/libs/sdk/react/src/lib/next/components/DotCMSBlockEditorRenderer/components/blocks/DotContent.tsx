@@ -24,8 +24,8 @@ const DOT_CONTENT_NO_MATCHING_COMPONENT_MESSAGE = (contentType: string) =>
  */
 export const DotContent = ({ customRenderers, node }: DotContentProps) => {
     const isDevMode = useIsDevMode();
-    const attrs = node?.attrs || {};
-    const data = attrs.data;
+    const { attrs = {} } = node;
+    const { data } = attrs;
 
     if (!data) {
         console.error(DOT_CONTENT_NO_DATA_MESSAGE);
@@ -33,15 +33,15 @@ export const DotContent = ({ customRenderers, node }: DotContentProps) => {
         return null;
     }
 
-    const contentType = data.contentType || 'Unknown Content Type';
+    const { contentType = 'Unknown Content Type' } = data;
     const Component = customRenderers[contentType];
 
-    // In dev mode, show a helpful message for unknown content types
+    /* In dev mode, show a helpful message for unknown content types */
     if (isDevMode && !Component) {
         return <UnknownContentType contentType={contentType} />;
     }
 
-    // In production, use default component if no matching component found
+    /* In production, use default component if no matching component found */
     if (!Component) {
         console.warn(DOT_CONTENT_NO_MATCHING_COMPONENT_MESSAGE(contentType));
 
