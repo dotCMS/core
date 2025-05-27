@@ -9,7 +9,7 @@
                             ? 'pi pi-bars'
                             : 'pi pi-arrow-left'
                     "
-                    styleClass="p-button-rounded p-button-text"></p-button>
+                    styleClass="p-button-rounded p-button-text" />
             </div>
             <div
                 [class.toolbar__logo-wrapper--collapsed]="dotNavigationService.collapsed$ | async"
@@ -26,7 +26,7 @@
                 <span class="toolbar__logo-bg"></span>
             </div>
         </div>
-        <dot-crumbtrail class="toolbar__crumbtrail"></dot-crumbtrail>
+        <dot-crumbtrail class="toolbar__crumbtrail" />
     </div>
     <div class="p-toolbar-group-right">
         <dot-site-selector
@@ -37,8 +37,8 @@
             class="toolbar__site-selector"
             #siteSelector
             cssClass="d-secondary"
-            width="200px"></dot-site-selector>
-        <dot-toolbar-notifications></dot-toolbar-notifications>
-        <dot-toolbar-user></dot-toolbar-user>
+            width="200px" />
+        <dot-toolbar-notifications />
+        <dot-toolbar-user />
     </div>
 </p-toolbar>

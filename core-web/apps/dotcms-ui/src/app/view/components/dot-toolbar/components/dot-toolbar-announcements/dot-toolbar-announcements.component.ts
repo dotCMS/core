@@ -1,4 +1,4 @@
-import { DatePipe, LowerCasePipe, NgClass } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import {
     Component,
     EventEmitter,
@@ -7,9 +7,9 @@ import {
     OnInit,
     Output,
     Signal,
-    ViewChild,
     inject,
-    signal
+    signal,
+    viewChild
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
@@ -30,14 +30,14 @@ import { DotMessagePipe } from '@dotcms/ui';
     templateUrl: './dot-toolbar-announcements.component.html',
     styleUrls: ['./dot-toolbar-announcements.component.scss'],
     standalone: true,
-    imports: [NgClass, DotMessagePipe, OverlayPanelModule, LowerCasePipe, DatePipe],
+    imports: [CommonModule, DotMessagePipe, OverlayPanelModule],
     providers: [AnnouncementsStore]
 })
 export class DotToolbarAnnouncementsComponent implements OnInit, OnChanges {
     announcementsStore = inject(AnnouncementsStore);
     dotMessageService = inject(DotMessageService);
     siteService = inject(SiteService);
-    @ViewChild('toolbarAnnouncements', { static: true }) toolbarAnnouncements: OverlayPanel;
+    $toolbarAnnouncements = viewChild.required<OverlayPanel>('toolbarAnnouncements');
     @Output() hideMenu = new EventEmitter();
 
     @Input() showUnreadAnnouncement: boolean;
@@ -85,7 +85,7 @@ export class DotToolbarAnnouncementsComponent implements OnInit, OnChanges {
      */
     toggleDialog(event): void {
         this.showMask.update((value) => !value);
-        this.toolbarAnnouncements.toggle(event);
+        this.$toolbarAnnouncements().toggle(event);
     }
 
     /**

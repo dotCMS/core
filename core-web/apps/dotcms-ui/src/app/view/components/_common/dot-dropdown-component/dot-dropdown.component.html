@@ -1,3 +1,8 @@
+@let disabled = $disabledState();
+@let show = $show();
+@let icon = $icon();
+@let title = $title();
+
 @if (show) {
     <div (click)="onToggle()" class="dot-mask"></div>
 }
@@ -23,7 +28,7 @@
 }
 
 @if (show) {
-    <div [ngStyle]="positionStyle" class="dropdown-content" [@enterAnimation]="show">
-        <ng-content></ng-content>
+    <div [style]="$style()" class="dropdown-content" [@enterAnimation]="show">
+        <ng-content />
     </div>
 }

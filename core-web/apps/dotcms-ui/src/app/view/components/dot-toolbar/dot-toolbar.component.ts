@@ -35,19 +35,17 @@ import { DotNavigationService } from '../dot-navigation/services/dot-navigation.
     ]
 })
 export class DotToolbarComponent implements OnInit {
+    private dotRouterService = inject(DotRouterService);
+    private dotcmsEventsService = inject(DotcmsEventsService);
+    private siteService = inject(SiteService);
+    dotNavigationService = inject(DotNavigationService);
+    iframeOverlayService = inject(IframeOverlayService);
+
     readonly #dotNavLogoService = inject(DotNavLogoService);
 
     @Input()
     collapsed: boolean;
     logo$: BehaviorSubject<string> = this.#dotNavLogoService.navBarLogo$;
-
-    constructor(
-        private dotRouterService: DotRouterService,
-        private dotcmsEventsService: DotcmsEventsService,
-        private siteService: SiteService,
-        public dotNavigationService: DotNavigationService,
-        public iframeOverlayService: IframeOverlayService
-    ) {}
 
     ngOnInit(): void {
         this.dotcmsEventsService.subscribeTo<Site>('ARCHIVE_SITE').subscribe((data: Site) => {

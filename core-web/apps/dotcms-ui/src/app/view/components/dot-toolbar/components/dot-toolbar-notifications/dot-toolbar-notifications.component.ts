@@ -12,7 +12,6 @@ import { FeaturedFlags } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 import { INotification } from '@models/notifications';
 
-
 import { DotNotificationsListComponent } from './components/dot-notifications/dot-notifications.component';
 
 import { DotToolbarAnnouncementsComponent } from '../dot-toolbar-announcements/dot-toolbar-announcements.component';
@@ -34,6 +33,11 @@ import { DotToolbarAnnouncementsComponent } from '../dot-toolbar-announcements/d
     providers: [AnnouncementsStore]
 })
 export class DotToolbarNotificationsComponent implements OnInit {
+    iframeOverlayService = inject(IframeOverlayService);
+    private dotcmsEventsService = inject(DotcmsEventsService);
+    private loginService = inject(LoginService);
+    private notificationService = inject(NotificationsService);
+
     readonly #announcementsStore = inject(AnnouncementsStore);
 
     @ViewChild(DotDropdownComponent, { static: true }) dropdown: DotDropdownComponent;
@@ -50,13 +54,6 @@ export class DotToolbarNotificationsComponent implements OnInit {
     private showNotifications = false;
 
     showUnreadAnnouncement = this.#announcementsStore.showUnreadAnnouncement;
-
-    constructor(
-        public iframeOverlayService: IframeOverlayService,
-        private dotcmsEventsService: DotcmsEventsService,
-        private loginService: LoginService,
-        private notificationService: NotificationsService
-    ) {}
 
     ngOnInit(): void {
         this.getNotifications();

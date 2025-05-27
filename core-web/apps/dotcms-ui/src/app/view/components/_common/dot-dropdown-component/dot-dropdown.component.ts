@@ -1,14 +1,13 @@
 import { animate, style, transition, trigger } from '@angular/animations';
 import {
     Component,
+    computed,
     ElementRef,
-    EventEmitter,
     HostListener,
-    Input,
-    OnChanges,
-    OnInit,
-    Output,
-    SimpleChanges
+    inject,
+    input,
+    signal,
+    output
 } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
@@ -32,51 +31,106 @@ import { ButtonModule } from 'primeng/button';
     standalone: true,
     imports: [ButtonModule]
 })
-export class DotDropdownComponent implements OnChanges, OnInit {
-    @Input()
-    disabled = false;
+export class DotDropdownComponent {
+    /** Reference to the component's DOM element for click detection */
+    readonly #elementRef = inject(ElementRef);
 
-    @Input()
-    icon = null;
+    /**
+     * Controls whether the dropdown trigger button is disabled.
+     * When true, prevents user interaction with the dropdown.
+     * @default false
+     */
+    $disabled = input(false, { alias: 'disabled' });
 
-    @Input()
-    title = null;
+    /**
+     * Icon to display on the dropdown trigger button.
+     * Accepts PrimeNG icon classes or null for no icon.
+     * @default null
+     */
+    $icon = input(null, { alias: 'icon' });
 
-    @Input() position: 'left' | 'right' = 'left';
+    /**
+     * Title text to display on the dropdown trigger button.
+     * Can be null if only an icon is desired.
+     * @default null
+     */
+    $title = input(null, { alias: 'title' });
 
-    @Input()
-    inverted = false;
+    /**
+     * Position of the dropdown content relative to the trigger button.
+     * 'left' aligns content to the left edge, 'right' to the right edge.
+     * @default 'left'
+     */
+    $position = input<'left' | 'right'>('left', { alias: 'position' });
 
-    @Output()
-    wasOpen = new EventEmitter<never>();
+    /**
+     * Controls the visual styling theme of the dropdown.
+     * When true, applies inverted color scheme.
+     * @default false
+     */
+    $inverted = input(false, { alias: 'inverted' });
 
-    @Output()
-    toggle = new EventEmitter<boolean>();
+    /**
+     * Computed CSS style object for positioning the dropdown content.
+     * Dynamically sets left or right positioning based on $position input.
+     * @returns CSS style object with positioning property
+     */
+    $style = computed(() => {
+        return {
+            [this.$position()]: '0'
+        };
+    });
 
-    @Output()
-    shutdown = new EventEmitter<never>();
+    /**
+     * Computed boolean indicating if the dropdown should be in disabled state.
+     * Returns true only when both disabled is true AND an icon is present.
+     * @returns true if dropdown should be disabled with icon, false otherwise
+     */
+    $disabledState = computed(() => {
+        const icon = this.$icon();
+        const disabled = this.$disabled();
 
-    show = false;
-    positionStyle = {};
+        return disabled && icon ? true : false;
+    });
 
-    constructor(private elementRef: ElementRef) {}
+    /**
+     * Event emitted when the dropdown is opened.
+     * Useful for triggering actions when dropdown becomes visible.
+     */
+    wasOpen = output<void>();
 
-    ngOnInit() {
-        this.positionStyle[this.position] = '0';
-    }
+    /**
+     * Event emitted whenever the dropdown visibility state changes.
+     * Emits the current visibility state (true for open, false for closed).
+     */
+    toggle = output<boolean>();
 
-    ngOnChanges(changes: SimpleChanges): void {
-        if (changes.disabled && this.icon) {
-            this.disabled = changes.disabled.currentValue ? true : null;
-        }
-    }
+    /**
+     * Event emitted when the dropdown is closed.
+     * Useful for cleanup actions when dropdown becomes hidden.
+     */
+    shutdown = output<void>();
 
+    /**
+     * Signal tracking the current visibility state of the dropdown.
+     * true when dropdown is open, false when closed.
+     * @default false
+     */
+    $show = signal(false);
+
+    /**
+     * Host listener that handles clicks outside the dropdown component.
+     * Automatically closes the dropdown when user clicks outside of it.
+     * Traverses the DOM tree to determine if click occurred inside component.
+     *
+     * @param $event - The mouse click event from the document
+     */
     @HostListener('document:click', ['$event'])
     handleClick($event) {
         let clickedComponent = $event.target;
         let inside = false;
         do {
-            if (clickedComponent === this.elementRef.nativeElement) {
+            if (clickedComponent === this.#elementRef.nativeElement) {
                 inside = true;
             }
 
@@ -84,23 +138,34 @@ export class DotDropdownComponent implements OnChanges, OnInit {
         } while (clickedComponent);
 
         if (!inside) {
-            this.show = false;
+            this.$show.set(false);
         }
     }
 
+    /**
+     * Programmatically closes the dropdown by setting visibility to false.
+     * Can be called from parent components or internal logic to hide dropdown.
+     */
     closeIt(): void {
-        this.show = false;
+        this.$show.set(false);
     }
 
+    /**
+     * Toggles the dropdown visibility state and emits appropriate events.
+     * - Flips the current $show state
+     * - Emits wasOpen when dropdown opens
+     * - Emits shutdown when dropdown closes
+     * - Always emits toggle with current state
+     */
     onToggle(): void {
-        this.show = !this.show;
+        this.$show.update((value) => !value);
 
-        if (this.show) {
+        if (this.$show()) {
             this.wasOpen.emit();
         } else {
             this.shutdown.emit();
         }
 
-        this.toggle.emit(this.show);
+        this.toggle.emit(this.$show());
     }
 }

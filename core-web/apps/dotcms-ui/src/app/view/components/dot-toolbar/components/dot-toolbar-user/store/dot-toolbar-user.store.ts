@@ -1,7 +1,7 @@
 import { ComponentStore } from '@ngrx/component-store';
 import { Observable } from 'rxjs';
 
-import { Inject, Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { MenuItem } from 'primeng/api';
 
@@ -34,19 +34,19 @@ const INITIAL_STATE: DotToolbarUserState = {
 
 @Injectable()
 export class DotToolbarUserStore extends ComponentStore<DotToolbarUserState> {
+    private loginService = inject(LoginService);
+    private dotMessageService = inject(DotMessageService);
+    private dotNavigationService = inject(DotNavigationService);
+    private loggerService = inject(LoggerService);
+    private location = inject<Location>(LOCATION_TOKEN);
+
     private readonly FINAL_LOGOUT_URL = `${LOGOUT_URL}?r=${new Date().getTime()}`;
 
     readonly vm$: Observable<DotToolbarUserState> = this.select((state) => state).pipe(
         filter((vm) => !!vm.userData.email)
     );
 
-    constructor(
-        private loginService: LoginService,
-        private dotMessageService: DotMessageService,
-        private dotNavigationService: DotNavigationService,
-        private loggerService: LoggerService,
-        @Inject(LOCATION_TOKEN) private location: Location
-    ) {
+    constructor() {
         super(INITIAL_STATE);
     }
 
