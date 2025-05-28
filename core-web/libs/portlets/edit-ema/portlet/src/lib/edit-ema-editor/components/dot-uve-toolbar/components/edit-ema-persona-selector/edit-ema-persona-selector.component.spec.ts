@@ -44,6 +44,11 @@ export const CUSTOM_PERSONA: DotPersona = {
     modUser: 'customAdmin'
 };
 
+const TEST_DEFAULT_PERSONA = {
+    ...DEFAULT_PERSONA,
+    photo: '/dA/198-23423-234'
+};
+
 describe('EditEmaPersonaSelectorComponent', () => {
     let spectator: Spectator<EditEmaPersonaSelectorComponent>;
     let component: EditEmaPersonaSelectorComponent;
@@ -60,7 +65,7 @@ describe('EditEmaPersonaSelectorComponent', () => {
                 useValue: {
                     getPersonas() {
                         return of({
-                            data: [DEFAULT_PERSONA, CUSTOM_PERSONA],
+                            data: [TEST_DEFAULT_PERSONA, CUSTOM_PERSONA],
                             pagination: {
                                 totalEntries: 1,
                                 page: 1,
@@ -76,9 +81,7 @@ describe('EditEmaPersonaSelectorComponent', () => {
     beforeEach(() => {
         spectator = createComponent({
             props: {
-                value: {
-                    ...DEFAULT_PERSONA
-                },
+                value: TEST_DEFAULT_PERSONA,
                 pageId: '123'
             }
         });
@@ -116,7 +119,7 @@ describe('EditEmaPersonaSelectorComponent', () => {
         });
 
         it('should set the value to the listbox', () => {
-            expect(component.listbox.value).toEqual(DEFAULT_PERSONA);
+            expect(component.listbox.value).toEqual(TEST_DEFAULT_PERSONA);
         });
 
         it('should add the chip to the personalized persona', () => {

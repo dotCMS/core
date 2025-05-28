@@ -77,6 +77,8 @@ export const UVEStore = signalStore(
                     const isLoading = status() === UVE_STATUS.LOADING;
                     const isEnterpriseLicense = isEnterprise();
 
+                    const canSeeRulesExists = page && 'canSeeRules' in page;
+
                     return {
                         canRead: page?.canRead,
                         error: errorPayload,
@@ -110,7 +112,7 @@ export const UVEStore = signalStore(
                                 href: `rules/${page?.identifier}`,
                                 isDisabled:
                                     // Check if the page has the canSeeRules property, GraphQL query does suppport this property
-                                    ('canSeeRules' in page && !page.canSeeRules) ||
+                                    (canSeeRulesExists && !page.canSeeRules) ||
                                     !page?.canEdit ||
                                     !isEnterpriseLicense
                             },

@@ -1,8 +1,8 @@
 import { Params } from '@angular/router';
 
 import { CurrentUser } from '@dotcms/dotcms-js';
-import { DotDevice, DotExperiment, DotExperimentStatus } from '@dotcms/dotcms-models';
-import { UVE_MODE } from '@dotcms/types';
+import { DotContainer, DotDevice, DotExperiment, DotExperimentStatus } from '@dotcms/dotcms-models';
+import { DotCMSPage, UVE_MODE } from '@dotcms/types';
 
 import {
     deleteContentletFromContainer,
@@ -29,14 +29,14 @@ import {
 import { DotPageApiParams } from '../services/dot-page-api.service';
 import { DEFAULT_PERSONA, PERSONA_KEY } from '../shared/consts';
 import { dotPageContainerStructureMock } from '../shared/mocks';
-import { ContentletDragPayload, ContentTypeDragPayload, DotPage } from '../shared/models';
+import { ContentletDragPayload, ContentTypeDragPayload } from '../shared/models';
 import { Orientation } from '../store/models';
 
 const generatePageAndUser = ({ locked, lockedBy, userId }) => ({
     page: {
         locked,
         lockedBy
-    } as DotPage,
+    } as DotCMSPage,
     currentUser: {
         userId
     } as CurrentUser
@@ -546,7 +546,7 @@ describe('utils functions', () => {
             const result = mapContainerStructureToDotContainerMap(dotPageContainerStructureMock);
 
             expect(result).toEqual({
-                '123': dotPageContainerStructureMock['123'].container
+                '123': dotPageContainerStructureMock['123'].container as unknown as DotContainer
             });
         });
     });

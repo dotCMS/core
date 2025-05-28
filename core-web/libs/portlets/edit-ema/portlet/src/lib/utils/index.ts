@@ -7,10 +7,9 @@ import {
     DotContainerMap,
     DotDevice,
     DotExperiment,
-    DotExperimentStatus,
-    VanityUrl
+    DotExperimentStatus
 } from '@dotcms/dotcms-models';
-import { DotCMSPage, DotCMSPageAssetContainers } from '@dotcms/types';
+import { DotCMSPage, DotCMSPageAssetContainers, DotCMSVanityUrl } from '@dotcms/types';
 
 import { EmaDragItem } from '../edit-ema-editor/components/ema-page-dropzone/types';
 import { DotPageAssetKeys, DotPageApiParams } from '../services/dot-page-api.service';
@@ -320,11 +319,21 @@ export function getIsDefaultVariant(variant?: string): boolean {
  * Check if the param is a forward or page
  *
  * @export
- * @param {VanityUrl} vanityUrl
+ * @param {DotCMSVanityUrl} vanityUrl
  * @return {*}
  */
-export function isForwardOrPage(vanityUrl?: VanityUrl): boolean {
-    return !vanityUrl || (!vanityUrl.permanentRedirect && !vanityUrl.temporaryRedirect);
+export function isForwardOrPage(vanityUrl?: DotCMSVanityUrl): boolean {
+    if (!vanityUrl) {
+        return true;
+    }
+
+    const pageAPIPropsExist = 'permanentRedirect' in vanityUrl && 'temporaryRedirect' in vanityUrl;
+
+    if (pageAPIPropsExist) {
+        return !vanityUrl?.permanentRedirect && !vanityUrl?.temporaryRedirect;
+    }
+
+    return vanityUrl?.action === 200; // GraphQL API returns 200 for forward
 }
 
 /**

@@ -94,13 +94,15 @@ export interface DotCMSVanityUrl {
     pattern: string;
     vanityUrlId: string;
     url: string;
+    uri?: string;
+    action?: number;
     siteId: string;
     languageId: number;
     forwardTo: string;
     response: number;
     order: number;
-    temporaryRedirect: boolean;
-    permanentRedirect: boolean;
+    temporaryRedirect?: boolean;
+    permanentRedirect?: boolean;
     forward: boolean;
 }
 
@@ -608,7 +610,8 @@ export interface DotCMSViewAsLanguage {
 export interface DotCMSViewAsPersona extends DotCMSBasicContentlet {
     name: string;
     keyTag: string;
-    photo: {
+    personalized?: boolean;
+    photo?: {
         versionPath: string;
     };
 }
@@ -667,7 +670,7 @@ export interface DotCMSLayout {
  * @property {string} code - Template code for rendering the structure
  * @property {string} contentTypeVar - Variable name of the content type
  */
-interface DotCMSContainerStructure {
+export interface DotCMSContainerStructure {
     id: string;
     structureId: string;
     containerInode: string;
@@ -1038,20 +1041,6 @@ interface DotCMSSiteField {
 }
 
 /**
- * Represents a vanity URL object from the GraphQL API
- * @export
- * @interface DotCMSVanityUrl
- * @property {number} action - Action taken when the vanity URL is accessed, 200 = forward, 301 = permanent redirect, 302 = temporary redirect
- * @property {string} forwardTo - URL to forward to
- * @property {string} uri - Vanity URL identifier
- */
-export interface DotCMSVanityUrl {
-    action: number;
-    forwardTo: string;
-    uri: string;
-}
-
-/**
  * Represents a basic page object from the GraphQL API
  *
  * @interface DotCMSGraphQLPage
@@ -1159,9 +1148,7 @@ export interface DotCMSGraphQLPage {
     urlContentMap: {
         _map: DotCMSURLContentMap;
     };
-    host: {
-        _map: DotCMSSite;
-    };
+    host: DotCMSSite;
     vanityUrl: DotCMSVanityUrl;
     _map: Record<string, unknown>;
 }

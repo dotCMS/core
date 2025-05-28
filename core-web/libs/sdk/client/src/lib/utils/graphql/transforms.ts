@@ -54,15 +54,13 @@ export const graphqlToPageEntity = (
     // Extract the _map data from the urlContentMap object
     const urlContentMapData = urlContentMapObject?.['_map'];
 
-    const hostContent = host?.['_map'];
-
     return {
         layout,
         template,
         viewAs,
         vanityUrl,
         runningExperimentId,
-        site: hostContent,
+        site: host,
         urlContentMap: urlContentMapData,
         containers: parseContainers(containers as []),
         page: {

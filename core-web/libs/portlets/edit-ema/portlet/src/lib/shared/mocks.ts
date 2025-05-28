@@ -1,12 +1,7 @@
 import { of } from 'rxjs';
 
 import { CurrentUser } from '@dotcms/dotcms-js';
-import {
-    DEFAULT_VARIANT_ID,
-    DotPageContainerStructure,
-    CONTAINER_SOURCE,
-    FeaturedFlags
-} from '@dotcms/dotcms-models';
+import { DEFAULT_VARIANT_ID, CONTAINER_SOURCE, FeaturedFlags } from '@dotcms/dotcms-models';
 import {
     DotCMSLayout,
     DotCMSPageAsset,
@@ -14,7 +9,11 @@ import {
     DotCMSViewAsPersona,
     DotCMSPageAssetContainers,
     DotCMSPage,
-    DotCMSTemplate
+    DotCMSTemplate,
+    DotCMSContainerStructure,
+    DotCMSContainer,
+    DotCMSVanityUrl,
+    DotCMSURLContentMap
 } from '@dotcms/types';
 import {
     mockSites,
@@ -190,7 +189,7 @@ export const MOCK_RESPONSE_HEADLESS: DotCMSPageAsset = {
     containers: mockDotContainers() as unknown as DotCMSPageAssetContainers
 };
 
-export const URL_CONTENT_MAP_MOCK = {
+export const URL_CONTENT_MAP_MOCK: DotCMSURLContentMap = {
     contentType: 'Blog',
     identifier: '123',
     inode: '1234',
@@ -213,7 +212,8 @@ export const URL_CONTENT_MAP_MOCK = {
     sortOrder: 0,
     stInode: '799f176a-d32e-4844-a07c-1b5fcd107578',
     titleImage: 'image',
-    URL_MAP_FOR_CONTENT: '/test-url'
+    URL_MAP_FOR_CONTENT: '/test-url',
+    urlMap: 'test'
 };
 
 export const MOCK_RESPONSE_VTL: DotCMSPageAsset = {
@@ -260,7 +260,7 @@ export const PAGE_RESPONSE_URL_CONTENT_MAP = {
     urlContentMap: URL_CONTENT_MAP_MOCK
 };
 
-export const dotPageContainerStructureMock: DotPageContainerStructure = {
+export const dotPageContainerStructureMock: DotCMSPageAssetContainers = {
     '123': {
         container: {
             archived: false,
@@ -273,19 +273,18 @@ export const dotPageContainerStructureMock: DotPageContainerStructure = {
             maxContentlets: 123,
             name: '123',
             path: '123',
-            pathName: '123',
             postLoop: '123',
             preLoop: '123',
             source: CONTAINER_SOURCE.DB,
             title: '123',
             type: '123',
             working: false
-        },
+        } as DotCMSContainer,
         containerStructures: [
             {
                 contentTypeVar: '123'
             }
-        ],
+        ] as DotCMSContainerStructure[],
         contentlets: {
             '123': [
                 {
@@ -530,6 +529,15 @@ export const getVanityUrl = (url, mock) =>
         }
     }) as unknown as DotCMSPageAsset;
 
+export const getNewVanityUrl = (uri: string, mock: Partial<DotCMSVanityUrl>) =>
+    ({
+        vanityUrl: {
+            ...mock,
+            uri,
+            url: uri
+        }
+    }) as unknown as DotCMSPageAsset;
+
 export const FORWARD_VANITY_URL = {
     pattern: '',
     vanityUrlId: '',
@@ -570,6 +578,18 @@ export const TEMPORARY_REDIRECT_VANITY_URL = {
     temporaryRedirect: true,
     permanentRedirect: false,
     forward: false
+};
+
+export const NEW_TEMPORARY_REDIRECT_VANITY_URL = {
+    action: 302,
+    forwardTo: 'new-vanity-url',
+    uri: 'test-url'
+};
+
+export const NEW_PERMANENT_REDIRECT_VANITY_URL = {
+    action: 301,
+    forwardTo: 'new-vanity-url',
+    uri: 'test-url'
 };
 
 export const EMA_DRAG_ITEM_CONTENTLET_MOCK: EmaDragItem = {

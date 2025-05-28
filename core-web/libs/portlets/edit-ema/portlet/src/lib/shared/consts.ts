@@ -64,10 +64,7 @@ export const DEFAULT_PERSONA: DotCMSViewAsPersona = {
     titleImage: 'TITLE_IMAGE_NOT_FOUND',
     modUserName: 'system user system user',
     hasLiveVersion: false,
-    modUser: 'system',
-    photo: {
-        versionPath: '/dA/198-23423-234'
-    }
+    modUser: 'system'
 };
 
 // Add the Feature flags we want to fetch for UVE
