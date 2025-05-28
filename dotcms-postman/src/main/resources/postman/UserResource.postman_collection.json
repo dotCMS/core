@@ -1000,7 +1000,7 @@
 									"pm.test(\"User FE creation sucessfully\", function () {",
 									"    var jsonData = pm.response.json();",
 									"    console.log(jsonData);",
-									"    pm.expect(jsonData.entity.user[\"emailAddress\"]).to.eql(\"test-user@dotcms.com\");",
+									"    pm.expect(jsonData.entity.user[\"emailAddress\"]).to.eql(\"test-user1@dotcms.com\");",
 									"    pm.expect(jsonData.entity.user[\"firstName\"]).to.eql(\"TestUser\");",
 									"});",
 									"",
