@@ -12,7 +12,7 @@ The `@dotcms/react` SDK is the DotCMS official React library. It empowers React 
     -   [dotCMS Client Configuration](#dotcms-client-configuration)
     -   [Proxy Setup for Assets](#proxy-setup-for-assets)
 -   [Quickstart](#quickstart)
-    -   [Example Project](#example-project)
+    -   [Example Project](#example-project-)
 -   [API Reference](#api-reference)
     -   [Components](#components)
         -   [DotCMSLayoutBody](#dotcmslayoutbody)
@@ -50,7 +50,8 @@ The `@dotcms/react` SDK is the DotCMS official React library. It empowers React 
 
 **For Testing & Development:**
 
--   📝 [dotCMS demo site](https://dev.dotcms.com/docs/demo-site) - perfect for trying out the SDK
+-   🧑🏻‍💻 [dotCMS demo site](https://demo.dotcms.com/dotAdmin/#/public/login) - perfect for trying out the SDK
+-   📘 [Learn how to use the demo site](https://dev.dotcms.com/docs/demo-site)
 -   📝 Read-only access, ideal for building proof-of-concepts
 
 **For Local Development:**
@@ -60,28 +61,7 @@ The `@dotcms/react` SDK is the DotCMS official React library. It empowers React 
 
 ### Configure The Universal Visual Editor App
 
-The Universal Visual Editor (UVE) is a powerful tool that allows you to edit your dotCMS content in real-time. To use the UVE, you need to configure the UVE application.
-
-1. Go to the **dotCMS admin panel**.
-2. Click on **Settings** > **Apps** > **Universal Visual Editor (UVE)**.
-3. Select the dotCMS Site you want to use the UVE on.
-4. Add the following basic configuration:
-
-```json
-{
-    "config": [
-        {
-            "pattern": ".*",
-            "url": "http://localhost:4321"
-        }
-    ]
-}
-```
-
-5. Click on **Save**.
-
-For detailed instructions, please refer to the [Universal Visual Editor Configuration for Headless Pages
-](https://dev.dotcms.com/docs/uve-headless-config).
+For a step-by-step guide on setting up the Universal Visual Editor, check out our [easy-to-follow instructions](https://dev.dotcms.com/docs/uve-headless-config) and get started in no time!
 
 ### Create a dotCMS API Key
 
@@ -127,9 +107,7 @@ export const dotCMSClient: DotCMSClient = createDotCMSClient({
 
 ### Proxy Setup for Assets 🖼️
 
-> **Important**: Without proper proxy configuration, images in dotCMS components won't load correctly in your environment.
-
-dotCMS stores all media assets (images, documents, etc.) in the `/dA` directory. To ensure these assets load properly in your React application during development, you need to configure a proxy that forwards these requests to your dotCMS instance.
+Configure a proxy to leverage the powerful dotCMS image API, allowing you to resize and serve optimized images efficiently. This enhances application performance and improves user experience, making it a strategic enhancement for your project.
 
 #### 1. Configure Vite
 
@@ -159,14 +137,13 @@ Learn more about Vite configuration [here](https://vitejs.dev/config/).
 Once configured, image URLs in your components will automatically be proxied to your dotCMS instance:
 
 ```typescript
+// /components/my-dotcms-image.tsx
 import type { DotCMSBasicContentlet } from '@dotcms/types';
 
 export const MyDotCMSImageComponent = ({ inode, title }: DotCMSBasicContentlet) => {
     return <img src={`/dA/${inode}`} alt={title} />;
 }
 ```
-
-💡 **Pro Tip**: For production deployments, you'll need to configure your web server (nginx, Apache, etc.) to handle these asset requests appropriately. The proxy configuration is primarily for development purposes.
 
 📚 Learn more about simple image pathing in dotCMS [here](https://dev.dotcms.com/docs/file-assets-and-dotassets).
 
@@ -180,6 +157,7 @@ The following example demonstrates how to quickly set up a basic dotCMS page ren
 -   Subscribe to real-time page updates when in the Universal Visual Editor
 
 ```tsx
+// /src/app/pages/dotcms-page.tsx
 import { useState, useEffect } from 'react';
 import { DotCMSLayoutBody, useEditableDotCMSPage } from '@dotcms/react/next';
 import { DotCMSPageResponse } from '@dotcms/types';
@@ -215,6 +193,9 @@ Looking to get started quickly? We've got you covered! Our [Next.js starter proj
 
 📦 Fetch and render dotCMS pages with best practices
 🧩 Register and manage components for different content types
+🔍 Listing pages with search functionality
+📝 Detail pages for blogs
+📈 Image and assets optimization for better performance
 ✨ Enable seamless editing via the Universal Visual Editor (UVE)
 ⚡️ Leverage React's hooks and state management for optimal performance
 
@@ -380,10 +361,10 @@ const DetailPage = ({ contentlet }: { contentlet: DotCMSBasicContentlet }) => {
 
 **Props**:
 
-| Input | Type | Required | Description |
-|-------|------|----------|-------------|
-| `children` | `ReactNode` | ✅ | Content to be conditionally rendered |
-| `when` | `UVE_MODE` | ✅ | The `UVE` mode when content should be displayed: <br/> `UVE_MODE.EDIT`: Only visible in edit mode <br/> `UVE_MODE.PREVIEW`: Only visible in preview mode <br/> `UVE_MODE.PUBLISHED`: Only visible in published mode |
+| Input      | Type        | Required | Description                                                                                                                                                                                                         |
+| ---------- | ----------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `children` | `ReactNode` | ✅       | Content to be conditionally rendered                                                                                                                                                                                |
+| `when`     | `UVE_MODE`  | ✅       | The `UVE` mode when content should be displayed: <br/> `UVE_MODE.EDIT`: Only visible in edit mode <br/> `UVE_MODE.PREVIEW`: Only visible in preview mode <br/> `UVE_MODE.PUBLISHED`: Only visible in published mode |
 
 **Usage**:
 
@@ -412,21 +393,21 @@ const MyComponent = () => {
 
 When you use the hook, it:
 
-1. 🔄 Initializes the UVE with your page data
-2. 📡 Sets up communication channels with the editor
-3. 🎯 Tracks content changes in real-time
-4. 🔄 Updates your page automatically when:
+1. Initializes the UVE with your page data
+2. Sets up communication channels with the editor
+3. Tracks content changes in real-time
+4. Updates your page automatically when:
     - Content is edited inline
     - Blocks are added or removed
     - Layout changes are made
     - Components are moved
-5. 🧹 Cleans up all listeners and connections on destroy
+5. Cleans up all listeners and connections on destroy
 
 **Parameters**:
 
-| Param | Type | Required | Description |
-|-------|------|----------|-------------|
-| `pageResponse` | `DotCMSPageResponse` | ✅ | The page data object from `client.page.get()` |
+| Param          | Type                 | Required | Description                                   |
+| -------------- | -------------------- | -------- | --------------------------------------------- |
+| `pageResponse` | `DotCMSPageResponse` | ✅       | The page data object from `client.page.get()` |
 
 **Usage**:
 
@@ -552,21 +533,21 @@ const MyEditButton = () => {
             ```
 
             ```tsx
-             // components/DotCMSPage.tsx (Client Component)
-             'use client';
+            // components/DotCMSPage.tsx (Client Component)
+            'use client';
 
-             import { useEditableDotCMSPage, DotCMSLayoutBody } from '@dotcms/react/next';
-             import type { DotCMSPageResponse } from '@dotcms/types';
+            import { useEditableDotCMSPage, DotCMSLayoutBody } from '@dotcms/react/next';
+            import type { DotCMSPageResponse } from '@dotcms/types';
 
-             const COMPONENTS_MAP = {
-                 Blog: BlogComponent,
-                 Product: ProductComponent
-             };
+            const COMPONENTS_MAP = {
+                Blog: BlogComponent,
+                Product: ProductComponent
+            };
 
-             export function DotCMSPage({ pageResponse }: { pageResponse: DotCMSPageResponse }) {
-                 const { pageAsset } = useEditableDotCMSPage(pageResponse);
-                 return <DotCMSLayoutBody pageAsset={pageAsset} components={COMPONENTS_MAP} />;
-             }
+            export function DotCMSPage({ pageResponse }: { pageResponse: DotCMSPageResponse }) {
+                const { pageAsset } = useEditableDotCMSPage(pageResponse);
+                return <DotCMSLayoutBody pageAsset={pageAsset} components={COMPONENTS_MAP} />;
+            }
             ```
 
         2. Always fetch data in Server Components for better performance
@@ -603,8 +584,8 @@ const MyEditButton = () => {
 ### Version Compatibility
 
 | dotCMS Version | SDK Version | React Version |
-|----------------|-------------|---------------|
-| 25.05+         | @next       | 19.x         |
+| -------------- | ----------- | ------------- |
+| 25.05+         | @next       | 19.x          |
 
 > [!TIP]
 > Always check version compatibility when upgrading any component of your stack.
@@ -614,7 +595,7 @@ const MyEditButton = () => {
 If you're still experiencing problems after trying these solutions:
 
 1. Search existing [GitHub issues](https://github.com/dotCMS/core/issues)
-2. Check our [community forum](https://community.dotcms.com/)
+2. Ask questions on the [community forum](https://community.dotcms.com/) to engage with other users.
 3. Create a new issue with:
     - Detailed reproduction steps
     - Environment information
@@ -628,6 +609,7 @@ We offer multiple channels to get help with the dotCMS React SDK:
 -   **GitHub Issues**: For bug reports and feature requests, please [open an issue](https://github.com/dotCMS/core/issues/new/choose) in the GitHub repository.
 -   **Community Forum**: Join our [community discussions](https://community.dotcms.com/) to ask questions and share solutions.
 -   **Stack Overflow**: Use the tag `dotcms-react` when posting questions.
+-   **Enterprise Support**: Enterprise customers can access premium support through the [dotCMS Support Portal](https://helpdesk.dotcms.com/support/).
 
 When reporting issues, please include:
 
@@ -635,8 +617,6 @@ When reporting issues, please include:
 -   React version
 -   Minimal reproduction steps
 -   Expected vs. actual behavior
-
-Enterprise customers can access premium support through the [dotCMS Support Portal](https://dev.dotcms.com/docs/help).
 
 ## How To Contribute
 

@@ -12,7 +12,7 @@ The `@dotcms/angular` SDK is the DotCMS official Angular library. It empowers An
     -   [dotCMS Client Configuration](#dotcms-client-configuration)
     -   [Proxy Setup for Assets](#proxy-setup-for-assets)
 -   [Quickstart](#quickstart)
-    -   [Example Project](#example-project)
+    -   [Example Project](#example-project-)
 -   [API Reference](#api-reference)
     -   [Components](#components)
         -   [DotCMSLayoutBody](#dotcmslayoutbody)
@@ -50,7 +50,8 @@ The `@dotcms/angular` SDK is the DotCMS official Angular library. It empowers An
 
 **For Testing & Development:**
 
--   📝 [dotCMS demo site](https://dev.dotcms.com/docs/demo-site) - perfect for trying out the SDK
+-   🧑🏻‍💻 [dotCMS demo site](https://demo.dotcms.com/dotAdmin/#/public/login) - perfect for trying out the SDK
+-   📘 [Learn how to use the demo site](https://dev.dotcms.com/docs/demo-site)
 -   📝 Read-only access, ideal for building proof-of-concepts
 
 **For Local Development:**
@@ -60,28 +61,7 @@ The `@dotcms/angular` SDK is the DotCMS official Angular library. It empowers An
 
 ### Configure The Universal Visual Editor App
 
-The Universal Visual Editor (UVE) is a powerful tool that allows you to edit your dotCMS content in real-time. To use the UVE, you need to configure the UVE application.
-
-1. Go to the **dotCMS admin panel**.
-2. Click on **Settings** > **Apps** > **Universal Visual Editor (UVE)**.
-3. Select the dotCMS Site you want to use the UVE on.
-4. Add the following basic configuration:
-
-```json
-{
-    "config": [
-        {
-            "pattern": ".*",
-            "url": "http://localhost:4200"
-        }
-    ]
-}
-```
-
-5. Click on **Save**.
-
-For detailed instructions, please refer to the [Universal Visual Editor Configuration for Headless Pages
-](https://dev.dotcms.com/docs/uve-headless-config).
+For a step-by-step guide on setting up the Universal Visual Editor, check out our [easy-to-follow instructions](https://dev.dotcms.com/docs/uve-headless-config) and get started in no time!
 
 ### Create a dotCMS API Key
 
@@ -137,11 +117,11 @@ export const appConfig: ApplicationConfig = {
 };
 ```
 
+This configuration makes the dotCMS client service available throughout your Angular application, allowing you to inject it wherever needed. For more details on how Angular's InjectionToken works, you can refer to the [Angular InjectionToken documentation](https://angular.dev/api/core/InjectionToken).
+
 ### Proxy Setup for Assets 🖼️
 
-> **Important**: Without proper proxy configuration, images in dotCMS components won't load correctly in your environment.
-
-dotCMS stores all media assets (images, documents, etc.) in the `/dA` directory. To ensure these assets load properly in your Angular application during development, you need to configure a proxy that forwards these requests to your dotCMS instance.
+Configure a proxy to leverage the powerful dotCMS image API, allowing you to resize and serve optimized images efficiently. This enhances application performance and improves user experience, making it a strategic enhancement for your project.
 
 #### 1. Create a Proxy Configuration
 
@@ -185,6 +165,7 @@ Add the proxy configuration to your `angular.json`:
 Once configured, image URLs in your components will automatically be proxied to your dotCMS instance:
 
 ```typescript
+// /components/my-dotcms-image.component.ts
 @Component({
     template: `
         <img [src]="'/dA/' + contentlet.inode" alt="Asset from dotCMS" />
@@ -194,8 +175,6 @@ class MyDotCMSImageComponent {
     @Input() contentlet: DotCMSBasicContentlet;
 }
 ```
-
-💡 **Pro Tip**: For production deployments, you'll need to configure your web server (nginx, Apache, etc.) to handle these asset requests appropriately. The proxy configuration is primarily for development purposes.
 
 📚 Learn more about simple image pathing in dotCMS [here](https://dev.dotcms.com/docs/file-assets-and-dotassets).
 
@@ -209,6 +188,7 @@ The following example demonstrates how to quickly set up a basic dotCMS page ren
 -   Subscribe to real-time page updates when in the Universal Visual Editor
 
 ```typescript
+// /src/app/pages/dotcms-page.component.ts
 import { Component, signal } from '@angular/core';
 
 import { DotCMSLayoutBody, DotCMSEditablePageService} from '@dotcms/angular/next';
@@ -271,6 +251,9 @@ Looking to get started quickly? We've got you covered! Our [Angular starter proj
 
 📦 Fetch and render dotCMS pages with best practices
 🧩 Register and manage components for different content types
+🔍 Listing pages with search functionality
+📝 Detail pages for blogs
+📈 Image and assets optimization for better performance
 ✨ Enable seamless editing via the Universal Visual Editor (UVE)
 ⚡️ Leverage Angular's dependency injection and signals for optimal performance
 
@@ -491,15 +474,15 @@ The `DotCMSEditablePageService` enables real-time page updates when using the Un
 
 When you use the `listen` method, the service:
 
-1. 🔄 Initializes the UVE with your page data
-2. 📡 Sets up communication channels with the editor
-3. 🎯 Tracks content changes in real-time
-4. 🔄 Updates your page automatically when:
+1. Initializes the UVE with your page data
+2. Sets up communication channels with the editor
+3. Tracks content changes in real-time
+4. Updates your page automatically when:
     - Content is edited inline
     - Blocks are added or removed
     - Layout changes are made
     - Components are moved
-5. 🧹 Cleans up all listeners and connections on destroy
+5. Cleans up all listeners and connections on destroy
 
 **Parameters**:
 
@@ -651,7 +634,7 @@ export class PageComponent implements OnInit, OnDestroy {
 If you're still experiencing problems after trying these solutions:
 
 1. Search existing [GitHub issues](https://github.com/dotCMS/core/issues)
-2. Check our [community forum](https://community.dotcms.com/)
+2. Ask questions on the [community forum](https://community.dotcms.com/) to engage with other users.
 3. Create a new issue with:
     - Detailed reproduction steps
     - Environment information
@@ -665,6 +648,7 @@ We offer multiple channels to get help with the dotCMS Angular SDK:
 -   **GitHub Issues**: For bug reports and feature requests, please [open an issue](https://github.com/dotCMS/core/issues/new/choose) in the GitHub repository.
 -   **Community Forum**: Join our [community discussions](https://community.dotcms.com/) to ask questions and share solutions.
 -   **Stack Overflow**: Use the tag `dotcms-angular` when posting questions.
+-   **Enterprise Support**: Enterprise customers can access premium support through the [dotCMS Support Portal](https://helpdesk.dotcms.com/support/).
 
 When reporting issues, please include:
 
@@ -672,8 +656,6 @@ When reporting issues, please include:
 -   Angular version
 -   Minimal reproduction steps
 -   Expected vs. actual behavior
-
-Enterprise customers can access premium support through the [dotCMS Support Portal](https://dev.dotcms.com/docs/help).
 
 ## How To Contribute
 
