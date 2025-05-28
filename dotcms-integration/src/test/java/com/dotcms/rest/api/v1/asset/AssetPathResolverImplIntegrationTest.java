@@ -331,5 +331,22 @@ public class AssetPathResolverImplIntegrationTest {
         assertNotNull(folderByPathAfter.getIdentifier());
     }
 
+    /**
+     * Given scenario: A folder with parentheses in the name
+     * Expected: Should resolve the resource without any exceptions and return the folder as folder and not as an asset
+     *
+     * @throws DotDataException
+     */
+    @Test
+    public void Test_Resolve_Folder_With_Parenthesis() throws DotDataException, DotSecurityException {
+        new FolderDataGen().site(host).name("(testFolder)").nextPersisted();
+        final String url = String.format("http://%s/(testFolder)/", host.getHostname());
+
+        final ResolvedAssetAndPath parse = AssetPathResolver.newInstance()
+                .resolve(url, APILocator.systemUser());
+
+        assertNull(parse.asset());
+    }
+
 
 }
