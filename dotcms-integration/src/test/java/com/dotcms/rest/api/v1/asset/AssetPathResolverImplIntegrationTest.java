@@ -339,13 +339,20 @@ public class AssetPathResolverImplIntegrationTest {
      */
     @Test
     public void Test_Resolve_Folder_With_Parenthesis() throws DotDataException, DotSecurityException {
-        new FolderDataGen().site(host).name("(testFolder)").nextPersisted();
-        final String url = String.format("http://%s/(testFolder)/", host.getHostname());
+        Folder folder = null;
+        try {
+            folder = new FolderDataGen().site(host).name("(testFolder)").nextPersisted();
+            final String url = String.format("http://%s/(testFolder)/", host.getHostname());
 
-        final ResolvedAssetAndPath parse = AssetPathResolver.newInstance()
-                .resolve(url, APILocator.systemUser());
-        assertEquals("/(testFolder)/", parse.path());
-        assertNull(parse.asset());
+            final ResolvedAssetAndPath parse = AssetPathResolver.newInstance()
+                    .resolve(url, APILocator.systemUser());
+            assertEquals("/(testFolder)/", parse.path());
+            assertNull(parse.asset());
+        } finally {
+            FolderDataGen.remove(folder);
+        }
+
+
     }
 
     /**
@@ -356,14 +363,19 @@ public class AssetPathResolverImplIntegrationTest {
      */
     @Test
     public void Test_Resolve_Asset_In_Folder_With_Parenthesis() throws DotDataException, DotSecurityException {
-        new FolderDataGen().site(host).name("(testFolder)").nextPersisted();
-        final String url = String.format("http://%s/(testFolder)/example.txt", host.getHostname());
+        Folder folder = null;
+        try {
+            folder = new FolderDataGen().site(host).name("(testFolder)").nextPersisted();
+            final String url = String.format("http://%s/(testFolder)/example.txt", host.getHostname());
 
-        final ResolvedAssetAndPath parse = AssetPathResolver.newInstance()
-                .resolve(url, APILocator.systemUser());
-        assertEquals("/(testFolder)/example.txt", parse.path());
-        assertNotNull(parse.asset());
-        assertEquals("example.txt", parse.asset());
+            final ResolvedAssetAndPath parse = AssetPathResolver.newInstance()
+                    .resolve(url, APILocator.systemUser());
+            assertEquals("/(testFolder)/example.txt", parse.path());
+            assertNotNull(parse.asset());
+            assertEquals("example.txt", parse.asset());
+        } finally {
+            FolderDataGen.remove(folder);
+        }
     }
 
 
