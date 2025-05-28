@@ -8,6 +8,15 @@ import {
     FeaturedFlags
 } from '@dotcms/dotcms-models';
 import {
+    DotCMSLayout,
+    DotCMSPageAsset,
+    DotCMSSite,
+    DotCMSViewAsPersona,
+    DotCMSPageAssetContainers,
+    DotCMSPage,
+    DotCMSTemplate
+} from '@dotcms/types';
+import {
     mockSites,
     mockDotLayout,
     mockDotTemplate,
@@ -23,7 +32,6 @@ import {
     ContentletArea,
     Container
 } from '../edit-ema-editor/components/ema-page-dropzone/types';
-import { DotPageApiResponse } from '../services/dot-page-api.service';
 
 export const HEADLESS_BASE_QUERY_PARAMS = {
     url: 'test-url',
@@ -145,7 +153,7 @@ export const PAYLOAD_MOCK: ActionPayload = {
     position: 'before'
 };
 
-export const MOCK_RESPONSE_HEADLESS: DotPageApiResponse = {
+export const MOCK_RESPONSE_HEADLESS: DotCMSPageAsset = {
     page: {
         pageURI: 'test-url',
         title: 'Test Page',
@@ -160,7 +168,7 @@ export const MOCK_RESPONSE_HEADLESS: DotPageApiResponse = {
         lockedBy: '',
         lockedByName: '',
         live: true
-    },
+    } as unknown as DotCMSPage,
     numberContents: 6,
     viewAs: {
         language: {
@@ -171,14 +179,15 @@ export const MOCK_RESPONSE_HEADLESS: DotPageApiResponse = {
             country: 'United States'
         },
         variantId: DEFAULT_VARIANT_ID,
+        mode: 'LIVE',
         persona: {
             ...DEFAULT_PERSONA
-        }
+        } as unknown as DotCMSViewAsPersona
     },
-    site: mockSites[0],
-    layout: mockDotLayout(),
-    template: mockDotTemplate(),
-    containers: mockDotContainers()
+    site: mockSites[0] as DotCMSSite,
+    layout: mockDotLayout() as DotCMSLayout,
+    template: mockDotTemplate() as unknown as DotCMSTemplate,
+    containers: mockDotContainers() as unknown as DotCMSPageAssetContainers
 };
 
 export const URL_CONTENT_MAP_MOCK = {
@@ -207,7 +216,7 @@ export const URL_CONTENT_MAP_MOCK = {
     URL_MAP_FOR_CONTENT: '/test-url'
 };
 
-export const MOCK_RESPONSE_VTL: DotPageApiResponse = {
+export const MOCK_RESPONSE_VTL: DotCMSPageAsset = {
     page: {
         pageURI: 'test-url',
         title: 'Test Page',
@@ -225,7 +234,7 @@ export const MOCK_RESPONSE_VTL: DotPageApiResponse = {
         live: true,
         liveInode: '1234',
         stInode: '12345'
-    },
+    } as unknown as DotCMSPage,
     numberContents: 6,
     viewAs: {
         language: {
@@ -235,15 +244,15 @@ export const MOCK_RESPONSE_VTL: DotPageApiResponse = {
             languageCode: '1',
             country: 'United States'
         },
-
+        mode: 'LIVE',
         persona: {
             ...DEFAULT_PERSONA
-        }
+        } as unknown as DotCMSViewAsPersona
     },
-    site: mockSites[0],
-    layout: mockDotLayout(),
-    template: mockDotTemplate(),
-    containers: mockDotContainers()
+    site: mockSites[0] as DotCMSSite,
+    layout: mockDotLayout() as DotCMSLayout,
+    template: mockDotTemplate() as unknown as DotCMSTemplate,
+    containers: mockDotContainers() as unknown as DotCMSPageAssetContainers
 };
 
 export const PAGE_RESPONSE_URL_CONTENT_MAP = {
@@ -519,7 +528,7 @@ export const getVanityUrl = (url, mock) =>
             ...mock,
             url
         }
-    }) as unknown as DotPageApiResponse;
+    }) as unknown as DotCMSPageAsset;
 
 export const FORWARD_VANITY_URL = {
     pattern: '',

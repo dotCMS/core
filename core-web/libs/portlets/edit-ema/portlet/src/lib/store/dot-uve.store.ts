@@ -2,7 +2,7 @@ import { patchState, signalStore, withComputed, withMethods, withState } from '@
 
 import { computed, untracked } from '@angular/core';
 
-import { UVE_MODE } from '@dotcms/types';
+import { DotCMSPageAsset, UVE_MODE } from '@dotcms/types';
 
 import { withSave } from './features/editor/save/withSave';
 import { withEditor } from './features/editor/withEditor';
@@ -11,7 +11,6 @@ import { withLayout } from './features/layout/withLayout';
 import { withTrack } from './features/track/withTrack';
 import { DotUveViewParams, ShellProps, TranslateProps, UVEState } from './models';
 
-import { DotPageApiResponse } from '../services/dot-page-api.service';
 import { UVE_FEATURE_FLAGS } from '../shared/consts';
 import { UVE_STATUS } from '../shared/enums';
 import { getErrorPayload, getRequestHostName, normalizeQueryParams, sanitizeURL } from '../utils';
@@ -163,7 +162,7 @@ export const UVEStore = signalStore(
                     status
                 });
             },
-            updatePageResponse(pageAPIResponse: DotPageApiResponse) {
+            updatePageResponse(pageAPIResponse: DotCMSPageAsset) {
                 patchState(store, {
                     status: UVE_STATUS.LOADED,
                     pageAPIResponse

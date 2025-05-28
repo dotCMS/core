@@ -111,24 +111,7 @@ export class PageClient {
      *      });
      * ```
      */
-
-    get<T extends DotCMSExtendedPageResponse = DotCMSPageResponse>(
-        url: string,
-        options?: DotCMSPageRequestParams
-    ): Promise<DotCMSComposedPageResponse<T>> {
-        return this.#getPageFromGraphQL(url, options);
-    }
-
-    /**
-     * Private implementation method that fetches page data using GraphQL.
-     * This method is used internally by the public get() method.
-     *
-     * @private
-     * @param {string} url - The URL of the page to retrieve
-     * @param {DotCMSPageRequestParams} [options] - Options including languageId, mode, and GraphQL parameters
-     * @returns {Promise<DotCMSComposedPageResponse<T>>} A Promise that resolves to the page data
-     */
-    async #getPageFromGraphQL<T extends DotCMSExtendedPageResponse = DotCMSPageResponse>(
+    async get<T extends DotCMSExtendedPageResponse = DotCMSPageResponse>(
         url: string,
         options?: DotCMSPageRequestParams
     ): Promise<DotCMSComposedPageResponse<T>> {

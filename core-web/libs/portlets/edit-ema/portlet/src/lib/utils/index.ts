@@ -8,9 +8,9 @@ import {
     DotDevice,
     DotExperiment,
     DotExperimentStatus,
-    DotPageContainerStructure,
     VanityUrl
 } from '@dotcms/dotcms-models';
+import { DotCMSPage, DotCMSPageAssetContainers } from '@dotcms/types';
 
 import { EmaDragItem } from '../edit-ema-editor/components/ema-page-dropzone/types';
 import { DotPageAssetKeys, DotPageApiParams } from '../services/dot-page-api.service';
@@ -26,7 +26,6 @@ import {
     ContainerPayload,
     ContentletDragPayload,
     ContentTypeDragPayload,
-    DotPage,
     DotPageAssetParams,
     DragDatasetItem,
     PageContainer
@@ -402,7 +401,7 @@ export function createFullURL(params: DotPageApiParams, siteId?: string): string
  * @return {*}  {boolean}
  */
 export function computeCanEditPage(
-    page: DotPage,
+    page: DotCMSPage,
     currentUser: CurrentUser,
     experiment?: DotExperiment
 ): boolean {
@@ -426,7 +425,7 @@ export function computeCanEditPage(
  * @param {CurrentUser} currentUser
  * @return {*}
  */
-export function computePageIsLocked(page: DotPage, currentUser: CurrentUser): boolean {
+export function computePageIsLocked(page: DotCMSPage, currentUser: CurrentUser): boolean {
     return !!page?.locked && page?.lockedBy !== currentUser?.userId;
 }
 
@@ -434,11 +433,11 @@ export function computePageIsLocked(page: DotPage, currentUser: CurrentUser): bo
  * Map the containerStructure to a DotContainerMap
  *
  * @private
- * @param {DotPageContainerStructure} containers
+ * @param {DotCMSPageAssetContainers} containers
  * @return {*}  {DotContainerMap}
  */
 export function mapContainerStructureToDotContainerMap(
-    containers: DotPageContainerStructure
+    containers: DotCMSPageAssetContainers
 ): DotContainerMap {
     return Object.keys(containers).reduce((acc, id) => {
         acc[id] = containers[id].container;
@@ -451,9 +450,9 @@ export function mapContainerStructureToDotContainerMap(
  * Map the containerStructure to an array
  *
  * @private
- * @param {DotPageContainerStructure} containers
+ * @param {DotCMSPageAssetContainers} containers
  */
-export const mapContainerStructureToArrayOfContainers = (containers: DotPageContainerStructure) => {
+export const mapContainerStructureToArrayOfContainers = (containers: DotCMSPageAssetContainers) => {
     return Object.keys(containers).reduce(
         (
             acc: {

@@ -1,4 +1,5 @@
-import { DotDeviceListItem, DotPersona } from '@dotcms/dotcms-models';
+import { DotDeviceListItem } from '@dotcms/dotcms-models';
+import { DotCMSViewAsPersona } from '@dotcms/types';
 
 import { CommonErrors } from './enums';
 import { CommonErrorsInfo } from './models';
@@ -36,7 +37,7 @@ export const COMMON_ERRORS: CommonErrorsInfo = {
     }
 };
 
-export const DEFAULT_PERSONA: DotPersona = {
+export const DEFAULT_PERSONA: DotCMSViewAsPersona = {
     hostFolder: 'SYSTEM_HOST',
     inode: '',
     host: 'SYSTEM_HOST',
@@ -63,7 +64,10 @@ export const DEFAULT_PERSONA: DotPersona = {
     titleImage: 'TITLE_IMAGE_NOT_FOUND',
     modUserName: 'system user system user',
     hasLiveVersion: false,
-    modUser: 'system'
+    modUser: 'system',
+    photo: {
+        versionPath: '/dA/198-23423-234'
+    }
 };
 
 // Add the Feature flags we want to fetch for UVE
