@@ -4814,4 +4814,79 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
 
     }
 
+    /**
+     * Method to test: {@link ESContentletAPIImpl#unpublish(Contentlet, User, boolean)}
+     * Given Scenario: Unpublish a {@link Contentlet}
+     * Expected Result: The modDate field should be updated
+     *
+     * @throws DotDataException
+     */
+    @Test
+    public void checkModDateAfterUnpublishContent() throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final ContentType contentType = new ContentTypeDataGen()
+                .host(host)
+                .nextPersisted();
+        final Contentlet contentlet = new ContentletDataGen(contentType)
+                .host(host)
+                .nextPersistedAndPublish();
+
+        try {
+            assertNotNull(contentlet.getModDate());
+            Thread.sleep(500);
+            APILocator.getContentletAPI().unpublish(contentlet, APILocator.systemUser(), false);
+
+            final Contentlet contentletByIdentifier = APILocator.getContentletAPI()
+                    .findContentletByIdentifier(contentlet.getIdentifier(),
+                            false, contentlet.getLanguageId(), APILocator.systemUser(), false);
+
+            assertNotEquals(contentlet.getModDate(), contentletByIdentifier.getModDate());
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        } finally {
+            ContentTypeDataGen.remove(contentType);
+            ContentletDataGen.remove(contentlet);
+        }
+
+    }
+    /**
+     * Method to test: {@link ESContentletAPIImpl#archive(Contentlet, User, boolean)}
+     * Given Scenario: Archive a {@link Contentlet}
+     * Expected Result: The modDate field should be updated
+     *
+     * @throws DotDataException
+     */
+    @Test
+    public void checkModDateAfterArchiveContent() throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final ContentType contentType = new ContentTypeDataGen()
+                .host(host)
+                .nextPersisted();
+        final Contentlet contentlet = new ContentletDataGen(contentType)
+                .host(host)
+                .nextPersistedAndPublish();
+
+        final Date initialModDate = contentlet.getModDate();
+
+        try {
+            assertNotNull(contentlet.getModDate());
+            Thread.sleep(500);
+            APILocator.getContentletAPI().archive(contentlet, APILocator.systemUser(), false);
+
+            final Contentlet contentletByIdentifier = APILocator.getContentletAPI()
+                    .findContentletByIdentifier(contentlet.getIdentifier(),
+                            false, contentlet.getLanguageId(), APILocator.systemUser(), false);
+
+            final Date finalModDate = contentletByIdentifier.getModDate();
+
+            assertNotEquals(initialModDate, finalModDate);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        } finally {
+            ContentTypeDataGen.remove(contentType);
+            ContentletDataGen.remove(contentlet);
+        }
+
+    }
+
 }
