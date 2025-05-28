@@ -344,7 +344,7 @@ public class AssetPathResolverImplIntegrationTest {
 
         final ResolvedAssetAndPath parse = AssetPathResolver.newInstance()
                 .resolve(url, APILocator.systemUser());
-
+        assertEquals("/(testFolder)/", parse.path());
         assertNull(parse.asset());
     }
 
