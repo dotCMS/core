@@ -3,7 +3,9 @@
         {{ $blockEditorState().error }}
     </div>
 } @else if (!$blockEditorState().error) {
-    <dotcms-block-editor-renderer-block
-        [content]="blocks.content"
-        [customRenderers]="customRenderers" />
+    <div [class]="class" [style]="style">
+        <dotcms-block-editor-renderer-block
+            [content]="blocks.content"
+            [customRenderers]="customRenderers" />
+    </div>
 }
