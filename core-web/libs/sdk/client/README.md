@@ -1,14 +1,13 @@
 # dotCMS Client SDK
 
-The `@dotcms/client` is a powerful JavaScript/TypeScript SDK designed to simplify the integration of dotCMS content into your applications. Whether building dynamic websites, content-driven apps, or managing content programmatically, this SDK offers an intuitive API for seamless and type-safe content management, enabling you to create engaging experiences effortlessly.
+The `@dotcms/client` is a powerful JavaScript/TypeScript SDK designed to simplify the integration of dotCMS content into your applications. Whether building dynamic websites or content-driven apps, this SDK offers an intuitive API for seamless and type-safe content retrieval, enabling you to create engaging experiences effortlessly by accessing and displaying content from dotCMS.
 
 ### When to Use It:
 
 -   Building headless frontends that need dotCMS content
--   Creating server-side applications that manage content
+-   Building content-driven apps that need to access dotCMS content
 -   Developing multi-language or personalized experiences
 -   Implementing dynamic navigation and page structures
--   Automating content workflows and operations
 
 ### Key Benefits:
 
@@ -82,35 +81,20 @@ For detailed instructions, please refer to the [dotCMS API Documentation - Read-
 
 ### Installation
 
-```bash
-npm install @dotcms/client@next
-```
-
-#### Dev Dependencies
-
-This package has the following dev dependencies for type definitions:
-
-| Dependency      | Version | Description                   |
-| --------------- | ------- | ----------------------------- |
-| `@dotcms/types` | latest  | Required for type definitions |
-
-Install dev dependencies:
-
-```bash
-npm install @dotcms/types@next --save-dev
-```
-
-## Quickstart
-
 Install the SDK and required dependencies:
 
 ```bash
-npm install @dotcms/client@next @dotcms/types
+npm install @dotcms/client@next @dotcms/types@next
 ```
 
-Initialize and use the client:
+> [!TIP]
+> If you are working with pure JavaScript, you can avoid installing the `@dotcms/types` package.
 
-```javascript
+## Quickstart
+
+Here's a basic setup of the dotCMS Client SDK to help you get started:
+
+```typescript
 import { createDotCMSClient } from '@dotcms/client/next';
 
 // Create a client instance
@@ -176,59 +160,51 @@ const client = createDotCMSClient({
 });
 ```
 
-### Page API
+### client.page.get(): Fetching Page Content
 
-**Overview:**
+The `client.page.get()` method is your primary way to retrieve page content from dotCMS using the SDK. It abstracts away the complexity of raw REST or GraphQL calls, letting you fetch structured page data with just a single method.
 
-The [Page API](https://dev.dotcms.com/docs/page-rest-api-layout-as-a-service-laas) allows you to fetch pages and their associated content from dotCMS. It provides a streamlined interface for retrieving page data and related content.
+#### What It Does
 
-**Parameters:**
+* Retrieves a **page asset** from dotCMS given its path (e.g., `/about-us`)
+* Automatically includes layout, containers, and content
+* Lets you **customize the request** with options like language, preview mode, or user persona
+* Supports **GraphQL extensions** so you can request exactly the fields or content fragments you need
 
-| Option        | Type            | Required | Default            | Description                                                 |
-| ------------- | --------------- | -------- | ------------------ | ----------------------------------------------------------- |
-| `siteId`      | string          | ❌       | From client config | ID of the site to interact with                             |
-| `mode`        | string          | ❌       | `LIVE`             | Page rendering mode: 'EDIT_MODE', 'PREVIEW_MODE', or 'LIVE' |
-| `languageId`  | string\|number  | ❌       | `1`                | Language ID for content localization                        |
-| `personaId`   | string          | ❌       | —                  | ID of the persona for personalized content                  |
-| `fireRules`   | boolean\|string | ❌       | false              | Whether to execute rules set on the page                    |
-| `publishDate` | string          | ❌       | —                  | Publication date for the requested page                     |
-| `variantName` | string          | ❌       | —                  | Name of the specific page variant to retrieve               |
-| `graphql`     | object          | ❌       | —                  | GraphQL options for extending the response                  |
+#### Basic Usage
 
-**GraphQL Options:**
+Here's the simplest way to fetch a page by its URL:
 
-| Option      | Type                   | Description                                       |
-| ----------- | ---------------------- | ------------------------------------------------- |
-| `page`      | string                 | GraphQL query to extend the page response         |
-| `content`   | Record<string, string> | Named GraphQL queries to fetch additional content |
-| `variables` | Record<string, string> | Variables to use in GraphQL queries               |
-| `fragments` | string[]               | GraphQL fragments for reuse across queries        |
+```ts
+const { pageAsset } = await client.page.get('/about-us');
+console.log(pageAsset.page.title);
+```
 
-The GraphQL options allow you to create powerful, flexible queries that can fetch exactly the data you need in a single request. With GraphQL, you can:
+You can now render this content or pass it to your components.
 
--   Deeply traverse relationships between content
--   Combine multiple content types in a single query
--   Specify precise field selection to optimize response size
--   Use fragments for reusable query parts
+#### Customizing the Request
 
-For detailed information about GraphQL capabilities, query syntax, and best practices, refer to the [official dotCMS GraphQL documentation](https://dev.dotcms.com/docs/graphql).
+You can customize the request to fetch different languages, rendering modes, or user personas:
 
-**Usage:**
+```ts
+const { pageAsset } = await client.page.get('/about-us', {
+    languageId: '2',
+    fireRules: true,
+    personaId: '1234'
+});
+```
 
-```typescript
+#### Fetching Additional Content with GraphQL
+
+You can also pull in related content, like blog posts or navigation menus, using the `graphql` option:
+
+```ts
 const { pageAsset, content } = await client.page.get('/about-us', {
-    languageId: '1',
-    mode: 'PREVIEW_MODE',
-    depth: '1',
     graphql: {
         page: `
-            containers {
-                containerContentlets {
-                    uuid
-                    contentlets {
-                        title
-                    }
-                }
+            title
+            vanityUrl {
+                url
             }
         `,
         content: {
@@ -239,34 +215,49 @@ const { pageAsset, content } = await client.page.get('/about-us', {
                 }
             `,
             navigation: `
-               DotNavigation(uri: "/", depth: 2) {
-                  hash
-                  href
-                  title
-                  target
-                  type
-                  children {
-                      hash
-                      href
-                      title
-                      target
-                      type
-                  }
-              }
+                DotNavigation(uri: "/", depth: 2) {
+                    href
+                    title
+                    children {
+                        href
+                        title
+                    }
+                }
             `
         }
     }
 });
 ```
 
-#### Method Signature:
+#### Request Options
 
-```typescript
+The `page.get()` method accepts an optional second argument of type [`DotCMSPageRequestParams`](https://github.com/dotCMS/core/blob/6e003eb697554ea9636a1fec59bc0fa020b84390/core-web/libs/sdk/types/src/lib/client/public.ts#L5-L54). This lets you customize how the page is fetched. Common options include:
+
+| Option       | Type             | Description                                      |
+| ------------ | ---------------- | ------------------------------------------------ |
+| `languageId` | string \| number | Language version of the page                     |
+| `mode`       | string           | Rendering mode: `LIVE`, `PREVIEW_MODE`, etc.     |
+| `personaId`  | string           | Personalize content based on persona ID          |
+| `graphql`    | object           | Extend the response with additional content/data |
+| `fireRules`  | boolean          | Whether to trigger page rules                    |
+
+> 💡 See [`DotCMSPageRequestParams`](https://github.com/dotCMS/core/blob/6e003eb697554ea9636a1fec59bc0fa020b84390/core-web/libs/sdk/types/src/lib/client/public.ts#L5-L54) for a full list of supported options.
+
+#### Method Signature
+
+```ts
 get<T extends DotCMSExtendedPageResponse = DotCMSPageResponse>(
-    url: string,
-    options?: DotCMSPageRequestParams
+  url: string,
+  options?: DotCMSPageRequestParams
 ): Promise<DotCMSComposedPageResponse<T>>;
 ```
+
+#### Why Use `page.get()`?
+
+* Fetch everything needed to render a page with one call
+* Avoid building multiple API queries manually
+* Type-safe, customizable, and extensible with GraphQL
+* Works with dotCMS content localization and personalization out of the box
 
 ### Content API
 
@@ -326,27 +317,77 @@ response.contentlets.forEach((post: BlogPost) => {
 });
 ```
 
-### Navigation API
+### client.navigation.get(): Fetching Navigation Structure
 
-**Overview:**
+The `client.navigation.get()` method fetches a structured view of a site's file and folder hierarchy from dotCMS. It's useful for building menus and navigation UIs.
 
-The [Navigation API](https://dev.dotcms.com/docs/navigation-rest-api) allows you to fetch site navigation structures from dotCMS. It provides a streamlined interface for retrieving navigation data.
+#### 📌 Prefer Fetching Navigation via `page.get()`
 
-**Usage:**
+In most cases, you **don't need to call** `client.navigation.get()` separately. You can fetch navigation data as part of your page request using the `graphql.content` option in `client.page.get()`. This approach:
 
-```typescript
+* Combines page content and navigation in **one request**
+* Reduces network overhead
+* Keeps your data fetching consistent and performant
+
+```ts
+const { pageAsset, content } = await client.page.get('/about-us', {
+  graphql: {
+    content: {
+      navigation: `DotNavigation(uri: "/", depth: 2) { title href children { title href } }`
+    }
+  }
+});
+```
+
+#### Basic Usage
+
+Here's the simplest way to fetch the root-level navigation:
+
+```ts
+const nav = await client.navigation.get('/');
+console.log(nav);
+```
+
+#### Customizing the Request
+
+You can tailor the navigation structure using optional parameters:
+
+```ts
 const nav = await client.navigation.get('/', {
     depth: 2,
     languageId: 1
 });
 ```
 
-**Options:**
+#### Request Options
 
-| Option       | Type   | Description                   |
-| ------------ | ------ | ----------------------------- |
-| `depth`      | number | Levels of children to include |
-| `languageId` | number | Navigation language           |
+The `navigation.get()` method accepts an optional second argument with the following parameters:
+
+| Option       | Type   | Description                                |
+| ------------ | ------ | ------------------------------------------ |
+| `depth`      | number | Number of child levels to include          |
+| `languageId` | number | Language ID for localized navigation names |
+
+> 💡 For typical use cases, setting `depth: 2` will include top-level navigation and one level of children.
+
+#### Method Signature
+
+```ts
+get(
+  uri: string,
+  options?: {
+    depth?: number;
+    languageId?: number;
+  }
+): Promise<DotCMSNavigationItem[]>;
+```
+
+### Why Use `navigation.get()`?
+
+* Build dynamic menus and site trees with minimal configuration
+* Avoid manual parsing or custom REST calls
+* Support localized navigation out of the box
+* Easily control navigation depth for responsive and nested UIs
 
 ## TypeScript Support
 
@@ -394,7 +435,7 @@ const response = await client.page.get<{ pageAsset: AboutUsPage; content: AboutU
     '/about-us',
     {
         languageId: '1',
-        mode: 'PREVIEW_MODE',
+        fireRules: true,
         graphql: {
             page: `
             title
