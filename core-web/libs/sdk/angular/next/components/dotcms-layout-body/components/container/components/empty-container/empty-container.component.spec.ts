@@ -34,7 +34,7 @@ describe('EmptyContainerComponent', () => {
         spectator.detectChanges();
         const element = spectator.query(byTestId('empty-container-message'));
         expect(element).toBeTruthy();
-        expect(element?.textContent).toBe('This container is empty.');
+        expect(element?.textContent?.trim()).toBe('This container is empty.');
     });
 
     it('should have data-dot-object="empty-content"', () => {
