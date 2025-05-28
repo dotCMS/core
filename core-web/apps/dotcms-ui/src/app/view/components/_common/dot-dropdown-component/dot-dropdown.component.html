@@ -1,4 +1,3 @@
-@let disabled = $disabledState();
 @let show = $show();
 @let icon = $icon();
 @let title = $title();
@@ -9,7 +8,7 @@
 @if (icon) {
     <button
         (click)="onToggle()"
-        [disabled]="disabled"
+        [disabled]="$disabledIcon()"
         [icon]="icon"
         class="p-button-rounded p-button-text"
         pButton
@@ -20,7 +19,7 @@
     <button
         (click)="onToggle()"
         [label]="title"
-        [disabled]="disabled"
+        [disabled]="$disabled()"
         pButton
         icon="pi pi-chevron-down"
         iconPos="right"

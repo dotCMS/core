@@ -7,7 +7,8 @@ import {
     inject,
     input,
     signal,
-    output
+    output,
+    ChangeDetectionStrategy
 } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
@@ -29,6 +30,7 @@ import { ButtonModule } from 'primeng/button';
     styleUrls: ['./dot-dropdown.component.scss'],
     templateUrl: 'dot-dropdown.component.html',
     standalone: true,
+    changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [ButtonModule]
 })
 export class DotDropdownComponent {
@@ -86,7 +88,7 @@ export class DotDropdownComponent {
      * Returns true only when both disabled is true AND an icon is present.
      * @returns true if dropdown should be disabled with icon, false otherwise
      */
-    $disabledState = computed(() => {
+    $disabledIcon = computed(() => {
         const icon = this.$icon();
         const disabled = this.$disabled();
 
@@ -121,25 +123,19 @@ export class DotDropdownComponent {
     /**
      * Host listener that handles clicks outside the dropdown component.
      * Automatically closes the dropdown when user clicks outside of it.
-     * Traverses the DOM tree to determine if click occurred inside component.
+     * Uses the native contains() method for efficient DOM checking.
      *
-     * @param $event - The mouse click event from the document
+     * @param event - The mouse click event from the document
      */
     @HostListener('document:click', ['$event'])
-    handleClick($event) {
-        let clickedComponent = $event.target;
-        let inside = false;
-        do {
-            if (clickedComponent === this.#elementRef.nativeElement) {
-                inside = true;
-            }
+    handleClick(event: MouseEvent): void {
+        const target = event.target;
 
-            clickedComponent = clickedComponent.parentNode;
-        } while (clickedComponent);
-
-        if (!inside) {
-            this.$show.set(false);
+        if (!target || this.#elementRef.nativeElement.contains(target)) {
+            return;
         }
+
+        this.$show.set(false);
     }
 
     /**
