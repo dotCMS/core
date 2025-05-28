@@ -1,4 +1,9 @@
-import { Contentlet, DotCMSUVEAction, DotCMSBasicContentlet } from '@dotcms/types';
+import {
+    Contentlet,
+    DotCMSUVEAction,
+    DotCMSBasicContentlet,
+    DotCMSPageResponse
+} from '@dotcms/types';
 import { DotCMSReorderMenuConfig } from '@dotcms/types/internal';
 
 import {
@@ -134,14 +139,14 @@ describe('UVE Public Functions', () => {
 
         it('should call setClientIsReady with graphql config when provided', () => {
             const setClientIsReadySpy = jest.spyOn(utils, 'setClientIsReady');
-            const config = { graphql: { query: '{ test }', variables: {} } };
+            const config = { graphql: { query: '{ test }', variables: {} } } as DotCMSPageResponse;
             initUVE(config);
             expect(setClientIsReadySpy).toHaveBeenCalledWith(config);
         });
 
         it('should call setClientIsReady with params config when provided', () => {
             const setClientIsReadySpy = jest.spyOn(utils, 'setClientIsReady');
-            const config = { params: { depth: '1' } };
+            const config = { params: { depth: '1' } } as unknown as DotCMSPageResponse;
             initUVE(config);
             expect(setClientIsReadySpy).toHaveBeenCalledWith(config);
         });

@@ -4,7 +4,12 @@ import { Injectable } from '@angular/core';
 
 import { finalize } from 'rxjs/operators';
 
-import { UVEEventType, DotCMSPageResponse } from '@dotcms/types';
+import {
+    UVEEventType,
+    DotCMSPageResponse,
+    DotCMSComposedPageResponse,
+    DotCMSExtendedPageResponse
+} from '@dotcms/types';
 import { createUVESubscription, getUVEState, initUVE, updateNavigation } from '@dotcms/uve';
 
 @Injectable({
@@ -59,7 +64,9 @@ export class DotCMSEditablePageService {
      * @param response Optional initial page data
      * @returns Observable that emits the updated page data or undefined
      */
-    listen(response?: DotCMSPageResponse): Observable<DotCMSPageResponse | undefined> {
+    listen<T extends DotCMSExtendedPageResponse>(
+        response?: DotCMSComposedPageResponse<T>
+    ): Observable<DotCMSComposedPageResponse<T> | undefined> {
         if (!getUVEState()) {
             return of(response || undefined);
         }

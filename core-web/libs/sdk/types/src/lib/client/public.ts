@@ -4,7 +4,7 @@ import { UVE_MODE } from '../editor/public';
  * The GraphQL parameters for a page request.
  * @public
  */
-export interface DotCMSGraphQLParams<TVars = Record<string, unknown>> {
+export interface DotCMSGraphQLParams {
     /**
      * The GraphQL query for the page.
      */
@@ -16,7 +16,7 @@ export interface DotCMSGraphQLParams<TVars = Record<string, unknown>> {
     /**
      * Variables for the GraphQL queries.
      */
-    variables?: TVars;
+    variables?: Record<string, string>;
     /**
      * An array of GraphQL fragment strings.
      */
@@ -24,11 +24,11 @@ export interface DotCMSGraphQLParams<TVars = Record<string, unknown>> {
 }
 
 /**
- * The parameters for the Page API.
+ * Parameters for making a page request to DotCMS.
  * @public
- * @template TGraphQLVars - Type for the GraphQL variables.
+ * @interface DotCMSPageRequestParams
  */
-export interface DotCMSPageRequestParams<TGraphQLVars = Record<string, unknown>> {
+export interface DotCMSPageRequestParams {
     /**
      * The id of the site you want to interact with. Defaults to the one from the config if not provided.
      */
@@ -71,7 +71,7 @@ export interface DotCMSPageRequestParams<TGraphQLVars = Record<string, unknown>>
     /**
      * The GraphQL options for the page.
      */
-    graphql?: DotCMSGraphQLParams<TGraphQLVars>;
+    graphql?: DotCMSGraphQLParams;
 }
 
 /**

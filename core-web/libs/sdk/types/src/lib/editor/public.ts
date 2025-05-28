@@ -217,15 +217,3 @@ export interface EditableContainerData {
     maxContentlets: number;
     variantId?: string;
 }
-
-/**
- * Configuration for the UVE
- * @interface DotCMSUVEConfig
- */
-export interface DotCMSUVEConfig {
-    graphql?: {
-        query: string;
-        variables: Record<string, unknown>;
-    };
-    params?: Record<string, unknown>;
-}

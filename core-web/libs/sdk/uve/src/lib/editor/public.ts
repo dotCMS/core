@@ -1,10 +1,10 @@
 import {
     Contentlet,
     DotCMSUVEAction,
-    DotCMSUVEConfig,
     DotCMSInlineEditingPayload,
     DotCMSInlineEditingType,
-    DotCMSBasicContentlet
+    DotCMSBasicContentlet,
+    DotCMSPageResponse
 } from '@dotcms/types'; // '../types/editor/public';
 import { DotCMSReorderMenuConfig, DotCMSUVEMessage } from '@dotcms/types/internal'; //'../types/editor/internal';
 
@@ -163,7 +163,9 @@ export function enableBlockEditorInline(
  * destroyUVESubscriptions();
  * ```
  */
-export function initUVE(config: DotCMSUVEConfig = {}): { destroyUVESubscriptions: () => void } {
+export function initUVE(config: DotCMSPageResponse = {} as DotCMSPageResponse): {
+    destroyUVESubscriptions: () => void;
+} {
     addClassToEmptyContentlets();
     setClientIsReady(config);
 
