@@ -13,12 +13,16 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vavr.Lazy;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Set;
+import javax.inject.Singleton;
 import javax.ws.rs.ApplicationPath;
+import org.glassfish.hk2.utilities.binding.AbstractBinder;
+import org.glassfish.jersey.internal.inject.InjectionManager;
+import org.glassfish.jersey.internal.inject.Providers;
 import org.glassfish.jersey.media.multipart.MultiPartFeature;
 import org.glassfish.jersey.server.ResourceConfig;
+import org.glassfish.jersey.server.spi.internal.ResourceMethodInvocationHandlerProvider;
 
 /**
  * This class provides the list of all the REST end-points in dotCMS. Every new
@@ -52,29 +56,59 @@ import org.glassfish.jersey.server.ResourceConfig;
 )
 public class DotRestApplication extends ResourceConfig {
 
+	static {
+		System.setProperty("jersey.config.server.provider.scanning.recursive", "true");
+		Logger.info(DotRestApplication.class, "Static block executed - earliest possible");
+	}
+
 	private static final Lazy<Boolean> ENABLE_TELEMETRY_FROM_CORE = Lazy.of(() ->
 			Config.getBooleanProperty(FeatureFlagName.FEATURE_FLAG_TELEMETRY_CORE_ENABLED, true));
 
 	public DotRestApplication() {
+
+		// Registrar providers Before anything else
+		registerEarlyProviders();
+
+		// Then: Include the rest of the application configuration
+		configureApplication();
+	}
+
+	private void registerEarlyProviders() {
+		register(DotResourceMethodInvocationHandlerProvider.class);
+		register(new AbstractBinder() {
+			@Override
+			protected void configure() {
+				bind(DotResourceMethodInvocationHandlerProvider.class)
+						.to(ResourceMethodInvocationHandlerProvider.class)
+						.in(Singleton.class)
+						.ranked(1); // Ensure this provider is used first
+			}
+		});
+		Logger.debug(DotRestApplication.class, "MethodInvocationHandlerProvider provider registered");
+	}
+
+	private void configureApplication() {
 		final List<String> packages = new ArrayList<>(List.of(
 				"com.dotcms.rest",
 				"com.dotcms.contenttype.model.field",
 				"com.dotcms.rendering.js",
 				"com.dotcms.ai.rest",
 				"io.swagger.v3.jaxrs2"));
+
 		if (Boolean.TRUE.equals(ENABLE_TELEMETRY_FROM_CORE.get())) {
 			packages.add(TelemetryResource.class.getPackageName());
 		}
-		register(MultiPartFeature.class).
-		register(JacksonJaxbJsonProvider.class).
-		registerClasses(customClasses.keySet()).
-		packages(packages.toArray(new String[0]));
+
+		register(MultiPartFeature.class)
+				.register(JacksonJaxbJsonProvider.class)
+				.registerClasses(customClasses.getAliveClasses())
+				.packages(packages.toArray(new String[0]));
 	}
 
 	/**
 	 * This is the cheap way to create a concurrent set of user provided classes
 	 */
-	private static final Map<Class<?>, Boolean> customClasses = new ConcurrentHashMap<>();
+	private static final WeakReferenceSet<Class<?>> customClasses = new WeakReferenceSet<>();
 
 	/**
 	 * adds a class and reloads
@@ -89,7 +123,7 @@ public class DotRestApplication extends ResourceConfig {
 			Logger.warn(DotRestApplication.class, "Bypassing activation of Telemetry REST Endpoint from OSGi");
 			return;
 		}
-		if (Boolean.TRUE.equals(customClasses.computeIfAbsent(clazz,c -> true))) {
+		if (customClasses.add(clazz)) {
 			final Optional<ContainerReloader> reloader = CDIUtils.getBean(ContainerReloader.class);
             reloader.ifPresent(ContainerReloader::reload);
 		}
@@ -103,7 +137,7 @@ public class DotRestApplication extends ResourceConfig {
 		if(clazz==null){
 			return;
 		}
-		if(customClasses.remove(clazz) != null){
+		if(customClasses.remove(clazz)){
 			final Optional<ContainerReloader> reloader = CDIUtils.getBean(ContainerReloader.class);
 			reloader.ifPresent(ContainerReloader::reload);
 		}

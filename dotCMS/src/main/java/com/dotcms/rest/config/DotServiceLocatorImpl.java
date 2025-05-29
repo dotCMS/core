@@ -68,7 +68,7 @@ public class DotServiceLocatorImpl extends ServiceLocatorImpl {
     public void inject(Object injectMe, String strategy) {
         //there's a bug in jersey that causes a IllegalStateException to be thrown when the container is reloading
         //This Bug Kills the container leaving it useless
-        //And the reason if the checkState Method in the super Class (which is private)
+        //And the reason is the checkState Method in the super Class (which is private)
         Utilities.justInject(injectMe, this, strategy);
     }
 
