@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import com.dotcms.mail.MailAPI;
+import com.dotcms.mail.MailAPIImpl;
 import com.dotcms.api.system.event.SystemEventsAPI;
 import com.dotcms.api.system.event.SystemEventsFactory;
 import com.dotcms.api.tree.TreeableAPI;
@@ -257,6 +259,13 @@ public class APILocator extends Locator<APIIndex>{
 	 */
 	public static UserAPI getUserAPI() {
 		return (UserAPI)getInstance(APIIndex.USER_API);
+	}
+
+
+	private static final Lazy<MailAPI> lazyMail = Lazy.of(MailAPIImpl::new);
+
+	public static MailAPI getMailApi() {
+		return lazyMail.get();
 	}
 
 	/**

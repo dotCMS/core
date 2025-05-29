@@ -18,6 +18,7 @@ import javax.mail.internet.MimeMultipart;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import com.liferay.util.mail.MailEngine;
+import com.dotmarketing.business.APILocator;
 /**
  * 
  * Description of the Class
@@ -323,27 +324,7 @@ public class Mailer {
 			 * 
 			 * the container Context
 			 */
-			Session session = null;
-			Context ctx = null;
-			try {
-				ctx = (Context) new InitialContext().lookup("java:comp/env");
-				session = (javax.mail.Session) ctx.lookup("mail/MailSession");
-			} catch (Exception e1) {
-				try {
-					Logger.debug(this, "Using the jndi intitialContext().");
-					ctx = new InitialContext();
-					session = (javax.mail.Session) ctx.lookup("mail/MailSession");
-				} catch (Exception e) {
-					Logger.error(this, "Exception occured finding a mailSession in JNDI context.");
-					Logger.error(this, e1.getMessage(), e1);
-					return false;
-				}
-
-			}
-			if (session == null) {
-				Logger.debug(this, "No Mail Session Available.");
-				return false;
-			}
+			Session session = APILocator.getMailApi().getMailSession();
 			Logger.debug(this, "Delivering mail using: " + session.getProperty("mail.smtp.host") + " as server.");
 			MimeMessage message = new MimeMessage(session);
 			message.addHeader("X-RecipientId", String.valueOf(getRecipientId()));
@@ -378,10 +359,10 @@ public class Mailer {
 			message.setSubject(subject, encoding);
 			message.setContent(mp);
 
-			//Calling the MailEngine to send the message
-			MailEngine._sendMessage(session, message);
-
-//			Transport.send(message);
+			final Transport transport = session.getTransport();
+			transport.connect(APILocator.getMailApi().getConnectionHost(),
+					APILocator.getMailApi().getConnectionPort(), null, null);
+			transport.sendMessage(message, message.getAllRecipients());
 			result = "Send Ok";
 			return true;
 		} catch (javax.mail.SendFailedException f) {
