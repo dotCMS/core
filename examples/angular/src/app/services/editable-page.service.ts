@@ -66,7 +66,6 @@ export class EditablePageService<T extends DotCMSExtendedPageResponse> {
                 })
             )
             .subscribe((response) => {
-                console.log('response', response);
                 if (response.errors && !getUVEState()) {
                     this.#setError({
                         message: response.errors.message,
