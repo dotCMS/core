@@ -1,10 +1,13 @@
+import { LowerCasePipe } from '@angular/common';
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 
-import { INotification, NotificationIcons } from '@models/notifications';
-import { DotCustomTimeModule } from '../../../../../_common/dot-custom-time.component/dot-custom-time.module';
 import { Button } from 'primeng/button';
-import { LowerCasePipe } from '@angular/common';
-import { DotMessagePipe } from '../../../../../../../../../../../libs/ui/src/lib/dot-message/dot-message.pipe';
+
+import { DotCustomTimeModule } from '@components/_common/dot-custom-time.component/dot-custom-time.module';
+import { DotMessagePipe } from '@dotcms/ui';
+import { INotification, NotificationIcons } from '@models/notifications';
+
+
 @Component({
     selector: 'dot-notifications-item',
     styleUrls: ['./dot-notifications-item.component.scss'],
