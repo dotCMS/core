@@ -7,7 +7,6 @@ import { DotCustomTimeModule } from '@components/_common/dot-custom-time.compone
 import { DotMessagePipe } from '@dotcms/ui';
 import { INotification, NotificationIcons } from '@models/notifications';
 
-
 @Component({
     selector: 'dot-notifications-item',
     styleUrls: ['./dot-notifications-item.component.scss'],
