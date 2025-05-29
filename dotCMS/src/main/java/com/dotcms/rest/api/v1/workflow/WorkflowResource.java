@@ -2616,8 +2616,8 @@ public class WorkflowResource {
                 contentlet.setIndexPolicy(IndexPolicy.parseIndexPolicy(indexPolicy));
             }
 
-            actionId = this.workflowHelper.getActionIdOnList
-                    (fireActionForm.getActionName(), contentlet, initDataObject.getUser());
+            actionId = this.workflowHelper.getActionIdOnList // we do not want to do a double permission check here, since the WF API will check the permissions for the action later on
+                    (fireActionForm.getActionName(), contentlet, APILocator.systemUser());
 
             Logger.debug(this, "fire ActionByName Multipart with the actionid: " + actionId);
             return fireAction(request, fireActionForm, initDataObject.getUser(), contentlet, actionId, Optional.empty());
@@ -2790,8 +2790,8 @@ public class WorkflowResource {
                 contentlet.setIndexPolicy(IndexPolicy.parseIndexPolicy(indexPolicy));
             }
 
-            actionId = this.workflowHelper.getActionIdOnList
-                    (fireActionForm.getActionName(), contentlet, initDataObject.getUser());
+            actionId = this.workflowHelper.getActionIdOnList // we do not want to do a double permission check here, since the WF API will check the permissions for the action later on
+                    (fireActionForm.getActionName(), contentlet, APILocator.systemUser());
 
             Logger.debug(this, "fire ActionByName with the actionid: " + actionId);
 

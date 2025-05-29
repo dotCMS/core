@@ -3,17 +3,7 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { DotCMSEditableTextComponent } from '@dotcms/angular/next';
-import { DotCMSBasicContentlet } from '@dotcms/types';
-
-interface BannerContentlet extends DotCMSBasicContentlet {
-    image?: {
-        identifier: string;
-    };
-    title: string;
-    caption: string;
-    link: string;
-    buttonText: string;
-}
+import { Banner } from '../../shared/contentlet.model';
 
 @Component({
     selector: 'app-banner',
@@ -21,7 +11,7 @@ interface BannerContentlet extends DotCMSBasicContentlet {
     imports: [RouterLink, NgOptimizedImage, DotCMSEditableTextComponent],
     template: `<div
         class="flex overflow-hidden relative justify-center items-center w-full h-96 bg-gray-200">
-        @if (contentlet().image?.identifier; as imageIdentifier) {
+        @if (contentlet().image.identifier; as imageIdentifier) {
         <img
             class="object-cover w-full"
             [ngSrc]="imageIdentifier"
@@ -46,5 +36,5 @@ interface BannerContentlet extends DotCMSBasicContentlet {
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class BannerComponent {
-    contentlet = input.required<BannerContentlet>();
+    contentlet = input.required<Banner>();
 }

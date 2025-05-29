@@ -1,20 +1,30 @@
-import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 
 import { Component, Input } from '@angular/core';
 import { fakeAsync, tick } from '@angular/core/testing';
 
-import { BlockEditorNode } from '@dotcms/types';
+import { BlockEditorNode, UVE_MODE } from '@dotcms/types';
 import { BlockEditorDefaultBlocks } from '@dotcms/types/internal';
+import { getUVEState } from '@dotcms/uve';
 
 import { DotCMSBlockEditorItemComponent } from './dotcms-block-editor-item.component';
 
 import { DotBlockQuote, DotCodeBlock } from '../blocks/code.component';
-import { DotContentletBlock } from '../blocks/contentlet.component';
+import { DotContentletBlock } from '../blocks/dot-contentlet.component';
 import { DotImageBlock } from '../blocks/image.component';
 import { DotBulletList, DotListItem, DotOrdererList } from '../blocks/list.component';
 import { DotTableBlock } from '../blocks/table.component';
 import { DotHeadingBlock, DotParagraphBlock, DotTextBlock } from '../blocks/text.component';
 import { DotVideoBlock } from '../blocks/video.component';
+
+const MOCK_UVE_STATE_EDIT = {
+    mode: UVE_MODE.EDIT,
+    persona: 'test',
+    variantName: 'test',
+    experimentId: 'test',
+    publishDate: 'test',
+    languageId: 'test'
+};
 
 @Component({
     selector: 'dotcms-block-editor-renderer-custom-component',
@@ -25,7 +35,13 @@ export class DotCMSBlockEditorRendererCustomComponent {
     @Input() content: BlockEditorNode[] = [];
 }
 
+jest.mock('@dotcms/uve', () => ({
+    getUVEState: jest.fn()
+}));
+
 describe('DotCMSBlockEditorRendererBlockComponent', () => {
+    const getUVEStateMock = getUVEState as jest.Mock;
+
     let spectator: Spectator<DotCMSBlockEditorItemComponent>;
     const createComponent = createComponentFactory({
         component: DotCMSBlockEditorItemComponent,
@@ -34,6 +50,10 @@ describe('DotCMSBlockEditorRendererBlockComponent', () => {
 
     beforeEach(() => {
         spectator = createComponent();
+    });
+
+    afterEach(() => {
+        jest.clearAllMocks();
     });
 
     describe('Block Rendering', () => {
@@ -286,18 +306,38 @@ describe('DotCMSBlockEditorRendererBlockComponent', () => {
                 expect(customComponent?.content).toEqual(content[0]);
             }));
 
-            it('should render unknown block type message', () => {
-                const content: BlockEditorNode[] = [
-                    {
-                        type: 'UNKNOWN_TYPE' as unknown as BlockEditorDefaultBlocks,
-                        content: []
-                    }
-                ];
-                spectator.setInput('content', content);
-                spectator.detectChanges();
+            describe('Unknown Block Type', () => {
+                it('should render unknown block type message if it is in edit mode', () => {
+                    getUVEStateMock.mockReturnValue(MOCK_UVE_STATE_EDIT);
 
-                const unknownBlock = spectator.query('div');
-                expect(unknownBlock?.textContent).toContain('Unknown Block Type: UNKNOWN_TYPE');
+                    const content: BlockEditorNode[] = [
+                        {
+                            type: 'UNKNOWN_TYPE' as unknown as BlockEditorDefaultBlocks,
+                            content: []
+                        }
+                    ];
+                    spectator.setInput('content', content);
+                    spectator.detectChanges();
+
+                    const unknownBlock = spectator.query(byTestId('unknown-block-type'));
+                    expect(unknownBlock).toBeTruthy();
+                });
+
+                it('should not render unknown block type message if it is not in edit mode', () => {
+                    getUVEStateMock.mockReturnValue(null);
+
+                    const content: BlockEditorNode[] = [
+                        {
+                            type: 'UNKNOWN_TYPE' as unknown as BlockEditorDefaultBlocks,
+                            content: []
+                        }
+                    ];
+                    spectator.setInput('content', content);
+                    spectator.detectChanges();
+
+                    const unknownBlock = spectator.query(byTestId('unknown-block-type'));
+                    expect(unknownBlock).toBeNull();
+                });
             });
         });
     });
