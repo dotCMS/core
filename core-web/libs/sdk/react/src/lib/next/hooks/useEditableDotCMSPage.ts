@@ -106,12 +106,22 @@ export const useEditableDotCMSPage = <T extends DotCMSExtendedPageResponse>(
             return;
         }
 
-        const pageURI = pageResponse?.pageAsset?.page?.pageURI ?? '/';
+        if (!pageResponse) {
+            console.warn('[useEditableDotCMSPage]: No DotCMSPageResponse provided');
+
+            return;
+        }
+
+        const pageURI = pageResponse?.pageAsset?.page?.pageURI;
 
         const { destroyUVESubscriptions } = initUVE(pageResponse);
 
-        // Update the navigation to the pageURI
-        updateNavigation(pageURI);
+        // Update the navigation to the pageURI, when we have a pageURI
+        // Sometimes the page is null due to permissions, so we don't want to update the navigation
+        // And wait for the UVE to resolve the page
+        if (pageURI) {
+            updateNavigation(pageURI);
+        }
 
         return () => {
             destroyUVESubscriptions();

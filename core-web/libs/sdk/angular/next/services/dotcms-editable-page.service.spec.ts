@@ -113,7 +113,7 @@ describe('DotCMSEditablePageService', () => {
             service.listen();
 
             expect(initUVE).toHaveBeenCalled();
-            expect(updateNavigation).toHaveBeenCalledWith('/');
+            expect(updateNavigation).not.toHaveBeenCalled();
         });
     });
 });

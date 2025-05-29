@@ -1,9 +1,9 @@
 import { environment } from '../../../../environments/environment';
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
-import { DestinationsComponent } from './destinations/destinations.component';
+import { DestinationsComponent } from './components/destinations/destinations.component';
 import { NgOptimizedImage } from '@angular/common';
-import { BlogsComponent } from './blogs/blogs.component';
+import { BlogsComponent } from './components/blogs/blogs.component';
 import { FooterContent } from '../../contentlet.model';
 
 @Component({

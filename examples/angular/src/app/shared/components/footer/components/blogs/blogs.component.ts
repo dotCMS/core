@@ -1,6 +1,6 @@
 import { Component, input } from '@angular/core';
-import { RecommendedCardComponent } from '../../recommended-card/recommended-card.component';
-import { Blog } from '../../../contentlet.model';
+import { RecommendedCardComponent } from '../recommended-card/recommended-card.component';
+import { Blog } from '../../../../contentlet.model';
 @Component({
     selector: 'app-blogs',
     standalone: true,
