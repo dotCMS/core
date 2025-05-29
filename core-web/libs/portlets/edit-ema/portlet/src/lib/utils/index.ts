@@ -333,7 +333,7 @@ export function isForwardOrPage(vanityUrl?: DotCMSVanityUrl): boolean {
         return !vanityUrl?.permanentRedirect && !vanityUrl?.temporaryRedirect;
     }
 
-    return vanityUrl?.action === 200; // GraphQL API returns 200 for forward
+    return vanityUrl?.action === 200 || vanityUrl?.response === 200; // GraphQL API returns 200 for forward
 }
 
 /**

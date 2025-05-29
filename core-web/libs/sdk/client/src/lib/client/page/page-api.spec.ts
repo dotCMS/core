@@ -111,6 +111,42 @@ describe('PageClient', () => {
             });
         });
 
+        it('should add leading slash to url if it does not have it', async () => {
+            const pageClient = new PageClient(validConfig, requestOptions);
+            const graphQLOptions = {
+                graphql: {
+                    page: `containers {
+                        containerContentlets {
+                            contentlets {
+                                ... on Banner {
+                                    title
+                                }
+                            }
+                        }
+                    }`,
+                    content: { content: 'query Content { items { title } }' }
+                }
+            };
+
+            // No leading slash
+            const result = await pageClient.get('graphql-page', graphQLOptions as any);
+
+            expect(result).toEqual({
+                pageAsset: graphqlToPageEntity(
+                    mockGraphQLResponse.data as unknown as DotCMSGraphQLPageResponse
+                ),
+                content: { content: mockGraphQLResponse.data.testContent },
+                graphql: {
+                    query: expect.any(String),
+                    variables: expect.objectContaining({
+                        url: '/graphql-page'
+                    })
+                },
+                vanityUrl: undefined,
+                runningExperimentId: undefined
+            });
+        });
+
         it('should pass correct variables to GraphQL query', async () => {
             const pageClient = new PageClient(validConfig, requestOptions);
             const graphQLOptions = {

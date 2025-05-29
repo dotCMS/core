@@ -134,7 +134,8 @@ export class PageClient {
         });
 
         const requestVariables: Record<string, unknown> = {
-            url,
+            // The url is expected to have a leading slash to comply on VanityURL Matching, some frameworks like Angular will not add the leading slash
+            url: url.startsWith('/') ? url : `/${url}`,
             mode,
             languageId,
             personaId,

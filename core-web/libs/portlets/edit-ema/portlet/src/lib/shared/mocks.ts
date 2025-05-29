@@ -592,6 +592,18 @@ export const NEW_PERMANENT_REDIRECT_VANITY_URL = {
     uri: 'test-url'
 };
 
+export const NEW_PERMANENT_REDIRECT_VANITY_URL_WITH_RESPONSE = {
+    forwardTo: 'new-vanity-url',
+    uri: 'test-url',
+    response: 200
+};
+
+export const NEW_PERMANENT_REDIRECT_VANITY_URL_WITH_ACTION = {
+    action: 200,
+    forwardTo: 'new-vanity-url',
+    uri: 'test-url'
+};
+
 export const EMA_DRAG_ITEM_CONTENTLET_MOCK: EmaDragItem = {
     baseType: 'CONTENT',
     contentType: 'kenobi',
