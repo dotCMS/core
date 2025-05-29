@@ -7,6 +7,8 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 import com.dotcms.mail.MailAPI;
 import com.dotcms.mail.MailAPIImpl;
+import io.vavr.Lazy;
+import io.vavr.control.Try;
 import com.dotcms.api.system.event.SystemEventsAPI;
 import com.dotcms.api.system.event.SystemEventsFactory;
 import com.dotcms.api.tree.TreeableAPI;
