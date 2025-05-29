@@ -60,6 +60,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.uuid.shorty.ShortyIdApiTest.class,
         DotGraphQLHttpServletTest.class,
         com.dotcms.graphql.datafetcher.page.VanityURLFetcherTest.class,
+        com.dotcms.graphql.datafetcher.page.ContentMapDataFetcherTest.class,
         com.dotcms.graphql.datafetcher.page.RunningExperimentFetcherTest.class,
         com.dotcms.graphql.datafetcher.CategoryFieldDataFetcherTest.class,
         com.dotcms.rest.TagResourceIntegrationTest.class,
