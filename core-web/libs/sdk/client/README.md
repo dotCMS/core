@@ -36,6 +36,9 @@ The `@dotcms/client` is a powerful JavaScript/TypeScript SDK designed to simplif
     -   [client.content.getCollection(): Fetching Content Collections](#clientcontentgetcollection-fetching-content-collections)
 -   [Using the SDK with TypeScript](#using-the-sdk-with-typescript)
     -   [Usage Example](#usage-example)
+-   [How to Enable Page Editing in dotCMS](#how-to-enable-page-editing-in-dotcms)
+    -   [Use an Official SDK](#use-an-official-sdk)
+    -   [⚠️ Advanced Only: Custom UVE Integration](#advanced-only-custom-uve-integration)
 -   [dotCMS Support](#dotcms-support)
 -   [How To Contribute](#how-to-contribute)
 -   [Licensing Information](#licensing-information)
@@ -544,6 +547,43 @@ response.contentlets.forEach((post) => {
     console.log(post.tags.join(', '));
 });
 ```
+
+## How to Enable Page Editing in dotCMS
+
+By default, the `@dotcms/client` SDK is **read-only**. It's designed to fetch content from dotCMS—pages, navigation, and collections—but it doesn't make pages editable in the dotCMS backend.
+
+To make your pages editable using the dotCMS **Universal Visual Editor (UVE)**, you'll need to pair this SDK with one of our supported front-end integrations.
+
+### Use an Official SDK: 
+
+If you're using a modern JavaScript framework like React or Angular, we strongly recommend starting with one of our official UVE integrations. These pair the `@dotcms/client` SDK with framework-specific tooling for the Universal Visual Editor:
+
+* 🧩 **React SDK**: [`@dotcms/react`](https://github.com/dotCMS/core/tree/main/core-web/libs/sdk/react)
+* 🧩 **Angular SDK**: [`@dotcms/angular`](https://github.com/dotCMS/core/tree/main/core-web/libs/sdk/angular)
+
+You can also see them in action within our full-stack examples:
+
+* [Next.js Example](https://github.com/dotCMS/core/tree/main/examples/nextjs)
+* [Angular Example](https://github.com/dotCMS/core/tree/main/examples/angular)
+* [Astro Example](https://github.com/dotCMS/core/tree/main/examples/astro)
+
+These integrations come pre-wired with everything you need to:
+
+* Enable editable pages inside dotCMS using the UVE
+* Render layouts and content containers
+* Fetch page and content data using `@dotcms/client`
+
+### ⚠️ Advanced Only: Custom UVE Integration
+
+If you’re building with a framework we don’t yet support, you can build your own UVE integration using the low-level [`@dotcms/uve`](https://github.com/dotCMS/core/tree/main/core-web/libs/sdk/uve) package.
+
+> **This is not a recommended path.**
+> 
+> Custom UVE implementations are complex, require a deep understanding of dotCMS internals, and are not actively supported.
+> 
+> You’ll be on your own for wiring up layout rendering, editable regions, and UVE behavior.
+
+That said, if you’re experienced and want to explore it, you can [review the `@dotcms/uve` source and docs here](https://github.com/dotCMS/core/tree/main/core-web/libs/sdk/uve).
 
 ## dotCMS Support
 
