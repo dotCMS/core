@@ -42,6 +42,9 @@ import com.dotmarketing.util.Logger;
 import com.liferay.util.GetterUtil;
 import com.liferay.util.JNDIUtil;
 import com.liferay.util.Validator;
+import java.util.Properties;
+import com.dotmarketing.util.Config;
+import io.vavr.Lazy;
 
 /**
  * <a href="MailEngine.java.html"><b><i>View Source</i></b></a>
