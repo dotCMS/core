@@ -17,6 +17,7 @@ import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
 import javax.naming.Context;
 import javax.naming.InitialContext;
+import com.liferay.util.mail.MailEngine;
 /**
  * 
  * Description of the Class
