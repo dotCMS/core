@@ -7,8 +7,7 @@ import { DotCrumbtrailComponent } from './dot-crumbtrail.component';
 import { DotCrumbtrailService } from './service/dot-crumbtrail.service';
 
 @NgModule({
-    imports: [CommonModule, BreadcrumbModule],
-    declarations: [DotCrumbtrailComponent],
+    imports: [CommonModule, BreadcrumbModule, DotCrumbtrailComponent],
     exports: [DotCrumbtrailComponent],
     providers: [DotCrumbtrailService]
 })

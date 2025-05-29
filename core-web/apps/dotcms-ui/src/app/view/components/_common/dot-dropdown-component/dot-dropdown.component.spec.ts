@@ -6,9 +6,12 @@ describe('DotDropdownComponent', () => {
     let spectator: Spectator<DotDropdownComponent>;
     const createComponent = createComponentFactory(DotDropdownComponent);
 
-    beforeEach(() =>(spectator = createComponent({
-        detectChanges: false
-    })));
+    beforeEach(
+        () =>
+            (spectator = createComponent({
+                detectChanges: false
+            }))
+    );
 
     describe('Enabled', () => {
         it('should display icon button and emit toggle event when clicked', () => {

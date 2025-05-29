@@ -1,53 +1,33 @@
-/* eslint-disable @typescript-eslint/no-empty-function */
-/* eslint-disable @typescript-eslint/no-explicit-any */
+import {
+    Spectator,
+    SpyObject,
+    byTestId,
+    createComponentFactory,
+    mockProvider
+} from '@ngneat/spectator';
+import { MockComponent } from 'ng-mocks';
+import { of, Subject } from 'rxjs';
 
-import { Observable, of as observableOf, of, Subject } from 'rxjs';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { Injectable, signal } from '@angular/core';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { Component, DebugElement, Injectable, Input, signal } from '@angular/core';
-import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
-import { By } from '@angular/platform-browser';
-
-import { ButtonModule } from 'primeng/button';
-
+import { DotDropdownComponent } from '@components/_common/dot-dropdown-component/dot-dropdown.component';
 import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
 import { AnnouncementsStore } from '@components/dot-toolbar/components/dot-toolbar-announcements/store/dot-announcements.store';
 import { NotificationsService } from '@dotcms/app/api/services/notifications-service';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotcmsEventsService, LoginService, SiteService, SiteServiceMock } from '@dotcms/dotcms-js';
-import { DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
-import { INotification } from '@shared/models/notifications';
 
+import { DotNotificationsListComponent } from './components/dot-notifications/dot-notifications.component';
 import { DotToolbarNotificationsComponent } from './dot-toolbar-notifications.component';
-
-@Component({
-    selector: 'dot-dropdown-component',
-    template: '',
-    standalone: true,
-    imports: [DotSafeHtmlPipe, DotMessagePipe, ButtonModule, HttpClientTestingModule]
-})
-class MockDotDropDownComponent {
-    @Input()
-    disabled = false;
-}
-
-@Component({
-    selector: 'dot-notifications-list',
-    template: '',
-    standalone: true,
-    imports: [DotSafeHtmlPipe, DotMessagePipe, ButtonModule, HttpClientTestingModule]
-})
-class MockDotNotificationsListComponent {
-    @Input()
-    notifications: INotification;
-}
 
 @Injectable()
 class MockDotcmsEventsService {
-    private events: Subject<any> = new Subject();
+    private events: Subject<unknown> = new Subject();
 
-    subscribeTo(clientEventType: string): Observable<any> {
+    subscribeTo(clientEventType: string) {
         if (clientEventType) {
             return this.events.asObservable();
         } else {
@@ -58,31 +38,16 @@ class MockDotcmsEventsService {
 
 @Injectable()
 class MockLoginService {
-    public watchUser(_func: (params?: unknown) => void): void {}
-}
-
-@Injectable()
-class MockNotificationsService {
-    getLastNotifications(): Observable<any> {
-        return observableOf({
-            entity: {
-                totalUnreadNotifications: 1,
-                notifications: [
-                    {
-                        id: '1',
-                        title: 'Notification Title',
-                        message: 'Notification message'
-                    }
-                ],
-                total: 1
-            }
-        });
+    public watchUser(_func: (params?: unknown) => void): void {
+        return;
     }
 }
 
 describe('DotToolbarNotificationsComponent', () => {
-    let fixture: ComponentFixture<DotToolbarNotificationsComponent>;
-    let iframeOverlayService: IframeOverlayService;
+    let spectator: Spectator<DotToolbarNotificationsComponent>;
+    let notificationService: SpyObject<NotificationsService>;
+    let iframeOverlayService: SpyObject<IframeOverlayService>;
+
     const messageServiceMock = new MockDotMessageService({
         notifications_dismissall: 'Dismiss all',
         notifications_title: 'Notifications',
@@ -92,51 +57,61 @@ describe('DotToolbarNotificationsComponent', () => {
     });
     const siteServiceMock = new SiteServiceMock();
 
-    beforeEach(waitForAsync(() => {
-        TestBed.configureTestingModule({
-            imports: [
-                DotSafeHtmlPipe,
-                DotMessagePipe,
-                ButtonModule,
-                HttpClientTestingModule,
-                DotToolbarNotificationsComponent,
-                MockDotDropDownComponent,
-                MockDotNotificationsListComponent
-            ],
-            providers: [
-                { provide: DotMessageService, useValue: messageServiceMock },
-                { provide: IframeOverlayService, useClass: IframeOverlayService },
-                { provide: DotcmsEventsService, useClass: MockDotcmsEventsService },
-                { provide: LoginService, useClass: MockLoginService },
-                { provide: NotificationsService, useClass: MockNotificationsService },
-                {
-                    provide: AnnouncementsStore,
-                    useClass: AnnouncementsStore
-                },
-                {
-                    provide: SiteService,
-                    useValue: siteServiceMock
-                }
-            ]
-        }).compileComponents();
+    const createComponent = createComponentFactory({
+        component: DotToolbarNotificationsComponent,
+        declarations: [
+            MockComponent(DotNotificationsListComponent),
+            MockComponent(DotDropdownComponent)
+        ],
+        providers: [
+            provideHttpClient(),
+            provideHttpClientTesting(),
+            AnnouncementsStore,
+            { provide: DotMessageService, useValue: messageServiceMock },
+            { provide: IframeOverlayService, useClass: IframeOverlayService },
+            { provide: DotcmsEventsService, useClass: MockDotcmsEventsService },
+            { provide: LoginService, useClass: MockLoginService },
+            mockProvider(NotificationsService),
+            {
+                provide: SiteService,
+                useValue: siteServiceMock
+            }
+        ]
+    });
 
-        fixture = TestBed.createComponent(DotToolbarNotificationsComponent);
-        iframeOverlayService = fixture.debugElement.injector.get(IframeOverlayService);
-    }));
+    beforeEach(() => {
+        spectator = createComponent({
+            detectChanges: false
+        });
+        notificationService = spectator.inject(NotificationsService);
+        iframeOverlayService = spectator.inject(IframeOverlayService);
+    });
 
     it(`should has a badge`, () => {
-        fixture.componentInstance.showUnreadAnnouncement = signal(true);
-        fixture.detectChanges();
-        const badge: DebugElement = fixture.debugElement.query(
-            By.css('#dot-toolbar-notifications-badge')
+        notificationService.getLastNotifications.and.returnValue(
+            of({
+                entity: {
+                    totalUnreadNotifications: 1,
+                    notifications: [
+                        {
+                            id: '1',
+                            title: 'Notification Title',
+                            message: 'Notification message'
+                        }
+                    ],
+                    total: 1
+                }
+            })
         );
-
+        spectator.component.showUnreadAnnouncement = signal(true);
+        spectator.detectChanges();
+        const badge = spectator.query('#dot-toolbar-notifications-badge');
         expect(badge).not.toBeNull();
     });
 
     it('should display the dropdown even if there are no notifications', () => {
-        spyOn(TestBed.inject(NotificationsService), 'getLastNotifications').and.returnValue(
-            of<any>({
+        notificationService.getLastNotifications.and.returnValue(
+            of({
                 entity: {
                     totalUnreadNotifications: 0,
                     notifications: [],
@@ -146,11 +121,9 @@ describe('DotToolbarNotificationsComponent', () => {
         );
 
         iframeOverlayService.show();
-        fixture.detectChanges();
+        spectator.detectChanges();
 
-        const notificationsComponent = fixture.debugElement.query(
-            By.css('[data-testId="dot-toolbar-notifications"]')
-        );
+        const notificationsComponent = spectator.query(byTestId('dot-toolbar-notifications'));
         expect(notificationsComponent).toBeDefined();
     });
 });

@@ -17351,10 +17351,10 @@ next@^14.0.4:
     "@next/swc-win32-ia32-msvc" "14.2.28"
     "@next/swc-win32-x64-msvc" "14.2.28"
 
-ng-mocks@^14.12.1:
-  version "14.13.4"
-  resolved "https://registry.npmjs.org/ng-mocks/-/ng-mocks-14.13.4.tgz#bb53f7b75e0937fcfc8a2177a234a0937143f326"
-  integrity sha512-OFpzcx9vzeMqpVaBaukH8gvHRhor8iAkc8pOWakSPwxD3DuoHyDrjb/odgjI3Jq+Iaerqb3js1I4Sluu+0rLSQ==
+ng-mocks@^14.13.5:
+  version "14.13.5"
+  resolved "https://registry.npmjs.org/ng-mocks/-/ng-mocks-14.13.5.tgz#0f73b0cf1d26595668fd451d092ec1a029c42f69"
+  integrity sha512-/0eMqYgKoy7ySvjXcD+2eOv8h9v84+JFOLIrhwX1sZLXHgwV8wVbZct5djxnbHJzwmOgQ3tn3osDZSSs3lIFuw==
 
 ng-packagr@17.3.0:
   version "17.3.0"

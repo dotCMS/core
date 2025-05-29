@@ -29,8 +29,7 @@ describe('DotCrumbtrailComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [DotCrumbtrailComponent],
-            imports: [BreadcrumbModule],
+            imports: [BreadcrumbModule, DotCrumbtrailComponent],
             providers: [
                 {
                     provide: DotCrumbtrailService,
