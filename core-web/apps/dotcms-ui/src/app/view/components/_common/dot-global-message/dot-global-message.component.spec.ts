@@ -73,8 +73,8 @@ describe('DotGlobalMessageComponent', () => {
         dotEventsService.notify('dot-global-message', { value: 'test', type: 'success' });
         fixture.detectChanges();
 
-        const dotIcon = fixture.debugElement.query(By.css('[data-testId="message-icon"]'));
-        const message = fixture.debugElement.query(By.css('[data-testId="message-text"]'));
+        const dotIcon = fixture.debugElement.query(By.css('[data-testid="message-icon"]'));
+        const message = fixture.debugElement.query(By.css('[data-testid="message-text"]'));
 
         expect(dotIcon.nativeElement.classList).toContain('pi-check-circle');
         expect(message.nativeElement.textContent).toContain('test');
@@ -88,8 +88,8 @@ describe('DotGlobalMessageComponent', () => {
         });
         fixture.detectChanges();
 
-        const dotIcon = fixture.debugElement.query(By.css('[data-testId="message-icon"]'));
-        const message = fixture.debugElement.query(By.css('[data-testId="message-text"]'));
+        const dotIcon = fixture.debugElement.query(By.css('[data-testid="message-icon"]'));
+        const message = fixture.debugElement.query(By.css('[data-testid="message-text"]'));
 
         expect(dotIcon.nativeElement.classList).toContain('pi-exclamation-triangle');
         expect(message.nativeElement.textContent).toContain('warning message');

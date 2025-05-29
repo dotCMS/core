@@ -1,4 +1,4 @@
-import { BehaviorSubject, Observable, Subject, of } from 'rxjs';
+import { BehaviorSubject, Observable, of } from 'rxjs';
 
 import { Injectable } from '@angular/core';
 import { ActivatedRoute, Data, NavigationEnd, Router } from '@angular/router';
@@ -15,7 +15,7 @@ import {
 @Injectable()
 export class DotCrumbtrailService {
     private URL_EXCLUDES = ['/content-types-angular/create/content'];
-    private crumbTrail: Subject<DotCrumb[]> = new BehaviorSubject([]);
+    private crumbTrail = new BehaviorSubject([]);
 
     private portletsTitlePathFinder = {
         'content-types-angular': 'contentType.name',

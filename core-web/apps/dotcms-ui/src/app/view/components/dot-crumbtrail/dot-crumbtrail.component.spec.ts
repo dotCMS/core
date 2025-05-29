@@ -1,69 +1,63 @@
-import { Observable, Subject } from 'rxjs';
+import { Spectator, SpyObject, createComponentFactory } from '@ngneat/spectator';
+import { BehaviorSubject, Observable } from 'rxjs';
 
-import { DebugElement, Injectable } from '@angular/core';
-import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
-import { By } from '@angular/platform-browser';
+import { Injectable } from '@angular/core';
 
-import { BreadcrumbModule } from 'primeng/breadcrumb';
+import { BreadcrumbModule, Breadcrumb } from 'primeng/breadcrumb';
 
 import { DotCrumbtrailComponent } from './dot-crumbtrail.component';
 import { DotCrumb, DotCrumbtrailService } from './service/dot-crumbtrail.service';
 
 @Injectable()
 class MockDotCrumbtrailService {
-    private crumbTrail: Subject<DotCrumb[]> = new Subject();
+    private crumbTrail = new BehaviorSubject([
+        {
+            label: 'label',
+            url: 'url'
+        }
+    ]);
 
     get crumbTrail$(): Observable<DotCrumb[]> {
         return this.crumbTrail.asObservable();
     }
-
-    trigger(crumbs: DotCrumb[]): void {
-        this.crumbTrail.next(crumbs);
-    }
 }
 
-describe('DotCrumbtrailComponent', () => {
-    let fixture: ComponentFixture<DotCrumbtrailComponent>;
-    let de: DebugElement;
-    const dotCrumbtrailService: MockDotCrumbtrailService = new MockDotCrumbtrailService();
+const mockDotCrumbtrailService = new MockDotCrumbtrailService();
 
-    beforeEach(waitForAsync(() => {
-        TestBed.configureTestingModule({
-            imports: [BreadcrumbModule, DotCrumbtrailComponent],
-            providers: [
-                {
-                    provide: DotCrumbtrailService,
-                    useValue: dotCrumbtrailService
-                }
-            ]
-        }).compileComponents();
-    }));
+describe('DotCrumbtrailComponent', () => {
+    let spectator: Spectator<DotCrumbtrailComponent>;
+    let dotCrumbtrailService: SpyObject<DotCrumbtrailService>;
+
+    const createComponent = createComponentFactory({
+        component: DotCrumbtrailComponent,
+        imports: [BreadcrumbModule],
+        componentProviders: [
+            {
+                provide: DotCrumbtrailService,
+                useValue: mockDotCrumbtrailService
+            }
+        ],
+        detectChanges: false
+    });
 
     beforeEach(() => {
-        fixture = TestBed.createComponent(DotCrumbtrailComponent);
-        de = fixture.debugElement;
-
-        fixture.detectChanges();
+        spectator = createComponent();
+        dotCrumbtrailService = spectator.inject(DotCrumbtrailService, true);
     });
 
     it('should has a p-breadcrumb', () => {
-        const pBreadCrumb: DebugElement = de.query(By.css('p-breadcrumb'));
+        spectator.detectChanges();
+        const pBreadCrumb = spectator.query(Breadcrumb);
         expect(pBreadCrumb).not.toBeNull();
     });
 
     it('should listen crumbTrail event from service', () => {
-        const crumbs = [
-            {
-                label: 'label',
-                url: 'url'
-            }
-        ];
+        spectator.detectChanges();
 
-        dotCrumbtrailService.trigger(crumbs);
+        const pBreadCrumb = spectator.query(Breadcrumb);
 
-        const pBreadCrumb: DebugElement = de.query(By.css('p-breadcrumb'));
-
-        fixture.detectChanges();
-        expect(pBreadCrumb.componentInstance.model).toBe(crumbs);
+        dotCrumbtrailService.crumbTrail$.subscribe((crumbs) => {
+            expect(pBreadCrumb.model).toBe(crumbs);
+        });
     });
 });
