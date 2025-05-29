@@ -1,10 +1,8 @@
 <p-card
     (click)="actionFired.emit(app.key)"
-    [ngClass]="{
-        'dot-apps-card__disabled': !app.configurationsCount
-    }">
+    [class.dot-apps-card__disabled]="!app.configurationsCount">
     <p-header>
-        <p-avatar [image]="app.iconUrl" [text]="app.name" size="large" dotAvatar></p-avatar>
+        <p-avatar [image]="app.iconUrl" [text]="app.name" size="large" dotAvatar />
         <div class="dot-apps-card__label-container">
             <span class="dot-apps-card__name">{{ app.name }}</span>
             <span class="dot-apps-card__configurations">
@@ -14,11 +12,14 @@
                         : ('apps.no.configurations' | dm)
                 }}
             </span>
-            <dot-icon
-                *ngIf="app.sitesWithWarnings"
-                name="warning"
-                pTooltip="{{ app.sitesWithWarnings + ' ' + ('apps.invalid.configurations' | dm) }}"
-                size="18"></dot-icon>
+            @if (app.sitesWithWarnings) {
+                <dot-icon
+                    name="warning"
+                    pTooltip="{{
+                        app.sitesWithWarnings + ' ' + ('apps.invalid.configurations' | dm)
+                    }}"
+                    size="18" />
+            }
         </div>
     </p-header>
     <p>
