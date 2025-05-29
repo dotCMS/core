@@ -92,7 +92,7 @@ export class DotDropdownComponent {
         const icon = this.$icon();
         const disabled = this.$disabled();
 
-        return disabled && icon ? true : false;
+        return disabled && icon;
     });
 
     /**
