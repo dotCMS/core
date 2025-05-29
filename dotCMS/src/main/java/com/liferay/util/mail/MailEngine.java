@@ -221,7 +221,7 @@ public class MailEngine {
 	String DEFAULT_MAIL_PROTOCOL = "smtp";
 	String TRANSPORT_PROTOCOL = "mail.transport.protocol";
 
-	private static void loadMailConfigProperties() {
+	private static Properties loadMailConfigProperties() {
 		Lazy<Properties> properties = Lazy.of(()->{
 
 			final Properties properties = new Properties();
@@ -257,7 +257,7 @@ public class MailEngine {
 		String smtpHost = mailProperties.getProperty("mail.smtp.host");
 		String user = mailProperties.getProperty("mail.smtp.user");
 		String password = mailProperties.getProperty("mail.smtp.password");
-		int smtpPort = mailProperties.getProperty("mail.smtp.port");
+		int smtpPort = GetterUtil.getInteger(mailProperties.getProperty("mail.smtp.port"), 25);
 
 		Logger.info(this, "Delivering mail using: " + smtpHost + " as server.");
 		Logger.info(this, "Delivering mail using: " + smtpPort + " as port.");
