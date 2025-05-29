@@ -47,13 +47,17 @@ export function DotCMSEditableText<T extends DotCMSBasicContentlet>({
     const [content, setContent] = useState(contentlet?.[fieldName] || '');
 
     useEffect(() => {
+        setContent(contentlet?.[fieldName] || '');
+    }, [fieldName, contentlet]);
+
+    useEffect(() => {
         const state = getUVEState();
 
         setInitEditor(state?.mode === UVE_MODE.EDIT && !!state?.dotCMSHost?.length);
 
         if (!contentlet || !fieldName) {
             console.error(
-                'DotCMSEditableText: contentlet or fieldName is missing',
+                '[DotCMSEditableText]: contentlet or fieldName is missing',
                 'Ensure that all needed props are passed to view and edit the content'
             );
 
@@ -61,14 +65,14 @@ export function DotCMSEditableText<T extends DotCMSBasicContentlet>({
         }
 
         if (state && state.mode !== UVE_MODE.EDIT) {
-            console.warn('DotCMSEditableText: TinyMCE is not available in the current mode');
+            console.warn('[DotCMSEditableText]: TinyMCE is not available in the current mode');
 
             return;
         }
 
         if (!state?.dotCMSHost) {
             console.warn(
-                'The `dotCMSHost` parameter is not defined. Check that the UVE is sending the correct parameters.'
+                '[DotCMSEditableText]: The `dotCMSHost` parameter is not defined. Check that the UVE is sending the correct parameters.'
             );
 
             return;
@@ -80,8 +84,7 @@ export function DotCMSEditableText<T extends DotCMSBasicContentlet>({
         const content = (contentlet?.[fieldName] as string) || '';
 
         editorRef.current?.setContent(content, { format });
-        setContent(content);
-    }, [format, fieldName, contentlet]);
+    }, [format, fieldName, contentlet, content]);
 
     useEffect(() => {
         if (getUVEState()?.mode !== UVE_MODE.EDIT) {
