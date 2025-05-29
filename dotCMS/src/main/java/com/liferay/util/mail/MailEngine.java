@@ -248,7 +248,7 @@ public class MailEngine {
 			return properties;
 	}
 
-	private static void _sendMessage(Session session, Message msg)
+	public static void _sendMessage(Session session, Message msg)
 		throws MessagingException {
 
 		Properties mailProperties = loadMailConfigProperties();

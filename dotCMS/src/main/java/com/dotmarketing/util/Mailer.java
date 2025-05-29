@@ -376,7 +376,11 @@ public class Mailer {
 			}
 			message.setSubject(subject, encoding);
 			message.setContent(mp);
-			Transport.send(message);
+
+			//Calling the MailEngine to send the message
+			MailEngine._sendMessage(session, message);
+
+//			Transport.send(message);
 			result = "Send Ok";
 			return true;
 		} catch (javax.mail.SendFailedException f) {
