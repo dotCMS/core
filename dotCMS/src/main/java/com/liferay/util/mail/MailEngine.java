@@ -218,20 +218,57 @@ public class MailEngine {
 		}
 	}
 
+	String DEFAULT_MAIL_PROTOCOL = "smtp";
+	String TRANSPORT_PROTOCOL = "mail.transport.protocol";
+
+	private static void loadMailConfigProperties() {
+		Lazy<Properties> properties = Lazy.of(()->{
+
+			final Properties properties = new Properties();
+
+			final String protocol = properties.containsKey(TRANSPORT_PROTOCOL)
+					? properties.getProperty(TRANSPORT_PROTOCOL) : DEFAULT_MAIL_PROTOCOL;
+
+			properties.setProperty("mail." + protocol + ".host", "localhost");
+			properties.setProperty("mail." + protocol + ".user", "dotCMS");
+
+			Config.getKeys().forEachRemaining(origKey -> {
+				final String lowerKey = origKey.toLowerCase();
+				if (lowerKey.startsWith("dot_mail") || lowerKey.startsWith("mail.")) {
+					Logger.info(this, "Loading mail property: " + origKey);
+					final String value = Config.getStringProperty(origKey);
+					final String propName = lowerKey.replace("dot_", "").replace("_", ".");
+					Logger.info(this, "Property: " + propName + " added");
+					properties.put(propName, value);
+				}
+
+			});
+
+			return properties;
+		});
+	}
+
 	private static void _sendMessage(Session session, Message msg)
 		throws MessagingException {
 
-		boolean smtpAuth = GetterUtil.getBoolean(
-			session.getProperty("mail.smtp.auth"), false);
-		String smtpHost = session.getProperty("mail.smtp.host");
-		String user = session.getProperty("mail.smtp.user");
-		String password = session.getProperty("mail.smtp.password");
+		Properties mailProperties = loadMailConfigProperties();
+
+		boolean smtpAuth = GetterUtil.getBoolean(mailProperties.getProperty("mail.smtp.auth"), false);
+		String smtpHost = mailProperties.getProperty("mail.smtp.host");
+		String user = mailProperties.getProperty("mail.smtp.user");
+		String password = mailProperties.getProperty("mail.smtp.password");
+		int smtpPort = mailProperties.getProperty("mail.smtp.port");
+
+		Logger.info(this, "Delivering mail using: " + smtpHost + " as server.");
+		Logger.info(this, "Delivering mail using: " + smtpPort + " as port.");
+		Logger.info(this, "Delivering mail using: " + user + " as user.");
+		Logger.info(this, "Delivering mail using: " + smtpAuth + " as auth.");
 
 		if (smtpAuth && Validator.isNotNull(user) &&
 			Validator.isNotNull(password)) {
 
 			Transport tr = session.getTransport("smtp");
-			tr.connect(smtpHost, user, password);
+			tr.connect(smtpHost, smtpPort, user, password);
 			tr.sendMessage(msg, msg.getAllRecipients());
 			tr.close();
 		}
