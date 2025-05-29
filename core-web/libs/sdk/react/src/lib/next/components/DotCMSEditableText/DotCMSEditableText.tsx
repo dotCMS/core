@@ -35,18 +35,16 @@ import { DotCMSEditableTextProps, TINYMCE_CONFIG } from './utils';
  * ```
  * @returns {JSX.Element} A component to edit content inline
  */
-export function DotCMSEditableText({
+export function DotCMSEditableText<T extends DotCMSBasicContentlet>({
     mode = 'plain',
     format = 'text',
     contentlet,
-    fieldName = ''
-}: Readonly<DotCMSEditableTextProps>): JSX.Element {
+    fieldName
+}: Readonly<DotCMSEditableTextProps<T>>): JSX.Element {
     const editorRef = useRef<Editor['editor'] | null>(null);
     const [scriptSrc, setScriptSrc] = useState('');
     const [initEditor, setInitEditor] = useState(false);
-    const [content, setContent] = useState(
-        contentlet?.[fieldName as keyof DotCMSBasicContentlet] || ''
-    );
+    const [content, setContent] = useState(contentlet?.[fieldName] || '');
 
     useEffect(() => {
         const state = getUVEState();
@@ -79,7 +77,8 @@ export function DotCMSEditableText({
         const createURL = new URL(__TINYMCE_PATH_ON_DOTCMS__, state.dotCMSHost);
         setScriptSrc(createURL.toString());
 
-        const content = contentlet?.[fieldName as keyof DotCMSBasicContentlet] || '';
+        const content = (contentlet?.[fieldName] as string) || '';
+
         editorRef.current?.setContent(content, { format });
         setContent(content);
     }, [format, fieldName, contentlet]);
@@ -170,7 +169,7 @@ export function DotCMSEditableText({
             inline={true}
             onInit={(_, editor) => (editorRef.current = editor)}
             init={TINYMCE_CONFIG[mode]}
-            initialValue={content}
+            initialValue={content as string}
             onMouseDown={onMouseDown}
             onFocusOut={onFocusOut}
         />

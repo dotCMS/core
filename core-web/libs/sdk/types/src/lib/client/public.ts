@@ -7,18 +7,22 @@ import { UVE_MODE } from '../editor/public';
 export interface DotCMSGraphQLParams {
     /**
      * The GraphQL query for the page.
+     * @property {string} page - The GraphQL query for the page.
      */
     page?: string;
     /**
      * A record of GraphQL queries for content.
+     * @property {Record<string, string>} content - A record of GraphQL queries for content.
      */
     content?: Record<string, string>;
     /**
      * Variables for the GraphQL queries.
+     * @property {Record<string, string>} variables - Variables for the GraphQL queries.
      */
     variables?: Record<string, string>;
     /**
      * An array of GraphQL fragment strings.
+     * @property {string[]} fragments - An array of GraphQL fragment strings.
      */
     fragments?: string[];
 }

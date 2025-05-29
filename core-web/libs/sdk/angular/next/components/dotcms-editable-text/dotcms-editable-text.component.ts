@@ -48,7 +48,9 @@ import { TINYMCE_CONFIG, DOT_EDITABLE_TEXT_FORMAT, DOT_EDITABLE_TEXT_MODE } from
         }
     ]
 })
-export class DotCMSEditableTextComponent implements OnInit, OnChanges {
+export class DotCMSEditableTextComponent<T extends DotCMSBasicContentlet>
+    implements OnInit, OnChanges
+{
     @ViewChild(EditorComponent) editorComponent!: EditorComponent;
 
     /**
@@ -71,13 +73,13 @@ export class DotCMSEditableTextComponent implements OnInit, OnChanges {
      * @type {DotCMSContentlet}
      * @memberof DotCMSEditableTextComponent
      */
-    @Input() contentlet!: DotCMSBasicContentlet;
+    @Input() contentlet!: T;
     /**
      * Represents the field name of the `contentlet` that can be edited
      *
      * @memberof DotCMSEditableTextComponent
      */
-    @Input() fieldName = '';
+    @Input() fieldName!: keyof T;
 
     /**
      * Represents the content of the `contentlet` that can be edited
@@ -179,7 +181,7 @@ export class DotCMSEditableTextComponent implements OnInit, OnChanges {
     }
 
     ngOnChanges() {
-        this.content = this.contentlet[this.fieldName as keyof DotCMSBasicContentlet] || '';
+        this.content = (this.contentlet[this.fieldName] as string) || '';
         if (this.editor) {
             this.editor.setContent(this.content, { format: this.format });
         }
