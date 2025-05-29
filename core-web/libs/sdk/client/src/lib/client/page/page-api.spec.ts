@@ -105,7 +105,9 @@ describe('PageClient', () => {
                 graphql: {
                     query: expect.any(String),
                     variables: expect.any(Object)
-                }
+                },
+                vanityUrl: undefined,
+                runningExperimentId: undefined
             });
         });
 
