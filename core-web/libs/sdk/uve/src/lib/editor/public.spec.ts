@@ -246,7 +246,7 @@ describe('UVE Public Functions', () => {
 
             const fieldName = 'nonExistentField';
 
-            enableBlockEditorInline(contentlet, fieldName);
+            enableBlockEditorInline(contentlet, fieldName as keyof DotCMSBasicContentlet);
 
             expect(consoleErrorSpy).toHaveBeenCalledWith(
                 `Contentlet ${contentlet.identifier} does not have field ${fieldName}`
@@ -258,7 +258,10 @@ describe('UVE Public Functions', () => {
             const contentlet = undefined;
             const fieldName = 'testField';
 
-            enableBlockEditorInline(contentlet as unknown as DotCMSBasicContentlet, fieldName);
+            enableBlockEditorInline(
+                contentlet as unknown as DotCMSBasicContentlet,
+                fieldName as keyof DotCMSBasicContentlet
+            );
 
             expect(consoleErrorSpy).toHaveBeenCalled();
             expect(postMessageSpy).not.toHaveBeenCalled();

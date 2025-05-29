@@ -68,7 +68,7 @@ export class DotCMSEditablePageService {
         response?: DotCMSComposedPageResponse<T>
     ): Observable<DotCMSComposedPageResponse<T> | undefined> {
         if (!getUVEState()) {
-            return of(response || undefined);
+            return of(response);
         }
 
         const pageURI = response?.pageAsset?.page?.pageURI;
