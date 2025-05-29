@@ -1,85 +1,107 @@
 package com.dotcms.rest.config;
 
+import com.dotmarketing.util.Logger;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import javax.annotation.Priority;
-import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Singleton;
 import javax.ws.rs.ext.Provider;
 import org.glassfish.jersey.server.model.Invocable;
 import org.glassfish.jersey.server.spi.internal.ResourceMethodInvocationHandlerProvider;
 
-@Priority(1)
+/**
+ * Proactive InvocationHandler that guarantees method and target use the same ClassLoader
+ * to prevent IllegalArgumentException: object is not an instance of declaring class
+ * The problem we are solving is that the original version provided by Jersey has a default static handler
+ * that keeps the ClassLoader of the method, which can lead to issues when the method is invoked on a different ClassLoader
+ * e.g. after uninstall and re-install a Resource from an OSGI plugin
+ * This handler proactively resolves ClassLoader differences before invoking the method if any
+ */
 @Provider
-@ApplicationScoped
-public class DotResourceMethodInvocationHandlerProvider implements
-        ResourceMethodInvocationHandlerProvider {
-
-    private static final InvocationHandler SAFE_DEFAULT_HANDLER = new SafeInvocationHandler();
-
+@Priority(1)
+@Singleton
+public class DotResourceMethodInvocationHandlerProvider implements ResourceMethodInvocationHandlerProvider {
+    /**
+     * This method is called by Jersey to create an InvocationHandler for the resource method.
+     * It returns a ProactiveClassLoaderHandler that ensures ClassLoader consistency.
+     *
+     * @param resourceMethod The resource method for which the handler is created.
+     * @return An InvocationHandler that guarantees ClassLoader consistency.
+     */
     @Override
     public InvocationHandler create(Invocable resourceMethod) {
-        return SAFE_DEFAULT_HANDLER;
+        return new ProactiveClassLoaderHandler();
     }
 
-    private static class SafeInvocationHandler implements InvocationHandler {
+    /**
+     * InvocationHandler that GUARANTEES method and target use the same ClassLoader
+     * by resolving ClassLoader differences BEFORE method invocation
+     */
+    private static class ProactiveClassLoaderHandler implements InvocationHandler {
 
+        /**
+         * This method is invoked when the resource method is called.
+         * It checks ClassLoader consistency and resolves any differences before invoking the method.
+         *
+         * @param proxy The proxy instance that the method was invoked on.
+         * @param method The method that was invoked.
+         * @param args The arguments passed to the method.
+         * @return The result of the method invocation.
+         * @throws Throwable If an error occurs during method invocation.
+         */
         @Override
         public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-            try {
-                return method.invoke(proxy, args);
+            // Get target and its ClassLoader
+            Class<?> targetClass = proxy.getClass();
+            ClassLoader targetClassLoader = targetClass.getClassLoader();
+            ClassLoader methodClassLoader = method.getDeclaringClass().getClassLoader();
 
-            } catch (IllegalArgumentException e) {
-                if (e.getMessage() != null && e.getMessage()
-                        .contains("object is not an instance of declaring class")) {
+            // If ClassLoaders differ, resolve BEFORE invoking
+            if (!isSameClassLoader(targetClassLoader, methodClassLoader)) {
+                Logger.debug("DotResourceMethodInvocationHandlerProvider",
+                        "ClassLoader mismatch detected - method: " + method.getName() +
+                        ", target class: " + targetClass.getName() +
+                        ", method class: " + method.getDeclaringClass().getName());
 
-                    return handleClassLoaderConflict(proxy, method, args);
-                }
-                throw e;
+                method = getMethodFromTargetClassLoader(proxy, method);
             }
+
+            // Invoke with GUARANTEED ClassLoader consistency
+            return method.invoke(proxy, args);
         }
 
+        /**
+         * Checks if two ClassLoaders are the same
+         * Handles null ClassLoaders (bootstrap ClassLoader)
+         */
+        private boolean isSameClassLoader(ClassLoader cl1, ClassLoader cl2) {
+            // Both null means same ClassLoader (bootstrap)
+            if (cl1 == null && cl2 == null) return true;
 
-        private Object handleClassLoaderConflict(Object target, Method originalMethod,
-                Object[] args) throws Throwable {
-            try {
-                ClassLoader targetClassLoader = target.getClass().getClassLoader();
+            // One null, other not = different ClassLoaders
+            if (cl1 == null || cl2 == null) return false;
 
-                Class<?> targetClass = targetClassLoader.loadClass(target.getClass().getName());
-
-                Class<?>[] paramTypes = originalMethod.getParameterTypes();
-                Method correctMethod = targetClass.getMethod(originalMethod.getName(), paramTypes);
-
-                Object result = correctMethod.invoke(target, args);
-
-                return result;
-
-            } catch (Exception fallbackException) {
-
-                return handleLastResortRecreation(target, originalMethod, args);
-            }
+            // Direct comparison
+            return cl1.equals(cl2);
         }
 
-        private Object handleLastResortRecreation(Object target, Method method, Object[] args) {
-            try {
+        /**
+         * Gets the EXACT method from the target's ClassLoader
+         * This ensures method and target share the same ClassLoader
+         */
+        private Method getMethodFromTargetClassLoader(Object target, Method originalMethod) throws NoSuchMethodException {
+            Class<?> targetClass = target.getClass();
+            // Get method from target's class (same ClassLoader guaranteed)
+            Method targetMethod = targetClass.getMethod(
+                    originalMethod.getName(),
+                    originalMethod.getParameterTypes()
+            );
 
-                ClassLoader currentClassLoader = Thread.currentThread().getContextClassLoader();
-
-                Class<?> newTargetClass = currentClassLoader.loadClass(target.getClass().getName());
-
-                Object newTarget = newTargetClass.getDeclaredConstructor().newInstance();
-
-                Method correctMethod = newTargetClass.getMethod(method.getName(),
-                        method.getParameterTypes());
-
-                return correctMethod.invoke(newTarget, args);
-
-            } catch (Exception e) {
-
-                throw new RuntimeException(
-                        "Unable to resolve ClassLoader conflict for method: " + method.getName(),
-                        e);
-            }
+            Logger.debug(DotResourceMethodInvocationHandlerProvider.class,
+                    "Resolved method from target ClassLoader - " +
+                    "Original method: " + originalMethod.getDeclaringClass().getName() +
+                    ", Target method: " + targetMethod.getDeclaringClass().getName());
+            return targetMethod;
         }
     }
-
 }
