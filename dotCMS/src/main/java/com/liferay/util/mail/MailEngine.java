@@ -236,10 +236,10 @@ public class MailEngine {
 			Config.getKeys().forEachRemaining(origKey -> {
 				final String lowerKey = origKey.toLowerCase();
 				if (lowerKey.startsWith("dot_mail") || lowerKey.startsWith("mail.")) {
-					Logger.info(this, "Loading mail property: " + origKey);
+					Logger.info(MailEngine.class, "Loading mail property: " + origKey);
 					final String value = Config.getStringProperty(origKey);
 					final String propName = lowerKey.replace("dot_", "").replace("_", ".");
-					Logger.info(this, "Property: " + propName + " added");
+					Logger.info(MailEngine.class, "Property: " + propName + " added");
 					properties.put(propName, value);
 				}
 
