@@ -107,7 +107,7 @@ public class ContentMapDataFetcher implements DataFetcher<Object> {
      *
      * @param hydratedMap the map to enrich
      */
-    private void enrichWithParsedRawFields(Map<String, Object> hydratedMap) {
+    private void enrichWithParsedRawFields(final Map<String, Object> hydratedMap) {
         final ObjectMapper objectMapper = new ObjectMapper();
         for (Map.Entry<String, Object> entry : new HashMap<>(hydratedMap).entrySet()) {
             final String mapKey = entry.getKey();
