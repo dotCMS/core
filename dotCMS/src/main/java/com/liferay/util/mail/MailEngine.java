@@ -221,12 +221,10 @@ public class MailEngine {
 		}
 	}
 
-	String DEFAULT_MAIL_PROTOCOL = "smtp";
-	String TRANSPORT_PROTOCOL = "mail.transport.protocol";
+	private static final String DEFAULT_MAIL_PROTOCOL = "smtp";
+	private static final String TRANSPORT_PROTOCOL = "mail.transport.protocol";
 
 	private static Properties loadMailConfigProperties() {
-		Lazy<Properties> properties = Lazy.of(()->{
-
 			final Properties properties = new Properties();
 
 			final String protocol = properties.containsKey(TRANSPORT_PROTOCOL)
@@ -248,7 +246,6 @@ public class MailEngine {
 			});
 
 			return properties;
-		});
 	}
 
 	private static void _sendMessage(Session session, Message msg)
@@ -262,10 +259,10 @@ public class MailEngine {
 		String password = mailProperties.getProperty("mail.smtp.password");
 		int smtpPort = GetterUtil.getInteger(mailProperties.getProperty("mail.smtp.port"), 25);
 
-		Logger.info(this, "Delivering mail using: " + smtpHost + " as server.");
-		Logger.info(this, "Delivering mail using: " + smtpPort + " as port.");
-		Logger.info(this, "Delivering mail using: " + user + " as user.");
-		Logger.info(this, "Delivering mail using: " + smtpAuth + " as auth.");
+		Logger.info(MailEngine.class, "Delivering mail using: " + smtpHost + " as server.");
+		Logger.info(MailEngine.class, "Delivering mail using: " + smtpPort + " as port.");
+		Logger.info(MailEngine.class, "Delivering mail using: " + user + " as user.");
+		Logger.info(MailEngine.class, "Delivering mail using: " + smtpAuth + " as auth.");
 
 		if (smtpAuth && Validator.isNotNull(user) &&
 			Validator.isNotNull(password)) {
