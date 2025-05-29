@@ -3,7 +3,8 @@ import {
     DotCMSClientConfig,
     DotCMSPageRequestParams,
     RequestOptions,
-    DotCMSGraphQLPageResponse
+    DotCMSGraphQLPageResponse,
+    DotCMSPageResponse
 } from '@dotcms/types';
 
 import { PageClient } from './page-api';
@@ -109,6 +110,39 @@ describe('PageClient', () => {
                 vanityUrl: undefined,
                 runningExperimentId: undefined
             });
+        });
+
+        it('should return an error if the page is not found', async () => {
+            const pageClient = new PageClient(validConfig, requestOptions);
+            const graphQLOptions = {
+                graphql: {
+                    page: `containers {
+                        containerContentlets {
+                            contentlets {
+                                ... on Banner {
+                                    title
+                                }
+                            }
+                        }
+                    }`,
+                    content: { content: 'query Content { items { title } }' }
+                }
+            };
+
+            mockFetchGraphQL.mockResolvedValue({
+                data: {
+                    page: null
+                },
+                errors: [{ message: 'Page not found' }]
+            });
+
+            try {
+                await pageClient.get('/graphql-page', graphQLOptions);
+            } catch (response: unknown) {
+                const responseData = response as DotCMSPageResponse;
+
+                expect(responseData.error?.message).toBe('Page not found');
+            }
         });
 
         it('should add leading slash to url if it does not have it', async () => {
