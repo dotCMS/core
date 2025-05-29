@@ -27,15 +27,15 @@ The `@dotcms/client` is a powerful JavaScript/TypeScript SDK designed to simplif
 -   [Quickstart](#quickstart)
     -   [Example Projects](#example-projects)
 -   [Key Concepts](#key-concepts)
+-   [Choosing the Right Method](#choosing-the-right-method)
+    -   [Start with `page.get()`: The One-Request Solution](#start-with-pageget-the-one-request-solution)
 -   [API Reference](#api-reference)
     -   [Client Initialization](#client-initialization)
-    -   [Page API](#page-api)
-    -   [Content API](#content-api)
-    -   [Navigation API](#navigation-api)
--   [TypeScript Support](#typescript-support)
+    -   [client.page.get(): Fetching Page Content](#clientpageget-fetching-page-content)
+    -   [client.navigation.get(): Fetching Navigation Structure](#clientnavigationget-fetching-navigation-structure)
+    -   [client.content.getCollection(): Fetching Content Collections](#clientcontentgetcollection-fetching-content-collections)
+-   [Using the SDK with TypeScript](#using-the-sdk-with-typescript)
     -   [Usage Example](#usage-example)
--   [Best Practices](#best-practices)
-    -   [Fetching Content and Navigation](#fetching-content-and-navigation)
 -   [dotCMS Support](#dotcms-support)
 -   [How To Contribute](#how-to-contribute)
 -   [Licensing Information](#licensing-information)
@@ -51,7 +51,8 @@ The `@dotcms/client` is a powerful JavaScript/TypeScript SDK designed to simplif
 
 **For Testing & Development:**
 
--   📝 [dotCMS demo site](https://dev.dotcms.com/docs/demo-site) - perfect for trying out the SDK
+-   🧑🏻‍💻 [dotCMS demo site](https://demo.dotcms.com/dotAdmin/#/public/login) - perfect for trying out the SDK
+-   📘 [Learn how to use the demo site](https://dev.dotcms.com/docs/demo-site)
 -   📝 Read-only access, ideal for building proof-of-concepts
 
 **For Local Development:**
@@ -90,7 +91,7 @@ npm install @dotcms/client@next @dotcms/types@next
 > [!TIP]
 > If you are working with pure JavaScript, you can avoid installing the `@dotcms/types` package.
 
-## Quickstart
+## Quickstart: Basic Setup Example
 
 Here's a basic setup of the dotCMS Client SDK to help you get started:
 
@@ -109,7 +110,7 @@ const { pageAsset } = await client.page.get('/about-us');
 console.log(pageAsset.page.title);
 ```
 
-### Example Projects
+### Full-Stack Example Projects Using the SDK
 
 While there isn't a dedicated example project specifically for the client SDK, you can see it in action within these full-stack examples:
 
@@ -128,14 +129,35 @@ These examples demonstrate how to use the client SDK as part of a complete web a
 | `collection` | A group of contentlets of the same type               | [Content API](https://dev.dotcms.com/docs/search)                              |
 | `graphql`    | Query language used to extend API responses           | [GraphQL](https://dev.dotcms.com/docs/graphql)                                 |
 
+## Choosing the Right Method
+
+The dotCMS Client SDK provides three core methods for fetching data. Use this quick guide to decide which one is best for your use case:
+
+| Method                                                                                       | Use When You Need...                                          | Best For                                                                                                                                                                                         |
+| -------------------------------------------------------------------------------------------- | ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| [`client.page.get()`](#clientpageget-fetching-page-content)                                  | A full page with layout, containers, and related content      | **Rendering entire pages** with a single request. Ideal for headless setups, SSR/SSG frameworks, and cases where you want everything—page structure, content, and navigation—tied to a URL path. |
+| [`client.content.getCollection()`](#clientcontentgetcollection-fetching-content-collections) | A filtered list of content items from a specific content type | Populating dynamic blocks, lists, search results, widgets, or reusable components.                                                                                                               |
+| [`client.navigation.get()`](#clientnavigationget-fetching-navigation-structure)              | Only the site's navigation structure (folders and links)      | Standalone menus or use cases where navigation is needed outside of page context.                                                                                                                |
+
+### Start with `page.get()`: The One-Request Solution
+
+For most use cases, `client.page.get()` is all you need. It lets you retrieve:
+
+-   The full page layout
+-   Related content
+-   Navigation structure
+
+All in a single request using GraphQL.
+
+Only use `content.getCollection()` or `navigation.get()` if you have advanced needs, like real-time data fetching or building custom dynamic components.
+
+> 🔍 **For an example of how to bundle content and navigation in one `page.get()` call,** see the [advanced usage](#fetching-additional-content-with-graphql) section under `client.page.get()`.
+
 ## API Reference
 
-### Client Initialization
+### createDotCMSClient: Client Initialization
 
-**Overview:**
-The Client Initialization is the first step in using the dotCMS Client SDK. It allows you to create a new client instance with your dotCMS configuration.
-
-**Configuration Options:**
+The `createDotCMSClient` function is the first step in using the dotCMS Client SDK. It allows you to create a new client instance with your dotCMS configuration.
 
 | Option           | Type           | Required | Description                                                   |
 | ---------------- | -------------- | -------- | ------------------------------------------------------------- |
@@ -144,7 +166,7 @@ The Client Initialization is the first step in using the dotCMS Client SDK. It a
 | `siteId`         | string         | ❌       | Site identifier (falls back to default site if not specified) |
 | `requestOptions` | RequestOptions | ❌       | Additional fetch options                                      |
 
-**Usage:**
+#### Initialization Example
 
 ```typescript
 import { createDotCMSClient } from '@dotcms/client/next';
@@ -164,12 +186,12 @@ const client = createDotCMSClient({
 
 The `client.page.get()` method is your primary way to retrieve page content from dotCMS using the SDK. It abstracts away the complexity of raw REST or GraphQL calls, letting you fetch structured page data with just a single method.
 
-#### What It Does
+#### Why Use `page.get()`?
 
-* Retrieves a **page asset** from dotCMS given its path (e.g., `/about-us`)
-* Automatically includes layout, containers, and content
-* Lets you **customize the request** with options like language, preview mode, or user persona
-* Supports **GraphQL extensions** so you can request exactly the fields or content fragments you need
+-   Fetch everything needed to render a page with one call
+-   Avoid building multiple API queries manually
+-   Type-safe, customizable, and extensible with GraphQL
+-   Works with dotCMS content localization and personalization out of the box
 
 #### Basic Usage
 
@@ -194,7 +216,7 @@ const { pageAsset } = await client.page.get('/about-us', {
 });
 ```
 
-#### Fetching Additional Content with GraphQL
+#### Bundling Content and Navigation in One Request
 
 You can also pull in related content, like blog posts or navigation menus, using the `graphql` option:
 
@@ -252,92 +274,9 @@ get<T extends DotCMSExtendedPageResponse = DotCMSPageResponse>(
 ): Promise<DotCMSComposedPageResponse<T>>;
 ```
 
-#### Why Use `page.get()`?
-
-* Fetch everything needed to render a page with one call
-* Avoid building multiple API queries manually
-* Type-safe, customizable, and extensible with GraphQL
-* Works with dotCMS content localization and personalization out of the box
-
-### Content API
-
-**Overview:**
-The Content API allows you to fetch content collections from dotCMS. It provides a builder pattern for constructing complex queries and filtering content based on various criteria.
-
-The `getCollection` method uses immutable patterns, so each method call returns a new instance. This means you can reuse partial queries by storing them before adding additional filters.
-
-**Builder Methods:**
-
-| Method       | Arguments                | Description                        |
-| ------------ | ------------------------ | ---------------------------------- |
-| `query()`    | `string` \| `BuildQuery` | Filter content using query builder |
-| `limit()`    | `number`                 | Set page size                      |
-| `page()`     | `number`                 | Set page number                    |
-| `sortBy()`   | `SortBy[]`               | Order results                      |
-| `language()` | `number \| string`       | Set content language               |
-
-**Usage:**
-
-```typescript
-const blogs = await client.content
-    .getCollection('Blog')
-    .query((qb) =>
-        qb.field('title').contains('dotCMS').and().field('publishDate').greaterThan('2023-01-01')
-    )
-    .limit(10)
-    .page(1)
-    .fetch();
-```
-
-**With TypeScript:**
-
-```typescript
-import { DotCMSBasicContentlet } from '@dotcms/types';
-
-// Define your content type interface
-interface BlogPost extends DotCMSBasicContentlet {
-    title: string;
-    publishDate: string;
-    author: string;
-    blogContent: {
-        json: string;
-    };
-    urlTitle: string;
-    tags: string[];
-}
-
-// Use the generic type parameter for type safety
-const response = await client.content.getCollection<BlogPost>('Blog').fetch();
-
-// Now you get full TypeScript support
-response.contentlets.forEach((post: BlogPost) => {
-    console.log(post.title); // TypeScript knows this exists
-    console.log(post.author); // TypeScript knows this exists
-    console.log(post.tags.join(', ')); // Type-safe array access
-});
-```
-
 ### client.navigation.get(): Fetching Navigation Structure
 
 The `client.navigation.get()` method fetches a structured view of a site's file and folder hierarchy from dotCMS. It's useful for building menus and navigation UIs.
-
-#### 📌 Prefer Fetching Navigation via `page.get()`
-
-In most cases, you **don't need to call** `client.navigation.get()` separately. You can fetch navigation data as part of your page request using the `graphql.content` option in `client.page.get()`. This approach:
-
-* Combines page content and navigation in **one request**
-* Reduces network overhead
-* Keeps your data fetching consistent and performant
-
-```ts
-const { pageAsset, content } = await client.page.get('/about-us', {
-  graphql: {
-    content: {
-      navigation: `DotNavigation(uri: "/", depth: 2) { title href children { title href } }`
-    }
-  }
-});
-```
 
 #### Basic Usage
 
@@ -382,18 +321,115 @@ get(
 ): Promise<DotCMSNavigationItem[]>;
 ```
 
-### Why Use `navigation.get()`?
+#### Why Use `navigation.get()`?
 
-* Build dynamic menus and site trees with minimal configuration
-* Avoid manual parsing or custom REST calls
-* Support localized navigation out of the box
-* Easily control navigation depth for responsive and nested UIs
+-   Build dynamic menus and site trees with minimal configuration
+-   Avoid manual parsing or custom REST calls
+-   Support localized navigation out of the box
+-   Easily control navigation depth for responsive and nested UIs
 
-## TypeScript Support
+### client.content.getCollection(): Fetching Content Collections
+
+The `client.content.getCollection()` method allows you to query and retrieve a collection of content items of a specific type from dotCMS. It uses a builder pattern so you can fluently compose queries with filters, pagination, sorting, and more.
+
+#### Why Use `getCollection()`?
+
+-   Query exactly the content you need
+-   Chain filters, sorting, and pagination cleanly
+-   Works great for lists, search results, or dynamic components
+-   Fully type-safe when used with TypeScript interfaces
+
+#### Basic Usage
+
+Here's how to fetch the first 10 items from the "Blog" content type:
+
+```ts
+const blogs = await client.content.getCollection('Blog').limit(10).page(1).fetch();
+```
+
+#### Filtering and Querying Content
+
+You can apply query filters using a fluent builder pattern:
+
+```ts
+const filtered = await client.content
+    .getCollection('Blog')
+    .query((qb) =>
+        qb.field('title').contains('dotCMS').and().field('publishDate').greaterThan('2023-01-01')
+    )
+    .limit(5)
+    .sortBy([{ field: 'publishDate', direction: 'desc' }])
+    .fetch();
+```
+
+#### Search and Paginate Product Results by Title and Price
+
+```ts
+const searchResults = await client.content
+    .getCollection('Product')
+    .query((qb) => qb.field('title').contains('Book').and().field('price').greaterThan(25).build())
+    .sortBy([{ field: 'price', order: 'asc' }])
+    .limit(10)
+    .page(2);
+
+console.log(searchResults);
+```
+
+#### Localized Query with Conditional Status Filtering
+
+```ts
+const events = await client.content
+    .getCollection('Event')
+    .query((qb) => qb.field('status').equals('Live').or().equals('Scheduled').build())
+    .language(2) // e.g., French
+    .limit(5);
+
+console.log(events);
+```
+
+#### Raw Search + Sorting + Pagination
+
+```ts
+const images = await client.content
+    .getCollection('Image')
+    .query('+title:vacation*')
+    .sortBy([{ field: 'publishDate', order: 'desc' }])
+    .limit(10)
+    .page(1);
+
+console.log(images);
+```
+
+#### Available Builder Methods
+
+The builder returned by `getCollection()` supports the following methods:
+
+| Method       | Arguments                     | Description                                                               |
+| ------------ | ----------------------------- | ------------------------------------------------------------------------- |
+| `query()`    | `string` \| `BuildQuery`      | Filter content using query builder or raw query                           |
+| `limit()`    | `number`                      | Set number of items to return                                             |
+| `page()`     | `number`                      | Set which page of results to fetch                                        |
+| `sortBy()`   | `SortBy[]`                    | Sort by one or more fields                                                |
+| `render()`   | None                          | Enable server-side rendering of widgets                                   |
+| `draft()`    | None                          | Retrieve draft content                                                    |
+| `variant()`  | `string`                      | Filter content by variant ID                                              |
+| `depth()`    | `number`                      | Set depth of related content                                              |
+| `language()` | `number \| string`            | Set content language                                                      |
+| `then()`     | `OnFullfilled<T>, OnRejected` | Handle promise fulfillment or rejection. Not needed if using async/await. |
+
+#### Method Signature
+
+```ts
+getCollection<T = DotCMSBasicContentlet>(
+  contentType: string
+): CollectionBuilder<T>;
+```
+
+## Using the SDK with TypeScript
 
 As mentioned earlier, dotCMS provides a rich set of types provided by the `@dotcms/types@next` package. These types can be leveraged to ensure proper typing for your page and content data, enhancing type safety and developer experience.
 
-### Usage Example
+### Defining Page Response Types
 
 You can use these types to define interfaces for your content and page structures, ensuring that your application benefits from TypeScript's type-checking capabilities:
 
@@ -482,38 +518,32 @@ console.log(content.blogPosts[0].title); // TypeScript knows this exists
 console.log(content.teamMembers[0].position); // TypeScript knows this exists
 ```
 
-## Best Practices
+### Defining Content Response Types
 
-### Fetching Content and Navigation
+You can define interfaces for your content types to get full type safety:
 
-While the Content and Navigation APIs can be called independently, it's recommended to fetch this data as part of your page requests using GraphQL options. This approach:
+```ts
+import { DotCMSBasicContentlet } from '@dotcms/types';
 
--   **Reduces API Calls**: Get all needed data in a single request
--   **Improves Performance**: Less network overhead and faster page loads
--   **Maintains Consistency**: Data is fetched at the same time as the page
+interface BlogPost extends DotCMSBasicContentlet {
+    title: string;
+    publishDate: string;
+    author: string;
+    blogContent: {
+        json: string;
+    };
+    urlTitle: string;
+    tags: string[];
+}
 
-```typescript
-// ✅ Recommended: Single API call with GraphQL
-const { pageAsset, content } = await client.page.get('/about', {
-    graphql: {
-        content: {
-            blogs: 'BlogCollection(limit: 3) { ... }',
-            navigation: 'DotNavigation(uri: "/", depth: 2) { ... }'
-        }
-    }
+const response = await client.content.getCollection<BlogPost>('Blog').fetch();
+
+response.contentlets.forEach((post) => {
+    console.log(post.title); // Type-safe access
+    console.log(post.author);
+    console.log(post.tags.join(', '));
 });
-
-// ❌ Not Recommended: Multiple separate API calls
-const { pageAsset } = await client.page.get('/about');
-const blogs = await client.content.getCollection('Blog').fetch();
-const nav = await client.navigation.get('/');
 ```
-
-Only use standalone API calls when you need to:
-
--   Fetch data independently from pages
--   Update content collections dynamically
--   Handle navigation changes without page reloads
 
 ## dotCMS Support
 
