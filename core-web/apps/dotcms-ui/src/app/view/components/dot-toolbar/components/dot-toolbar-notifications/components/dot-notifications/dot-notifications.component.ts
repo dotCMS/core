@@ -1,7 +1,7 @@
 import { LowerCasePipe } from '@angular/common';
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 
-import { Button } from 'primeng/button';
+import { ButtonModule } from 'primeng/button';
 
 import { DotCustomTimeModule } from '@components/_common/dot-custom-time.component/dot-custom-time.module';
 import { DotMessagePipe } from '@dotcms/ui';
@@ -13,7 +13,7 @@ import { INotification, NotificationIcons } from '@models/notifications';
     styleUrls: ['./dot-notifications-item.component.scss'],
     templateUrl: 'dot-notifications-item.component.html',
     standalone: true,
-    imports: [DotCustomTimeModule, Button, LowerCasePipe, DotMessagePipe]
+    imports: [DotCustomTimeModule, ButtonModule, LowerCasePipe, DotMessagePipe]
 })
 export class DotNotificationsItemComponent implements OnInit {
     @Input() data;
