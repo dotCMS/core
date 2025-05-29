@@ -1210,7 +1210,7 @@ export interface DotCMSGraphQLPageResponse {
 export interface DotCMSPageResponse {
     pageAsset: DotCMSPageAsset;
     content?: Record<string, unknown> | unknown;
-    errors?: DotCMSGraphQLError;
+    error?: DotCMSGraphQLError;
     graphql: {
         query: string;
         variables: Record<string, unknown>;
