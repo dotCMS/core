@@ -2,22 +2,6 @@
 
 :host {
     display: block;
-    ::ng-deep {
-        .dot-nav__button-wrapper {
-            .p-button-icon-only.p-button {
-                .p-button-icon.pi {
-                    color: $white;
-                }
-                &:hover {
-                    background-color: $color-palette-white-op-30;
-                }
-
-                &:focus {
-                    outline: none;
-                }
-            }
-        }
-    }
 }
 
 #logo {
@@ -25,6 +9,22 @@
     width: 90px;
     height: 16px;
     background-repeat: no-repeat;
+}
+
+.toggle-button {
+    color: $white;
+    background: transparent;
+    &:enabled {
+        background: transparent;
+    }
+    &:hover {
+        background-color: $color-palette-white-op-30;
+    }
+
+    &:focus {
+        outline: none;
+    }
+
 }
 
 .dot-nav__header {
