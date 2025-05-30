@@ -3,11 +3,11 @@ import {
     DotDeviceListItem,
     DotExperiment,
     DotLanguage,
-    DotPageContainerStructure,
     DotPersona,
     SeoMetaTags,
     SeoMetaTagsResult
 } from '@dotcms/dotcms-models';
+import { DotCMSPageAssetContainers, DotCMSViewAsPersona } from '@dotcms/types';
 
 import {
     Container,
@@ -79,7 +79,7 @@ export interface EditorProps {
     };
     palette?: {
         languageId: number;
-        containers: DotPageContainerStructure;
+        containers: DotCMSPageAssetContainers;
         variantId: string;
         paletteClass: PALETTE_CLASSES;
     };
@@ -143,5 +143,5 @@ export interface UVEToolbarProps {
 
 export interface PersonaSelectorProps {
     pageId: string;
-    value: DotPersona;
+    value: DotCMSViewAsPersona;
 }

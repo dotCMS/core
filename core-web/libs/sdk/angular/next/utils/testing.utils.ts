@@ -475,6 +475,7 @@ export const PageResponseMock: DotCMSPageAsset = {
         }
     },
     page: {
+        contentType: 'htmlpageasset',
         template: 'fdc739f6-fe53-4271-9c8c-a3e05d12fcac',
         modDate: 1689887118429,
         metadata: '',

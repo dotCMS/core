@@ -1,6 +1,17 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 /**
+ * Represents a map of container identifiers to their container objects
+ *
+ * @interface DotCMSPageAssetContainers
+ * @property {string} [key] - The identifier of the container
+ * @property {DotCMSPageAssetContainer} [value] - The container object
+ */
+export interface DotCMSPageAssetContainers {
+    [key: string]: DotCMSPageAssetContainer;
+}
+
+/**
  * Represents a DotCMS page asset that contains all the components and configuration needed to render a page
  *
  * @interface DotCMSPageAsset
@@ -17,17 +28,19 @@
  */
 export interface DotCMSPageAsset {
     canCreateTemplate?: boolean;
-    containers: {
-        [key: string]: DotCMSPageAssetContainer;
-    };
+    numberContents?: number;
+    containers: DotCMSPageAssetContainers;
     layout: DotCMSLayout;
     page: DotCMSPage;
     site: DotCMSSite;
-    template: DotCMSTemplate;
+    template:
+        | DotCMSTemplate
+        | Pick<DotCMSTemplate, 'drawed' | 'theme' | 'anonymous' | 'identifier'>;
     viewAs?: DotCMSViewAs;
     vanityUrl?: DotCMSVanityUrl;
     urlContentMap?: DotCMSURLContentMap;
     params?: Record<string, unknown>;
+    runningExperimentId?: string;
 }
 
 /**
@@ -81,13 +94,15 @@ export interface DotCMSVanityUrl {
     pattern: string;
     vanityUrlId: string;
     url: string;
+    uri?: string;
+    action?: number;
     siteId: string;
     languageId: number;
     forwardTo: string;
     response: number;
     order: number;
-    temporaryRedirect: boolean;
-    permanentRedirect: boolean;
+    temporaryRedirect?: boolean;
+    permanentRedirect?: boolean;
     forward: boolean;
 }
 
@@ -429,7 +444,7 @@ export interface DotCMSNavigationItem {
  * @property {boolean} new - Whether template is new
  * @property {boolean} canEdit - Whether current user can edit template
  */
-interface DotCMSTemplate {
+export interface DotCMSTemplate {
     iDate: number;
     type: string;
     owner: string;
@@ -512,7 +527,7 @@ interface DotCMSTemplate {
  * @property {string} liveInode - Live version inode
  * @property {string} shortyLive - Short live version ID
  */
-interface DotCMSPage {
+export interface DotCMSPage {
     template: string;
     modDate: number;
     metadata: string;
@@ -544,6 +559,8 @@ interface DotCMSPage {
     folder: string;
     deleted: boolean;
     sortOrder: number;
+    rendered?: string;
+    contentType: string;
     modUser: string;
     pageUrl: string;
     workingInode: string;
@@ -556,24 +573,53 @@ interface DotCMSPage {
     lockedByName: string;
     liveInode: string;
     shortyLive: string;
+    canSeeRules?: boolean;
+}
+
+/**
+ * Represents the language configuration for a DotCMS page
+ *
+ * @export
+ * @interface DotCMSViewAsLanguage
+ * @property {number} id - Unique identifier for the language
+ * @property {string} languageCode - ISO 639-1 language code (e.g. 'en', 'es')
+ * @property {string} countryCode - ISO 3166-1 country code (e.g. 'US', 'ES')
+ * @property {string} language - Full name of the language (e.g. 'English', 'Spanish')
+ * @property {string} country - Full name of the country (e.g. 'United States', 'Spain')
+ */
+export interface DotCMSViewAsLanguage {
+    id: number;
+    languageCode: string;
+    countryCode: string;
+    language: string;
+    country: string;
+}
+
+/**
+ * Represents the persona configuration for a DotCMS page
+ *
+ * @export
+ * @interface DotCMSViewAsPersona
+ * @property {number} modDate - Last modification date timestamp
+ * @property {string} inode - Unique inode identifier
+ * @property {string} name - Name of the persona
+ * @property {string} identifier - Unique identifier
+ * @property {string} keyTag - Key tag for the persona
+ * @property {string} photo - Photo of the persona
+ */
+export interface DotCMSViewAsPersona extends DotCMSBasicContentlet {
+    name: string;
+    keyTag: string;
+    personalized?: boolean;
+    photo?: {
+        versionPath: string;
+    };
 }
 
 /**
  * Represents view configuration settings for preview/editing modes
  *
  * @interface DotCMSViewAs
- * @property {Object} language - Language configuration
- * @property {number} language.id - Language identifier
- * @property {string} language.languageCode - ISO language code
- * @property {string} language.countryCode - ISO country code
- * @property {string} language.language - Language name
- * @property {string} language.country - Country name
- * @property {string} mode - View mode (e.g. PREVIEW_MODE, EDIT_MODE, LIVE)
- */
-/**
- * Represents view configuration settings for preview/editing modes
- *
- * @interface DotCMSViewAs
  * @property {Object} language - Language configuration for the view
  * @property {number} language.id - Unique identifier for the language
  * @property {string} language.languageCode - ISO 639-1 language code (e.g. 'en', 'es')
@@ -582,28 +628,11 @@ interface DotCMSPage {
  * @property {string} language.country - Full name of the country (e.g. 'United States', 'Spain')
  * @property {string} mode - View mode for the page ('PREVIEW_MODE' | 'EDIT_MODE' | 'LIVE')
  */
-
-/**
- * Represents view configuration settings for preview/editing modes
- *
- * @interface DotCMSViewAs
- * @property {Object} language - Language configuration for the view
- * @property {number} language.id - Unique identifier for the language
- * @property {string} language.languageCode - ISO 639-1 language code (e.g. 'en', 'es')
- * @property {string} language.countryCode - ISO 3166-1 country code (e.g. 'US', 'ES')
- * @property {string} language.language - Full name of the language (e.g. 'English', 'Spanish')
- * @property {string} language.country - Full name of the country (e.g. 'United States', 'Spain')
- * @property {string} mode - View mode for the page ('PREVIEW_MODE' | 'EDIT_MODE' | 'LIVE')
- */
-interface DotCMSViewAs {
-    language: {
-        id: number;
-        languageCode: string;
-        countryCode: string;
-        language: string;
-        country: string;
-    };
+export interface DotCMSViewAs {
+    language: DotCMSViewAsLanguage;
     mode: string;
+    persona?: DotCMSViewAsPersona;
+    variantId?: string;
 }
 
 /**
@@ -619,7 +648,7 @@ interface DotCMSViewAs {
  * @property {DotPageAssetLayoutBody} body - The main content body configuration
  * @property {DotPageAssetLayoutSidebar} sidebar - The sidebar configuration
  */
-interface DotCMSLayout {
+export interface DotCMSLayout {
     pageWidth: string;
     width: string;
     layout: string;
@@ -641,7 +670,7 @@ interface DotCMSLayout {
  * @property {string} code - Template code for rendering the structure
  * @property {string} contentTypeVar - Variable name of the content type
  */
-interface DotCMSContainerStructure {
+export interface DotCMSContainerStructure {
     id: string;
     structureId: string;
     containerInode: string;
@@ -730,7 +759,7 @@ interface DotPageAssetLayoutBody {
  * @property {number} sortOrder - Sort order position
  * @property {DotCMSSiteContentType} contentType - Content type configuration
  */
-interface DotCMSSite {
+export interface DotCMSSite {
     lowIndexPriority: boolean;
     name: string;
     default: boolean;
@@ -1061,7 +1090,8 @@ interface DotCMSSiteField {
  * @property {DotCMSLayout} layout - Layout configuration
  * @property {DotCMSViewAs} viewAs - View configuration
  * @property {DotCMSURLContentMap} urlContentMap - URL to content mapping
- * @property {DotCMSSite} site - Site information
+ * @property {Record<string, unknown>} host - Site information
+ * @property {Record<string, unknown>} vanityUrl - Vanity URL information
  * @property {Record<string, unknown>} _map - Additional mapping data
  */
 export interface DotCMSGraphQLPage {
@@ -1101,6 +1131,8 @@ export interface DotCMSGraphQLPage {
     live: boolean;
     isContentlet: boolean;
     statusIcons: string;
+    runningExperimentId?: string;
+    canSeeRules?: boolean;
     // Language information
     conLanguage: {
         id: number;
@@ -1108,13 +1140,16 @@ export interface DotCMSGraphQLPage {
         languageCode: string;
     };
     // Template information
-    template: Partial<DotCMSTemplate>;
+    template: Pick<DotCMSTemplate, 'drawed' | 'theme' | 'anonymous' | 'identifier'>;
     // Container information
     containers: DotCMSGraphQLPageContainer[];
     layout: DotCMSLayout;
     viewAs: DotCMSViewAs;
-    urlContentMap: Record<string, unknown>;
-    site: DotCMSSite;
+    urlContentMap: {
+        _map: DotCMSURLContentMap;
+    };
+    host: DotCMSSite;
+    vanityUrl: DotCMSVanityUrl;
     _map: Record<string, unknown>;
 }
 
@@ -1175,7 +1210,7 @@ export interface DotCMSGraphQLPageResponse {
 export interface DotCMSPageResponse {
     pageAsset: DotCMSPageAsset;
     content?: Record<string, unknown> | unknown;
-    errors?: DotCMSGraphQLError;
+    error?: DotCMSGraphQLError;
     graphql: {
         query: string;
         variables: Record<string, unknown>;

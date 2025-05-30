@@ -1,4 +1,5 @@
-import { DotDeviceListItem, DotPersona } from '@dotcms/dotcms-models';
+import { DotDeviceListItem } from '@dotcms/dotcms-models';
+import { DotCMSViewAsPersona } from '@dotcms/types';
 
 import { CommonErrors } from './enums';
 import { CommonErrorsInfo } from './models';
@@ -36,8 +37,7 @@ export const COMMON_ERRORS: CommonErrorsInfo = {
     }
 };
 
-export const DEFAULT_PERSONA: DotPersona = {
-    hostFolder: 'SYSTEM_HOST',
+export const DEFAULT_PERSONA: DotCMSViewAsPersona = {
     inode: '',
     host: 'SYSTEM_HOST',
     locked: false,

@@ -1,24 +1,31 @@
-import { BlogListingPage } from "@/pages/BlogListingPage";
-import { getDotCMSPage } from "@/utils/getDotCMSPage";
+import { BlogListingPage } from '@/pages/BlogListingPage';
+import { getDotCMSPage } from '@/utils/getDotCMSPage';
 
-import NotFound from "../not-found";
+import NotFound from '../not-found';
 
 export async function generateMetadata() {
     try {
         const { pageAsset } = await getDotCMSPage(`/blog`);
         const title = pageAsset?.page?.friendlyName;
         return {
-            title: `${title} - Blog`,
+            title: `${title} - Blog`
         };
     } catch (e) {
         return {
-            title: "Blog - Page not found",
+            title: 'Blog - Page not found'
         };
     }
 }
 
 export default async function Home() {
     const pageResponse = await getDotCMSPage(`/blog`);
+
+    const vanityUrl = pageContent?.pageAsset?.vanityUrl;
+    const action = vanityUrl?.action ?? 0;
+
+    if (action > 200) {
+        return redirect(pageContent.pageAsset.vanityUrl.forwardTo);
+    }
 
     if (!pageResponse) {
         return <NotFound />;

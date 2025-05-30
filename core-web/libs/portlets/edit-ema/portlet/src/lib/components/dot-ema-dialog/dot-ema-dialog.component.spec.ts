@@ -29,6 +29,7 @@ import {
 import { CoreWebService, DotcmsConfigService, DotcmsEventsService } from '@dotcms/dotcms-js';
 import { DotCMSBaseTypesContentTypes, DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DotContentCompareComponent } from '@dotcms/portlets/dot-ema/ui';
+import { DotCMSPage } from '@dotcms/types';
 import {
     DotcmsConfigServiceMock,
     DotcmsEventsServiceMock,
@@ -42,7 +43,6 @@ import { DotActionUrlService } from '../../services/dot-action-url/dot-action-ur
 import { DotEmaWorkflowActionsService } from '../../services/dot-ema-workflow-actions/dot-ema-workflow-actions.service';
 import { FormStatus, NG_CUSTOM_EVENTS } from '../../shared/enums';
 import { MOCK_RESPONSE_HEADLESS, PAYLOAD_MOCK } from '../../shared/mocks';
-import { DotPage } from '../../shared/models';
 import { UVEStore } from '../../store/dot-uve.store';
 
 describe('DotEmaDialogComponent', () => {
@@ -375,7 +375,7 @@ describe('DotEmaDialogComponent', () => {
             component.translatePage({
                 page: {
                     title: 'test'
-                } as DotPage,
+                } as DotCMSPage,
                 newLanguage: '1'
             });
 

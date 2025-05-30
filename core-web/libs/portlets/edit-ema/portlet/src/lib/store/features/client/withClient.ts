@@ -9,7 +9,8 @@ import {
 
 import { computed } from '@angular/core';
 
-import { DotPageApiResponse } from '../../../services/dot-page-api.service';
+import { DotCMSPageAsset } from '@dotcms/types';
+
 import { PERSONA_KEY } from '../../../shared/consts';
 import { UVEState } from '../../models';
 
@@ -27,7 +28,7 @@ export interface ClientConfigState {
         variables: Record<string, string>;
     };
     graphqlResponse: {
-        pageAsset: DotPageApiResponse;
+        pageAsset: DotCMSPageAsset;
         content?: Record<string, unknown>;
     };
 }

@@ -6,6 +6,7 @@ import { signal } from '@angular/core';
 
 import { CLIENT_ACTIONS } from '@dotcms/client';
 import { DotMessageService } from '@dotcms/data-access';
+import { DotCMSPage } from '@dotcms/types';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotEmaDialogStore } from './dot-ema-dialog.store';
@@ -14,7 +15,6 @@ import { DotActionUrlService } from '../../../services/dot-action-url/dot-action
 import { LAYOUT_URL } from '../../../shared/consts';
 import { DialogStatus, FormStatus } from '../../../shared/enums';
 import { PAYLOAD_MOCK } from '../../../shared/mocks';
-import { DotPage } from '../../../shared/models';
 import { UVEStore } from '../../../store/dot-uve.store';
 
 const TEST_VARIANT = 'my-test-variant';
@@ -383,7 +383,7 @@ describe('DotEmaDialogStoreService', () => {
                     stInode: '12345',
                     live: true,
                     title: 'test'
-                } as DotPage,
+                } as DotCMSPage,
                 newLanguage: 2
             });
 
@@ -429,7 +429,7 @@ describe('DotEmaDialogStoreService', () => {
                     title: 'test',
                     working: true,
                     workingInode: '56789'
-                } as DotPage,
+                } as DotCMSPage,
                 newLanguage: 2
             });
 

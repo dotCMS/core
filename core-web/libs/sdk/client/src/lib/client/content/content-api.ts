@@ -17,7 +17,6 @@ import { CollectionBuilder } from './builders/collection/collection';
  *     .sortBy([{ field: 'title', order: 'asc' }])
  *     .query(q => q.field('author').equals('John Doe'))
  *     .depth(1)
- *     .fetch();
  *
  * console.log(response.contentlets);
  * ```
@@ -31,7 +30,6 @@ import { CollectionBuilder } from './builders/collection/collection';
  *     .sortBy([{ field: 'title', order: 'asc' }])
  *     .query(q => q.field('author').equals('John Doe'))
  *     .depth(1)
- *     .fetch()
  *     .then(response => console.log(response.contentlets))
  *     .catch(error => console.error(error));
  * ```
@@ -47,7 +45,6 @@ import { CollectionBuilder } from './builders/collection/collection';
  * const posts = await client.content
  *     .getCollection<BlogPost>('Blog')
  *     .limit(10)
- *     .fetch();
  *
  * posts.contentlets.forEach(post => {
  *     console.log(post.title, post.author, post.summary);

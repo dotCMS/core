@@ -4,7 +4,11 @@ import {
     DotCMSBasicContentlet,
     DotCMSGraphQLPageContainer,
     DotCMSGraphQLPageResponse,
-    DotCMSPageContainerContentlets
+    DotCMSPageAssetContainers,
+    DotCMSPageContainerContentlets,
+    DotCMSPage,
+    DotCMSPageAsset,
+    DotCMSContainer
 } from '@dotcms/types';
 
 /**
@@ -18,7 +22,9 @@ import {
  * const pageEntity = graphqlToPageEntity(graphQLPageResponse);
  * ```
  */
-export const graphqlToPageEntity = (graphQLPageResponse: DotCMSGraphQLPageResponse) => {
+export const graphqlToPageEntity = (
+    graphQLPageResponse: DotCMSGraphQLPageResponse
+): DotCMSPageAsset | null => {
     const { page } = graphQLPageResponse;
 
     // If there is no page, return null
@@ -26,38 +32,55 @@ export const graphqlToPageEntity = (graphQLPageResponse: DotCMSGraphQLPageRespon
         return null;
     }
 
-    const { layout, template, containers, urlContentMap, viewAs, site, _map, ...pageAsset } = page;
+    const {
+        layout,
+        template,
+        containers,
+        urlContentMap,
+        viewAs,
+        host,
+        vanityUrl,
+        runningExperimentId,
+        _map,
+        ...pageAsset
+    } = page;
     const data = (_map || {}) as Record<string, unknown>;
 
+    const typedPageAsset = pageAsset as unknown as DotCMSPage;
+
     // To prevent type errors, we cast the urlContentMap to an object
-    const urlContentMapObject = urlContentMap as Record<string, unknown>;
+    const urlContentMapObject = urlContentMap;
 
     // Extract the _map data from the urlContentMap object
-    const urlContentMapData = urlContentMapObject?.['_map'] as Record<string, unknown>;
+    const urlContentMapData = urlContentMapObject?.['_map'];
 
     return {
         layout,
         template,
         viewAs,
-        site,
+        vanityUrl,
+        runningExperimentId,
+        site: host,
+        urlContentMap: urlContentMapData,
+        containers: parseContainers(containers as []),
         page: {
             ...data,
-            ...pageAsset
-        },
-        containers: parseContainers(containers as []),
-        urlContentMap: urlContentMapData
-    } as any; // NOTE: This is a rabbit hole and we have to fix this, not in this PR tho.
+            ...typedPageAsset
+        }
+    };
 };
 
 /**
  * Parses the containers from the GraphQL response.
  *
- * @param {Array<Record<string, unknown>>} [containers=[]] - The containers array from the GraphQL response.
- * @returns {Record<string, unknown>} The parsed containers.
+ * @param {DotCMSGraphQLPageContainer[]} [containers=[]] - The containers array from the GraphQL response.
+ * @returns {DotCMSPageAssetContainers} The parsed containers.
  */
-const parseContainers = (containers: DotCMSGraphQLPageContainer[] = []) => {
+const parseContainers = (
+    containers: DotCMSGraphQLPageContainer[] = []
+): DotCMSPageAssetContainers => {
     return containers.reduce(
-        (acc: Record<string, unknown>, container: DotCMSGraphQLPageContainer) => {
+        (acc: DotCMSPageAssetContainers, container: DotCMSGraphQLPageContainer) => {
             const { path, identifier, containerStructures, containerContentlets, ...rest } =
                 container;
 
@@ -69,7 +92,7 @@ const parseContainers = (containers: DotCMSGraphQLPageContainer[] = []) => {
                     path,
                     identifier,
                     ...rest
-                },
+                } as DotCMSContainer,
                 contentlets: parseContentletsToUuidMap(containerContentlets as [])
             };
 

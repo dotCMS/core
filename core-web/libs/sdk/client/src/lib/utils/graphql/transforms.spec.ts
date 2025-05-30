@@ -71,6 +71,12 @@ const GRAPHQL_RESPONSE_MOCK = {
         },
         viewAs: {
             mode: 'LIVE'
+        },
+        runningExperimentId: '123',
+        vanityUrl: {
+            action: 200,
+            uri: '/test2',
+            forwardTo: '/test2'
         }
     }
 };
@@ -127,9 +133,6 @@ const MOCK_PAGE_ENTITY = {
         title: 'default-template'
     },
     page: {
-        host: {
-            hostName: 'demo.dotcms.com'
-        },
         seodescription: null,
         title: 'test2',
         url: '/test2'
@@ -142,7 +145,16 @@ const MOCK_PAGE_ENTITY = {
     },
     viewAs: {
         mode: 'LIVE'
-    }
+    },
+    site: {
+        hostName: 'demo.dotcms.com'
+    },
+    vanityUrl: {
+        action: 200,
+        uri: '/test2',
+        forwardTo: '/test2'
+    },
+    runningExperimentId: '123'
 };
 
 describe('GraphQL Parser', () => {
