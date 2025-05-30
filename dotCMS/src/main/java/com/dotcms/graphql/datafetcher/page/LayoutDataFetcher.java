@@ -30,7 +30,6 @@ public class LayoutDataFetcher implements DataFetcher<TemplateLayout> {
             if(null == page.getContentType()) {
                 return null;
             }
-
             Logger.debug(this, ()-> "Fetching layout for page: " + page.getIdentifier());
             final HTMLPageAsset pageAsset = APILocator.getHTMLPageAssetAPI()
                     .fromContentlet(page);
