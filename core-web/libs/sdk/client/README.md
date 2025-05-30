@@ -581,7 +581,7 @@ If you’re building with a framework we don’t yet support, you can build your
 > 
 > Custom UVE implementations are complex, require a deep understanding of dotCMS internals, and are not actively supported.
 > 
-> You’ll be on your own for wiring up layout rendering, editable regions, and UVE behavior.
+> This route is intended only for advanced use cases, such as wiring up layout rendering, editable regions, and UVE behavior manually.
 
 That said, if you’re experienced and want to explore it, you can [review the `@dotcms/uve` source and docs here](https://github.com/dotCMS/core/tree/main/core-web/libs/sdk/uve).
 

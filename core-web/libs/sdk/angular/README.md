@@ -10,10 +10,10 @@ The `@dotcms/angular` SDK is the DotCMS official Angular library. It empowers An
     -   [Configure The Universal Visual Editor App](#configure-the-universal-visual-editor-app)
     -   [Installation](#installation)
     -   [dotCMS Client Configuration](#dotcms-client-configuration)
-    -   [Proxy Setup for Assets](#proxy-setup-for-assets)
--   [Quickstart](#quickstart)
+    -   [Proxy Configuration for Static Assets](#proxy-configuration-for-static-assets)
+-   [Quickstart: Render a Page with dotCMS](#quickstart-render-a-page-with-dotcms)
     -   [Example Project](#example-project-)
--   [API Reference](#api-reference)
+-   [SDK Reference](#sdk-reference)
     -   [Components](#components)
         -   [DotCMSLayoutBody](#dotcmslayoutbody)
         -   [DotCMSEditableText](#dotcmseditabletext)
@@ -79,16 +79,8 @@ For detailed instructions, please refer to the [dotCMS API Documentation - Read-
 
 ### Installation
 
-The `@dotcms/angular` package provides Angular-specific components, directives, and services for building dotCMS applications. However, to create a fully functional dotCMS application, you'll need to install additional core packages:
-
--   `@dotcms/uve`: Enables live editing and Universal Visual Editor integration
--   `@dotcms/client`: Provides the core API client for communicating with dotCMS
--   `@dotcms/types`: TypeScript definitions for type safety and better development experience
-
-Install all required packages:
-
 ```bash
-npm install @dotcms/angular@next @dotcms/uve@next @dotcms/client@next @dotcms/types@next
+npm install @dotcms/angular@next @dotcms/uve@next @dotcms/client@next @dotcms/types@next @tinymce/tinymce-angular
 ```
 
 ### dotCMS Client Configuration
@@ -119,7 +111,7 @@ export const appConfig: ApplicationConfig = {
 
 This configuration makes the dotCMS client service available throughout your Angular application, allowing you to inject it wherever needed. For more details on how Angular's InjectionToken works, you can refer to the [Angular InjectionToken documentation](https://angular.dev/api/core/InjectionToken).
 
-### Proxy Setup for Assets 🖼️
+### Proxy Configuration for Static Assets
 
 Configure a proxy to leverage the powerful dotCMS image API, allowing you to resize and serve optimized images efficiently. This enhances application performance and improves user experience, making it a strategic enhancement for your project.
 
@@ -178,7 +170,7 @@ class MyDotCMSImageComponent {
 
 📚 Learn more about simple image pathing in dotCMS [here](https://dev.dotcms.com/docs/file-assets-and-dotassets).
 
-## Quickstart
+## Quickstart: Render a Page with dotCMS
 
 The following example demonstrates how to quickly set up a basic dotCMS page renderer in your Angular application. This example shows how to:
 
@@ -260,7 +252,7 @@ Looking to get started quickly? We've got you covered! Our [Angular starter proj
 > [!TIP]
 > This starter project is more than just an example, it follows all our best practices. We highly recommend using it as the base for your next dotCMS + Angular project!
 
-## API Reference
+## SDK Reference
 
 All components, directives, and services should be imported from `@dotcms/angular/next`:
 

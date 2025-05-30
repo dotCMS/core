@@ -10,10 +10,10 @@ The `@dotcms/react` SDK is the DotCMS official React library. It empowers React 
     -   [Configure The Universal Visual Editor App](#configure-the-universal-visual-editor-app)
     -   [Installation](#installation)
     -   [dotCMS Client Configuration](#dotcms-client-configuration)
-    -   [Proxy Setup for Assets](#proxy-setup-for-assets)
--   [Quickstart](#quickstart)
+    -   [Proxy Configuration for Static Assets](#proxy-configuration-for-static-assets)
+-   [Quickstart: Render a Page with dotCMS](#quickstart-render-a-page-with-dotcms)
     -   [Example Project](#example-project-)
--   [API Reference](#api-reference)
+-   [SDK Reference](#sdk-reference)
     -   [Components](#components)
         -   [DotCMSLayoutBody](#dotcmslayoutbody)
         -   [DotCMSShow](#dotcmsshow)
@@ -79,16 +79,8 @@ For detailed instructions, please refer to the [dotCMS API Documentation - Read-
 
 ### Install Dependencies
 
-The `@dotcms/react` package provides React-specific components, hooks, and services for building dotCMS applications. However, to create a fully functional dotCMS application, you'll need to install additional core packages:
-
--   `@dotcms/uve`: Enables live editing and Universal Visual Editor integration
--   `@dotcms/client`: Provides the core API client for communicating with dotCMS
--   `@dotcms/types`: TypeScript definitions for type safety and better development experience
-
-Install all required packages:
-
 ```bash
-npm install @dotcms/react@next @dotcms/uve@next @dotcms/client@next @dotcms/types@next
+npm install @dotcms/react@next @dotcms/uve@next @dotcms/client@next @dotcms/types@next @tinymce/tinymce-react
 ```
 
 ### dotCMS Client Configuration
@@ -105,7 +97,7 @@ export const dotCMSClient: DotCMSClient = createDotCMSClient({
 });
 ```
 
-### Proxy Setup for Assets 🖼️
+### Proxy Configuration for Static Assets
 
 Configure a proxy to leverage the powerful dotCMS image API, allowing you to resize and serve optimized images efficiently. This enhances application performance and improves user experience, making it a strategic enhancement for your project.
 
@@ -147,7 +139,7 @@ export const MyDotCMSImageComponent = ({ inode, title }: DotCMSBasicContentlet) 
 
 📚 Learn more about simple image pathing in dotCMS [here](https://dev.dotcms.com/docs/file-assets-and-dotassets).
 
-## Quickstart
+## Quickstart: Render a Page with dotCMS
 
 The following example demonstrates how to quickly set up a basic dotCMS page renderer in your React application. This example shows how to:
 
@@ -202,7 +194,7 @@ Looking to get started quickly? We've got you covered! Our [Next.js starter proj
 > [!TIP]
 > This starter project is more than just an example, it follows all our best practices. We highly recommend using it as the base for your next dotCMS + Next.js project!
 
-## API Reference
+## SDK Reference
 
 All components and hooks should be imported from `@dotcms/react/next`:
 
