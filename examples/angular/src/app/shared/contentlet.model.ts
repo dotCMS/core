@@ -1,4 +1,4 @@
-import { DotCMSBasicContentlet, DotcmsNavigationItem } from '@dotcms/types';
+import { DotCMSBasicContentlet, DotCMSNavigationItem } from '@dotcms/types';
 
 export interface FileAsset {
     fileAsset: {
@@ -130,5 +130,5 @@ export interface FooterContent {
 }
 
 export interface ExtraContent extends FooterContent {
-    navigation: DotcmsNavigationItem;
+    navigation: DotCMSNavigationItem;
 }

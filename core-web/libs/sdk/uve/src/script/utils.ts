@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { DotCMSUVEAction, DotCMSUVEConfig, UVEEventType } from '@dotcms/types';
+import { DotCMSPageResponse, DotCMSUVEAction, UVEEventType } from '@dotcms/types';
 
 import { createUVESubscription } from '../lib/core/core.utils';
 import { computeScrollIsInBottom } from '../lib/dom/dom.utils';
@@ -129,7 +129,7 @@ export function registerUVEEvents() {
  * This is typically called after all UVE event handlers and DOM listeners
  * have been set up successfully.
  */
-export function setClientIsReady(config?: DotCMSUVEConfig): void {
+export function setClientIsReady(config?: DotCMSPageResponse): void {
     sendMessageToUVE({
         action: DotCMSUVEAction.CLIENT_READY,
         payload: config
