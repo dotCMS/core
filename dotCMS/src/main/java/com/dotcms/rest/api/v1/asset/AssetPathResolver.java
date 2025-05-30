@@ -22,6 +22,7 @@ import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 /**
  * This class is responsible for resolving a path to an asset. The path can be a folder or an asset.
@@ -237,7 +238,7 @@ public class AssetPathResolver {
                 if(folderPath.endsWith(FORWARD_SLASH)){
                     folderPath = folderPath.replaceAll(".$","");
                 }
-                resource = resource.replaceFirst(folderPath, BLANK);
+                resource = resource.replaceFirst(Pattern.quote(folderPath), BLANK);
                 resource = resource.replace(FORWARD_SLASH, BLANK);
         }
         return UtilMethods.isNotSet(resource) ? Optional.empty() :  Optional.of(resource);
