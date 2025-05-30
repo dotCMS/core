@@ -255,7 +255,7 @@
         "mock-socket": "^9.0.3",
         "mockdate": "^3.0.5",
         "monaco-editor": "^0.33.0",
-        "ng-mocks": "^14.13.5",
+        "ng-mocks": "^14.12.1",
         "npm": "^6.14.16",
         "nx": "19.6.5",
         "postcss": "^8.4.18",
