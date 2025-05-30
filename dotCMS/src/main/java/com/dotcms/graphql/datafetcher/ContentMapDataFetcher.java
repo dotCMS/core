@@ -91,6 +91,8 @@ public class ContentMapDataFetcher implements DataFetcher<Object> {
             HashMap<String,Object> result = new ObjectMapper().readValue(jsonWithRels.toString(), HashMap.class);
             hydratedMap.putAll(result);
 
+            enrichWithParsedRawFields(hydratedMap);
+
             return hydratedMap;
 
         } catch (Exception e) {
@@ -98,6 +100,35 @@ public class ContentMapDataFetcher implements DataFetcher<Object> {
             throw e;
         }
     }
+
+    /**
+     * Detects *_raw fields in the hydrated map and parses them as JSON if a base key exists.
+     * Adds the parsed value under the base key only if it was already defined.
+     *
+     * @param hydratedMap the map to enrich
+     */
+    private void enrichWithParsedRawFields(final Map<String, Object> hydratedMap) {
+        final ObjectMapper objectMapper = new ObjectMapper();
+        for (Map.Entry<String, Object> entry : new HashMap<>(hydratedMap).entrySet()) {
+            final String mapKey = entry.getKey();
+            final Object rawValue = entry.getValue();
+
+            if (mapKey.endsWith("_raw") && rawValue instanceof String) {
+                final String baseKey = mapKey.substring(0, mapKey.length() - 4);
+
+                if (hydratedMap.containsKey(baseKey)) {
+                    try {
+                        @SuppressWarnings("unchecked")
+                        Map<String, Object> parsed = objectMapper.readValue((String) rawValue, Map.class);
+                        hydratedMap.put(baseKey, parsed);
+                    } catch (Exception e) {
+                        Logger.warn(this, () -> "Error parsing JSON for '" + mapKey + "': " + e.getMessage());
+                    }
+                }
+            }
+        }
+    }
+
 
     private Object getRenderedFieldValue(final HttpServletRequest request,
             final HttpServletResponse response, final Contentlet contentlet,
