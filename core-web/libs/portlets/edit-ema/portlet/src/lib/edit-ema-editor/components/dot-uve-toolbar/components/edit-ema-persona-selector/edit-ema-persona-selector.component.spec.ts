@@ -44,9 +44,10 @@ export const CUSTOM_PERSONA: DotPersona = {
     modUser: 'customAdmin'
 };
 
-const TEST_DEFAULT_PERSONA = {
+const TEST_DEFAULT_PERSONA: DotPersona = {
     ...DEFAULT_PERSONA,
-    photo: '/dA/198-23423-234'
+    photo: '/dA/198-23423-234',
+    url: 'example.defaultsite.com'
 };
 
 describe('EditEmaPersonaSelectorComponent', () => {
