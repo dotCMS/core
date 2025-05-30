@@ -12,7 +12,10 @@
     @if (!isCollapsed) {
         <div class="dot-nav__logo-wrapper" [class.whitelabel]="logo">
             @if (logo) {
-                <span data-testid="whitelabel-logo" [style.background-image]="logo" class="dot-nav__logo--whitelabel"></span>
+                <span
+                    data-testid="whitelabel-logo"
+                    [style.background-image]="logo"
+                    class="dot-nav__logo--whitelabel"></span>
             } @else {
                 <span data-testid="default-logo" class="dot-nav__logo--default"></span>
             }

@@ -27,7 +27,12 @@ import { DotNavigationService } from './services/dot-navigation.service';
         DotOverlayMaskModule,
         DotRandomIconPipeModule
     ],
-    declarations: [DotNavigationComponent, DotSubNavComponent, DotNavItemComponent, DotNavHeaderComponent],
+    declarations: [
+        DotNavigationComponent,
+        DotSubNavComponent,
+        DotNavItemComponent,
+        DotNavHeaderComponent
+    ],
     providers: [DotNavigationService],
     exports: [DotNavigationComponent]
 })

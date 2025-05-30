@@ -158,5 +158,4 @@ describe('DotToolbarComponent', () => {
         expect(siteSelector.componentInstance.cssClass).toBe('d-secondary');
         expect(siteSelector.componentInstance.width).toBe('200px');
     });
-
 });

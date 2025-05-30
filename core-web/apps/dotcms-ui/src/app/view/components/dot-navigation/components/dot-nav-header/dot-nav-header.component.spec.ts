@@ -1,4 +1,10 @@
-import { byTestId, createComponentFactory, mockProvider, Spectator, SpyObject } from '@ngneat/spectator';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator,
+    SpyObject
+} from '@ngneat/spectator';
 import { BehaviorSubject } from 'rxjs';
 
 import { ButtonModule } from 'primeng/button';

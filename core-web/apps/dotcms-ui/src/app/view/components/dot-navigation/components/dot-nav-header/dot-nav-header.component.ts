@@ -1,7 +1,7 @@
-import { Component, input, inject, output } from "@angular/core";
-import { toSignal } from "@angular/core/rxjs-interop";
+import { Component, input, inject, output } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 
-import { DotNavLogoService } from "@dotcms/app/api/services/dot-nav-logo/dot-nav-logo.service";
+import { DotNavLogoService } from '@dotcms/app/api/services/dot-nav-logo/dot-nav-logo.service';
 
 @Component({
     selector: 'dot-nav-header',
@@ -30,7 +30,7 @@ export class DotNavHeaderComponent {
      * @readonly
      * @returns {Signal<LogoData>} The current logo configuration and image data
      */
-    $logo = toSignal(this.#dotNavLogoService.navBarLogo$, {requireSync: true});
+    $logo = toSignal(this.#dotNavLogoService.navBarLogo$, { requireSync: true });
 
     /**
      * Input signal indicating whether the navigation sidebar is currently collapsed.
@@ -39,5 +39,5 @@ export class DotNavHeaderComponent {
      * @input {boolean} isCollapsed - Current collapsed state of the navigation
      * @required
      */
-    $isCollapsed = input.required<boolean>({alias: 'isCollapsed'});
+    $isCollapsed = input.required<boolean>({ alias: 'isCollapsed' });
 }
