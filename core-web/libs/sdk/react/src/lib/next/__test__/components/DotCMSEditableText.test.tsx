@@ -5,6 +5,7 @@ import * as tinymceReact from '@tinymce/tinymce-react';
 import * as dotcmsClient from '@dotcms/client';
 import { CLIENT_ACTIONS } from '@dotcms/client';
 import { DotCMSBasicContentlet, DotCMSUVEAction, UVE_MODE } from '@dotcms/types';
+import * as dotcmsUVE from '@dotcms/uve';
 import { sendMessageToUVE, getUVEState } from '@dotcms/uve';
 
 import { DotCMSEditableText } from '../../components/DotCMSEditableText/DotCMSEditableText';
@@ -23,6 +24,16 @@ const TINYMCE_EDITOR_MOCK = {
     }
 };
 
+const MOCK_UVE_STATE = {
+    mode: 'EDIT_MODE',
+    dotCMSHost: 'http://localhost:8080',
+    languageId: null,
+    persona: null,
+    variantName: null,
+    experimentId: null,
+    publishDate: null
+};
+
 jest.mock('@tinymce/tinymce-react', () => ({
     Editor: jest.fn(({ onInit, onMouseDown, onFocusOut }) => {
         onInit({}, TINYMCE_EDITOR_MOCK);
@@ -35,21 +46,14 @@ jest.mock('@tinymce/tinymce-react', () => ({
 jest.mock('@dotcms/uve', () => ({
     ...jest.requireActual('@dotcms/uve'),
     sendMessageToUVE: jest.fn(),
-    getUVEState: jest.fn().mockImplementation(() => ({
-        mode: 'EDIT_MODE',
-        dotCMSHost: 'http://localhost:8080',
-        languageId: null,
-        persona: null,
-        variantName: null,
-        experimentId: null,
-        publishDate: null
-    }))
+    getUVEState: jest.fn().mockImplementation(() => MOCK_UVE_STATE)
 }));
 
 const { Editor } = tinymceReact as jest.Mocked<typeof tinymceReact>;
 const mockedGetUVEState = getUVEState as jest.MockedFunction<typeof getUVEState>;
 
 describe('DotCMSEditableText', () => {
+    let getUVEStateSpy: jest.SpyInstance;
     let consoleErrorSpy: jest.SpyInstance;
     let consoleWarnSpy: jest.SpyInstance;
 
@@ -60,12 +64,14 @@ describe('DotCMSEditableText', () => {
         consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {
             /* empty */
         });
+        getUVEStateSpy = jest.spyOn(dotcmsUVE, 'getUVEState');
     });
 
     afterEach(() => {
         jest.clearAllMocks();
         consoleErrorSpy.mockRestore();
         consoleWarnSpy.mockRestore();
+        getUVEStateSpy.mockRestore();
     });
 
     describe('Console logs', () => {
@@ -83,7 +89,7 @@ describe('DotCMSEditableText', () => {
             render(<DotCMSEditableText fieldName="title" />);
 
             expect(consoleErrorSpy).toHaveBeenCalledWith(
-                'DotCMSEditableText: contentlet or fieldName is missing',
+                '[DotCMSEditableText]: contentlet or fieldName is missing',
                 'Ensure that all needed props are passed to view and edit the content'
             );
         });
@@ -101,7 +107,7 @@ describe('DotCMSEditableText', () => {
             // @ts-expect-error - fieldName is required but we're testing error case
             render(<DotCMSEditableText contentlet={MOCK_CONTENTLET} />);
             expect(consoleErrorSpy).toHaveBeenCalledWith(
-                'DotCMSEditableText: contentlet or fieldName is missing',
+                '[DotCMSEditableText]: contentlet or fieldName is missing',
                 'Ensure that all needed props are passed to view and edit the content'
             );
         });
@@ -119,7 +125,7 @@ describe('DotCMSEditableText', () => {
             render(<DotCMSEditableText contentlet={MOCK_CONTENTLET} fieldName="title" />);
 
             expect(consoleWarnSpy).toHaveBeenCalledWith(
-                'DotCMSEditableText: TinyMCE is not available in the current mode'
+                '[DotCMSEditableText]: TinyMCE is not available in the current mode'
             );
         });
 
@@ -136,7 +142,7 @@ describe('DotCMSEditableText', () => {
             render(<DotCMSEditableText contentlet={MOCK_CONTENTLET} fieldName="title" />);
 
             expect(consoleWarnSpy).toHaveBeenCalledWith(
-                'The `dotCMSHost` parameter is not defined. Check that the UVE is sending the correct parameters.'
+                '[DotCMSEditableText]: The `dotCMSHost` parameter is not defined. Check that the UVE is sending the correct parameters.'
             );
         });
     });
@@ -331,6 +337,39 @@ describe('DotCMSEditableText', () => {
                     expect(sendMessageToUVE).toHaveBeenCalledWith(postMessageData);
                 });
             });
+        });
+    });
+
+    describe('Contentlet and fieldName changes', () => {
+        beforeEach(() => {
+            getUVEStateSpy.mockImplementation(() => null);
+        });
+
+        it('should update the HTML when contentlet changes', () => {
+            const { rerender } = render(
+                <DotCMSEditableText contentlet={MOCK_CONTENTLET} fieldName="title" />
+            );
+
+            expect(screen.getByText(MOCK_CONTENTLET['title'])).not.toBeNull();
+
+            const newContentlet = { ...MOCK_CONTENTLET, title: 'New Title' };
+            rerender(<DotCMSEditableText contentlet={newContentlet} fieldName="title" />);
+
+            expect(screen.getByText('New Title')).not.toBeNull();
+        });
+
+        it('should update the HTML when fieldName changes', () => {
+            const { rerender } = render(
+                <DotCMSEditableText contentlet={MOCK_CONTENTLET} fieldName="title" />
+            );
+
+            expect(screen.getByText(MOCK_CONTENTLET['title'])).not.toBeNull();
+
+            const newFieldName = 'description';
+            const newContentlet = { ...MOCK_CONTENTLET, description: 'New Description' };
+            rerender(<DotCMSEditableText contentlet={newContentlet} fieldName={newFieldName} />);
+
+            expect(screen.getByText('New Description')).not.toBeNull();
         });
     });
 });

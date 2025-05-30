@@ -10,11 +10,11 @@ import { Navigation } from "./layout/navigation";
 import { Footer } from "./layout/footer/footer";
 import NotFound from "./components/notFound";
 
-import type { DotcmsNavigationItem, DotCMSPageAsset } from "@dotcms/types";
+import type { DotCMSNavigationItem, DotCMSPageAsset } from "@dotcms/types";
 
 export type MyPageProps = {
   pageAsset?: DotCMSPageAsset;
-  nav?: DotcmsNavigationItem[];
+  nav?: DotCMSNavigationItem[];
 };
 
 export const MyPage: FC<MyPageProps> = ({ pageAsset, nav }) => {
