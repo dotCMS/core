@@ -1,6 +1,8 @@
 # dotCMS UVE SDK
 
-The `@dotcms/uve` SDK is a powerful tool that enables live editing in your JavaScript applications by seamlessly integrating with the **dotCMS Universal Visual Editor (UVE)**. It provides a comprehensive low-level API to make pages and contentlets editable, respond to editor events, and support in-place editing, layout updates, and real-time content previews. Whether you're using a framework-specific library or the core SDK for custom implementations, `@dotcms/uve` offers the flexibility and control needed to enhance your app's editing capabilities. Use it to:
+The @dotcms/uve SDK adds live editing to your JavaScript app using the dotCMS Universal Visual Editor (UVE). It gives you low-level tools to make pages and contentlets editable, trigger modals or inline editors, and respond to real-time changes.
+
+Use this SDK directly or as the foundation for a framework-specific integration. With it, you can:
 
 -   Make pages and contentlets editable
 -   Respond to editor events (content updates, mode changes)
@@ -9,15 +11,15 @@ The `@dotcms/uve` SDK is a powerful tool that enables live editing in your JavaS
 
 ## Table of Contents
 
+-   [Before You Use @dotcms/uve](#before-you-use-dotcmsuve)
+    -   [Getting Started: Recommended Examples](#getting-started-recommended-examples)
+    -   [🚩 Custom Setup: Manual Rendering (Not Recommended)](#-custom-setup-manual-rendering-not-recommended)
 -   [Prerequisites & Setup](#prerequisites--setup)
     -   [Get a dotCMS Instance](#get-a-dotcms-instance)
     -   [Create a dotCMS API Key](#create-a-dotcms-api-key)
     -   [Installation](#installation)
     -   [TypeScript Support](#typescript-support)
--   [Quickstart](#quickstart)
-    -   [Important Notes](#important-notes)
-    -   [Starter Example Project 🚀](#starter-example-project-)
--   [API Reference](#api-reference)
+-   [SDK Reference](#sdk-reference)
     -   [`initUVE()`](#inituveconfig-dotcmsuveconfig)
     -   [`getUVEState()`](#getuvestate)
     -   [`createUVESubscription()`](#createuvesubscriptioneventtype-callback)
@@ -35,6 +37,132 @@ The `@dotcms/uve` SDK is a powerful tool that enables live editing in your JavaS
 -   [How To Contribute](#how-to-contribute)
 -   [Licensing Information](#licensing-information)
 -   [Troubleshooting](#troubleshooting)
+
+## Before You Use @dotcms/uve
+
+### Getting Started: Recommended Examples
+
+We strongly recommend using one of our official framework SDKs, which are designed to handle UVE integration, routing, rendering, and more—out of the box. These examples are the best way to get started:
+
+* [dotCMS Angular SDK: Angular Example](https://github.com/dotCMS/core/tree/main/examples/angular) – Ideal for Angular apps 🅰️
+* [dotCMS React SDK: NextJS Example](https://github.com/dotCMS/core/tree/main/examples/react) – Ideal for NextJS projects ⚛️
+* [dotCMS React SDK: Astro Example](https://github.com/dotCMS/core/tree/main/examples/astro) – Ideal for Astro projects 🌌
+
+These examples handle UVE integration, routing, rendering, and more—out of the box. **If you're building a headless dotCMS front-end, start there.**
+
+### 🚩 Custom Setup: Manual Rendering (Not Recommended)
+
+You can use `@dotcms/uve` directly, but it’s not recommended or supported unless you’re building a highly custom integration. Here’s how the pieces fit together:
+
+1. **You must use `@dotcms/client` to fetch content and page data.**
+2. **You must render pages based on dotCMS’s layout schema.**
+3. **You must apply the correct `data-dot-*` attributes to containers and contentlets.**
+
+Here's a minimal setup using `@dotcms/client` and `@dotcms/uve`:
+
+1. Initializa the Client and get the page response:
+
+```ts
+// getPage.ts
+import { createDotCMSClient } from '@dotcms/client/next';
+import { initUVE, createUVESubscription } from '@dotcms/uve/next';
+
+const dotCMSClient = createDotCMSClient({
+  dotcmsUrl: 'https://your-dotcms-instance.com',
+  authToken: 'your-api-key',
+  siteId: 'your-site-id'
+});
+
+const getPage = async () => {
+  const pageResponse = await dotCMSClient.page.get('/', {
+    languageId: '1'
+  });
+
+  return pageResponse;
+}
+```
+
+2. Initialize the UVE and subscribe to changes:
+
+> ⚠️ The `initUVE()` function only works with a `PageResponse` returned by `@dotcms/client`. If you try to pass in data from another source or build your own structure, it won't initialize properly.
+
+```ts
+import { initUVE, createUVESubscription } from '@dotcms/uve/next';
+import { getPage } from './getPage';
+
+const pageResponse = await getPage();
+
+initUVE(pageResponse);
+createUVESubscription('changes', (newPageResponse) => {
+  // Handle page updates (e.g. re-render)
+});
+
+```
+
+> ⚠️ This only sets up the editor connection. You are responsible for rendering the page structure (rows, columns, containers, contentlets) using your own UI components.
+
+3. Create a custom render for the page:
+
+```tsx
+// 🔧 Render the page layout (you must implement this component)
+<MyDotCMSPage pageAsset={pageResponse.pageAsset} />
+```
+
+> ⚠️ Below is a simplified breakdown of how dotCMS layouts are structured and how you might render them manually.
+
+#### 🔄 How to Render a dotCMS Page
+
+dotCMS pages are structured as nested layout objects:
+
+* A `PageAsset` contains a `layout` object
+* The `layout` includes rows, columns, containers, and contentlets
+
+Here’s a basic pseudocode outline:
+
+```jsx
+<Page>
+  {layout.body.rows.map(row => (
+    <Row>
+      {row.columns.map(column => (
+        <Column>
+          {column.containers.map(container => (
+            <Container data-dot-object="container" ...>
+              {container.contentlets.map(contentlet => (
+                <Contentlet data-dot-object="contentlet" ...>
+                  {renderContentletByType(contentlet)}
+                </Contentlet>
+              ))}
+            </Container>
+          ))}
+        </Column>
+      ))}
+    </Row>
+  ))}
+</Page>
+```
+
+Each contentlet is rendered according to its content type:
+
+```ts
+function renderContentletByType(contentlet) {
+  switch(contentlet.contentType) {
+    case 'text': return <TextBlock contentlet={contentlet} />;
+    case 'image': return <ImageBlock contentlet={contentlet} />;
+    case 'video': return <VideoBlock contentlet={contentlet} />;
+    default: return null;
+  }
+}
+```
+
+To make the layout editable, be sure to apply all required `data-dot-*` attributes on containers and contentlets.
+
+For a complete guide, see this tutorial:
+👉 [How to Build a Custom dotCMS Renderer](https://www.dotcms.com/blog/developer-tutorial-how-to-use-dotcms-and-react-to-build-single-page-apps)
+
+---
+
+
+> 💡 Unless you are building your own front-end framework (which we don’t recommend), use `@dotcms/react` or `@dotcms/angular`. These handle rendering and editor integration for you.
 
 ## Prerequisites & Setup
 
@@ -63,28 +191,7 @@ The `@dotcms/uve` SDK is a powerful tool that enables live editing in your JavaS
 
 ### Configure The Universal Visual Editor App
 
-The Universal Visual Editor (UVE) is a powerful tool that allows you to edit your dotCMS content in real-time. To use the UVE, you need to configure the UVE application.
-
-1. Go to the **dotCMS admin panel**.
-2. Click on **Settings** > **Apps** > **Universal Visual Editor (UVE)**.
-3. Select the dotCMS Site you want to use the UVE on.
-4. Add the following basic configuration:
-
-```json
-{
-    "config": [
-        {
-            "pattern": ".*",
-            "url": "https://your-app-url.com"
-        }
-    ]
-}
-```
-
-5. Click on **Save**.
-
-For detailed instructions, please refer to the [Universal Visual Editor Configuration for Headless Pages
-](https://dev.dotcms.com/docs/uve-headless-config).
+For a step-by-step guide on setting up the Universal Visual Editor, check out our [easy-to-follow instructions](https://dev.dotcms.com/docs/uve-headless-config) and get started in no time!
 
 ### Installation
 
@@ -94,7 +201,7 @@ npm install @dotcms/uve@next
 
 ### TypeScript Support
 
-The UVE SDK is written in TypeScript and provides comprehensive type definitions. All interfaces and types are available through the `@dotcms/types` package:
+All interfaces and types are available through the `@dotcms/types` package:
 
 ```bash
 npm install @dotcms/types@next --save-dev
@@ -117,55 +224,7 @@ import {
 
 For a complete reference of all available types and interfaces, please refer to the [@dotcms/types documentation](https://www.npmjs.com/package/@dotcms/types).
 
-That's it! You can now start using the UVE SDK in your application.
-
-## Quickstart
-
-The `@dotcms/uve` SDK is a versatile toolkit that provides a low-level API for integrating with the dotCMS Universal Visual Editor (UVE). It doesn't enforce a specific workflow, allowing you to initialize the UVE editor and then freely call other functions as needed. This flexibility makes it ideal for custom implementations.
-
-### Important Notes:
-
-1. **dotCMS Integration**: This SDK is designed to work **exclusively within the dotCMS environment**, specifically inside the UVE App.
-2. **Framework-Specific Libraries**: For higher-level integrations with frameworks like React or Angular, please refer to our [example projects](#starter-examples) for optimized implementations.
-
-Here's a quick example to get you started:
-
-```typescript
-import { initUVE, editContentlet } from '@dotcms/uve';
-
-// Initialize the UVE
-const UVE_PARAMS = {
-    languageId: '1',
-    depth: 3
-};
-
-initUVE({ params: UVE_PARAMS });
-
-// Get the edit button
-const myEditButton = document.getElementById('my-edit-button');
-
-// Add an event listener to the edit button
-myEditButton.addEventListener('click', () => {
-    const contentlet = document.getElementById('my-contentlet').dataset.contentlet;
-    // Open the modal editor for the contentlet
-    editContentlet(contentlet);
-});
-```
-
-This example demonstrates how to initialize the UVE and interact with contentlets, providing a foundation for further customization and integration.
-
-### Starter Example Project 🚀
-
-Looking to get started quickly? We've got you covered! Here are some example projects that demonstrate how to use the UVE SDK with different frameworks:
-
--   [Angular Example](https://github.com/dotCMS/core/tree/main/examples/angular) - Integration with Angular 🅰️
--   [Next.js Example](https://github.com/dotCMS/core/tree/main/examples/nextjs) - Integration with Next.js ⚛️
--   [Astro Example](https://github.com/dotCMS/core/tree/main/examples/astro) - Integration with Astro 🌌
-
-> [!TIP]
-> These starter projects are more than just examples, they follow all our best practices. We highly recommend using them as the base for your next dotCMS Headless project! 💡
-
-## API Reference
+## SDK Reference
 
 ### `initUVE(config?: DotCMSUVEConfig)`
 
@@ -175,26 +234,15 @@ Looking to get started quickly? We've got you covered! Here are some example pro
 
 | Name     | Type              | Required | Description                               |
 | -------- | ----------------- | -------- | ----------------------------------------- |
-| `config` | `DotCMSUVEConfig` | ❌       | Optional setup for language, persona, etc |
+| `config` | `DotCMSPageResponse` | ✅       | The page Response from the `@dotcms/client` |
 
 **Usage:**
 
 ```ts
-const { destroyUVESubscriptions } = initUVE({ params });
+const { destroyUVESubscriptions } = initUVE(pageResponse);
 ```
 
-#### UVE Configuration
-
--   `graphql` (object - optional): The graphql query to execute
-    -   `query` (string): The graphql query to execute
-    -   `variables` (object): The variables to pass to the graphql query.
--   `params` (object - optional): The parameters to pass to the page API
-    -   `languageId` (string): The language ID of the current page set on the UVE.
-    -   `personaId` (string): The persona ID of the current page set on the UVE.
-    -   `publishDate` (string): The publish date of the current page set on the UVE.
-    -   `depth` (0-3): The depth of the current page set on the UVE.
-    -   `fireRules` (boolean): Indicates whether you want to fire the rules set on the page.
-    -   `variantName` (string): The name of the current variant.
+> ⚠️ If you don't provide a `pageResponse`, we can't assure that the UVE will be initialized correctly.
 
 ### `getUVEState()`
 
@@ -291,7 +339,7 @@ initInlineEditing('WYSIWYG', {
 
 ### `enableBlockEditorInline(contentlet, fieldName)`
 
-**Overview**: The `enableBlockEditorInline` function is a shortcut to enable inline block editing for a field.
+**Overview**: The `enableBlockEditorInline` function is a shortcut to [enable inline block editing](https://dev.dotcms.com/docs/block-editor#BlockInlineEditor) for a field.
 
 **Parameters**:
 
