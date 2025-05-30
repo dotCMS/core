@@ -169,12 +169,12 @@ describe('DotToolbarComponent', () => {
 
         const button: DebugElement = de.query(By.css('p-button'));
 
-        expect(button.componentInstance.icon).toEqual('pi pi-arrow-left');
+        expect(button.componentInstance.icon).toEqual('pi pi-bars');
         button.triggerEventHandler('click', {});
         fixture.detectChanges();
 
         expect(dotNavigationService.toggle).toHaveBeenCalledTimes(1);
-        expect(button.componentInstance.icon).toEqual('pi pi-arrow-left');
+        expect(button.componentInstance.icon).toEqual('pi pi-bars');
     });
 
     it('should have default logo', () => {

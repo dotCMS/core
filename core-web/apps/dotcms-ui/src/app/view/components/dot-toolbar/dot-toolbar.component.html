@@ -4,12 +4,8 @@
             <div class="toolbar__button-wrapper">
                 <p-button
                     (click)="handleMainButtonClick()"
-                    [icon]="
-                        (dotNavigationService.collapsed$ | async)
-                            ? 'pi pi-bars'
-                            : 'pi pi-arrow-left'
-                    "
-                    styleClass="p-button-rounded p-button-text"></p-button>
+                    icon="pi pi-bars"
+                    styleClass="p-button-rounded p-button-text" />
             </div>
             <div
                 [class.toolbar__logo-wrapper--collapsed]="dotNavigationService.collapsed$ | async"
@@ -18,7 +14,7 @@
                 @let logo = logo$ | async;
                 @if (logo) {
                     <span
-                        [ngStyle]="{ 'background-image': logo }"
+                        [style.background-image]="logo"
                         class="toolbar__logo--whitelabel"></span>
                 } @else {
                     <span class="toolbar__logo"></span>
