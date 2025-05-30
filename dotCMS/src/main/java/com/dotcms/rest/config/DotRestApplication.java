@@ -13,13 +13,12 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vavr.Lazy;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import javax.inject.Singleton;
 import javax.ws.rs.ApplicationPath;
 import org.glassfish.hk2.utilities.binding.AbstractBinder;
-import org.glassfish.jersey.internal.inject.InjectionManager;
-import org.glassfish.jersey.internal.inject.Providers;
 import org.glassfish.jersey.media.multipart.MultiPartFeature;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.server.spi.internal.ResourceMethodInvocationHandlerProvider;
@@ -56,10 +55,6 @@ import org.glassfish.jersey.server.spi.internal.ResourceMethodInvocationHandlerP
 )
 public class DotRestApplication extends ResourceConfig {
 
-	static {
-		System.setProperty("jersey.config.server.provider.scanning.recursive", "true");
-		Logger.info(DotRestApplication.class, "Static block executed - earliest possible");
-	}
 
 	private static final Lazy<Boolean> ENABLE_TELEMETRY_FROM_CORE = Lazy.of(() ->
 			Config.getBooleanProperty(FeatureFlagName.FEATURE_FLAG_TELEMETRY_CORE_ENABLED, true));
@@ -73,6 +68,9 @@ public class DotRestApplication extends ResourceConfig {
 		configureApplication();
 	}
 
+	/**
+	 * Registers the {@link DotResourceMethodInvocationHandlerProvider} as the first
+	 */
 	private void registerEarlyProviders() {
 		register(DotResourceMethodInvocationHandlerProvider.class);
 		register(new AbstractBinder() {
@@ -100,15 +98,16 @@ public class DotRestApplication extends ResourceConfig {
 		}
 
 		register(MultiPartFeature.class)
-				.register(JacksonJaxbJsonProvider.class)
-				.registerClasses(customClasses.getAliveClasses())
-				.packages(packages.toArray(new String[0]));
+		.register(JacksonJaxbJsonProvider.class)
+		.registerClasses(customClasses.keySet())
+		.packages(packages.toArray(new String[0])
+		);
 	}
 
 	/**
 	 * This is the cheap way to create a concurrent set of user provided classes
 	 */
-	private static final WeakReferenceSet<Class<?>> customClasses = new WeakReferenceSet<>();
+	private static final Map<Class<?>, Boolean> customClasses = new ConcurrentHashMap<>();
 
 	/**
 	 * adds a class and reloads
@@ -123,7 +122,7 @@ public class DotRestApplication extends ResourceConfig {
 			Logger.warn(DotRestApplication.class, "Bypassing activation of Telemetry REST Endpoint from OSGi");
 			return;
 		}
-		if (customClasses.add(clazz)) {
+		if (Boolean.TRUE.equals(customClasses.computeIfAbsent(clazz,c -> true))) {
 			final Optional<ContainerReloader> reloader = CDIUtils.getBean(ContainerReloader.class);
             reloader.ifPresent(ContainerReloader::reload);
 		}
@@ -137,7 +136,7 @@ public class DotRestApplication extends ResourceConfig {
 		if(clazz==null){
 			return;
 		}
-		if(customClasses.remove(clazz)){
+		if(customClasses.remove(clazz) != null){
 			final Optional<ContainerReloader> reloader = CDIUtils.getBean(ContainerReloader.class);
 			reloader.ifPresent(ContainerReloader::reload);
 		}
