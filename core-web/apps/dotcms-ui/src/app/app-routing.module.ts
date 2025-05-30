@@ -1,4 +1,4 @@
-import { NgModule, inject } from '@angular/core';
+import { inject, NgModule } from '@angular/core';
 import {
     ActivatedRouteSnapshot,
     Route,
@@ -18,6 +18,9 @@ import { DotExperimentsService, EmaAppConfigurationService } from '@dotcms/data-
 import { dotAnalyticsHealthCheckResolver, DotEnterpriseLicenseResolver } from '@dotcms/ui';
 import { DotCustomReuseStrategyService } from '@shared/dot-custom-reuse-strategy/dot-custom-reuse-strategy.service';
 
+import { DotEditContentOrchestratorService } from '@dotcms/edit-content';
+import { DialogService } from 'primeng/dynamicdialog';
+import { DotCustomEventHandlerService } from './api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { AuthGuardService } from './api/services/guards/auth-guard.service';
 import { ContentletGuardService } from './api/services/guards/contentlet-guard.service';
 import { DefaultGuardService } from './api/services/guards/default-guard.service';
@@ -160,6 +163,7 @@ const PORTLETS_IFRAME = [
     {
         canActivateChild: [MenuGuardService],
         path: 'c',
+        providers: [DotEditContentOrchestratorService, DialogService, DotCustomEventHandlerService],
         children: [
             {
                 component: IframePortletLegacyComponent,
@@ -259,4 +263,4 @@ const appRoutes: Routes = [
     ],
     providers: [{ provide: RouteReuseStrategy, useClass: DotCustomReuseStrategyService }]
 })
-export class AppRoutingModule {}
+export class AppRoutingModule { }

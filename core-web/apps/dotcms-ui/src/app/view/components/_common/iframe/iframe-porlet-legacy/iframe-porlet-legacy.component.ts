@@ -35,7 +35,7 @@ export class IframePortletLegacyComponent implements OnInit, OnDestroy {
         public siteService: SiteService,
         private dotcmsEventsService: DotcmsEventsService,
         private dotIframeService: DotIframeService
-    ) {}
+    ) { }
 
     ngOnInit(): void {
         this.dotRouterService.portletReload$.subscribe((portletId: string) => {

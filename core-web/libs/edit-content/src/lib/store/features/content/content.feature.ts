@@ -204,7 +204,7 @@ export function withContent() {
                     pipe(
                         switchMap(({ inode, depth }) => {
                             patchState(store, { state: ComponentStatus.LOADING });
-
+                            console.log('🔍 Initializing existing content', { inode, depth });
                             return dotEditContentService.getContentById({ id: inode, depth }).pipe(
                                 switchMap((contentlet) => {
                                     const { contentType } = contentlet;
