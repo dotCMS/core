@@ -105,8 +105,6 @@ jobs:
       - name: 'Checkout repository'
         if: ${{ github.event.inputs.type == 'empty' && github.event.inputs.dry-run == 'false' }}
         uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.CI_MACHINE_TOKEN }}
 
       - uses: jfrog/setup-jfrog-cli@v4
         env:
