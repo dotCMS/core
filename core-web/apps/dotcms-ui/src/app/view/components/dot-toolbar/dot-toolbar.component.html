@@ -1,28 +1,6 @@
 <p-toolbar>
     <div class="p-toolbar-group-left">
-        <div class="toolbar__dot-wrapper">
-            <div class="toolbar__button-wrapper">
-                <p-button
-                    (click)="handleMainButtonClick()"
-                    icon="pi pi-bars"
-                    styleClass="p-button-rounded p-button-text" />
-            </div>
-            <div
-                [class.toolbar__logo-wrapper--collapsed]="dotNavigationService.collapsed$ | async"
-                [class.toolbar__logo-wrapper--whitelabel]="logo$ | async"
-                class="toolbar__logo-wrapper">
-                @let logo = logo$ | async;
-                @if (logo) {
-                    <span
-                        [style.background-image]="logo"
-                        class="toolbar__logo--whitelabel"></span>
-                } @else {
-                    <span class="toolbar__logo"></span>
-                }
-                <span class="toolbar__logo-bg"></span>
-            </div>
-        </div>
-        <dot-crumbtrail class="toolbar__crumbtrail"></dot-crumbtrail>
+        <dot-crumbtrail class="toolbar__crumbtrail" />
     </div>
     <div class="p-toolbar-group-right">
         <dot-site-selector

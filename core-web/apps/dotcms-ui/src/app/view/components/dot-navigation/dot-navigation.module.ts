@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
 import { RouterModule } from '@angular/router';
 
+import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotOverlayMaskModule } from '@components/_common/dot-overlay-mask/dot-overlay-mask.module';
@@ -17,6 +18,7 @@ import { DotNavigationService } from './services/dot-navigation.service';
 @NgModule({
     imports: [
         CommonModule,
+        ButtonModule,
         RouterModule,
         DotNavIconModule,
         DotIconModule,

@@ -3,14 +3,14 @@
 <dot-message-display></dot-message-display>
 
 <div class="layout">
-    <header class="layout__header">
-        <dot-toolbar></dot-toolbar>
-    </header>
     <div class="layout__content">
         <aside class="layout__sidebar">
             <dot-main-nav></dot-main-nav>
         </aside>
         <main class="layout__main">
+            <header class="layout__header">
+                <dot-toolbar></dot-toolbar>
+            </header>
             <router-outlet></router-outlet>
         </main>
     </div>

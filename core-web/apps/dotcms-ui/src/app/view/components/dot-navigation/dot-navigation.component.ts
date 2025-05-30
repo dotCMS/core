@@ -2,6 +2,7 @@ import { Component, HostBinding, HostListener, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 
 import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
+import { DotNavLogoService } from '@dotcms/app/api/services/dot-nav-logo/dot-nav-logo.service';
 import { DotMenu, DotMenuItem } from '@dotcms/dotcms-models';
 
 import { DotNavigationService } from './services/dot-navigation.service';
@@ -18,6 +19,8 @@ export class DotNavigationComponent {
      * This service is used to manage the navigation logic within the application.
      */
     readonly #dotNavigationService = inject(DotNavigationService);
+
+    readonly #dotNavLogoService = inject(DotNavLogoService);
 
     /**
      * A readonly instance of the IframeOverlayService injected into the component.
@@ -36,6 +39,8 @@ export class DotNavigationComponent {
     $menu = toSignal(this.#dotNavigationService.items$, {
         requireSync: true
     });
+
+    logo$ = this.#dotNavLogoService.navBarLogo$;
 
     /**
      * Signal indicating whether the navigation is collapsed.
@@ -95,5 +100,9 @@ export class DotNavigationComponent {
         if (this.$isCollapsed()) {
             this.#dotNavigationService.closeAllSections();
         }
+    }
+
+    handleMainButtonClick(): void {
+        this.#dotNavigationService.toggle();
     }
 }
