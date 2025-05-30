@@ -21,7 +21,7 @@ The `@dotcms/client` is a powerful JavaScript/TypeScript SDK designed to simplif
 ## Table of Contents
 
 -   [Prerequisites & Setup](#prerequisites--setup)
-    -   [Get a dotCMS Instance](#get-a-dotcms-instance)
+    -   [Get a dotCMS Environment](#get-a-dotcms-environment)
     -   [Create a dotCMS API Key](#create-a-dotcms-api-key)
     -   [Installation](#installation)
 -   [Quickstart](#quickstart)
@@ -45,7 +45,15 @@ The `@dotcms/client` is a powerful JavaScript/TypeScript SDK designed to simplif
 
 ## Prerequisites & Setup
 
-### Get a dotCMS Instance
+### Get a dotCMS Environment
+
+#### Version Compatibility
+
+-   **Recommended**: dotCMS Evergreen
+-   **Minimum**: dotCMS v25.05
+-   **Best Experience**: Latest Evergreen release
+
+#### Environment Setup
 
 **For Production Use:**
 
@@ -62,12 +70,6 @@ The `@dotcms/client` is a powerful JavaScript/TypeScript SDK designed to simplif
 
 -   🐳 [Docker setup guide](https://github.com/dotCMS/core/tree/main/docker/docker-compose-examples/single-node-demo-site)
 -   💻 [Local installation guide](https://dev.dotcms.com/docs/quick-start-guide)
-
-#### Version Requirements
-
--   **Recommended**: dotCMS Evergreen
--   **Minimum**: dotCMS v25.05
--   **Best Experience**: Latest Evergreen release
 
 ### Create a dotCMS API Key
 

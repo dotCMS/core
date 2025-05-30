@@ -14,18 +14,14 @@ The `@dotcms/angular` SDK is the DotCMS official Angular library. It empowers An
 -   [Quickstart: Render a Page with dotCMS](#quickstart-render-a-page-with-dotcms)
     -   [Example Project](#example-project-)
 -   [SDK Reference](#sdk-reference)
-    -   [Components](#components)
-        -   [DotCMSLayoutBody](#dotcmslayoutbody)
-        -   [DotCMSEditableText](#dotcmseditabletext)
-        -   [DotCMSBlockEditorRenderer](#dotcmsblockeditorrenderer)
-    -   [Directives](#directives)
-        -   [DotCMSShowWhen](#dotcmsshowwhen)
-    -   [Services](#services)
-        -   [DotCMSEditablePageService](#dotcmseditablepageservice)
+    -   [DotCMSLayoutBody](#dotcmslayoutbody)
+    -   [DotCMSEditableText](#dotcmseditabletext)
+    -   [DotCMSBlockEditorRenderer](#dotcmsblockeditorrenderer)
+    -   [DotCMSShowWhen](#dotcmsshowwhen)
+    -   [DotCMSEditablePageService](#dotcmseditablepageservice)
 -   [Troubleshooting](#troubleshooting)
     -   [Common Issues & Solutions](#common-issues--solutions)
     -   [Debugging Tips](#debugging-tips)
-    -   [Version Compatibility](#version-compatibility)
     -   [Still Having Issues?](#still-having-issues)
 -   [dotCMS Support](#dotcms-support)
 -   [How To Contribute](#how-to-contribute)
@@ -33,15 +29,15 @@ The `@dotcms/angular` SDK is the DotCMS official Angular library. It empowers An
 
 ## Prerequisites & Setup
 
-### dotCMS Instance
+### Get a dotCMS Environment
 
-#### Version Requirements
+#### Version Compatibility
 
 -   **Recommended**: dotCMS Evergreen
 -   **Minimum**: dotCMS v25.05
 -   **Best Experience**: Latest Evergreen release
 
-#### Getting an Instance
+#### Environment Setup
 
 **For Production Use:**
 
@@ -254,47 +250,19 @@ Looking to get started quickly? We've got you covered! Our [Angular starter proj
 
 ## SDK Reference
 
-All components, directives, and services should be imported from `@dotcms/angular/next`:
+All components, directives, and services should be imported from `@dotcms/angular/next`.
 
-### Components
+### DotCMSLayoutBody
 
-#### DotCMSLayoutBody
-
-**Overview**: Component used to render the layout for a DotCMS page, supporting both production and development modes.
-
-**Inputs**:
+`DotCMSLayoutBody` is a component used to render the layout for a DotCMS page, supporting both production and development modes.
 
 | Input        | Type                     | Required | Default        | Description                                    |
 |--------------|--------------------------|----------|----------------|------------------------------------------------|
 | `page`       | `DotCMSPageAsset`       | ✅       | -              | The page asset containing the layout to render |
-| `components` | `DotCMSPageComponent`    | ✅       | `{}`           | Map of content type → Angular component        |
-| `mode`       | `DotCMSPageRendererMode` | ❌       | `'production'` | Rendering mode ('production' or 'development') |
+| `components` | `DotCMSPageComponent`    | ✅       | `{}`           | [Map of content type → Angular component](#component-mapping)        |
+| `mode`       | `DotCMSPageRendererMode` | ❌       | `'production'` | [Rendering mode ('production' or 'development')](#layout-body-modes) |
 
-**Layout Body Modes**:
-
--   `production`: Performance-optimized mode that only renders content with explicitly mapped components, leaving unmapped content empty.
--   `development`: Debug-friendly mode that renders default components for unmapped content types and provides visual indicators and console logs for empty containers and missing mappings.
-
-**Component Mapping**:
-
-The `DotCMSLayoutBody` component uses a `components` input to map content type variable names to Angular components. This allows you to render different components for different content types. Example:
-
-```typescript
-const DYNAMIC_COMPONENTS = {
-    Blog: import('./blog.component').then((c) => c.BlogComponent),
-    Product: import('./product.component').then((c) => c.ProductComponent)
-};
-```
-
--   Keys (e.g., `Blog`, `Product`): Match your [content type variable names](https://dev.dotcms.com/docs/content-types#VariableNames) in dotCMS
--   Values: Dynamic imports of your Angular components that render each content type
--   Supports lazy loading through dynamic imports
--   Components must be standalone or declared in a module
-
-> [!TIP]
-> Always use the exact content type variable name from dotCMS as the key. You can find this in the Content Types section of your dotCMS admin panel.
-
-**Usage**:
+#### Usage
 
 ```typescript
 import { Component, signal } from '@angular/core';
@@ -323,11 +291,33 @@ export class MyPageComponent {
 }
 ```
 
-#### DotCMSEditableText
+#### Layout Body Modes
 
-**Overview**: Component for inline editing of text fields in dotCMS, supporting plain text, text area, and WYSIWYG fields.
+-   `production`: Performance-optimized mode that only renders content with explicitly mapped components, leaving unmapped content empty.
+-   `development`: Debug-friendly mode that renders default components for unmapped content types and provides visual indicators and console logs for empty containers and missing mappings.
 
-**Inputs**:
+#### Component Mapping
+
+The `DotCMSLayoutBody` component uses a `components` input to map content type variable names to Angular components. This allows you to render different components for different content types. Example:
+
+```typescript
+const DYNAMIC_COMPONENTS = {
+    Blog: import('./blog.component').then((c) => c.BlogComponent),
+    Product: import('./product.component').then((c) => c.ProductComponent)
+};
+```
+
+-   Keys (e.g., `Blog`, `Product`): Match your [content type variable names](https://dev.dotcms.com/docs/content-types#VariableNames) in dotCMS
+-   Values: Dynamic imports of your Angular components that render each content type
+-   Supports lazy loading through dynamic imports
+-   Components must be standalone or declared in a module
+
+> [!TIP]
+> Always use the exact content type variable name from dotCMS as the key. You can find this in the Content Types section of your dotCMS admin panel.
+
+### DotCMSEditableText
+
+`DotCMSEditableText` is a component for inline editing of text fields in dotCMS, supporting plain text, text area, and WYSIWYG fields.
 
 | Input        | Type                | Required | Description                                                                                                                                                                                                                 |
 |--------------|---------------------|----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -336,7 +326,7 @@ export class MyPageComponent {
 | `mode`       | `'plain' \| 'full'` | ❌       | `plain` (default): Support text editing. Does not show style controls. <br/> `full`: Enables a bubble menu with style options. This mode only works with [`WYSIWYG` fields](https://dev.dotcms.com/docs/the-wysiwyg-field). |
 | `format`     | `'text' \| 'html'`  | ❌       | `text` (default): Renders HTML tags as plain text <br/> `html`: Interprets and renders HTML markup                                                                                                                          |
 
-**Usage**:
+#### Usage
 
 ```typescript
 import { Component, Input } from '@angular/core';
@@ -374,16 +364,14 @@ export class MyBannerComponent {
 }
 ```
 
-**Editor Integration**:
+#### Editor Integration
 
 -   Detects UVE edit mode and enables inline TinyMCE editing
 -   Triggers a `Save` [workflow action](https://dev.dotcms.com/docs/workflows) on blur without needing full content dialog.
 
-#### DotCMSBlockEditorRenderer
+### DotCMSBlockEditorRenderer
 
-**Overview**: Component for rendering [Block Editor](https://dev.dotcms.com/docs/block-editor) content from dotCMS with support for custom block renderers.
-
-**Inputs**:
+`DotCMSBlockEditorRenderer` is a component for rendering [Block Editor](https://dev.dotcms.com/docs/block-editor) content from dotCMS with support for custom block renderers.
 
 | Input             | Type                 | Required | Description                                                                                                |
 |-------------------|----------------------|----------|------------------------------------------------------------------------------------------------------------|
@@ -392,7 +380,7 @@ export class MyBannerComponent {
 | `className`       | `string`            | ❌       | CSS class to apply to the container                                                                        |
 | `style`           | `CSSProperties`      | ❌       | Inline styles for the container                                                                            |
 
-**Usage**:
+#### Usage
 
 ```typescript
 import { DotCMSBasicContentlet } from '@dotcms/types';
@@ -418,7 +406,7 @@ export class MyBannerComponent {
 }
 ```
 
-**Recommendations**:
+#### Recommendations
 
 -   Should not be used with [`DotCMSEditableText`](#dotcmseditabletext)
 -   Take into account the CSS cascade can affect the look and feel of your blocks.
@@ -426,19 +414,16 @@ export class MyBannerComponent {
 
 📘 For advanced examples, customization options, and best practices, refer to the [DotCMSBlockEditorRenderer README](https://github.com/dotCMS/core/tree/master/core-web/libs/sdk/angular/src/lib/components/DotCMSBlockEditorRenderer).
 
-### Directives
 
-#### DotCMSShowWhen
+### DotCMSShowWhen
 
-**Overview**: Directive for conditionally showing content based on the current UVE mode. Useful for mode-based behaviors outside of render logic.
-
-**Input**:
+`DotCMSShowWhen` is a `directive` for conditionally showing content based on the current UVE mode. Useful for mode-based behaviors outside of render logic.
 
 | Input  | Type       | Required | Description                                                                                                                                                                                                         |
 |--------|------------|----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `when` | `UVE_MODE` | ✅       | The `UVE` mode when content should be displayed: <br/> `UVE_MODE.EDIT`: Only visible in edit mode <br/> `UVE_MODE.PREVIEW`: Only visible in preview mode <br/> `UVE_MODE.PUBLISHED`: Only visible in published mode |
 
-**Usage**:
+#### Usage
 
 ```typescript
 import { UVE_MODE } from '@dotcms/types';
@@ -456,13 +441,15 @@ export class YourComponent {}
 
 📚 Learn more about the `UVE_MODE` enum in the [dotCMS UVE Package Documentation](https://dev.dotcms.com/docs/uve).
 
-### Services
-
-#### DotCMSEditablePageService
+### DotCMSEditablePageService
 
 The `DotCMSEditablePageService` enables real-time page updates when using the Universal Visual Editor. It provides a single method `listen` that returns an Observable of page changes.
 
-**Service Lifecycle & Operations**
+| Param          | Type                 | Required | Description                                   |
+|----------------|----------------------|----------|-----------------------------------------------|
+| `pageResponse` | `DotCMSPageResponse` | ✅       | The page data object from `client.page.get()` |
+
+#### Service Lifecycle & Operations
 
 When you use the `listen` method, the service:
 
@@ -476,13 +463,7 @@ When you use the `listen` method, the service:
     - Components are moved
 5. Cleans up all listeners and connections on destroy
 
-**Parameters**:
-
-| Param          | Type                 | Required | Description                                   |
-|----------------|----------------------|----------|-----------------------------------------------|
-| `pageResponse` | `DotCMSPageResponse` | ✅       | The page data object from `client.page.get()` |
-
-**Usage**:
+#### Usage
 
 ```typescript
 import { Subscription } from 'rxjs';
@@ -611,15 +592,6 @@ export class PageComponent implements OnInit, OnDestroy {
     - Use browser dev tools to monitor API calls
     - Check for 401/403 errors (auth issues)
     - Verify asset loading paths
-
-### Version Compatibility
-
-| dotCMS Version | SDK Version | Angular Version |
-|----------------|-------------|-----------------|
-| 25.05+         | @next       | 19.x            |
-
-> [!TIP]
-> Always check version compatibility when upgrading any component of your stack.
 
 ### Still Having Issues?
 
