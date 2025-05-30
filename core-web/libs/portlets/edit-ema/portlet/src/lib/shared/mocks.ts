@@ -289,10 +289,7 @@ export const dotPageContainerStructureMock: DotCMSPageAssetContainers = {
             '123': [
                 {
                     baseType: '123',
-                    content: 'something',
                     contentType: '123',
-                    dateCreated: '123',
-                    dateModifed: '123',
                     folder: '123',
                     host: '123',
                     identifier: '123',
@@ -319,15 +316,12 @@ export const dotPageContainerStructureMock: DotCMSPageAssetContainers = {
                 },
                 {
                     baseType: '456',
-                    content: 'something',
                     contentType: '456',
-                    dateCreated: '456',
                     folder: '456',
                     identifier: '456',
                     inode: '456',
                     languageId: 456,
                     live: false,
-                    dateModifed: '456',
                     modDate: '456',
                     host: '456',
                     working: false,
@@ -351,11 +345,8 @@ export const dotPageContainerStructureMock: DotCMSPageAssetContainers = {
             '456': [
                 {
                     contentType: '123',
-                    content: 'something',
-                    dateCreated: '123',
                     baseType: '123',
                     folder: '123',
-                    dateModifed: '123',
                     identifier: '123',
                     host: '123',
                     live: false,

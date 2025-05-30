@@ -2,7 +2,7 @@ import { Params } from '@angular/router';
 
 import { CurrentUser } from '@dotcms/dotcms-js';
 import { DotContainer, DotDevice, DotExperiment, DotExperimentStatus } from '@dotcms/dotcms-models';
-import { DotCMSPage, UVE_MODE } from '@dotcms/types';
+import { DotCMSPage, DotCMSViewAsPersona, UVE_MODE } from '@dotcms/types';
 
 import {
     deleteContentletFromContainer,
@@ -341,13 +341,13 @@ describe('utils functions', () => {
             const personalization = getPersonalization({
                 contentType: 'persona',
                 keyTag: 'adminUser'
-            });
+            } as DotCMSViewAsPersona);
 
             expect(personalization).toBe('dot:persona:adminUser');
         });
 
         it('should return the correct personalization when persona does not exist', () => {
-            const personalization = getPersonalization({});
+            const personalization = getPersonalization({} as DotCMSViewAsPersona);
             expect(personalization).toBe('dot:default');
         });
     });
