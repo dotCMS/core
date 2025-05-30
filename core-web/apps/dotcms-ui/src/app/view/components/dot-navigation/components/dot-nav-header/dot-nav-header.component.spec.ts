@@ -285,13 +285,6 @@ describe('DotNavHeaderComponent', () => {
             expect(logoWrapper).toBeTruthy();
         });
 
-        it('should have correct button wrapper structure', () => {
-            const buttonWrapper = spectator.query('.dot-nav__button-wrapper');
-            const button = buttonWrapper?.querySelector('p-button');
-
-            expect(button).toBeTruthy();
-        });
-
         it('should use template variables correctly', () => {
             // The template uses @let variables for isCollapsed and logo
             // We can verify they work by checking the rendered content
@@ -350,7 +343,7 @@ describe('DotNavHeaderComponent', () => {
         it('should have accessible button element', () => {
             const toggleButton = spectator.query(byTestId('dot-nav-header-toggle-button'));
             expect(toggleButton).toBeTruthy();
-            expect(toggleButton.tagName.toLowerCase()).toBe('p-button');
+            expect(toggleButton.tagName.toLowerCase()).toBe('button');
         });
 
         it('should maintain button functionality across logo changes', () => {
