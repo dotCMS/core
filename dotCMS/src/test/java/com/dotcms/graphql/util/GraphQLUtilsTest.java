@@ -14,37 +14,42 @@ import static org.junit.jupiter.api.Assertions.*;
 class GraphQLUtilsTest {
 
     /**
-     * Verifies that isRedirectPage returns true when the contentlet is null.
+     * Verifies that isRedirectPage returns false when the contentlet has no content type but redirect flag is false.
      */
     @Test
-    void returnsTrue_whenContentletIsNull() {
-        DotGraphQLContext ctx = Mockito.mock(DotGraphQLContext.class);
-
-        assertTrue(GraphQLUtils.isRedirectPage(null, ctx));
-    }
-
-    /**
-     * Verifies that isRedirectPage returns true when the contentlet has no content type.
-     */
-    @Test
-    void returnsTrue_whenContentletHasNoContentType() {
+    void returnsFalse_whenContentletHasNoContentType_andNoRedirectFlag() {
         Contentlet contentlet = Mockito.mock(Contentlet.class);
         Mockito.when(contentlet.getContentType()).thenReturn(null);
 
         DotGraphQLContext ctx = Mockito.mock(DotGraphQLContext.class);
+        Mockito.when(ctx.getParam("isVanityRedirect")).thenReturn(false);
 
-        assertTrue(GraphQLUtils.isRedirectPage(contentlet, ctx));
+        assertFalse(GraphQLUtils.isRedirectPage(contentlet, ctx));
     }
 
     /**
-     * Verifies that isRedirectPage returns true when the context contains the isVanityRedirect flag set to true.
+     * Verifies that isRedirectPage returns false when the contentlet has a content type and redirect flag is true.
      */
     @Test
-    void returnsTrue_whenContextIndicatesVanityRedirect() {
+    void returnsFalse_whenContentletIsValid_andRedirectFlagIsTrue() {
         Contentlet contentlet = Mockito.mock(Contentlet.class);
         ContentType type = Mockito.mock(ContentType.class);
-
         Mockito.when(contentlet.getContentType()).thenReturn(type);
+
+        DotGraphQLContext ctx = Mockito.mock(DotGraphQLContext.class);
+        Mockito.when(ctx.getParam("isVanityRedirect")).thenReturn(true);
+
+        assertFalse(GraphQLUtils.isRedirectPage(contentlet, ctx));
+    }
+
+    /**
+     * Verifies that isRedirectPage returns true when the contentlet has no content type and redirect flag is true.
+     */
+    @Test
+    void returnsTrue_whenContentletHasNoContentType_andRedirectFlagIsTrue() {
+        Contentlet contentlet = Mockito.mock(Contentlet.class);
+        Mockito.when(contentlet.getContentType()).thenReturn(null);
+
         DotGraphQLContext ctx = Mockito.mock(DotGraphQLContext.class);
         Mockito.when(ctx.getParam("isVanityRedirect")).thenReturn(true);
 
@@ -52,14 +57,14 @@ class GraphQLUtilsTest {
     }
 
     /**
-     * Verifies that isRedirectPage returns false when the contentlet is valid and there is no redirect flag in the context.
+     * Verifies that isRedirectPage returns false when the contentlet is valid and redirect flag is false.
      */
     @Test
-    void returnsFalse_whenContentletIsValidAndNoRedirectInContext() {
+    void returnsFalse_whenContentletIsValid_andNoRedirectFlag() {
         Contentlet contentlet = Mockito.mock(Contentlet.class);
         ContentType type = Mockito.mock(ContentType.class);
-
         Mockito.when(contentlet.getContentType()).thenReturn(type);
+
         DotGraphQLContext ctx = Mockito.mock(DotGraphQLContext.class);
         Mockito.when(ctx.getParam("isVanityRedirect")).thenReturn(false);
 
