@@ -1,4 +1,9 @@
-import { Contentlet, DotCMSUVEAction, DotCMSBasicContentlet } from '@dotcms/types';
+import {
+    Contentlet,
+    DotCMSUVEAction,
+    DotCMSBasicContentlet,
+    DotCMSPageResponse
+} from '@dotcms/types';
 import { DotCMSReorderMenuConfig } from '@dotcms/types/internal';
 
 import {
@@ -10,6 +15,10 @@ import {
 } from './public';
 
 import * as utils from '../../script/utils';
+
+interface TestContentlet extends DotCMSBasicContentlet {
+    testField: string;
+}
 
 describe('UVE Public Functions', () => {
     let postMessageSpy: jest.SpyInstance;
@@ -130,14 +139,14 @@ describe('UVE Public Functions', () => {
 
         it('should call setClientIsReady with graphql config when provided', () => {
             const setClientIsReadySpy = jest.spyOn(utils, 'setClientIsReady');
-            const config = { graphql: { query: '{ test }', variables: {} } };
+            const config = { graphql: { query: '{ test }', variables: {} } } as DotCMSPageResponse;
             initUVE(config);
             expect(setClientIsReadySpy).toHaveBeenCalledWith(config);
         });
 
         it('should call setClientIsReady with params config when provided', () => {
             const setClientIsReadySpy = jest.spyOn(utils, 'setClientIsReady');
-            const config = { params: { depth: '1' } };
+            const config = { params: { depth: '1' } } as unknown as DotCMSPageResponse;
             initUVE(config);
             expect(setClientIsReadySpy).toHaveBeenCalledWith(config);
         });
@@ -202,7 +211,7 @@ describe('UVE Public Functions', () => {
                 identifier: 'test-identifier',
                 contentType: 'test-content-type',
                 testField: 'test content'
-            } as unknown as DotCMSBasicContentlet;
+            } as unknown as TestContentlet;
 
             const fieldName = 'testField';
 
@@ -213,7 +222,7 @@ describe('UVE Public Functions', () => {
                     inode: contentlet.inode,
                     language: contentlet.languageId,
                     contentType: contentlet.contentType,
-                    content: contentlet['testField']
+                    content: contentlet.testField
                 }
             };
 
@@ -237,7 +246,7 @@ describe('UVE Public Functions', () => {
 
             const fieldName = 'nonExistentField';
 
-            enableBlockEditorInline(contentlet, fieldName);
+            enableBlockEditorInline(contentlet, fieldName as keyof DotCMSBasicContentlet);
 
             expect(consoleErrorSpy).toHaveBeenCalledWith(
                 `Contentlet ${contentlet.identifier} does not have field ${fieldName}`
@@ -249,7 +258,10 @@ describe('UVE Public Functions', () => {
             const contentlet = undefined;
             const fieldName = 'testField';
 
-            enableBlockEditorInline(contentlet as unknown as DotCMSBasicContentlet, fieldName);
+            enableBlockEditorInline(
+                contentlet as unknown as DotCMSBasicContentlet,
+                fieldName as keyof DotCMSBasicContentlet
+            );
 
             expect(consoleErrorSpy).toHaveBeenCalled();
             expect(postMessageSpy).not.toHaveBeenCalled();

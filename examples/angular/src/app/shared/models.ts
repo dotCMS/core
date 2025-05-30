@@ -1,6 +1,6 @@
 import {
     DotCMSComposedPageResponse,
-    DotcmsNavigationItem,
+    DotCMSNavigationItem,
     DotCMSExtendedPageResponse
 } from '@dotcms/types';
 
@@ -14,7 +14,7 @@ export type ComposedPageResponse<T extends DotCMSExtendedPageResponse> =
 
 export type PageState<T extends DotCMSExtendedPageResponse> = {
     pageResponse?: ComposedPageResponse<T> | null;
-    nav?: DotcmsNavigationItem;
+    nav?: DotCMSNavigationItem;
     error?: PageError;
     status: 'idle' | 'success' | 'error' | 'loading';
 };
