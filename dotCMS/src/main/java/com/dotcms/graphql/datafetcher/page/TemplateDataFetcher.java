@@ -1,6 +1,7 @@
 package com.dotcms.graphql.datafetcher.page;
 
 import com.dotcms.graphql.DotGraphQLContext;
+import com.dotcms.graphql.util.GraphQLUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionLevel;
 import com.dotmarketing.exception.DotDataException;
@@ -35,7 +36,7 @@ public class TemplateDataFetcher implements DataFetcher<Map<Object, Object>> {
             final User user = context.getUser();
             final Contentlet contentlet = environment.getSource();
 
-            if(null == contentlet.getContentType()) {
+            if(GraphQLUtils.isRedirectPage(contentlet, context)) {
                 return Collections.emptyMap();
             }
             final String pageModeAsString = (String) context.getParam("pageMode");

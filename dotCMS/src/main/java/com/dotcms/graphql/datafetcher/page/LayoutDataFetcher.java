@@ -1,6 +1,7 @@
 package com.dotcms.graphql.datafetcher.page;
 
 import com.dotcms.graphql.DotGraphQLContext;
+import com.dotcms.graphql.util.GraphQLUtils;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -27,7 +28,7 @@ public class LayoutDataFetcher implements DataFetcher<TemplateLayout> {
             final String pageModeAsString = (String) context.getParam("pageMode");
             final PageMode mode = PageMode.get(pageModeAsString);
 
-            if(null == page.getContentType()) {
+            if(GraphQLUtils.isRedirectPage(page, context)) {
                 return null;
             }
             Logger.debug(this, ()-> "Fetching layout for page: " + page.getIdentifier());

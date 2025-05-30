@@ -1,6 +1,7 @@
 package com.dotcms.graphql.datafetcher.page;
 
 import com.dotcms.graphql.DotGraphQLContext;
+import com.dotcms.graphql.util.GraphQLUtils;
 import com.dotcms.rendering.velocity.services.PageRenderUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -13,6 +14,8 @@ import com.dotmarketing.util.PageMode;
 import com.liferay.portal.model.User;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
+
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -29,8 +32,8 @@ public class ContainersDataFetcher implements DataFetcher<List<ContainerRaw>> {
             final String pageModeAsString = (String) context.getParam("pageMode");
             final String languageId = (String) context.getParam("languageId");
 
-            if(null == page.getContentType()) {
-                return null;
+            if(GraphQLUtils.isRedirectPage(page, context)) {
+                return Collections.emptyList();
             }
             final PageMode mode = PageMode.get(pageModeAsString);
             final HTMLPageAsset pageAsset = APILocator.getHTMLPageAssetAPI()

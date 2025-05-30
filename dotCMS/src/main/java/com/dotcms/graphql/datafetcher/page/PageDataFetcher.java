@@ -130,6 +130,7 @@ public class PageDataFetcher implements DataFetcher<Contentlet> {
                     final Contentlet emptyPage = new Contentlet();
                     emptyPage.setLanguageId(language.getId());
                     emptyPage.setHost(host.getIdentifier());
+                    context.addParam("vanityRedirect", true);
                     return emptyPage;
                 } else {
                     // For forwards, use the resolved URI
