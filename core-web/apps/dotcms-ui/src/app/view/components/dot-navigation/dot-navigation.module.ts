@@ -9,6 +9,7 @@ import { DotOverlayMaskModule } from '@components/_common/dot-overlay-mask/dot-o
 import { DotIconModule } from '@dotcms/ui';
 import { DotRandomIconPipeModule } from '@pipes/dot-radom-icon/dot-random-icon.pipe.module';
 
+import { DotNavHeaderComponent } from './components/dot-nav-header/dot-nav-header.component';
 import { DotNavIconModule } from './components/dot-nav-icon/dot-nav-icon.module';
 import { DotNavItemComponent } from './components/dot-nav-item/dot-nav-item.component';
 import { DotSubNavComponent } from './components/dot-sub-nav/dot-sub-nav.component';
@@ -26,7 +27,7 @@ import { DotNavigationService } from './services/dot-navigation.service';
         DotOverlayMaskModule,
         DotRandomIconPipeModule
     ],
-    declarations: [DotNavigationComponent, DotSubNavComponent, DotNavItemComponent],
+    declarations: [DotNavigationComponent, DotSubNavComponent, DotNavItemComponent, DotNavHeaderComponent],
     providers: [DotNavigationService],
     exports: [DotNavigationComponent]
 })
