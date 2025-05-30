@@ -27,6 +27,10 @@ public class LayoutDataFetcher implements DataFetcher<TemplateLayout> {
             final String pageModeAsString = (String) context.getParam("pageMode");
             final PageMode mode = PageMode.get(pageModeAsString);
 
+            if(null == page.getContentType()) {
+                return null;
+            }
+
             Logger.debug(this, ()-> "Fetching layout for page: " + page.getIdentifier());
             final HTMLPageAsset pageAsset = APILocator.getHTMLPageAssetAPI()
                     .fromContentlet(page);

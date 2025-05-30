@@ -29,6 +29,9 @@ public class ContainersDataFetcher implements DataFetcher<List<ContainerRaw>> {
             final String pageModeAsString = (String) context.getParam("pageMode");
             final String languageId = (String) context.getParam("languageId");
 
+            if(null == page.getContentType()) {
+                return null;
+            }
             final PageMode mode = PageMode.get(pageModeAsString);
             final HTMLPageAsset pageAsset = APILocator.getHTMLPageAssetAPI()
                     .fromContentlet(page);

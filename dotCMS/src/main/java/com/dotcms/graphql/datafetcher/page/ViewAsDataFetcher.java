@@ -25,6 +25,9 @@ public class ViewAsDataFetcher implements DataFetcher<ViewAsPageStatus> {
             final User user = context.getUser();
             final Contentlet contentlet = environment.getSource();
 
+            if(null == contentlet.getContentType()) {
+                return null;
+            }
 
             final String pageModeAsString = (String) context.getParam("pageMode");
 
