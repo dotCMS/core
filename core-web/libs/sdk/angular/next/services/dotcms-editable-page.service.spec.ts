@@ -74,7 +74,7 @@ describe('DotCMSEditablePageService', () => {
 
         it('should return observable with the initial page asset when UVE state is false', () => {
             (getUVEState as jest.Mock).mockReturnValue(false);
-            let result: DotCMSPageResponse | null = null;
+            let result: DotCMSPageResponse | undefined = undefined;
 
             service.listen(mockPageAsset).subscribe((res) => {
                 result = res;
@@ -97,7 +97,7 @@ describe('DotCMSEditablePageService', () => {
                 return { unsubscribe: unsubscribeMock };
             });
 
-            const emittedValues: Array<DotCMSPageResponse | null> = [];
+            const emittedValues: Array<DotCMSPageResponse | undefined> = [];
 
             service.listen(mockPageAsset).subscribe((value) => {
                 emittedValues.push(value);
@@ -113,7 +113,7 @@ describe('DotCMSEditablePageService', () => {
             service.listen();
 
             expect(initUVE).toHaveBeenCalled();
-            expect(updateNavigation).toHaveBeenCalledWith('/');
+            expect(updateNavigation).not.toHaveBeenCalled();
         });
     });
 });

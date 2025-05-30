@@ -14,6 +14,7 @@ import com.dotcms.rest.api.DotRestInstanceProvider;
 import com.dotcms.rest.api.v1.authentication.IncorrectPasswordException;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.rest.api.v1.site.ResponseSiteVariablesEntityView;
+import com.dotcms.rest.api.v1.workflow.BulkActionsResultView;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
@@ -65,6 +66,7 @@ import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.NotFoundException;
+import javax.ws.rs.PATCH;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -865,6 +867,175 @@ public class UserResource implements Serializable {
 		throw new ForbiddenException(USER_MSG + modUser.getUserId() + " does not have permissions to update users");
 	} // create.
 
+	/**
+     * Activate an existing user.
+     *
+     * Only Admin User or have access to Users and Roles Portlets can update an existing user
+     *
+     * @param httpServletRequest
+     * @return User Updated
+     * @throws Exception
+     */
+    @Operation(summary = "Active an existing user.",
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation =
+                                            ResponseUserMapEntityView.class)),
+                            description = "If success returns a map with the user + user id."),
+                    @ApiResponse(
+                            responseCode = "403",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation =
+                                            ResponseUserMapEntityView.class)),
+                            description = "If the user is not an admin or access to the role + user layouts or does have permission, it will return a 403."),
+                    @ApiResponse(
+                            responseCode = "404",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation =
+                                            ResponseUserMapEntityView.class)),
+                            description = "If the user to update does not exist"),
+                    @ApiResponse(
+                            responseCode = "400",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation =
+                                            ResponseUserMapEntityView.class)),
+                            description = "If the user information is not valid"),
+            })
+    @PATCH
+    @Path("/activate/{userId}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final ResponseUserMapEntityView active(@Context final HttpServletRequest httpServletRequest,
+                                 @Context final HttpServletResponse httpServletResponse,
+                                 @PathParam("userId") @Parameter(
+                                         required = true,
+                                         description = "Identifier of an user.\n\n" +
+                                                 "Example value: `b9d89c80-3d88-4311-8365-187323c96436` ",
+                                         schema = @Schema(type = "string"))
+                                 final String userId)
+            throws Exception {
+
+        final User modUser = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(httpServletRequest, httpServletResponse)
+                .rejectWhenNoUser(true)
+                .init().getUser();
+
+        Logger.debug(this, ()-> "Activating user: " + modUser.getUserId());
+
+        final boolean isRoleAdministrator = modUser.isAdmin() ||
+                (
+                        APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.ROLES.toString(), modUser) &&
+                                APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.USERS.toString(), modUser)
+                );
+
+        if (isRoleAdministrator) {
+
+            final User userToUpdated = this.userAPI.loadUserById(userId);
+            if (Objects.isNull(userToUpdated)) {
+
+                throw new NoSuchUserException("User with id " + userId + " does not exist");
+            }
+
+            userToUpdated.setActive(true);
+            this.userAPI.save(userToUpdated, modUser, false);
+
+            return new ResponseUserMapEntityView(Map.of(USER_ID, userToUpdated.getUserId(),
+                    "user", userToUpdated.toMap())); // 200
+        }
+
+        throw new ForbiddenException(USER_MSG + modUser.getUserId() + " does not have permissions to update users");
+    } // active.
+
+    /**
+     * Deactivate an existing user.
+     *
+     * Only Admin User or have access to Users and Roles Portlets can update an existing user
+     *
+     * @param httpServletRequest
+     * @return User Updated
+     * @throws Exception
+     */
+    @Operation(summary = "Deactivate an existing user.",
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation =
+                                            ResponseUserMapEntityView.class)),
+                            description = "If success returns a map with the user + user id."),
+                    @ApiResponse(
+                            responseCode = "403",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation =
+                                            ResponseUserMapEntityView.class)),
+                            description = "If the user is not an admin or access to the role + user layouts or does have permission, it will return a 403."),
+                    @ApiResponse(
+                            responseCode = "404",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation =
+                                            ResponseUserMapEntityView.class)),
+                            description = "If the user to update does not exist"),
+                    @ApiResponse(
+                            responseCode = "400",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation =
+                                            ResponseUserMapEntityView.class)),
+                            description = "If the user information is not valid"),
+            })
+    @PATCH
+    @Path("/deactivate/{userId}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final ResponseUserMapEntityView deactivate(@Context final HttpServletRequest httpServletRequest,
+                                                  @Context final HttpServletResponse httpServletResponse,
+                                                  @PathParam("userId") @Parameter(
+                                                          required = true,
+                                                          description = "Identifier of an user.\n\n" +
+                                                                  "Example value: `b9d89c80-3d88-4311-8365-187323c96436` ",
+                                                          schema = @Schema(type = "string"))
+                                                  final String userId)
+            throws Exception {
+
+        final User modUser = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(httpServletRequest, httpServletResponse)
+                .rejectWhenNoUser(true)
+                .init().getUser();
+
+        Logger.debug(this, ()-> "Deactivating user: " + modUser.getUserId());
+
+        final boolean isRoleAdministrator = modUser.isAdmin() ||
+                (
+                        APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.ROLES.toString(), modUser) &&
+                                APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.USERS.toString(), modUser)
+                );
+
+        if (isRoleAdministrator) {
+
+            final User userToUpdated = this.userAPI.loadUserById(userId);
+            if (Objects.isNull(userToUpdated)) {
+
+                throw new NoSuchUserException("User with id " + userId + " does not exist");
+            }
+
+            userToUpdated.setActive(false);
+            this.userAPI.save(userToUpdated, modUser, false);
+
+            return new ResponseUserMapEntityView(Map.of(USER_ID, userToUpdated.getUserId(),
+                    "user", userToUpdated.toMap())); // 200
+        }
+
+        throw new ForbiddenException(USER_MSG + modUser.getUserId() + " does not have permissions to update users");
+    } // deactivate.
+
+
 	@WrapInTransaction
 	private User updateUser(final User modUser, final HttpServletRequest request,
 							final UserForm updateUserForm) throws DotDataException, DotSecurityException,
@@ -1068,5 +1239,5 @@ public class UserResource implements Serializable {
 
 			throw new ForbiddenException(USER_MSG + modUser.getUserId() + " does not have permissions to update users");
 		}
-	} // active.
+	} // delete.
 }
