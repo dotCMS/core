@@ -1,0 +1,25 @@
+@let isCollapsed = $isCollapsed();
+@let logo = $logo();
+
+<div class="dot-nav__header">
+    <div class="dot-nav__button-wrapper">
+        <button
+            (click)="toggle.emit()"
+            icon="pi pi-bars"
+            pButton
+            class="toggle-button p-button-icon-only p-button-rounded"
+            data-testid="dot-nav-header-toggle-button"></button>
+    </div>
+    @if (!isCollapsed) {
+        <div class="dot-nav__logo-wrapper" [class.whitelabel]="logo">
+            @if (logo) {
+                <span
+                    data-testid="whitelabel-logo"
+                    [style.background-image]="logo"
+                    class="dot-nav__logo--whitelabel"></span>
+            } @else {
+                <span data-testid="default-logo" class="dot-nav__logo--default"></span>
+            }
+        </div>
+    }
+</div>

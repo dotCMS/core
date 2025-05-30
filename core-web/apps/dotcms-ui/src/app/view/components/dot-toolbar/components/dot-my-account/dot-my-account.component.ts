@@ -1,6 +1,5 @@
 import { Subject } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -55,7 +54,6 @@ enum FormStatus {
     templateUrl: 'dot-my-account.component.html',
     standalone: true,
     imports: [
-        CommonModule,
         ReactiveFormsModule,
         FormsModule,
         ButtonModule,

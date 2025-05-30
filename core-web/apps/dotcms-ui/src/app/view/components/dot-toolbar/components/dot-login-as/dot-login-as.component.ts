@@ -1,6 +1,5 @@
 import { Subject } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -41,7 +40,6 @@ import { DotMessagePipe } from '@dotcms/ui';
     changeDetection: ChangeDetectionStrategy.OnPush,
     standalone: true,
     imports: [
-        CommonModule,
         ReactiveFormsModule,
         DialogModule,
         ButtonModule,

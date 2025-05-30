@@ -12,7 +12,7 @@ export class SideMenuPage {
   }
 
   async expandMenu() {
-    const expandBtn = this.page.locator(".toolbar__button-wrapper p-button");
+    const expandBtn = this.page.getByTestId("dot-nav-header-toggle-button");
     await expect(expandBtn).toBeVisible();
     await expandBtn.click();
   }
