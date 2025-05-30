@@ -363,8 +363,7 @@ const filtered = await client.content
         qb.field('title').contains('dotCMS').and().field('publishDate').greaterThan('2023-01-01')
     )
     .limit(5)
-    .sortBy([{ field: 'publishDate', direction: 'desc' }])
-    .fetch();
+    .sortBy([{ field: 'publishDate', direction: 'desc' }]);
 ```
 
 #### Search and Paginate Product Results by Title and Price
