@@ -6,6 +6,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
+import static com.dotcms.graphql.util.GraphQLUtils.IS_VANITY_REDIRECT_PARAM;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -22,7 +23,7 @@ class GraphQLUtilsTest {
         Mockito.when(contentlet.getContentType()).thenReturn(null);
 
         DotGraphQLContext ctx = Mockito.mock(DotGraphQLContext.class);
-        Mockito.when(ctx.getParam("isVanityRedirect")).thenReturn(false);
+        Mockito.when(ctx.getParam(IS_VANITY_REDIRECT_PARAM)).thenReturn(false);
 
         assertFalse(GraphQLUtils.isRedirectPage(contentlet, ctx));
     }
@@ -37,7 +38,7 @@ class GraphQLUtilsTest {
         Mockito.when(contentlet.getContentType()).thenReturn(type);
 
         DotGraphQLContext ctx = Mockito.mock(DotGraphQLContext.class);
-        Mockito.when(ctx.getParam("isVanityRedirect")).thenReturn(true);
+        Mockito.when(ctx.getParam(IS_VANITY_REDIRECT_PARAM)).thenReturn(true);
 
         assertFalse(GraphQLUtils.isRedirectPage(contentlet, ctx));
     }
@@ -51,7 +52,7 @@ class GraphQLUtilsTest {
         Mockito.when(contentlet.getContentType()).thenReturn(null);
 
         DotGraphQLContext ctx = Mockito.mock(DotGraphQLContext.class);
-        Mockito.when(ctx.getParam("isVanityRedirect")).thenReturn(true);
+        Mockito.when(ctx.getParam(IS_VANITY_REDIRECT_PARAM)).thenReturn(true);
 
         assertTrue(GraphQLUtils.isRedirectPage(contentlet, ctx));
     }
@@ -66,7 +67,7 @@ class GraphQLUtilsTest {
         Mockito.when(contentlet.getContentType()).thenReturn(type);
 
         DotGraphQLContext ctx = Mockito.mock(DotGraphQLContext.class);
-        Mockito.when(ctx.getParam("isVanityRedirect")).thenReturn(false);
+        Mockito.when(ctx.getParam(IS_VANITY_REDIRECT_PARAM)).thenReturn(false);
 
         assertFalse(GraphQLUtils.isRedirectPage(contentlet, ctx));
     }
