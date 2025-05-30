@@ -8,23 +8,6 @@
     display: block;
     height: 100%;
     line-height: 1.5;
-
-    ::ng-deep {
-        .dot-nav__button-wrapper {
-            .p-button-icon-only.p-button {
-                .p-button-icon.pi {
-                    color: $white;
-                }
-                &:hover {
-                    background-color: $color-palette-white-op-30;
-                }
-
-                &:focus {
-                    outline: none;
-                }
-            }
-        }
-    }
 }
 
 dot-nav-item {
