@@ -69,7 +69,7 @@ describe('DotToolbarComponent', () => {
         declarations: [
             MockComponent(DotToolbarNotificationsComponent),
             MockComponent(DotCrumbtrailComponent),
-            MockComponent(DotSiteSelectorComponent),
+            MockComponent(DotSiteSelectorComponent)
         ],
         providers: [
             provideHttpClient(),

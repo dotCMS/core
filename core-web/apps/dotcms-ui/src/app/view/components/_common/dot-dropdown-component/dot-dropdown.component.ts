@@ -27,7 +27,7 @@ import {
     selector: 'dot-dropdown-component',
     styleUrls: ['./dot-dropdown.component.scss'],
     templateUrl: 'dot-dropdown.component.html',
-    changeDetection: ChangeDetectionStrategy.OnPush,
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotDropdownComponent {
     /** Reference to the component's DOM element for click detection */
