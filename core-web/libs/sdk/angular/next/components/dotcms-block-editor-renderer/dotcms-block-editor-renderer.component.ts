@@ -43,6 +43,8 @@ export type CustomRenderer = Record<string, DynamicComponentEntity>;
 export class DotCMSBlockEditorRendererComponent {
     @Input() blocks!: BlockEditorContent;
     @Input() customRenderers: CustomRenderer | undefined;
+    @Input() class: string | undefined;
+    @Input() style: string | Record<string, string> | undefined;
 
     $blockEditorState = signal<BlockEditorState>({ error: null });
     $isInEditMode = signal(getUVEState()?.mode === UVE_MODE.EDIT);
