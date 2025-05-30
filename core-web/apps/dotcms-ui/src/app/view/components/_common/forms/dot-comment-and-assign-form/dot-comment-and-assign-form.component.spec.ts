@@ -21,7 +21,7 @@ import { DotCommentAndAssignFormComponent } from './dot-comment-and-assign-form.
 @Component({
     selector: 'dot-test-host-component',
     template:
-        '<dot-comment-and-assign-form *ngIf="data" [data]="data"></dot-comment-and-assign-form>'
+        '@if (data) {<dot-comment-and-assign-form [data]="data"></dot-comment-and-assign-form>}'
 })
 class TestHostComponent {
     @Input() data: any;

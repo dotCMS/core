@@ -2,7 +2,6 @@ import { Meta, StoryObj, moduleMetadata, componentWrapperDecorator } from '@stor
 import { of } from 'rxjs';
 
 import { DotCrumbtrailComponent } from '@components/dot-crumbtrail/dot-crumbtrail.component';
-import { DotCrumbtrailModule } from '@components/dot-crumbtrail/dot-crumbtrail.module';
 import { DotCrumbtrailService } from '@components/dot-crumbtrail/service/dot-crumbtrail.service';
 
 const meta: Meta<DotCrumbtrailComponent> = {
@@ -10,7 +9,6 @@ const meta: Meta<DotCrumbtrailComponent> = {
     component: DotCrumbtrailComponent,
     decorators: [
         moduleMetadata({
-            imports: [DotCrumbtrailModule],
             providers: [
                 {
                     provide: DotCrumbtrailService,
