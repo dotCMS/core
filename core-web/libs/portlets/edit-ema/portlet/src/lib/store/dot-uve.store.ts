@@ -64,7 +64,8 @@ export const UVEStore = signalStore(
                 $shellProps: computed<ShellProps>(() => {
                     const response = pageAPIResponse();
 
-                    const currentUrl = '/' + sanitizeURL(response?.page.pageURI);
+                    const url = sanitizeURL(response?.page.pageURI);
+                    const currentUrl = url.startsWith('/') ? url : '/' + url;
 
                     const requestHostName = getRequestHostName(pageParams());
 
