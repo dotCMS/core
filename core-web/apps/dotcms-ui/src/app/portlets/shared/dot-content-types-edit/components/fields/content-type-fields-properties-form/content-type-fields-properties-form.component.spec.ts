@@ -122,7 +122,7 @@ describe('ContentTypeFieldsPropertiesFormComponent', () => {
     const startHostComponent = () => {
         hostComp.mockDFormFieldData = {
             ...mockDFormFieldData
-        };
+        } as unknown as DotCMSContentTypeField;
 
         hostFixture.detectChanges();
 
