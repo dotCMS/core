@@ -9,13 +9,13 @@ export type DOT_EDITABLE_TEXT_FORMAT = 'html' | 'text';
 
 export type DOT_EDITABLE_TEXT_MODE = 'minimal' | 'full' | 'plain';
 
-export interface DotCMSEditableTextProps {
+export interface DotCMSEditableTextProps<T extends DotCMSBasicContentlet> {
     /**
      * Represents the field name of the `contentlet` that can be edited
      *
      * @memberof DotCMSEditableTextProps
      */
-    fieldName: string;
+    fieldName: keyof T;
     /**
      * Represents the format of the editor which can be `text` or `html`
      *
@@ -36,7 +36,7 @@ export interface DotCMSEditableTextProps {
      * @type {DotCMSBasicContentlet}
      * @memberof DotCMSEditableTextProps
      */
-    contentlet: DotCMSBasicContentlet;
+    contentlet: T;
 }
 
 const DEFAULT_TINYMCE_CONFIG: IAllProps['init'] = {

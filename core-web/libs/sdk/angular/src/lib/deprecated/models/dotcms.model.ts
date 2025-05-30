@@ -134,10 +134,10 @@ export interface DotCMSContentlet {
     [key: string]: any; // This is a catch-all for any other custom properties that might be on the contentlet.
 }
 
-export interface DotcmsNavigationItem {
+export interface DotCMSNavigationItem {
     code?: any;
     folder: string;
-    children?: DotcmsNavigationItem[];
+    children?: DotCMSNavigationItem[];
     host: string;
     languageId: number;
     href: string;

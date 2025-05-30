@@ -1,10 +1,10 @@
 import {
     Contentlet,
     DotCMSUVEAction,
-    DotCMSUVEConfig,
     DotCMSInlineEditingPayload,
     DotCMSInlineEditingType,
-    DotCMSBasicContentlet
+    DotCMSBasicContentlet,
+    DotCMSPageResponse
 } from '@dotcms/types'; // '../types/editor/public';
 import { DotCMSReorderMenuConfig, DotCMSUVEMessage } from '@dotcms/types/internal'; //'../types/editor/internal';
 
@@ -121,22 +121,24 @@ export function initInlineEditing(
  * @param {string} fieldName
  * @return {*}  {void}
  */
-export function enableBlockEditorInline(
-    contentlet: DotCMSBasicContentlet,
-    fieldName: string
+export function enableBlockEditorInline<T extends DotCMSBasicContentlet>(
+    contentlet: T extends DotCMSBasicContentlet ? T : never,
+    fieldName: keyof T
 ): void {
-    if (!contentlet?.[fieldName]) {
-        console.error(`Contentlet ${contentlet?.identifier} does not have field ${fieldName}`);
+    if (!contentlet?.[fieldName as keyof DotCMSBasicContentlet]) {
+        console.error(
+            `Contentlet ${contentlet?.identifier} does not have field ${fieldName as string}`
+        );
 
         return;
     }
 
     const data = {
-        fieldName,
+        fieldName: fieldName as string,
         inode: contentlet.inode,
         language: contentlet.languageId,
         contentType: contentlet.contentType,
-        content: contentlet[fieldName]
+        content: contentlet[fieldName] as Record<string, unknown>
     };
 
     initInlineEditing('BLOCK_EDITOR', data);
@@ -163,7 +165,9 @@ export function enableBlockEditorInline(
  * destroyUVESubscriptions();
  * ```
  */
-export function initUVE(config: DotCMSUVEConfig = {}): { destroyUVESubscriptions: () => void } {
+export function initUVE(config: DotCMSPageResponse = {} as DotCMSPageResponse): {
+    destroyUVESubscriptions: () => void;
+} {
     addClassToEmptyContentlets();
     setClientIsReady(config);
 
