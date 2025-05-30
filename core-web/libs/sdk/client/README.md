@@ -349,7 +349,7 @@ The `client.content.getCollection()` method allows you to query and retrieve a c
 Here's how to fetch the first 10 items from the "Blog" content type:
 
 ```ts
-const blogs = await client.content.getCollection('Blog').limit(10).page(1).fetch();
+const blogs = await client.content.getCollection('Blog').limit(10).page(1);
 ```
 
 #### Filtering and Querying Content
@@ -359,9 +359,7 @@ You can apply query filters using a fluent builder pattern:
 ```ts
 const filtered = await client.content
     .getCollection('Blog')
-    .query((qb) =>
-        qb.field('title').contains('dotCMS').and().field('publishDate').greaterThan('2023-01-01')
-    )
+    .query((qb) => qb.field('title').equals('dotCMS*'))
     .limit(5)
     .sortBy([{ field: 'publishDate', direction: 'desc' }]);
 ```
@@ -371,7 +369,7 @@ const filtered = await client.content
 ```ts
 const searchResults = await client.content
     .getCollection('Product')
-    .query((qb) => qb.field('title').contains('Book').and().field('price').greaterThan(25).build())
+    .query((qb) => qb.field('title').equals('Book*'))
     .sortBy([{ field: 'price', order: 'asc' }])
     .limit(10)
     .page(2);
@@ -540,7 +538,7 @@ interface BlogPost extends DotCMSBasicContentlet {
     tags: string[];
 }
 
-const response = await client.content.getCollection<BlogPost>('Blog').fetch();
+const response = await client.content.getCollection<BlogPost>('Blog');
 
 response.contentlets.forEach((post) => {
     console.log(post.title); // Type-safe access
