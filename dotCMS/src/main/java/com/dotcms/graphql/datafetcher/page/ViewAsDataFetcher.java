@@ -1,6 +1,7 @@
 package com.dotcms.graphql.datafetcher.page;
 
 import com.dotcms.graphql.DotGraphQLContext;
+import com.dotcms.graphql.util.GraphQLUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.business.render.page.ViewAsPageStatus;
@@ -25,6 +26,9 @@ public class ViewAsDataFetcher implements DataFetcher<ViewAsPageStatus> {
             final User user = context.getUser();
             final Contentlet contentlet = environment.getSource();
 
+            if(GraphQLUtils.isRedirectPage(contentlet, context)) {
+                return null;
+            }
 
             final String pageModeAsString = (String) context.getParam("pageMode");
 
