@@ -38,7 +38,6 @@ export const COMMON_ERRORS: CommonErrorsInfo = {
 };
 
 export const DEFAULT_PERSONA: DotCMSViewAsPersona = {
-    hostFolder: 'SYSTEM_HOST',
     inode: '',
     host: 'SYSTEM_HOST',
     locked: false,

@@ -74,9 +74,9 @@ export class EditablePageService<T extends DotCMSExtendedPageResponse> {
                     return;
                 }
 
-                if (response.errors && !getUVEState()) {
+                if (response.error && !getUVEState()) {
                     this.#setError({
-                        message: response.errors.message,
+                        message: response.error.message,
                         status: 'Error'
                     });
                     return;

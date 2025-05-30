@@ -9,7 +9,13 @@ import {
     DotExperiment,
     DotExperimentStatus
 } from '@dotcms/dotcms-models';
-import { DotCMSPage, DotCMSPageAssetContainers, DotCMSVanityUrl } from '@dotcms/types';
+import {
+    DotCMSPage,
+    DotCMSPageAssetContainers,
+    DotCMSURLContentMap,
+    DotCMSVanityUrl,
+    DotCMSViewAsPersona
+} from '@dotcms/types';
 
 import { EmaDragItem } from '../edit-ema-editor/components/ema-page-dropzone/types';
 import { DotPageAssetKeys, DotPageApiParams } from '../services/dot-page-api.service';
@@ -212,10 +218,10 @@ export function sanitizeURL(url?: string): string {
 /**
  * Get the personalization for the contentlet
  *
- * @param {Record<string, string>} persona
+ * @param {DotCMSViewAsPersona} persona
  * @return {*}
  */
-export const getPersonalization = (persona: Record<string, string>) => {
+export const getPersonalization = (persona: DotCMSViewAsPersona) => {
     if (!persona || (!persona.contentType && !persona.keyTag)) {
         return `dot:default`;
     }
@@ -684,7 +690,7 @@ export function getAllowedPageParams(params: Params): DotPageAssetParams {
  */
 export function getTargetUrl(
     url: string | undefined,
-    urlContentMap: DotCMSContentlet
+    urlContentMap: DotCMSURLContentMap
 ): string | undefined {
     // Return URL from content map or fallback to the provided URL
     return urlContentMap?.URL_MAP_FOR_CONTENT || url;
