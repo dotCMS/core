@@ -56,9 +56,9 @@
                 (edit)="handleEditContentlet($event)"
                 (editVTL)="handleEditVTL($event)"
                 (delete)="deleteContentlet($event)"
-                (addWidget)="dialog.addWidget($event)"
-                (addForm)="dialog.addForm($event)"
-                (addContent)="dialog.addContentlet($event)"
+                (addWidget)="dialogService.addWidget($event)"
+                (addForm)="dialogService.addForm($event)"
+                (addContent)="dialogService.addContentlet($event)"
                 [hide]="contentletTools.hide"
                 [contentletArea]="contentletTools.contentletArea"
                 [isEnterprise]="contentletTools.isEnterprise"
@@ -85,13 +85,7 @@
         [variantId]="palette.variantId"
         data-testId="palette" />
 }
-@if ($editorProps().showDialogs) {
-    <dot-edit-ema-dialog
-        (action)="onCustomEvent($event)"
-        (reloadFromDialog)="reloadPage()"
-        #dialog
-        data-testId="ema-dialog" />
-}
+
 <p-confirmDialog
     [style]="{
         width: '400px'
