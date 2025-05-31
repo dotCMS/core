@@ -514,17 +514,18 @@ public class PermissionAPITest extends IntegrationTestBase {
      */
     @Test
     public void issue781() throws DotDataException, DotSecurityException, PortalException, SystemException {
-        Host hh = new Host();
-        hh.setHostname("issue781.demo.dotcms.com");
-        hh=APILocator.getHostAPI().save(hh, sysuser, false);
+        Host site = new Host();
+        site.setHostname("issue781.demo.dotcms.com");
+        site.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
+        site=APILocator.getHostAPI().save(site, sysuser, false);
 
         Role nrole=getRole("TestingRole7");
 
         try {
-            Folder f1 = APILocator.getFolderAPI().createFolders("/f1/", hh, sysuser, false);
-            Folder f2 = APILocator.getFolderAPI().createFolders("/f2/", hh, sysuser, false);
-            Folder f3 = APILocator.getFolderAPI().createFolders("/f3/", hh, sysuser, false);
-            Folder f4 = APILocator.getFolderAPI().createFolders("/f4/", hh, sysuser, false);
+            Folder f1 = APILocator.getFolderAPI().createFolders("/f1/", site, sysuser, false);
+            Folder f2 = APILocator.getFolderAPI().createFolders("/f2/", site, sysuser, false);
+            Folder f3 = APILocator.getFolderAPI().createFolders("/f3/", site, sysuser, false);
+            Folder f4 = APILocator.getFolderAPI().createFolders("/f4/", site, sysuser, false);
 
             CacheLocator.getPermissionCache().clearCache();
 
@@ -534,18 +535,18 @@ public class PermissionAPITest extends IntegrationTestBase {
 
             Map<String,String> mm=new HashMap<>();
             mm.put("individual",Integer.toString(PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE));
-            new RoleAjax().saveRolePermission(nrole.getId(), hh.getIdentifier(), mm, false);
+            new RoleAjax().saveRolePermission(nrole.getId(), site.getIdentifier(), mm, false);
 
-            assertTrue(permissionAPI.findParentPermissionable(f4).equals(hh));
-            assertTrue(permissionAPI.findParentPermissionable(f3).equals(hh));
-            assertTrue(permissionAPI.findParentPermissionable(f2).equals(hh));
-            assertTrue(permissionAPI.findParentPermissionable(f1).equals(hh));
+            assertTrue(permissionAPI.findParentPermissionable(f4).equals(site));
+            assertTrue(permissionAPI.findParentPermissionable(f3).equals(site));
+            assertTrue(permissionAPI.findParentPermissionable(f2).equals(site));
+            assertTrue(permissionAPI.findParentPermissionable(f1).equals(site));
         }
         finally {
             try{
             	HibernateUtil.startTransaction();
-                APILocator.getHostAPI().archive(hh, sysuser, false);
-                APILocator.getHostAPI().delete(hh, sysuser, false);
+                APILocator.getHostAPI().archive(site, sysuser, false);
+                APILocator.getHostAPI().delete(site, sysuser, false);
             	HibernateUtil.closeAndCommitTransaction();
             }catch(Exception e){
             	HibernateUtil.rollbackTransaction();
@@ -563,17 +564,18 @@ public class PermissionAPITest extends IntegrationTestBase {
      */
     @Test
     public void issue847() throws DotHibernateException, DotSecurityException, DotDataException {
-        Structure s=null;
-        Host hh = new Host();
-        hh.setHostname("issue847.demo.dotcms.com");
-        hh=APILocator.getHostAPI().save(hh, sysuser, false);
+        Structure s;
+        Host site = new Host();
+        site.setHostname("issue847.demo.dotcms.com");
+        site.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
+        site=APILocator.getHostAPI().save(site, sysuser, false);
         try {
-            Folder f1 = APILocator.getFolderAPI().createFolders("/hh1/", hh, sysuser, false);
-            Folder f2 = APILocator.getFolderAPI().createFolders("/hh1/hh2/", hh, sysuser, false);
+            Folder f1 = APILocator.getFolderAPI().createFolders("/hh1/", site, sysuser, false);
+            Folder f2 = APILocator.getFolderAPI().createFolders("/hh1/hh2/", site, sysuser, false);
 
             s = new Structure();
             s.setName("structure_issue847");
-            s.setHost(hh.getIdentifier());
+            s.setHost(site.getIdentifier());
             s.setStructureType(Structure.STRUCTURE_TYPE_CONTENT);
             s.setOwner(sysuser.getUserId());
             s.setVelocityVarName("str847"+System.currentTimeMillis());
@@ -596,7 +598,7 @@ public class PermissionAPITest extends IntegrationTestBase {
             Contentlet cont1=new Contentlet();
             cont1.setStructureInode(s.getInode());
             cont1.setStringProperty("testtext", "a test value");
-            cont1.setHost(hh.getIdentifier());
+            cont1.setHost(site.getIdentifier());
             cont1.setFolder(f2.getInode());
             cont1.setIndexPolicy(IndexPolicy.FORCE);
             cont1=APILocator.getContentletAPI().checkin(cont1, sysuser, false);
@@ -611,8 +613,8 @@ public class PermissionAPITest extends IntegrationTestBase {
         finally {
             try{
             	HibernateUtil.startTransaction();
-                APILocator.getHostAPI().archive(hh, sysuser, false);
-                APILocator.getHostAPI().delete(hh, sysuser, false);
+                APILocator.getHostAPI().archive(site, sysuser, false);
+                APILocator.getHostAPI().delete(site, sysuser, false);
             	HibernateUtil.closeAndCommitTransaction();
             }catch(Exception e){
             	HibernateUtil.rollbackTransaction();
@@ -628,18 +630,19 @@ public class PermissionAPITest extends IntegrationTestBase {
      */
     @Test
     public void issue886() throws Exception {
-        Host hh = new Host();
+        Host site = new Host();
         try {
-            hh.setHostname("issue886.demo.dotcms.com");
-            hh = APILocator.getHostAPI().save(hh, sysuser, false);
+            site.setHostname("issue886.demo.dotcms.com");
+            site.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
+            site = APILocator.getHostAPI().save(site, sysuser, false);
         } catch(Exception e) {
-            hh = APILocator.getHostAPI().findByName("issue886.demo.dotcms.com", sysuser, false);
+            site = APILocator.getHostAPI().findByName("issue886.demo.dotcms.com", sysuser, false);
         }
 
         try {
-            Folder folderA = APILocator.getFolderAPI().createFolders("/ax/", hh, sysuser, false);
-            Folder b = APILocator.getFolderAPI().createFolders("/ax/b/", hh, sysuser, false);
-            Folder c = APILocator.getFolderAPI().createFolders("/ax/b/c/", hh, sysuser, false);
+            Folder folderA = APILocator.getFolderAPI().createFolders("/ax/", site, sysuser, false);
+            Folder b = APILocator.getFolderAPI().createFolders("/ax/b/", site, sysuser, false);
+            Folder c = APILocator.getFolderAPI().createFolders("/ax/b/c/", site, sysuser, false);
 
             permissionAPI.permissionIndividually(APILocator.getHostAPI().findSystemHost(), folderA, sysuser);
 
@@ -664,7 +667,7 @@ public class PermissionAPITest extends IntegrationTestBase {
             java.io.File cadata=java.io.File.createTempFile("tmpfile", "cdata.txt");
             FileUtils.copyFile(fdata, cadata);
             ca.setBinary(FileAssetAPI.BINARY_FIELD, cadata);
-            ca.setHost(hh.getIdentifier());
+            ca.setHost(site.getIdentifier());
             ca.setFolder(folderA.getInode());
             ca.setIndexPolicy(IndexPolicy.FORCE);
             ca=APILocator.getContentletAPI().checkin(ca, sysuser, false);
@@ -676,7 +679,7 @@ public class PermissionAPITest extends IntegrationTestBase {
             java.io.File cbdata=java.io.File.createTempFile("tmpfile", "cdata.txt");
             FileUtils.copyFile(fdata, cbdata);
             cb.setBinary(FileAssetAPI.BINARY_FIELD, cbdata);
-            cb.setHost(hh.getIdentifier());
+            cb.setHost(site.getIdentifier());
             cb.setFolder(b.getInode());
             cb.setIndexPolicy(IndexPolicy.FORCE);
             cb=APILocator.getContentletAPI().checkin(cb, sysuser, false);
@@ -688,7 +691,7 @@ public class PermissionAPITest extends IntegrationTestBase {
             java.io.File ccdata=java.io.File.createTempFile("tmpfile", "cdata.txt");
             FileUtils.copyFile(fdata, ccdata);
             cc.setBinary(FileAssetAPI.BINARY_FIELD, ccdata);
-            cc.setHost(hh.getIdentifier());
+            cc.setHost(site.getIdentifier());
             cc.setFolder(c.getInode());
             cc.setIndexPolicy(IndexPolicy.FORCE);
             cc=APILocator.getContentletAPI().checkin(cc, sysuser, false);
@@ -716,8 +719,8 @@ public class PermissionAPITest extends IntegrationTestBase {
         }
         finally {
             try {
-                APILocator.getHostAPI().archive(hh, sysuser, false);
-                APILocator.getHostAPI().delete(hh, sysuser, false);
+                APILocator.getHostAPI().archive(site, sysuser, false);
+                APILocator.getHostAPI().delete(site, sysuser, false);
             }catch (Exception e) {
                 e.printStackTrace();
             }
@@ -737,9 +740,10 @@ public class PermissionAPITest extends IntegrationTestBase {
         final boolean propValue = Config.getBooleanProperty(propName, false);
         Config.setProperty(propName, false);
 
-        Host hh = new Host();
-        hh.setHostname("issue560_"+System.currentTimeMillis()+".demo.dotcms.com");
-        hh=APILocator.getHostAPI().save(hh, sysuser, false);
+        Host site = new Host();
+        site.setHostname("issue560_"+System.currentTimeMillis()+".demo.dotcms.com");
+        site.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
+        site=APILocator.getHostAPI().save(site, sysuser, false);
 
         Role nrole1 = getRole("TestingRole8");
 
@@ -748,11 +752,11 @@ public class PermissionAPITest extends IntegrationTestBase {
         Structure s=null;
         Contentlet cont1=null;
         try {
-            Folder a = APILocator.getFolderAPI().createFolders("/a/", hh, sysuser, false);
+            Folder a = APILocator.getFolderAPI().createFolders("/a/", site, sysuser, false);
             permissionAPI.permissionIndividually(permissionAPI.findParentPermissionable(a), a, sysuser);
 
             s = new Structure();
-            s.setHost(hh.getIdentifier());
+            s.setHost(site.getIdentifier());
             s.setFolder(a.getInode());
             s.setName("issue560");
             s.setStructureType(Structure.STRUCTURE_TYPE_CONTENT);
@@ -808,8 +812,8 @@ public class PermissionAPITest extends IntegrationTestBase {
                 if (s != null) {
                     APILocator.getStructureAPI().delete(s, sysuser);
                 }
-                APILocator.getHostAPI().archive(hh, sysuser, false);
-                APILocator.getHostAPI().delete(hh, sysuser, false);
+                APILocator.getHostAPI().archive(site, sysuser, false);
+                APILocator.getHostAPI().delete(site, sysuser, false);
             }catch (Exception e) {
                 e.printStackTrace();
             }
@@ -844,18 +848,18 @@ public class PermissionAPITest extends IntegrationTestBase {
      */
     @Test
     public void test_templateLayout_parentPermissionableIsHost() throws Exception {
-
-        Host hh = new Host();
-        hh.setHostname("issue1112.demo.dotcms.com");
-        hh=APILocator.getHostAPI().save(hh, sysuser, false);
-        final Folder folderTheme = new FolderDataGen().site(hh).title("themeFolder"+System.currentTimeMillis()).nextPersisted();
+        Host site = new Host();
+        site.setHostname("issue1112.demo.dotcms.com");
+        site.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
+        site=APILocator.getHostAPI().save(site, sysuser, false);
+        final Folder folderTheme = new FolderDataGen().site(site).title("themeFolder"+System.currentTimeMillis()).nextPersisted();
 
         Role nrole=getRole("TestingRole10");
 
         Map<String,String> mm=new HashMap<>();
         mm.put("templateLayouts", Integer.toString(PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT | PermissionAPI.PERMISSION_PUBLISH | PermissionAPI.PERMISSION_EDIT_PERMISSIONS));
         RoleAjax roleAjax = new RoleAjax();
-        roleAjax.saveRolePermission(nrole.getId(), hh.getIdentifier(), mm, false);
+        roleAjax.saveRolePermission(nrole.getId(), site.getIdentifier(), mm, false);
         PermissionAPI permAPI = APILocator.getPermissionAPI();
         List<Permission> perms = permAPI.getPermissionsByRole(nrole, true, true);
 
@@ -880,16 +884,16 @@ public class PermissionAPITest extends IntegrationTestBase {
             t.setTheme(folderTheme.getIdentifier());
 
 
-            APILocator.getTemplateAPI().saveTemplate(t,hh, sysuser, false);
+            APILocator.getTemplateAPI().saveTemplate(t,site, sysuser, false);
 
 
-            assertTrue(permissionAPI.findParentPermissionable(t).equals(hh));
+            assertTrue(permissionAPI.findParentPermissionable(t).equals(site));
         }
         finally {
             try{
                 HibernateUtil.startTransaction();
-                APILocator.getHostAPI().archive(hh, sysuser, false);
-                APILocator.getHostAPI().delete(hh, sysuser, false);
+                APILocator.getHostAPI().archive(site, sysuser, false);
+                APILocator.getHostAPI().delete(site, sysuser, false);
                 HibernateUtil.closeAndCommitTransaction();
             }catch(Exception e){
                 HibernateUtil.rollbackTransaction();
