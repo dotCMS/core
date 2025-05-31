@@ -1,41 +1,66 @@
 package com.dotmarketing.portlets.links.business;
 
+import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.datagen.LinkDataGen;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.util.Config;
-import java.util.List;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import com.dotcms.IntegrationTestBase;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.links.model.Link;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
-import static org.junit.Assert.*;
+import java.util.List;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
+/**
+ * A test class for verifying the functionalities and behaviors of the MenuLinkAPI. This class
+ * includes various test methods to validate the creation, movement, retrieval, and saving of menu
+ * links in the application. Designed as an integration test, it operates in the context of a fully
+ * initialized application environment.
+ * <p>
+ * The `MenuLinkAPITest` class extends `IntegrationTestBase`, ensuring that all tests execute in a
+ * consistent integration test setup.
+ * <p>
+ * Features of `MenuLinkAPITest`:
+ * <ul>
+ *     <li>Validates permissions management when moving menu links between folders.</li>
+ *     <li>Ensures proper saving of menu links and their attributes.</li>
+ *     <li>Provides retrieval and verification of links based on their inode and other attributes.
+ *     </li>
+ *     <li>Tests exception handling when accessing non-existent inodes.</li>
+ * </ul>
+ *
+ * @author Oscar Arrieta
+ * @since Sep 26th, 2016
+ */
 public class MenuLinkAPITest extends IntegrationTestBase {
+
     static PermissionAPI pAPI;
     static FolderAPI fAPI;
     static MenuLinkAPI mAPI;
     static ContentletAPI cAPI;
     static HostAPI hAPI;
     static UserAPI uAPI;
-    static Host host=null;
+    static Host site = null;
     static User user=null;
     
     @BeforeClass
@@ -51,29 +76,30 @@ public class MenuLinkAPITest extends IntegrationTestBase {
         uAPI = APILocator.getUserAPI();
         
         user = uAPI.getSystemUser();
-        host = new Host();
-        host.setHostname("MenuLinkTest"+UUIDGenerator.generateUuid());
+        site = new Host();
+        site.setHostname("MenuLinkTest"+UUIDGenerator.generateUuid());
+        site.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
         try{
         	HibernateUtil.startTransaction();
-        	host = hAPI.save(host, user, false);
+        	site = hAPI.save(site, user, false);
         	HibernateUtil.closeAndCommitTransaction();
         }catch(Exception e){
         	HibernateUtil.rollbackTransaction();
         	Logger.error(MenuLinkAPITest.class, e.getMessage());
         }
         
-        hAPI.publish(host, user, false);
-        cAPI.isInodeIndexed(host.getInode(),true);
-        pAPI.permissionIndividually(hAPI.findSystemHost(),host, user);
+        hAPI.publish(site, user, false);
+        cAPI.isInodeIndexed(site.getInode(),true);
+        pAPI.permissionIndividually(hAPI.findSystemHost(), site, user);
     }
     
     @AfterClass
     public static void cleanup() throws Exception {
         try{
         	HibernateUtil.startTransaction();
-        	hAPI.unpublish(host, user, false);
-        	hAPI.archive(host, user, false);
-        	hAPI.delete(host,user,false);
+        	hAPI.unpublish(site, user, false);
+        	hAPI.archive(site, user, false);
+        	hAPI.delete(site,user,false);
         	HibernateUtil.closeAndCommitTransaction();
         }catch(Exception e){
         	HibernateUtil.rollbackTransaction();
@@ -92,14 +118,14 @@ public class MenuLinkAPITest extends IntegrationTestBase {
             /*
              * Make sure chaning from a folder to other respect target folder permissions and inheritance
              */
-            Folder parent1 = fAPI.createFolders("/parent1/sub", host, user, false);
-            Folder parent2 = fAPI.createFolders("/parent2/sub", host, user, false);
-            pAPI.permissionIndividually(host, parent2, user);
+            Folder parent1 = fAPI.createFolders("/parent1/sub", site, user, false);
+            Folder parent2 = fAPI.createFolders("/parent2/sub", site, user, false);
+            pAPI.permissionIndividually(site, parent2, user);
 
             Link link = new Link();
             link.setFriendlyName("test link");
             link.setTitle(link.getFriendlyName());
-            link.setHostId(host.getIdentifier());
+            link.setHostId(site.getIdentifier());
             link.setLinkType(Link.LinkType.EXTERNAL.toString());
             link.setUrl("google.com");
             link.setProtocal("http://");
@@ -107,7 +133,7 @@ public class MenuLinkAPITest extends IntegrationTestBase {
 
             Logger.info(MenuLinkAPITest.class, "getPermissionId " + link.getPermissionId());
             // must be getting permissions from the host
-            assertEquals(host.getPermissionId(),
+            assertEquals(site.getPermissionId(),
                     pAPI.findParentPermissionable(link).getPermissionId());
             assertTrue(mAPI.move(link, parent2, user, false));
 
@@ -122,11 +148,11 @@ public class MenuLinkAPITest extends IntegrationTestBase {
     @Test
     public void save() throws Exception {
     	HibernateUtil.startTransaction();
-        Folder folder = fAPI.createFolders("/testsave", host, user, false);
+        Folder folder = fAPI.createFolders("/testsave", site, user, false);
         Link link = new Link();
         link.setFriendlyName("test link");
         link.setTitle(link.getFriendlyName());
-        link.setHostId(host.getIdentifier());
+        link.setHostId(site.getIdentifier());
         link.setLinkType(Link.LinkType.EXTERNAL.toString());
         link.setUrl("google.com");
         link.setProtocal("http://");
@@ -141,7 +167,7 @@ public class MenuLinkAPITest extends IntegrationTestBase {
         link.setIdentifier(existingIdent);
         link.setFriendlyName("test link");
         link.setTitle(link.getFriendlyName());
-        link.setHostId(host.getIdentifier());
+        link.setHostId(site.getIdentifier());
         link.setLinkType(Link.LinkType.EXTERNAL.toString());
         link.setUrl("google.com");
         link.setProtocal("http://");
@@ -173,7 +199,7 @@ public class MenuLinkAPITest extends IntegrationTestBase {
     @Test
     public void testFind_returnLink()
             throws DotSecurityException, DotDataException {
-        final Link menuLink = new LinkDataGen(fAPI.findSystemFolder()).hostId(host.getIdentifier())
+        final Link menuLink = new LinkDataGen(fAPI.findSystemFolder()).hostId(site.getIdentifier())
                 .showOnMenu(true).nextPersisted();
         APILocator.getVersionableAPI().setLive(menuLink);
 
