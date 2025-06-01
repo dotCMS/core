@@ -21,7 +21,10 @@ import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.api.web.HttpServletResponseThreadLocal;
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
 import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.model.field.DateTimeField;
+import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.TextField;
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContainerAsFileDataGen;
 import com.dotcms.datagen.ContainerDataGen;
@@ -121,6 +124,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import javax.enterprise.context.ApplicationScoped;
 import javax.servlet.http.HttpServletRequest;
@@ -1956,6 +1960,182 @@ public class PageResourceTest {
             TimeZone.setDefault(defaultZone);
         }
 
+    }
+
+    /**
+     * Test for GitHub Issue #32261: Content with invalid date configuration should be filtered in LIVE mode.
+     */
+    @Test
+    public void testPageAPIShouldHideContentWithInvalidDateConfiguration()
+            throws DotDataException, DotSecurityException, WebAssetException, JsonProcessingException {
+
+        final TimeZone defaultZone = TimeZone.getDefault();
+        try {
+            final TimeZone utc = TimeZone.getTimeZone("UTC");
+            TimeZone.setDefault(utc);
+
+            // Create invalid date config: expire date is before publish date
+            final Date publishDate = new Date(System.currentTimeMillis() + TimeUnit.DAYS.toMillis(10));
+            final Date expireDate = new Date(System.currentTimeMillis() + TimeUnit.DAYS.toMillis(5));
+
+            // Test LIVE mode - should NOT show invalid content
+            validatePageRenderingWithInvalidDates(PageMode.LIVE, false, publishDate, expireDate);
+            // Test PREVIEW mode - should show content for admin to fix
+            validatePageRenderingWithInvalidDates(PageMode.PREVIEW_MODE, true, publishDate, expireDate);
+
+        } finally {
+            TimeZone.setDefault(defaultZone);
+        }
+    }
+
+    private void validatePageRenderingWithInvalidDates(final PageMode mode, final boolean expectContentlet,
+                                                     final Date publishDate, final Date expireDate)
+            throws DotDataException, DotSecurityException, WebAssetException, JsonProcessingException {
+
+        final User systemUser = APILocator.getUserAPI().getSystemUser();
+        final long languageId = 1L;
+        
+        // Create date fields for publish and expire dates
+        final Field publishField = new FieldDataGen()
+                .name("Publish Date")
+                .velocityVarName("publishDate")
+                .defaultValue(null)
+                .type(DateTimeField.class)
+                .next();
+                
+        final Field expireField = new FieldDataGen()
+                .name("Expire Date")
+                .velocityVarName("expireDate")
+                .defaultValue(null)
+                .type(DateTimeField.class)
+                .next();
+
+        // Create content type with proper publish and expire date configuration
+        final ContentType blogLikeContentType = new ContentTypeDataGen()
+                .name("BlogWithDates" + System.currentTimeMillis())
+                .baseContentType(BaseContentType.CONTENT)
+                .field(new FieldDataGen().name("title").velocityVarName("title").next())
+                .field(new FieldDataGen().name("body").velocityVarName("body").next())
+                .field(publishField)
+                .field(expireField)
+                .publishDateFieldVarName(publishField.variable())
+                .expireDateFieldVarName(expireField.variable())
+                .nextPersisted();
+
+        // Verify content type has both date fields for this test
+        assertNotNull("Content type must have publishDateVar for this test", blogLikeContentType.publishDateVar());
+        assertNotNull("Content type must have expireDateVar for this test", blogLikeContentType.expireDateVar());
+
+        // Create content with invalid date configuration
+        final ContentletDataGen blogsDataGen = new ContentletDataGen(blogLikeContentType.id())
+                .languageId(languageId)
+                .host(host)
+                .setProperty("title", "Invalid Date Content")
+                .setProperty("body", "This content has expireDate < publishDate")
+                .setProperty(publishField.variable(), publishDate)
+                .setProperty(expireField.variable(), expireDate)
+                .setPolicy(IndexPolicy.WAIT_FOR)
+                .setProperty(Contentlet.IS_TEST_MODE, true);
+
+        final Contentlet blog = blogsDataGen.nextPersisted();
+        
+        // Publish the content so it's available in LIVE mode
+        ContentletDataGen.publish(blog);
+        assertTrue("Content should be published", blog.isLive());
+        final Structure structure = new StructureDataGen().nextPersisted();
+        final Container myContainer = new ContainerDataGen()
+                .withStructure(structure, "")
+                .friendlyName("container-invalid-dates-test-" + System.currentTimeMillis())
+                .title("container-title")
+                .site(host)
+                .nextPersisted();
+
+        ContainerDataGen.publish(myContainer);
+
+        final TemplateLayout templateLayout = TemplateLayoutDataGen.get()
+                .withContainer(myContainer.getIdentifier())
+                .next();
+
+        final Template newTemplate = new TemplateDataGen()
+                .drawedBody(templateLayout)
+                .withContainer(myContainer.getIdentifier())
+                .nextPersisted();
+
+        final VersionableAPI versionableAPI = APILocator.getVersionableAPI();
+        versionableAPI.setWorking(newTemplate);
+        versionableAPI.setLive(newTemplate);
+
+        final String myFolderName = "folder-invalid-dates-" + System.currentTimeMillis();
+        final Folder myFolder = new FolderDataGen().name(myFolderName).site(host).nextPersisted();
+        final String myPageName = "page-invalid-dates-" + System.currentTimeMillis();
+        final HTMLPageAsset myPage = new HTMLPageDataGen(myFolder, newTemplate)
+                .languageId(languageId)
+                .pageURL(myPageName)
+                .title(myPageName)
+                .nextPersisted();
+
+        final ContentletAPI contentletAPI = APILocator.getContentletAPI();
+        contentletAPI.publish(myPage, systemUser, false);
+
+        final ContentType widgetLikeContentType = TestDataUtils.getWidgetLikeContentType(()-> widgetCode(host, blogLikeContentType));
+        final Contentlet myWidget = new ContentletDataGen(widgetLikeContentType)
+                .languageId(languageId)
+                .host(host)
+                .setProperty("widgetTitle", "Widget for Invalid Dates Test")
+                .setProperty("code", "test-widget-code")
+                .nextPersisted();
+        ContentletDataGen.publish(myWidget);
+
+        final MultiTreeAPI multiTreeAPI = APILocator.getMultiTreeAPI();
+        final MultiTree multiTree = new MultiTree(myPage.getIdentifier(),
+                myContainer.getIdentifier(), myWidget.getIdentifier(), "1", 1);
+        multiTreeAPI.saveMultiTree(multiTree);
+
+        when(request.getAttribute(WebKeys.HTMLPAGE_LANGUAGE)).thenReturn(String.valueOf(languageId));
+        when(request.getAttribute(WebKeys.PAGE_MODE_PARAMETER)).thenReturn(mode);
+        when(request.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(systemUser);
+
+        HttpServletResponseThreadLocal.INSTANCE.setResponse(this.response);
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(this.request);
+
+        final String myPagePath = String.format("/%s/%s", myFolderName, myPageName);
+        final Response myResponse = pageResource
+                .loadJson(this.request, this.response, myPagePath, mode.name(), null,
+                        String.valueOf(languageId), null, null);
+
+        RestUtilTest.verifySuccessResponse(myResponse);
+
+        final PageView pageView = (PageView) ((ResponseEntityView<?>) myResponse.getEntity()).getEntity();
+        final ObjectMapper objectMapper = new ObjectMapper();
+        final String json = objectMapper.writeValueAsString(pageView);
+        final JsonNode node = objectMapper.readTree(json);
+        final Optional<JsonNode> widgetCodeJSON = findNode(node, "widgetCodeJSON");
+
+        if(widgetCodeJSON.isPresent()){
+            final JsonNode posts = widgetCodeJSON.get().get("posts");
+            if(expectContentlet){
+                assertFalse("Content should be visible in " + mode + " mode", posts.isEmpty());
+                boolean foundInvalidDateContent = false;
+                for (JsonNode post : posts) {
+                    if ("Invalid Date Content".equals(post.get("title").asText())) {
+                        foundInvalidDateContent = true;
+                        break;
+                    }
+                }
+                assertTrue("Should find 'Invalid Date Content' in " + mode + " mode", foundInvalidDateContent);
+            } else {
+                boolean foundInvalidDateContent = false;
+                for (JsonNode post : posts) {
+                    if ("Invalid Date Content".equals(post.get("title").asText())) {
+                        foundInvalidDateContent = true;
+                        break;
+                    }
+                }
+                assertFalse("Content with expireDate < publishDate should not be visible in " + mode + " mode", foundInvalidDateContent);
+            }
+        } else {
+            assertFalse("Expected content but widgetCodeJSON not found", expectContentlet);
+        }
     }
 
 }
