@@ -1,18 +1,16 @@
-import type { DotCMSNavigationItem, DotCMSPageAsset } from "@dotcms/types";
 import { DotCMSLayoutBody, useEditableDotCMSPage } from "@dotcms/react/next";
 
 import { pageComponents } from "../components/content-types";
 
-import Footer from "./layout/footer/Footer";
-import Header from "./layout/Header";
-import NotFound from "../components/react/notFound";
+import Footer from "@components/react/Footer";
+import Header from "@components/react/Header";
 
 export type MyPageProps = {
   pageResponse: any;
 };
 
 export const DotCMSPage = ({ pageResponse }: any) => {
-  const { pageAsset, content = {} } = pageResponse; //useEditableDotCMSPage<any>(pageResponse);
+  const { pageAsset, content = {} } = useEditableDotCMSPage<any>(pageResponse);
   const navigation = content.navigation;
 
   console.log(content);
