@@ -45,11 +45,7 @@ export default function BannerCarousel({
             className={`duration-700 ease-in-out w-full h-full object-cover ${index === currentIndex ? "" : "hidden"}`}
             data-carousel-item
           >
-            <img
-              src={image}
-              className="absolute block w-full "
-              alt={title}
-            />
+            <img src={image} className="absolute block w-full " alt={title} />
           </div>
         ))}
       </div>

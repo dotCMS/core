@@ -32,10 +32,7 @@ export const MyPage = ({ pageAsset, nav }: MyPageProps) => {
       )}
 
       <main className="container m-auto">
-        <DotCMSLayoutBody
-          page={pageAsset}
-          components={pageComponents}
-        />
+        <DotCMSLayoutBody page={pageAsset} components={pageComponents} />
       </main>
 
       {pageAsset?.layout.footer && <Footer />}

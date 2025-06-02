@@ -16,15 +16,16 @@ export const getDotCMSPage = async (
   searchParams?: URLSearchParams,
 ) => {
   // Avoid passing mode if you have a read only auth token
-  const { mode, ...params } = Object.fromEntries(searchParams?.entries() ?? []) ?? {};
+  const { mode, ...params } =
+    Object.fromEntries(searchParams?.entries() ?? []) ?? {};
   try {
     const pageData = await dotCMSClient.page.get<{
-        pageAsset: DotCMSPageAsset;
-        content?: {
-            navigation: {
-                children: DotCMSNavigationItem[];
-            };
+      pageAsset: DotCMSPageAsset;
+      content?: {
+        navigation: {
+          children: DotCMSNavigationItem[];
         };
+      };
     }>(path, {
       ...params,
       graphql: {

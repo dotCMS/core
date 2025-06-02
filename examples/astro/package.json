@@ -16,8 +16,8 @@
     "@astrojs/vercel": "^7.8.0",
     "@dotcms/client": "next",
     "@dotcms/react": "next",
-    "@dotcms/uve": "next",
     "@dotcms/types": "next",
+    "@dotcms/uve": "next",
     "@tinymce/tinymce-react": "6.1.0",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
@@ -28,7 +28,7 @@
     "typescript": "^5.5.4"
   },
   "devDependencies": {
-    "prettier": "^3.3.3",
+    "prettier": "^3.5.3",
     "prettier-plugin-astro": "^0.14.1"
   }
 }

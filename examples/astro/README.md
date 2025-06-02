@@ -46,11 +46,13 @@ To configure the Astro app to use your dotCMS instance:
 1. Open the project folder in your code editor
 2. In the root, find the file `.env.local.example` and rename it to `.env.local`
 3. Open the `.env.local` file and update the following environment variables:
+
    - `PUBLIC_DOTCMS_AUTH_TOKEN`: Your dotCMS auth token
    - `PUBLIC_DOTCMS_HOST`: URL of your dotCMS instance (e.g., https://demo.dotcms.com)
    - `PUBLIC_DOTCMS_SITE_ID`: The identifier of the Site you are going to use for your website
 
    To find your Site ID:
+
    1. Go to Settings > Sites in your dotCMS instance
    2. Select the desired Site (A modal should open)
    3. Go to the History Tab
@@ -115,7 +117,8 @@ If you encounter issues while setting up or running the dotCMS Astro example, he
 
 This often occurs when the environment variables are not set correctly.
 
-**Solution:** 
+**Solution:**
+
 - Double-check that you've renamed `.env.local.example` to `.env.local`.
 - Ensure you've updated the `PUBLIC_DOTCMS_AUTH_TOKEN` in the `.env.local` file with a valid token.
 - Verify that the token hasn't expired. If it has, generate a new one in the dotCMS UI.
@@ -127,6 +130,7 @@ This often occurs when the environment variables are not set correctly.
 If you're having trouble connecting to the dotCMS instance:
 
 **Solution:**
+
 - Verify that the `PUBLIC_DOTCMS_HOST` in `.env.local` is correct.
 - If using `https://demo.dotcms.com`, remember it restarts every 24 hours. You might need to wait or try again later.
 - Ensure your network allows connections to the dotCMS instance (check firewalls, VPNs, etc.).
@@ -138,6 +142,7 @@ If you're having trouble connecting to the dotCMS instance:
 If you're getting 404 errors for pages that should exist:
 
 **Solution:**
+
 - Ensure the page exists in your dotCMS instance. For example, if you're trying to access `/about`, make sure an "about" page exists in dotCMS.
 - Check if the content types used in the example match those in your dotCMS instance.
 - Verify that the content has been published and is not in draft status.
@@ -150,18 +155,23 @@ If you're getting 404 errors for pages that should exist:
 If you're experiencing unexpected behavior or errors related to dependencies:
 
 **Solution:** Perform a clean reinstall of all dependencies by running:
+
 ```bash
 rm -rf node_modules && rm package-lock.json && npm install
 ```
+
 This command will:
+
 1. Remove the `node_modules` directory
 2. Delete the `package-lock.json` file
 3. Perform a fresh install of all dependencies
 
 After this, restart your development server:
+
 ```bash
 npm run dev
 ```
+
 </details>
 
 <details>
@@ -170,17 +180,21 @@ npm run dev
 If you're experiencing build errors or changes aren't reflected in the running application:
 
 **Solution:** Clear Astro's cache and rebuild the project:
+
 ```bash
 npm run clean
 npm run build
 npm run dev
 ```
+
 This sequence of commands will:
+
 1. Clear Astro's cache
 2. Rebuild the project
 3. Start the development server
 
 This is recommended when:
+
 - You've made significant changes to your project configuration
 - You're experiencing unexplainable build errors
 - Your changes aren't reflected in the running application despite saving and restarting the dev server
@@ -193,6 +207,7 @@ This is recommended when:
 If the Universal Visual Editor is not functioning as expected:
 
 **Solution:**
+
 - Ensure you've correctly configured the UVE in your dotCMS instance as described in the [Universal Visual Editor](#universal-visual-editor) section.
 - Verify that your Astro application is running on `http://localhost:4321` (or update the UVE configuration if using a different port).
 - Check that you're accessing the dotCMS edit mode from the correct URL.

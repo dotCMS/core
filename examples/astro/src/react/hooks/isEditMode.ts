@@ -8,11 +8,11 @@ import { UVE_MODE } from "@dotcms/types";
  * @returns {boolean}
  */
 export function useIsEditMode() {
-    const [isEditMode, setIsEditMode] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
 
-    useEffect(() => {
-        setIsEditMode(getUVEState()?.mode === UVE_MODE.EDIT);
-    }, []);
+  useEffect(() => {
+    setIsEditMode(getUVEState()?.mode === UVE_MODE.EDIT);
+  }, []);
 
-    return isEditMode;
+  return isEditMode;
 }
