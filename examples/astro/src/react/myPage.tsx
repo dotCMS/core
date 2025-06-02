@@ -3,7 +3,7 @@ import { DotcmsLayout } from "@dotcms/react";
 import { usePageAsset } from "./hooks/usePageAsset";
 import Header from "./layout/header";
 
-import componentsMap from "./content-types";
+import { pageComponents } from "./content-types";
 import type { FC } from "react";
 
 import { Navigation } from "./layout/navigation";
@@ -35,7 +35,7 @@ export const MyPage: FC<MyPageProps> = ({ pageAsset, nav }) => {
       <main className="container m-auto">
         <DotcmsLayout
           pageContext={{
-            components: componentsMap,
+            components: pageComponents,
             pageAsset: pageAsset as any,
             isInsideEditor: false,
           }}
