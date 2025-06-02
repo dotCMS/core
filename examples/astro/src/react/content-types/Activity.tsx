@@ -1,7 +1,7 @@
 import type { DotCMSBasicContentlet } from '@dotcms/types';
 
 export interface ActivityProps extends DotCMSBasicContentlet {
-    description: string;
+    description: string
     urlMap?: string;
     urlTitle?: string;
     widgetTitle?: string;

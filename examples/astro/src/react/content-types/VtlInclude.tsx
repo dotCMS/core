@@ -1,4 +1,5 @@
 import type { DotCMSBasicContentlet } from "@dotcms/types";
+import { useIsEditMode } from "@react/hooks/isEditMode";
 
 interface VtlIncludeProps extends DotCMSBasicContentlet {
     componentType: string;
@@ -7,7 +8,7 @@ interface VtlIncludeProps extends DotCMSBasicContentlet {
     };
 }
 export default function VtlInclude({ componentType, widgetCodeJSON }: VtlIncludeProps) {
-    const isEditMode = false; // useIsEditMode();
+    const isEditMode = useIsEditMode();
 
     if (componentType === "destinationListing") {
         // return <DestinationListing {...widgetCodeJSON} />;

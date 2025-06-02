@@ -1,4 +1,4 @@
-// import { useIsEditMode } from "@/hooks/isEditMode";
+import { useIsEditMode } from "@react/hooks/isEditMode";
 
 import type { DotCMSBasicContentlet } from "@dotcms/types";
 
@@ -10,7 +10,7 @@ interface SimpleWidgetProps extends DotCMSBasicContentlet {
     code: string;
 }
 export default function SimpleWidget({ widgetTitle, identifier, code }: SimpleWidgetProps) {
-    const isEditMode = false; // useIsEditMode();
+    const isEditMode = useIsEditMode();
     if (TRAVEL_BOT_KEY == identifier) {
         return (
             <div className="bg-white rounded-lg shadow-sm p-8 text-center max-w-lg mx-auto my-6">
