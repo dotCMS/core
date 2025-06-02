@@ -30,10 +30,10 @@ import java.util.Objects;
  */
 public class TemplateDataFetcher extends RedirectAwareDataFetcher<Map<Object, Object>> {
     @Override
-    public Map<Object, Object> safeGet(final DataFetchingEnvironment env, final DotGraphQLContext context, final Contentlet contentlet) throws Exception {
+    public Map<Object, Object> safeGet(final DataFetchingEnvironment environment, final DotGraphQLContext context) throws Exception {
         try {
             final User user = context.getUser();
-
+            final Contentlet contentlet = environment.getSource();
             final String pageModeAsString = (String) context.getParam("pageMode");
 
             final PageMode mode = PageMode.get(pageModeAsString);

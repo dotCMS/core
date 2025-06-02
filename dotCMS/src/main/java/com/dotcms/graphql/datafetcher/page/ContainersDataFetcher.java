@@ -23,9 +23,10 @@ import java.util.List;
  */
 public class ContainersDataFetcher extends RedirectAwareDataFetcher<List<ContainerRaw>> {
     @Override
-    public List<ContainerRaw> safeGet(final DataFetchingEnvironment env, final DotGraphQLContext context, final Contentlet page) throws Exception {
+    public List<ContainerRaw> safeGet(final DataFetchingEnvironment environment, final DotGraphQLContext context) throws Exception {
         try {
             final User user = context.getUser();
+            final Contentlet page = environment.getSource();
             Logger.debug(this, ()-> "Fetching containers for page: " + page.getIdentifier());
             final String pageModeAsString = (String) context.getParam("pageMode");
             final String languageId = (String) context.getParam("languageId");

@@ -20,10 +20,10 @@ import javax.servlet.http.HttpServletRequest;
  */
 public class ViewAsDataFetcher extends RedirectAwareDataFetcher<ViewAsPageStatus> {
     @Override
-    public ViewAsPageStatus safeGet(final DataFetchingEnvironment environment, final DotGraphQLContext context, final Contentlet contentlet) throws Exception {
+    public ViewAsPageStatus safeGet(final DataFetchingEnvironment environment, final DotGraphQLContext context) throws Exception {
         try {
             final User user = context.getUser();
-
+            final Contentlet contentlet = environment.getSource();
             final String pageModeAsString = (String) context.getParam("pageMode");
 
             final PageMode mode = PageMode.get(pageModeAsString);

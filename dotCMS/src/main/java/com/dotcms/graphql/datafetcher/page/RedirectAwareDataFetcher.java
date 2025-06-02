@@ -13,14 +13,13 @@ public abstract class RedirectAwareDataFetcher<T> implements DataFetcher<T> {
 
     @Override
     public T get(DataFetchingEnvironment environment) throws Exception {
-        DotGraphQLContext context = environment.getContext();
-        Contentlet contentlet = environment.getSource();
+        final DotGraphQLContext context = environment.getContext();
 
-        if (GraphQLUtils.isRedirectPage(contentlet, context)) {
+        if (GraphQLUtils.isRedirectPage(context)) {
             return onRedirect();
         }
 
-        return safeGet(environment, context, contentlet);
+        return safeGet(environment, context);
     }
 
     /**
@@ -32,5 +31,5 @@ public abstract class RedirectAwareDataFetcher<T> implements DataFetcher<T> {
     /**
      * Called when the page is valid and not a redirect.
      */
-    protected abstract T safeGet(DataFetchingEnvironment env, DotGraphQLContext context, Contentlet contentlet) throws Exception;
+    protected abstract T safeGet(DataFetchingEnvironment env, DotGraphQLContext context) throws Exception;
 }

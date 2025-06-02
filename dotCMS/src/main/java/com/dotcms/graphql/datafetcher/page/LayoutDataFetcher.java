@@ -20,8 +20,9 @@ import java.util.Map;
  */
 public class LayoutDataFetcher extends RedirectAwareDataFetcher<TemplateLayout> {
     @Override
-    public TemplateLayout safeGet(final DataFetchingEnvironment env, final DotGraphQLContext context, final Contentlet page) throws Exception {
+    public TemplateLayout safeGet(final DataFetchingEnvironment environment, final DotGraphQLContext context) throws Exception {
         try {
+            final Contentlet page = environment.getSource();
             final String pageModeAsString = (String) context.getParam("pageMode");
             final PageMode mode = PageMode.get(pageModeAsString);
 

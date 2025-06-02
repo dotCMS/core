@@ -17,12 +17,10 @@ public class GraphQLUtils {
     /**
      * Determines whether a page contentlet represents a redirect caused by a vanity URL.
      *
-     * @param c    the contentlet representing the page
      * @param ctx  the GraphQL context
-     * @return true if the contentlet is empty and the redirect flag is set in the context
+     * @return true if the context indicates a vanity redirect
      */
-    public static boolean isRedirectPage(final Contentlet c, final DotGraphQLContext ctx) {
-        return !UtilMethods.isSet(c.getContentType()) &&
-                Boolean.TRUE.equals(ctx.getParam(IS_VANITY_REDIRECT_PARAM));
+    public static boolean isRedirectPage(final DotGraphQLContext ctx) {
+        return Boolean.TRUE.equals(ctx.getParam(IS_VANITY_REDIRECT_PARAM));
     }
 }
