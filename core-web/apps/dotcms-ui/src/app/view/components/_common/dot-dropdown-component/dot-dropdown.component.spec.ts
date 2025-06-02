@@ -1,139 +1,202 @@
-import { Component, DebugElement } from '@angular/core';
-import { ComponentFixture, waitForAsync } from '@angular/core/testing';
-import { By } from '@angular/platform-browser';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-
-import { ButtonModule } from 'primeng/button';
-
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
+import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator';
 
 import { DotDropdownComponent } from './dot-dropdown.component';
 
-@Component({
-    selector: 'dot-test-host-component',
-    template: `
-        <dot-dropdown-component
-            [icon]="icon"
-            [title]="title"
-            [disabled]="disabled"></dot-dropdown-component>
-    `
-})
-class DotTestHostComponent {
-    disabled: boolean;
-    icon: string;
-    title: string;
-
-    constructor() {
-        this.icon = 'icon';
-        this.title = 'test';
-    }
-}
-
-function executeEnabled(
-    elem: DebugElement,
-    hostFixture: ComponentFixture<DotTestHostComponent>,
-    de: DebugElement,
-    comp: DotDropdownComponent
-) {
-    elem.nativeElement.click();
-    hostFixture.detectChanges();
-    const content = de.query(By.css('.dropdown-content'));
-    expect(content).toBeTruthy();
-    expect(elem).toBeTruthy();
-    expect(comp.toggle.emit).toHaveBeenCalledWith(true);
-}
-
-function executeDisabled(elem: DebugElement, de: DebugElement) {
-    elem.nativeElement.click();
-    const content = de.query(By.css('.dropdown-content'));
-    expect(content).toBeFalsy();
-    expect(elem).toBeTruthy();
-}
-
 describe('DotDropdownComponent', () => {
-    let hostFixture: ComponentFixture<DotTestHostComponent>;
-    let hostDe: DebugElement;
-    let hostComp: DotTestHostComponent;
+    let spectator: Spectator<DotDropdownComponent>;
+    const createComponent = createComponentFactory(DotDropdownComponent);
 
-    let comp: DotDropdownComponent;
-    let de: DebugElement;
-
-    beforeEach(waitForAsync(() => {
-        DOTTestBed.configureTestingModule({
-            declarations: [DotDropdownComponent, DotTestHostComponent],
-            imports: [BrowserAnimationsModule, ButtonModule]
-        });
-
-        hostFixture = DOTTestBed.createComponent(DotTestHostComponent);
-        hostComp = hostFixture.debugElement.componentInstance;
-        hostDe = hostFixture.debugElement;
-
-        de = hostDe.query(By.css('dot-dropdown-component'));
-        comp = de.componentInstance;
-    }));
+    beforeEach(
+        () =>
+            (spectator = createComponent({
+                detectChanges: false
+            }))
+    );
 
     describe('Enabled', () => {
-        let button: DebugElement;
-        let titleButton: DebugElement;
+        it('should display icon button and emit toggle event when clicked', () => {
+            spectator.setInput('icon', 'test');
+            spectator.setInput('disabled', false);
+            spectator.detectChanges();
 
-        beforeEach(() => {
-            spyOn(comp.toggle, 'emit');
-            hostComp.disabled = false;
-            hostFixture.detectChanges();
-            button = de.query(By.css('[data-testid="icon-button"]'));
-            titleButton = de.query(By.css('[data-testid="title-button"]'));
+            const iconBtn = spectator.query<HTMLButtonElement>(byTestId('icon-button'));
+            const spyToggle = spyOn(spectator.component.toggle, 'emit');
+            const spyWasOpen = spyOn(spectator.component.wasOpen, 'emit');
+
+            spectator.click(iconBtn);
+
+            const content = spectator.query('.dropdown-content');
+
+            expect(content).toBeTruthy();
+            expect(iconBtn).toBeTruthy();
+            expect(iconBtn.disabled).toBeFalsy();
+            expect(spyToggle).toHaveBeenCalledWith(true);
+            expect(spyWasOpen).toHaveBeenCalled();
         });
 
-        it(`should dot-icon button be displayed & emit`, () => {
-            executeEnabled(button, hostFixture, de, comp);
-            expect(button.attributes.disabled).not.toBeDefined();
-        });
+        it('should display title button and emit toggle event when clicked', () => {
+            spectator.setInput('title', 'test');
+            spectator.setInput('disabled', false);
+            spectator.detectChanges();
 
-        it(`should title button be displayed & emit`, () => {
-            executeEnabled(titleButton, hostFixture, de, comp);
+            const titleBtn = spectator.query<HTMLButtonElement>(byTestId('title-button'));
+            const spyToggle = spyOn(spectator.component.toggle, 'emit');
+            const spyWasOpen = spyOn(spectator.component.wasOpen, 'emit');
+
+            spectator.click(titleBtn);
+
+            const content = spectator.query('.dropdown-content');
+
+            expect(content).toBeTruthy();
+            expect(titleBtn).toBeTruthy();
+            expect(titleBtn.disabled).toBeFalsy();
+            expect(spyToggle).toHaveBeenCalledWith(true);
+            expect(spyWasOpen).toHaveBeenCalled();
         });
     });
 
     describe('Disabled', () => {
-        let button: DebugElement;
-        let titleButton: DebugElement;
+        it('should disable icon button and not emit when disabled', () => {
+            spectator.setInput('icon', 'test');
+            spectator.setInput('disabled', true);
+            spectator.detectChanges();
 
-        beforeEach(() => {
-            spyOn(comp.toggle, 'emit');
-            hostComp.disabled = true;
-            hostFixture.detectChanges();
-            button = de.query(By.css('[data-testid="icon-button"]'));
-            titleButton = de.query(By.css('[data-testid="title-button"]'));
+            const iconBtn = spectator.query<HTMLButtonElement>(byTestId('icon-button'));
+            const spyToggle = spyOn(spectator.component.toggle, 'emit');
+
+            expect(iconBtn.disabled).toBeTruthy();
+
+            spectator.click(iconBtn);
+            expect(spyToggle).not.toHaveBeenCalled();
         });
 
-        it(`should dot-icon button not be displayed --> null`, () => {
-            executeDisabled(button, de);
-            expect(button.componentInstance.disabled).toBe(true);
-        });
+        it('should disable title button and not emit when disabled', () => {
+            spectator.setInput('title', 'test');
+            spectator.setInput('disabled', true);
+            spectator.detectChanges();
 
-        it(`should title button not be displayed & not emit`, () => {
-            executeDisabled(titleButton, de);
-            expect(comp.toggle.emit).not.toHaveBeenCalled();
+            const titleBtn = spectator.query<HTMLButtonElement>(byTestId('title-button'));
+            const spyToggle = spyOn(spectator.component.toggle, 'emit');
+
+            expect(titleBtn.disabled).toBeTruthy();
+
+            spectator.click(titleBtn);
+            expect(spyToggle).not.toHaveBeenCalled();
         });
     });
 
-    it(`should hide the dropdown dialog`, () => {
-        comp.closeIt();
-        expect(comp.show).toBe(false);
+    describe('Dropdown behavior', () => {
+        it('should show and hide the dropdown dialog', () => {
+            spectator.detectChanges();
+
+            expect(spectator.query('.dropdown-content')).toBeFalsy();
+
+            spectator.component.onToggle();
+            spectator.detectChanges();
+
+            expect(spectator.query('.dropdown-content')).toBeTruthy();
+
+            spectator.component.closeIt();
+            spectator.detectChanges();
+
+            expect(spectator.query('.dropdown-content')).toBeFalsy();
+        });
+
+        it('should emit shutdown event when closing dropdown', () => {
+            const spyShutdown = spyOn(spectator.component.shutdown, 'emit');
+
+            spectator.component.onToggle(); // Open
+            spectator.component.onToggle(); // Close
+
+            expect(spyShutdown).toHaveBeenCalled();
+        });
+
+        it('should show the mask when dropdown is open', () => {
+            spectator.detectChanges();
+            spectator.component.onToggle();
+            spectator.detectChanges();
+
+            const mask = spectator.query('.dot-mask');
+
+            expect(mask).toBeTruthy();
+        });
+
+        it('should hide the mask when dropdown is closed', () => {
+            spectator.detectChanges();
+            spectator.component.onToggle();
+            spectator.detectChanges();
+
+            expect(spectator.query('.dot-mask')).toBeTruthy();
+
+            spectator.component.closeIt();
+            spectator.detectChanges();
+
+            expect(spectator.query('.dot-mask')).toBeFalsy();
+        });
+
+        it('should close dropdown when clicking on mask', () => {
+            spectator.detectChanges();
+            spectator.component.onToggle();
+            spectator.detectChanges();
+
+            const mask = spectator.query('.dot-mask');
+            const spyToggle = spyOn(spectator.component.toggle, 'emit');
+
+            spectator.click(mask);
+
+            expect(spyToggle).toHaveBeenCalledWith(false);
+        });
     });
 
-    it('shold show the mask', () => {
-        comp.show = true;
-        hostFixture.detectChanges();
-        const mask = de.query(By.css('.dot-mask'));
-        mask.nativeElement.click();
-        expect(mask).toBeTruthy();
+    describe('Computed properties', () => {
+        it('should compute $disabledIcon correctly when icon is present and disabled', () => {
+            spectator.setInput('icon', 'test');
+            spectator.setInput('disabled', true);
+            spectator.detectChanges();
+
+            expect(spectator.component.$disabledIcon()).toBeTruthy();
+        });
+
+        it('should compute $disabledIcon as false when no icon is present', () => {
+            spectator.setInput('disabled', true);
+            spectator.detectChanges();
+
+            expect(spectator.component.$disabledIcon()).toBeFalsy();
+        });
+
+        it('should compute $style with correct positioning', () => {
+            spectator.setInput('position', 'right');
+            spectator.detectChanges();
+
+            expect(spectator.component.$style()).toEqual({ right: '0' });
+        });
+
+        it('should compute $style with left positioning by default', () => {
+            spectator.detectChanges();
+
+            expect(spectator.component.$style()).toEqual({ left: '0' });
+        });
     });
 
-    it('shold hide the mask', () => {
-        comp.show = false;
-        hostFixture.detectChanges();
-        const mask = de.query(By.css('.dot-mask'));
-        expect(mask).toBeFalsy();
+    describe('Click outside behavior', () => {
+        it('should close dropdown when clicking outside component', () => {
+            spectator.component.onToggle();
+            spectator.detectChanges();
+
+            expect(spectator.component.$show()).toBeTruthy();
+
+            // Simulate click outside
+            const outsideElement = document.createElement('div');
+            document.body.appendChild(outsideElement);
+
+            const clickEvent = new MouseEvent('click', { bubbles: true });
+            Object.defineProperty(clickEvent, 'target', { value: outsideElement });
+
+            spectator.component.handleClick(clickEvent);
+
+            expect(spectator.component.$show()).toBeFalsy();
+
+            document.body.removeChild(outsideElement);
+        });
     });
 });
