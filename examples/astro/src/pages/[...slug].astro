@@ -1,17 +1,21 @@
 ---
-import Layout from "../layouts/Layout.astro";
+import Layout from "../components/Layout.astro";
 import Error from "../components/Error.astro";
 import { getDotCMSPage } from "@utils/client";
-import { MyPage } from "@react/myPage";
+import { DotCMSPage } from "@react/DotCMSPage";
 
 const params = Astro.params;
 
-const { pageAsset, content, errors } =
-  (await getDotCMSPage(params?.slug ?? "", Astro.url.searchParams)) ?? {};
+const pageResponse = await getDotCMSPage(
+  params?.slug ?? "",
+  Astro.url.searchParams,
+);
 
-console.log(errors);
-
+const pageAsset = pageResponse?.pageAsset;
+const errors = pageResponse?.errors;
 const { vanityUrl } = pageAsset ?? {};
+
+console.log(pageResponse);
 
 if (vanityUrl && (vanityUrl.temporaryRedirect || vanityUrl.permanentRedirect)) {
   return Astro.redirect(vanityUrl.forwardTo, vanityUrl.response);
@@ -26,10 +30,9 @@ const title = pageAsset ? pageAsset.page.title : "Error";
       {errors ? (
         <Error error={errors} />
       ) : (
-        <MyPage
+        <DotCMSPage
           client:only="react"
-          pageAsset={pageAsset}
-          nav={content?.navigation?.children}
+          pageResponse={pageResponse}
         />
       )}
     </Layout>

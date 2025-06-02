@@ -9,9 +9,10 @@
       "@utils/*": ["src/utils/*"],
       "@react/*": ["src/react/*"],
       "@react/shared/*": ["src/react/shared/*"],
-      "@react/hooks/*": ["src/react/hooks/*"],
-      "@react/contentTypes/*": ["src/react/content-types/*"],
-      "@react/layout/*": ["src/react/layout/*"]
+      "@react/hooks/*": ["src/hooks/*"],
+      "@react/contentTypes/*": ["src/components/content-types/*"],
+      "@react/layout/*": ["src/react/layout/*"],
+      "@components/*": ["src/components/*"]
     }
   }
 }

@@ -1,36 +1,21 @@
-import { useEffect, useState } from "react";
-import type { DotCMSBasicContentlet } from "@dotcms/types";
+import RecommendedCard from "@components/react/RecommendedCard";
 
-import { Contentlets } from "@react/shared/contentlets";
-import { dotCMSClient } from "@utils/client";
+export default function Destinations({ destinations }: { destinations: any }) {
+    if (!destinations?.length) return null;
 
-export const Destinations = () => {
-  const [destinations, setDestinations] = useState<DotCMSBasicContentlet[]>([]);
-
-  useEffect(() => {
-    dotCMSClient.content
-      .getCollection("Destination")
-      .sortBy([
-        {
-          field: "modDate",
-          order: "desc",
-        },
-      ])
-      .limit(3)
-      .then((response) => {
-        setDestinations(response.contentlets);
-      })
-      .catch((error) => {
-        console.error(`Error fetching Destinations`, error);
-      });
-  }, []);
-
-  return (
-    <div className="flex flex-col">
-      <h2 className="text-2xl font-bold mb-7 text-black">
-        Popular Destinations
-      </h2>
-      {!!destinations.length && <Contentlets contentlets={destinations} />}
-    </div>
-  );
-};
+    return (
+        <div className="flex flex-col">
+            <h2 className="text-2xl font-bold mb-7 text-white">
+                Popular Destinations
+            </h2>
+            <div className="flex flex-col gap-5">
+                {destinations.map((destination: any) => (
+                    <RecommendedCard
+                        key={destination.identifier}
+                        contentlet={destination}
+                    />
+                ))}
+            </div>
+        </div>
+    );
+}

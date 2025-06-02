@@ -1,6 +1,6 @@
 import { editContentlet } from "@dotcms/uve";
 import type { DotCMSBasicContentlet } from "@dotcms/types";
-import { useIsEditMode } from "@react/hooks/isEditMode";
+import { useIsEditMode } from "src/hooks/isEditMode";
 
 interface BlogCardProps extends DotCMSBasicContentlet {
   title: string;

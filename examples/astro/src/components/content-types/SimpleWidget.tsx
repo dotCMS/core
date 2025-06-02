@@ -1,4 +1,4 @@
-import { useIsEditMode } from "@react/hooks/isEditMode";
+import { useIsEditMode } from "src/hooks/isEditMode";
 
 import type { DotCMSBasicContentlet } from "@dotcms/types";
 
