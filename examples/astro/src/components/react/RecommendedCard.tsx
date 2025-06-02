@@ -4,24 +4,29 @@ interface RecommendedCardProps extends DotCMSBasicContentlet {
   urlMap: string;
 }
 
+const dateFormatOptions: Intl.DateTimeFormatOptions = {
+  year: "numeric",
+  month: "long",
+  day: "numeric",
+};
+
 const RecommendedCard = ({
   contentlet,
 }: {
   contentlet: RecommendedCardProps;
 }) => {
   const { url, title, inode, image, urlMap, modDate } = contentlet;
-  const dateFormatOptions = {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  };
 
   return (
-    <div className="flex gap-7 min-h-16 relative">
+    <div className="flex gap-7 relative">
       {/* <EditButton contentlet={contentlet} /> */}
       <a className="relative min-w-32" href={urlMap || url}>
         {image && (
-          <img src={`/dA/${inode}`} alt={title} className="object-cover" />
+          <img
+            src={`/dA/${inode}/250w`}
+            alt={title}
+            className="object-cover w-[128px] h-[88px]"
+          />
         )}
       </a>
       <div className="flex flex-col gap-1">
@@ -29,10 +34,7 @@ const RecommendedCard = ({
           {title}
         </a>
         <time className="text-gray-400">
-          {new Date(modDate).toLocaleDateString(
-            "en-US",
-            dateFormatOptions as Intl.DateTimeFormatOptions,
-          )}
+          {new Date(modDate).toLocaleDateString("en-US", dateFormatOptions)}
         </time>
       </div>
     </div>

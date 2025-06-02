@@ -19,7 +19,7 @@ function Activity({
       {image && (
         <div className="relative w-full h-56 overflow-hidden">
           <img
-            className="object-cover"
+            className="w-full h-full object-cover"
             src={`/dA/${inode}`}
             alt="Activity Image"
           />

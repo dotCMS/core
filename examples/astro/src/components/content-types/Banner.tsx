@@ -13,9 +13,9 @@ function Banner(contentlet: BannerProps) {
   const { title, caption, inode, image, link, buttonText } = contentlet;
 
   return (
-    <div className="relative w-full p-4 bg-gray-200 h-96">
+    <div className="relative bg-gray-200 h-96 mb-4">
       {image && (
-        <img src={`/dA/${inode}`} className="object-cover" alt={title} />
+        <img src={`/dA/${inode}`} className="w-full h-full object-cover" alt={title} />
       )}
       <div className="absolute inset-0 flex flex-col items-center justify-center p-4 text-center text-white">
         <h2 className="mb-2 text-6xl font-bold text-shadow">
