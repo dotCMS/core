@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { DotRouterService } from '@dotcms/data-access';
@@ -16,13 +16,16 @@ export class DotToolbarComponent implements OnInit {
     readonly #dotRouterService = inject(DotRouterService);
     readonly #dotcmsEventsService = inject(DotcmsEventsService);
     readonly #siteService = inject(SiteService);
+    readonly #destroyRef = inject(DestroyRef);
     dotNavigationService = inject(DotNavigationService);
     iframeOverlayService = inject(IframeOverlayService);
+
+
 
     ngOnInit(): void {
         this.#dotcmsEventsService
             .subscribeTo<Site>('ARCHIVE_SITE')
-            .pipe(takeUntilDestroyed())
+            .pipe(takeUntilDestroyed(this.#destroyRef))
             .subscribe((data: Site) => {
                 if (data.hostname === this.#siteService.currentSite.hostname && data.archived) {
                     this.#siteService.switchToDefaultSite().subscribe((defaultSite: Site) => {
@@ -35,7 +38,7 @@ export class DotToolbarComponent implements OnInit {
     siteChange(site: Site): void {
         this.#siteService
             .switchSite(site)
-            .pipe(takeUntilDestroyed())
+            .pipe(takeUntilDestroyed(this.#destroyRef))
             .subscribe(() => {
                 // wait for the site to be switched
                 // before redirecting to the site browser
