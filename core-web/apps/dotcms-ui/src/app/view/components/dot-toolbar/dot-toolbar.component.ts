@@ -20,8 +20,6 @@ export class DotToolbarComponent implements OnInit {
     dotNavigationService = inject(DotNavigationService);
     iframeOverlayService = inject(IframeOverlayService);
 
-
-
     ngOnInit(): void {
         this.#dotcmsEventsService
             .subscribeTo<Site>('ARCHIVE_SITE')
