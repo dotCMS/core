@@ -8,10 +8,11 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
-import com.microsoft.sqlserver.jdbc.ISQLServerConnection;
 import io.vavr.control.Try;
-
 import java.sql.Connection;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 public class LocalTransaction {
@@ -23,7 +24,7 @@ public class LocalTransaction {
     }
 
 
-    private final static String WARN_MESSAGE = "Transaction broken - Connection that started the transaction is not the same as the one who is commiting";
+    private static final String WARN_MESSAGE = "Transaction broken - Connection that started the transaction is not the same as the one who is commiting";
 
     /**
      * @param delegate {@link ReturnableDelegate}
@@ -33,7 +34,7 @@ public class LocalTransaction {
      *                          listeners) this pattern will use a new connection (if the parent
      *                          caller is already in a transaction, that transaction will be
      *                          restored after this method gets done) If the SQL call fails, it will
-     *                          rollback the work, close  the db connection and throw the error up
+     *                          roll back the work, close  the db connection and throw the error up
      *                          the stack.
      *                          <p>
      *                          Since it uses a new connection, that one will be closed at the end
@@ -44,10 +45,26 @@ public class LocalTransaction {
      *                          return new LocalTransaction().externalizeTransaction(() ->{ return
      *                          myDBMethod(args); });
      */
-    static public <T> T externalizeTransaction(final ReturnableDelegate<T> delegate)
+    public static <T> T externalizeTransaction(final ReturnableDelegate<T> delegate)
+            throws Exception {
+        return externalizeTransaction(delegate, null, null);
+    } // transaction.
+
+    /**
+     * Externalizes a transaction with commit and rollback callbacks.
+     * @param delegate {@link ReturnableDelegate}
+     * @param commitCallbacks list of callbacks to execute on commit
+     * @param rollbackCallbacks list of callbacks to execute on rollback
+     * @return result of the {@link ReturnableDelegate}
+     * @param <T> the type of the result
+     * @throws Exception if an error occurs during the transaction
+     */
+    public static <T> T externalizeTransaction(final ReturnableDelegate<T> delegate,
+            final List<Consumer<T>> commitCallbacks,
+            final List<Consumer<Exception>> rollbackCallbacks)
             throws Exception {
         T result = null;
-        // gets the current conn
+        // gets the current connection
         final Connection currentConnection = DbConnectionFactory.getConnection();
         final Session currentSession = HibernateUtil.getSession();
         // creates a new one
@@ -66,19 +83,62 @@ public class LocalTransaction {
             result = delegate.execute();
             handleTransactionInteruption(newTransactionConnection, threadStack);
             HibernateUtil.commitTransaction();
-        } catch (Throwable e) {
 
+            notifyCommitCallbacks(commitCallbacks, result);
+
+        } catch (Throwable e) {
             HibernateUtil.rollbackTransaction();
+
+            notifyRollbackCallbacks(rollbackCallbacks, e);
+
             throwException(e);
         } finally {
-
             HibernateUtil.closeSessionSilently();
-            // return the previous conn, if needed
+            // return the previous connection, if needed
             HibernateUtil.setSession(currentSession);
             DbConnectionFactory.setConnection(currentConnection);
         }
         return result;
-    } // transaction.
+    }
+
+    /**
+     * Notifies rollback callbacks in case of an exception.
+     * @param rollbackCallbacks list of rollback callbacks to execute
+     * @param e the exception that caused the rollback
+     */
+    private static void notifyRollbackCallbacks(List<Consumer<Exception>> rollbackCallbacks, Throwable e) {
+        // Execute rollback callbacks if provided
+        if (rollbackCallbacks != null) {
+            Exception rollbackException = (e instanceof Exception) ? (Exception) e
+                    : new Exception(e);
+            for (Consumer<Exception> callback : rollbackCallbacks) {
+                try {
+                    callback.accept(rollbackException);
+                } catch (Exception callbackEx) {
+                    Logger.warn(LocalTransaction.class, "Error executing rollback callback: " + callbackEx.getMessage(), callbackEx);
+                }
+            }
+        }
+    }
+
+    /**
+     * Notifies commit callbacks after a successful transaction.
+     * @param commitCallbacks list of commit callbacks to execute
+     * @param result the result of the transaction
+     * @param <T> the type of the result
+     */
+    private static <T> void notifyCommitCallbacks(List<Consumer<T>> commitCallbacks, T result) {
+        // Execute commit callbacks if provided
+        if (commitCallbacks != null) {
+            for (Consumer<T> callback : commitCallbacks) {
+                try {
+                    callback.accept(result);
+                } catch (Exception e) {
+                    Logger.warn(LocalTransaction.class, "Error executing commit callback: " + e.getMessage(), e);
+                }
+            }
+        }
+    }
 
     /**
      * @param delegate {@link ReturnableDelegate}
@@ -263,7 +323,7 @@ public class LocalTransaction {
 
     private static final String LOCAL_TRANSACTION_NAME = LocalTransaction.class.getCanonicalName();
 
-    static public boolean inLocalTransaction() {
+    public static boolean inLocalTransaction() {
         final StackTraceElement[] stes = Thread.currentThread().getStackTrace();
         for (int i = 2; i < stes.length; i++) {
             final int stackNumber = i;
@@ -274,5 +334,81 @@ public class LocalTransaction {
         }
         return false;
     }
+
+    /**
+     * Factory method to create Monad with operation
+     */
+    public static <T> Tx<T> tx() {
+        return new Tx<>(null, new ArrayList<>(), new ArrayList<>());
+    }
+
+    /**
+     * Factory method to create Monad with operation
+     */
+    public static class Tx<T> {
+        private final ReturnableDelegate<T> operation;
+        private final List<Consumer<T>> commitCallbacks;
+        private final List<Consumer<Exception>> rollbackCallbacks;
+
+        // Private constructor for immutability
+        private Tx(ReturnableDelegate<T> operation,
+                List<Consumer<T>> commitCallbacks,
+                List<Consumer<Exception>> rollbackCallbacks) {
+            this.operation = operation;
+            this.commitCallbacks = List.copyOf(commitCallbacks != null ? commitCallbacks : new ArrayList<>());
+            this.rollbackCallbacks = List.copyOf(rollbackCallbacks != null ? rollbackCallbacks : new ArrayList<>());
+        }
+
+        /**
+         * Sets the main transactional operation - Returns new instance (immutable)
+         */
+        public Tx<T> of(ReturnableDelegate<T> operation) {
+            return new Tx<>(operation, this.commitCallbacks, this.rollbackCallbacks);
+        }
+
+        /**
+         * Adds a single commit callback - Returns new instance (immutable)
+         */
+        public Tx<T> thenCommit(Consumer<T> callback) {
+            List<Consumer<T>> newCommitCallbacks = new ArrayList<>(this.commitCallbacks);
+            newCommitCallbacks.add(callback);
+            return new Tx<>(this.operation, newCommitCallbacks, this.rollbackCallbacks);
+        }
+
+        /**
+         * Adds a simple commit callback that doesn't use the result
+         */
+        public Tx<T> thenCommit(Runnable callback) {
+            return thenCommit(result -> callback.run());
+        }
+
+        /**
+         * Adds a single rollback callback - Returns new instance (immutable)
+         */
+        public Tx<T> orElseRollback(Consumer<Exception> callback) {
+            List<Consumer<Exception>> newRollbackCallbacks = new ArrayList<>(this.rollbackCallbacks);
+            newRollbackCallbacks.add(callback);
+            return new Tx<>(this.operation, this.commitCallbacks, newRollbackCallbacks);
+        }
+
+        /**
+         * Adds a simple rollback callback that doesn't use the exception
+         */
+        public Tx<T> orElseRollback(Runnable callback) {
+            return orElseRollback(ex -> callback.run());
+        }
+
+        /**
+         * Executes the transaction and returns the result
+         */
+        public T run() throws Exception {
+            if (this.operation == null) {
+                throw new IllegalStateException("No operation defined. Use transactional() to set an operation.");
+            }
+            return externalizeTransaction(this.operation, this.commitCallbacks, this.rollbackCallbacks);
+        }
+
+    }
+
 
 } // E:O:F:LocalTransaction.
