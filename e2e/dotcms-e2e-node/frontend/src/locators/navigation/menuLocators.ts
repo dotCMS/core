@@ -37,7 +37,7 @@ export class MenuEntriesLocators {
   readonly COLLAPSE: Locator;
 
   constructor(page: Page) {
-    this.EXPAND = page.getByRole("button", { name: "" });
+    this.EXPAND = page.getByTestId("dot-nav-header-toggle-button");
     this.COLLAPSE = page
       .locator('button[ng-reflect-ng-class="[object Object]"]')
       .first();

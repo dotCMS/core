@@ -101,7 +101,7 @@
                             pButton
                             type="submit"
                             [loading]="$isSaving()"
-                            [disabled]="$isSaving()"
+                            [disabled]="$isSaving() || !commentControl.value?.trim()"
                             class="p-button-sm p-button-primary activities__submit"
                             data-testid="activities-submit">
                             {{ 'edit.content.sidebar.activities.send' | dm }}
