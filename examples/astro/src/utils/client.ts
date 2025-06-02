@@ -1,7 +1,7 @@
-import { DotCmsClient, getPageRequestParams } from "@dotcms/client";
+import { createDotCMSClient } from "@dotcms/client/next";
 import type { DotCMSNavigationItem, DotCMSPageAsset } from "@dotcms/types";
 
-export const client = DotCmsClient.init({
+export const dotCMSClient = createDotCMSClient({
   authToken: import.meta.env.PUBLIC_DOTCMS_AUTH_TOKEN,
   dotcmsUrl: import.meta.env.PUBLIC_DOTCMS_HOST,
   siteId: import.meta.env.PUBLIC_DOTCMS_SITE_ID,
@@ -11,59 +11,97 @@ export const client = DotCmsClient.init({
   },
 });
 
-export type GetPageDataResponse = {
-  pageAsset?: DotCMSPageAsset;
-  nav?: DotCMSNavigationItem;
-  error?: unknown;
-};
-
-export const getPageData = async (
-  slug: string | undefined,
-  params: URLSearchParams,
+export const getDotCMSPage = async (
+  path: string,
+  searchParams?: URLSearchParams,
 ) => {
-  const path = slug || "/";
-  const pageParams = getPageRequestParams({
-    path,
-    params,
-  });
-
-  const { pageAsset, error: pageError } = await fetchPageData(pageParams);
-  const { nav, error: navError } = await fetchNavData(pageParams.language_id);
-
-  return {
-    nav,
-    pageAsset,
-    error: pageError || navError,
-  };
-};
-
-const fetchPageData = async (params: any) => {
+  // Avoid passing mode if you have a read only auth token
+  const { mode, ...params } = Object.fromEntries(searchParams?.entries() ?? []) ?? {};
   try {
-    const pageAsset = (await client.page.get({
+    const pageData = await dotCMSClient.page.get<{
+        pageAsset: DotCMSPageAsset;
+        content?: {
+            navigation: {
+                children: DotCMSNavigationItem[];
+            };
+        };
+    }>(path, {
       ...params,
-      depth: 3,
-    })) as DotCMSPageAsset;
+      graphql: {
+        content: {
+          blogs: blogQuery,
+          destinations: destinationQuery,
+          navigation: navigationQuery,
+        },
+        fragments: [fragmentNav],
+      },
+    });
+    return pageData;
+  } catch (e: any) {
+    console.error("ERROR FETCHING PAGE: ", e.message);
 
-    return { pageAsset };
-  } catch (error: any) {
-    if (error?.status === 404) {
-      return { pageAsset: undefined, error: undefined };
+    return null;
+  }
+};
+
+export const blogQuery = `
+    search(query: "+contenttype:Blog +live:true", limit: 3) {
+        title
+        identifier
+        ... on Blog {
+            inode
+            image {
+                fileName
+            }
+            urlMap
+            modDate
+            urlTitle
+            teaser
+            author {
+                firstName
+                lastName
+                inode
+            }
+        }
     }
+`;
 
-    return { pageAsset: undefined, error };
-  }
-};
+export const destinationQuery = `
+    search(query: "+contenttype:Destination +live:true", limit: 3) {
+        title
+        identifier
+        ... on Destination {
+                inode
+                image {
+                fileName
+                }
+                urlMap
+                modDate
+                url
+        }
+    }
+`;
 
-const fetchNavData = async (languageId = 1) => {
-  try {
-    const { entity } = (await client.nav.get({
-      path: "/",
-      depth: 2,
-      languageId,
-    })) as { entity: DotCMSNavigationItem };
+export const navigationQuery = `
+DotNavigation(uri: "/", depth: 2) {
+    ...NavProps
+    children {
+        ...NavProps
+    }
+}
+`;
 
-    return { nav: entity };
-  } catch (error) {
-    return { nav: undefined, error };
-  }
-};
+export const fragmentNav = `
+fragment NavProps on DotNavigation {
+    code
+    folder
+    hash
+    host
+    href
+    languageId
+    order
+    target
+    title
+    type
+}
+`;

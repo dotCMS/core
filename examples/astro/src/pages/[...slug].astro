@@ -1,12 +1,14 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import Error from '../components/Error.astro';
-import { getPageData } from '@utils/client';
+import { getDotCMSPage } from '@utils/client';
 import { MyPage } from '@react/myPage';
 
 const params = Astro.params;
 
-const { pageAsset, nav, error } = await getPageData(params?.slug, Astro.url.searchParams);
+const { pageAsset, content, errors } = await getDotCMSPage(params?.slug ?? '', Astro.url.searchParams) ?? {};
+
+console.log(errors);
 
 const { vanityUrl } = pageAsset ?? {};
 
@@ -20,10 +22,10 @@ const title = pageAsset ? pageAsset.page.title : 'Error';
 {
     (
         <Layout title={title}>
-            {error ? (
-                <Error error={error} />
+            {errors ? (
+                <Error error={errors} />
             ) : (
-                <MyPage client:only="react" pageAsset={pageAsset} nav={nav?.children} />
+                <MyPage client:only="react" pageAsset={pageAsset} nav={content?.navigation?.children} />
             )}
         </Layout>
     )

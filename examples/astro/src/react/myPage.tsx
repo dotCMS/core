@@ -1,24 +1,22 @@
-import { DotcmsLayout } from "@dotcms/react";
-
-import { usePageAsset } from "./hooks/usePageAsset";
-import Header from "./layout/header";
+import type { DotCMSNavigationItem, DotCMSPageAsset } from "@dotcms/types";
+import { DotCMSLayoutBody } from "@dotcms/react/next";
 
 import { pageComponents } from "./content-types";
-import type { FC } from "react";
 
-import { Navigation } from "./layout/navigation";
 import { Footer } from "./layout/footer/footer";
+import { Navigation } from "./layout/navigation";
+import Header from "./layout/header";
 import NotFound from "./components/notFound";
-
-import type { DotCMSNavigationItem, DotCMSPageAsset } from "@dotcms/types";
 
 export type MyPageProps = {
   pageAsset?: DotCMSPageAsset;
   nav?: DotCMSNavigationItem[];
 };
 
-export const MyPage: FC<MyPageProps> = ({ pageAsset, nav }) => {
-  pageAsset = usePageAsset(pageAsset);
+export const MyPage = ({ pageAsset, nav }: MyPageProps) => {
+  // pageAsset = usePageAsset(pageAsset);
+
+  console.log(pageAsset);
 
   if (!pageAsset) {
     return <NotFound />;
@@ -28,26 +26,15 @@ export const MyPage: FC<MyPageProps> = ({ pageAsset, nav }) => {
     <div className="flex flex-col min-h-screen gap-6 bg-lime-50">
       {pageAsset?.layout.header && (
         <Header>
-          <Navigation items={nav} />
+          <h1>Header</h1>
+          {/* <Navigation items={nav} /> */}
         </Header>
       )}
 
       <main className="container m-auto">
-        <DotcmsLayout
-          pageContext={{
-            components: pageComponents,
-            pageAsset: pageAsset as any,
-            isInsideEditor: false,
-          }}
-          config={{
-            pathname: window.location.pathname,
-
-            editor: {
-              params: {
-                depth: "3",
-              },
-            },
-          }}
+        <DotCMSLayoutBody
+          page={pageAsset}
+          components={pageComponents}
         />
       </main>
 

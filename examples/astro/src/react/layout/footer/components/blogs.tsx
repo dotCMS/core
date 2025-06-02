@@ -1,13 +1,14 @@
-import { Contentlets } from "@react/shared/contentlets";
-import type { DotCMSContentlet } from "@dotcms/types";
-import { client } from "@utils/client";
 import { useEffect, useState } from "react";
 
+import type { DotCMSBasicContentlet } from "@dotcms/types";
+import { Contentlets } from "@react/shared/contentlets";
+import { dotCMSClient } from "@utils/client";
+
 export const Blogs = () => {
-  const [blogs, setBlogs] = useState<DotCMSContentlet[]>([]);
+  const [blogs, setBlogs] = useState<DotCMSBasicContentlet[]>([]);
 
   useEffect(() => {
-    client.content
+    dotCMSClient.content
       .getCollection("Blog")
       .sortBy([
         {
