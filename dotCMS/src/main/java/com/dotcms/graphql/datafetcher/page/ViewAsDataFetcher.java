@@ -18,23 +18,17 @@ import javax.servlet.http.HttpServletRequest;
 /**
  * This DataFetcher returns a {@link ViewAsPageStatus} representing the view as status of the originally
  */
-public class ViewAsDataFetcher implements DataFetcher<ViewAsPageStatus> {
+public class ViewAsDataFetcher extends RedirectAwareDataFetcher<ViewAsPageStatus> {
     @Override
-    public ViewAsPageStatus get(final DataFetchingEnvironment environment) throws Exception {
+    public ViewAsPageStatus safeGet(final DataFetchingEnvironment environment, final DotGraphQLContext context, final Contentlet contentlet) throws Exception {
         try {
-            final DotGraphQLContext context = environment.getContext();
             final User user = context.getUser();
-            final Contentlet contentlet = environment.getSource();
-
-            if(GraphQLUtils.isRedirectPage(contentlet, context)) {
-                return null;
-            }
 
             final String pageModeAsString = (String) context.getParam("pageMode");
 
             final PageMode mode = PageMode.get(pageModeAsString);
 
-            final HttpServletRequest request = ((DotGraphQLContext) environment.getContext())
+            final HttpServletRequest request = context
                     .getHttpServletRequest();
 
             final HTMLPageAsset pageAsset = APILocator.getHTMLPageAssetAPI()
@@ -46,6 +40,11 @@ public class ViewAsDataFetcher implements DataFetcher<ViewAsPageStatus> {
             Logger.error(this, e.getMessage(), e);
             throw e;
         }
+    }
+
+    @Override
+    protected ViewAsPageStatus onRedirect() {
+        return null;
     }
 
 

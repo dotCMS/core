@@ -21,20 +21,15 @@ import java.util.List;
 /**
  * This DataFetcher returns the {@link TemplateLayout} associated to the requested {@link HTMLPageAsset}.
  */
-public class ContainersDataFetcher implements DataFetcher<List<ContainerRaw>> {
+public class ContainersDataFetcher extends RedirectAwareDataFetcher<List<ContainerRaw>> {
     @Override
-    public List<ContainerRaw> get(final DataFetchingEnvironment environment) throws Exception {
+    public List<ContainerRaw> safeGet(final DataFetchingEnvironment env, final DotGraphQLContext context, final Contentlet page) throws Exception {
         try {
-            final DotGraphQLContext context = environment.getContext();
             final User user = context.getUser();
-            final Contentlet page = environment.getSource();
             Logger.debug(this, ()-> "Fetching containers for page: " + page.getIdentifier());
             final String pageModeAsString = (String) context.getParam("pageMode");
             final String languageId = (String) context.getParam("languageId");
 
-            if(GraphQLUtils.isRedirectPage(page, context)) {
-                return Collections.emptyList();
-            }
             final PageMode mode = PageMode.get(pageModeAsString);
             final HTMLPageAsset pageAsset = APILocator.getHTMLPageAssetAPI()
                     .fromContentlet(page);
@@ -50,5 +45,9 @@ public class ContainersDataFetcher implements DataFetcher<List<ContainerRaw>> {
             Logger.error(this, e.getMessage(), e);
             throw e;
         }
+    }
+    @Override
+    protected List<ContainerRaw> onRedirect() {
+        return Collections.emptyList();
     }
 }

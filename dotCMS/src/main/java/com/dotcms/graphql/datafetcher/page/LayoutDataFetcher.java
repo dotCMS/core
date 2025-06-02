@@ -18,19 +18,13 @@ import java.util.Map;
 /**
  * This DataFetcher returns the {@link TemplateLayout} associated to the requested {@link HTMLPageAsset}.
  */
-public class LayoutDataFetcher implements DataFetcher<TemplateLayout> {
+public class LayoutDataFetcher extends RedirectAwareDataFetcher<TemplateLayout> {
     @Override
-    public TemplateLayout get(final DataFetchingEnvironment environment) throws Exception {
+    public TemplateLayout safeGet(final DataFetchingEnvironment env, final DotGraphQLContext context, final Contentlet page) throws Exception {
         try {
-            final DotGraphQLContext context = environment.getContext();
-            final User user = context.getUser();
-            final Contentlet page = environment.getSource();
             final String pageModeAsString = (String) context.getParam("pageMode");
             final PageMode mode = PageMode.get(pageModeAsString);
 
-            if(GraphQLUtils.isRedirectPage(page, context)) {
-                return null;
-            }
             Logger.debug(this, ()-> "Fetching layout for page: " + page.getIdentifier());
             final HTMLPageAsset pageAsset = APILocator.getHTMLPageAssetAPI()
                     .fromContentlet(page);
@@ -43,5 +37,10 @@ public class LayoutDataFetcher implements DataFetcher<TemplateLayout> {
             Logger.error(this, e.getMessage(), e);
             throw e;
         }
+    }
+
+    @Override
+    protected TemplateLayout onRedirect() {
+        return null;
     }
 }
