@@ -42,6 +42,7 @@ import java.io.IOException;
 import java.io.Writer;
 import java.security.NoSuchAlgorithmException;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -197,8 +198,13 @@ public class SAMLHelperTest extends IntegrationTestBase {
         final User nativeUser = new UserDataGen().active(true).lastName(nativeLastName).firstName(nativeFirstName)
                 .emailAddress(nativeEmailAddress).nextPersisted();
 
+        final Map<String, Object> additionalAttributes = new HashMap<>();
+
+        additionalAttributes.put("prop-key1", "prop-value1");
+        additionalAttributes.put("prop-key2", "prop-value2");
+
         final Attributes nativeUserAttributes = new Attributes.Builder().firstName(nativeFirstName + "Updated")
-                .lastName(nativeLastName).nameID(nativeUser.getUserId()).email(nativeEmailAddress).build();
+                .lastName(nativeLastName).nameID(nativeUser.getUserId()).email(nativeEmailAddress).additionalAttributes(additionalAttributes).build();
 
         // recover with SAML the native user
         final User recoveredNativeUser = samlHelper.resolveUser(nativeUserAttributes, identityProviderConfiguration);
@@ -208,6 +214,9 @@ public class SAMLHelperTest extends IntegrationTestBase {
         Assert.assertEquals (nativeUser.getEmailAddress(), recoveredNativeUser.getEmailAddress());
         Assert.assertNotEquals(nativeUser.getFirstName(),  recoveredNativeUser.getFirstName());
         Assert.assertEquals (nativeUser.getLastName(),     recoveredNativeUser.getLastName());
+        Assert.assertNotNull(recoveredNativeUser.getAdditionalInfo());
+        Assert.assertEquals ("The additional info prop1 is not right","prop-value1",     recoveredNativeUser.getAdditionalInfo().get("prop-key1"));
+        Assert.assertEquals ("The additional info prop1 is not right","prop-value2",     recoveredNativeUser.getAdditionalInfo().get("prop-key2"));
 
         // creates an user from saml
         final Attributes samlUserAttributes = new Attributes.Builder().firstName(samlFirstName)

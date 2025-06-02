@@ -6,7 +6,7 @@ import { Editor } from 'tinymce';
 import { DebugElement, ElementRef, Renderer2, SecurityContext } from '@angular/core';
 import { By, DomSanitizer } from '@angular/platform-browser';
 
-import { DotCMSUVEAction, UVE_MODE } from '@dotcms/types';
+import { DotCMSBasicContentlet, DotCMSUVEAction, UVE_MODE } from '@dotcms/types';
 import { __DOTCMS_UVE_EVENT__ } from '@dotcms/types/internal';
 import * as dotCMSUVE from '@dotcms/uve';
 
@@ -53,7 +53,7 @@ const TINYMCE_EDITOR_PROPERTY_MOCK = {
     get: jest.fn(() => TINYMCE_EDITOR_MOCK as Editor)
 };
 
-const mockEditorFn = (spectator: Spectator<DotCMSEditableTextComponent>) => {
+const mockEditorFn = (spectator: Spectator<DotCMSEditableTextComponent<DotCMSBasicContentlet>>) => {
     // Mock the editor property of the EditorComponent
     // We need to test that the methods of the editor are called
     // We do not care about how the editor handles the calls under the hood
@@ -65,7 +65,7 @@ const mockEditorFn = (spectator: Spectator<DotCMSEditableTextComponent>) => {
 };
 
 describe('DotCMSEditableTextComponent', () => {
-    let spectator: Spectator<DotCMSEditableTextComponent>;
+    let spectator: Spectator<DotCMSEditableTextComponent<DotCMSBasicContentlet>>;
 
     const createComponent = createComponentFactory({
         component: DotCMSEditableTextComponent,

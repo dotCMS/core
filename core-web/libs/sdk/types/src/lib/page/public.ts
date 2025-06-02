@@ -351,7 +351,7 @@ export interface DotCMSBasicContentlet {
     title: string;
     titleImage: string;
     text?: string;
-    url: string;
+    url?: string;
     working: boolean;
     body?: string;
     contentTypeIcon?: string;
@@ -359,16 +359,16 @@ export interface DotCMSBasicContentlet {
     widgetTitle?: string;
     onNumberOfPages?: string;
     __icon__?: string;
-    [key: string]: any;
+    _map?: Record<string, unknown>;
 }
 
 /**
  * Represents a navigation item in the DotCMS navigation structure
  *
- * @interface DotcmsNavigationItem
+ * @interface DotCMSNavigationItem
  * @property {string} [code] - Optional unique code identifier for the navigation item
  * @property {string} folder - The folder path where this navigation item is located
- * @property {DotcmsNavigationItem[]} [children] - Optional array of child navigation items
+ * @property {DotCMSNavigationItem[]} [children] - Optional array of child navigation items
  * @property {string} host - The host/site this navigation item belongs to
  * @property {number} languageId - The language ID for this navigation item
  * @property {string} href - The URL/link that this navigation item points to
@@ -378,10 +378,10 @@ export interface DotCMSBasicContentlet {
  * @property {string} target - The target attribute for the link (e.g. "_blank", "_self")
  * @property {number} order - The sort order position of this item in the navigation
  */
-export interface DotcmsNavigationItem {
+export interface DotCMSNavigationItem {
     code?: string;
     folder: string;
-    children?: DotcmsNavigationItem[];
+    children?: DotCMSNavigationItem[];
     host: string;
     languageId: number;
     href: string;

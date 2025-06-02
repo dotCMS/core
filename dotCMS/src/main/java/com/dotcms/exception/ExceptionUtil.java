@@ -2,6 +2,7 @@ package com.dotcms.exception;
 
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
+import com.dotcms.rest.config.DotServiceLocatorImpl.QuietServiceShutdownException;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ValidationException;
 import com.dotcms.util.exceptions.DuplicateFileException;
@@ -116,6 +117,11 @@ public class ExceptionUtil {
                     InvalidFolderNameException.class
             );
 
+
+    //These are exceptions we want to log but not bubble up to the user
+    public static final Set<Class<? extends Throwable>> LOUD_MOUTH_EXCEPTIONS = Set.of(
+            QuietServiceShutdownException.class
+    );
 
     private ExceptionUtil () {}
 
