@@ -1054,7 +1054,7 @@ public class IntegrityResource {
      * @param integrityDataRequestID
      */
     private void addThreadToSession ( HttpSession session, Thread thread, String endpointId, String integrityDataRequestID ) {
-        session.setAttribute( "integrityThread_" + endpointId, thread );
+        session.setAttribute( "integrityThread_" + endpointId, ProcessStatus.PROCESSING );
         session.setAttribute( "integrityDataRequest_" + endpointId, integrityDataRequestID );
     }
 
