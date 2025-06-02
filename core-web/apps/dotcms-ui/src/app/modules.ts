@@ -25,7 +25,7 @@ import { DotDownloadBundleDialogModule } from '@components/_common/dot-download-
 import { DotPushPublishDialogModule } from '@components/_common/dot-push-publish-dialog';
 import { DotWizardModule } from '@components/_common/dot-wizard/dot-wizard.module';
 import { DotMessageDisplayModule } from '@components/dot-message-display/dot-message-display.module';
-import { DotToolbarModule } from '@components/dot-toolbar/dot-toolbar.module';
+import { DotToolbarComponent } from '@components/dot-toolbar/dot-toolbar.component';
 import { DotContentCompareModule } from '@dotcms/portlets/dot-ema/ui';
 import { DotDialogModule, DotFieldValidationMessageComponent, DotIconModule } from '@dotcms/ui';
 
@@ -41,7 +41,7 @@ import { DotListingDataTableModule } from './view/components/dot-listing-data-ta
 import { DotWorkflowTaskDetailModule } from './view/components/dot-workflow-task-detail/dot-workflow-task-detail.module';
 
 export const CUSTOM_MODULES = [
-    DotToolbarModule,
+    DotToolbarComponent,
     DotActionButtonModule,
     DotContentletEditorModule,
     DotDialogModule,

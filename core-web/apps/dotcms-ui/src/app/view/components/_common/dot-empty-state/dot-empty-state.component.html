@@ -1,7 +1,13 @@
 <div class="dot-empty-container__notice">
-    <span *ngIf="icon" class="material-icons" data-testid="material-icons">{{ icon }}</span>
-    <h3 *ngIf="title" class="dot-empty-container__title" data-testid="title">{{ title }}</h3>
-    <p *ngIf="content" class="dot-empty-container__content" data-testid="content">{{ content }}</p>
+    @if (icon) {
+        <span class="material-icons" data-testid="material-icons">{{ icon }}</span>
+    }
+    @if (title) {
+        <h3 class="dot-empty-container__title" data-testid="title">{{ title }}</h3>
+    }
+    @if (content) {
+        <p class="dot-empty-container__content" data-testid="content">{{ content }}</p>
+    }
     <button
         (click)="handleClick($event)"
         pButton
@@ -11,16 +17,17 @@
 </div>
 <table class="dot-empty-state" data-testid="dot-empty-state">
     <tbody>
-        <tr *ngFor="let number of numberOfRows()">
-            <td [ngStyle]="{ width: checkBoxWidth + '%' }" data-testid="checkbox">
-                <div class="checkbox-dummy"></div>
-            </td>
-            <td
-                *ngFor="let width of colsTextWidth"
-                [ngStyle]="{ width: columnWidth }"
-                data-testid="dummy-text-td">
-                <span [ngStyle]="{ width: width + '%' }" class="dot-dummy-text"></span>
-            </td>
-        </tr>
+        @for (number of numberOfRows(); track $index) {
+            <tr>
+                <td [style.width]="checkBoxWidth + '%'" data-testid="checkbox">
+                    <div class="checkbox-dummy"></div>
+                </td>
+                @for (width of colsTextWidth; track $index) {
+                    <td [style.width]="columnWidth" data-testid="dummy-text-td">
+                        <span [style.width]="width + '%'" class="dot-dummy-text"></span>
+                    </td>
+                }
+            </tr>
+        }
     </tbody>
 </table>
