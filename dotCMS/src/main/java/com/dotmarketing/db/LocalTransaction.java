@@ -47,7 +47,7 @@ public class LocalTransaction {
      */
     public static <T> T externalizeTransaction(final ReturnableDelegate<T> delegate)
             throws Exception {
-        return externalizeTransaction(delegate, null, null);
+        return externalizeTransaction(delegate, null, null, true);
     } // transaction.
 
     /**
@@ -61,7 +61,8 @@ public class LocalTransaction {
      */
     public static <T> T externalizeTransaction(final ReturnableDelegate<T> delegate,
             final List<Consumer<T>> commitCallbacks,
-            final List<Consumer<Exception>> rollbackCallbacks)
+            final List<Consumer<Exception>> rollbackCallbacks,
+            final boolean throwException)
             throws Exception {
         T result = null;
         // gets the current connection
@@ -90,8 +91,9 @@ public class LocalTransaction {
             HibernateUtil.rollbackTransaction();
 
             notifyRollbackCallbacks(rollbackCallbacks, e);
-
-            throwException(e);
+            if(throwException){
+               throwException(e);
+            }
         } finally {
             HibernateUtil.closeSessionSilently();
             // return the previous connection, if needed
@@ -337,6 +339,7 @@ public class LocalTransaction {
 
     /**
      * Factory method to create Monad with operation
+     * This is an Alternative to using the @WrapInTransaction + HibernateUtil.addTransactionListener
      */
     public static <T> Tx<T> tx() {
         return new Tx<>(null, new ArrayList<>(), new ArrayList<>());
@@ -346,6 +349,7 @@ public class LocalTransaction {
      * Factory method to create Monad with operation
      */
     public static class Tx<T> {
+
         private final ReturnableDelegate<T> operation;
         private final List<Consumer<T>> commitCallbacks;
         private final List<Consumer<Exception>> rollbackCallbacks;
@@ -369,7 +373,7 @@ public class LocalTransaction {
         /**
          * Adds a single commit callback - Returns new instance (immutable)
          */
-        public Tx<T> thenCommit(Consumer<T> callback) {
+        public Tx<T> onCommit(Consumer<T> callback) {
             List<Consumer<T>> newCommitCallbacks = new ArrayList<>(this.commitCallbacks);
             newCommitCallbacks.add(callback);
             return new Tx<>(this.operation, newCommitCallbacks, this.rollbackCallbacks);
@@ -378,14 +382,14 @@ public class LocalTransaction {
         /**
          * Adds a simple commit callback that doesn't use the result
          */
-        public Tx<T> thenCommit(Runnable callback) {
-            return thenCommit(result -> callback.run());
+        public Tx<T> onCommit(Runnable callback) {
+            return onCommit(result -> callback.run());
         }
 
         /**
          * Adds a single rollback callback - Returns new instance (immutable)
          */
-        public Tx<T> orElseRollback(Consumer<Exception> callback) {
+        public Tx<T> onRollback(Consumer<Exception> callback) {
             List<Consumer<Exception>> newRollbackCallbacks = new ArrayList<>(this.rollbackCallbacks);
             newRollbackCallbacks.add(callback);
             return new Tx<>(this.operation, this.commitCallbacks, newRollbackCallbacks);
@@ -394,21 +398,28 @@ public class LocalTransaction {
         /**
          * Adds a simple rollback callback that doesn't use the exception
          */
-        public Tx<T> orElseRollback(Runnable callback) {
-            return orElseRollback(ex -> callback.run());
+        public Tx<T> onRollback(Runnable callback) {
+            return onRollback(ex -> callback.run());
         }
 
         /**
          * Executes the transaction and returns the result
          */
-        public T run() throws Exception {
+        public T run() {
             if (this.operation == null) {
                 throw new IllegalStateException("No operation defined. Use transactional() to set an operation.");
             }
-            return externalizeTransaction(this.operation, this.commitCallbacks, this.rollbackCallbacks);
+            try {
+                return externalizeTransaction(this.operation, this.commitCallbacks,
+                        this.rollbackCallbacks, false);
+            } catch (Exception e){
+                // This exception should not be thrown, since we are handling it internally and using the onRollback callbacks and the throwException flag is set to false.
+                // However, we log it here to be JVM complaint.
+                Logger.error(LocalTransaction.class, "Error executing transaction", e);
+            }
+            return null;
         }
 
     }
-
 
 } // E:O:F:LocalTransaction.

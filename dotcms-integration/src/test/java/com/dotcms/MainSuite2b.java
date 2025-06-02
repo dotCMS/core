@@ -440,6 +440,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.db.DbConnectionFactoryTest.class,
         com.dotmarketing.db.DbConnectionFactoryUtilTest.class,
         com.dotmarketing.db.HibernateUtilTest.class,
+        com.dotmarketing.db.LocalTransactionTest.class,
         com.dotmarketing.quartz.job.BinaryCleanupJobTest.class,
 
         com.dotmarketing.fixTasks.FixTask00085FixEmptyParentPathOnIdentifierTest.class,

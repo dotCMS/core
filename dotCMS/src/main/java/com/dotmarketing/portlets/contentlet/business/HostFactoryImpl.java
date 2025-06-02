@@ -501,12 +501,13 @@ public class HostFactoryImpl implements HostFactory {
 
     private Boolean innerDeleteSite(final Host site, final User user, final boolean respectFrontendRoles) {
         try {
-            return LocalTransaction.<Boolean>tx().of(() -> {
+            return LocalTransaction.<Boolean>tx()
+            .of(() -> {
                 deleteSite(site, user, respectFrontendRoles);
                 return Boolean.TRUE;
-            }).thenCommit(() ->
+            }).onCommit(() ->
                     onSiteDeleteOk(site, user) // This will be executed after the transaction is committed
-              ).orElseRollback(() ->
+              ).onRollback(() ->
                     Logger.error(HostAPIImpl.class, String.format("An error occurred when deleting Site '%s' by User '%s'",
                     site.getHostname(), user.getUserId()))
               ).run();
