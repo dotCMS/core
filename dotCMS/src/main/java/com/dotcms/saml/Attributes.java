@@ -4,6 +4,7 @@ import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 
 import java.io.Serializable;
+import java.util.Map;
 
 /**
  * Encapsulates the attributes retrieve from the Saml Assertion
@@ -35,6 +36,8 @@ public class Attributes implements Serializable {
 	// SAML Session Index
 	private final String sessionIndex;
 
+	private final Map<String, Object> additionalAttributes;
+
 	private Attributes(final Builder builder) {
 
 		final String uuid = UUIDUtil.uuid();
@@ -45,6 +48,7 @@ public class Attributes implements Serializable {
 		this.roles        = builder.roles;
 		this.nameID       = builder.nameID;
 		this.sessionIndex = builder.sessionIndex;
+		this.additionalAttributes = builder.additionalAttributes;
 	}
 
 	public String getEmail()
@@ -81,10 +85,22 @@ public class Attributes implements Serializable {
 		return sessionIndex;
 	}
 
+	public Map<String, Object> getAdditionalAttributes() {
+		return additionalAttributes;
+	}
+
 	@Override
 	public String toString() {
-		return "AttributesBean{" + "nameID='" + nameID + '\'' + ", email='" + email + '\'' + ", lastName='" + lastName + '\''
-				+ ", firstName='" + firstName + '\'' + ", addRoles=" + addRoles + ", roles=" + roles + '}';
+		return "Attributes{" +
+				"email='" + email + '\'' +
+				", lastName='" + lastName + '\'' +
+				", firstName='" + firstName + '\'' +
+				", addRoles=" + addRoles +
+				", roles=" + roles +
+				", nameID=" + nameID +
+				", sessionIndex='" + sessionIndex + '\'' +
+				", additionalAttributes=" + additionalAttributes +
+				'}';
 	}
 
 	public static final class Builder {
@@ -95,6 +111,13 @@ public class Attributes implements Serializable {
 		Object roles     = null;
 		Object nameID    = null;
 		String sessionIndex;
+		Map<String, Object> additionalAttributes;
+
+		public Builder additionalAttributes(final Map<String, Object> additionalAttributes)
+		{
+			this.additionalAttributes = additionalAttributes;
+			return this;
+		}
 
 		public Builder email(final String email )
 		{

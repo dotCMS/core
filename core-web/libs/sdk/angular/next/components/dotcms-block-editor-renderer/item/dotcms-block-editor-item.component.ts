@@ -5,11 +5,12 @@ import { BlockEditorNode } from '@dotcms/types';
 import { BlockEditorDefaultBlocks } from '@dotcms/types/internal';
 
 import { DotCodeBlock, DotBlockQuote } from '../blocks/code.component';
-import { DotContentletBlock } from '../blocks/contentlet.component';
+import { DotContentletBlock } from '../blocks/dot-contentlet.component';
 import { DotImageBlock } from '../blocks/image.component';
 import { DotBulletList, DotOrdererList, DotListItem } from '../blocks/list.component';
 import { DotTableBlock } from '../blocks/table.component';
 import { DotParagraphBlock, DotTextBlock, DotHeadingBlock } from '../blocks/text.component';
+import { DotUnknownBlockComponent } from '../blocks/unknown.component';
 import { DotVideoBlock } from '../blocks/video.component';
 import { CustomRenderer } from '../dotcms-block-editor-renderer.component';
 
@@ -33,7 +34,8 @@ import { CustomRenderer } from '../dotcms-block-editor-renderer.component';
         DotImageBlock,
         DotVideoBlock,
         DotTableBlock,
-        DotContentletBlock
+        DotContentletBlock,
+        DotUnknownBlockComponent
     ]
 })
 export class DotCMSBlockEditorItemComponent {

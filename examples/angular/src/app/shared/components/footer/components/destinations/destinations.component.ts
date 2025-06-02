@@ -1,8 +1,8 @@
 import { Component, input } from '@angular/core';
 
-import { RecommendedCardComponent } from '../../recommended-card/recommended-card.component';
+import { RecommendedCardComponent } from '../recommended-card/recommended-card.component';
 
-import { Destination } from '../../../contentlet.model';
+import { Destination } from '../../../../contentlet.model';
 
 @Component({
     selector: 'app-destinations',

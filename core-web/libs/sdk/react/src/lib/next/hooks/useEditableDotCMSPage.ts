@@ -1,6 +1,10 @@
 import { useState, useEffect } from 'react';
 
-import { DotCMSPageResponse, UVEEventType } from '@dotcms/types';
+import {
+    DotCMSComposedPageResponse,
+    UVEEventType,
+    DotCMSExtendedPageResponse
+} from '@dotcms/types';
 import { getUVEState, initUVE, createUVESubscription, updateNavigation } from '@dotcms/uve';
 
 /**
@@ -91,21 +95,33 @@ import { getUVEState, initUVE, createUVESubscription, updateNavigation } from '@
  * @returns {DotCMSPageResponse} The updated editable page state that reflects any changes made in the UVE.
  * The structure includes page data and any GraphQL content that was requested.
  */
-export const useEditableDotCMSPage = (pageResponse: DotCMSPageResponse): DotCMSPageResponse => {
+export const useEditableDotCMSPage = <T extends DotCMSExtendedPageResponse>(
+    pageResponse: DotCMSComposedPageResponse<T>
+): DotCMSComposedPageResponse<T> => {
     const [updatedPageResponse, setUpdatedPageResponse] =
-        useState<DotCMSPageResponse>(pageResponse);
+        useState<DotCMSComposedPageResponse<T>>(pageResponse);
 
     useEffect(() => {
         if (!getUVEState()) {
             return;
         }
 
-        const pageURI = pageResponse?.pageAsset?.page?.pageURI ?? '/';
+        if (!pageResponse) {
+            console.warn('[useEditableDotCMSPage]: No DotCMSPageResponse provided');
+
+            return;
+        }
+
+        const pageURI = pageResponse?.pageAsset?.page?.pageURI;
 
         const { destroyUVESubscriptions } = initUVE(pageResponse);
 
-        // Update the navigation to the pageURI
-        updateNavigation(pageURI);
+        // Update the navigation to the pageURI, when we have a pageURI
+        // Sometimes the page is null due to permissions, so we don't want to update the navigation
+        // And wait for the UVE to resolve the page
+        if (pageURI) {
+            updateNavigation(pageURI);
+        }
 
         return () => {
             destroyUVESubscriptions();
@@ -113,9 +129,12 @@ export const useEditableDotCMSPage = (pageResponse: DotCMSPageResponse): DotCMSP
     }, [pageResponse]);
 
     useEffect(() => {
-        const { unsubscribe } = createUVESubscription(UVEEventType.CONTENT_CHANGES, (payload) => {
-            setUpdatedPageResponse(payload);
-        });
+        const { unsubscribe } = createUVESubscription(
+            UVEEventType.CONTENT_CHANGES,
+            (payload: DotCMSComposedPageResponse<T>) => {
+                setUpdatedPageResponse(payload);
+            }
+        );
 
         return () => {
             unsubscribe();

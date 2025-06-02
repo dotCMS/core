@@ -1,16 +1,7 @@
 import { NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { DotCMSBasicContentlet } from '@dotcms/types';
-
-interface ActivityContentlet extends DotCMSBasicContentlet {
-    image?: {
-        identifier: string;
-    };
-    title: string;
-    description: string;
-    urlTitle: string;
-}
+import { Activity } from '../../shared/contentlet.model';
 
 @Component({
     selector: 'app-activity',
@@ -38,5 +29,5 @@ interface ActivityContentlet extends DotCMSBasicContentlet {
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ActivityComponent {
-    contentlet = input.required<ActivityContentlet>();
+    contentlet = input.required<Activity>();
 }

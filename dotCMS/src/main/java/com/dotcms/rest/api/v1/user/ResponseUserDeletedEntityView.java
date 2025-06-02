@@ -3,9 +3,11 @@ package com.dotcms.rest.api.v1.user;
 import com.dotcms.rest.ResponseEntityView;
 
 /**
- * Returns the response entity view for an user deleted view
+ * Returns a map such as
+ * userID -> {userId}
+ * user   -> {userMap}
  */
-public class ResponseUserDeletedEntityView extends ResponseEntityView <UserDeletedView> {
+public class ResponseUserDeletedEntityView extends ResponseEntityView<UserDeletedView> {
     public ResponseUserDeletedEntityView(final UserDeletedView entity) {
         super(entity);
     }

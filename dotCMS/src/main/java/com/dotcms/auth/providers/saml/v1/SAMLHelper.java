@@ -368,6 +368,12 @@ public class SAMLHelper {
             user.setFirstName(attributesBean.getFirstName());
             user.setLastName(attributesBean.getLastName());
 
+            if (Objects.nonNull(attributesBean.getAdditionalAttributes()) &&
+                    attributesBean.getAdditionalAttributes().size() > 0) {
+
+                user.setAdditionalInfo(attributesBean.getAdditionalAttributes());
+            }
+
             this.userAPI.save(user, systemUser, false);
             Logger.debug(this, ()-> "User with email '" + attributesBean.getEmail() + "' has been updated");
         } catch (Exception e) {
@@ -697,6 +703,12 @@ public class SAMLHelper {
             user.setCreateDate(new Date());
             user.setPassword(PublicEncryptionFactory.digestString(UUIDGenerator.generateUuid() + "/" + UUIDGenerator.generateUuid()));
             user.setPasswordEncrypted(true);
+
+            if (Objects.nonNull(attributesBean.getAdditionalAttributes()) &&
+                    attributesBean.getAdditionalAttributes().size() > 0) {
+
+                user.setAdditionalInfo(attributesBean.getAdditionalAttributes());
+            }
 
             this.userAPI.save(user, systemUser, false);
             Logger.debug(this, ()-> "User with NameID '" + nameID + "' and email '" +

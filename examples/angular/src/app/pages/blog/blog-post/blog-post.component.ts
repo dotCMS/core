@@ -38,7 +38,6 @@ export class BlogPostComponent implements OnChanges {
     }
 
     customRenderers = {
-        // 'paragraph': import('./customRenderers/paragraph/paragraph.component').then(c => c.ParagraphComponent),
         Activity: import('./customRenderers/activity/activity.component').then(
             (c) => c.ActivityComponent
         )
