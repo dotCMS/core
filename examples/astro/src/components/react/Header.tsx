@@ -1,8 +1,6 @@
 // import { useIsEditMode } from "@react/hooks/isEditMode";
 
 function Header({ navItems }: { navItems: any }) {
-    console.log(navItems);
-    // const isEditMode = useIsEditMode();
 
     return (
         <div className="flex items-center justify-between p-4 bg-blue-500">

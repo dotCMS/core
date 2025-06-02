@@ -1,15 +1,11 @@
 ---
-import Layout from "../components/Layout.astro";
-import Error from "../components/Error.astro";
+import Layout from "@components/Layout.astro";
+import Error from "@components/Error.astro";
 import { getDotCMSPage } from "@utils/client";
-import { DotCMSPage } from "@react/DotCMSPage";
+import { DetailPage } from "@react/DetailPage";
 
 const params = Astro.params;
-
-const pageResponse = await getDotCMSPage(
-  params?.slug ?? "",
-  Astro.url.searchParams,
-);
+const pageResponse = await getDotCMSPage("/blog/post/" + params?.post, Astro.url.searchParams);
 
 const pageAsset = pageResponse?.pageAsset;
 const errors = pageResponse?.errors;
@@ -28,7 +24,7 @@ const title = pageAsset ? pageAsset.page.title : "Error";
       {errors ? (
         <Error error={errors} />
       ) : (
-        <DotCMSPage
+        <DetailPage
           client:only="react"
           pageResponse={pageResponse}
         />

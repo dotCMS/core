@@ -1,5 +1,9 @@
 import { createDotCMSClient } from "@dotcms/client/next";
-import type { DotCMSComposedPageResponse, DotCMSNavigationItem, DotCMSPageAsset } from "@dotcms/types";
+import type {
+  DotCMSComposedPageResponse,
+  DotCMSNavigationItem,
+  DotCMSPageAsset,
+} from "@dotcms/types";
 import {
   blogQuery,
   destinationQuery,

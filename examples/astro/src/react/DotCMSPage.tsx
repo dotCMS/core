@@ -13,8 +13,6 @@ export const DotCMSPage = ({ pageResponse }: any) => {
   const { pageAsset, content = {} } = useEditableDotCMSPage<any>(pageResponse);
   const navigation = content.navigation;
 
-  console.log(content);
-
   return (
     <div className="flex flex-col min-h-screen gap-6 bg-lime-50">
       {pageAsset?.layout.header && <Header navItems={navigation.children}></Header>}
