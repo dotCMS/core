@@ -1,6 +1,8 @@
-// import { useIsEditMode } from "@react/hooks/isEditMode";
+import { useIsEditMode } from "@/hooks";
+import { ReorderMenuButton } from "@/components/ui";
 
 function Header({ navItems }: { navItems: any }) {
+    const isEditMode = useIsEditMode();
 
     return (
         <div className="flex items-center justify-between p-4 bg-blue-500">
@@ -9,7 +11,7 @@ function Header({ navItems }: { navItems: any }) {
                     <a href="/">TravelLux in NextJS</a>
                 </h2>
 
-                {/* {isEditMode && <ReorderMenuButton />} */}
+                {isEditMode && <ReorderMenuButton />}
             </div>
 
             {navItems && <Navigation navItems={navItems} />}

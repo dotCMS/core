@@ -1,4 +1,5 @@
 import type { DotCMSBasicContentlet } from "@dotcms/types";
+import { EditButton } from "./EditButton";
 
 interface RecommendedCardProps extends DotCMSBasicContentlet {
   urlMap: string;
@@ -19,7 +20,7 @@ export const RecommendedCard = ({
 
   return (
     <div className="flex gap-7 relative">
-      {/* <EditButton contentlet={contentlet} /> */}
+      <EditButton contentlet={contentlet} />
       <a className="relative min-w-32" href={urlMap || url}>
         {image && (
           <img

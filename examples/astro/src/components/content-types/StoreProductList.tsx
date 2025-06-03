@@ -1,6 +1,6 @@
 import type { DotCMSBasicContentlet } from "@dotcms/types";
-
-interface Product {
+import { EditButton } from "../ui/EditButton";
+ interface Product extends DotCMSBasicContentlet {
   inode: string;
   title: string;
   retailPrice: number;
@@ -46,7 +46,7 @@ function ProductCard({ product }: { product: Product }) {
       className="group relative"
       onClick={() => alert("Selected Product: " + title)}
     >
-      {/* <EditButton contentlet={product} /> */}
+      <EditButton contentlet={product} />
       <div className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300 flex flex-col h-full">
         <div className="relative aspect-square w-full overflow-hidden bg-gray-100">
           <img

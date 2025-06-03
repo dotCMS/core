@@ -1,4 +1,5 @@
 import type { DotCMSBasicContentlet } from "@dotcms/types";
+import { EditButton } from "./EditButton";
 
 export interface Destination extends DotCMSBasicContentlet {
   selectValue: string;
@@ -28,7 +29,7 @@ export function DestinationListing({
             key={destination.identifier}
             className="relative bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300"
           >
-            {/* <EditButton contentlet={destination} /> */}
+            <EditButton contentlet={destination} />
             <div className="relative h-64 overflow-hidden">
               <img
                 src={`/dA/${destination.inode}`}
