@@ -1,15 +1,11 @@
 import type { DotCMSBasicContentlet } from "@dotcms/types";
 import { useIsEditMode } from "@/hooks";
+import { DestinationListing, type Destination } from "../ui";
 
 interface VtlIncludeProps extends DotCMSBasicContentlet {
   componentType: string;
   widgetCodeJSON: {
-    products: {
-      inode: string;
-      title: string;
-      retailPrice: number;
-      salePrice: number;
-    }[];
+    destinations: Destination[];
   };
 }
 export default function VtlInclude({
@@ -19,9 +15,7 @@ export default function VtlInclude({
   const isEditMode = useIsEditMode();
 
   if (componentType === "destinationListing") {
-    // return <DestinationListing {...widgetCodeJSON} />;
-
-    return <div>Destination List</div>;
+    return <DestinationListing destinations={widgetCodeJSON.destinations} />;
   }
 
   if (isEditMode) {

@@ -1,4 +1,4 @@
-import RecommendedCard from "@components/ui/RecommendedCard";
+import {RecommendedCard} from "@/components/ui";
 
 function Footer({ blogs, destinations }: { blogs: any; destinations: any }) {
   return (

@@ -1,12 +1,12 @@
 import type { DotCMSBasicContentlet } from "@dotcms/types";
 
-interface Destination extends DotCMSBasicContentlet {
+export interface Destination extends DotCMSBasicContentlet {
   selectValue: string;
   shortDescription: string;
   activities: string[];
 }
 
-interface DestinationListingProps extends DotCMSBasicContentlet {
+interface DestinationListingProps {
   destinations: Destination[];
 }
 
@@ -29,7 +29,7 @@ export function DestinationListing({
             className="relative bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300"
           >
             {/* <EditButton contentlet={destination} /> */}
-            <div className="relative h-64">
+            <div className="relative h-64 overflow-hidden">
               <img
                 src={`/dA/${destination.inode}`}
                 alt={destination.title}
