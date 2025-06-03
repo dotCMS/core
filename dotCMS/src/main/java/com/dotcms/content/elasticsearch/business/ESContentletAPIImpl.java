@@ -7006,6 +7006,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
     @Override
     public void restoreVersion(Contentlet contentlet, User user, boolean respectFrontendRoles)
             throws DotSecurityException, DotContentletStateException, DotDataException {
+        Logger.info(this.getClass(),
+                "Restoring version for contentlet: " + contentlet.getIdentifier() + " by user: "
+                        + (user != null ? user.getUserId() : "Unknown") + " inode: " + contentlet.getInode());
         if (contentlet.getInode().equals("")) {
             throw new DotContentletStateException(CAN_T_CHANGE_STATE_OF_CHECKED_OUT_CONTENT);
         }
