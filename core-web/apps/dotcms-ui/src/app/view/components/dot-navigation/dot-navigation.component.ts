@@ -7,7 +7,6 @@ import { DotMenu, DotMenuItem } from '@dotcms/dotcms-models';
 import { DotNavigationService } from './services/dot-navigation.service';
 
 @Component({
-    providers: [],
     selector: 'dot-main-nav',
     styleUrls: ['./dot-navigation.component.scss'],
     templateUrl: 'dot-navigation.component.html'
@@ -95,5 +94,14 @@ export class DotNavigationComponent {
         if (this.$isCollapsed()) {
             this.#dotNavigationService.closeAllSections();
         }
+    }
+
+    /**
+     * Handle click on main button to toggle the navigation
+     *
+     * @memberof DotNavigationComponent
+     */
+    handleCollapseButtonClick(): void {
+        this.#dotNavigationService.toggle();
     }
 }
