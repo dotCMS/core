@@ -1,7 +1,6 @@
 package com.dotcms.graphql.datafetcher.page;
 
 import com.dotcms.graphql.DotGraphQLContext;
-import com.dotcms.graphql.util.GraphQLUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionLevel;
 import com.dotmarketing.exception.DotDataException;
@@ -16,7 +15,6 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.liferay.portal.model.User;
-import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 import java.io.CharArrayReader;
 import java.io.IOException;

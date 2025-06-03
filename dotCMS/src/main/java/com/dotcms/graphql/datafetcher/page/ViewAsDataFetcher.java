@@ -1,18 +1,15 @@
 package com.dotcms.graphql.datafetcher.page;
 
 import com.dotcms.graphql.DotGraphQLContext;
-import com.dotcms.graphql.util.GraphQLUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.business.render.page.ViewAsPageStatus;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
-import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.liferay.portal.model.User;
-import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
-import java.util.Map;
+
 import javax.servlet.http.HttpServletRequest;
 
 /**

@@ -1,7 +1,6 @@
 package com.dotcms.graphql.datafetcher.page;
 
 import com.dotcms.graphql.DotGraphQLContext;
-import com.dotcms.graphql.util.GraphQLUtils;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -10,10 +9,7 @@ import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
-import com.liferay.portal.model.User;
-import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
-import java.util.Map;
 
 /**
  * This DataFetcher returns the {@link TemplateLayout} associated to the requested {@link HTMLPageAsset}.

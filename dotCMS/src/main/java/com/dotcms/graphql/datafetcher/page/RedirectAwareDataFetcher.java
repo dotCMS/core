@@ -1,8 +1,6 @@
 package com.dotcms.graphql.datafetcher.page;
 
 import com.dotcms.graphql.DotGraphQLContext;
-import com.dotcms.graphql.util.GraphQLUtils;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 
@@ -15,7 +13,7 @@ public abstract class RedirectAwareDataFetcher<T> implements DataFetcher<T> {
     public T get(DataFetchingEnvironment environment) throws Exception {
         final DotGraphQLContext context = environment.getContext();
 
-        if (GraphQLUtils.isRedirectPage(context)) {
+        if (context.isVanityRedirect() ) {
             return onRedirect();
         }
 
