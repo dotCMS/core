@@ -3,7 +3,7 @@ import "@styles/global.css";
 import Layout from "@components/Layout.astro";
 import Error from "@components/Error.astro";
 import { getDotCMSPage } from "@utils/client";
-import { DotCMSPage } from "@react/DotCMSPage";
+import { BlogListingPage } from "@react/BlogListingPage";
 
 const params = Astro.params;
 
@@ -28,7 +28,7 @@ const title = pageAsset ? pageAsset.page.title : "Error";
         {errors ? (
           <Error error={errors} />
         ) : (
-          <DotCMSPage
+          <BlogListingPage
             client:only="react"
             pageResponse={pageResponse}
           />

@@ -1,9 +1,11 @@
 import type { DotCMSBasicContentlet } from "@dotcms/types";
+import { useIsEditMode } from "@react/hooks/isEditMode";
 
-import { useIsEditMode } from "src/hooks/isEditMode";
+import ContactUs from "@components/react/ContactForm";
 
 interface PageFormProps extends DotCMSBasicContentlet {
   formType: string;
+  description: string;
 }
 
 export default function PageForm(contentlet: PageFormProps) {
@@ -11,8 +13,7 @@ export default function PageForm(contentlet: PageFormProps) {
   const isEditMode = useIsEditMode();
 
   if (formType === "contact-us") {
-    // return <ContactUs {...contentlet} />;
-    return <div>Contact Us</div>;
+    return <ContactUs {...contentlet} />;
   }
 
   if (isEditMode) {

@@ -14,11 +14,11 @@ export const DotCMSPage = ({ pageResponse }: any) => {
   const navigation = content.navigation;
 
   return (
-    <div className="flex flex-col min-h-screen gap-6 bg-lime-50">
+    <div className="flex flex-col min-h-screen gap-6 bg-slate-50">
       {pageAsset?.layout.header && <Header navItems={navigation.children}></Header>}
 
       <main className="container m-auto">
-        <DotCMSLayoutBody page={pageAsset} components={pageComponents} mode="development" />
+        <DotCMSLayoutBody page={pageAsset} components={pageComponents} />
       </main>
 
       {pageAsset?.layout.footer && (
