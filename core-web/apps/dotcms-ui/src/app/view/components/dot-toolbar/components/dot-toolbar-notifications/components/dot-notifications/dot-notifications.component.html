@@ -1,0 +1,68 @@
+@let notifications = $notifications();
+@let unreadCount = notifications.unreadCount;
+@let hasMore = notifications.hasMore;
+@let data = notifications.data;
+@let isOverlayPanelVisible = $isOverlayPanelVisible();
+
+@if (isOverlayPanelVisible) {
+    <div (click)="onToggle()" class="dot-mask"></div>
+}
+
+@if (unreadCount) {
+    <span class="dot-toolbar__badge"></span>
+}
+
+<p-button
+    (onClick)="op.toggle($event)"
+    [icon]="'pi pi-bell'"
+    [rounded]="true"
+    [text]="true"
+    data-testid="icon-button" />
+
+
+<p-overlayPanel #op [appendTo]="'body'" (onShow)="onShow()" (onHide)="onHide()">
+    <div class="dot-notifications">
+        <div class="dot-notifications__heading">
+            <h3 class="dot-notifications__title" id="dot-toolbar-notifications-title">
+                {{ 'notifications_title' | dm }}
+            </h3>
+            @if (data.length) {
+                <p-button
+                    (click)="dismissAllNotifications()"
+                    id="dot-toolbar-notifications-button-dismiss-all"
+                    [label]="'notifications_clear_all' | dm"
+                    icon="pi pi-trash"
+                    [rounded]="true"
+                    [text]="true"
+                    styleClass="p-button-sm p-button-primary" />
+            }
+        </div>
+        @if (!data.length) {
+            <div class="dot-notifications__empty">
+                <span class="dot-notifications__empty-title">
+                    {{ 'notifications_no_notifications_title' | dm }}
+                </span>
+                <span class="dot-notifications__empty-info">
+                    {{ 'notifications_no_notifications' | dm }}
+                </span>
+            </div>
+        }
+        <div class="dot-notifications__content" id="dot-toolbar-notifications-content">
+            <dot-notification-list
+                (dismissNotification)="onDismissNotification($event)"
+                [notifications]="notifications"
+                id="dot-notifications-list" />
+        </div>
+        <div class="dot-notifications__footer" id="dot-toolbar-notifications-footer">
+            @if (hasMore) {
+                <button
+                    (click)="loadMore()"
+                    class="p-button-outlined"
+                    id="dot-toolbar-notifications-button-load-more"
+                    ripple
+                    pButton
+                    label="{{ 'notifications_load_more' | dm }}"></button>
+            }
+        </div>
+    </div>
+</p-overlayPanel>

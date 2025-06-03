@@ -58,7 +58,7 @@ export class DotToolbarNotificationsComponent implements OnInit {
         });
     }
 
-    onDismissNotification($event): void {
+    onDismissNotification($event: { id: string }): void {
         const notificationId = $event.id;
 
         this.#notificationService

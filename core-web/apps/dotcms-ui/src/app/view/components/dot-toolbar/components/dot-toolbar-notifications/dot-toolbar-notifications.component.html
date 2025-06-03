@@ -34,9 +34,11 @@
                     <p-button
                         (click)="dismissAllNotifications()"
                         id="dot-toolbar-notifications-button-dismiss-all"
-                        label="{{ 'notifications_clear_all' | dm }}"
+                        [label]="'notifications_clear_all' | dm"
                         icon="pi pi-trash"
-                        styleClass="p-button-rounded p-button-text p-button-sm p-button-primary"></p-button>
+                        [rounded]="true"
+                        [text]="true"
+                        styleClass="p-button-sm p-button-primary" />
                 }
             </div>
             @if (!notifications.length) {
@@ -50,10 +52,10 @@
                 </div>
             }
             <div class="toolbar-notifications__content" id="dot-toolbar-notifications-content">
-                <dot-notifications-list
+                <dot-notification-list
                     (dismissNotification)="onDismissNotification($event)"
                     [notifications]="notifications"
-                    id="dot-notifications-list"></dot-notifications-list>
+                    id="dot-notifications-list" />
             </div>
             <div class="toolbar-notifications__footer" id="dot-toolbar-notifications-footer">
                 @if (existsMoreToLoad) {
@@ -69,3 +71,4 @@
         </div>
     </dot-dropdown-component>
 </div>
+<dot-notifications />
