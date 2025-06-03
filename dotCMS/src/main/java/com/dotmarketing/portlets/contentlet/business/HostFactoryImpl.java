@@ -500,8 +500,7 @@ public class HostFactoryImpl implements HostFactory {
      */
 
     private Boolean innerDeleteSite(final Host site, final User user, final boolean respectFrontendRoles) {
-        try {
-            return LocalTransaction.<Boolean>tx()
+        final boolean ok = LocalTransaction.<Boolean>tx()
             .of(() -> {
                 deleteSite(site, user, respectFrontendRoles);
                 return Boolean.TRUE;
@@ -511,9 +510,12 @@ public class HostFactoryImpl implements HostFactory {
                     Logger.error(HostAPIImpl.class, String.format("An error occurred when deleting Site '%s' by User '%s'",
                     site.getHostname(), user.getUserId()))
               ).run();
-        } catch (Exception e) {
-            throw new DotRuntimeException(e);
+
+        if (!ok) {
+            throw new DotRuntimeException(String.format("An error occurred when deleting Site '%s' by User '%s'",
+                    site.getHostname(), user.getUserId()));
         }
+        return Boolean.TRUE;
     }
 
     /**
