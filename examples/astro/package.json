@@ -19,7 +19,7 @@
     "@dotcms/uve": "next",
     "@tailwindcss/typography": "^0.5.16",
     "@tailwindcss/vite": "^4.1.8",
-    "@tinymce/tinymce-react": "6.1.0",
+    "@tinymce/tinymce-react": "6.2.1",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
     "astro": "^4.14.3",
