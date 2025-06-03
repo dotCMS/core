@@ -17,7 +17,11 @@ import { DotToolbarAnnouncementsComponent } from '../dot-toolbar-announcements/d
     templateUrl: 'dot-toolbar-notifications.component.html'
 })
 export class DotToolbarNotificationsComponent implements OnInit {
+    readonly #dotcmsEventsService = inject(DotcmsEventsService);
+    readonly #loginService = inject(LoginService);
+    readonly #notificationService = inject(NotificationsService);
     readonly #announcementsStore = inject(AnnouncementsStore);
+    iframeOverlayService = inject(IframeOverlayService);
 
     @ViewChild(DotDropdownComponent, { static: true }) dropdown: DotDropdownComponent;
 
@@ -34,24 +38,17 @@ export class DotToolbarNotificationsComponent implements OnInit {
 
     showUnreadAnnouncement = this.#announcementsStore.showUnreadAnnouncement;
 
-    constructor(
-        public iframeOverlayService: IframeOverlayService,
-        private dotcmsEventsService: DotcmsEventsService,
-        private loginService: LoginService,
-        private notificationService: NotificationsService
-    ) {}
-
     ngOnInit(): void {
         this.getNotifications();
         this.subscribeToNotifications();
 
-        this.loginService.watchUser(this.getNotifications.bind(this));
+        this.#loginService.watchUser(this.getNotifications.bind(this));
         this.#announcementsStore.load();
     }
 
     dismissAllNotifications(): void {
         const items = this.notifications.map((item) => item.id);
-        this.notificationService.dismissNotifications({ items: items }).subscribe((res) => {
+        this.#notificationService.dismissNotifications({ items: items }).subscribe((res) => {
             // TODO: I think we should get here res and err
             if (res.errors.length) {
                 return;
@@ -64,7 +61,7 @@ export class DotToolbarNotificationsComponent implements OnInit {
     onDismissNotification($event): void {
         const notificationId = $event.id;
 
-        this.notificationService
+        this.#notificationService
             .dismissNotifications({ items: [notificationId] })
             .subscribe((res) => {
                 if (res.errors.length) {
@@ -86,7 +83,7 @@ export class DotToolbarNotificationsComponent implements OnInit {
     }
 
     loadMore(): void {
-        this.notificationService.getAllNotifications().subscribe((res) => {
+        this.#notificationService.getAllNotifications().subscribe((res) => {
             this.notificationsUnreadCount = res.entity.totalUnreadNotifications;
             this.notifications = res.entity.notifications;
             this.existsMoreToLoad = false;
@@ -109,7 +106,7 @@ export class DotToolbarNotificationsComponent implements OnInit {
     }
 
     private getNotifications(): void {
-        this.notificationService.getLastNotifications().subscribe((res) => {
+        this.#notificationService.getLastNotifications().subscribe((res) => {
             this.notificationsUnreadCount = res.entity.totalUnreadNotifications;
             this.notifications = res.entity.notifications;
             this.existsMoreToLoad = res.entity.total > res.entity.notifications.length;
@@ -117,14 +114,14 @@ export class DotToolbarNotificationsComponent implements OnInit {
     }
 
     private markAllAsRead(): void {
-        this.notificationService.markAllAsRead().subscribe(() => {
+        this.#notificationService.markAllAsRead().subscribe(() => {
             this.isNotificationsMarkedAsRead = true;
             this.notificationsUnreadCount = 0;
         });
     }
 
     private subscribeToNotifications(): void {
-        this.dotcmsEventsService
+        this.#dotcmsEventsService
             .subscribeTo<INotification>('NOTIFICATION')
             .subscribe((data: INotification) => {
                 this.notifications.unshift(data);
