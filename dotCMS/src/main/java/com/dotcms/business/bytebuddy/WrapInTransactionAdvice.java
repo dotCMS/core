@@ -24,6 +24,7 @@ public class WrapInTransactionAdvice {
 
     @Advice.OnMethodEnter(inline = false)
     public static TransactionInfo enter(@Advice.Origin("#m") String methodName) throws DotDataException {
+        final boolean shouldDebug = methodName.contains("innerDeleteSite");
 
         TransactionInfo info = null;
         boolean isLocalTransaction = false;
@@ -33,6 +34,11 @@ public class WrapInTransactionAdvice {
             isLocalTransaction = HibernateUtil.startLocalTransactionIfNeeded();
             final Connection conn = DbConnectionFactory.getConnection();
             info = new TransactionInfo(isNewConnection,isLocalTransaction,conn);
+
+            if (shouldDebug) {
+                Logger.debug(WrapInTransactionAdvice.class, "is New Conn: " + isNewConnection + " is Local Transaction: " + isLocalTransaction);
+            }
+
         } catch (Throwable e) {
             if (isLocalTransaction) {
                 HibernateUtil.rollbackTransaction();

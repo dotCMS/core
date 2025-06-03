@@ -416,47 +416,39 @@ public class HostFactoryImpl implements HostFactory {
      *
      * @throws DotRuntimeException The specified Site failed to be deleted.
      */
-
+    @WrapInTransaction
     private Boolean innerDeleteSite(final Host site, final User user, final boolean respectFrontendRoles) {
         try {
-            final boolean ok = LocalTransaction.externalizeTransaction(new ReturnableDelegate<Boolean>() {
-                @Override
-                public Boolean execute() throws Throwable {
-                    deleteSite(site, user, respectFrontendRoles);
-                    return Boolean.TRUE;
-                }
-            });
-            if(ok) { //If we get this far is because the commit was successful
-                onSiteDeleteOk(site, user);
+            deleteSite(site, user, respectFrontendRoles);
+            HibernateUtil.addCommitListener
+                    ("HostFactoryImpl"+System.currentTimeMillis(),
+                      () ->{
+                          Logger.info(HostAPIImpl.class, String.format("Committing changes after deleting Site '%s'", site.getHostname()));
+                          generateNotification(site, user);
+                      }
+                    );
+        } catch (final Exception e) {
+            try {
+                APILocator.getNotificationAPI().generateNotification(
+                        new I18NMessage("notification.hostapi.delete.error.title"), // title = Host Notification
+                        new I18NMessage("notifications_host_deletion_error", site.getHostname(), ExceptionUtil.getErrorMessage(e)),
+                        null, // no actions
+                        NotificationLevel.ERROR,
+                        NotificationType.GENERIC,
+                        user.getUserId(),
+                        user.getLocale()
+                );
+            } catch (final DotDataException e1) {
+                Logger.error(HostAPIImpl.class, String.format("An error occurred when saving Site Deletion " +
+                        "Notification for site '%s': %s", site, ExceptionUtil.getErrorMessage(e)), e);
             }
-            return ok;
-        }catch (final Exception e) {
-            final String errorMsg = String.format("An error occurred when User '%s' tried to delete Site '%s': %s",
-                    user.getUserId(), site, ExceptionUtil.getErrorMessage(e));
+            final String errorMsg = String.format("An error occurred when User '%s' tried to delete Site " +
+                    "'%s': %s", user.getUserId(), site, ExceptionUtil.getErrorMessage(e));
             Logger.error(HostAPIImpl.class, errorMsg, e);
             throw new DotRuntimeException(errorMsg, e);
         }
-    }
 
-    /**
-     * This method is called inside a separate thread and takes care of deleting the specified Site
-     * @param site The {@link Host} object to be deleted.
-     * @param user The {@link User} object that is requesting the deletion.
-     */
-    private void onSiteDeleteOk(Host site, User user) {
-        try {
-            Logger.info(HostAPIImpl.class, String.format(
-                    "Site '%s' with id '%s' added to the Reindex Queue for deletion",
-                    site.getHostname(), site.getIdentifier()));
-            APILocator.getReindexQueueAPI().addIdentifierDelete(site.getIdentifier());
-        } catch (DotDataException e) {
-            Logger.error(HostAPIImpl.class, String.format(
-                    "An error occurred when removing Site '%s' from the " +
-                            "Reindex Queue: %s", site.getHostname(),
-                    ExceptionUtil.getErrorMessage(e)), e);
-        }
-
-        generateNotification(site, user);
+        return Boolean.TRUE;
     }
 
     private void generateNotification(final Host site, final User user) {

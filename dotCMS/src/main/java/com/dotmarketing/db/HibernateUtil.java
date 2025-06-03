@@ -1047,8 +1047,15 @@ public class HibernateUtil {
      * @throws DotHibernateException An error occurred when registering the commit listener.
      */
     public static void addCommitListener(final String tag, final Runnable listener) {
-        if (DbConnectionFactory.inTransaction()
-                && getTransactionListenersStatus() != TransactionListenerStatus.DISABLED) {
+        // Log if tag starts with "HostFactoryImpl"
+        boolean shouldLog = tag != null && tag.startsWith("HostFactoryImpl");
+
+        if (DbConnectionFactory.inTransaction() && getTransactionListenersStatus() != TransactionListenerStatus.DISABLED) {
+            if (shouldLog) {
+                Logger.info(HibernateUtil.class,
+                        "Adding commit listener in transaction - Listener: " + listener.getClass().getName() + " with tag: " + tag);
+            }
+
             if (listener instanceof DotSyncRunnable) {
                 syncCommitListeners.get().put(tag, listener);
             } else if (listener instanceof ReindexRunnable && asyncReindexCommitListeners()) {
@@ -1057,10 +1064,22 @@ public class HibernateUtil {
                 syncCommitListeners.get().put(tag, listener);
             } else if (getAsyncCommitListenersFinalization() && asyncCommitListeners()) {
                 asyncCommitListeners.get().put(tag, listener);
+                if( shouldLog) {
+                    Logger.info(HibernateUtil.class,
+                            "Adding commit listener asynchronously ");
+                }
             } else {
                 syncCommitListeners.get().put(tag, listener);
+                if ( shouldLog) {
+                Logger.info(HibernateUtil.class,
+                        "Adding commit listener synchronously ");
+                }
             }
         } else {
+            if (shouldLog) {
+                Logger.info(HibernateUtil.class,
+                        "Executing commit listener immediately (no transaction) - Listener: " + listener.getClass().getName() + " with tag: " + tag);
+            }
             listener.run();
         }
     }
