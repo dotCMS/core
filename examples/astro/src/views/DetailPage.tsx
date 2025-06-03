@@ -7,18 +7,18 @@ import {
     useEditableDotCMSPage,
 } from "@dotcms/react/next";
 
-import type { DotCMSCustomPageResponse } from "@/types/page.model";
+import type { DotCMSCustomDetailPageResponse } from "@/types/page.model";
 
 import Footer from "@/components/common/Footer";
 import Header from "@/components/common/Header";
 import { useIsEditMode } from "@/hooks";
 
-export function DetailPage({ pageResponse }: { pageResponse: DotCMSCustomPageResponse }) {
+export function DetailPage({ pageResponse }: { pageResponse: DotCMSCustomDetailPageResponse }) {
     const [blockEditorClasses, setBlockEditorClasses] = useState(
         "prose lg:prose-xl prose-a:text-blue-600",
     );
 
-    const { pageAsset, content } = useEditableDotCMSPage<DotCMSCustomPageResponse>(pageResponse);
+    const { pageAsset, content } = useEditableDotCMSPage<DotCMSCustomDetailPageResponse>(pageResponse);
     const { urlContentMap, layout } = pageAsset;
     const { blogContent } = urlContentMap || {};
 

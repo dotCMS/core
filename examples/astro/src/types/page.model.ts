@@ -1,22 +1,29 @@
 import type { DotCMSBasicContentlet, DotCMSComposedPageResponse, DotCMSNavigationItem, DotCMSPageAsset, DotCMSURLContentMap } from "@dotcms/types";
 
 export type DotCMSCustomPageResponse = DotCMSComposedPageResponse< {
-    pageAsset: CustomDotCMSPageAsset;
-    content: {
-        navigation: DotCMSNavigationItem;
-        blogs: DotCMSBlog[];
-        destinations: DotCMSDestination[];
-    };
+    pageAsset: DotCMSPageAsset;
+    content: DotCMSContent
+}>
+
+export type DotCMSCustomDetailPageResponse = DotCMSComposedPageResponse< {
+    pageAsset: DetailPageAsset;
+    content: DotCMSContent
 }
 >
 
-export interface CustomDotCMSPageAsset extends DotCMSPageAsset {
+export interface DetailPageAsset extends DotCMSPageAsset {
     urlContentMap?: URLContentMap;
 }
 
 interface URLContentMap extends DotCMSURLContentMap {
     urlMap: string;
     blogContent: string;
+}
+
+interface DotCMSContent {
+    navigation: DotCMSNavigationItem;
+    blogs: DotCMSBlog[];
+    destinations: DotCMSDestination[];
 }
 
 interface DotCMSBlog extends DotCMSBasicContentlet {
