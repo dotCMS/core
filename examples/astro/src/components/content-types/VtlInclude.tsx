@@ -1,5 +1,5 @@
 import type { DotCMSBasicContentlet } from "@dotcms/types";
-import { useIsEditMode } from "src/hooks/isEditMode";
+import { useIsEditMode } from "@/hooks";
 
 interface VtlIncludeProps extends DotCMSBasicContentlet {
   componentType: string;

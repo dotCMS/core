@@ -1,9 +1,9 @@
 ---
 import "@styles/global.css";
-import Layout from "@components/Layout.astro";
-import Error from "@components/Error.astro";
-import { getDotCMSPage } from "@utils/client";
-import { BlogListingPage } from "@react/BlogListingPage";
+import Layout from "@/components/common/Layout.astro";
+import Error from "@/components/common/Error.astro";
+import { getDotCMSPage } from "@/dotcms-integration";
+import { BlogListingPage } from "@/views/BlogListingPage";
 
 const params = Astro.params;
 

@@ -5,7 +5,7 @@ interface ImageComponentProps extends DotCMSBasicContentlet {
   title: string;
   description: string;
 }
-function ImageComponent({
+function DotCMSImage({
   fileAsset,
   title,
   description,
@@ -30,4 +30,4 @@ function ImageComponent({
   );
 }
 
-export default ImageComponent;
+export default DotCMSImage;

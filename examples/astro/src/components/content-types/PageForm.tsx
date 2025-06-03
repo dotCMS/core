@@ -1,7 +1,7 @@
 import type { DotCMSBasicContentlet } from "@dotcms/types";
-import { useIsEditMode } from "@react/hooks/isEditMode";
+import { useIsEditMode } from "@/hooks";
 
-import ContactUs from "@components/react/ContactForm";
+import { ContactUs } from "@/components/ui";
 
 interface PageFormProps extends DotCMSBasicContentlet {
   formType: string;

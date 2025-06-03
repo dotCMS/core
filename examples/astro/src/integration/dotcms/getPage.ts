@@ -1,25 +1,12 @@
-import { createDotCMSClient } from "@dotcms/client/next";
-import type {
-  DotCMSComposedPageResponse,
-  DotCMSNavigationItem,
-  DotCMSPageAsset,
-} from "@dotcms/types";
+import type { DotCMSNavigationItem, DotCMSPageAsset } from "@dotcms/types";
+import { dotCMSClient } from "./dotCMSClient";
+
 import {
   blogQuery,
   destinationQuery,
   fragmentNav,
   navigationQuery,
 } from "./queries";
-
-export const dotCMSClient = createDotCMSClient({
-  authToken: import.meta.env.PUBLIC_DOTCMS_AUTH_TOKEN,
-  dotcmsUrl: import.meta.env.PUBLIC_DOTCMS_HOST,
-  siteId: import.meta.env.PUBLIC_DOTCMS_SITE_ID,
-  requestOptions: {
-    // In production you might want to deal with this differently
-    cache: "no-cache",
-  },
-});
 
 export const getDotCMSPage = async (
   path: string,

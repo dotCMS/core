@@ -1,9 +1,9 @@
 import { DotCMSLayoutBody, useEditableDotCMSPage } from "@dotcms/react/next";
 
-import { pageComponents } from "../components/content-types";
+import { dotComponents } from "@/components/content-types";
 
-import Footer from "@components/react/Footer";
-import Header from "@components/react/Header";
+import Footer from "@/components/common/Footer";
+import Header from "@/components/common/Header";
 
 export type MyPageProps = {
   pageResponse: any;
@@ -18,7 +18,7 @@ export const DotCMSPage = ({ pageResponse }: any) => {
       {pageAsset?.layout.header && <Header navItems={navigation.children}></Header>}
 
       <main className="container m-auto">
-        <DotCMSLayoutBody page={pageAsset} components={pageComponents} />
+        <DotCMSLayoutBody page={pageAsset} components={dotComponents} />
       </main>
 
       {pageAsset?.layout.footer && (

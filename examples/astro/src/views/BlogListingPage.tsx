@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 
-import { useDebounce } from "@react/hooks/useDebounce";
 import { useEditableDotCMSPage } from "@dotcms/react/next";
-import { dotCMSClient } from "@utils/client";
-import Header from "@components/react/Header";
-import BlogCard from "@components/react/BlogCard";
+import { useDebounce } from "@/hooks";
+import { dotCMSClient } from "@/dotcms-integration";
+import { BlogCard } from "@/components/ui";
+import Header from "@/components/common/Header";
 
 export function BlogListingPage({ pageResponse }: { pageResponse: any }) {
     const { content } = useEditableDotCMSPage<any>(pageResponse);

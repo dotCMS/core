@@ -6,9 +6,9 @@ import {
     useEditableDotCMSPage,
 } from "@dotcms/react/next";
 
-import Footer from "@components/react/Footer";
-import Header from "@components/react/Header";
-import { useIsEditMode } from "@react/hooks/isEditMode";
+import Footer from "@/components/common/Footer";
+import Header from "@/components/common/Header";
+import { useIsEditMode } from "@/hooks";
 
 export function DetailPage({ pageResponse }: { pageResponse: any }) {
     const [blockEditorClasses, setBlockEditorClasses] = useState(

@@ -1,4 +1,4 @@
-import RecommendedCard from "@components/react/RecommendedCard";
+import RecommendedCard from "@components/ui/RecommendedCard";
 
 function Footer({ blogs, destinations }: { blogs: any; destinations: any }) {
   return (

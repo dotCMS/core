@@ -1,4 +1,4 @@
-export default function NotFound() {
+export function NotFound() {
   return (
     <div className="bg-slate-100 min-h-dvh w-full flex justify-center items-center">
       <section>

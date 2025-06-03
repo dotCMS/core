@@ -10,7 +10,7 @@ const dateFormatOptions: Intl.DateTimeFormatOptions = {
   day: "numeric",
 };
 
-const RecommendedCard = ({
+export const RecommendedCard = ({
   contentlet,
 }: {
   contentlet: RecommendedCardProps;
@@ -40,5 +40,3 @@ const RecommendedCard = ({
     </div>
   );
 };
-
-export default RecommendedCard;

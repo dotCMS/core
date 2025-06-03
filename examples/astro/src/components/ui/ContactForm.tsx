@@ -7,7 +7,7 @@ const initialFormData = {
     acceptTerms: false,
 };
 
-export default function ContactUs({ description }: { description: string }) {
+export function ContactUs({ description }: { description: string }) {
     const [formData, setFormData] = useState(initialFormData);
 
     const [isSubmitting, setIsSubmitting] = useState(false);

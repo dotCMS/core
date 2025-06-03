@@ -10,7 +10,7 @@ interface DestinationListingProps extends DotCMSBasicContentlet {
   destinations: Destination[];
 }
 
-export default function DestinationListing({
+export function DestinationListing({
   destinations,
 }: DestinationListingProps) {
   if (!destinations || !destinations.length) {

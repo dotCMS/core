@@ -1,9 +1,9 @@
 ---
 import "@styles/global.css";
-import Layout from "@components/Layout.astro";
-import Error from "@components/Error.astro";
-import { getDotCMSPage } from "@utils/client";
-import { DetailPage } from "@react/DetailPage";
+import Layout from "@/components/common/Layout.astro";
+import Error from "@/components/common/Error.astro";
+import { getDotCMSPage } from "@/dotcms-integration";
+import { DetailPage } from "@/views/DetailPage";
 
 const params = Astro.params;
 const pageResponse = await getDotCMSPage("/blog/post/" + params?.post, Astro.url.searchParams);

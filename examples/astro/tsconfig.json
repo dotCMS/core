@@ -6,14 +6,15 @@
     "module": "es2020",
     "baseUrl": "./",
     "paths": {
-      "@utils/*": ["src/utils/*"],
-      "@react/*": ["src/react/*"],
-      "@react/shared/*": ["src/react/shared/*"],
-      "@react/hooks/*": ["src/hooks/*"],
-      "@react/contentTypes/*": ["src/components/content-types/*"],
-      "@react/layout/*": ["src/react/layout/*"],
-      "@components/*": ["src/components/*"],
-      "@styles/*": ["src/styles/*"]
+      "@/components/*": ["./src/components/*"],
+      "@/components/common/*": ["./src/components/common/*"],
+      "@/components/content-types": ["src/components/content-types/index.ts"],
+      "@/components/ui": ["src/components/ui/index.ts"],
+      "@/views/*": ["./src/views/*"],
+      "@/hooks": ["./src/hooks/index.ts"],
+      "@/dotcms-integration": ["./src/integration/dotcms/index.ts"],
+      "@/pages/*": ["./src/pages/*"],
+      "@/styles/*": ["./src/styles/*"]
     }
   }
 }

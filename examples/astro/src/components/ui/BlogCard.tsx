@@ -1,6 +1,6 @@
 import { editContentlet } from "@dotcms/uve";
 import type { DotCMSBasicContentlet } from "@dotcms/types";
-import { useIsEditMode } from "src/hooks/isEditMode";
+import { useIsEditMode } from "@/hooks";
 
 interface BlogCardProps extends DotCMSBasicContentlet {
   title: string;
@@ -18,7 +18,7 @@ const dateFormatOptions: Intl.DateTimeFormatOptions = {
   day: "numeric",
 };
 
-export default function BlogCard({ blog }: { blog: BlogCardProps }) {
+export function BlogCard({ blog }: { blog: BlogCardProps }) {
   const { title, image, urlMap, inode, modDate, urlTitle, teaser } = blog;
 
   const isEditMode = useIsEditMode();
