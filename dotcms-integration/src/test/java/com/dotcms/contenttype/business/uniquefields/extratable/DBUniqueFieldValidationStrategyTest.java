@@ -46,6 +46,13 @@ import static com.dotmarketing.portlets.contentlet.model.Contentlet.INODE_KEY;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+/**
+ * This Integration Test verifies that the {@link DBUniqueFieldValidationStrategy} class works as
+ * expected.
+ *
+ * @author Freddy Rodriguez
+ * @since Oct 30th, 2024
+ */
 @ApplicationScoped
 @RunWith(JUnit4WeldRunner.class)
 public class DBUniqueFieldValidationStrategyTest {
@@ -56,16 +63,6 @@ public class DBUniqueFieldValidationStrategyTest {
     public static void prepare() throws Exception {
         IntegrationTestInitService.getInstance().init();
         uniqueFieldDataBaseUtil = new UniqueFieldDataBaseUtil();
-
-        //TODO: Remove this when the whole change is done
-        try {
-            new DotConnect().setSQL("CREATE TABLE IF NOT EXISTS unique_fields (" +
-                    "unique_key_val VARCHAR(64) PRIMARY KEY," +
-                    "supporting_values JSONB" +
-                    " )").loadObjectResults();
-        } catch (DotDataException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     /**
@@ -1011,14 +1008,18 @@ public class DBUniqueFieldValidationStrategyTest {
     }
 
     /**
-     * Method to test:  {@link DBUniqueFieldValidationStrategy#validateInPreview(Contentlet, Field)}
-     * When: Creating a Contentlet with a unique field, and try to create a second one with the same
-     * unique field value. The second contentlet is in preview mode, which means it HAS NOT been
-     * created yet.
-     * Should: Throw a {@link UniqueFieldValueDuplicatedException}
+     * <ul>
+     *     <li><b>Method to test:
+     *     </b>{@link DBUniqueFieldValidationStrategy#validateInPreview(Contentlet, Field)}</li>
+     *     <li><b>Given Scenario: </b>Creating a Contentlet with a unique field, and try to
+     *     create a second one with the same unique field value. The second contentlet is in
+     *     preview mode, which means it HAS NOT been created yet.</li>
+     *     <li><b>Expected Result: </b>Throw a {@link UniqueFieldValueDuplicatedException}
+     *     indicating that there is already another Contentlet with the same unique value.</li>
+     * </ul>
      */
     @Test
-    public void tryToInsertDuplicatedPreview() throws DotDataException, UniqueFieldValueDuplicatedException, DotSecurityException {
+    public void tryToInsertDuplicatedPreview() throws DotDataException, DotSecurityException {
         final Field uniqueField = new FieldDataGen().type(TextField.class).unique(true).next();
         final ContentType contentType = new ContentTypeDataGen().field(uniqueField).nextPersisted();
         final Object value =  "UniqueValue" + System.currentTimeMillis();
@@ -1026,15 +1027,15 @@ public class DBUniqueFieldValidationStrategyTest {
         final Host site = new SiteDataGen().nextPersisted();
 
         // First contentlet with a valid unique field value
-        Contentlet contentlet = new ContentletDataGen(contentType)
+        final Contentlet contentlet = new ContentletDataGen(contentType)
                 .setProperty(uniqueField.variable(), value)
                 .host(site)
                 .languageId(language.getId())
                 .nextPersisted();
-        contentlet = ContentletDataGen.publish(contentlet);
+        ContentletDataGen.publish(contentlet);
 
         // Second contentlet with the same unique field value. But NOT persisted to the DB
-        Contentlet invalidContentlet = new ContentletDataGen(contentType)
+        final Contentlet invalidContentlet = new ContentletDataGen(contentType)
                 .setProperty(uniqueField.variable(), value)
                 .host(site)
                 .languageId(language.getId())
@@ -1042,13 +1043,10 @@ public class DBUniqueFieldValidationStrategyTest {
 
         final DBUniqueFieldValidationStrategy extraTableUniqueFieldValidationStrategy =
                 new DBUniqueFieldValidationStrategy(uniqueFieldDataBaseUtil);
-        extraTableUniqueFieldValidationStrategy.validate(contentlet, uniqueField);
-
         try {
-
             extraTableUniqueFieldValidationStrategy.validateInPreview(invalidContentlet, uniqueField);
             throw new AssertionError("UniqueFieldValueDuplicatedException expected");
-        } catch (UniqueFieldValueDuplicatedException e) {
+        } catch (final UniqueFieldValueDuplicatedException e) {
             final int countAfter = Integer.parseInt(new DotConnect()
                     .setSQL("SELECT COUNT(*) as count " +
                             "FROM unique_fields " +
@@ -1056,8 +1054,7 @@ public class DBUniqueFieldValidationStrategyTest {
                     .addParam(contentType.id())
                     .loadObjectResults()
                     .get(0).get("count").toString());
-
-            assertEquals(1, countAfter);
+            assertEquals("There must be only 1 record in the unique fields table", 1, countAfter);
         }
     }
 

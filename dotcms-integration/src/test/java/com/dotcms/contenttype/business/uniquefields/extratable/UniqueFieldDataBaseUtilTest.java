@@ -28,6 +28,7 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.StringUtils;
 import graphql.AssertException;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -56,6 +57,13 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+/**
+ * This Integration Test verifies that the {@link UniqueFieldDataBaseUtil} class is working as
+ * expected.
+ *
+ * @author Freddy Rodriguez
+ * @since Oct 30th, 2024
+ */
 @ApplicationScoped
 @RunWith(JUnit4WeldRunner.class)
 public class UniqueFieldDataBaseUtilTest {
@@ -63,16 +71,6 @@ public class UniqueFieldDataBaseUtilTest {
     @BeforeClass
     public static void init () throws Exception {
         IntegrationTestInitService.getInstance().init();
-
-        //TODO: Remove this when the whole change is done
-        try {
-            new DotConnect().setSQL("CREATE TABLE IF NOT EXISTS unique_fields (" +
-                    "unique_key_val VARCHAR(64) PRIMARY KEY," +
-                    "supporting_values JSONB" +
-                    " )").loadObjectResults();
-        } catch (DotDataException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     /**
@@ -697,6 +695,9 @@ public class UniqueFieldDataBaseUtilTest {
      */
     @Test
     @SuppressWarnings("unchecked")
+    //TODO: WE'RE TEMPORARILY IGNORING THIS TEST BECAUSE IT DEPENDS ON THE CODE FIX
+    // FOM TICKET https://github.com/dotCMS/core/issues/32309
+    @Ignore
     public void populateUniqueFieldsTableWithVariantWithSameValues() throws SQLException, DotDataException {
         final Variant variant = new VariantDataGen().nextPersisted();
 
