@@ -128,6 +128,11 @@ public class StaticDependencyBundler implements IBundler {
                 if (asset.getType().equals(PusheableAsset.CONTENTLET.getType())) {
                 	List<Contentlet> cons = contentletAPI.search("+identifier:"+asset.getAsset(), 0, 0, null, systemUser, false);
 
+                    Folder folder = folderAPI.find(cons.get(0).getFolder(), systemUser, false);
+                    if (folder != null) {
+                        folders.add(folder.getIdentifier());
+                    }
+
                 	if (!cons.isEmpty() && cons.get(0).isFileAsset() || cons.get(0).isHTMLPage()) {
                         includes.add(id.getPath());
                     } else if (!cons.isEmpty() && UtilMethods.isSet(cons.get(0).getStructure().getUrlMapPattern())) {
