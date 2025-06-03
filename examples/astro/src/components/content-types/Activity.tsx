@@ -32,7 +32,7 @@ function Activity({
       <div className="px-6 pt-4 pb-2">
         <a
           href={`/activities/${urlTitle || "#"}`}
-          className="inline-block px-4 py-2 font-bold rounded-full bg-blue-500 hover:bg-blue-700 text-white"
+          className="inline-block px-4 py-2 font-bold rounded-full bg-violet-800 hover:bg-blue-700 text-white"
         >
           Link to detail →
         </a>

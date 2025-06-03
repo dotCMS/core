@@ -24,7 +24,7 @@ function Banner(contentlet: BannerProps) {
         <p className="mb-4 text-xl text-shadow">{caption}</p>
         {link && (
           <a
-            className="p-4 text-xl transition duration-300 bg-blue-500 rounded-sm hover:bg-blue-700"
+            className="p-4 text-xl transition duration-300 bg-violet-800 rounded-sm hover:bg-blue-700"
             href={link}
           >
             {buttonText || "See more"}

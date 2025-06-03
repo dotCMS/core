@@ -108,7 +108,7 @@ const SearchBar = ({ searchQuery, setSearchQuery }: { searchQuery: string, setSe
                 </div>
                 <input
                     type="search"
-                    className="block w-full p-4 pl-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-white focus:ring-blue-500 focus:border-blue-500 outline-hidden"
+                    className="block w-full p-4 pl-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-white focus:ring-violet-800 focus:border-violet-800 outline-hidden"
                     placeholder="Search blogs..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}

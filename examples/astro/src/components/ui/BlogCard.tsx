@@ -28,7 +28,7 @@ export function BlogCard({ blog }: { blog: BlogCardProps }) {
       {isEditMode && (
         <button
           onClick={() => editContentlet(blog)}
-          className="absolute top-2 right-2 z-10 bg-blue-500 text-white rounded-md py-2 px-4 shadow-md hover:bg-blue-600"
+          className="absolute top-2 right-2 z-10 bg-violet-800 text-white rounded-md py-2 px-4 shadow-md hover:bg-blue-600"
         >
           Edit
         </button>

@@ -7,7 +7,7 @@ function Header({ navigation }: { navigation: DotCMSNavigationItem }) {
     const navItems = navigation?.children;
 
     return (
-        <div className="flex items-center justify-between p-4 bg-blue-500">
+        <div className="flex items-center justify-between p-4 bg-violet-800">
             <div className="flex items-center">
                 <h2 className="text-3xl font-bold text-white">
                     <a href="/">TravelLux in NextJS</a>
@@ -16,12 +16,12 @@ function Header({ navigation }: { navigation: DotCMSNavigationItem }) {
                 {isEditMode && <ReorderMenuButton />}
             </div>
 
-            {navItems && <Navigation {...navItems} />}
+            {navItems && <Navigation navItems={navItems} />}
         </div>
     );
 }
 
-function Navigation(navItems: DotCMSNavigationItem[]) {
+function Navigation({ navItems }: { navItems: DotCMSNavigationItem[] }) {
     const pathname = window.location.pathname;
 
     return (

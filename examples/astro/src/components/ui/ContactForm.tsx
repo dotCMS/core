@@ -64,7 +64,7 @@ export function ContactUs({ description }: { description: string }) {
                         value={formData.firstName}
                         onChange={handleChange}
                         required
-                        className="w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 border-gray-300"
+                        className="w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-violet-800 border-gray-300"
                     />
                 </div>
 
@@ -82,7 +82,7 @@ export function ContactUs({ description }: { description: string }) {
                         value={formData.lastName}
                         onChange={handleChange}
                         required
-                        className="w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 border-gray-300"
+                        className="w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-violet-800 border-gray-300"
                     />
                 </div>
 
@@ -100,7 +100,7 @@ export function ContactUs({ description }: { description: string }) {
                         value={formData.email}
                         onChange={handleChange}
                         required
-                        className="w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 border-gray-300"
+                        className="w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-violet-800 border-gray-300"
                     />
                 </div>
 
@@ -113,7 +113,7 @@ export function ContactUs({ description }: { description: string }) {
                             checked={formData.acceptTerms}
                             onChange={handleChange}
                             required
-                            className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                            className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-violet-800"
                         />
                     </div>
                     <div className="ml-3">
@@ -137,7 +137,7 @@ export function ContactUs({ description }: { description: string }) {
                     <button
                         type="submit"
                         disabled={isSubmitting}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-75"
+                        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-violet-800 disabled:opacity-75"
                     >
                         {isSubmitting ? "Submitting..." : "Submit"}
                     </button>
