@@ -102,6 +102,10 @@ jobs:
       url: ${{ steps.deploy-artifacts.outputs.url }}
       pr_created: ${{ steps.create-pull-request.outcome == 'success' }}      
     steps:
+      - name: 'Checkout repository'
+        if: ${{ github.event.inputs.type == 'empty' && github.event.inputs.dry-run == 'false' }}
+        uses: actions/checkout@v4
+
       - uses: jfrog/setup-jfrog-cli@v4
         env:
           JF_URL: ${{ vars.ARTIFACTORY_URL }}

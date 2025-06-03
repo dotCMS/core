@@ -1,4 +1,4 @@
-import { NgClass, CommonModule } from '@angular/common';
+import { DatePipe, LowerCasePipe, NgClass } from '@angular/common';
 import {
     Component,
     EventEmitter,
@@ -12,7 +12,6 @@ import {
     signal
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { RouterLink } from '@angular/router';
 
 import { OverlayPanel, OverlayPanelModule } from 'primeng/overlaypanel';
 
@@ -31,7 +30,7 @@ import { DotMessagePipe } from '@dotcms/ui';
     templateUrl: './dot-toolbar-announcements.component.html',
     styleUrls: ['./dot-toolbar-announcements.component.scss'],
     standalone: true,
-    imports: [NgClass, DotMessagePipe, RouterLink, CommonModule, OverlayPanelModule],
+    imports: [NgClass, DotMessagePipe, LowerCasePipe, OverlayPanelModule, DatePipe],
     providers: [AnnouncementsStore]
 })
 export class DotToolbarAnnouncementsComponent implements OnInit, OnChanges {
