@@ -1,11 +1,7 @@
-@if (showMask()) {
-    <div class="dot-mask" data-testId="dot-mask"></div>
-}
-<p-overlayPanel
-    (onHide)="hideDialog()"
-    #toolbarAnnouncements
-    appendTo="body"
-    styleClass="toolbar-announcements__container">
+<dot-toolbar-btn-overlay
+    icon="pi pi-megaphone"
+    [showBadge]="$showUnreadAnnouncement()"
+    (onHide)="hideDialog()">
     <div class="announcements__main-container">
         <h5 class="announcements__title">{{ 'announcements' | dm }}</h5>
         <ul class="announcements__list">
@@ -70,4 +66,4 @@
             </div>
         }
     </div>
-</p-overlayPanel>
+</dot-toolbar-btn-overlay>

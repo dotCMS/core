@@ -2,18 +2,13 @@ import { DatePipe, LowerCasePipe, NgClass } from '@angular/common';
 import {
     Component,
     EventEmitter,
-    Input,
-    OnChanges,
     OnInit,
     Output,
     Signal,
-    ViewChild,
     inject,
     signal
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-
-import { OverlayPanel, OverlayPanelModule } from 'primeng/overlaypanel';
 
 import {
     Announcement,
@@ -25,22 +20,23 @@ import { DotMessageService } from '@dotcms/data-access';
 import { SiteService } from '@dotcms/dotcms-js';
 import { DotMessagePipe } from '@dotcms/ui';
 
+import { DotToolbarBtnOverlayComponent } from '../dot-toolbar-overlay/dot-toolbar-btn-overlay.component';
+
 @Component({
     selector: 'dot-toolbar-announcements',
     templateUrl: './dot-toolbar-announcements.component.html',
     styleUrls: ['./dot-toolbar-announcements.component.scss'],
     standalone: true,
-    imports: [NgClass, DotMessagePipe, LowerCasePipe, OverlayPanelModule, DatePipe],
+    imports: [NgClass, DotMessagePipe, LowerCasePipe, DatePipe, DotToolbarBtnOverlayComponent],
     providers: [AnnouncementsStore]
 })
-export class DotToolbarAnnouncementsComponent implements OnInit, OnChanges {
+export class DotToolbarAnnouncementsComponent implements OnInit {
     announcementsStore = inject(AnnouncementsStore);
     dotMessageService = inject(DotMessageService);
     siteService = inject(SiteService);
-    @ViewChild('toolbarAnnouncements', { static: true }) toolbarAnnouncements: OverlayPanel;
     @Output() hideMenu = new EventEmitter();
 
-    @Input() showUnreadAnnouncement: boolean;
+    $showUnreadAnnouncement = this.announcementsStore.showUnreadAnnouncement;
     announcements: Signal<Announcement[]> = this.announcementsStore.announcementsSignal;
     contactLinks: Signal<AnnouncementLink[]> = this.announcementsStore.selectContactLinks;
     knowledgeCenterLinks: Signal<AnnouncementLink[]> =
@@ -62,11 +58,14 @@ export class DotToolbarAnnouncementsComponent implements OnInit, OnChanges {
         this.aboutLinks = this.getAboutLinks();
     }
 
+    /*
+
     ngOnChanges(changes): void {
         if (!changes.showUnreadAnnouncement.currentValue) {
             this.announcementsStore.markAnnouncementsAsRead();
         }
     }
+        */
 
     /**
      * Get the about links
@@ -85,7 +84,7 @@ export class DotToolbarAnnouncementsComponent implements OnInit, OnChanges {
      */
     toggleDialog(event): void {
         this.showMask.update((value) => !value);
-        this.toolbarAnnouncements.toggle(event);
+        // this.toolbarAnnouncements.toggle(event);
     }
 
     /**

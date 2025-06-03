@@ -1,0 +1,18 @@
+@if ($showMask()) {
+    <div (click)="hide()" class="dot-mask"></div>
+}
+
+@if ($showBadge()) {
+    <span class="dot-toolbar__badge"></span>
+}
+
+<p-button
+    (onClick)="overlayPanel.toggle($event)"
+    [icon]="$icon()"
+    [rounded]="true"
+    [text]="true"
+    data-testid="btn-overlay" />
+
+<p-overlayPanel #overlayPanel [appendTo]="'body'" (onShow)="handlerShow()" (onHide)="handlerHide()">
+    <ng-content />
+</p-overlayPanel>

@@ -1,28 +1,25 @@
 import { Component, DestroyRef, inject, OnInit, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
-import { ButtonModule } from 'primeng/button';
-import { OverlayPanel, OverlayPanelModule } from 'primeng/overlaypanel';
-
 import { NotificationsService } from '@dotcms/app/api/services/notifications-service';
 import { DotMessagePipe } from '@dotcms/ui';
 import { INotification } from '@models/notifications';
 
+import { DotToolbarBtnOverlayComponent } from '../../../dot-toolbar-overlay/dot-toolbar-btn-overlay.component';
 import { DotNotificationListComponent } from '../dot-notification-list/dot-notification-list.component';
 
 @Component({
     selector: 'dot-notifications',
     standalone: true,
-    imports: [ButtonModule, OverlayPanelModule, DotMessagePipe, DotNotificationListComponent],
+    imports: [DotMessagePipe, DotNotificationListComponent, DotToolbarBtnOverlayComponent],
     styleUrls: ['./dot-notifications.component.scss'],
     templateUrl: 'dot-notifications.component.html'
 })
 export class DotNotificationsComponent implements OnInit {
     readonly #notificationService = inject(NotificationsService);
     readonly #destroyRef = inject(DestroyRef);
-    readonly $overlayPanel = viewChild.required<OverlayPanel>('op');
 
-    $isOverlayPanelVisible = signal(false);
+    readonly $overlayPanel = viewChild.required<DotToolbarBtnOverlayComponent>('overlayPanel');
 
     $notifications = signal<{
         data: INotification[];
@@ -102,23 +99,5 @@ export class DotNotificationsComponent implements OnInit {
             hasMore: false
         });
         this.$overlayPanel().hide();
-    }
-
-    onShow(): void {
-        this.$isOverlayPanelVisible.set(true);
-    }
-
-    onHide(): void {
-        this.$isOverlayPanelVisible.set(false);
-    }
-
-    onToggle(): void {
-        const isVisible = this.$isOverlayPanelVisible();
-
-        if (isVisible) {
-            this.onHide();
-        } else {
-            this.onShow();
-        }
     }
 }

@@ -2,24 +2,8 @@
 @let unreadCount = notifications.unreadCount;
 @let hasMore = notifications.hasMore;
 @let data = notifications.data;
-@let isOverlayPanelVisible = $isOverlayPanelVisible();
 
-@if (isOverlayPanelVisible) {
-    <div (click)="onToggle()" class="dot-mask"></div>
-}
-
-@if (unreadCount) {
-    <span class="dot-toolbar__badge"></span>
-}
-
-<p-button
-    (onClick)="op.toggle($event)"
-    [icon]="'pi pi-bell'"
-    [rounded]="true"
-    [text]="true"
-    data-testid="icon-button" />
-
-<p-overlayPanel #op [appendTo]="'body'" (onShow)="onShow()" (onHide)="onHide()">
+<dot-toolbar-btn-overlay #overlayPanel icon="pi pi-bell" [showBadge]="true">
     <div class="dot-notifications">
         <div class="dot-notifications__heading">
             <h3 class="dot-notifications__title" id="dot-toolbar-notifications-title">
@@ -64,4 +48,4 @@
             }
         </div>
     </div>
-</p-overlayPanel>
+</dot-toolbar-btn-overlay>
