@@ -56,7 +56,7 @@ function ProductCard({ product }: { product: Product }) {
           />
         </div>
 
-        <div className="p-4 flex flex-col flex-grow">
+        <div className="p-4 flex flex-col grow">
           <h3 className="text-gray-900 font-medium text-sm mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors">
             {title}
           </h3>
