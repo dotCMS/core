@@ -152,6 +152,8 @@ Add the proxy configuration to your `angular.json`:
 
 Once configured, image URLs in your components will automatically be proxied to your dotCMS instance:
 
+>📚 Learn more about [Image Resizing and Processing in dotCMS with Angular](https://www.dotcms.com/blog/image-resizing-and-processing-in-dotcms-with-angular-and-nextjs).
+
 ```typescript
 // /components/my-dotcms-image.component.ts
 @Component({
@@ -163,8 +165,6 @@ class MyDotCMSImageComponent {
     @Input() contentlet: DotCMSBasicContentlet;
 }
 ```
-
-📚 Learn more about simple image pathing in dotCMS [here](https://dev.dotcms.com/docs/file-assets-and-dotassets).
 
 ## Quickstart: Render a Page with dotCMS
 
@@ -321,8 +321,8 @@ const DYNAMIC_COMPONENTS = {
 
 | Input        | Type                | Required | Description                                                                                                                                                                                                                 |
 |--------------|---------------------|----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `contentlet` | `DotCMSContentlet`  | ✅       | The contentlet containing the editable field                                                                                                                                                                                |
-| `fieldName`  | `string`            | ✅       | Name of the field to edit                                                                                                                                                                                                   |
+| `contentlet` | `T extends DotCMSBasicContentlet`  | ✅       | The contentlet containing the editable field                                                                                                   |
+| `fieldName`  | `keyof T`                     | ✅       | Name of the field to edit, which must be a valid key of the contentlet type `T`                                                                |
 | `mode`       | `'plain' \| 'full'` | ❌       | `plain` (default): Support text editing. Does not show style controls. <br/> `full`: Enables a bubble menu with style options. This mode only works with [`WYSIWYG` fields](https://dev.dotcms.com/docs/the-wysiwyg-field). |
 | `format`     | `'text' \| 'html'`  | ❌       | `text` (default): Renders HTML tags as plain text <br/> `html`: Interprets and renders HTML markup                                                                                                                          |
 

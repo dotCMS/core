@@ -126,6 +126,8 @@ Learn more about Vite configuration [here](https://vitejs.dev/config/).
 
 Once configured, image URLs in your components will automatically be proxied to your dotCMS instance:
 
+>📚 Learn more about [Image Resizing and Processing in dotCMS with React](https://www.dotcms.com/blog/image-resizing-and-processing-in-dotcms-with-angular-and-nextjs).
+
 ```typescript
 // /components/my-dotcms-image.tsx
 import type { DotCMSBasicContentlet } from '@dotcms/types';
@@ -134,8 +136,6 @@ export const MyDotCMSImageComponent = ({ inode, title }: DotCMSBasicContentlet) 
     return <img src={`/dA/${inode}`} alt={title} />;
 }
 ```
-
-📚 Learn more about simple image pathing in dotCMS [here](https://dev.dotcms.com/docs/file-assets-and-dotassets).
 
 ## Quickstart: Render a Page with dotCMS
 
@@ -206,6 +206,14 @@ All components and hooks should be imported from `@dotcms/react/next`:
 | `components` | `DotCMSPageComponent`    | ✅       | `{}`           | [Map of content type → React component](#component-mapping)          |
 | `mode`       | `DotCMSPageRendererMode` | ❌       | `'production'` | [Rendering mode ('production' or 'development')](#layout-body-modes) |
 
+#### Client-Side Only Component
+
+> ⚠️ **Important: This is a client-side React component.**
+> `DotCMSLayoutBody` uses React features like `useContext`, `useEffect`, and `useState`.
+> If you're using a framework that supports Server-Side Rendering (like **Next.js**, **Gatsby**, or **Astro**), you **must** mark the parent component with `"use client"` or follow your framework’s guidelines for using client-side components.
+>
+> 👉 [Learn more: Next.js – Client Components](https://nextjs.org/docs/getting-started/react-essentials#client-components)
+
 #### Usage
 
 ```tsx
@@ -256,8 +264,8 @@ const DYNAMIC_COMPONENTS = {
 
 | Input        | Type                | Required | Description                                                                                                                                                                                                                 |
 | ------------ | ------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `contentlet` | `DotCMSContentlet`  | ✅       | The contentlet containing the editable field                                                                                                                                                                                |
-| `fieldName`  | `string`            | ✅       | Name of the field to edit                                                                                                                                                                                                   |
+| `contentlet` | `T extends DotCMSBasicContentlet`  | ✅       | The contentlet containing the editable field                                                                                                   |
+| `fieldName`  | `keyof T`                     | ✅       | Name of the field to edit, which must be a valid key of the contentlet type `T`                                                                |
 | `mode`       | `'plain' \| 'full'` | ❌       | `plain` (default): Support text editing. Does not show style controls. <br/> `full`: Enables a bubble menu with style options. This mode only works with [`WYSIWYG` fields](https://dev.dotcms.com/docs/the-wysiwyg-field). |
 | `format`     | `'text' \| 'html'`  | ❌       | `text` (default): Renders HTML tags as plain text <br/> `html`: Interprets and renders HTML markup                                                                                                                          |
 

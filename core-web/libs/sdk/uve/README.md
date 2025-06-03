@@ -53,7 +53,9 @@ These examples handle UVE integration, routing, rendering, and more—out of the
 
 ### 🚩 Custom Setup: Manual Rendering (Not Recommended)
 
-You can use `@dotcms/uve` directly, but it’s not recommended or supported unless you’re building a highly custom integration. Here’s how the pieces fit together:
+> 💡 We recommend using one of our official framework SDKs, which are designed to handle UVE integration, routing, rendering, and more—out of the box.
+
+You can use `@dotcms/uve` directly, but **it’s not recommended or supported** unless you’re building a highly custom integration. Here’s how the pieces fit together:
 
 1. **You must use `@dotcms/client` to fetch content and page data.**
 2. **You must render pages based on dotCMS’s layout schema.**
@@ -112,6 +114,9 @@ createUVESubscription('changes', (newPageResponse) => {
 
 #### 🔄 How to Render a dotCMS Page
 
+> 📚 For a complete guide, here is a full tutorial:
+> 👉 [dotCMS Page Rendering Architecture]( https://dev.dotcms.com/docs/dotcms-page-rendering-architecture)
+
 dotCMS pages are structured as nested layout objects:
 
 -   A `PageAsset` contains a `layout` object
@@ -155,11 +160,6 @@ function renderContentletByType(contentlet) {
 ```
 
 To make the layout editable, be sure to apply all required `data-dot-*` attributes on containers and contentlets.
-
-For a complete guide, see this tutorial:
-👉 [How to Build a Custom dotCMS Renderer](https://www.dotcms.com/blog/developer-tutorial-how-to-use-dotcms-and-react-to-build-single-page-apps)
-
-> 💡 Unless you are building your own front-end framework (which we don’t recommend), use `@dotcms/react` or `@dotcms/angular`. These handle rendering and editor integration for you.
 
 ## Prerequisites & Setup
 
@@ -311,7 +311,7 @@ sub.unsubscribe();
 
 | Input        | Type               | Required | Description                      |
 | ------------ | ------------------ | -------- | -------------------------------- |
-| `contentlet` | `DotCMSContentlet` | ✅       | The contentlet you want to edit. |
+| `contentlet` | `Contentlet<T>` | ✅       | The contentlet you want to edit. |
 
 #### Usage
 

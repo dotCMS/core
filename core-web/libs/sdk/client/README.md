@@ -14,7 +14,6 @@ The `@dotcms/client` is a powerful JavaScript/TypeScript SDK designed to simplif
 -   **Simplified Development**: Write less code with intuitive methods and builders
 -   **Type Safety**: Built-in TypeScript definitions prevent runtime errors
 -   **Universal Compatibility**: Works in both browser and Node.js environments
--   **Performance Optimized**: Built-in caching and efficient data fetching
 -   **Security First**: Handles authentication and requests securely
 -   **Developer Experience**: Rich autocompletion and documentation
 
