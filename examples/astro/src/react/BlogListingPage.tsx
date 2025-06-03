@@ -6,8 +6,6 @@ import { dotCMSClient } from "@utils/client";
 import Header from "@components/react/Header";
 import BlogCard from "@components/react/BlogCard";
 
-
-
 export function BlogListingPage({ pageResponse }: { pageResponse: any }) {
     const { content } = useEditableDotCMSPage<any>(pageResponse);
     const [searchQuery, setSearchQuery] = useState("");
