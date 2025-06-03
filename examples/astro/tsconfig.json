@@ -12,7 +12,8 @@
       "@react/hooks/*": ["src/hooks/*"],
       "@react/contentTypes/*": ["src/components/content-types/*"],
       "@react/layout/*": ["src/react/layout/*"],
-      "@components/*": ["src/components/*"]
+      "@components/*": ["src/components/*"],
+      "@styles/*": ["src/styles/*"]
     }
   }
 }
