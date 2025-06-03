@@ -1,5 +1,5 @@
 import NotFound from "@/app/not-found";
-import { DetailPage } from "@/pages/DetailPage";
+import { DetailPage } from "@/pages-components/DetailPage";
 import { getDotCMSPage } from "@/utils/getDotCMSPage";
 
 export async function generateMetadata(props) {

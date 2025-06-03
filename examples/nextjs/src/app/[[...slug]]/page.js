@@ -1,7 +1,7 @@
 import { cache } from "react";
 
 import NotFound from "@/app/not-found";
-import { Page } from "@/pages/Page";
+import { Page } from "@/pages-components/Page";
 import { getDotCMSPage } from "@/utils/getDotCMSPage";
 
 export async function generateMetadata(props) {
