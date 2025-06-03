@@ -46,6 +46,7 @@ import {
     SeoMetaTags
 } from '@dotcms/dotcms-models';
 import { DotResultsSeoToolComponent } from '@dotcms/portlets/dot-ema/ui';
+import { DotCMSPage } from '@dotcms/types';
 import { __DOTCMS_UVE_EVENT__ } from '@dotcms/types/internal';
 import { SafeUrlPipe, DotSpinnerModule, DotCopyContentModalService } from '@dotcms/ui';
 import { isEqual, WINDOW } from '@dotcms/utils';
@@ -79,8 +80,7 @@ import {
     InsertPayloadFromDelete,
     DialogAction,
     PostMessage,
-    ReorderMenuPayload,
-    DotPage
+    ReorderMenuPayload
 } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
 import {
@@ -986,6 +986,9 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                                 this.messageService.add({
                                     severity: 'success',
                                     summary: this.dotMessageService.get('message.content.saved'),
+                                    detail: this.dotMessageService.get(
+                                        'message.content.note.already.published'
+                                    ),
                                     life: 2000
                                 });
                             },
@@ -1418,7 +1421,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         }
     }
 
-    private createNewTranslation(language: DotLanguage, page: DotPage): void {
+    private createNewTranslation(language: DotLanguage, page: DotCMSPage): void {
         this.confirmationService.confirm({
             header: this.dotMessageService.get(
                 'editpage.language-change-missing-lang-populate.confirm.header'
@@ -1440,7 +1443,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         });
     }
 
-    translatePage(event: { page: DotPage; newLanguage: number }) {
+    translatePage(event: { page: DotCMSPage; newLanguage: number }) {
         this.dialog.translatePage(event);
     }
 
