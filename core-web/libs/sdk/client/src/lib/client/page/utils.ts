@@ -99,8 +99,21 @@ export const buildPageQuery = ({
     canEdit
     canLock
     canRead
+    runningExperimentId
     urlContentMap {
       _map
+    }
+    host {
+      identifier
+      hostName
+     	googleMap
+      archived
+      contentType
+    }
+    vanityUrl {
+      action
+      forwardTo
+      uri
     }
     conLanguage {
       id
@@ -109,6 +122,9 @@ export const buildPageQuery = ({
     }
     template {
       drawed
+      anonymous
+      theme
+      identifier
     }
     containers {
       path

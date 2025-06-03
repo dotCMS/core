@@ -7,10 +7,15 @@ import {
     DotContainerMap,
     DotDevice,
     DotExperiment,
-    DotExperimentStatus,
-    DotPageContainerStructure,
-    VanityUrl
+    DotExperimentStatus
 } from '@dotcms/dotcms-models';
+import {
+    DotCMSPage,
+    DotCMSPageAssetContainers,
+    DotCMSURLContentMap,
+    DotCMSVanityUrl,
+    DotCMSViewAsPersona
+} from '@dotcms/types';
 
 import { EmaDragItem } from '../edit-ema-editor/components/ema-page-dropzone/types';
 import { DotPageAssetKeys, DotPageApiParams } from '../services/dot-page-api.service';
@@ -26,7 +31,6 @@ import {
     ContainerPayload,
     ContentletDragPayload,
     ContentTypeDragPayload,
-    DotPage,
     DotPageAssetParams,
     DragDatasetItem,
     PageContainer
@@ -214,10 +218,10 @@ export function sanitizeURL(url?: string): string {
 /**
  * Get the personalization for the contentlet
  *
- * @param {Record<string, string>} persona
+ * @param {DotCMSViewAsPersona} persona
  * @return {*}
  */
-export const getPersonalization = (persona: Record<string, string>) => {
+export const getPersonalization = (persona: DotCMSViewAsPersona) => {
     if (!persona || (!persona.contentType && !persona.keyTag)) {
         return `dot:default`;
     }
@@ -321,11 +325,21 @@ export function getIsDefaultVariant(variant?: string): boolean {
  * Check if the param is a forward or page
  *
  * @export
- * @param {VanityUrl} vanityUrl
+ * @param {DotCMSVanityUrl} vanityUrl
  * @return {*}
  */
-export function isForwardOrPage(vanityUrl?: VanityUrl): boolean {
-    return !vanityUrl || (!vanityUrl.permanentRedirect && !vanityUrl.temporaryRedirect);
+export function isForwardOrPage(vanityUrl?: DotCMSVanityUrl): boolean {
+    if (!vanityUrl) {
+        return true;
+    }
+
+    const pageAPIPropsExist = 'permanentRedirect' in vanityUrl && 'temporaryRedirect' in vanityUrl;
+
+    if (pageAPIPropsExist) {
+        return !vanityUrl?.permanentRedirect && !vanityUrl?.temporaryRedirect;
+    }
+
+    return vanityUrl?.action === 200 || vanityUrl?.response === 200; // GraphQL API returns 200 for forward
 }
 
 /**
@@ -402,7 +416,7 @@ export function createFullURL(params: DotPageApiParams, siteId?: string): string
  * @return {*}  {boolean}
  */
 export function computeCanEditPage(
-    page: DotPage,
+    page: DotCMSPage,
     currentUser: CurrentUser,
     experiment?: DotExperiment
 ): boolean {
@@ -426,7 +440,7 @@ export function computeCanEditPage(
  * @param {CurrentUser} currentUser
  * @return {*}
  */
-export function computePageIsLocked(page: DotPage, currentUser: CurrentUser): boolean {
+export function computePageIsLocked(page: DotCMSPage, currentUser: CurrentUser): boolean {
     return !!page?.locked && page?.lockedBy !== currentUser?.userId;
 }
 
@@ -434,11 +448,11 @@ export function computePageIsLocked(page: DotPage, currentUser: CurrentUser): bo
  * Map the containerStructure to a DotContainerMap
  *
  * @private
- * @param {DotPageContainerStructure} containers
+ * @param {DotCMSPageAssetContainers} containers
  * @return {*}  {DotContainerMap}
  */
 export function mapContainerStructureToDotContainerMap(
-    containers: DotPageContainerStructure
+    containers: DotCMSPageAssetContainers
 ): DotContainerMap {
     return Object.keys(containers).reduce((acc, id) => {
         acc[id] = containers[id].container;
@@ -451,9 +465,9 @@ export function mapContainerStructureToDotContainerMap(
  * Map the containerStructure to an array
  *
  * @private
- * @param {DotPageContainerStructure} containers
+ * @param {DotCMSPageAssetContainers} containers
  */
-export const mapContainerStructureToArrayOfContainers = (containers: DotPageContainerStructure) => {
+export const mapContainerStructureToArrayOfContainers = (containers: DotCMSPageAssetContainers) => {
     return Object.keys(containers).reduce(
         (
             acc: {
@@ -676,7 +690,7 @@ export function getAllowedPageParams(params: Params): DotPageAssetParams {
  */
 export function getTargetUrl(
     url: string | undefined,
-    urlContentMap: DotCMSContentlet
+    urlContentMap: DotCMSURLContentMap
 ): string | undefined {
     // Return URL from content map or fallback to the provided URL
     return urlContentMap?.URL_MAP_FOR_CONTENT || url;
