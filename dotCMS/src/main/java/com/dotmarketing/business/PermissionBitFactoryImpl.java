@@ -1770,7 +1770,6 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
           bitPermissionsList = (List<Permission>) Try.of(() -> persistenceService.list())
                           .getOrElseThrow(e -> new DotRuntimeException(e));
           bitPermissionsList.forEach(p -> p.setBitPermission(true));
-          
           // adding to cache if found
           if (!bitPermissionsList.isEmpty()) {
               permissionCache.addToPermissionCache(permissionKey, bitPermissionsList);

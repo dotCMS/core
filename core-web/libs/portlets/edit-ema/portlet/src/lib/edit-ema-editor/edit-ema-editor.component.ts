@@ -986,6 +986,9 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                                 this.messageService.add({
                                     severity: 'success',
                                     summary: this.dotMessageService.get('message.content.saved'),
+                                    detail: this.dotMessageService.get(
+                                        'message.content.note.already.published'
+                                    ),
                                     life: 2000
                                 });
                             },
