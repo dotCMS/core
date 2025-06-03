@@ -405,19 +405,23 @@ public class LocalTransaction {
         /**
          * Executes the transaction and returns the result
          */
-        public T run() {
+        public T run(final boolean bubbleUpExceptions) throws Exception {
             if (this.operation == null) {
-                throw new IllegalStateException("No operation defined. Use transactional() to set an operation.");
+                throw new IllegalStateException(
+                        "No operation defined. Use transactional() to set an operation.");
             }
-            try {
-                return externalizeTransaction(this.operation, this.commitCallbacks,
-                        this.rollbackCallbacks, false);
-            } catch (Exception e){
-                // This exception should not be thrown, since we are handling it internally and using the onRollback callbacks and the throwException flag is set to false.
-                // However, we log it here to be JVM complaint.
-                Logger.error(LocalTransaction.class, "Error executing transaction", e);
-            }
-            return null;
+
+            return externalizeTransaction(this.operation, this.commitCallbacks,
+                    this.rollbackCallbacks, bubbleUpExceptions);
+
+        }
+
+        /**
+         * Executes the transaction and returns the result
+         * This method does not bubble up exceptions
+         */
+        public T run() throws Exception {
+            return run(false);
         }
 
     }

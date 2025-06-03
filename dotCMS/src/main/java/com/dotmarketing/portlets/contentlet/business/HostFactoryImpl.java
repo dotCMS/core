@@ -498,24 +498,21 @@ public class HostFactoryImpl implements HostFactory {
      *
      * @throws DotRuntimeException The specified Site failed to be deleted.
      */
-
     private Boolean innerDeleteSite(final Host site, final User user, final boolean respectFrontendRoles) {
-        final boolean ok = LocalTransaction.<Boolean>tx()
-            .of(() -> {
-                deleteSite(site, user, respectFrontendRoles);
-                return Boolean.TRUE;
-            }).onCommit(() ->
-                    onSiteDeleteOk(site, user) // This will be executed after the transaction is committed
-              ).onRollback(() ->
-                    Logger.error(HostAPIImpl.class, String.format("An error occurred when deleting Site '%s' by User '%s'",
-                    site.getHostname(), user.getUserId()))
-              ).run();
-
-        if (!ok) {
-            throw new DotRuntimeException(String.format("An error occurred when deleting Site '%s' by User '%s'",
-                    site.getHostname(), user.getUserId()));
+        try {
+            return LocalTransaction.<Boolean>tx()
+                .of(() -> {
+                    deleteSite(site, user, respectFrontendRoles);
+                    return Boolean.TRUE;
+                }).onCommit(() ->
+                        onSiteDeleteOk(site, user) // This will be executed after the transaction is committed
+                  ).onRollback(() ->
+                        Logger.error(HostAPIImpl.class, String.format("An error occurred when deleting Site '%s' by User '%s'",
+                        site.getHostname(), user.getUserId()))
+                  ).run(true);
+        } catch (Exception e) {
+            throw new DotRuntimeException(e);
         }
-        return Boolean.TRUE;
     }
 
     /**
