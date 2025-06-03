@@ -11,6 +11,7 @@ The `@dotcms/angular` SDK is the DotCMS official Angular library. It empowers An
     -   [Installation](#installation)
     -   [dotCMS Client Configuration](#dotcms-client-configuration)
     -   [Proxy Configuration for Static Assets](#proxy-configuration-for-static-assets)
+    -   [Using dotCMS Images with Angular’s `NgOptimizedImage` Directive (Recommended)](#using-dotcms-images-with-angulars-ngoptimizedimage-directive-recommended)
 -   [Quickstart: Render a Page with dotCMS](#quickstart-render-a-page-with-dotcms)
     -   [Example Project](#example-project-)
 -   [SDK Reference](#sdk-reference)
@@ -165,6 +166,52 @@ class MyDotCMSImageComponent {
     @Input() contentlet: DotCMSBasicContentlet;
 }
 ```
+
+### Using dotCMS Images with Angular’s `NgOptimizedImage` Directive (Recommended)
+
+To optimize images served from dotCMS in your Angular app, we recommend using the built-in `NgOptimizedImage` directive. This integration supports automatic image preloading, lazy loading, and improved performance.
+
+We provide a helper function `provideDotCMSImageLoader()` to configure image loading with your dotCMS instance.
+
+#### Setup
+
+Add the image loader to your `app.config.ts`:
+
+```ts
+// src/app/app.config.ts
+import { provideDotCMSImageLoader } from '@dotcms/angular';
+import { ApplicationConfig } from '@angular/core';
+
+export const appConfig: ApplicationConfig = {
+  providers: [
+    provideDotCMSImageLoader(environment.dotcmsUrl)
+  ]
+};
+```
+
+#### Usage
+
+Once configured, you can use the `NgOptimizedImage` directive to render dotCMS images:
+
+```ts
+// src/components/my-dotcms-image.component.ts
+@Component({
+  selector: 'my-dotcms-image',
+  template: `
+    <img [ngSrc]="imagePath" alt="Asset from dotCMS" />
+  `,
+  standalone: true
+})
+export class MyDotCMSImageComponent {
+  @Input() contentlet!: DotCMSBasicContentlet;
+  
+  get imagePath() {
+    return this.contentlet.image.versionPath;
+  }
+}
+```
+
+> 📚 Learn more about [`NgOptimizedImage`](https://angular.dev/guide/image-optimization)
 
 ## Quickstart: Render a Page with dotCMS
 
