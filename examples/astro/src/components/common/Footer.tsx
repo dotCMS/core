@@ -1,6 +1,20 @@
 import {RecommendedCard} from "@/components/ui";
+import type { DotCMSBasicContentlet } from "@dotcms/types";
 
-function Footer({ blogs, destinations }: { blogs: any; destinations: any }) {
+interface Blog extends DotCMSBasicContentlet {
+  urlMap: string;
+}
+
+interface Destination extends DotCMSBasicContentlet {
+  urlMap: string;
+}
+
+interface FooterProps {
+  blogs: Blog[];
+  destinations: Destination[];
+}
+
+function Footer({ blogs, destinations }: FooterProps) {
   return (
     <footer className="p-4 bg-slate-600 text-white py-24">
       <div className="grid md:grid-cols-3 sm:grid-cols-1 md:grid-rows-1 sm:grid-rows-3 gap-7 mx-24">
@@ -21,14 +35,14 @@ function Footer({ blogs, destinations }: { blogs: any; destinations: any }) {
   );
 }
 
-function Blogs({ blogs }: { blogs: any }) {
+function Blogs({ blogs }: { blogs: Blog[] }) {
   if (!blogs?.length) return null;
 
   return (
     <div className="flex flex-col">
       <h2 className="text-2xl font-bold mb-7 text-white">Latest Blog Posts</h2>
       <div className="flex flex-col gap-5">
-        {blogs.map((blog: any) => (
+        {blogs.map((blog: Blog) => (
           <RecommendedCard key={blog.identifier} contentlet={blog} />
         ))}
       </div>
@@ -36,7 +50,7 @@ function Blogs({ blogs }: { blogs: any }) {
   );
 }
 
-function Destinations({ destinations }: { destinations: any }) {
+function Destinations({ destinations }: { destinations: Destination[] }) {
   if (!destinations?.length) return null;
 
   return (
@@ -45,7 +59,7 @@ function Destinations({ destinations }: { destinations: any }) {
         Popular Destinations
       </h2>
       <div className="flex flex-col gap-5">
-        {destinations.map((destination: any) => (
+        {destinations.map((destination: Destination) => (
           <RecommendedCard
             key={destination.identifier}
             contentlet={destination}

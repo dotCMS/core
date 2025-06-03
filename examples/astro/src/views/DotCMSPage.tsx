@@ -1,29 +1,26 @@
 import { DotCMSLayoutBody, useEditableDotCMSPage } from "@dotcms/react/next";
+import type { DotCMSCustomPageResponse } from "@/types/page.model";
 
 import { dotComponents } from "@/components/content-types";
-
 import Footer from "@/components/common/Footer";
 import Header from "@/components/common/Header";
 
-export type MyPageProps = {
-  pageResponse: any;
-};
+export const DotCMSPage = ({ pageResponse }: { pageResponse: DotCMSCustomPageResponse }) => {
+  const { pageAsset, content } = useEditableDotCMSPage<DotCMSCustomPageResponse>(pageResponse);
+  const { layout } = pageAsset;
 
-export const DotCMSPage = ({ pageResponse }: any) => {
-  const { pageAsset, content = {} } = useEditableDotCMSPage<any>(pageResponse);
-  const navigation = content.navigation;
+  const showHeader = layout.header && content;
+  const showFooter = layout.footer && content;
 
   return (
     <div className="flex flex-col min-h-screen gap-6 bg-slate-50">
-      {pageAsset?.layout.header && <Header navItems={navigation.children}></Header>}
+      {showHeader && <Header navigation={content?.navigation}></Header>}
 
       <main className="container m-auto">
         <DotCMSLayoutBody page={pageAsset} components={dotComponents} />
       </main>
 
-      {pageAsset?.layout.footer && (
-        <Footer {...content} />
-      )}
+      {showFooter && <Footer {...content} />}
     </div>
   );
 };

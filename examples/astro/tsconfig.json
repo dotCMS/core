@@ -14,7 +14,8 @@
       "@/hooks": ["./src/hooks/index.ts"],
       "@/dotcms-integration": ["./src/integration/dotcms/index.ts"],
       "@/pages/*": ["./src/pages/*"],
-      "@/styles/*": ["./src/styles/*"]
+      "@/styles/*": ["./src/styles/*"],
+      "@/types/*": ["./src/types/*"]
     }
   }
 }

@@ -1,25 +1,29 @@
 import { useEffect, useState } from "react";
 
+import type { BlockEditorNode } from "@dotcms/types";
 import { enableBlockEditorInline } from "@dotcms/uve";
 import {
     DotCMSBlockEditorRenderer,
     useEditableDotCMSPage,
 } from "@dotcms/react/next";
 
+import type { DotCMSCustomPageResponse } from "@/types/page.model";
+
 import Footer from "@/components/common/Footer";
 import Header from "@/components/common/Header";
 import { useIsEditMode } from "@/hooks";
 
-export function DetailPage({ pageResponse }: { pageResponse: any }) {
+export function DetailPage({ pageResponse }: { pageResponse: DotCMSCustomPageResponse }) {
     const [blockEditorClasses, setBlockEditorClasses] = useState(
         "prose lg:prose-xl prose-a:text-blue-600",
     );
 
-    console.log(pageResponse);
-    const { pageAsset, content } = useEditableDotCMSPage<any>(pageResponse);
-    const { urlContentMap } = pageAsset;
-    const { blogContent } = urlContentMap as any || {};
-    const navigation = content?.navigation as any;
+    const { pageAsset, content } = useEditableDotCMSPage<DotCMSCustomPageResponse>(pageResponse);
+    const { urlContentMap, layout } = pageAsset;
+    const { blogContent } = urlContentMap || {};
+
+    const showHeader = layout.header && content;
+    const showFooter = layout.footer && content;
     const isEditMode = useIsEditMode();
 
     useEffect(() => {
@@ -38,9 +42,7 @@ export function DetailPage({ pageResponse }: { pageResponse: any }) {
 
     return (
         <div className="flex flex-col gap-6 min-h-screen bg-slate-50">
-            {pageAsset?.layout.header && (
-                <Header navItems={navigation?.children} />
-            )}
+            {showHeader && <Header navigation={content?.navigation} />}
             <main className="flex flex-col gap-8 m-auto">
                 {urlContentMap?.image && (
                     <div className="relative w-full h-80 overflow-hidden">
@@ -50,21 +52,21 @@ export function DetailPage({ pageResponse }: { pageResponse: any }) {
 
                 <div onClick={handleClick}>
                     <DotCMSBlockEditorRenderer
-                        blocks={JSON.parse(blogContent)}
+                        blocks={JSON.parse(blogContent || "[]")}
                         className={blockEditorClasses}
                         customRenderers={customeRenderers}
                     />
                 </div>
             </main>
 
-            {pageAsset?.layout.footer && <Footer {...content} />}
+            {showFooter && <Footer {...content} />}
         </div>
     );
 }
 
 const customeRenderers = {
-    Activity: (props: any) => {
-        const { title, description } = props.attrs.data;
+    Activity: (props: BlockEditorNode) => {
+        const { title, description } = props.attrs?.data || {};
 
         return (
             <div>
@@ -73,8 +75,8 @@ const customeRenderers = {
             </div>
         );
     },
-    Product: (props: any) => {
-        const { title, description } = props.attrs.data;
+    Product: (props: BlockEditorNode) => {
+        const { title, description } = props.attrs?.data || {};
 
         return (
             <div>

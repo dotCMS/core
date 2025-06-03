@@ -1,8 +1,10 @@
 import { useIsEditMode } from "@/hooks";
 import { ReorderMenuButton } from "@/components/ui";
+import type { DotCMSNavigationItem } from "@dotcms/types";
 
-function Header({ navItems }: { navItems: any }) {
+function Header({ navigation }: { navigation: DotCMSNavigationItem }) {
     const isEditMode = useIsEditMode();
+    const navItems = navigation?.children;
 
     return (
         <div className="flex items-center justify-between p-4 bg-blue-500">
@@ -14,12 +16,12 @@ function Header({ navItems }: { navItems: any }) {
                 {isEditMode && <ReorderMenuButton />}
             </div>
 
-            {navItems && <Navigation navItems={navItems} />}
+            {navItems && <Navigation {...navItems} />}
         </div>
     );
 }
 
-function Navigation({ navItems }: { navItems: any }) {
+function Navigation(navItems: DotCMSNavigationItem[]) {
     const pathname = window.location.pathname;
 
     return (

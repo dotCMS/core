@@ -1,20 +1,23 @@
 import { useEffect, useState } from "react";
 
 import { useEditableDotCMSPage } from "@dotcms/react/next";
-import { useDebounce } from "@/hooks";
+
 import { dotCMSClient } from "@/dotcms-integration";
+import { useDebounce } from "@/hooks";
 import { BlogCard } from "@/components/ui";
 import Header from "@/components/common/Header";
+import type { DotCMSCustomPageResponse } from "@/types/page.model";
+import type { DotCMSNavigationItem } from "@dotcms/types";
 
-export function BlogListingPage({ pageResponse }: { pageResponse: any }) {
-    const { content } = useEditableDotCMSPage<any>(pageResponse);
+export function BlogListingPage({ pageResponse }: { pageResponse: DotCMSCustomPageResponse }) {
+    const { content } = useEditableDotCMSPage<DotCMSCustomPageResponse>(pageResponse);
     const [searchQuery, setSearchQuery] = useState("");
     const [filteredBlogs, setFilteredBlogs] = useState<any[]>([]);
-    const debouncedSearchQuery = useDebounce(searchQuery, 500);
-    const navigation = content.navigation as any;
+    const debouncedSearchQuery = useDebounce(searchQuery, 500)
+    const navigation = content?.navigation;
 
     useEffect(() => {
-        const allBlogs = content.blogs || [];
+        const allBlogs = content?.blogs || [];
 
         if (!debouncedSearchQuery.length) {
             setFilteredBlogs(allBlogs);
@@ -34,11 +37,11 @@ export function BlogListingPage({ pageResponse }: { pageResponse: any }) {
             .then(({ contentlets }: { contentlets: any[] }) => {
                 setFilteredBlogs(contentlets);
             });
-    }, [debouncedSearchQuery, content.blogs]);
+    }, [debouncedSearchQuery, content?.blogs]);
 
     return (
         <div className="flex flex-col gap-6 min-h-screen bg-slate-50">
-            <Header navItems={navigation?.children} />
+            <Header navigation={navigation as DotCMSNavigationItem} />
             <main className="container mx-auto px-4 py-8">
                 <div className="flex flex-col gap-4 mb-8">
                     <h1 className="text-4xl font-bold text-center">
