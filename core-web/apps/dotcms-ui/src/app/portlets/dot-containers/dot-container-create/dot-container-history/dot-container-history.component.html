@@ -1,3 +1,6 @@
 <dot-portlet-box>
-    <dot-iframe [src]="historyUrl" data-testId="historyIframe"></dot-iframe>
+    <dot-iframe
+        [src]="historyUrl"
+        data-testId="historyIframe"
+        (custom)="onCustomEvent($event)"></dot-iframe>
 </dot-portlet-box>

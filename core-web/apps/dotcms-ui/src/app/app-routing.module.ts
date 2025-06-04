@@ -33,7 +33,10 @@ const PORTLETS_ANGULAR: Route[] = [
         loadChildren: () =>
             import('@dotcms/app/portlets/dot-containers/dot-containers.module').then(
                 (m) => m.DotContainersModule
-            )
+            ),
+        data: {
+            reuseRoute: false
+        }
     },
     {
         path: 'categories',

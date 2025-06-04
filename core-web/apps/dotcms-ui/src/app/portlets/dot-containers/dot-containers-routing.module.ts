@@ -24,7 +24,8 @@ const routes: Routes = [
             ),
         resolve: {
             container: DotContainerEditResolver
-        }
+        },
+        runGuardsAndResolvers: 'always'
     }
 ];
 

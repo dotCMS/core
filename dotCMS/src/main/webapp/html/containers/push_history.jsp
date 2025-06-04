@@ -56,10 +56,9 @@
             })
             .then(response => response.json())
             .then(({ entity }) => {
-                const customEvent = document.createEvent('CustomEvent');
-
-                customEvent.initCustomEvent('ng-event', false, false, {
-                    name: 'bring-back-version',
+				const customEvent = document.createEvent('CustomEvent');
+				customEvent.initCustomEvent('ng-event', false, false, {
+					name: 'bring-back-version',
                     data: {
                         id: entity.versionId,
                         inode: entity.inode,
@@ -68,18 +67,11 @@
                 })
 
                 document.dispatchEvent(customEvent);
-
-
-
             })
             .catch((error) => {
                 console.error('Error bringing back version: ', error);
             })
-            .finally(() => {
-                setIsBringBack(false)
-                // Redirect in the top window
-                window.top.location.href = `/dotAdmin/#/containers`;
-            });
+            .finally(() => setIsBringBack(false));
         }
     }
 
