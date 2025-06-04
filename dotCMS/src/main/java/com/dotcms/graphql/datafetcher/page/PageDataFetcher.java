@@ -6,7 +6,6 @@ import com.dotcms.rest.api.v1.page.PageResource;
 import com.dotcms.vanityurl.business.VanityUrlAPI;
 import com.dotcms.vanityurl.model.CachedVanityUrl;
 import com.dotcms.vanityurl.model.VanityUrlResult;
-import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -66,7 +65,6 @@ public class PageDataFetcher implements DataFetcher<Contentlet> {
             final String persona = environment.getArgument("persona");
             final String site = environment.getArgument("site");
             final String publishDate = environment.getArgument("publishDate");
-            final String variantName = environment.getArgument("variantName");
 
             context.addParam("url", url);
             context.addParam("languageId", languageId);
@@ -90,10 +88,6 @@ public class PageDataFetcher implements DataFetcher<Contentlet> {
 
             if(UtilMethods.isSet(site)) {
                 request.setAttribute(Host.HOST_VELOCITY_VAR_NAME, site);
-            }
-
-            if(UtilMethods.isSet(variantName)) {
-                request.setAttribute(VariantAPI.VARIANT_KEY, variantName);
             }
 
             Date publishDateObj = null;

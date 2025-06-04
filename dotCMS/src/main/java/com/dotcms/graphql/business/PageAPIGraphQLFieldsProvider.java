@@ -54,10 +54,6 @@ public enum PageAPIGraphQLFieldsProvider implements GraphQLFieldsProvider {
                         .name("publishDate")
                         .type(GraphQLString)
                         .build())
-                .argument(GraphQLArgument.newArgument()
-                        .name("variantName")
-                        .type(GraphQLString)
-                        .build())
                 .type(PageAPIGraphQLTypesProvider.INSTANCE.getTypesMap().get(DOT_PAGE))
                 .dataFetcher(new PageDataFetcher()).build());
     }
