@@ -5,7 +5,9 @@ import { ButtonModule } from 'primeng/button';
 
 import { DotCustomTimeModule } from '@components/_common/dot-custom-time.component/dot-custom-time.module';
 import { DotMessagePipe } from '@dotcms/ui';
-import { INotification, NotificationIcons } from '@models/notifications';
+import { NotificationIcons } from '@models/notifications';
+
+import { IToolbarNotification } from '../../../../dot-toolbar.models';
 
 const notificationIcons: NotificationIcons = {
     ERROR: 'exclamation-triangle',
@@ -21,7 +23,7 @@ const notificationIcons: NotificationIcons = {
     templateUrl: 'dot-notification-item.component.html'
 })
 export class DotNotificationItemComponent {
-    $data = input.required<INotification>({ alias: 'data' });
+    $data = input.required<IToolbarNotification>({ alias: 'data' });
 
     clear = output<{ id: string }>();
 

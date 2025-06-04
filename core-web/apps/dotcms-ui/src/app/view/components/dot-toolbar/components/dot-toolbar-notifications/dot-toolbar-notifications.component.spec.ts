@@ -4,7 +4,7 @@
 import { Observable, of as observableOf, of, Subject } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { Component, DebugElement, Injectable, Input, signal } from '@angular/core';
+import { Component, DebugElement, Injectable, Input } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 

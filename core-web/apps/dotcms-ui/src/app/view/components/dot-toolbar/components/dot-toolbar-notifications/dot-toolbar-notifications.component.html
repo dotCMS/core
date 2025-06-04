@@ -35,10 +35,13 @@
             </div>
         }
         <div class="dot-notifications__content" id="dot-toolbar-notifications-content">
-            <dot-notification-list
-                (dismissNotification)="onDismissNotification($event)"
-                [notifications]="notifications.data"
-                id="dot-notifications-list" />
+            <ul class="dot-notifications-list p-0">
+                @for (notification of data; track $index) {
+                    <dot-notification-item
+                        (clear)="onDismissNotification($event)"
+                        [data]="notification" />
+                }
+            </ul>
         </div>
         <div class="dot-notifications__footer" id="dot-toolbar-notifications-footer">
             @if (hasMore) {
