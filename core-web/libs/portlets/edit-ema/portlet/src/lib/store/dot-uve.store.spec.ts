@@ -1,4 +1,4 @@
-import { describe, expect } from '@jest/globals';
+import { describe, expect, it } from '@jest/globals';
 import {
     createServiceFactory,
     mockProvider,
@@ -271,6 +271,46 @@ describe('UVEStore', () => {
 
                     expect(rules.isDisabled).toBe(true);
                     expect(experiments.isDisabled).toBe(true);
+                });
+
+                it('should return rules as disabled when page does not have the canSeeRules property and cannot edit and is not enterprise', () => {
+                    jest.spyOn(dotPageApiService, 'get').mockImplementation(
+                        buildPageAPIResponseFromMock({
+                            ...MOCK_RESPONSE_VTL,
+                            page: {
+                                ...MOCK_RESPONSE_VTL.page,
+                                canSeeRules: undefined,
+                                canEdit: false
+                            }
+                        })
+                    );
+
+                    store.loadPageAsset(VTL_BASE_QUERY_PARAMS);
+                    patchState(store, { isEnterprise: false });
+
+                    const rules = store.$shellProps().items.find((item) => item.id === 'rules');
+                    expect(rules.isDisabled).toBe(true);
+                });
+
+                it('should return rules as not disabled when page does not have the canSeeRules property and can edit and is enterprise', () => {
+                    const pageWithoutCanSeeRules = MOCK_RESPONSE_VTL.page;
+                    // delete the canSeeRules property
+                    delete pageWithoutCanSeeRules.canSeeRules;
+
+                    jest.spyOn(dotPageApiService, 'get').mockImplementation(
+                        buildPageAPIResponseFromMock({
+                            ...MOCK_RESPONSE_VTL,
+                            page: {
+                                ...pageWithoutCanSeeRules,
+                                canEdit: true
+                            }
+                        })
+                    );
+
+                    store.loadPageAsset(VTL_BASE_QUERY_PARAMS);
+
+                    const rules = store.$shellProps().items.find((item) => item.id === 'rules');
+                    expect(rules.isDisabled).toBe(false);
                 });
             });
 
