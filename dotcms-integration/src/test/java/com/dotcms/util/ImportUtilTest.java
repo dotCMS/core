@@ -22,6 +22,7 @@ import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.DateTimeField;
 import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.HostFolderField;
+import com.dotcms.contenttype.model.field.ImageField;
 import com.dotcms.contenttype.model.field.ImmutableTextAreaField;
 import com.dotcms.contenttype.model.field.ImmutableTextField;
 import com.dotcms.contenttype.model.field.RelationshipField;
@@ -3295,7 +3296,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                 .importId(0L)
                 .siteId(defaultSite.getInode())
                 .contentTypeInode(contentType.inode())
-                .keyFields(new String[]{titleField.id()})
+                .keyFields(titleField.id())
                 .user(user)
                 .language(defaultLanguage.getId())
                 .csvHeaders(csvHeaders)
@@ -3358,12 +3359,12 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                     -1, reader,
                     schemeStepActionResult1.getAction().getId(), getHttpRequest());
 
-           //Chekinf import result
+           //Checking import result
             final List<String> results = imported.get("results");
             assertEquals(2, results.size());
 
             final String expectedMessage = String.format("2 New \"%s\" were created.", contentType.name());
-            assertTrue(String.format("Expected Message %s, real messages", expectedMessage, results),
+            assertTrue(String.format("Expected Message %s, real messages (%s)", expectedMessage, results),
                     results.contains(expectedMessage));
 
             final List<String> errors = imported.get("errors");
@@ -3381,7 +3382,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             assertTrue(titles.contains("A"));
             assertTrue(titles.contains("B"));
 
-            //Cheking unique_fields table
+            //Checking unique_fields table
             List<Map<String, Object>> maps = new DotConnect().setSQL("SELECT * FROM unique_fields " +
                             "WHERE supporting_values->>'contentTypeId' = ?")
                     .addParam(contentType.id())
@@ -3498,7 +3499,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             assertEquals(1, contentlets.size());
             assertEquals("C", contentlets.get(0).getTitle());
 
-            //Cheking unique_fields table
+            //Checking unique_fields table
             List<Map<String, Object>> maps = new DotConnect().setSQL("SELECT * FROM unique_fields " +
                             "WHERE supporting_values->>'contentTypeId' = ?")
                     .addParam(contentType.id())
@@ -3662,7 +3663,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
      * @throws IOException
      */
     @Test
-    public void TestImportBinaryImageExpectNoError()
+    public void TestImportBinaryImageExpectErrors()
             throws DotSecurityException, DotDataException, IOException {
 
         String contentTypeName = "TestImportBinaryImageErrorMessage_" + System.currentTimeMillis();
@@ -3702,6 +3703,59 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         assertEquals(INVALID_BINARY_URL.name(), result.error().get(0).code().get());
         assertTrue(result.error().get(1).code().isPresent());
         assertEquals(INVALID_BINARY_URL.name(), result.error().get(1).code().get());
+
+        final List<Contentlet> byStructure = contentletAPI.findByStructure(contentType.inode(),
+                user, false, 0, 0);
+        assertNotNull(byStructure);
+    }
+
+
+    @Test
+    public void TestImportImageExpectErrors()
+            throws DotSecurityException, DotDataException, IOException {
+
+        String contentTypeName = "TestImportImageErrorMessage_" + System.currentTimeMillis();
+        String contentTypeVarName = contentTypeName.replaceAll("_", "Var_");
+        com.dotcms.contenttype.model.field.Field titleField = new FieldDataGen()
+                .name("title")
+                .velocityVarName("title")
+                .type(TextField.class)
+                .next();
+        com.dotcms.contenttype.model.field.Field reqField = new FieldDataGen()
+                .name("image")
+                .velocityVarName("image")
+                .required(false)
+                .type(ImageField.class)
+                .next();
+
+        ContentType contentType = new ContentTypeDataGen()
+                .name(contentTypeName)
+                .velocityVarName(contentTypeVarName)
+                .host(APILocator.systemHost())
+                .fields(List.of(titleField, reqField))
+                .nextPersisted();
+
+        final ContentType saved = contentTypeApi.find(contentType.inode());
+        titleField = saved.fields().get(0);
+
+        final Reader reader = createTempFile("title,image \r\n" +
+                "Company Logo, https://www.dotcms.com/assets/logo.svg?w=3840 " + "\r\n" +
+                "Non-Existing file path, /fake/path" + "\r\n" +
+                "Non-Existing url, https://demo.dotcms.com/lol.jpg" + "\r\n"
+        );
+        final ImportResult result = importAndValidate(contentType, titleField, reader, false, 1, WORKFLOW_PUBLISH_ACTION_ID);
+
+        assertNotNull(result);
+        assertFalse(result.error().isEmpty());
+        assertTrue(result.error().get(0).code().isPresent());
+        assertEquals(INVALID_BINARY_URL.name(), result.error().get(0).code().get());
+        assertTrue(result.error().get(1).code().isPresent());
+        assertEquals(INVALID_BINARY_URL.name(), result.error().get(1).code().get());
+
+        final List<Contentlet> byStructure = contentletAPI.findByStructure(contentType.inode(),
+                user, false, 0, 0);
+        assertNotNull(byStructure);
+
     }
 
 }

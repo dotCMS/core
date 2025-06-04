@@ -9,6 +9,7 @@ import com.dotcms.content.elasticsearch.util.ESUtils;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.HostFolderField;
+import com.dotcms.contenttype.model.field.ImageField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
@@ -2036,6 +2037,8 @@ public class ImportUtil {
             results.setSiteAndFolder(location);
         } else if (isBinaryField(field)) {
             processedValue = processBinaryField(value);
+        } else if (isImageField(field)) {
+            processedValue = processImageField(field, value, results);
         } else if (isFileField(field)) {
             processedValue = processFileField(field, value, currentHostId, user, results);
         } else {
@@ -2165,6 +2168,16 @@ public class ImportUtil {
     }
 
     /**
+     * Checks if the given field is an image field.
+     * @param field the field to check
+     * @return true if the field is an image field, false otherwise
+     */
+    private static boolean isImageField(final Field field) {
+        return new LegacyFieldTransformer(field).from().typeName()
+                .equals(ImageField.class.getName());
+    }
+
+    /**
      * Checks if the given field is a file field.
      * <p>
      * This method determines if the field type is either IMAGE or FILE.
@@ -2288,6 +2301,29 @@ public class ImportUtil {
     }
 
     /**
+     * Processes an image field by validating the URL.
+     * @param value the value to process
+     * @return the processed value if the URL is valid
+     */
+    private static Object processImageField(final Field field, final String value, final FieldProcessingResultBuilder resultBuilder) {
+        if (UtilMethods.isSet(value) && !APILocator.getTempFileAPI().validUrl(value)) {
+            throw ImportLineException.builder()
+                    .message("URL is malformed or Response is not 200")
+                    .code(ImportLineValidationCodes.INVALID_BINARY_URL.name())
+                    .invalidValue(value)
+                    .build();
+        }
+
+        if (!UtilMethods.isImage(value)) {
+            resultBuilder.addWarning(String.format("The file is not an image for field: %s", field.getVelocityVarName()),
+                    ImportLineValidationCodes.INVALID_IMAGE_TYPE.name());
+            return null;
+        }
+
+        return value;
+    }
+
+    /**
      * Processes a file field by validating and converting the value to a contentlet identifier.
      *
      * @param field         the field definition containing type and validation rules
@@ -2304,15 +2340,6 @@ public class ImportUtil {
             final FieldProcessingResultBuilder resultBuilder
     ) throws DotDataException, DotSecurityException {
         String filePath = value;
-        if (Field.FieldType.IMAGE.toString().equals(field.getFieldType()) && !UtilMethods.isImage(
-                filePath)) {
-            if (UtilMethods.isSet(filePath)) {
-                resultBuilder.addWarning(String.format(
-                                "The file is not an image for field: %s", field.getVelocityVarName()),
-                        ImportLineValidationCodes.INVALID_IMAGE_TYPE.name());
-            }
-            return null;
-        }
 
         Host fileHost = hostAPI.find(currentHostId, user, false);
         if (filePath.contains(StringPool.COLON)) {
