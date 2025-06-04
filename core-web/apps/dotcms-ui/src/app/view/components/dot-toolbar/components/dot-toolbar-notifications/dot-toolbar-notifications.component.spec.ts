@@ -118,7 +118,7 @@ describe('DotToolbarNotificationsComponent', () => {
     }));
 
     it(`should has a badge`, () => {
-        fixture.componentInstance.showUnreadAnnouncement = signal(true);
+        //fixture.componentInstance.showUnreadAnnouncement = signal(true);
         fixture.detectChanges();
         const badge: DebugElement = fixture.debugElement.query(
             By.css('#dot-toolbar-notifications-badge')

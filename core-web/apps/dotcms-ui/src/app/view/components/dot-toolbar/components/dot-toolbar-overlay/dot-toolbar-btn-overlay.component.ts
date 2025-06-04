@@ -97,4 +97,8 @@ export class DotToolbarBtnOverlayComponent {
     hide(): void {
         this.$overlayPanel().hide();
     }
+
+    show(event: Event): void {
+        this.$overlayPanel().show(event);
+    }
 }
