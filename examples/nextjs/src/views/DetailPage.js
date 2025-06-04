@@ -43,6 +43,10 @@ export function DetailPage({ pageContent }) {
                 <Header navItems={navigation?.children} />
             )}
             <main className="flex flex-col gap-8 m-auto">
+                {urlContentMap?.title && (
+                    <h1 className="text-4xl font-bold">{urlContentMap?.title}</h1>
+                )}
+
                 {urlContentMap?.image && (
                     <div className="relative w-full h-80 overflow-hidden">
                         <Image
