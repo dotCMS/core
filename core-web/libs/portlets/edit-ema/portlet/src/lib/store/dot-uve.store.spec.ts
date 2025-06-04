@@ -1,4 +1,4 @@
-import { describe, expect } from '@jest/globals';
+import { describe, expect, it } from '@jest/globals';
 import {
     createServiceFactory,
     mockProvider,
@@ -173,9 +173,11 @@ describe('UVEStore', () => {
         describe('$shellProps', () => {
             describe('Headless Page', () => {
                 beforeEach(() => store.loadPageAsset(HEADLESS_BASE_QUERY_PARAMS));
+
                 it('should return the shell props for Headless Pages', () => {
                     expect(store.$shellProps()).toEqual(BASE_SHELL_PROPS_RESPONSE);
                 });
+
                 it('should return the shell props with property item disable when loading', () => {
                     store.setUveStatus(UVE_STATUS.LOADING);
                     const baseItems = BASE_SHELL_ITEMS.slice(0, BASE_SHELL_ITEMS.length - 1);
@@ -193,6 +195,7 @@ describe('UVEStore', () => {
                         ]
                     });
                 });
+
                 it('should return the error for 404', () => {
                     patchState(store, { errorCode: 404 });
 
@@ -204,6 +207,7 @@ describe('UVEStore', () => {
                         }
                     });
                 });
+
                 it('should return the error for 403', () => {
                     patchState(store, { errorCode: 403 });
 
@@ -215,6 +219,7 @@ describe('UVEStore', () => {
                         }
                     });
                 });
+
                 it('should return the error for 401', () => {
                     patchState(store, { errorCode: 401 });
 
@@ -266,6 +271,46 @@ describe('UVEStore', () => {
 
                     expect(rules.isDisabled).toBe(true);
                     expect(experiments.isDisabled).toBe(true);
+                });
+
+                it('should return rules as disabled when page does not have the canSeeRules property and cannot edit and is not enterprise', () => {
+                    jest.spyOn(dotPageApiService, 'get').mockImplementation(
+                        buildPageAPIResponseFromMock({
+                            ...MOCK_RESPONSE_VTL,
+                            page: {
+                                ...MOCK_RESPONSE_VTL.page,
+                                canSeeRules: undefined,
+                                canEdit: false
+                            }
+                        })
+                    );
+
+                    store.loadPageAsset(VTL_BASE_QUERY_PARAMS);
+                    patchState(store, { isEnterprise: false });
+
+                    const rules = store.$shellProps().items.find((item) => item.id === 'rules');
+                    expect(rules.isDisabled).toBe(true);
+                });
+
+                it('should return rules as not disabled when page does not have the canSeeRules property and can edit and is enterprise', () => {
+                    const pageWithoutCanSeeRules = MOCK_RESPONSE_VTL.page;
+                    // delete the canSeeRules property
+                    delete pageWithoutCanSeeRules.canSeeRules;
+
+                    jest.spyOn(dotPageApiService, 'get').mockImplementation(
+                        buildPageAPIResponseFromMock({
+                            ...MOCK_RESPONSE_VTL,
+                            page: {
+                                ...pageWithoutCanSeeRules,
+                                canEdit: true
+                            }
+                        })
+                    );
+
+                    store.loadPageAsset(VTL_BASE_QUERY_PARAMS);
+
+                    const rules = store.$shellProps().items.find((item) => item.id === 'rules');
+                    expect(rules.isDisabled).toBe(false);
                 });
             });
 
@@ -371,6 +416,42 @@ describe('UVEStore', () => {
                         .items.find((item) => item.id === 'layout');
 
                     expect(layoutItem.isDisabled).toBe(true);
+                });
+            });
+
+            describe('currentUrl', () => {
+                it('should not add a initial slash if the url has one', () => {
+                    jest.spyOn(dotPageApiService, 'get').mockImplementation(
+                        buildPageAPIResponseFromMock({
+                            ...MOCK_RESPONSE_VTL,
+                            page: {
+                                ...MOCK_RESPONSE_VTL.page,
+                                pageURI: '/test-url'
+                            }
+                        })
+                    );
+
+                    store.loadPageAsset(VTL_BASE_QUERY_PARAMS);
+                    const seoParams = store.$shellProps().seoParams;
+
+                    expect(seoParams.currentUrl).toEqual('/test-url');
+                });
+
+                it('should add a initial slash if the url does not have one', () => {
+                    jest.spyOn(dotPageApiService, 'get').mockImplementation(
+                        buildPageAPIResponseFromMock({
+                            ...MOCK_RESPONSE_VTL,
+                            page: {
+                                ...MOCK_RESPONSE_VTL.page,
+                                pageURI: 'test-url'
+                            }
+                        })
+                    );
+
+                    store.loadPageAsset(VTL_BASE_QUERY_PARAMS);
+                    const seoParams = store.$shellProps().seoParams;
+
+                    expect(seoParams.currentUrl).toEqual('/test-url');
                 });
             });
         });

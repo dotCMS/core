@@ -1,6 +1,5 @@
 package com.dotcms.graphql.datafetcher.page;
 
-import com.dotcms.contenttype.model.type.ImmutablePageContentType;
 import com.dotcms.graphql.DotGraphQLContext;
 import com.dotcms.graphql.exception.PermissionDeniedGraphQLException;
 import com.dotcms.rest.api.v1.page.PageResource;
@@ -37,7 +36,6 @@ import java.util.Date;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.util.Optional;
-
 /**
  * This DataFetcher returns a {@link HTMLPageAsset} given an URL. It also takes optional parameters
  * to find a specific version of the page: languageId and pageMode.
@@ -130,6 +128,7 @@ public class PageDataFetcher implements DataFetcher<Contentlet> {
                     final Contentlet emptyPage = new Contentlet();
                     emptyPage.setLanguageId(language.getId());
                     emptyPage.setHost(host.getIdentifier());
+                    context.markAsVanityRedirect();
                     return emptyPage;
                 } else {
                     // For forwards, use the resolved URI
