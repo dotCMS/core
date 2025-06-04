@@ -56,7 +56,7 @@ export function DetailPage({ pageContent }) {
 
                 <div onClick={handleClick}>
                     <DotCMSBlockEditorRenderer
-                        blocks={JSON.parse(blogContent)}
+                        blocks={blogContent}
                         className={blockEditorClasses}
                         customRenderers={customeRenderers}
                     />

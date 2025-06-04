@@ -20,7 +20,7 @@ export async function generateMetadata() {
 export default async function Home() {
     const pageResponse = await getDotCMSPage(`/blog`);
 
-    const vanityUrl = pageContent?.pageAsset?.vanityUrl;
+    const vanityUrl = pageResponse?.pageAsset?.vanityUrl;
     const action = vanityUrl?.action ?? 0;
 
     if (action > 200) {
