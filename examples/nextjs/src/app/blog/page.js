@@ -1,4 +1,4 @@
-import { BlogListingPage } from "@/pages-components/BlogListingPage";
+import { BlogListingPage } from "@/views/BlogListingPage";
 import { getDotCMSPage } from "@/utils/getDotCMSPage";
 
 import NotFound from "../not-found";

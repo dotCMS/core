@@ -1,3 +1,5 @@
+import { consola } from 'consola';
+
 import { ErrorMessages } from '../models';
 
 const DEFAULT_PAGE_CONTENTLETS_CONTENT = `
@@ -49,8 +51,8 @@ export const buildPageQuery = ({
     additionalQueries?: string;
 }) => {
     if (!page) {
-        console.warn(
-            'No page query provided. The query will be used by fetching all content with _map. This may mean poor performance in the query. We suggest you provide a detailed query on page attribute.'
+        consola.warn(
+            "[DotCMS Client]: No page query was found, so we're loading all content using _map. This might slow things down. For better performance, we recommend adding a specific query in the page attribute."
         );
     }
 
