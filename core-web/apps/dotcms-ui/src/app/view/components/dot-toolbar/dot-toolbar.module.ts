@@ -1,5 +1,4 @@
 import { CommonModule } from '@angular/common';
-import { HttpClientJsonpModule } from '@angular/common/http';
 import { NgModule } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
@@ -11,7 +10,7 @@ import { DotShowHideFeatureDirective } from '@dotcms/app/shared/directives/dot-s
 
 import { DotToolbarAnnouncementsComponent } from './components/dot-toolbar-announcements/dot-toolbar-announcements.component';
 import { DotNotificationsComponent } from './components/dot-toolbar-notifications/components/dot-notifications/dot-notifications.component';
-import { DotToolbarNotificationModule } from './components/dot-toolbar-notifications/dot-toolbar-notifications.module';
+import { DotToolbarNotificationsComponent } from './components/dot-toolbar-notifications/dot-toolbar-notifications.component';
 import { DotToolbarUserComponent } from './components/dot-toolbar-user/dot-toolbar-user.component';
 import { DotToolbarComponent } from './dot-toolbar.component';
 
@@ -21,12 +20,11 @@ import { DotToolbarComponent } from './dot-toolbar.component';
         CommonModule,
         DotCrumbtrailModule,
         DotSiteSelectorModule,
-        DotToolbarNotificationModule,
+        DotToolbarNotificationsComponent,
         ToolbarModule,
         DotToolbarUserComponent,
         DotNotificationsComponent,
         DotShowHideFeatureDirective,
-        HttpClientJsonpModule,
         DotToolbarAnnouncementsComponent
     ],
     declarations: [DotToolbarComponent],

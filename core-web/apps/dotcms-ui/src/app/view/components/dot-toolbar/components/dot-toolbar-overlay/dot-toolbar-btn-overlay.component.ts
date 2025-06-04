@@ -43,6 +43,13 @@ export class DotToolbarBtnOverlayComponent {
     $showBadge = input<boolean>(false, { alias: 'showBadge' });
 
     /**
+     * Input signal that determines the style class of the overlay panel.
+     *
+     * @default ''
+     */
+    $overlayStyleClass = input<string>('', { alias: 'overlayStyleClass' });
+
+    /**
      * Required input signal for the button icon.
      * Should be a valid PrimeNG icon class (e.g., 'pi pi-bell', 'pi pi-user').
      */

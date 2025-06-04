@@ -6,13 +6,21 @@
     <span class="dot-toolbar__badge"></span>
 }
 
-<p-button
-    (onClick)="overlayPanel.toggle($event)"
+<button
+    (click)="overlayPanel.toggle($event)"
     [icon]="$icon()"
     [rounded]="true"
     [text]="true"
-    data-testid="btn-overlay" />
+    [class.isActive]="$showMask()"
+    pButton
+    class="overlay-btn"
+    data-testid="btn-overlay"></button>
 
-<p-overlayPanel #overlayPanel [appendTo]="'body'" (onShow)="handlerShow()" (onHide)="handlerHide()">
+<p-overlayPanel
+    #overlayPanel
+    [styleClass]="$overlayStyleClass()"
+    [appendTo]="'body'"
+    (onShow)="handlerShow()"
+    (onHide)="handlerHide()">
     <ng-content />
 </p-overlayPanel>

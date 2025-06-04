@@ -1,61 +1,65 @@
-import { Component, inject, OnInit, ViewChild, ViewEncapsulation } from '@angular/core';
+import { Component, DestroyRef, inject, OnInit, signal, viewChild } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
-import { DotDropdownComponent } from '@components/_common/dot-dropdown-component/dot-dropdown.component';
-import { AnnouncementsStore } from '@components/dot-toolbar/components/dot-toolbar-announcements/store/dot-announcements.store';
 import { NotificationsService } from '@dotcms/app/api/services/notifications-service';
-import { DotcmsEventsService, LoginService } from '@dotcms/dotcms-js';
-import { FeaturedFlags } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 import { INotification } from '@models/notifications';
 
-import { IframeOverlayService } from '../../../_common/iframe/service/iframe-overlay.service';
-import { DotToolbarAnnouncementsComponent } from '../dot-toolbar-announcements/dot-toolbar-announcements.component';
+import { DotNotificationListComponent } from './components/dot-notification-list/dot-notification-list.component';
+
+import { DotToolbarBtnOverlayComponent } from '../dot-toolbar-overlay/dot-toolbar-btn-overlay.component';
 
 @Component({
-    encapsulation: ViewEncapsulation.Emulated,
     selector: 'dot-toolbar-notifications',
+    standalone: true,
+    imports: [DotMessagePipe, DotNotificationListComponent, DotToolbarBtnOverlayComponent],
     styleUrls: ['./dot-toolbar-notifications.component.scss'],
     templateUrl: 'dot-toolbar-notifications.component.html'
 })
 export class DotToolbarNotificationsComponent implements OnInit {
-    readonly #dotcmsEventsService = inject(DotcmsEventsService);
-    readonly #loginService = inject(LoginService);
     readonly #notificationService = inject(NotificationsService);
-    readonly #announcementsStore = inject(AnnouncementsStore);
-    iframeOverlayService = inject(IframeOverlayService);
+    readonly #destroyRef = inject(DestroyRef);
 
-    @ViewChild(DotDropdownComponent, { static: true }) dropdown: DotDropdownComponent;
+    readonly $overlayPanel = viewChild.required<DotToolbarBtnOverlayComponent>('overlayPanel');
 
-    @ViewChild('toolbarAnnouncements') toolbarAnnouncements: DotToolbarAnnouncementsComponent;
-    existsMoreToLoad = false;
-    notifications: INotification[] = [];
-    notificationsUnreadCount = 0;
-    featureFlagAnnouncements = FeaturedFlags.FEATURE_FLAG_ANNOUNCEMENTS;
-    annocumentsMarkedAsRead = false;
-    activeAnnouncements = false;
-
-    private isNotificationsMarkedAsRead = false;
-    private showNotifications = false;
-
-    showUnreadAnnouncement = this.#announcementsStore.showUnreadAnnouncement;
+    $notifications = signal<{
+        data: INotification[];
+        unreadCount: number;
+        hasMore: boolean;
+    }>({
+        data: [],
+        unreadCount: 0,
+        hasMore: false
+    });
 
     ngOnInit(): void {
-        this.getNotifications();
-        this.subscribeToNotifications();
-
-        this.#loginService.watchUser(this.getNotifications.bind(this));
-        this.#announcementsStore.load();
+        this.#getNotifications();
     }
 
-    dismissAllNotifications(): void {
-        const items = this.notifications.map((item) => item.id);
-        this.#notificationService.dismissNotifications({ items: items }).subscribe((res) => {
-            // TODO: I think we should get here res and err
-            if (res.errors.length) {
-                return;
-            }
+    loadMore(): void {
+        this.#notificationService
+            .getAllNotifications()
+            .pipe(takeUntilDestroyed(this.#destroyRef))
+            .subscribe((res) => {
+                this.$notifications.set({
+                    data: res.entity.notifications,
+                    unreadCount: res.entity.totalUnreadNotifications,
+                    hasMore: res.entity.total > res.entity.notifications.length
+                });
+            });
+    }
 
-            this.clearNotitications();
-        });
+    #getNotifications(): void {
+        this.#notificationService
+            .getLastNotifications()
+            .pipe(takeUntilDestroyed(this.#destroyRef))
+            .subscribe((res) => {
+                this.$notifications.set({
+                    data: res.entity.notifications,
+                    unreadCount: res.entity.totalUnreadNotifications,
+                    hasMore: res.entity.total > res.entity.notifications.length
+                });
+            });
     }
 
     onDismissNotification($event: { id: string }): void {
@@ -63,79 +67,38 @@ export class DotToolbarNotificationsComponent implements OnInit {
 
         this.#notificationService
             .dismissNotifications({ items: [notificationId] })
+            .pipe(takeUntilDestroyed(this.#destroyRef))
             .subscribe((res) => {
                 if (res.errors.length) {
                     return;
                 }
 
-                this.notifications = this.notifications.filter((item) => {
-                    return item.id !== notificationId;
-                });
+                this.$notifications.update((state) => ({
+                    ...state,
+                    data: state.data.filter((item) => {
+                        return item.id !== notificationId;
+                    })
+                }));
 
-                if (this.notificationsUnreadCount) {
-                    this.notificationsUnreadCount--;
+                if (this.$notifications().unreadCount) {
+                    this.$notifications.update((state) => ({
+                        ...state,
+                        unreadCount: state.unreadCount - 1
+                    }));
                 }
 
-                if (!this.notifications.length && !this.notificationsUnreadCount) {
+                if (!this.$notifications().data.length && !this.$notifications().unreadCount) {
                     this.clearNotitications();
                 }
             });
     }
 
-    loadMore(): void {
-        this.#notificationService.getAllNotifications().subscribe((res) => {
-            this.notificationsUnreadCount = res.entity.totalUnreadNotifications;
-            this.notifications = res.entity.notifications;
-            this.existsMoreToLoad = false;
-        });
-    }
-
-    toggleNotifications(): void {
-        this.showNotifications = !this.showNotifications;
-
-        if (this.showNotifications && !this.isNotificationsMarkedAsRead) {
-            this.markAllAsRead();
-        }
-    }
-
     private clearNotitications(): void {
-        this.notifications = [];
-        this.notificationsUnreadCount = 0;
-        this.showNotifications = false;
-        this.dropdown.closeIt();
-    }
-
-    private getNotifications(): void {
-        this.#notificationService.getLastNotifications().subscribe((res) => {
-            this.notificationsUnreadCount = res.entity.totalUnreadNotifications;
-            this.notifications = res.entity.notifications;
-            this.existsMoreToLoad = res.entity.total > res.entity.notifications.length;
+        this.$notifications.set({
+            data: [],
+            unreadCount: 0,
+            hasMore: false
         });
-    }
-
-    private markAllAsRead(): void {
-        this.#notificationService.markAllAsRead().subscribe(() => {
-            this.isNotificationsMarkedAsRead = true;
-            this.notificationsUnreadCount = 0;
-        });
-    }
-
-    private subscribeToNotifications(): void {
-        this.#dotcmsEventsService
-            .subscribeTo<INotification>('NOTIFICATION')
-            .subscribe((data: INotification) => {
-                this.notifications.unshift(data);
-                this.notificationsUnreadCount++;
-                this.isNotificationsMarkedAsRead = false;
-            });
-    }
-
-    onActiveAnnouncements(event: CustomEvent): void {
-        this.activeAnnouncements = true;
-        this.toolbarAnnouncements.toggleDialog(event);
-    }
-    markAnnocumentsAsRead(): void {
-        this.activeAnnouncements = false;
-        this.#announcementsStore.markAnnouncementsAsRead();
+        this.$overlayPanel().hide();
     }
 }

@@ -1,11 +1,13 @@
 <dot-toolbar-btn-overlay
+    #overlayPanel
     icon="pi pi-megaphone"
     [showBadge]="$showUnreadAnnouncement()"
-    (onHide)="hideDialog()">
+    (onHide)="markAnnouncementsAsRead()"
+    overlayStyleClass="toolbar-announcements__container">
     <div class="announcements__main-container">
         <h5 class="announcements__title">{{ 'announcements' | dm }}</h5>
         <ul class="announcements__list">
-            @for (item of announcements(); track item.identifier) {
+            @for (item of $announcements(); track item.identifier) {
                 <li
                     [class.announcements__list-item--active]="!item.hasBeenRead"
                     class="announcements__list-item">
@@ -13,10 +15,10 @@
                         <span class="announcements__badge"></span>
                     }
                     <span
-                        [ngClass]="typesIcons[item.type | lowercase] || typesIcons['important']"
+                        [class]="typesIcons[item.type | lowercase] || typesIcons['important']"
                         class="announcements__image pi"></span>
                     <a
-                        (click)="toggleDialog($event)"
+                        (click)="hideOverlayPanel($event)"
                         [href]="item.url"
                         class="announcements__url"
                         target="_blank"
@@ -38,8 +40,8 @@
             <div class="announcements__link-container">
                 <i class="pi pi-external-link"></i>
                 <a
-                    (click)="toggleDialog($event)"
-                    [href]="linkToDotCms()"
+                    (click)="hideOverlayPanel()"
+                    [href]="$linkToDotCms()"
                     class="announcements__link"
                     target="_blank"
                     data-testId="announcement_link_all"
@@ -49,12 +51,12 @@
             </div>
         </div>
 
-        @for (item of aboutLinks; track $index) {
+        @for (item of $aboutLinks(); track $index) {
             <h5 class="announcements__title">{{ item.title | dm }}</h5>
             <div class="announcements__about">
-                @for (item of item.items(); track $index) {
+                @for (item of item.items; track $index) {
                     <a
-                        (click)="toggleDialog($event)"
+                        (click)="hideOverlayPanel()"
                         [href]="item.url"
                         class="announcements__about-link"
                         data-testId="announcements__about-link"

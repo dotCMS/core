@@ -15,3 +15,18 @@
     left: 28px;
     top: 2px;
 }
+
+.overlay-btn.p-button-text {
+    &:hover {
+        background-color: $color-palette-primary-op-10;
+    }
+    &:focus {
+        outline: none;
+    }
+    &:enabled {
+        outline: none;
+    }
+    &.isActive {
+        background-color: $color-palette-primary-op-20;
+    }
+}
