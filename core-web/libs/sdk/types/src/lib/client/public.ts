@@ -59,12 +59,17 @@ export interface DotCMSPageRequestParams {
     fireRules?: boolean | string;
 
     /**
-     * Allows access to related content via the Relationship fields of contentlets on a Page; 0 (default).
-     */
-    depth?: 0 | 1 | 2 | 3 | '0' | '1' | '2' | '3';
-
-    /**
      * The publish date of the page you want to retrieve.
+     * Must be an ISO 8601 formatted date string (e.g. '2025-06-19T12:59:41Z').
+     *
+     * @example
+     * // ✓ Correct usage:
+     * publishDate: '2025-06-19T12:59:41Z'
+     * publishDate: '2023-12-25T00:00:00Z'
+     *
+     * // ✗ Incorrect usage:
+     * publishDate: '19/06/2025'           // Wrong format
+     * publishDate: '2025-06-19 12:59:41'  // Not ISO 8601 format
      */
     publishDate?: string;
 
