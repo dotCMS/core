@@ -127,4 +127,5 @@ This maintenance release includes the following code fixes:
 121. https://github.com/dotCMS/core/issues/31994 : SAML: skip RequestedAuthenticationContext #31994
 122. https://github.com/dotCMS/core/issues/30731 : Company information doesn't show in comapny field after the relogin #30731
 123. https://github.com/dotCMS/core/issues/29238 : Attaching files feature on tasks is not properly working #29238
+124. https://github.com/dotCMS/core/issues/31141 : Automated Unpublishing Fails for Content with Inactive/Deleted Last Modified Users #31141
 

@@ -330,6 +330,136 @@ public class PublisherTest extends IntegrationTestBase {
         }
     }
 
+    /**
+     * Method to test: {@link com.dotcms.enterprise.publishing.PublishDateUpdater#updatePublishExpireDates(Date)}
+     * When:
+     * - Create a ContentType with expire date field
+     * - Create a {@link Contentlet} with a expire date set, publish it
+     * Should: The {@link Contentlet} should be unpublished and system user should be the one executing the action
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void autoUnpublishContent() throws DotDataException, DotSecurityException, InterruptedException {
+
+        //Create a datetime field to be used as expire field
+        final Field expiresField = new FieldDataGen().defaultValue(null)
+                .type(DateTimeField.class).next();
+
+        //Create Content Type without Expire Field set
+        ContentType contentType = new ContentTypeDataGen()
+                .field(expiresField)
+                .nextPersisted();
+
+        Contentlet contentlet = null;
+
+        try {
+            //Create a date to be used as expire date value
+            final Calendar calendar = Calendar.getInstance();
+            calendar.add(Calendar.DATE, -1);
+            final Date expireDate = calendar.getTime();
+
+            //Create Contentlet
+            contentlet = new ContentletDataGen(contentType)
+                    .setProperty(expiresField.variable(), expireDate)
+                    .nextPersisted();
+
+            ContentletDataGen.publish(contentlet);
+
+            assertTrue(contentlet.isLive());
+
+            //Add the Expire Field at content type level
+            final ContentTypeBuilder builder = ContentTypeBuilder.builder(contentType);
+            builder.expireDateVar(expiresField.variable());
+            contentType = APILocator.getContentTypeAPI(APILocator.systemUser()).save(builder.build());
+
+            //To give some time to the system to update the identifier (IdenfierDateJob)
+            Thread.sleep(1000);
+
+            //Check if the content type has the expire field
+            assertTrue(contentType.expireDateVar().equals(expiresField.variable()));
+
+            //Run the function to auto publish and expire content
+            PublishDateUpdater.updatePublishExpireDates(new Date());
+
+            //Check if the contentlet was unpublished
+            contentlet = APILocator.getContentletAPI().checkout(contentlet.getInode(), APILocator.systemUser(), false);
+            assertFalse(contentlet.isLive());
+
+        } finally {
+
+            ContentletDataGen.remove(contentlet);
+            ContentTypeDataGen.remove(contentType);
+
+        }
+    }
+
+    /**
+     * Method to test: {@link com.dotcms.enterprise.publishing.PublishDateUpdater#updatePublishExpireDates(Date)}
+     * When:
+     * - Create a ContentType with publish date field
+     * - Create a {@link Contentlet} with a publish date set
+     * Should: The {@link Contentlet} should be publish and system user should be the one executing the action
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void autoPublishContent() throws DotDataException, DotSecurityException, InterruptedException {
+
+        //Create a datetime field to be used as publish field
+        final Field publishField = new FieldDataGen().defaultValue(null)
+                .type(DateTimeField.class).next();
+
+        //Create Content Type without publish field set
+        ContentType contentType = new ContentTypeDataGen()
+                .field(publishField)
+                .nextPersisted();
+
+        Contentlet contentlet = null;
+
+        try {
+            //Create a date to be used as publish date value
+            final Calendar calendar = Calendar.getInstance();
+            calendar.add(Calendar.DATE, -1);
+            final Date publishDate = calendar.getTime();
+
+            //Create Contentlet
+            contentlet = new ContentletDataGen(contentType)
+                    .setProperty(publishField.variable(), publishDate)
+                    .nextPersisted();
+
+
+            assertFalse(contentlet.isLive());
+
+            //Add the publish Field at content type level
+            final ContentTypeBuilder builder = ContentTypeBuilder.builder(contentType);
+            builder.publishDateVar(publishField.variable());
+            contentType = APILocator.getContentTypeAPI(APILocator.systemUser()).save(builder.build());
+
+            //To give some time to the system to update the identifier (IdenfierDateJob)
+            Thread.sleep(1000);
+
+            //Check if the content type has the publish field
+            assertTrue(contentType.publishDateVar().equals(publishField.variable()));
+
+            //Run the function to auto publish and expire content
+            PublishDateUpdater.updatePublishExpireDates(new Date());
+
+            //Check if the contentlet was published
+            contentlet = APILocator.getContentletAPI().search(contentlet.getIdentifier(), 0, -1, null, APILocator.systemUser(), false).get(0);
+
+            assertTrue(contentlet.isLive());
+
+        } finally {
+
+            ContentletDataGen.remove(contentlet);
+            ContentTypeDataGen.remove(contentType);
+
+        }
+    }
+
     private FolderPage createNewPage (final  FolderPage folderPage, final User user) throws Exception {
 
         final HTMLPageAsset page = PublisherTestUtil.createPage(folderPage.folder, user);
