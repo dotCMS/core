@@ -46,7 +46,7 @@
 
     let isBringBack = false;
     const message = '<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "folder.replace.container.working.version"))%>'
-    function bringBackTemplateVersion(inode){
+    function bringBackVersion(inode){
         if(!isBringBack && confirm(message)){
 
             setIsBringBack(true);
