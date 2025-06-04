@@ -113,7 +113,7 @@ public class PublishDateUpdater {
 
             for (final Contentlet contentlet : contentletToPublish) {
                 try {
-                    APILocator.getContentletAPI().publish(contentlet, locker(contentlet), false);
+                    APILocator.getContentletAPI().publish(contentlet, systemUser, false);
                 } catch (Exception e) {
                     Logger.debug(PublishDateUpdater.class,
                             "content failed to publish: " + e.getMessage());
@@ -129,10 +129,10 @@ public class PublishDateUpdater {
 
         for(final Contentlet contentlet : contentletToUnPublish) {
             try {
-                APILocator.getContentletAPI().unpublish(contentlet, locker(contentlet), false);
+                APILocator.getContentletAPI().unpublish(contentlet, systemUser, false);
             }
             catch(Exception e){
-                Logger.debug(PublishDateUpdater.class, "content failed to publish: " +  e.getMessage());
+                Logger.debug(PublishDateUpdater.class, "content failed to unpublish: " +  e.getMessage());
             }
         }
     }
@@ -155,27 +155,4 @@ public class PublishDateUpdater {
     private static String getLuceneQuery(final String luceneQueryTemplate, final Object ... parameters) {
         return String.format(luceneQueryTemplate, parameters );
     }
-
-    /**
-     *
-     * @param contentlet
-     * @return
-     * @throws DotDataException
-     */
-    private static User locker(final Contentlet contentlet) throws DotDataException {
-
-        User locker = APILocator.getUserAPI().getSystemUser();
-        try {
-            User modUser = APILocator.getUserAPI()
-                    .loadUserById(contentlet.getModUser(), locker, false);
-            if (APILocator.getContentletAPI().canLock(contentlet, locker)) {
-                locker = modUser;
-            }
-        } catch (Exception userEx) {
-            Logger.error(PublishDateUpdater.class, userEx.getMessage(), userEx);
-        }
-
-        return locker;
-    }
-
 }
