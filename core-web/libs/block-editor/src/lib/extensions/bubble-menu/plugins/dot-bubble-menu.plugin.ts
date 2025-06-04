@@ -378,15 +378,32 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
                 break;
 
             case 'indent':
-                if (isListNode(this.editor)) {
-                    this.editor.commands.sinkListItem('listItem');
+                // Handle lists with native commands directly
+                if (this.editor.isActive('listItem')) {
+                    // Try sinkListItem first, if it fails, manually indent with wrapIn
+                    if (this.editor.can().sinkListItem('listItem')) {
+                        this.editor.commands.sinkListItem('listItem');
+                    } else {
+                        // Alternative: wrap in a new list of the same type
+                        const currentList = this.editor.isActive('bulletList')
+                            ? 'bulletList'
+                            : 'orderedList';
+                        this.editor.chain().wrapIn(currentList).focus().run();
+                    }
+                } else {
+                    // Use IndentExtension for paragraphs, headings, blockquotes
+                    this.editor.commands.indent();
                 }
 
                 break;
 
             case 'outdent':
-                if (isListNode(this.editor)) {
+                // Handle lists with native commands directly
+                if (this.editor.isActive('listItem')) {
                     this.editor.commands.liftListItem('listItem');
+                } else {
+                    // Use IndentExtension for paragraphs, headings, blockquotes
+                    this.editor.commands.outdent();
                 }
 
                 break;

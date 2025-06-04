@@ -33,3 +33,4 @@ export * from './ai-content-prompt/plugins/ai-content-prompt.plugin';
 export * from './ai-content-prompt/ai-content-prompt.component';
 export * from './ai-image-prompt/ai-image-prompt.extension';
 export * from './ai-image-prompt/ai-image-prompt.plugin';
+export * from './indent/indent.extension';

@@ -43,3 +43,4 @@ This maintenance release includes the following code fixes:
 37. https://github.com/dotCMS/core/issues/31919 : UVE: Incorrect Language Layout Loaded When Editing Multilingual Pages #31919
 38. https://github.com/dotCMS/core/issues/32137 : Task241015ReplaceLanguagesWithLocalesPortlet cast issue #32137
 39. https://github.com/dotCMS/core/issues/31141 : Automated Unpublishing Fails for Content with Inactive/Deleted Last Modified Users #31141
+40. https://github.com/dotCMS/core/issues/32106 : Indent does not work in the Block Editor #32106
