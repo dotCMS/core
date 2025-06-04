@@ -1,11 +1,14 @@
 package com.dotmarketing.portlets.fileassets.business;
 
 import com.dotcms.api.tree.Parentable;
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.browser.BrowserQuery;
 import com.dotcms.content.elasticsearch.business.event.ContentletCheckinEvent;
 import com.dotcms.content.elasticsearch.business.event.ContentletDeletedEvent;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.system.event.local.model.EventSubscriber;
+import com.dotmarketing.portlets.contentlet.model.ResourceLink;
+import com.dotmarketing.portlets.contentlet.transform.strategy.FileViewStrategy;
 import com.dotmarketing.portlets.folders.business.FolderAPIImpl;
 import com.dotmarketing.portlets.structure.model.Field.DataType;
 import java.io.ByteArrayInputStream;
@@ -61,6 +64,8 @@ import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
+
+import javax.servlet.http.HttpServletRequest;
 
 /**
  * This class is a bridge impl that will support the older
@@ -306,10 +311,33 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 	public List<IFileAsset> fromContentletsI(final List<Contentlet> contentlets) {
 		final List<IFileAsset> fileAssets = new ArrayList<>();
 		for (Contentlet con : contentlets) {
-			fileAssets.add(fromContentlet(con));
+			if (con.isDotAsset()) {
+
+				fileAssets.add(transformDotAsset(con));
+			} else {
+				fileAssets.add(fromContentlet(con));
+			}
 		}
 		return fileAssets;
 
+	}
+
+	private FileAsset transformDotAsset(Contentlet con) {
+		try {
+			con.setProperty(FileAssetAPI.BINARY_FIELD, Try.of(()->con.getBinary("asset")).getOrNull());
+
+			FileAsset fileAsset = FileViewStrategy.convertToFileAsset(con, this);
+
+			final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+			if	(request != null) {
+				final String fileLink = new ResourceLink.ResourceLinkBuilder().build(request, APILocator.systemUser(), fileAsset, FileAssetAPI.BINARY_FIELD).getConfiguredImageURL();
+
+				fileAsset.getMap().put("fileLink", fileLink);
+			}
+			return fileAsset;
+		} catch (DotDataException | DotSecurityException e) {
+			throw new DotRuntimeException(e);
+		}
 	}
 
 	@CloseDBIfOpened
@@ -437,7 +465,7 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 		String path = "";
 
 		path = java.io.File.separator + _inode.charAt(0)
-				+ java.io.File.separator + _inode.charAt(1) + java.io.File.separator + _inode + java.io.File.separator + "fileAsset" + java.io.File.separator+ fileName;
+				+ java.io.File.separator + _inode.charAt(1) + java.io.File.separator + _inode + java.io.File.separator + FileAssetAPI.BINARY_FIELD + java.io.File.separator+ fileName;
 
 		return path;
 
@@ -578,7 +606,7 @@ public class FileAssetAPIImpl implements FileAssetAPI {
         final String fullFileName = UtilMethods.isSet(ext) ? fileName + "." + ext : fileName;
         final String path = ((!UtilMethods.isSet(realPath)) ? assetPath : realPath)
                 + inode.charAt(0) + java.io.File.separator + inode.charAt(1)
-                + java.io.File.separator + inode+ java.io.File.separator + "fileAsset" + java.io.File.separator + fullFileName;
+                + java.io.File.separator + inode+ java.io.File.separator + FileAssetAPI.BINARY_FIELD + java.io.File.separator + fullFileName;
 
         if (!UtilMethods.isSet(realPath)) {
             return FileUtil.getRealPath(path);
@@ -638,7 +666,7 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 
         path = ((!UtilMethods.isSet(realPath)) ? assetPath : realPath)
                 + _inode.charAt(0) + java.io.File.separator + _inode.charAt(1)
-                + java.io.File.separator + _inode+ java.io.File.separator + "fileAsset" + java.io.File.separator;
+                + java.io.File.separator + _inode+ java.io.File.separator + FileAssetAPI.BINARY_FIELD + java.io.File.separator;
 
         if (!UtilMethods.isSet(realPath))
             return FileUtil.getRealPath(path);
