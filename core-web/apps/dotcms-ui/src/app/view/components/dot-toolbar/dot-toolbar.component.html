@@ -12,10 +12,12 @@
             #siteSelector
             cssClass="d-secondary"
             width="200px" />
-        <ng-container *dotShowHideFeature="featureFlagAnnouncements">
-            <dot-toolbar-announcements />
-        </ng-container>
-        <dot-toolbar-notifications />
+        <div class="flex gap-1">
+            <ng-container *dotShowHideFeature="featureFlagAnnouncements">
+                <dot-toolbar-announcements />
+            </ng-container>
+            <dot-toolbar-notifications />
+        </div>
         <dot-toolbar-user />
     </ng-template>
 </p-toolbar>

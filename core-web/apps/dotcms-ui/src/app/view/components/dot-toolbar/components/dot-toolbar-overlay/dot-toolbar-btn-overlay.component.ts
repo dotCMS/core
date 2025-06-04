@@ -1,4 +1,11 @@
-import { Component, input, output, signal, viewChild } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    input,
+    output,
+    signal,
+    viewChild
+} from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { OverlayPanel, OverlayPanelModule } from 'primeng/overlaypanel';
@@ -25,7 +32,8 @@ import { OverlayPanel, OverlayPanelModule } from 'primeng/overlaypanel';
     standalone: true,
     imports: [ButtonModule, OverlayPanelModule],
     styleUrls: ['./dot-toolbar-btn-overlay.component.scss'],
-    templateUrl: 'dot-toolbar-btn-overlay.component.html'
+    templateUrl: 'dot-toolbar-btn-overlay.component.html',
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotToolbarBtnOverlayComponent {
     /**

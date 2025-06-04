@@ -11,16 +11,9 @@ $notification-padding: $spacing-3;
     border-radius: 50%;
 }
 
-.dot-notifications__heading {
-    display: flex;
-    justify-content: space-between;
-    padding-right: $notification-padding;
-}
-
 .dot-notifications__title {
     font-size: $font-size-lmd;
     margin: 0;
-    padding-bottom: $spacing-0;
 }
 
 .dot-notifications__footer {

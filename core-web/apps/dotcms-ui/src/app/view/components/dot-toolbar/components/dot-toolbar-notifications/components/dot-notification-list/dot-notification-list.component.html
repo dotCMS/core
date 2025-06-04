@@ -1,4 +1,4 @@
-<ul class="dot-notifications-list">
+<ul class="dot-notifications-list p-0">
     @for (notification of $notifications(); track $index) {
         <dot-notification-item (clear)="onClearNotification($event)" [data]="notification" />
     }

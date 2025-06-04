@@ -1,7 +1,18 @@
-import { Component, DestroyRef, inject, OnInit, signal, viewChild } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    DestroyRef,
+    inject,
+    OnInit,
+    signal,
+    viewChild
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
+import { ButtonModule } from 'primeng/button';
+
 import { NotificationsService } from '@dotcms/app/api/services/notifications-service';
+import { DotcmsEventsService, LoginService } from '@dotcms/dotcms-js';
 import { DotMessagePipe } from '@dotcms/ui';
 import { INotification } from '@models/notifications';
 
@@ -12,13 +23,21 @@ import { DotToolbarBtnOverlayComponent } from '../dot-toolbar-overlay/dot-toolba
 @Component({
     selector: 'dot-toolbar-notifications',
     standalone: true,
-    imports: [DotMessagePipe, DotNotificationListComponent, DotToolbarBtnOverlayComponent],
+    imports: [
+        DotMessagePipe,
+        DotNotificationListComponent,
+        DotToolbarBtnOverlayComponent,
+        ButtonModule
+    ],
     styleUrls: ['./dot-toolbar-notifications.component.scss'],
-    templateUrl: 'dot-toolbar-notifications.component.html'
+    templateUrl: 'dot-toolbar-notifications.component.html',
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotToolbarNotificationsComponent implements OnInit {
     readonly #notificationService = inject(NotificationsService);
     readonly #destroyRef = inject(DestroyRef);
+    readonly #dotcmsEventsService = inject(DotcmsEventsService);
+    readonly #loginService = inject(LoginService);
 
     readonly $overlayPanel = viewChild.required<DotToolbarBtnOverlayComponent>('overlayPanel');
 
@@ -34,6 +53,8 @@ export class DotToolbarNotificationsComponent implements OnInit {
 
     ngOnInit(): void {
         this.#getNotifications();
+        this.#subscribeToNotifications();
+        this.#loginService.watchUser(this.#getNotifications.bind(this));
     }
 
     loadMore(): void {
@@ -44,7 +65,7 @@ export class DotToolbarNotificationsComponent implements OnInit {
                 this.$notifications.set({
                     data: res.entity.notifications,
                     unreadCount: res.entity.totalUnreadNotifications,
-                    hasMore: res.entity.total > res.entity.notifications.length
+                    hasMore: false
                 });
             });
     }
@@ -62,6 +83,38 @@ export class DotToolbarNotificationsComponent implements OnInit {
             });
     }
 
+    dismissAllNotifications(): void {
+        const items = this.$notifications().data.map((item) => item.id);
+        this.#notificationService.dismissNotifications({ items: items }).subscribe((res) => {
+            if (res.errors.length) {
+                return;
+            }
+
+            this.clearNotitications();
+        });
+    }
+
+    #subscribeToNotifications(): void {
+        this.#dotcmsEventsService
+            .subscribeTo<INotification>('NOTIFICATION')
+            .subscribe((data: INotification) => {
+                this.$notifications.update((state) => ({
+                    data: [data, ...state.data],
+                    unreadCount: state.unreadCount + 1,
+                    hasMore: false
+                }));
+            });
+    }
+
+    markAllAsRead(): void {
+        this.#notificationService.markAllAsRead().subscribe(() => {
+            this.$notifications.update((state) => ({
+                ...state,
+                unreadCount: 0
+            }));
+        });
+    }
+
     onDismissNotification($event: { id: string }): void {
         const notificationId = $event.id;
 
@@ -75,19 +128,13 @@ export class DotToolbarNotificationsComponent implements OnInit {
 
                 this.$notifications.update((state) => ({
                     ...state,
-                    data: state.data.filter((item) => {
-                        return item.id !== notificationId;
-                    })
+                    data: state.data.filter((item) => item.id !== notificationId),
+                    unreadCount: state.unreadCount - 1
                 }));
 
-                if (this.$notifications().unreadCount) {
-                    this.$notifications.update((state) => ({
-                        ...state,
-                        unreadCount: state.unreadCount - 1
-                    }));
-                }
+                const { data, unreadCount } = this.$notifications();
 
-                if (!this.$notifications().data.length && !this.$notifications().unreadCount) {
+                if (data.length === 0 && unreadCount === 0) {
                     this.clearNotitications();
                 }
             });
