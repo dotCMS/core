@@ -9,7 +9,7 @@ export default function PageForm(contentlet) {
         return <ContactUs {...contentlet} />;
     }
 
-    if (isEditMode()) {
+    if (isEditMode) {
         return (
             <div>
                 <h4>

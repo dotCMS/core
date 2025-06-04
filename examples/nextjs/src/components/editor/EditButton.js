@@ -1,3 +1,5 @@
+"use client";
+
 import { editContentlet } from '@dotcms/uve';
 import { useIsEditMode } from '@/hooks/isEditMode';
 
