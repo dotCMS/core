@@ -8,6 +8,7 @@ import { switchMap } from 'rxjs/operators';
 
 import { CLIENT_ACTIONS } from '@dotcms/client';
 import { DotMessageService } from '@dotcms/data-access';
+import { DotCMSPage } from '@dotcms/types';
 
 import { DotActionUrlService } from '../../../services/dot-action-url/dot-action-url.service';
 import { LAYOUT_URL, CONTENTLET_SELECTOR_URL } from '../../../shared/consts';
@@ -17,7 +18,6 @@ import {
     AddContentletAction,
     CreateContentletAction,
     CreateFromPaletteAction,
-    DotPage,
     EditContentletPayload,
     EditEmaDialogState
 } from '../../../shared/models';
@@ -185,7 +185,7 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
      * @memberof DotEmaDialogStore
      */
     readonly translatePage = this.updater(
-        (state, { page, newLanguage }: { page: DotPage; newLanguage: number | string }) => {
+        (state, { page, newLanguage }: { page: DotCMSPage; newLanguage: number | string }) => {
             return {
                 ...state,
                 header: page.title,
@@ -348,7 +348,7 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
         return `${CONTENTLET_SELECTOR_URL}?${queryParams.toString()}`;
     }
 
-    private createTranslatePageUrl(page: DotPage, newLanguage: number | string) {
+    private createTranslatePageUrl(page: DotCMSPage, newLanguage: number | string) {
         const { working, workingInode, inode } = page;
         const pageInode = working ? workingInode : inode;
         const queryParams = new URLSearchParams({

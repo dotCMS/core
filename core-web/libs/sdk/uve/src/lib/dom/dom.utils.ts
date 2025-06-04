@@ -154,9 +154,11 @@ export function getClosestDotCMSContainerData(element: Element) {
 export function findDotCMSElement(element: HTMLElement | null): HTMLElement | null {
     if (!element) return null;
 
+    const emptyContent = element.querySelector('[data-dot-object="empty-content"]');
+
     if (
         element?.dataset?.['dotObject'] === 'contentlet' ||
-        (element?.dataset?.['dotObject'] === 'container' && element.children.length === 0)
+        (element?.dataset?.['dotObject'] === 'container' && emptyContent)
     ) {
         return element;
     }
