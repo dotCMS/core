@@ -21,6 +21,7 @@ import javax.servlet.http.HttpSessionAttributeListener;
 import javax.servlet.http.HttpSessionBindingEvent;
 import java.io.Serializable;
 import java.util.Objects;
+import io.vavr.Lazy;
 
 /**
  * Trigger a {@link SystemEventType#SWITCH_SITE} when the current site is set in the {@link HttpSession}
