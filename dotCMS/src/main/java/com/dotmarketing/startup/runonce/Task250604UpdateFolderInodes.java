@@ -5,6 +5,7 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.startup.StartupTask;
 import com.dotmarketing.util.Logger;
@@ -19,8 +20,8 @@ public class Task250604UpdateFolderInodes implements StartupTask {
 
     String ALLOW_DEFER_CONSTRAINT_SQL = "ALTER TABLE folder ALTER CONSTRAINT folder_identifier_fk DEFERRABLE;";
     String DEFER_CONSTRAINT_SQL = "SET CONSTRAINTS folder_identifier_fk DEFERRED;";
-    String UPDATE_SYSTEM_FOLDER_IDENTIFIER = "update identifier set id ='SYSTEM_FOLDER' where parent_path = '/System folder';";
-    String UPDATE_SYSTEM_FOLDER = "update folder set identifier ='SYSTEM_FOLDER' where inode = 'SYSTEM_FOLDER';";
+    String UPDATE_SYSTEM_FOLDER_IDENTIFIER = "update identifier set id ='SYSTEM_FOLDER' where parent_path = '/System folder' or id='"+ FolderAPI.OLD_SYSTEM_FOLDER_ID + "';";
+    String UPDATE_SYSTEM_FOLDER_FOLDER = "update folder set identifier ='SYSTEM_FOLDER' where inode = 'SYSTEM_FOLDER' or inode='"+ FolderAPI.OLD_SYSTEM_FOLDER_ID + "';";
     String UPDATE_ALL_FOLDERS = "update folder set inode = identifier;";
     String DENY_DEFER_CONSTRAINT_SQL = "ALTER TABLE folder ALTER CONSTRAINT folder_identifier_fk NOT DEFERRABLE;";
 
@@ -78,7 +79,7 @@ public class Task250604UpdateFolderInodes implements StartupTask {
             conn.createStatement().execute(UPDATE_SYSTEM_FOLDER_IDENTIFIER);
 
             // update system folder folder
-            conn.createStatement().execute(UPDATE_SYSTEM_FOLDER);
+            conn.createStatement().execute(UPDATE_SYSTEM_FOLDER_FOLDER);
 
             // set all folder inodes=identifer
             conn.createStatement().execute(UPDATE_ALL_FOLDERS);
