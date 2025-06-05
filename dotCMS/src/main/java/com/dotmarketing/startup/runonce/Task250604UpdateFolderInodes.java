@@ -1,5 +1,6 @@
 package com.dotmarketing.startup.runonce;
 
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
@@ -100,6 +101,10 @@ public class Task250604UpdateFolderInodes implements StartupTask {
             Logger.error(this, e);
             throw new DotRuntimeException(e);
         }
+
+        // just in case
+        CacheLocator.getFolderCache().clearCache();
+
 
     }
 
