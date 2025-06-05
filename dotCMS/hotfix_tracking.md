@@ -129,4 +129,5 @@ This maintenance release includes the following code fixes:
 123. https://github.com/dotCMS/core/issues/29238 : Attaching files feature on tasks is not properly working #29238
 124. https://github.com/dotCMS/core/issues/31141 : Automated Unpublishing Fails for Content with Inactive/Deleted Last Modified Users #31141
 125. https://github.com/dotCMS/core/issues/32106 : Indent does not work in the Block Editor #32106
+126. https://github.com/dotCMS/core/issues/32131 : IntegrityChecker serialization error #32131
 
