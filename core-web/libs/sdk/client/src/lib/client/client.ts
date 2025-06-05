@@ -1,3 +1,5 @@
+import { consola } from 'consola';
+
 import { DotCMSClientConfig, RequestOptions } from '@dotcms/types';
 
 import { Content } from './content/content-api';
@@ -14,7 +16,7 @@ function parseURL(url: string): URL | undefined {
     try {
         return new URL(url);
     } catch {
-        console.error('Invalid URL:', url);
+        consola.error('[DotCMS Client]: Invalid URL:', url);
 
         return undefined;
     }
