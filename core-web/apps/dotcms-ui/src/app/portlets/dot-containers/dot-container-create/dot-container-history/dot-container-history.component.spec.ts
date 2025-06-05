@@ -5,6 +5,8 @@ import { By } from '@angular/platform-browser';
 import { DotPortletBoxModule } from '@components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.module';
 
 import { DotContainerHistoryComponent } from './dot-container-history.component';
+import { DotRouterService } from '@dotcms/data-access';
+import { MockDotRouterService } from '@dotcms/utils-testing';
 
 @Component({
     selector: 'dot-iframe',
@@ -33,7 +35,8 @@ describe('ContainerHistoryComponent', () => {
     beforeEach(async () => {
         await TestBed.configureTestingModule({
             declarations: [DotContainerHistoryComponent, IframeMockComponent, DotTestHostComponent],
-            imports: [DotPortletBoxModule]
+            imports: [DotPortletBoxModule],
+            providers: [{ provide: DotRouterService, useClass: MockDotRouterService }]
         }).compileComponents();
 
         fixture = TestBed.createComponent(DotTestHostComponent);
