@@ -241,7 +241,7 @@ import static com.dotmarketing.portlets.personas.business.PersonaAPI.DEFAULT_PER
 public class ESContentletAPIImpl implements ContentletAPI {
 
     private static Lazy<Boolean> FEATURE_FLAG_DB_UNIQUE_FIELD_VALIDATION = Lazy.of(() ->
-            Config.getBooleanProperty(FeatureFlagName.FEATURE_FLAG_DB_UNIQUE_FIELD_VALIDATION, false));
+            Config.getBooleanProperty(FeatureFlagName.FEATURE_FLAG_DB_UNIQUE_FIELD_VALIDATION, true));
     private static final String CAN_T_CHANGE_STATE_OF_CHECKED_OUT_CONTENT = "Can't change state of checked out content or where inode is not set. Use Search or Find then use method";
     private static final String CANT_GET_LOCK_ON_CONTENT = "Only the CMS Admin or the user who locked the contentlet can lock/unlock it";
     private static final String FAILED_TO_DELETE_UNARCHIVED_CONTENT = "Failed to delete unarchived content. Content must be archived first before it can be deleted.";
