@@ -123,13 +123,13 @@ public class FolderFactoryImpl extends FolderFactory {
 
 
 	@Override
-	protected Folder find(final String folderInode) throws DotDataException {
-		Folder folder = folderCache.getFolder(folderInode);
+	protected Folder find(final String folderIdOrInode) throws DotDataException {
+		Folder folder = folderCache.getFolder(folderIdOrInode);
 		if (folder == null) {
 			try{
 			     DotConnect dc    = new DotConnect()
 			             .setSQL("select * from folder where identifier = ? or inode = ?")
-			             .addParam(folderInode).addParam(folderInode);
+			             .addParam(folderIdOrInode).addParam(folderIdOrInode);
 
 				List<Folder> folders = TransformerLocator.createFolderTransformer(dc.loadObjectResults()).asList();
 
@@ -1010,6 +1010,7 @@ public class FolderFactoryImpl extends FolderFactory {
 			Folder folder1 = new Folder();
 			String hostInode = "";
 			folder1.setInode(SYSTEM_FOLDER);
+			folder1.setIdentifier(SYSTEM_FOLDER);
 			folder1.setName(SYSTEM_FOLDER_ASSET_NAME);
 			folder1.setTitle("System folder");
 			try {
@@ -1025,7 +1026,7 @@ public class FolderFactoryImpl extends FolderFactory {
 			String IdentifierQuery = "INSERT INTO IDENTIFIER(ID,PARENT_PATH,ASSET_NAME,HOST_INODE,ASSET_TYPE) VALUES(?,?,?,?,?)";
 			String uuid = SYSTEM_FOLDER_ID;
 			dc.setSQL(IdentifierQuery);
-			dc.addParam(uuid);
+			dc.addParam(SYSTEM_FOLDER);
 			dc.addParam(SYSTEM_FOLDER_PARENT_PATH);
 			dc.addParam(folder1.getName());
 			dc.addParam(hostInode);
@@ -1034,13 +1035,13 @@ public class FolderFactoryImpl extends FolderFactory {
 
 			String hostQuery = "INSERT INTO FOLDER (INODE, NAME, TITLE, SHOW_ON_MENU, SORT_ORDER,FILES_MASKS,IDENTIFIER, OWNER, IDATE) VALUES (?,?,?,?,?,?,?,?,null,?)";
 			dc.setSQL(hostQuery);
-			dc.addParam(folder1.getInode());
+			dc.addParam(SYSTEM_FOLDER);
 			dc.addParam(folder1.getName());
 			dc.addParam(folder1.getTitle());
 			dc.addParam(folder1.isShowOnMenu());
 			dc.addParam(folder1.getSortOrder());
 			dc.addParam(folder1.getFilesMasks());
-			dc.addParam(uuid);
+			dc.addParam(SYSTEM_FOLDER);
 			dc.addParam(folder1.getIDate());
 			dc.loadResult();
 			folderCache.addFolder(folder1,APILocator.getIdentifierAPI().find(folder1.getIdentifier()));

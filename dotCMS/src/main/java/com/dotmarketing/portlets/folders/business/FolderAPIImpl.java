@@ -102,6 +102,7 @@ public class FolderAPIImpl implements FolderAPI  {
 					new HashSet<>(CollectionsUtils
 							.set(Config.getStringArrayProperty("RESERVEDFOLDERNAMES",
 									new String[]{"WEB-INF", "META-INF", "assets", "dotcms", "html",
+											"System folder",
 											"portal",
 											"email_backups",
 											"DOTLESS", "DOTSASS", "dotAdmin", "custom_elements"})
