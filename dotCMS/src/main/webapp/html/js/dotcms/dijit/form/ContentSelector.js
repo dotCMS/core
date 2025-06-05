@@ -1232,7 +1232,7 @@ dojo.declare(
 
                 // Select button functionality
                 var selected = function (scope, content) {
-                    if (this.useRelateContentOnSelect) {
+                    if (scope.useRelateContentOnSelect) {
                         scope._doRelateContent(content);
                     } else {
                         scope._onContentSelected(content);
@@ -1322,6 +1322,7 @@ dojo.declare(
                     );
                     if (selectButton.onclick == undefined) {
                         selectButton.onclick = dojo.hitch(this, function (event) {
+                            event.stopPropagation();
                             selected(this, asset);
                         });
                     }

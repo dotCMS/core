@@ -16,9 +16,7 @@ export class BlogPostComponent implements OnChanges {
     post = input.required<BlogContentlet>();
 
     postContent = computed(() => {
-        const content = JSON.parse(this.post().blogContent);
-
-        return content as BlockEditorContent;
+        return this.post().blogContent;
     });
 
     get isEditMode() {

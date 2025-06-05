@@ -6,6 +6,7 @@ import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.mock.request.FakeHttpRequest;
 import com.dotcms.mock.response.BaseResponse;
+import com.dotcms.rendering.velocity.directive.DotCacheDirective;
 import com.dotcms.rendering.velocity.viewtools.VelocityRequestWrapper;
 import com.dotcms.rendering.velocity.viewtools.content.ContentMap;
 import com.dotcms.rendering.velocity.viewtools.content.ContentTool;
@@ -41,6 +42,7 @@ import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.context.Context;
+import org.apache.velocity.context.InternalContextAdapter;
 import org.apache.velocity.exception.ParseErrorException;
 import org.apache.velocity.exception.ResourceNotFoundException;
 import org.apache.velocity.tools.view.ToolboxManager;
@@ -578,6 +580,25 @@ public class VelocityUtil {
 
 		Logger.debug(VelocityUtil.class, String.format("Velocity ROOT path found: %s", velocityRootPath));
 		return velocityRootPath;
+	}
+
+	/**
+	 * Gets the value of the DONT_USE_DIRECTIVE_CACHE from the context.
+	 * If the value is a Boolean, it returns it as is.
+	 * If the value is a String, it parses it to a Boolean.
+	 * If the value is not set or not a Boolean or String, it returns false.
+	 *
+	 * @param context The context from which to retrieve the value.
+	 * @return true if the directive cache should not be used, false otherwise.
+	 */
+	public static boolean getDontUseDirectiveCache(Context context) {
+		final Object dontCacheObj = context.get(DotCacheDirective.DONT_USE_DIRECTIVE_CACHE);
+		if (dontCacheObj instanceof Boolean) {
+			return (Boolean) dontCacheObj;
+		} else if (dontCacheObj instanceof String) {
+			return Boolean.parseBoolean((String) dontCacheObj);
+		}
+		return false;
 	}
 
 

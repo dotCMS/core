@@ -6,14 +6,14 @@ import { LoadingComponent } from '../../shared/components/loading/loading.compon
 import { ErrorComponent } from '../../shared/components/error/error.component';
 import { FooterComponent } from '../../shared/components/footer/footer.component';
 import { BlogPostComponent } from './blog-post/blog-post.component';
-import { DotCMSPageAsset, DotCMSURLContentMap } from '@dotcms/types';
+import { BlockEditorContent, DotCMSPageAsset, DotCMSURLContentMap } from '@dotcms/types';
 import { EditablePageService } from '../../services/editable-page.service';
 import { ContentletImage, ExtraContent } from '../../shared/contentlet.model';
 import { BASE_EXTRA_QUERIES } from '../../shared/queries';
 import { PageState } from '../../shared/models';
 
 export interface BlogContentlet extends DotCMSURLContentMap {
-    blogContent: string;
+    blogContent: BlockEditorContent;
     image: ContentletImage;
 }
 

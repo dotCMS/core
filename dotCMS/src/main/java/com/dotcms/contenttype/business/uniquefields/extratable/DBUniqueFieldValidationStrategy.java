@@ -37,6 +37,7 @@ import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFiel
 import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.FIELD_VALUE_ATTR;
 import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.UNIQUE_PER_SITE_ATTR;
 import static com.dotmarketing.util.Constants.DONT_RESPECT_FRONT_END_ROLES;
+import static com.liferay.util.StringPool.BLANK;
 
 /**
  * This implementation of the {@link UniqueFieldValidationStrategy} checks the uniqueness of a given
@@ -71,20 +72,8 @@ public class DBUniqueFieldValidationStrategy implements UniqueFieldValidationStr
             cleanUniqueFieldsUp(contentlet, field);
         }
 
-        final User systemUser = APILocator.systemUser();
-        final Host site = APILocator.getHostAPI().find(contentlet.getHost(), systemUser, DONT_RESPECT_FRONT_END_ROLES);
-        final Language language = APILocator.getLanguageAPI().getLanguage(contentlet.getLanguageId());
-        final UniqueFieldCriteria uniqueFieldCriteria = new UniqueFieldCriteria.Builder()
-                .setSite(site)
-                .setLanguage(language)
-                .setField(field)
-                .setContentType(contentType)
-                .setValue(fieldValue)
-                .setVariantName(contentlet.getVariantId())
-                .setLive(isLive(contentlet))
-                .build();
-
-        insertUniqueValue(uniqueFieldCriteria, contentlet.getIdentifier());
+        final UniqueFieldCriteria uniqueFieldCriteria = this.buildUniqueFieldCriteria(contentlet, field, fieldValue, contentType);
+        this.insertUniqueValue(uniqueFieldCriteria, contentlet.getIdentifier());
     }
 
     @Override
@@ -93,11 +82,36 @@ public class DBUniqueFieldValidationStrategy implements UniqueFieldValidationStr
     public void innerValidateInPreview(final Contentlet contentlet, final Field field, final Object fieldValue,
                                         final ContentType contentType)
             throws UniqueFieldValueDuplicatedException, DotDataException, DotSecurityException {
+        final UniqueFieldCriteria uniqueFieldCriteria = this.buildUniqueFieldCriteria(contentlet, field, fieldValue, contentType);
+        final Optional<UniqueFieldDataBaseUtil.UniqueFieldValue> uniqueFieldValueOptional =
+                uniqueFieldDataBaseUtil.get(uniqueFieldCriteria);
+        if (uniqueFieldValueOptional.isPresent()) {
+            this.checkUniqueFieldDuplication(contentlet, uniqueFieldCriteria, uniqueFieldValueOptional.get());
+        }
+    }
 
+    /**
+     * Creates a {@link UniqueFieldCriteria} object based on the provided {@link Contentlet},
+     * {@link Field}, field value, and {@link ContentType}. These criteria are used to check the
+     * uniqueness of the field value.
+     *
+     * @param contentlet  The {@link Contentlet} being validated.
+     * @param field       The {@link Field} that is being validated for uniqueness.
+     * @param fieldValue  The value of the field to be checked for uniqueness.
+     * @param contentType The {@link ContentType} of the Contentlet.
+     *
+     * @return A new instance of {@link UniqueFieldCriteria}.
+     *
+     * @throws DotDataException     If there is an error accessing the database.
+     * @throws DotSecurityException If there is a security issue accessing the host or language.
+     */
+    private UniqueFieldCriteria buildUniqueFieldCriteria(final Contentlet contentlet,
+                                                         final Field field, final Object fieldValue,
+                                                         final ContentType contentType) throws DotDataException, DotSecurityException {
         final User systemUser = APILocator.systemUser();
         final Host site = APILocator.getHostAPI().find(contentlet.getHost(), systemUser, DONT_RESPECT_FRONT_END_ROLES);
         final Language language = APILocator.getLanguageAPI().getLanguage(contentlet.getLanguageId());
-        final UniqueFieldCriteria uniqueFieldCriteria = new UniqueFieldCriteria.Builder()
+        return new UniqueFieldCriteria.Builder()
                 .setSite(site)
                 .setLanguage(language)
                 .setField(field)
@@ -106,12 +120,6 @@ public class DBUniqueFieldValidationStrategy implements UniqueFieldValidationStr
                 .setVariantName(contentlet.getVariantId())
                 .setLive(isLive(contentlet))
                 .build();
-
-        final Optional<UniqueFieldDataBaseUtil.UniqueFieldValue> uniqueFieldValueOptional =
-                uniqueFieldDataBaseUtil.get(uniqueFieldCriteria);
-        if (uniqueFieldValueOptional.isPresent()) {
-            this.checkUniqueFieldDuplication(contentlet, uniqueFieldCriteria, uniqueFieldValueOptional.get());
-        }
     }
 
     /**
@@ -157,20 +165,19 @@ public class DBUniqueFieldValidationStrategy implements UniqueFieldValidationStr
     }
 
     /**
-     * When the {@link Contentlet} is being updated, this method removes its entry from the Unique
-     * Field table so that it can be safely re-generated later on.
+     * When the {@link Contentlet} is being updated, this method removes its existing entry from the
+     * Unique Field table so that it can be safely re-generated after the update.
      * <p>If its associated hash belongs to more than one Contentlet, instead of removing the
-     * record, it will be updated in order to NOT include the ID of the updated Contentlet. The hash
-     * is not re-generated as the Contentlet ID is not used in it.</p>
+     * record, it will be updated in order to NOT include the ID of the updated Contentlet. Keep in
+     * mind that the hash is <b>NOT</b> re-generated at all, as the Contentlet ID is not used to
+     * create it.</p>
      *
-     * @param contentlet The {@link Contentlet} being updated.
+     * @param contentlet The {@link Contentlet} whose unique field value is being updated.
      *
      * @throws DotDataException An error occurred when interacting with the database.
      */
-    @SuppressWarnings("unchecked")
     private  void cleanUniqueFieldsUp(final Contentlet contentlet, final Field field) throws DotDataException {
-        List<Map<String, Object>> uniqueFields = uniqueFieldDataBaseUtil.get(contentlet, field);
-
+        final List<Map<String, Object>> uniqueFields = uniqueFieldDataBaseUtil.get(contentlet, field);
         if (UtilMethods.isSet(uniqueFields)) {
             final List<Map<String, Object>> workingUniqueFields = uniqueFields.stream()
                     .filter(uniqueValue -> Boolean.FALSE.equals(getSupportingValues(uniqueValue).get("live")))
@@ -186,15 +193,16 @@ public class DBUniqueFieldValidationStrategy implements UniqueFieldValidationStr
                         .ifPresent(uniqueFieldValue -> {
                             final Map<String, Object> supportingValues = getSupportingValues(uniqueFieldValue);
                             final String oldUniqueValue = supportingValues.get(FIELD_VALUE_ATTR).toString();
-                            final String newUniqueValue = contentlet.getStringProperty(field.variable());
-
+                            // All Unique Field values are stored in lower case. So, the incoming
+                            // value must be lower-cased to potentially match the existing one
+                            final String newUniqueValue = UtilMethods.isSet(contentlet.getStringProperty(field.variable()))
+                                    ? contentlet.getStringProperty(field.variable()).toLowerCase()
+                                    : BLANK;
                             if (oldUniqueValue.equals(newUniqueValue)) {
                                 cleanUniqueFieldUp(contentlet.getIdentifier(), uniqueFieldValue);
                             }
                         });
             }
-
-
         }
     }
 
@@ -206,6 +214,7 @@ public class DBUniqueFieldValidationStrategy implements UniqueFieldValidationStr
         }
     }
 
+    @SuppressWarnings("unchecked")
     private void cleanUniqueFieldUp(final String contentId,
                                     final Map<String, Object> uniqueFields)  {
         try {
@@ -289,7 +298,6 @@ public class DBUniqueFieldValidationStrategy implements UniqueFieldValidationStr
             Logger.debug(DBUniqueFieldValidationStrategy.class, String.format("Including value of field '%s' in Contentlet " +
                     "'%s' in the unique_fields table", uniqueFieldCriteria.field().variable(), contentletId));
             uniqueFieldDataBaseUtil.insert(uniqueFieldCriteria.criteria(), supportingValues);
-
         } catch (final DotDataException e) {
             if (isDuplicatedKeyError(e)) {
                 throwsDuplicatedException(uniqueFieldCriteria);

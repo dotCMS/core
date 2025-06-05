@@ -167,15 +167,21 @@ export function DotCMSEditableText<T extends DotCMSBasicContentlet>({
     }
 
     return (
-        <Editor
-            tinymceScriptSrc={scriptSrc}
-            inline={true}
-            onInit={(_, editor) => (editorRef.current = editor)}
-            init={TINYMCE_CONFIG[mode]}
-            initialValue={content as string}
-            onMouseDown={onMouseDown}
-            onFocusOut={onFocusOut}
-        />
+        <div
+            style={{
+                outline: '2px solid #006ce7',
+                borderRadius: '4px'
+            }}>
+            <Editor
+                tinymceScriptSrc={scriptSrc}
+                inline={true}
+                onInit={(_, editor) => (editorRef.current = editor)}
+                init={TINYMCE_CONFIG[mode]}
+                initialValue={content as string}
+                onMouseDown={onMouseDown}
+                onFocusOut={onFocusOut}
+            />
+        </div>
     );
 }
 
