@@ -58,7 +58,8 @@ import {
     DotTableHeaderExtension,
     DragHandler,
     FREEZE_SCROLL_KEY,
-    FreezeScroll
+    FreezeScroll,
+    IndentExtension
 } from '../../extensions';
 import { DotPlaceholder } from '../../extensions/dot-placeholder/dot-placeholder-plugin';
 import { AIContentNode, ContentletBlock, ImageNode, LoaderNode, VideoNode } from '../../nodes';
@@ -452,7 +453,8 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
             TableRow,
             FreezeScroll,
             CharacterCount,
-            AssetUploader(this.injector, this.viewContainerRef)
+            AssetUploader(this.injector, this.viewContainerRef),
+            IndentExtension
         ];
 
         if (isAIPluginInstalled) {
