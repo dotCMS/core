@@ -1,6 +1,6 @@
-import NotFound from '@/app/not-found';
-import { DetailPage } from '@/pages/DetailPage';
-import { getDotCMSPage } from '@/utils/getDotCMSPage';
+import NotFound from "@/app/not-found";
+import { DetailPage } from "@/views/DetailPage";
+import { getDotCMSPage } from "@/utils/getDotCMSPage";
 
 export async function generateMetadata(props) {
     const searchParams = await props.searchParams;
