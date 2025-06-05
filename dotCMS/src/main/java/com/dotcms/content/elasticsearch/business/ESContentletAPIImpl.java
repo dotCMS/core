@@ -1213,27 +1213,49 @@ public class ESContentletAPIImpl implements ContentletAPI {
     public List<Contentlet> search(String luceneQuery, int limit, int offset, String sortBy,
             User user, boolean respectFrontendRoles, int requiredPermission)
             throws DotDataException, DotSecurityException {
+
+        Logger.debug(this, "search - search: " + luceneQuery);
+        Logger.debug(this, "search - limit: " + limit);
+        Logger.debug(this, "search - offset: " + offset);
+        Logger.debug(this, "search - sortBy: " + sortBy);
+        Logger.debug(this, "search - user: " + user);
+        Logger.debug(this, "search - respectFrontendRoles: " + respectFrontendRoles);
+        Logger.debug(this, "search - requiredPermission: " + requiredPermission);
+
         PaginatedArrayList<Contentlet> contents = new PaginatedArrayList<>();
         ArrayList<String> inodes = new ArrayList<>();
 
         PaginatedArrayList<ContentletSearch> list = (PaginatedArrayList) searchIndex(luceneQuery,
                 limit, offset, sortBy, user, respectFrontendRoles);
         contents.setTotalResults(list.getTotalResults());
+        Logger.debug(this, "search - list size: " + contents.getTotalResults());
         for (ContentletSearch conwrap : list) {
 
             inodes.add(conwrap.getInode());
+            Logger.debug(this, "search - inode Added: " + conwrap.getInode());
         }
 
+        Logger.debug(this, "search - inodes: " + inodes);
         List<Contentlet> contentlets = findContentlets(inodes);
+        Logger.debug(this, "search - contentlets size: " + contentlets.size());
+        Logger.debug(this, "search - contentlets: " + contentlets);
         Map<String, Contentlet> map = new HashMap<>(contentlets.size());
         for (Contentlet contentlet : contentlets) {
+            Logger.debug(this, "search - contentlet: " + contentlet);
+            Logger.debug(this, "search - contentlet inode: " + contentlet.getInode());
             map.put(contentlet.getInode(), contentlet);
+            Logger.debug(this, "search - map size: " + map.size());
         }
+        Logger.debug(this, "search - map: " + map);
         for (String inode : inodes) {
+            Logger.debug(this, "search - inode: " + inode);
             if (map.get(inode) != null) {
+                Logger.debug(this, "search - map.get(inode): " + map.get(inode));
                 contents.add(map.get(inode));
+                Logger.debug(this, "search - contents size: " + contents.size());
             }
         }
+        Logger.debug(this, "search - contents: " + contents);
         return contents;
 
     }
@@ -1322,14 +1344,22 @@ public class ESContentletAPIImpl implements ContentletAPI {
             throws DotDataException, DotStateException,
             DotSecurityException {
 
+        Logger.debug(this, "Experiments - getAllContentByVariants: " + Arrays.toString(variantNames));
+
         final String queryWithoutParenthesis = Arrays.stream(variantNames)
                 .map((variant) -> "variant:" + variant)
                 .collect(Collectors.joining(" OR "));
 
         final String query = "+(" + queryWithoutParenthesis + ")";
 
-        return search(query, -1, 0, null,
+        Logger.debug(this, "Experiments - getAllContentByVariants: query: " + query);
+
+        final List<Contentlet> search = search(query, -1, 0, null,
                 user, respectFrontendRoles);
+
+        Logger.debug(this, "Experiments - getAllContentByVariants: search: " + search);
+
+        return search;
     }
 
     @Override
@@ -4793,6 +4823,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
             try {
                 publish(contentlet, user, respectFrontendRoles);
             } catch (DotContentletStateException e) {
+                stateError = true;
+            } catch (Exception e){
+                Logger.debug(this.getClass(),
+                        "Unable to publish one contentlet because ",e);
                 stateError = true;
             }
         }
