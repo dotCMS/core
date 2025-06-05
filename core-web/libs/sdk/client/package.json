@@ -6,6 +6,9 @@
     "type": "git",
     "url": "git+https://github.com/dotCMS/core.git#main"
   },
+  "dependencies": {
+    "consola": "^3.4.2"
+  },
   "devDependencies": {
     "@dotcms/types": "next"
   },

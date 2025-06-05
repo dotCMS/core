@@ -20,8 +20,8 @@
         "@angular/router": "^17.1.0",
         "@dotcms/angular": "next",
         "@dotcms/client": "next",
-        "@dotcms/uve": "next",
         "@dotcms/types": "next",
+        "@dotcms/uve": "next",
         "rxjs": "~7.8.0",
         "tslib": "^2.3.0",
         "zone.js": "~0.14.2"
@@ -30,6 +30,7 @@
         "@angular-devkit/build-angular": "^17.0.7",
         "@angular/cli": "^17.0.7",
         "@angular/compiler-cli": "^17.1.0",
+        "@tailwindcss/typography": "^0.5.16",
         "@types/jasmine": "~5.1.0",
         "autoprefixer": "^10.4.19",
         "jasmine-core": "~5.1.0",
