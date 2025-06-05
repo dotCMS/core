@@ -3663,7 +3663,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
      * @throws IOException
      */
     @Test
-    public void TestImportBinaryImageExpectErrors()
+    public void TestImportBinaryImageExpectWarnings()
             throws DotSecurityException, DotDataException, IOException {
 
         String contentTypeName = "TestImportBinaryImageErrorMessage_" + System.currentTimeMillis();
@@ -3676,7 +3676,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         com.dotcms.contenttype.model.field.Field reqField = new FieldDataGen()
                 .name("bin")
                 .velocityVarName("bin")
-                .required(true)
+                .required(false)
                 .type(BinaryField.class)
                 .next();
 
@@ -3688,7 +3688,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                 .nextPersisted();
 
         final ContentType saved = contentTypeApi.find(contentType.inode());
-        titleField = saved.fields().get(0);
+        titleField = saved.fields().stream().filter(f -> "title".equals(f.variable())).findFirst().orElseThrow();
 
         final Reader reader = createTempFile("title,bin \r\n" +
                 "Company Logo, https://www.dotcms.com/assets/logo.svg?w=3840 " + "\r\n" +
@@ -3698,20 +3698,21 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         final ImportResult result = importAndValidate(contentType, titleField, reader, false, 1, WORKFLOW_PUBLISH_ACTION_ID);
 
         assertNotNull(result);
-        assertFalse(result.error().isEmpty());
-        assertTrue(result.error().get(0).code().isPresent());
-        assertEquals(INVALID_BINARY_URL.name(), result.error().get(0).code().get());
-        assertTrue(result.error().get(1).code().isPresent());
-        assertEquals(INVALID_BINARY_URL.name(), result.error().get(1).code().get());
+        assertTrue(result.error().isEmpty());
+        assertFalse(result.warning().isEmpty());
+        assertTrue(result.warning().get(0).code().isPresent());
+        assertEquals(INVALID_BINARY_URL.name(), result.warning().get(0).code().get());
+        assertTrue(result.warning().get(1).code().isPresent());
+        assertEquals(INVALID_BINARY_URL.name(), result.warning().get(1).code().get());
 
         final List<Contentlet> byStructure = contentletAPI.findByStructure(contentType.inode(),
                 user, false, 0, 0);
-        assertNotNull(byStructure);
+        assertEquals(3,byStructure.size());
     }
 
 
     @Test
-    public void TestImportImageExpectErrors()
+    public void TestImportImageExpectWarnings()
             throws DotSecurityException, DotDataException, IOException {
 
         String contentTypeName = "TestImportImageErrorMessage_" + System.currentTimeMillis();
@@ -3736,7 +3737,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                 .nextPersisted();
 
         final ContentType saved = contentTypeApi.find(contentType.inode());
-        titleField = saved.fields().get(0);
+        titleField = saved.fields().stream().filter(f -> "title".equals(f.variable())).findFirst().orElseThrow();
 
         final Reader reader = createTempFile("title,image \r\n" +
                 "Company Logo, https://www.dotcms.com/assets/logo.svg?w=3840 " + "\r\n" +
@@ -3746,15 +3747,16 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         final ImportResult result = importAndValidate(contentType, titleField, reader, false, 1, WORKFLOW_PUBLISH_ACTION_ID);
 
         assertNotNull(result);
-        assertFalse(result.error().isEmpty());
-        assertTrue(result.error().get(0).code().isPresent());
-        assertEquals(INVALID_BINARY_URL.name(), result.error().get(0).code().get());
-        assertTrue(result.error().get(1).code().isPresent());
-        assertEquals(INVALID_BINARY_URL.name(), result.error().get(1).code().get());
+        assertFalse(result.warning().isEmpty());
+        assertTrue(result.error().isEmpty());
+        assertTrue(result.warning().get(0).code().isPresent());
+        assertEquals(INVALID_BINARY_URL.name(), result.warning().get(0).code().get());
+        assertTrue(result.warning().get(1).code().isPresent());
+        assertEquals(INVALID_BINARY_URL.name(), result.warning().get(1).code().get());
 
         final List<Contentlet> byStructure = contentletAPI.findByStructure(contentType.inode(),
                 user, false, 0, 0);
-        assertNotNull(byStructure);
+        assertEquals(3,byStructure.size());
 
     }
 

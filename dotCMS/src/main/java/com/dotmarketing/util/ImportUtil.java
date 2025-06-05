@@ -2036,7 +2036,7 @@ public class ImportUtil {
             processedValue = value;
             results.setSiteAndFolder(location);
         } else if (isBinaryField(field)) {
-            processedValue = processBinaryField(value);
+            processedValue = processBinaryField(field, value, results);
         } else if (isImageField(field)) {
             processedValue = processImageField(field, value, results);
         } else if (isFileField(field)) {
@@ -2289,13 +2289,15 @@ public class ImportUtil {
      * @return the processed value if the URL is valid
      * @throws ImportLineException if the URL is invalid
      */
-    private static Object processBinaryField(final String value) {
+    private static Object processBinaryField(final Field field, final String value, final FieldProcessingResultBuilder resultBuilder) {
         if (UtilMethods.isSet(value) && !APILocator.getTempFileAPI().validUrl(value)) {
-            throw ImportLineException.builder()
-                    .message("URL is malformed or Response is not 200")
-                    .code(ImportLineValidationCodes.INVALID_BINARY_URL.name())
-                    .invalidValue(value)
-                    .build();
+            resultBuilder.addWarning(
+                    String.format("The URL is malformed or the response is not 200 for field: %s",
+                            field.getVelocityVarName()),
+                    ImportLineValidationCodes.INVALID_BINARY_URL.name(),
+                    field.getVelocityVarName()
+            );
+            return null;
         }
         return value;
     }
@@ -2307,16 +2309,20 @@ public class ImportUtil {
      */
     private static Object processImageField(final Field field, final String value, final FieldProcessingResultBuilder resultBuilder) {
         if (UtilMethods.isSet(value) && !APILocator.getTempFileAPI().validUrl(value)) {
-            throw ImportLineException.builder()
-                    .message("URL is malformed or Response is not 200")
-                    .code(ImportLineValidationCodes.INVALID_BINARY_URL.name())
-                    .invalidValue(value)
-                    .build();
+            resultBuilder.addWarning(
+                    String.format("The URL is malformed or the response is not 200 for field: %s",
+                            field.getVelocityVarName()),
+                    ImportLineValidationCodes.INVALID_BINARY_URL.name(),
+                    field.getVelocityVarName()
+            );
+            return null;
         }
 
         if (!UtilMethods.isImage(value)) {
             resultBuilder.addWarning(String.format("The file is not an image for field: %s", field.getVelocityVarName()),
-                    ImportLineValidationCodes.INVALID_IMAGE_TYPE.name());
+                    ImportLineValidationCodes.INVALID_IMAGE_TYPE.name(),
+                    field.getVelocityVarName()
+            );
             return null;
         }
 
@@ -2363,7 +2369,8 @@ public class ImportUtil {
             resultBuilder.addWarning(String.format(
                             "The file has not been found in %s:%s",
                             fileHost.getHostname(), filePath
-                    ), ImportLineValidationCodes.FILE_NOT_FOUND.name()
+                    ), ImportLineValidationCodes.FILE_NOT_FOUND.name(),
+                    field.getVelocityVarName()
             );
         }
         return null;
@@ -4767,9 +4774,14 @@ public class ImportUtil {
         }
 
         public void addWarning(final String message, final String code) {
+            addWarning(message, code, "N/A");
+        }
+
+        public void addWarning(final String message, final String code, final String field) {
             addValidationMessage(ValidationMessage.builder()
                     .type(ValidationMessageType.WARNING)
                     .message(message)
+                    .field(field)
                     .code(code)
                     .lineNumber(lineNumber)
                     .build());
