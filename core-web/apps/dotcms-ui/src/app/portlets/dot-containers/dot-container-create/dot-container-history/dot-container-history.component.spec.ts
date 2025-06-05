@@ -3,10 +3,10 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
 import { DotPortletBoxModule } from '@components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.module';
-
-import { DotContainerHistoryComponent } from './dot-container-history.component';
 import { DotRouterService } from '@dotcms/data-access';
 import { MockDotRouterService } from '@dotcms/utils-testing';
+
+import { DotContainerHistoryComponent } from './dot-container-history.component';
 
 @Component({
     selector: 'dot-iframe',
