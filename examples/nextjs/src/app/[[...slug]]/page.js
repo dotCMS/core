@@ -1,7 +1,6 @@
-import NotFound from '@/app/not-found';
-import { Page } from '@/pages/Page';
-import { getDotCMSPage } from '@/utils/getDotCMSPage';
-import { redirect } from 'next/navigation';
+import NotFound from "@/app/not-found";
+import { Page } from "@/views/Page";
+import { getDotCMSPage } from "@/utils/getDotCMSPage";
 
 export async function generateMetadata(props) {
     const searchParams = await props.searchParams;
