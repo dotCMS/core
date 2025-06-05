@@ -42,6 +42,7 @@ import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
+import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
@@ -90,6 +91,7 @@ import io.vavr.control.Try;
 import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
+import java.net.URI;
 import java.net.URL;
 import java.sql.Savepoint;
 import java.sql.Timestamp;
@@ -580,12 +582,7 @@ public class ImportUtil {
     /**
      * Generates an import result from the provided input parameters after processing and analyzing
      * the file data and performing the necessary content operations.
-     *
-     * @param preview         a boolean flag indicating whether the operation is a preview or an
-     *                        actual import
-     * @param wfActionId      a string representing the workflow action ID associated with the
-     *                        import operation
-     * @param fileTotalLines  the total number of lines in the file being processed
+     * @param params         the parameters containing details about the import operation,
      * @param lineNumber      the number of lines successfully processed
      * @param failedRows      the number of rows that encountered errors during processing
      * @param messages        a list of validation messages containing information, warnings, or
@@ -2036,9 +2033,9 @@ public class ImportUtil {
             processedValue = value;
             results.setSiteAndFolder(location);
         } else if (isBinaryField(field)) {
-            processedValue = processBinaryField(field, value, results);
+            processedValue = processBinaryField(field, value);
         } else if (isImageField(field)) {
-            processedValue = processImageField(field, value, results);
+            processedValue = processImageField(field, value);
         } else if (isFileField(field)) {
             processedValue = processFileField(field, value, currentHostId, user, results);
         } else {
@@ -2289,41 +2286,41 @@ public class ImportUtil {
      * @return the processed value if the URL is valid
      * @throws ImportLineException if the URL is invalid
      */
-    private static Object processBinaryField(final Field field, final String value, final FieldProcessingResultBuilder resultBuilder) {
+    private static Object processBinaryField(final Field field, final String value) {
         if (UtilMethods.isSet(value) && !APILocator.getTempFileAPI().validUrl(value)) {
-            resultBuilder.addWarning(
-                    String.format("The URL is malformed or the response is not 200 for field: %s",
-                            field.getVelocityVarName()),
-                    ImportLineValidationCodes.INVALID_BINARY_URL.name(),
-                    field.getVelocityVarName()
-            );
-            return null;
+            throw ImportLineException.builder()
+                    .message("URL is malformed or Response is not 200")
+                    .code(ImportLineValidationCodes.INVALID_BINARY_URL.name())
+                    .field(field.getVelocityVarName())
+                    .invalidValue(value)
+                    .build();
         }
         return value;
     }
 
     /**
      * Processes an image field by validating the URL.
+     * This method checks if the URL is valid and if the content is an image type.
      * @param value the value to process
      * @return the processed value if the URL is valid
      */
-    private static Object processImageField(final Field field, final String value, final FieldProcessingResultBuilder resultBuilder) {
+    private static Object processImageField(final Field field, final String value) {
         if (UtilMethods.isSet(value) && !APILocator.getTempFileAPI().validUrl(value)) {
-            resultBuilder.addWarning(
-                    String.format("The URL is malformed or the response is not 200 for field: %s",
-                            field.getVelocityVarName()),
-                    ImportLineValidationCodes.INVALID_BINARY_URL.name(),
-                    field.getVelocityVarName()
-            );
-            return null;
+            throw ImportLineException.builder()
+                    .message("URL is malformed or Response is not 200")
+                    .code(ImportLineValidationCodes.INVALID_BINARY_URL.name())
+                    .field(field.getVelocityVarName())
+                    .invalidValue(value)
+                    .build();
         }
 
         if (!UtilMethods.isImage(value)) {
-            resultBuilder.addWarning(String.format("The file is not an image for field: %s", field.getVelocityVarName()),
-                    ImportLineValidationCodes.INVALID_IMAGE_TYPE.name(),
-                    field.getVelocityVarName()
-            );
-            return null;
+            throw ImportLineException.builder()
+                    .message(String.format(" %s is not a supported image type", value))
+                    .code(ImportLineValidationCodes.INVALID_BINARY_URL.name())
+                    .field(field.getVelocityVarName())
+                    .invalidValue(value)
+                    .build();
         }
 
         return value;
@@ -3291,7 +3288,9 @@ public class ImportUtil {
 
             try {
                 if (isBinaryField(field)) {
-                    processBinaryField(cont, field, value, request, preview);
+                    fetchAndSetBinaryField(cont, field, value, request, preview);
+                } else if (isImageField(field)) {
+                    fetchAndSetImageField(cont, field, value, request, preview);
                 } else {
                     conAPI.setContentletProperty(cont, field, value);
                 }
@@ -3467,7 +3466,7 @@ public class ImportUtil {
      *
      * @param value The raw value of the binary field from the CSV line.
      */
-    private static void processBinaryField(final Contentlet cont, final Field field,
+    private static void fetchAndSetBinaryField(final Contentlet cont, final Field field,
             final Object value, final HttpServletRequest request, final boolean preview)
             throws IOException, DotSecurityException {
         if (preview) {
@@ -3479,6 +3478,31 @@ public class ImportUtil {
                     .createTempFileFromUrl(null, request, new URL(value.toString()), -1);
             cont.setBinary(field.getVelocityVarName(), tempFile.file);
         }
+    }
+
+    private static void fetchAndSetImageField(final Contentlet cont, final Field field,
+            final Object value, final HttpServletRequest request, final boolean preview)
+            throws IOException, DotSecurityException {
+        if(preview){
+            // Create a dummy file for preview purposes and set it as a binary field
+        } else if (value != null && UtilMethods.isSet(value.toString())) {
+            final URL url = URI.create(value.toString()).toURL();
+            DotTempFile tempFile = APILocator.getTempFileAPI()
+                    .createTempFileFromUrl(null, request, url, -1);
+            File file = tempFile.file;
+            cont.setProperty(FileAssetAPI.TITLE_FIELD, file.getName());
+            cont.setProperty(FileAssetAPI.FILE_NAME_FIELD, file.getName());
+            cont.setProperty(FileAssetAPI.BINARY_FIELD, file);
+            try {
+                final Contentlet checkin = APILocator.getContentletAPI()
+                        .checkin(cont, APILocator.systemUser(), true);
+                cont.setProperty(field.getVelocityVarName(), checkin.getIdentifier());
+            } catch (Exception e) {
+                Logger.error(ImportUtil.class, "Error setting image field", e);
+            }
+
+        }
+
     }
 
     /**

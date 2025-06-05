@@ -3663,10 +3663,10 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
      * @throws IOException
      */
     @Test
-    public void TestImportBinaryImageExpectWarnings()
+    public void TestImportBinaryExpectErrors()
             throws DotSecurityException, DotDataException, IOException {
 
-        String contentTypeName = "TestImportBinaryImageErrorMessage_" + System.currentTimeMillis();
+        String contentTypeName = "TestImportBinaryErrorMessage_" + System.currentTimeMillis();
         String contentTypeVarName = contentTypeName.replaceAll("_", "Var_");
         com.dotcms.contenttype.model.field.Field titleField = new FieldDataGen()
                 .name("title")
@@ -3698,21 +3698,28 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         final ImportResult result = importAndValidate(contentType, titleField, reader, false, 1, WORKFLOW_PUBLISH_ACTION_ID);
 
         assertNotNull(result);
-        assertTrue(result.error().isEmpty());
-        assertFalse(result.warning().isEmpty());
-        assertTrue(result.warning().get(0).code().isPresent());
-        assertEquals(INVALID_BINARY_URL.name(), result.warning().get(0).code().get());
-        assertTrue(result.warning().get(1).code().isPresent());
-        assertEquals(INVALID_BINARY_URL.name(), result.warning().get(1).code().get());
+        assertFalse(result.error().isEmpty());
+        assertTrue(result.error().get(0).code().isPresent());
+        assertEquals(INVALID_BINARY_URL.name(), result.error().get(0).code().get());
+        assertTrue(result.error().get(1).code().isPresent());
+        assertEquals(INVALID_BINARY_URL.name(), result.error().get(1).code().get());
 
         final List<Contentlet> byStructure = contentletAPI.findByStructure(contentType.inode(),
                 user, false, 0, 0);
-        assertEquals(3,byStructure.size());
+        assertEquals(1,byStructure.size());
     }
 
 
+    /**
+     * Method to test: {@link ImportUtil#importFile(Long, String, String, String[], boolean, boolean, User, long, String[], CsvReader, int, int, Reader, String, HttpServletRequest)}
+     * Given scenario: We try to import a file with a valid image URL including query parameters and some invalid URLs
+     * Expected behavior: The import should fail for the invalid URLs but succeed for the valid one
+     * @throws DotSecurityException
+     * @throws DotDataException
+     * @throws IOException
+     */
     @Test
-    public void TestImportImageExpectWarnings()
+    public void TestImportImageExpectErrors()
             throws DotSecurityException, DotDataException, IOException {
 
         String contentTypeName = "TestImportImageErrorMessage_" + System.currentTimeMillis();
@@ -3747,16 +3754,15 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         final ImportResult result = importAndValidate(contentType, titleField, reader, false, 1, WORKFLOW_PUBLISH_ACTION_ID);
 
         assertNotNull(result);
-        assertFalse(result.warning().isEmpty());
-        assertTrue(result.error().isEmpty());
-        assertTrue(result.warning().get(0).code().isPresent());
-        assertEquals(INVALID_BINARY_URL.name(), result.warning().get(0).code().get());
-        assertTrue(result.warning().get(1).code().isPresent());
-        assertEquals(INVALID_BINARY_URL.name(), result.warning().get(1).code().get());
+        assertFalse(result.error().isEmpty());
+        assertTrue(result.error().get(0).code().isPresent());
+        assertEquals(INVALID_BINARY_URL.name(), result.error().get(0).code().get());
+        assertTrue(result.error().get(1).code().isPresent());
+        assertEquals(INVALID_BINARY_URL.name(), result.error().get(1).code().get());
 
         final List<Contentlet> byStructure = contentletAPI.findByStructure(contentType.inode(),
                 user, false, 0, 0);
-        assertEquals(3,byStructure.size());
+        assertEquals(1,byStructure.size());
 
     }
 
