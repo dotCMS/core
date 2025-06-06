@@ -5,11 +5,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { SiteService } from '@dotcms/dotcms-js';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import {
-    TypesIcons,
-    AnnouncementsStore,
-    AnnouncementLink
-} from './store/dot-announcements.store';
+import { TypesIcons, AnnouncementsStore, AnnouncementLink } from './store/dot-announcements.store';
 
 import { DotToolbarBtnOverlayComponent } from '../dot-toolbar-overlay/dot-toolbar-btn-overlay.component';
 

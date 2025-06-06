@@ -10,7 +10,7 @@ describe('DotToolbarBtnOverlayComponent', () => {
 
     const createComponent = createComponentFactory({
         component: DotToolbarBtnOverlayComponent,
-        detectChanges: false,
+        detectChanges: false
     });
 
     beforeEach(() => {
@@ -260,4 +260,3 @@ describe('DotToolbarBtnOverlayComponent', () => {
         });
     });
 });
-

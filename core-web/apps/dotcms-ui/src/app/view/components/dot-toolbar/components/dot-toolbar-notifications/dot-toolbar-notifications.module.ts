@@ -23,7 +23,7 @@ import { DotToolbarNotificationsComponent } from './dot-toolbar-notifications.co
         DotCustomTimeModule,
         DotSafeHtmlPipe,
         DotMessagePipe,
-        DividerModule,
+        DividerModule
     ],
     exports: [DotToolbarNotificationsComponent],
     declarations: [
