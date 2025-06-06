@@ -13,7 +13,13 @@
 <%@page import="com.liferay.portal.util.ReleaseInfo"%>
 <%@page import="com.dotmarketing.cms.factories.PublicCompanyFactory"%>
 <%@page import="com.liferay.portal.model.*" %>
-
+<%@ page import="com.fasterxml.jackson.databind.ObjectMapper" %>
+<%@ page import="com.fasterxml.jackson.datatype.jdk8.Jdk8Module" %>
+<%@ page import="com.dotcms.rest.api.v1.DotObjectMapperProvider" %>
+<%@page import="com.dotmarketing.portlets.contentlet.business.ContentletAPI"%>
+<%@ page import="com.dotmarketing.util.Logger" %>
+<%@ page import="java.util.HashMap" %>
+<%@ page import="java.util.Map" %>
 
 <%@page import="com.dotmarketing.util.Config"%>
 <%
@@ -36,12 +42,12 @@
 
   <link rel="stylesheet" type="text/css" href="<%=dojoPath%>/dijit/themes/dijit.css">
   <link rel="stylesheet" type="text/css" href="/html/css/dijit-dotcms/dotcms.css?b=<%= ReleaseInfo.getVersion() %>">
-  
+
   <%
 	HttpSession sess = request.getSession(false);
 	Locale locale = null;
 	User user = PortalUtil.getUser(request);
-	
+
 
 	if(sess != null){
 	 	locale = (Locale) sess.getAttribute(com.dotcms.repackage.org.apache.struts.Globals.LOCALE_KEY);
@@ -74,7 +80,7 @@
      modulePaths: {
          dotcms: "/html/js/dotcms",
      }
-};	   
+};
 
     function isInodeSet(x){
      return (x && x != undefined && x!="" && x.length>15);
@@ -104,6 +110,7 @@
 
     dojo.require("dotcms.dijit.image.ImageEditor");
     dojo.require("dotcms.dojo.data.UsersReadStore");
+    dojo.require("dijit.form.TextBox");
 
     dojo.addOnLoad(function () {
         dojo.global.DWRUtil = dwr.util;
@@ -205,22 +212,22 @@
        * @namespace DotCustomFieldApi
        * @description Bridge API for DotCMS Custom Fields that enables communication between the custom field iframe and the parent form.
        * This API allows custom fields to get/set values and listen to changes in the parent form.
-       * 
+       *
        * @example
        * // Wait for API to be ready and use it
        * DotCustomFieldApi.ready(() => {
        *     // Get field value
        *     const value = DotCustomFieldApi.get('fieldId');
-       * 
+       *
        *     // Set field value
        *     DotCustomFieldApi.set('fieldId', 'new value');
-       * 
+       *
        *     // Listen to field changes
        *     DotCustomFieldApi.onChangeField('fieldId', (newValue) => {
        *         console.log('Field changed:', newValue);
        *     });
        * });
-       * 
+       *
        * @property {Function} ready - Callback executed when the API is ready to use
        * @property {Function} get - Get a field value by ID
        * @property {Function} set - Set a field value by ID
@@ -249,27 +256,45 @@
 <%
     String contentTypeVarName = request.getParameter("variable");
     String fieldName = request.getParameter("field");
+    // Use DotObjectMapperProvider to get properly configured ObjectMapper
+    ObjectMapper mapper = DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
 
     if (null != contentTypeVarName && null != fieldName) {
 
         ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
-
         ContentType contentType = contentTypeAPI.find(contentTypeVarName);
+
+        // GET CURRENT CONTENTLET OBJECT
+        String inode = request.getParameter("inode") != null ? request.getParameter("inode") : null;
+        ContentletAPI conAPI = APILocator.getContentletAPI();
+        Contentlet contentlet =  (inode!=null) ? conAPI.find(inode,user,false) : new Contentlet();
+        String contentletObj = "{}";
+
+        if(contentlet != null){
+            try{
+                Map con = contentlet.getMap();
+                contentletObj = mapper.writeValueAsString(con);
+            } catch(Exception e){
+                Logger.error("legacy-custom-field.jsp", "Error serializing contentlet: " + e.getMessage(), e);
+            }
+        }
 
         if (null != contentType) {
 
             Field field = contentType.fieldMap().get(fieldName);
-            System.out.println(field);
+            String fieldJson = mapper.writeValueAsString(contentType.fieldMap());
+
+
             if (null != field) {
-               
+
                 String HTMLString = "";
-                Object value = null; //TODO: Investigate how to set this value
+                Object value = null;
                 String defaultValue = field.defaultValue() != null ? field.defaultValue().trim() : "";
                 String textValue = field.values();
 
                 if(UtilMethods.isSet(textValue)){
                     org.apache.velocity.context.Context velocityContext =  com.dotmarketing.util.web.VelocityWebUtil.getVelocityContext(request,response);
-                    // set the velocity variable for use in the code (if it has not already been set
+                    // set the velocity variable for use in the code (if it has not already been set)
                     if(!UtilMethods.isSet(velocityContext.get(field.variable()))){
                         if(UtilMethods.isSet(value)){
                             velocityContext.put(field.variable(), value);
@@ -284,6 +309,119 @@
                     <body id="legacy-custom-field-body">
                         <%= HTMLString %>
                     </body>
+                    <script>
+                        const allFields = Object.values(<%= fieldJson %>);
+                        const contentlet = <%= contentletObj %>;
+                        const bodyElement = document.querySelector('body');
+
+                        const currentFieldVariable = '<%= field.variable() %>';
+
+                        const createHiddenInput = (variable, value) => {
+                            const input = document.createElement('input');
+                            input.setAttribute('type', 'hidden');
+                            input.setAttribute('name', variable);
+                            input.setAttribute('id', variable);
+                            input.setAttribute('dojoType', 'dijit.form.TextBox');
+                            input.setAttribute('value', value);
+                            bodyElement.appendChild(input);
+                            addSmartInterceptor(input, variable);
+
+                            return input;
+                        };
+
+                        // Smart interceptor that can differentiate between Angular updates and VTL changes
+                        const addSmartInterceptor = (input, variable) => {
+                            let isAngularUpdate = false;
+                            const valueDescriptor = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value');
+
+                            Object.defineProperty(input, 'value', {
+                                get: function() {
+                                    return valueDescriptor.get.apply(this);
+                                },
+                                set: function(value) {
+                                    const oldValue = valueDescriptor.get.apply(this);
+                                    valueDescriptor.set.apply(this, [value]);
+
+                                    if (oldValue !== value && !isAngularUpdate && DotCustomFieldApi) {
+                                        DotCustomFieldApi.set(variable, value);
+                                    }
+                                }
+                            });
+
+                            input.setFromAngular = (value) => {
+                                isAngularUpdate = true;
+                                input.value = value;
+                                isAngularUpdate = false;
+                            };
+
+                            return input;
+                        };
+
+                        const installGlobalInterceptors = () => {
+                            const originalSetAttribute = HTMLInputElement.prototype.setAttribute;
+                            HTMLInputElement.prototype.setAttribute = function(name, value) {
+                                                                const oldValue = this.value;
+                                originalSetAttribute.call(this, name, value);
+
+                                if (name === 'value' && oldValue !== value && this.hasAttribute('data-angular-tracked')) {
+                                    const variable = this.name || this.id;
+                                    if (variable && DotCustomFieldApi) {
+                                        DotCustomFieldApi.set(variable, value);
+                                    }
+                                }
+                            };
+
+                            const observer = new MutationObserver((mutations) => {
+                                mutations.forEach((mutation) => {
+                                                                        if (mutation.type === 'childList') {
+                                        mutation.addedNodes.forEach((node) => {
+                                            if (node.nodeType === 1) {
+                                                const inputs = node.tagName === 'INPUT' ? [node] : node.querySelectorAll ? node.querySelectorAll('input[type="hidden"]') : [];
+
+                                                inputs.forEach((input) => {
+                                                    const variable = input.name || input.id;
+                                                    if (variable && allFields.some(f => f.variable === variable)) {
+                                                        input.setAttribute('data-angular-tracked', 'true');
+                                                        addSmartInterceptor(input, variable);
+                                                    }
+                                                });
+                                            }
+                                        });
+                                    }
+                                });
+                            });
+
+                            observer.observe(document.body, {
+                                childList: true,
+                                subtree: true
+                            });
+                        };
+
+                        installGlobalInterceptors();
+
+                        allFields.forEach(({ variable }) => {
+                            const input = createHiddenInput(variable, contentlet[variable] || "");
+                            input.setAttribute('data-angular-tracked', 'true');
+                        });
+
+                        dojo.addOnLoad(function () {
+                            dojo.global.DWRUtil = dwr.util;
+                            dojo.global.DWREngine = dwr.engine;
+                            dwr.engine.setErrorHandler(DWRErrorHandler);
+                            dwr.engine.setWarningHandler(DWRErrorHandler);
+
+                            DotCustomFieldApi.ready(() => {
+                                allFields.forEach(({ variable }) => {
+                                    DotCustomFieldApi.onChangeField(variable, (value) => {
+                                        const dijitWidget = dijit.byId(variable);
+                                        if(dijitWidget && dijitWidget.setValue) {
+                                            dijitWidget.setValue(value);
+                                        }
+                                    });
+                                });
+                            });
+                        });
+                    </script>
 <%
             }
         }
