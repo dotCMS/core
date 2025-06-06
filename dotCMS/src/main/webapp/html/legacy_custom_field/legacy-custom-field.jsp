@@ -284,11 +284,11 @@
             Field field = contentType.fieldMap().get(fieldName);
             String fieldJson = mapper.writeValueAsString(contentType.fieldMap());
 
-            System.out.println(field);
+
             if (null != field) {
 
                 String HTMLString = "";
-                Object value = null; //TODO: Investigate how to set this value
+                Object value = null;
                 String defaultValue = field.defaultValue() != null ? field.defaultValue().trim() : "";
                 String textValue = field.values();
 
@@ -310,20 +310,12 @@
                         <%= HTMLString %>
                     </body>
                     <script>
-                        // GET THE FIELDS MAP AND THE CONTENTLET VALUE
                         const allFields = Object.values(<%= fieldJson %>);
                         const contentlet = <%= contentletObj %>;
                         const bodyElement = document.querySelector('body');
 
                         const currentFieldVariable = '<%= field.variable() %>';
-                        console.log(`Current custom field variable: ${currentFieldVariable}`);
 
-                        // Create hidden inputs for ALL fields (including current field)
-                        // VTL clients expect to find the current field's hidden input too
-                        console.log(`Total fields: ${allFields.length}`);
-                        console.log(`Creating hidden inputs for ALL fields:`, allFields.map(f => f.variable));
-
-                        // Create hidden input for the current field
                         const createHiddenInput = (variable, value) => {
                             const input = document.createElement('input');
                             input.setAttribute('type', 'hidden');
@@ -332,8 +324,6 @@
                             input.setAttribute('dojoType', 'dijit.form.TextBox');
                             input.setAttribute('value', value);
                             bodyElement.appendChild(input);
-
-                            // Add smart interceptor to detect VTL changes vs Angular updates
                             addSmartInterceptor(input, variable);
 
                             return input;
@@ -352,58 +342,45 @@
                                     const oldValue = valueDescriptor.get.apply(this);
                                     valueDescriptor.set.apply(this, [value]);
 
-                                    // Only emit to Angular if:
-                                    // 1. Value actually changed
-                                    // 2. Change is NOT from Angular update
                                     if (oldValue !== value && !isAngularUpdate && DotCustomFieldApi) {
-                                        console.log(`VTL changed hidden input ${variable}: ${oldValue} → ${value}`);
                                         DotCustomFieldApi.set(variable, value);
                                     }
                                 }
                             });
 
-                            // Method to safely update from Angular without triggering interceptor
                             input.setFromAngular = (value) => {
                                 isAngularUpdate = true;
                                 input.value = value;
-                                // Reset flag immediately after
                                 isAngularUpdate = false;
                             };
 
                             return input;
                         };
 
-                        // ENHANCED: Global interceptor for ALL inputs (including dynamically created ones)
                         const installGlobalInterceptors = () => {
-                            // Intercept setAttribute calls to catch attribute-based value changes
                             const originalSetAttribute = HTMLInputElement.prototype.setAttribute;
                             HTMLInputElement.prototype.setAttribute = function(name, value) {
-                                const oldValue = this.value;
+                                                                const oldValue = this.value;
                                 originalSetAttribute.call(this, name, value);
 
-                                // If 'value' attribute was set and it changed, notify Angular
                                 if (name === 'value' && oldValue !== value && this.hasAttribute('data-angular-tracked')) {
                                     const variable = this.name || this.id;
                                     if (variable && DotCustomFieldApi) {
-                                        console.log(`VTL changed input via setAttribute ${variable}: ${oldValue} → ${value}`);
                                         DotCustomFieldApi.set(variable, value);
                                     }
                                 }
                             };
 
-                            // Monitor DOM mutations to detect dynamically created inputs
                             const observer = new MutationObserver((mutations) => {
                                 mutations.forEach((mutation) => {
-                                    if (mutation.type === 'childList') {
+                                                                        if (mutation.type === 'childList') {
                                         mutation.addedNodes.forEach((node) => {
-                                            if (node.nodeType === 1) { // Element node
-                                                // Check if it's an input or contains inputs
+                                            if (node.nodeType === 1) {
                                                 const inputs = node.tagName === 'INPUT' ? [node] : node.querySelectorAll ? node.querySelectorAll('input[type="hidden"]') : [];
 
                                                 inputs.forEach((input) => {
                                                     const variable = input.name || input.id;
                                                     if (variable && allFields.some(f => f.variable === variable)) {
-                                                        console.log(`Detected dynamically created input: ${variable}`);
                                                         input.setAttribute('data-angular-tracked', 'true');
                                                         addSmartInterceptor(input, variable);
                                                     }
@@ -414,25 +391,19 @@
                                 });
                             });
 
-                            // Start observing DOM mutations
                             observer.observe(document.body, {
                                 childList: true,
                                 subtree: true
                             });
-
-                            console.log('Global input interceptors installed');
                         };
 
-                        // Install global interceptors
                         installGlobalInterceptors();
 
-                        // Create hidden inputs for all fields (including current field)
                         allFields.forEach(({ variable }) => {
                             const input = createHiddenInput(variable, contentlet[variable] || "");
                             input.setAttribute('data-angular-tracked', 'true');
                         });
 
-                        // Wait until dojo is loaded
                         dojo.addOnLoad(function () {
                             dojo.global.DWRUtil = dwr.util;
                             dojo.global.DWREngine = dwr.engine;
@@ -441,15 +412,10 @@
 
                             DotCustomFieldApi.ready(() => {
                                 allFields.forEach(({ variable }) => {
-                                    // Listen for Angular field changes
                                     DotCustomFieldApi.onChangeField(variable, (value) => {
-                                        // Update using Dijit API - guaranteed to exist since we created them dynamically
                                         const dijitWidget = dijit.byId(variable);
                                         if(dijitWidget && dijitWidget.setValue) {
                                             dijitWidget.setValue(value);
-                                            console.log(`Angular updated dijit widget ${variable} = ${value}`);
-                                        } else {
-                                            console.warn(`Dijit widget not found for ${variable} - this shouldn't happen`);
                                         }
                                     });
                                 });
