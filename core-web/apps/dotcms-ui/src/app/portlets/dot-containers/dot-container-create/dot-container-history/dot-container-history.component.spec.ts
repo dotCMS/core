@@ -46,12 +46,7 @@ describe('ContainerHistoryComponent', () => {
         await TestBed.configureTestingModule({
             declarations: [DotContainerHistoryComponent, IframeMockComponent, DotTestHostComponent],
             imports: [DotPortletBoxModule],
-            providers: [
-                {
-                    provide: DotRouterService,
-                    useValue: new MockDotRouterService()
-                }
-            ]
+            providers: [{ provide: DotRouterService, useClass: MockDotRouterService }]
         }).compileComponents();
 
         fixture = TestBed.createComponent(DotTestHostComponent);
