@@ -368,6 +368,9 @@ public class SAMLHelper {
             user.setFirstName(attributesBean.getFirstName());
             user.setLastName(attributesBean.getLastName());
 
+            // setting the last login date
+            user.setLastLoginDate(new Date());
+
             if (Objects.nonNull(attributesBean.getAdditionalAttributes()) &&
                     attributesBean.getAdditionalAttributes().size() > 0) {
 
