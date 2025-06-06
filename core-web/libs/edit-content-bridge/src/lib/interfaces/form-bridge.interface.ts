@@ -19,10 +19,12 @@ export interface FormBridge {
 
     /**
      * Subscribes to changes of a specific form field.
+     * Supports multiple callbacks per field.
      * @param fieldId - The unique identifier of the form field to watch
      * @param callback - Function to execute when the field value changes
+     * @returns Function to unsubscribe this specific callback
      */
-    onChangeField(fieldId: string, callback: (value: FormFieldValue) => void): void;
+    onChangeField(fieldId: string, callback: (value: FormFieldValue) => void): () => void;
 
     /**
      * Optional method to handle bridge initialization.
