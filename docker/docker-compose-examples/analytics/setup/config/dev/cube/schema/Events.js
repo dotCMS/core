@@ -191,6 +191,11 @@ cube('request', {
       type: `string`,
       primaryKey: true
     },
+    custom_0: { sql: 'custom_0', type: `string` },
+    custom_1: { sql: 'custom_1', type: `string` },
+    custom_2: { sql: 'custom_2', type: `string` },
+    custom_3: { sql: 'custom_3', type: `string` },
+    custom_4: { sql: 'custom_4', type: `string` },
     conHost: { sql: 'conhost', type: `string` },
     conHostName: { sql: 'conhostname', type: `string` },
     contentTypeName: { sql: 'object_contenttypename', type: `string` },

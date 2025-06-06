@@ -8,6 +8,7 @@ import com.dotcms.http.CircuitBreakerUrl;
 import com.dotcms.http.CircuitBreakerUrl.Method;
 import com.dotcms.http.CircuitBreakerUrl.Response;
 import com.dotcms.metrics.timing.TimeMetric;
+import com.dotcms.rest.api.v1.analytics.content.util.ContentAnalyticsUtil;
 import com.dotcms.system.event.local.model.EventSubscriber;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.JsonUtil;
@@ -114,8 +115,15 @@ public class CubeJSClient implements EventSubscriber<SystemTableUpdatedKeyEvent>
 
         try {
             final String responseAsString = response.getResponse();
-            final Map<String, Object> responseAsMap = UtilMethods.isSet(responseAsString) && !responseAsString.equals("[]") ?
-                    JsonUtil.getJsonFromString(responseAsString) : new HashMap<>();
+
+            String translateResponse = responseAsString;
+
+            for (Map.Entry<String, String> customMatch : ContentAnalyticsUtil.CUSTOM_MATCH.entrySet()) {
+                translateResponse = translateResponse.replaceAll(customMatch.getValue(), customMatch.getKey());
+            }
+
+            final Map<String, Object> responseAsMap = UtilMethods.isSet(translateResponse) && !translateResponse.equals("[]") ?
+                    JsonUtil.getJsonFromString(translateResponse) : new HashMap<>();
             final List<Map<String, Object>> data = (List<Map<String, Object>>) responseAsMap.get("data");
 
             return new CubeJSResultSetImpl(UtilMethods.isSet(data) ? data : Collections.emptyList());

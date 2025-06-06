@@ -133,7 +133,7 @@ public class EventLogRunnable implements Runnable {
 
         return Optional.ofNullable(
                         Try.of(postLog::doResponse)
-                                .onFailure(e -> Logger.warnAndDebug(EventLogRunnable.class, e.getMessage(), e))
+                                .onFailure(e -> Logger.info(EventLogRunnable.class, () -> e.getMessage()))
                                 .getOrElse(CircuitBreakerUrl.EMPTY_RESPONSE));
     }
 

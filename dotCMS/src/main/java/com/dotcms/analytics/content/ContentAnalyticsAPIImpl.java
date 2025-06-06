@@ -2,11 +2,15 @@ package com.dotcms.analytics.content;
 
 import com.dotcms.analytics.query.AnalyticsQuery;
 import com.dotcms.cube.CubeJSQuery;
+import com.dotcms.rest.api.v1.analytics.content.util.ContentAnalyticsUtil;
+import com.dotcms.util.JsonUtil;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import java.io.IOException;
+import java.util.Map;
 
 /**
  * Implementation class for the {@link ContentAnalyticsAPIImpl} interface.
@@ -41,8 +45,14 @@ public class ContentAnalyticsAPIImpl implements ContentAnalyticsAPI {
     @Override
     public ReportResponse runRawReport(final String cubeJsQueryJson, final User user) {
 
+        String translateQuery = cubeJsQueryJson;
+
+        for (Map.Entry<String, String> customMatch : ContentAnalyticsUtil.CUSTOM_MATCH.entrySet()) {
+            translateQuery = translateQuery.replaceAll(customMatch.getKey(), customMatch.getValue());
+        }
+
         Logger.debug(this, ()-> "Running the report for the raw json query: " + cubeJsQueryJson);
         // note: should check any permissions for an user.
-        return this.contentAnalyticsFactory.getRawReport(cubeJsQueryJson, user);
+        return this.contentAnalyticsFactory.getRawReport(translateQuery, user);
     }
 }
