@@ -103,7 +103,7 @@ public class UniqueFieldDataBaseUtil {
             "                                    content_type_id::text," +
             "                                    field_var_name::text," +
             "                                    language_id::text," +
-            "                                    field_value::text," +
+            "                                    LOWER(field_value)::text," +
             "                                    CASE WHEN uniquePerSite = 'true' THEN COALESCE(host_id::text, '') ELSE '' END" +
             "                            )," +
             "                            'UTF8'" +
@@ -114,7 +114,7 @@ public class UniqueFieldDataBaseUtil {
             "       json_build_object('" + CONTENT_TYPE_ID_ATTR + "', content_type_id, " +
                                     "'" + FIELD_VARIABLE_NAME_ATTR + "', field_var_name, " +
                                     "'" + LANGUAGE_ID_ATTR + "', language_id, " +
-                                    "'" + FIELD_VALUE_ATTR +"', field_value, " +
+                                    "'" + FIELD_VALUE_ATTR +"', LOWER(field_value), " +
                                     "'" + SITE_ID_ATTR + "', host_id, " +
                                     "'" + VARIANT_ATTR + "', variant_id, " +
                                     "'" + UNIQUE_PER_SITE_ATTR + "', " + "uniquePerSite, " +
