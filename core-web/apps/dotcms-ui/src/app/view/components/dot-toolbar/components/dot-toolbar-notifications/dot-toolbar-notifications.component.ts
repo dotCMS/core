@@ -130,9 +130,9 @@ export class DotToolbarNotificationsComponent implements OnInit {
             });
     }
 
-    onActiveAnnouncements(event: CustomEvent): void {
+    onActiveAnnouncements(): void {
         this.activeAnnouncements = true;
-        this.toolbarAnnouncements.toggleDialog(event);
+        //this.toolbarAnnouncements.toggleDialog(event);
     }
     markAnnocumentsAsRead(): void {
         this.activeAnnouncements = false;

@@ -11,8 +11,11 @@
             class="toolbar__site-selector"
             #siteSelector
             cssClass="d-secondary"
-            width="200px"></dot-site-selector>
-        <dot-toolbar-notifications></dot-toolbar-notifications>
-        <dot-toolbar-user></dot-toolbar-user>
+            width="200px" />
+        <ng-container *dotShowHideFeature="featureFlagAnnouncements">
+            <dot-toolbar-announcements />
+        </ng-container>
+        <dot-toolbar-notifications />
+        <dot-toolbar-user />
     </div>
 </p-toolbar>

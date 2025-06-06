@@ -7,7 +7,6 @@ import { DividerModule } from 'primeng/divider';
 import { DotCustomTimeModule } from '@components/_common/dot-custom-time.component/dot-custom-time.module';
 import { DotDropdownModule } from '@components/_common/dot-dropdown-component/dot-dropdown.module';
 import { AnnouncementsStore } from '@components/dot-toolbar/components/dot-toolbar-announcements/store/dot-announcements.store';
-import { DotShowHideFeatureDirective } from '@dotcms/app/shared/directives/dot-show-hide-feature/dot-show-hide-feature.directive';
 import { DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 
 import {
@@ -15,8 +14,6 @@ import {
     DotNotificationsListComponent
 } from './components/dot-notifications/dot-notifications.component';
 import { DotToolbarNotificationsComponent } from './dot-toolbar-notifications.component';
-
-import { DotToolbarAnnouncementsComponent } from '../dot-toolbar-announcements/dot-toolbar-announcements.component';
 
 @NgModule({
     imports: [
@@ -27,8 +24,6 @@ import { DotToolbarAnnouncementsComponent } from '../dot-toolbar-announcements/d
         DotSafeHtmlPipe,
         DotMessagePipe,
         DividerModule,
-        DotToolbarAnnouncementsComponent,
-        DotShowHideFeatureDirective
     ],
     exports: [DotToolbarNotificationsComponent],
     declarations: [

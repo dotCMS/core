@@ -1,18 +1,3 @@
-<ng-container *dotShowHideFeature="featureFlagAnnouncements">
-    <p-button
-        (click)="onActiveAnnouncements($event)"
-        [class.dot-toolbar-notifications__button-active]="activeAnnouncements"
-        icon="pi pi-megaphone"
-        styleClass="p-button-rounded p-button-text"></p-button>
-    @if (showUnreadAnnouncement()) {
-        <span class="dot-toolbar__badge" id="dot-toolbar-notifications-badge"></span>
-    }
-
-    <dot-toolbar-announcements
-        (hideMenu)="markAnnocumentsAsRead()"
-        [showUnreadAnnouncement]="showUnreadAnnouncement()"
-        #toolbarAnnouncements />
-</ng-container>
 <div class="toolbar-notifications__container">
     @if (notificationsUnreadCount) {
         <span class="dot-toolbar__badge" id="dot-toolbar-notifications-badge"></span>
