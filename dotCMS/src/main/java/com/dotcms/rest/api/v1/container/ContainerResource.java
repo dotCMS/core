@@ -740,36 +740,39 @@ public class ContainerResource implements Serializable {
                 () -> "Updating container. Request payload is : " + JsonUtil.getJsonStringFromObject(
                         containerForm));
 
-            container.setInode(StringPool.BLANK);
-            container.setCode(containerForm.getCode());
-            container.setMaxContentlets(containerForm.getMaxContentlets());
-            container.setNotes(containerForm.getNotes());
-            container.setPreLoop(containerForm.getPreLoop());
-            container.setPostLoop(containerForm.getPostLoop());
-            container.setSortContentletsBy(containerForm.getSortContentletsBy());
-            container.setStaticify(containerForm.isStaticify());
-            container.setUseDiv(containerForm.isUseDiv());
-            container.setFriendlyName(containerForm.getFriendlyName());
-            container.setModDate(new Date());
-            container.setModUser(user.getUserId());
-            container.setOwner(user.getUserId());
-            container.setShowOnMenu(containerForm.isShowOnMenu());
-            container.setTitle(containerForm.getTitle());
+        Container newContainerVersion = new Container();
+        newContainerVersion.setIdentifier(containerForm.getIdentifier());
+        newContainerVersion.setCode(containerForm.getCode());
+        newContainerVersion.setMaxContentlets(containerForm.getMaxContentlets());
+        newContainerVersion.setNotes(containerForm.getNotes());
+        newContainerVersion.setPreLoop(containerForm.getPreLoop());
+        newContainerVersion.setPostLoop(containerForm.getPostLoop());
+        newContainerVersion.setSortContentletsBy(containerForm.getSortContentletsBy());
+        newContainerVersion.setStaticify(containerForm.isStaticify());
+        newContainerVersion.setUseDiv(containerForm.isUseDiv());
+        newContainerVersion.setFriendlyName(containerForm.getFriendlyName());
+        newContainerVersion.setModDate(new Date());
+        newContainerVersion.setModUser(user.getUserId());
+        newContainerVersion.setOwner(user.getUserId());
+        newContainerVersion.setShowOnMenu(containerForm.isShowOnMenu());
+        newContainerVersion.setTitle(containerForm.getTitle());
 
-            if (containerForm.getMaxContentlets() == 0) {
-                container.setCode(containerForm.getCode());
-            }
+        if (containerForm.getMaxContentlets() == 0) {
+            newContainerVersion.setCode(containerForm.getCode());
+        }
 
-            this.containerAPI.save(container, containerForm.getContainerStructures(), host, user,
-                    pageMode.respectAnonPerms);
+        newContainerVersion.setLuceneQuery(container.getLuceneQuery());
+
+        this.containerAPI.save(newContainerVersion, containerForm.getContainerStructures(), host, user,
+                pageMode.respectAnonPerms);
 
         ActivityLogger.logInfo(this.getClass(),
                 "Update Container: " + containerForm.getIdentifier(),
                 getInfoMessage(user,
-                        MessageConstants.SAVED + container.getTitle()),
+                        MessageConstants.SAVED + newContainerVersion.getTitle()),
                 host.getHostname());
 
-        return Response.ok(new ResponseEntityView(new ContainerView(container))).build();
+        return Response.ok(new ResponseEntityView(new ContainerView(newContainerVersion))).build();
     }
 
     /**
