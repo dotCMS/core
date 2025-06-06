@@ -1,7 +1,5 @@
 package com.dotcms.contenttype.business;
 
-import static com.dotcms.util.DotPreconditions.checkNotNull;
-
 import com.dotcms.contenttype.business.sql.FieldSql;
 import com.dotcms.contenttype.exception.DotDataValidationException;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
@@ -34,6 +32,8 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
+import org.apache.commons.lang.time.DateUtils;
+
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
@@ -45,7 +45,8 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import org.apache.commons.lang.time.DateUtils;
+
+import static com.dotcms.util.DotPreconditions.checkNotNull;
 
 /**
  * This class provides a SQL-based implementation for the {@link FieldFactory} interface.
@@ -56,7 +57,7 @@ import org.apache.commons.lang.time.DateUtils;
 public class FieldFactoryImpl implements FieldFactory {
 
   //List of reserved field variables
-  final static public Set<String> RESERVED_FIELD_VARS= ImmutableSet.of(
+    public static final Set<String> RESERVED_FIELD_VARS = ImmutableSet.of(
           Contentlet.LANGUAGEID_KEY.toLowerCase(),
           Contentlet.LOCKED_KEY.toLowerCase(),
           Contentlet.LIVE_KEY.toLowerCase(),
@@ -85,7 +86,12 @@ public class FieldFactoryImpl implements FieldFactory {
           Contentlet.DISABLED_WYSIWYG_KEY.toLowerCase(),
           Contentlet.ARCHIVED_KEY.toLowerCase(),
           Contentlet.BASE_TYPE_KEY.toLowerCase(),
-          Contentlet.CONTENT_TYPE_KEY.toLowerCase()
+          Contentlet.CONTENT_TYPE_KEY.toLowerCase(),
+          Contentlet.MOD_USER_NAME_KEY.toLowerCase(),
+          Contentlet.OWNER_USER_NAME_KEY.toLowerCase(),
+          Contentlet.CREATION_DATE_KEY.toLowerCase(),
+          Contentlet.PUBLISH_USER_KEY.toLowerCase(),
+          Contentlet.PUBLISH_USER_NAME_KEY.toLowerCase()
   );
 
   final FieldSql sql;
@@ -756,38 +762,21 @@ public class FieldFactoryImpl implements FieldFactory {
     }
   }
 
-
-  @Override
-public String suggestVelocityVar( String tryVar, Field field, List<String> takenFieldsVariables) throws DotDataException {
-
-    final List<String> forbiddenFieldVariables = new ArrayList<>(takenFieldsVariables);
-
-    if(! ContentAPIGraphQLTypesProvider.INSTANCE.isFieldVariableGraphQLCompatible(tryVar, field) || RESERVED_FIELD_VARS.contains(tryVar.toLowerCase()) ) {
-      forbiddenFieldVariables.add(tryVar);
-    }
-
-    String var = StringUtils.camelCaseLower(tryVar);
-    // if we don't get a var back, we are looking at UTF-8 or worse
-    // lets just make a field up
-    if (!UtilMethods.isSet(var)) {
-        tryVar= "field";
-    }
-    for (String fieldVar : forbiddenFieldVariables) {
-        if (var.equalsIgnoreCase(fieldVar)) {
-            var= null;
-            break;
+    @Override
+    public String suggestVelocityVar(String tryVar, final Field field, final List<String> takenFieldsVariables) throws DotDataException {
+        final List<String> forbiddenFieldVariables = new ArrayList<>(takenFieldsVariables);
+        String var = StringUtils.camelCaseLower(tryVar);
+        if (!isFieldVariableValid(var, field)) {
+          forbiddenFieldVariables.add(var);
         }
-    }
-
-    if (UtilMethods.isSet(var)) {
-        return var;
-    }
-
-    for (int i = 1; i < 100000; i++) {
-        var = StringUtils.camelCaseLower(tryVar) + i;
-        for (String fieldVar : forbiddenFieldVariables) {
+        // if we don't get a var back, we are looking at UTF-8 or worse
+        // lets just make a field up
+        if (!UtilMethods.isSet(var)) {
+            tryVar= "field";
+        }
+        for (final String fieldVar : forbiddenFieldVariables) {
             if (var.equalsIgnoreCase(fieldVar)) {
-                var = null;
+                var= null;
                 break;
             }
         }
@@ -795,10 +784,41 @@ public String suggestVelocityVar( String tryVar, Field field, List<String> taken
         if (UtilMethods.isSet(var)) {
             return var;
         }
-    }
-    throw new DotDataValidationException("Unable to suggest a variable name for " + tryVar,
-            "field.validation.variable.already.taken");
 
+        for (int i = 1; i < 100000; i++) {
+            var = StringUtils.camelCaseLower(tryVar) + i;
+            for (final String fieldVar : forbiddenFieldVariables) {
+                if (var.equalsIgnoreCase(fieldVar)) {
+                    var = null;
+                    break;
+                }
+            }
+
+            if (UtilMethods.isSet(var)) {
+                return var;
+            }
+        }
+        throw new DotDataValidationException(String.format("Unable to suggest a variable name for '%s'", tryVar),
+            "field.validation.variable.already.taken");
+    }
+
+    /**
+     * Checks if the specified field variable name is valid or not, meaning that it must meet the
+     * following conditions:
+     * <ul>
+     *     <li>It must be GraphQL-compatible.</li>
+     *     <li>It must NOT be a reserved field variable name. Please refer to the Set of
+     *     {@link #RESERVED_FIELD_VARS}.</li>
+     * </ul>
+     *
+     * @param fieldVarName The field variable name to check.
+     * @param field        The {@link Field} to check against.
+     *
+     * @return If the field variable is valid, returns {@code true}.
+     */
+    private boolean isFieldVariableValid(final String fieldVarName, final Field field) {
+        return ContentAPIGraphQLTypesProvider.INSTANCE.isFieldVariableGraphQLCompatible(fieldVarName, field)
+                && !RESERVED_FIELD_VARS.contains(fieldVarName.toLowerCase());
 }
 
   public void moveSortOrderForward(String contentTypeId, int from, int to) throws DotDataException {
@@ -826,4 +846,5 @@ public String suggestVelocityVar( String tryVar, Field field, List<String> taken
   public void moveSortOrderBackward(String contentTypeId, int from) throws DotDataException {
     moveSortOrderBackward(contentTypeId, from, Integer.MAX_VALUE);
   }
+
 }

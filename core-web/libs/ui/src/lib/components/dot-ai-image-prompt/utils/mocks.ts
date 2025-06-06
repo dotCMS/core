@@ -49,7 +49,7 @@ const mcokContentLetImage: DotCMSContentlet = {
     modUserName: 'Admin User',
     name: 'create_20241014_035505.png',
     owner: 'dotcms.org.1',
-    ownerName: 'Admin User',
+    ownerUserName: 'Admin User',
     path: '/content.b86f89b9-b6be-49d0-a8a4-b94f4d996555',
     publishDate: 1728921308967,
     publishUser: 'dotcms.org.1',

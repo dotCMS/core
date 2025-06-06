@@ -32,11 +32,11 @@
                 <span class="sidebar-card__title">{{ 'Created' | dm }}</span>
                 <span
                     class="sidebar-card__subtitle"
-                    [pTooltip]="contentlet?.ownerName"
+                    [pTooltip]="contentlet?.ownerUserName"
                     tooltipPosition="bottom">
                     {{
                         contentlet?.creationDate
-                            ? (contentlet?.ownerName | dotNameFormat) ||
+                            ? (contentlet?.ownerUserName | dotNameFormat) ||
                               ('edit.content.sidebar.workflow.you' | dm)
                             : '-'
                     }}

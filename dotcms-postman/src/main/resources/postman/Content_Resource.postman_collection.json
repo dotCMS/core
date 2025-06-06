@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "dd2afcb5-bb50-4718-acce-83a05dd215c6",
+		"_postman_id": "3b49ea5f-ad77-4e2a-915e-139455df8090",
 		"name": "Content Resource",
 		"description": "Content Resource test",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
@@ -1779,7 +1779,7 @@
 											"    ",
 											"    pm.expect(entity.creationDate).to.not.equal(undefined, \"The 'creationDate' attribute must be present\");",
 											"    pm.expect(entity.owner).to.not.equal(undefined, \"The 'owner' attribute must be present\");",
-											"    pm.expect(entity.ownerName).to.not.equal(undefined, \"The 'ownerName' attribute must be present\");",
+											"    pm.expect(entity.ownerUserName).to.not.equal(undefined, \"The 'ownerUserName' attribute must be present\");",
 											"    pm.expect(entity.modDate).to.not.equal(undefined, \"The 'modDate' attribute must be present\");",
 											"    pm.expect(entity.modUser).to.not.equal(undefined, \"The 'modUser' attribute must be present\");",
 											"    pm.expect(entity.modUserName).to.not.equal(undefined, \"The 'modUserName' attribute must be present\");",

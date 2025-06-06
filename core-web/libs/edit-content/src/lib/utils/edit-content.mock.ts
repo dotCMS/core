@@ -438,7 +438,7 @@ export const MOCK_CONTENTLET_1_TAB: DotCMSContentlet = {
     modUser: 'dotcms.org.1',
     modUserName: 'Admin User',
     owner: 'dotcms.org.1',
-    ownerName: 'Admin User',
+    ownerUserName: 'Admin User',
     publishDate: '1729024086674',
     publishUser: 'dotcms.org.1',
     publishUserName: 'Admin User',
@@ -1036,12 +1036,12 @@ export const MOCK_CONTENTTYPE_2_TABS: DotCMSContentType = {
 
 /**
  * Fields allowed to be used in form controls from the MOCK_CONTENTTYPE_2_TABS Content Type.
- * 
+ *
  * This array contains a subset of fields from MOCK_CONTENTTYPE_2_TABS that are suitable
  * for form controls. It excludes fields of types defined in NON_FORM_CONTROL_FIELD_TYPES,
  * such as Row, Column, Tab_divider, Constant-Field, and Hidden-Field.
 
- * 
+ *
  * @see MOCK_CONTENTTYPE_2_TABS
  * @see NON_FORM_CONTROL_FIELD_TYPES
  */

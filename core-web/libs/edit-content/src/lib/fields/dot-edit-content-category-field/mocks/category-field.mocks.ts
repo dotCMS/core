@@ -36,7 +36,7 @@ export const CATEGORY_FIELD_CONTENTLET_MOCK: DotCMSContentlet = {
     modUser: 'dotcms.org.1',
     modUserName: 'Admin User',
     owner: 'dotcms.org.1',
-    ownerName: 'Admin User',
+    ownerUserName: 'Admin User',
     publishDate: 1719237693091,
     publishUser: 'dotcms.org.1',
     publishUserName: 'Admin User',

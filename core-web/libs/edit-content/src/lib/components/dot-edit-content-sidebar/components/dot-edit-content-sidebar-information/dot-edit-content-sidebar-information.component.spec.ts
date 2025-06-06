@@ -24,7 +24,7 @@ describe('DotEditContentSidebarInformationComponent', () => {
 
     const mockContentlet = {
         inode: '123',
-        ownerName: 'admin@dotcms.com',
+        ownerUserName: 'admin@dotcms.com',
         creationDate: new Date('2024-03-20'),
         modDate: new Date('2024-03-21'),
         modUserName: 'editor@dotcms.com',
