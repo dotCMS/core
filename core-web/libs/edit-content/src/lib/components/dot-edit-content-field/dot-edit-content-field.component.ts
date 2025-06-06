@@ -12,7 +12,7 @@ import { ControlContainer, ReactiveFormsModule } from '@angular/forms';
 import { DividerModule } from 'primeng/divider';
 
 import { BlockEditorModule } from '@dotcms/block-editor';
-import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotCMSContentlet, DotCMSContentTypeField, DotCMSFieldTypes } from '@dotcms/dotcms-models';
 import { DotEditContentBinaryFieldComponent } from '@dotcms/edit-content/fields/dot-edit-content-binary-field/dot-edit-content-binary-field.component';
 import { DotEditContentCalendarFieldComponent } from '@dotcms/edit-content/fields/dot-edit-content-calendar-field/dot-edit-content-calendar-field.component';
 import { DotEditContentCategoryFieldComponent } from '@dotcms/edit-content/fields/dot-edit-content-category-field/dot-edit-content-category-field.component';
@@ -31,9 +31,6 @@ import { DotEditContentTextAreaComponent } from '@dotcms/edit-content/fields/dot
 import { DotEditContentTextFieldComponent } from '@dotcms/edit-content/fields/dot-edit-content-text-field/dot-edit-content-text-field.component';
 import { DotEditContentWYSIWYGFieldComponent } from '@dotcms/edit-content/fields/dot-edit-content-wysiwyg-field/dot-edit-content-wysiwyg-field.component';
 import { DotFieldRequiredDirective } from '@dotcms/ui';
-
-import { CALENDAR_FIELD_TYPES } from '../../models/dot-edit-content-field.constant';
-import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
 
 @Component({
     selector: 'dot-edit-content-field',
@@ -91,8 +88,10 @@ export class DotEditContentFieldComponent {
      */
     $contentType = input<string>(null, { alias: 'contentType' });
 
-    readonly fieldTypes = FIELD_TYPES;
-    readonly calendarTypes = CALENDAR_FIELD_TYPES as string[];
+    /**
+     * The field types.
+     */
+    readonly fieldTypes = DotCMSFieldTypes;
 
     /**
      * Whether to show the label.

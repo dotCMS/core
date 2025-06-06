@@ -28,12 +28,12 @@ mockFieldRow.columns[0].fields = [
         ...dotcmsContentTypeFieldBasicMock,
         clazz: 'text',
         name: 'field-1'
-    },
+    } as unknown as DotCMSContentTypeField,
     {
         ...dotcmsContentTypeFieldBasicMock,
         clazz: 'image',
         name: 'field-1'
-    }
+    } as unknown as DotCMSContentTypeField
 ];
 
 mockFieldRow.columns[1].fields = [
@@ -41,7 +41,7 @@ mockFieldRow.columns[1].fields = [
         ...dotcmsContentTypeFieldBasicMock,
         clazz: 'text',
         name: 'field-1'
-    }
+    } as unknown as DotCMSContentTypeField
 ];
 
 @Component({

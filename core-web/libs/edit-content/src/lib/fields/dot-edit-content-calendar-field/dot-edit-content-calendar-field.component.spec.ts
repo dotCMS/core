@@ -1,15 +1,16 @@
 import { describe } from '@jest/globals';
-import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator';
+import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator/jest';
 
 import { ControlContainer, FormGroupDirective } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 
 import { Calendar } from 'primeng/calendar';
 
+import { DotCMSFieldTypes } from '@dotcms/dotcms-models';
+
 import { DotEditContentCalendarFieldComponent } from './dot-edit-content-calendar-field.component';
 import { CALENDAR_OPTIONS_PER_TYPE } from './utils';
 
-import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
 import { DATE_FIELD_MOCK, createFormGroupDirectiveMock } from '../../utils/mocks';
 
 describe('DotEditContentCalendarFieldComponent', () => {
@@ -31,7 +32,7 @@ describe('DotEditContentCalendarFieldComponent', () => {
         spectator = createComponent({
             props: {
                 field: DATE_FIELD_MOCK
-            }
+            } as unknown
         });
         calendar = spectator.query(byTestId(DATE_FIELD_MOCK.variable));
     });
@@ -51,13 +52,13 @@ describe('DotEditContentCalendarFieldComponent', () => {
 
     describe.each([
         {
-            fieldType: FIELD_TYPES.DATE_AND_TIME
+            fieldType: DotCMSFieldTypes.DATE_AND_TIME
         },
         {
-            fieldType: FIELD_TYPES.DATE
+            fieldType: DotCMSFieldTypes.DATE
         },
         {
-            fieldType: FIELD_TYPES.TIME
+            fieldType: DotCMSFieldTypes.TIME
         }
     ])('with fieldType as $fieldType', ({ fieldType }) => {
         let calendar: Calendar;
@@ -68,7 +69,7 @@ describe('DotEditContentCalendarFieldComponent', () => {
             spectator = createComponent({
                 props: {
                     field: { ...DATE_FIELD_MOCK, fieldType }
-                }
+                } as unknown
             });
 
             calendar = spectator.debugElement.query(
