@@ -3,6 +3,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { DotRouterService } from '@dotcms/data-access';
 import { DotcmsEventsService, Site, SiteService } from '@dotcms/dotcms-js';
+import { FeaturedFlags } from '@dotcms/dotcms-models';
 
 import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
 import { DotNavigationService } from '../dot-navigation/services/dot-navigation.service';
@@ -19,6 +20,8 @@ export class DotToolbarComponent implements OnInit {
     readonly #destroyRef = inject(DestroyRef);
     dotNavigationService = inject(DotNavigationService);
     iframeOverlayService = inject(IframeOverlayService);
+
+    featureFlagAnnouncements = FeaturedFlags.FEATURE_FLAG_ANNOUNCEMENTS;
 
     ngOnInit(): void {
         this.#dotcmsEventsService

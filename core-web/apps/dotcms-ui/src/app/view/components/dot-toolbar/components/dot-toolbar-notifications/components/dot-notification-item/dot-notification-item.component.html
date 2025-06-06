@@ -1,10 +1,14 @@
-<li class="notification-item {{ data.level | lowercase }}">
+@let data = $data();
+@let level = data.level;
+@let iconName = $getIconName();
+
+<li class="notification-item {{ level | lowercase }}">
     <div class="notification-item__wrapper">
-        <i [class]="getIconName(data.level)"></i>
+        <i [class]="iconName"></i>
         <div class="notification-item__content">
-            <p class="notification-item__message" id="{{ 'notification-item-message-' + data.id }}">
-                {{ data.notificationData.message }}
-                @if (showLinkAction) {
+            <p class="notification-item__message" [id]="'notification-item-message-' + data.id">
+                {{ data.message }}
+                @if ($showLinkAction()) {
                     <a
                         [href]="data.notificationData.actions[0].action"
                         class="notification-item__link"
@@ -14,16 +18,18 @@
                 }
                 <dot-custom-time
                     id="{{ 'notification-item-date-' + data.id }}"
-                    time="{{ data.timeSent }}"></dot-custom-time>
+                    time="{{ data.timeSent }}" />
             </p>
             <!--TODO: handle more than one action-->
         </div>
         <p-button
             (click)="onClear()"
             class="notification-item__close"
-            id="{{ 'notification-item-button-close-' + data.id }}"
+            [id]="'notification-item-button-close-' + data.id"
             icon="pi pi-times"
-            title="{{ 'notifications_dismiss' | dm }}"
-            styleClass="p-button-rounded p-button-text p-button-sm p-button-primary"></p-button>
+            [title]="'notifications_dismiss' | dm"
+            [rounded]="true"
+            [text]="true"
+            styleClass="p-button-sm p-button-primary" />
     </div>
 </li>

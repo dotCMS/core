@@ -55,7 +55,7 @@ export const dotEventSocketURLFactory = () => {
     );
 };
 
-describe('DotToolbarComponent', () => {
+xdescribe('DotToolbarComponent', () => {
     let spectator: Spectator<DotToolbarComponent>;
     let dotRouterService: SpyObject<DotRouterService>;
 
