@@ -1,5 +1,5 @@
 import { describe } from '@jest/globals';
-import { MonacoEditorModule, MonacoEditorLoaderService } from '@materia-ui/ngx-monaco-editor';
+import { MonacoEditorLoaderService, MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
 import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
 import { EditorComponent } from '@tinymce/tinymce-angular';
 import { MockComponent } from 'ng-mocks';
@@ -20,10 +20,11 @@ import {
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
 import { DotKeyValueComponent, DotLanguageVariableSelectorComponent } from '@dotcms/ui';
-import { monacoMock } from '@dotcms/utils-testing';
+import { configParams, monacoMock } from '@dotcms/utils-testing';
 
 import { DotEditContentFieldComponent } from './dot-edit-content-field.component';
 
+import { CoreWebService, DotcmsConfigService } from '@dotcms/dotcms-js';
 import { DotEditContentBinaryFieldComponent } from '../../fields/dot-edit-content-binary-field/dot-edit-content-binary-field.component';
 import { DotEditContentCalendarFieldComponent } from '../../fields/dot-edit-content-calendar-field/dot-edit-content-calendar-field.component';
 import { DotEditContentCategoryFieldComponent } from '../../fields/dot-edit-content-category-field/dot-edit-content-category-field.component';
@@ -75,6 +76,8 @@ declare module '@tiptap/core' {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 (global as any).monaco = monacoMock;
+
+
 
 // This holds the mapping between the field type and the component that should be used to render it.
 // We need to hold this record here, because for some reason the references just fall to undefined.
@@ -248,7 +251,11 @@ describe.each([...FIELDS_TO_BE_RENDER])('DotEditContentFieldComponent all fields
             provideHttpClient(),
             provideHttpClientTesting(),
             ...(fieldTestBed?.providers || []),
-            mockProvider(DotHttpErrorManagerService)
+            mockProvider(DotHttpErrorManagerService),
+            mockProvider(CoreWebService),
+            mockProvider(DotcmsConfigService, {
+                getSystemTimeZone: () => of(configParams.systemTimezone)
+            })
         ]
     });
 

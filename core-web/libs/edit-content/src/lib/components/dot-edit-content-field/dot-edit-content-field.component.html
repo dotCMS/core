@@ -72,6 +72,7 @@
         @defer (on immediate) {
             <ng-container [ngTemplateOutlet]="labelTemplate" />
             <dot-edit-content-calendar-field
+                [utcTimezone]="$systemTimezone()"
                 [field]="field"
                 [attr.data-testId]="'field-' + field.variable" />
         }
@@ -184,6 +185,10 @@
         }
     }
 }
-@if (field.hint && field.fieldType !== fieldTypes.RELATIONSHIP) {
+@if (
+    field.hint &&
+    field.fieldType !== fieldTypes.RELATIONSHIP &&
+    !calendarTypes.includes(field.fieldType)
+) {
     <small [attr.data-testId]="'hint-' + field.variable">{{ field.hint }}</small>
 }
