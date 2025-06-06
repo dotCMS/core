@@ -7,7 +7,7 @@ import { DividerModule } from 'primeng/divider';
 import { DotCustomTimeModule } from '@components/_common/dot-custom-time.component/dot-custom-time.module';
 import { DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 
-import { DotNotificationItemComponent} from './components/dot-notification-item/dot-notification-item.component';
+import { DotNotificationItemComponent } from './components/dot-notification-item/dot-notification-item.component';
 import { DotToolbarNotificationsComponent } from './dot-toolbar-notifications.component';
 
 import { DotToolbarBtnOverlayComponent } from '../dot-toolbar-overlay/dot-toolbar-btn-overlay.component';
@@ -24,6 +24,6 @@ import { DotToolbarBtnOverlayComponent } from '../dot-toolbar-overlay/dot-toolba
         DotToolbarBtnOverlayComponent
     ],
     exports: [DotToolbarNotificationsComponent],
-    declarations: [DotToolbarNotificationsComponent],
+    declarations: [DotToolbarNotificationsComponent]
 })
 export class DotToolbarNotificationModule {}

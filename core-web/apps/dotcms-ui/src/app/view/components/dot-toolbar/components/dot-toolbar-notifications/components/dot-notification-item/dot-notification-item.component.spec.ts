@@ -1,13 +1,19 @@
-import {
-    Spectator,
-    createComponentFactory,
-} from '@ngneat/spectator';
+import { Spectator, createComponentFactory } from '@ngneat/spectator';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { CoreWebService, CoreWebServiceMock, DotcmsConfigService, DotcmsEventsService, DotEventsSocketURL, LoggerService, StringUtils, DotEventsSocket } from '@dotcms/dotcms-js';
+import {
+    CoreWebService,
+    CoreWebServiceMock,
+    DotcmsConfigService,
+    DotcmsEventsService,
+    DotEventsSocketURL,
+    LoggerService,
+    StringUtils,
+    DotEventsSocket
+} from '@dotcms/dotcms-js';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotNotificationItemComponent } from './dot-notification-item.component';
@@ -24,7 +30,7 @@ describe('DotNotificationItemComponent', () => {
     let component: DotNotificationItemComponent;
 
     const messageServiceMock = new MockDotMessageService({
-        'notifications_dismiss': 'Dismiss',
+        notifications_dismiss: 'Dismiss'
     });
 
     const createComponent = createComponentFactory({
