@@ -4,6 +4,7 @@ import static com.dotmarketing.portlets.contentlet.model.Contentlet.IDENTIFIER_K
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.STRUCTURE_INODE_KEY;
 import static com.dotmarketing.util.importer.HeaderValidationCodes.HEADERS_NOT_FOUND;
 import static com.dotmarketing.util.importer.ImportLineValidationCodes.LANGUAGE_NOT_FOUND;
+import static com.liferay.util.StringPool.FORWARD_SLASH;
 
 import com.dotcms.content.elasticsearch.util.ESUtils;
 import com.dotcms.contenttype.business.ContentTypeAPI;
@@ -42,6 +43,7 @@ import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
+import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -109,6 +111,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
@@ -132,14 +136,15 @@ import org.apache.commons.lang3.tuple.Pair;
  */
 public class ImportUtil {
 
-    private static PermissionAPI permissionAPI = APILocator.getPermissionAPI();
-    private final static ContentletAPI conAPI = APILocator.getContentletAPI();
-    private final static CategoryAPI catAPI = APILocator.getCategoryAPI();
-    private final static LanguageAPI langAPI = APILocator.getLanguageAPI();
-    private final static HostAPI hostAPI = APILocator.getHostAPI();
-    private final static FolderAPI folderAPI = APILocator.getFolderAPI();
-    private final static WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
-    private final static ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
+    private static final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+    private static final ContentletAPI conAPI = APILocator.getContentletAPI();
+    private static final CategoryAPI catAPI = APILocator.getCategoryAPI();
+    private static final LanguageAPI langAPI = APILocator.getLanguageAPI();
+    private static final HostAPI hostAPI = APILocator.getHostAPI();
+    private static final FolderAPI folderAPI = APILocator.getFolderAPI();
+    private static final WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
+    private static final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
+    private static final FileAssetAPI fileAssetAPI = APILocator.getFileAssetAPI();
 
     public static final String KEY_WARNINGS = "warnings";
     public static final String KEY_ERRORS = "errors";
@@ -1663,7 +1668,7 @@ public class ImportUtil {
         validateLineLength(line, headers, lineNumber);
 
         // Process fields and collect values
-        final var fieldResults = processFields(
+        final FieldsProcessingResult fieldResults = processFields(
                 line, headers, contentType, user, currentHostId, language, lineNumber
         );
 
@@ -3480,23 +3485,40 @@ public class ImportUtil {
         }
     }
 
+    /**
+     * Fetches and sets an image field in the contentlet.
+     * @param cont Contentlet with processed field values
+     * @param field Field to check
+     * @param value Value to set for the image field
+     * @param request HTTP request object, used for context
+     * @param preview Boolean flag indicating if this is a preview operation
+     * @throws IOException If an error occurs while fetching the image
+     * @throws DotSecurityException If a security exception occurs while accessing the contentlet
+     */
     private static void fetchAndSetImageField(final Contentlet cont, final Field field,
             final Object value, final HttpServletRequest request, final boolean preview)
             throws IOException, DotSecurityException {
         if(preview){
-            // Create a dummy file for preview purposes and set it as a binary field
+            fetchAndSetBinaryField(cont, field, value, request, true);
         } else if (value != null && UtilMethods.isSet(value.toString())) {
-            final URL url = URI.create(value.toString()).toURL();
-            DotTempFile tempFile = APILocator.getTempFileAPI()
-                    .createTempFileFromUrl(null, request, url, -1);
-            File file = tempFile.file;
-            cont.setProperty(FileAssetAPI.TITLE_FIELD, file.getName());
-            cont.setProperty(FileAssetAPI.FILE_NAME_FIELD, file.getName());
-            cont.setProperty(FileAssetAPI.BINARY_FIELD, file);
             try {
-                final Contentlet checkin = APILocator.getContentletAPI()
-                        .checkin(cont, APILocator.systemUser(), true);
-                cont.setProperty(field.getVelocityVarName(), checkin.getIdentifier());
+            final Host defaultHost = hostAPI.findDefaultHost(APILocator.systemUser(), false);
+                final ContentType contentType = contentTypeAPI.find(
+                    FileAssetAPI.DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME);
+            final URL url = URI.create(value.toString()).toURL();
+            final DotTempFile tempFile = APILocator.getTempFileAPI()
+                    .createTempFileFromUrl(null, request, url, -1);
+                final Contentlet fileAsset = getFileAsset(tempFile,
+                        contentType, defaultHost);
+
+                // Set the image field in the contentlet to the identifier of the file asset
+                // That's how image fields are constructed
+                cont.setProperty(field.getVelocityVarName(), fileAsset.getIdentifier());
+                //There is a lot of room for improvement here as we could be creating a new file asset for the same url could have been used already
+                Logger.warn(ImportUtil.class,
+                        String.format("A new file asset has been created with under default (%s) host to set imageField (%s) ",
+                                defaultHost.getName(), field.getVelocityVarName())
+                );
             } catch (Exception e) {
                 Logger.error(ImportUtil.class, "Error setting image field", e);
             }
@@ -3504,6 +3526,63 @@ public class ImportUtil {
         }
 
     }
+
+
+
+    private static Contentlet getFileAsset(final DotTempFile tempFile, final ContentType contentType,
+            final Host defaultHost) throws DotDataException, DotSecurityException {
+        final long langId = langAPI.getDefaultLanguage().getId();
+        final File file = tempFile.file;
+
+        // Use filename + host as key since we're checking for filename existence on that host
+        final String fileKey = file.getName() + ":" + defaultHost.getIdentifier();
+        final ReentrantLock reentrantLock = fileLocks.computeIfAbsent(fileKey, k -> new ReentrantLock());
+
+        reentrantLock.lock();
+        try {
+            final Folder root = folderAPI.findFolderByPath(FORWARD_SLASH,
+                    defaultHost, APILocator.systemUser(), false);
+
+            final boolean exists = fileAssetAPI.fileNameExists(defaultHost, root, file.getName());
+            if (exists) {
+                return fileAssetAPI.getFileByPath(FORWARD_SLASH + file.getName(),
+                        defaultHost, langId, false);
+            }
+
+            // Create a fileAsset with the uploaded image
+            final Contentlet fileAsset = new Contentlet();
+            fileAsset.setContentType(contentType);
+            fileAsset.setLanguageId(langId);
+            fileAsset.setHost(defaultHost.getIdentifier());
+            fileAsset.setFolder(root.getInode());
+            fileAsset.setProperty(FileAssetAPI.TITLE_FIELD, file.getName());
+            fileAsset.setProperty(FileAssetAPI.FILE_NAME_FIELD, file.getName());
+            fileAsset.setProperty(FileAssetAPI.BINARY_FIELD, file);
+
+            final Contentlet savedFileAsset = conAPI.checkin(fileAsset, APILocator.systemUser(), false);
+            conAPI.publish(savedFileAsset, APILocator.systemUser(), false);
+
+            return savedFileAsset;
+
+        } finally {
+            reentrantLock.unlock();
+            // Cleanup if no threads are waiting
+            if (!reentrantLock.hasQueuedThreads()) {
+                fileLocks.remove(fileKey, reentrantLock);
+            }
+        }
+    }
+
+    private static final ConcurrentHashMap<String, ReentrantLock> fileLocks = new ConcurrentHashMap<>();
+
+    /**
+     * Creates a Contentlet object representing a file asset from the provided temporary file.
+     * @param tempFile The temporary file containing the uploaded file data.
+     * @param contentType The content type for the file asset, used to define its structure.
+     * @param defaultHost The default host where the file asset will be stored.
+     * @return A Contentlet object representing the file asset, populated with necessary properties.
+     */
+
 
     /**
      * Retrieves all category-related fields from the specified content structure based on its

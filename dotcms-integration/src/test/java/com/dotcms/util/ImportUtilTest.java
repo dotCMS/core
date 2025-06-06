@@ -3707,6 +3707,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         final List<Contentlet> byStructure = contentletAPI.findByStructure(contentType.inode(),
                 user, false, 0, 0);
         assertEquals(1,byStructure.size());
+        assertNotNull(byStructure.get(0).get("bin"));
     }
 
 
@@ -3760,9 +3761,11 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         assertTrue(result.error().get(1).code().isPresent());
         assertEquals(INVALID_BINARY_URL.name(), result.error().get(1).code().get());
 
+        //Make sure we got one row with the image as the other two should have failed
         final List<Contentlet> byStructure = contentletAPI.findByStructure(contentType.inode(),
                 user, false, 0, 0);
         assertEquals(1,byStructure.size());
+        assertNotNull(byStructure.get(0).get("image"));
 
     }
 
