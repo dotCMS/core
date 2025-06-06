@@ -4,11 +4,13 @@ import static com.dotmarketing.portlets.contentlet.model.Contentlet.IDENTIFIER_K
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.STRUCTURE_INODE_KEY;
 import static com.dotmarketing.util.importer.HeaderValidationCodes.HEADERS_NOT_FOUND;
 import static com.dotmarketing.util.importer.ImportLineValidationCodes.LANGUAGE_NOT_FOUND;
+import static com.liferay.util.StringPool.FORWARD_SLASH;
 
 import com.dotcms.content.elasticsearch.util.ESUtils;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.HostFolderField;
+import com.dotcms.contenttype.model.field.ImageField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
@@ -41,6 +43,8 @@ import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
+import com.dotmarketing.portlets.fileassets.business.FileAsset;
+import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
@@ -89,6 +93,7 @@ import io.vavr.control.Try;
 import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
+import java.net.URI;
 import java.net.URL;
 import java.sql.Savepoint;
 import java.sql.Timestamp;
@@ -106,6 +111,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
@@ -129,14 +136,15 @@ import org.apache.commons.lang3.tuple.Pair;
  */
 public class ImportUtil {
 
-    private static PermissionAPI permissionAPI = APILocator.getPermissionAPI();
-    private final static ContentletAPI conAPI = APILocator.getContentletAPI();
-    private final static CategoryAPI catAPI = APILocator.getCategoryAPI();
-    private final static LanguageAPI langAPI = APILocator.getLanguageAPI();
-    private final static HostAPI hostAPI = APILocator.getHostAPI();
-    private final static FolderAPI folderAPI = APILocator.getFolderAPI();
-    private final static WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
-    private final static ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
+    private static final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+    private static final ContentletAPI conAPI = APILocator.getContentletAPI();
+    private static final CategoryAPI catAPI = APILocator.getCategoryAPI();
+    private static final LanguageAPI langAPI = APILocator.getLanguageAPI();
+    private static final HostAPI hostAPI = APILocator.getHostAPI();
+    private static final FolderAPI folderAPI = APILocator.getFolderAPI();
+    private static final WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
+    private static final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
+    private static final FileAssetAPI fileAssetAPI = APILocator.getFileAssetAPI();
 
     public static final String KEY_WARNINGS = "warnings";
     public static final String KEY_ERRORS = "errors";
@@ -579,12 +587,7 @@ public class ImportUtil {
     /**
      * Generates an import result from the provided input parameters after processing and analyzing
      * the file data and performing the necessary content operations.
-     *
-     * @param preview         a boolean flag indicating whether the operation is a preview or an
-     *                        actual import
-     * @param wfActionId      a string representing the workflow action ID associated with the
-     *                        import operation
-     * @param fileTotalLines  the total number of lines in the file being processed
+     * @param params         the parameters containing details about the import operation,
      * @param lineNumber      the number of lines successfully processed
      * @param failedRows      the number of rows that encountered errors during processing
      * @param messages        a list of validation messages containing information, warnings, or
@@ -1665,7 +1668,7 @@ public class ImportUtil {
         validateLineLength(line, headers, lineNumber);
 
         // Process fields and collect values
-        final var fieldResults = processFields(
+        final FieldsProcessingResult fieldResults = processFields(
                 line, headers, contentType, user, currentHostId, language, lineNumber
         );
 
@@ -2035,7 +2038,9 @@ public class ImportUtil {
             processedValue = value;
             results.setSiteAndFolder(location);
         } else if (isBinaryField(field)) {
-            processedValue = processBinaryField(value);
+            processedValue = processBinaryField(field, value);
+        } else if (isImageField(field)) {
+            processedValue = processImageField(field, value);
         } else if (isFileField(field)) {
             processedValue = processFileField(field, value, currentHostId, user, results);
         } else {
@@ -2165,6 +2170,16 @@ public class ImportUtil {
     }
 
     /**
+     * Checks if the given field is an image field.
+     * @param field the field to check
+     * @return true if the field is an image field, false otherwise
+     */
+    private static boolean isImageField(final Field field) {
+        return new LegacyFieldTransformer(field).from().typeName()
+                .equals(ImageField.class.getName());
+    }
+
+    /**
      * Checks if the given field is a file field.
      * <p>
      * This method determines if the field type is either IMAGE or FILE.
@@ -2276,14 +2291,43 @@ public class ImportUtil {
      * @return the processed value if the URL is valid
      * @throws ImportLineException if the URL is invalid
      */
-    private static Object processBinaryField(final String value) {
+    private static Object processBinaryField(final Field field, final String value) {
         if (UtilMethods.isSet(value) && !APILocator.getTempFileAPI().validUrl(value)) {
             throw ImportLineException.builder()
                     .message("URL is malformed or Response is not 200")
                     .code(ImportLineValidationCodes.INVALID_BINARY_URL.name())
+                    .field(field.getVelocityVarName())
                     .invalidValue(value)
                     .build();
         }
+        return value;
+    }
+
+    /**
+     * Processes an image field by validating the URL.
+     * This method checks if the URL is valid and if the content is an image type.
+     * @param value the value to process
+     * @return the processed value if the URL is valid
+     */
+    private static Object processImageField(final Field field, final String value) {
+        if (UtilMethods.isSet(value) && !APILocator.getTempFileAPI().validUrl(value)) {
+            throw ImportLineException.builder()
+                    .message("URL is malformed or Response is not 200")
+                    .code(ImportLineValidationCodes.INVALID_BINARY_URL.name())
+                    .field(field.getVelocityVarName())
+                    .invalidValue(value)
+                    .build();
+        }
+
+        if (!UtilMethods.isImage(value)) {
+            throw ImportLineException.builder()
+                    .message(String.format(" %s is not a supported image type", value))
+                    .code(ImportLineValidationCodes.INVALID_BINARY_URL.name())
+                    .field(field.getVelocityVarName())
+                    .invalidValue(value)
+                    .build();
+        }
+
         return value;
     }
 
@@ -2304,15 +2348,6 @@ public class ImportUtil {
             final FieldProcessingResultBuilder resultBuilder
     ) throws DotDataException, DotSecurityException {
         String filePath = value;
-        if (Field.FieldType.IMAGE.toString().equals(field.getFieldType()) && !UtilMethods.isImage(
-                filePath)) {
-            if (UtilMethods.isSet(filePath)) {
-                resultBuilder.addWarning(String.format(
-                                "The file is not an image for field: %s", field.getVelocityVarName()),
-                        ImportLineValidationCodes.INVALID_IMAGE_TYPE.name());
-            }
-            return null;
-        }
 
         Host fileHost = hostAPI.find(currentHostId, user, false);
         if (filePath.contains(StringPool.COLON)) {
@@ -2336,7 +2371,8 @@ public class ImportUtil {
             resultBuilder.addWarning(String.format(
                             "The file has not been found in %s:%s",
                             fileHost.getHostname(), filePath
-                    ), ImportLineValidationCodes.FILE_NOT_FOUND.name()
+                    ), ImportLineValidationCodes.FILE_NOT_FOUND.name(),
+                    field.getVelocityVarName()
             );
         }
         return null;
@@ -3257,7 +3293,9 @@ public class ImportUtil {
 
             try {
                 if (isBinaryField(field)) {
-                    processBinaryField(cont, field, value, request, preview);
+                    fetchAndSetBinaryField(cont, field, value, request, preview);
+                } else if (isImageField(field)) {
+                    fetchAndSetImageField(cont, field, value, request, preview);
                 } else {
                     conAPI.setContentletProperty(cont, field, value);
                 }
@@ -3433,7 +3471,7 @@ public class ImportUtil {
      *
      * @param value The raw value of the binary field from the CSV line.
      */
-    private static void processBinaryField(final Contentlet cont, final Field field,
+    private static void fetchAndSetBinaryField(final Contentlet cont, final Field field,
             final Object value, final HttpServletRequest request, final boolean preview)
             throws IOException, DotSecurityException {
         if (preview) {
@@ -3446,6 +3484,105 @@ public class ImportUtil {
             cont.setBinary(field.getVelocityVarName(), tempFile.file);
         }
     }
+
+    /**
+     * Fetches and sets an image field in the contentlet.
+     * @param cont Contentlet with processed field values
+     * @param field Field to check
+     * @param value Value to set for the image field
+     * @param request HTTP request object, used for context
+     * @param preview Boolean flag indicating if this is a preview operation
+     * @throws IOException If an error occurs while fetching the image
+     * @throws DotSecurityException If a security exception occurs while accessing the contentlet
+     */
+    private static void fetchAndSetImageField(final Contentlet cont, final Field field,
+            final Object value, final HttpServletRequest request, final boolean preview)
+            throws IOException, DotSecurityException {
+        if(preview){
+            fetchAndSetBinaryField(cont, field, value, request, true);
+        } else if (value != null && UtilMethods.isSet(value.toString())) {
+            try {
+            final Host defaultHost = hostAPI.findDefaultHost(APILocator.systemUser(), false);
+                final ContentType contentType = contentTypeAPI.find(
+                    FileAssetAPI.DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME);
+            final URL url = URI.create(value.toString()).toURL();
+            final DotTempFile tempFile = APILocator.getTempFileAPI()
+                    .createTempFileFromUrl(null, request, url, -1);
+                final Contentlet fileAsset = getFileAsset(tempFile,
+                        contentType, defaultHost);
+
+                // Set the image field in the contentlet to the identifier of the file asset
+                // That's how image fields are constructed
+                cont.setProperty(field.getVelocityVarName(), fileAsset.getIdentifier());
+                //There is a lot of room for improvement here as we could be creating a new file asset for the same url could have been used already
+                Logger.warn(ImportUtil.class,
+                        String.format("A new file asset has been created with under default (%s) host to set imageField (%s) ",
+                                defaultHost.getName(), field.getVelocityVarName())
+                );
+            } catch (Exception e) {
+                Logger.error(ImportUtil.class, "Error setting image field", e);
+            }
+
+        }
+
+    }
+
+
+
+    private static Contentlet getFileAsset(final DotTempFile tempFile, final ContentType contentType,
+            final Host defaultHost) throws DotDataException, DotSecurityException {
+        final long langId = langAPI.getDefaultLanguage().getId();
+        final File file = tempFile.file;
+
+        // Use filename + host as key since we're checking for filename existence on that host
+        final String fileKey = file.getName() + ":" + defaultHost.getIdentifier();
+        final ReentrantLock reentrantLock = fileLocks.computeIfAbsent(fileKey, k -> new ReentrantLock());
+
+        reentrantLock.lock();
+        try {
+            final Folder root = folderAPI.findFolderByPath(FORWARD_SLASH,
+                    defaultHost, APILocator.systemUser(), false);
+
+            final boolean exists = fileAssetAPI.fileNameExists(defaultHost, root, file.getName());
+            if (exists) {
+                return fileAssetAPI.getFileByPath(FORWARD_SLASH + file.getName(),
+                        defaultHost, langId, false);
+            }
+
+            // Create a fileAsset with the uploaded image
+            final Contentlet fileAsset = new Contentlet();
+            fileAsset.setContentType(contentType);
+            fileAsset.setLanguageId(langId);
+            fileAsset.setHost(defaultHost.getIdentifier());
+            fileAsset.setFolder(root.getInode());
+            fileAsset.setProperty(FileAssetAPI.TITLE_FIELD, file.getName());
+            fileAsset.setProperty(FileAssetAPI.FILE_NAME_FIELD, file.getName());
+            fileAsset.setProperty(FileAssetAPI.BINARY_FIELD, file);
+
+            final Contentlet savedFileAsset = conAPI.checkin(fileAsset, APILocator.systemUser(), false);
+            conAPI.publish(savedFileAsset, APILocator.systemUser(), false);
+
+            return savedFileAsset;
+
+        } finally {
+            reentrantLock.unlock();
+            // Cleanup if no threads are waiting
+            if (!reentrantLock.hasQueuedThreads()) {
+                fileLocks.remove(fileKey, reentrantLock);
+            }
+        }
+    }
+
+    private static final ConcurrentHashMap<String, ReentrantLock> fileLocks = new ConcurrentHashMap<>();
+
+    /**
+     * Creates a Contentlet object representing a file asset from the provided temporary file.
+     * @param tempFile The temporary file containing the uploaded file data.
+     * @param contentType The content type for the file asset, used to define its structure.
+     * @param defaultHost The default host where the file asset will be stored.
+     * @return A Contentlet object representing the file asset, populated with necessary properties.
+     */
+
 
     /**
      * Retrieves all category-related fields from the specified content structure based on its
@@ -4740,9 +4877,14 @@ public class ImportUtil {
         }
 
         public void addWarning(final String message, final String code) {
+            addWarning(message, code, "N/A");
+        }
+
+        public void addWarning(final String message, final String code, final String field) {
             addValidationMessage(ValidationMessage.builder()
                     .type(ValidationMessageType.WARNING)
                     .message(message)
+                    .field(field)
                     .code(code)
                     .lineNumber(lineNumber)
                     .build());
