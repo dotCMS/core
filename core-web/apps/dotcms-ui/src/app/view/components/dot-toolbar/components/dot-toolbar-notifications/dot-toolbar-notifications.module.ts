@@ -9,10 +9,7 @@ import { DotDropdownModule } from '@components/_common/dot-dropdown-component/do
 import { AnnouncementsStore } from '@components/dot-toolbar/components/dot-toolbar-announcements/store/dot-announcements.store';
 import { DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 
-import {
-    DotNotificationsItemComponent,
-    DotNotificationsListComponent
-} from './components/dot-notifications/dot-notifications.component';
+import { DotNotificationItemComponent} from './components/dot-notification-item/dot-notification-item.component';
 import { DotToolbarNotificationsComponent } from './dot-toolbar-notifications.component';
 
 @NgModule({
@@ -23,13 +20,12 @@ import { DotToolbarNotificationsComponent } from './dot-toolbar-notifications.co
         DotCustomTimeModule,
         DotSafeHtmlPipe,
         DotMessagePipe,
-        DividerModule
+        DividerModule,
+        DotNotificationItemComponent
     ],
     exports: [DotToolbarNotificationsComponent],
     declarations: [
-        DotToolbarNotificationsComponent,
-        DotNotificationsItemComponent,
-        DotNotificationsListComponent
+        DotToolbarNotificationsComponent
     ],
     providers: [AnnouncementsStore]
 })

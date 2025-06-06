@@ -82,3 +82,10 @@ $notification-padding: $spacing-3;
         color: $color-palette-gray-800;
     }
 }
+
+.dot-notifications-list {
+    list-style: none;
+    margin: 0;
+    max-height: 600px;
+    overflow-x: hidden;
+}
