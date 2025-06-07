@@ -145,7 +145,7 @@ public class FolderFactoryImpl extends FolderFactory {
 			return folder.get();
 		}
 
-
+		// if this is the old system folder id, return the new SYSTEM_FOLDER
 		if(OLD_SYSTEM_FOLDER_ID.equals(folderIdOrInode)) {
 			return find(SYSTEM_FOLDER);
 		}
