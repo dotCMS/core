@@ -44,6 +44,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
+import java.util.Optional;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.apache.oro.text.regex.Pattern;
 import org.apache.oro.text.regex.Perl5Compiler;
@@ -124,29 +125,35 @@ public class FolderFactoryImpl extends FolderFactory {
 
 	@Override
 	protected Folder find(final String folderIdOrInode) throws DotDataException {
-		Folder folder = folderCache.getFolder(folderIdOrInode);
-		if (folder == null) {
-			try{
-			     DotConnect dc    = new DotConnect()
-			             .setSQL("select * from folder where identifier = ? or inode = ?")
-			             .addParam(folderIdOrInode).addParam(folderIdOrInode);
-
-				List<Folder> folders = TransformerLocator.createFolderTransformer(dc.loadObjectResults()).asList();
-
-				if (folders.isEmpty()) {
-					return null;
-				}
-
-				folder = folders.get(0);
-				Identifier id = APILocator.getIdentifierAPI().find(folder.getIdentifier());
-				folderCache.addFolder(folder, id);
-			}
-			catch(Exception e){
-				throw new DotDataException(e.getMessage(),e);
-			}
-
+		Optional<Folder> folder = Optional.ofNullable(folderCache.getFolder(folderIdOrInode));
+		if (folder.isPresent()) {
+			return folder.get();
 		}
-		return folder;
+
+		 DotConnect dc    = new DotConnect()
+				 .setSQL("select * from folder where identifier = ? or inode = ?")
+				 .addParam(folderIdOrInode)
+				 .addParam(folderIdOrInode);
+
+		folder = Try.of(()->TransformerLocator.createFolderTransformer(dc.loadObjectResults()).asList().get(0))
+				.onFailure(e->Logger.debug(FolderFactoryImpl.class,e.getMessage(),e))
+				.toJavaOptional();
+
+		if (folder.isPresent()) {
+			Identifier id = APILocator.getIdentifierAPI().find(folder.get().getIdentifier());
+			folderCache.addFolder(folder.get(), id);
+			return folder.get();
+		}
+
+
+		if(OLD_SYSTEM_FOLDER_ID.equals(folderIdOrInode)) {
+			return find(SYSTEM_FOLDER);
+		}
+
+		return null;
+
+
+
 	}
 
 	/**
