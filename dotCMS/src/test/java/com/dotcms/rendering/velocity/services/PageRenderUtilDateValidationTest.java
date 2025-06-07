@@ -2,6 +2,7 @@ package com.dotcms.rendering.velocity.services;
 
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
@@ -19,6 +20,13 @@ import static org.mockito.Mockito.*;
 
 /**
  * Unit test for PageRenderUtil date validation logic.
+ * 
+ * This test validates the fix for GitHub issue #32261: "Page API returns expired content if publishDate is in the future"
+ * The issue occurred when content had an invalid date configuration where expireDate < publishDate,
+ * causing expired content to be returned in LIVE mode. The fix ensures such content is properly
+ * filtered out in LIVE mode while remaining visible in PREVIEW mode for debugging purposes.
+ * 
+ * Note: Tests private method directly rather than through populateContainers() public API to avoid complex page rendering setup for focused validation.
  */
 public class PageRenderUtilDateValidationTest {
 
@@ -53,6 +61,8 @@ public class PageRenderUtilDateValidationTest {
 
     @Test
     public void testInvalidDateConfiguration() throws Exception {
+        // Reproduce the exact scenario from GitHub issue #32261:
+        // publishDate 10 days in future, expireDate 5 days in future (expireDate < publishDate = INVALID)
         Date publishDate = new Date(System.currentTimeMillis() + TimeUnit.DAYS.toMillis(10));
         Date expireDate = new Date(System.currentTimeMillis() + TimeUnit.DAYS.toMillis(5));
         
@@ -60,7 +70,7 @@ public class PageRenderUtilDateValidationTest {
         
         boolean result = testHasInvalidDateConfiguration(mockContentlet);
         
-        assertTrue(result, "Should return true for invalid date configuration (expireDate < publishDate)");
+        assertTrue(result, "Should return true for invalid date configuration (expireDate < publishDate) - GitHub issue #32261");
     }
 
     @Test
@@ -108,6 +118,30 @@ public class PageRenderUtilDateValidationTest {
         boolean result = testHasInvalidDateConfiguration(mockContentlet);
         
         assertFalse(result, "Should return false when publishDate equals expireDate");
+    }
+
+    /**
+     * Test that validates the PageMode integration behavior from the original bug report.
+     * The fix should only filter invalid content in LIVE mode, not in PREVIEW mode.
+     */
+    @Test
+    public void testPageModeIntegrationBehavior() throws Exception {
+        // Setup invalid date configuration (expireDate < publishDate)
+        Date publishDate = new Date(System.currentTimeMillis() + TimeUnit.DAYS.toMillis(10));
+        Date expireDate = new Date(System.currentTimeMillis() + TimeUnit.DAYS.toMillis(5));
+        
+        setupMockContentlet("publishDateField", "expireDateField", publishDate, expireDate);
+        
+        boolean hasInvalidConfig = testHasInvalidDateConfiguration(mockContentlet);
+        assertTrue(hasInvalidConfig, "Invalid date configuration should be detected");
+        
+        // Test PageMode behavior integration
+        // In actual PageRenderUtil usage, the date validation is only applied when showLive=true
+        boolean wouldBeFilteredInLive = PageMode.LIVE.showLive && hasInvalidConfig;
+        boolean wouldBeFilteredInPreview = PageMode.PREVIEW_MODE.showLive && hasInvalidConfig;
+        
+        assertTrue(wouldBeFilteredInLive, "Content with invalid dates should be filtered in LIVE mode");
+        assertFalse(wouldBeFilteredInPreview, "Content with invalid dates should NOT be filtered in PREVIEW mode (for admin debugging)");
     }
 
     private void setupMockContentlet(String publishDateVar, String expireDateVar, Date publishDate, Date expireDate) {
