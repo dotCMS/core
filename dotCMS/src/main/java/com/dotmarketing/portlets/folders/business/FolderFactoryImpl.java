@@ -1186,6 +1186,10 @@ public class FolderFactoryImpl extends FolderFactory {
 	@Override
 	public void save(Folder folder) throws DotDataException {
 
+		if(folder.isSystemFolder()) {
+			Logger.error(this, "SYSTEM_FOLDER cannot be saved, ignoring request.");
+			return;
+		}
 		folderCache.removeFolder(folder, APILocator.getIdentifierAPI().find(folder.getIdentifier()));
 
 		upsertFolder(folder);

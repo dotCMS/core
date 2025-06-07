@@ -125,7 +125,7 @@ public class Folder implements Serializable, Permissionable, Treeable, Ruleable,
     }
     
     public boolean isSystemFolder() {
-        return Try.of(()->FolderAPI.SYSTEM_FOLDER.equals(identifier)).getOrElse(false);
+        return Try.of(()->FolderAPI.SYSTEM_FOLDER.equals(identifier) || FolderAPI.OLD_SYSTEM_FOLDER_ID.equals(identifier)).getOrElse(false);
     }
     
     
