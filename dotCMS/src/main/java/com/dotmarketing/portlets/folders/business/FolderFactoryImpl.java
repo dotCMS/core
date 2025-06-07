@@ -44,6 +44,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
+import java.util.Optional;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.apache.oro.text.regex.Pattern;
 import org.apache.oro.text.regex.Perl5Compiler;
@@ -69,7 +70,7 @@ import java.util.stream.Collectors;
 
 import static com.dotmarketing.portlets.folders.business.FolderAPI.SYSTEM_FOLDER;
 import static com.dotmarketing.portlets.folders.business.FolderAPI.SYSTEM_FOLDER_ASSET_NAME;
-import static com.dotmarketing.portlets.folders.business.FolderAPI.SYSTEM_FOLDER_ID;
+import static com.dotmarketing.portlets.folders.business.FolderAPI.OLD_SYSTEM_FOLDER_ID;
 import static com.dotmarketing.portlets.folders.business.FolderAPI.SYSTEM_FOLDER_PARENT_PATH;
 import static com.dotmarketing.portlets.folders.business.FolderFactorySql.GET_CONTENT_REPORT;
 import static com.dotmarketing.portlets.folders.business.FolderFactorySql.GET_CONTENT_TYPE_COUNT;
@@ -123,30 +124,36 @@ public class FolderFactoryImpl extends FolderFactory {
 
 
 	@Override
-	protected Folder find(final String folderInode) throws DotDataException {
-		Folder folder = folderCache.getFolder(folderInode);
-		if (folder == null) {
-			try{
-			     DotConnect dc    = new DotConnect()
-			             .setSQL("select * from folder where identifier = ? or inode = ?")
-			             .addParam(folderInode).addParam(folderInode);
-
-				List<Folder> folders = TransformerLocator.createFolderTransformer(dc.loadObjectResults()).asList();
-
-				if (folders.isEmpty()) {
-					return null;
-				}
-
-				folder = folders.get(0);
-				Identifier id = APILocator.getIdentifierAPI().find(folder.getIdentifier());
-				folderCache.addFolder(folder, id);
-			}
-			catch(Exception e){
-				throw new DotDataException(e.getMessage(),e);
-			}
-
+	protected Folder find(final String folderIdOrInode) throws DotDataException {
+		Optional<Folder> folder = Optional.ofNullable(folderCache.getFolder(folderIdOrInode));
+		if (folder.isPresent()) {
+			return folder.get();
 		}
-		return folder;
+
+		 DotConnect dc    = new DotConnect()
+				 .setSQL("select * from folder where identifier = ? or inode = ?")
+				 .addParam(folderIdOrInode)
+				 .addParam(folderIdOrInode);
+
+		folder = Try.of(()->TransformerLocator.createFolderTransformer(dc.loadObjectResults()).asList().get(0))
+				.onFailure(e->Logger.debug(FolderFactoryImpl.class,e.getMessage(),e))
+				.toJavaOptional();
+
+		if (folder.isPresent()) {
+			Identifier id = APILocator.getIdentifierAPI().find(folder.get().getIdentifier());
+			folderCache.addFolder(folder.get(), id);
+			return folder.get();
+		}
+
+		// if this is the old system folder id, return the new SYSTEM_FOLDER
+		if(OLD_SYSTEM_FOLDER_ID.equals(folderIdOrInode)) {
+			return find(SYSTEM_FOLDER);
+		}
+
+		return null;
+
+
+
 	}
 
 	/**
@@ -995,57 +1002,53 @@ public class FolderFactoryImpl extends FolderFactory {
 
 	// http://jira.dotmarketing.net/browse/DOTCMS-3232
 	protected Folder findSystemFolder() throws DotDataException {
-		Folder folder = new Folder();
-		folder = folderCache.getFolder(SYSTEM_FOLDER);
-		if (folder!=null && folder.getInode().equalsIgnoreCase(SYSTEM_FOLDER)) {
+		Folder folder = find(SYSTEM_FOLDER);
+		if(folder!=null && UtilMethods.isSet(folder.getInode())){
 			return folder;
-		} else {
-			folder = find(SYSTEM_FOLDER);
 		}
-		if (UtilMethods.isSet(folder.getInode()) && folder.getInode().equalsIgnoreCase(SYSTEM_FOLDER)) {
-			folderCache.addFolder(folder,APILocator.getIdentifierAPI().find(folder.getIdentifier()));
+		folder = find(OLD_SYSTEM_FOLDER_ID);
+
+		if (folder!=null && UtilMethods.isSet(folder.getInode()) ) {
 			return folder;
-		} else {
-			DotConnect dc = new DotConnect();
-			Folder folder1 = new Folder();
-			String hostInode = "";
-			folder1.setInode(SYSTEM_FOLDER);
-			folder1.setName(SYSTEM_FOLDER_ASSET_NAME);
-			folder1.setTitle("System folder");
-			try {
-				hostInode = APILocator.getHostAPI().findSystemHost(APILocator.getUserAPI().getSystemUser(), true).getIdentifier();
-			} catch (DotSecurityException e) {
-				Logger.error(FolderFactoryImpl.class, e.getMessage(), e);
-				throw new DotDataException(e.getMessage(), e);
-			}
-			folder1.setFilesMasks("");
-			folder1.setSortOrder(0);
-			folder1.setShowOnMenu(false);
-
-			String IdentifierQuery = "INSERT INTO IDENTIFIER(ID,PARENT_PATH,ASSET_NAME,HOST_INODE,ASSET_TYPE) VALUES(?,?,?,?,?)";
-			String uuid = SYSTEM_FOLDER_ID;
-			dc.setSQL(IdentifierQuery);
-			dc.addParam(uuid);
-			dc.addParam(SYSTEM_FOLDER_PARENT_PATH);
-			dc.addParam(folder1.getName());
-			dc.addParam(hostInode);
-			dc.addParam(folder1.getType());
-			dc.loadResult();
-
-			String hostQuery = "INSERT INTO FOLDER (INODE, NAME, TITLE, SHOW_ON_MENU, SORT_ORDER,FILES_MASKS,IDENTIFIER, OWNER, IDATE) VALUES (?,?,?,?,?,?,?,?,null,?)";
-			dc.setSQL(hostQuery);
-			dc.addParam(folder1.getInode());
-			dc.addParam(folder1.getName());
-			dc.addParam(folder1.getTitle());
-			dc.addParam(folder1.isShowOnMenu());
-			dc.addParam(folder1.getSortOrder());
-			dc.addParam(folder1.getFilesMasks());
-			dc.addParam(uuid);
-			dc.addParam(folder1.getIDate());
-			dc.loadResult();
-			folderCache.addFolder(folder1,APILocator.getIdentifierAPI().find(folder1.getIdentifier()));
-			return folder1;
 		}
+
+		// should not be here
+		Logger.warn(this, "Unable to find system folder, trying to create it. Should not be here.");
+		DotConnect dc = new DotConnect();
+		Folder folder1 = new Folder();
+		folder1.setInode(SYSTEM_FOLDER);
+		folder1.setIdentifier(SYSTEM_FOLDER);
+		folder1.setName(SYSTEM_FOLDER_ASSET_NAME);
+		folder1.setTitle("System folder");
+
+		folder1.setFilesMasks("");
+		folder1.setSortOrder(0);
+		folder1.setShowOnMenu(false);
+
+		String IdentifierQuery = "INSERT INTO IDENTIFIER(ID,PARENT_PATH,ASSET_NAME,HOST_INODE,ASSET_TYPE) VALUES(?,?,?,?,?)";
+		String uuid = SYSTEM_FOLDER;
+		dc.setSQL(IdentifierQuery);
+		dc.addParam(SYSTEM_FOLDER);
+		dc.addParam(SYSTEM_FOLDER_PARENT_PATH);
+		dc.addParam(folder1.getName());
+		dc.addParam(Host.SYSTEM_HOST);
+		dc.addParam(folder1.getType());
+		dc.loadResult();
+
+		String hostQuery = "INSERT INTO FOLDER (INODE, NAME, TITLE, SHOW_ON_MENU, SORT_ORDER,FILES_MASKS,IDENTIFIER, OWNER, IDATE) VALUES (?,?,?,?,?,?,?,?,null,?)";
+		dc.setSQL(hostQuery);
+		dc.addParam(SYSTEM_FOLDER);
+		dc.addParam(folder1.getName());
+		dc.addParam(folder1.getTitle());
+		dc.addParam(folder1.isShowOnMenu());
+		dc.addParam(folder1.getSortOrder());
+		dc.addParam(folder1.getFilesMasks());
+		dc.addParam(SYSTEM_FOLDER);
+		dc.addParam(folder1.getIDate());
+		dc.loadResult();
+		folderCache.addFolder(folder1,APILocator.getIdentifierAPI().find(folder1.getIdentifier()));
+		return folder1;
+
 	}
 
 	@SuppressWarnings("unchecked")
@@ -1183,6 +1186,10 @@ public class FolderFactoryImpl extends FolderFactory {
 	@Override
 	public void save(Folder folder) throws DotDataException {
 
+		if(folder.isSystemFolder()) {
+			Logger.error(this, "SYSTEM_FOLDER cannot be saved, ignoring request.");
+			return;
+		}
 		folderCache.removeFolder(folder, APILocator.getIdentifierAPI().find(folder.getIdentifier()));
 
 		upsertFolder(folder);
