@@ -91,6 +91,7 @@ import com.dotmarketing.business.PermissionBitFactoryImplTest;
 import com.dotmarketing.business.VersionableFactoryImplTest;
 import com.dotmarketing.business.helper.PermissionHelperTest;
 import com.dotmarketing.common.db.DBTimeZoneCheckTest;
+import com.dotmarketing.db.LocalTransactionTest;
 import com.dotmarketing.filters.AutoLoginFilterTest;
 import com.dotmarketing.osgi.GenericBundleActivatorTest;
 import com.dotmarketing.portlets.browser.BrowserUtilTest;
@@ -301,7 +302,8 @@ import org.junit.runners.Suite.SuiteClasses;
         CompletionsToolTest.class,
         EmbeddingContentListenerTest.class,
         Task241013RemoveFullPathLcColumnFromIdentifierTest.class,
-        Task250107RemoveEsReadOnlyMonitorJobTest.class
+        Task250107RemoveEsReadOnlyMonitorJobTest.class,
+        LocalTransactionTest.class
 //        ExperimentFactoryIntegrationTest.class
 })
 

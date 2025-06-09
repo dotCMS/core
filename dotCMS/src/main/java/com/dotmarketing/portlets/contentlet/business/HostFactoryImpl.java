@@ -1,7 +1,6 @@
 package com.dotmarketing.portlets.contentlet.business;
 
 import com.dotcms.business.CloseDBIfOpened;
-import com.dotcms.business.WrapInTransaction;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.content.business.json.ContentletJsonAPI;
 import com.dotcms.contenttype.business.ContentTypeAPI;
@@ -22,7 +21,7 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -412,36 +411,49 @@ public class HostFactoryImpl implements HostFactory {
      *
      * @throws DotRuntimeException The specified Site failed to be deleted.
      */
-    @WrapInTransaction
     private Boolean innerDeleteSite(final Host site, final User user, final boolean respectFrontendRoles) {
         try {
+            return LocalTransaction.<Boolean>tx()
+                .of(() -> {
             deleteSite(site, user, respectFrontendRoles);
-            HibernateUtil.addCommitListener
-                    (() -> generateNotification(site, user));
-        } catch (final Exception e) {
-            try {
-                APILocator.getNotificationAPI().generateNotification(
-                        new I18NMessage("notification.hostapi.delete.error.title"), // title = Host Notification
-                        new I18NMessage("notifications_host_deletion_error", site.getHostname(), ExceptionUtil.getErrorMessage(e)),
-                        null, // no actions
-                        NotificationLevel.ERROR,
-                        NotificationType.GENERIC,
-                        user.getUserId(),
-                        user.getLocale()
-                );
-            } catch (final DotDataException e1) {
-                Logger.error(HostAPIImpl.class, String.format("An error occurred when saving Site Deletion " +
-                        "Notification for site '%s': %s", site, ExceptionUtil.getErrorMessage(e)), e);
-            }
-            final String errorMsg = String.format("An error occurred when User '%s' tried to delete Site " +
-                    "'%s': %s", user.getUserId(), site, ExceptionUtil.getErrorMessage(e));
-            Logger.error(HostAPIImpl.class, errorMsg, e);
-            throw new DotRuntimeException(errorMsg, e);
+                    return Boolean.TRUE;
+                }).onCommit(() ->
+                        onSiteDeleteOk(site, user) // This will be executed after the transaction is committed
+                  ).onRollback(() ->
+                        Logger.error(HostAPIImpl.class, String.format("An error occurred when deleting Site '%s' by User '%s'",
+                        site.getHostname(), user.getUserId()))
+                  ).run(true);
+        } catch (Exception e) {
+            throw new DotRuntimeException(e);
         }
-
-        return Boolean.TRUE;
     }
 
+    /**
+     * This method is called inside a separate thread and takes care of deleting the specified Site
+     * @param site The {@link Host} object to be deleted.
+     * @param user The {@link User} object that is requesting the deletion.
+     */
+    private void onSiteDeleteOk(Host site, User user) {
+            try {
+            Logger.info(HostAPIImpl.class, String.format(
+                    "Site '%s' with id '%s' added to the Reindex Queue for deletion",
+                    site.getHostname(), site.getIdentifier()));
+            APILocator.getReindexQueueAPI().addIdentifierDelete(site.getIdentifier());
+        } catch (DotDataException e) {
+            Logger.error(HostAPIImpl.class, String.format(
+                    "An error occurred when removing Site '%s' from the " +
+                            "Reindex Queue: %s", site.getHostname(),
+                    ExceptionUtil.getErrorMessage(e)), e);
+        }
+
+        generateNotification(site, user);
+    }
+
+    /**
+     * Generates a notification for the specified Site deletion.
+     * @param site The {@link Host} object that was deleted.
+     * @param user The {@link User} object that requested the deletion.
+     */
     private void generateNotification(final Host site, final User user) {
         try {
 
