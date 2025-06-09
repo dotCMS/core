@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "3b49ea5f-ad77-4e2a-915e-139455df8090",
+		"_postman_id": "7d7888e2-37a5-47e3-9bbb-f6c890cc6ff1",
 		"name": "Content Resource",
 		"description": "Content Resource test",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
@@ -1724,8 +1724,9 @@
 									"listen": "test",
 									"script": {
 										"exec": [
-											"pm.test(\"Test content created successfully\", function () {",
+											"pm.test(\"Test Contentlet created successfully\", function () {",
 											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.entity.summary.failCount).to.eql(\"An error occurred when creating the test Contentlet\", 0);",
 											"    pm.expect(jsonData.errors.length).to.eql(0);",
 											"    var contentId = Object.keys(jsonData.entity.results[0]);",
 											"    pm.collectionVariables.set(\"testContentId\", jsonData.entity.results[0][contentId].identifier);",
