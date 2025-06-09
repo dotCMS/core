@@ -4,74 +4,132 @@ A comprehensive GraphQL API implementation for dotCMS that provides flexible con
 
 ## Architecture Overview
 
+<div align="center">
+
+```svg
+<svg width="800" height="600" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="clientGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#e3f2fd;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#bbdefb;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="apiGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f3e5f5;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#e1bee7;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="securityGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#fff3e0;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#ffcc02;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="coreGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#e8f5e8;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#c8e6c9;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="dataGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#fce4ec;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#f8bbd9;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="800" height="600" fill="#fafafa"/>
+  
+  <!-- Title -->
+  <text x="400" y="30" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#2c3e50">dotCMS GraphQL API Architecture</text>
+  
+  <!-- Client Layer -->
+  <rect x="50" y="60" width="700" height="60" rx="10" fill="url(#clientGrad)" stroke="#1976d2" stroke-width="2"/>
+  <text x="400" y="85" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#1976d2">🌐 CLIENT APPLICATIONS</text>
+  <text x="150" y="105" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="#1976d2">GraphQL SDK</text>
+  <text x="400" y="105" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="#1976d2">Web Browser</text>
+  <text x="650" y="105" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="#1976d2">Mobile Apps</text>
+  
+  <!-- Arrow down -->
+  <path d="M400 130 L400 150" stroke="#333" stroke-width="3" marker-end="url(#arrowhead)"/>
+  
+  <!-- API Endpoint -->
+  <rect x="250" y="160" width="300" height="50" rx="8" fill="url(#apiGrad)" stroke="#7b1fa2" stroke-width="2"/>
+  <text x="400" y="180" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#7b1fa2">🚪 /api/v1/graphql</text>
+  <text x="400" y="195" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#7b1fa2">HTTP Endpoint</text>
+  
+  <!-- Arrow down -->
+  <path d="M400 220 L400 240" stroke="#333" stroke-width="3" marker-end="url(#arrowhead)"/>
+  
+  <!-- Security Layer -->
+  <rect x="200" y="250" width="400" height="50" rx="8" fill="url(#securityGrad)" stroke="#f57c00" stroke-width="2"/>
+  <text x="400" y="270" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#f57c00">🔐 Security & Schema Layer</text>
+  <text x="400" y="285" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#f57c00">Authentication • Permissions • Dynamic Schema</text>
+  
+  <!-- Arrow down -->
+  <path d="M400 310 L400 330" stroke="#333" stroke-width="3" marker-end="url(#arrowhead)"/>
+  
+  <!-- GraphQL APIs -->
+  <rect x="50" y="340" width="700" height="80" rx="10" fill="url(#coreGrad)" stroke="#388e3c" stroke-width="2"/>
+  <text x="400" y="360" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#388e3c">🔧 GRAPHQL APIs</text>
+  
+  <!-- API Boxes -->
+  <rect x="70" y="370" width="150" height="40" rx="5" fill="#ffffff" stroke="#388e3c" stroke-width="1"/>
+  <text x="145" y="385" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="#388e3c">📄 Content API</text>
+  <text x="145" y="398" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="#388e3c">BlogCollection</text>
+  
+  <rect x="240" y="370" width="150" height="40" rx="5" fill="#ffffff" stroke="#388e3c" stroke-width="1"/>
+  <text x="315" y="385" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="#388e3c">🏗️ Page API</text>
+  <text x="315" y="398" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="#388e3c">Templates & Layouts</text>
+  
+  <rect x="410" y="370" width="150" height="40" rx="5" fill="#ffffff" stroke="#388e3c" stroke-width="1"/>
+  <text x="485" y="385" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="#388e3c">🧭 Navigation</text>
+  <text x="485" y="398" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="#388e3c">DotNavigation</text>
+  
+  <rect x="580" y="370" width="150" height="40" rx="5" fill="#ffffff" stroke="#388e3c" stroke-width="1"/>
+  <text x="655" y="385" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="#388e3c">📊 System APIs</text>
+  <text x="655" y="398" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="#388e3c">Metadata & Cache</text>
+  
+  <!-- Arrow down -->
+  <path d="M400 430 L400 450" stroke="#333" stroke-width="3" marker-end="url(#arrowhead)"/>
+  
+  <!-- Data Processing -->
+  <rect x="50" y="460" width="700" height="60" rx="10" fill="url(#dataGrad)" stroke="#c2185b" stroke-width="2"/>
+  <text x="400" y="480" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#c2185b">⚙️ DATA PROCESSING LAYER</text>
+  <text x="180" y="500" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="#c2185b">🔍 Data Fetchers</text>
+  <text x="400" y="500" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="#c2185b">🏭 Type Providers</text>
+  <text x="620" y="500" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="#c2185b">💾 Cache Layer</text>
+  
+  <!-- Arrow down -->
+  <path d="M400 530 L400 550" stroke="#333" stroke-width="3" marker-end="url(#arrowhead)"/>
+  
+  <!-- dotCMS Core -->
+  <rect x="150" y="560" width="500" height="30" rx="8" fill="#37474f" stroke="#263238" stroke-width="2"/>
+  <text x="400" y="580" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="white">💽 dotCMS CORE - Content Types • Pages • Users • Permissions</text>
+  
+  <!-- Arrow marker definition -->
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#333"/>
+    </marker>
+  </defs>
+  
+  <!-- Side annotations -->
+  <text x="20" y="95" font-family="Arial, sans-serif" font-size="10" fill="#666" transform="rotate(-90 20 95)">External</text>
+  <text x="20" y="300" font-family="Arial, sans-serif" font-size="10" fill="#666" transform="rotate(-90 20 300)">GraphQL Layer</text>
+  <text x="20" y="500" font-family="Arial, sans-serif" font-size="10" fill="#666" transform="rotate(-90 20 500)">Core System</text>
+  
+</svg>
 ```
-                    🌐 CLIENT APPLICATIONS
-    ┌─────────────────┬─────────────────┬─────────────────┐
-    │   GraphQL SDK   │   Web Browser   │   Mobile Apps   │
-    │   React/Vue     │   JavaScript    │   iOS/Android   │
-    └─────────────────┴─────────────────┴─────────────────┘
-                               │
-                               ▼ HTTP POST/GET
-                    ╔═══════════════════════╗
-                    ║   /api/v1/graphql     ║
-                    ║   🚪 Entry Point       ║
-                    ╚═══════════════════════╝
-                               │
-                               ▼
-                    ╔═══════════════════════╗
-                    ║  🔐 Security Layer     ║
-                    ║  • JWT Authentication ║
-                    ║  • User Permissions   ║
-                    ║  • Field-level Access ║
-                    ╚═══════════════════════╝
-                               │
-                               ▼
-                    ╔═══════════════════════╗
-                    ║  📋 Schema Provider    ║
-                    ║  • Dynamic Generation ║
-                    ║  • User-aware Schema  ║
-                    ║  • Content Type Based ║
-                    ╚═══════════════════════╝
-                               │
-                               ▼
-    ┌─────────────────────────────────────────────────────────┐
-    │                   🔧 GRAPHQL APIs                       │
-    ├─────────────┬─────────────┬─────────────┬─────────────┤
-    │ 📄 Content  │ 🏗️ Page API │ 🧭 Navigation│ 📊 System   │
-    │ Delivery    │             │             │ APIs        │
-    │             │ • page()    │ • DotNav    │             │
-    │ • search()  │ • render    │             │ • Metadata  │
-    │ • Blog      │ • template  │             │ • Pagination│
-    │ Collection  │ • layout    │             │             │
-    │ • Product   │ • containers│             │             │
-    │ Collection  │             │             │             │
-    └─────────────┴─────────────┴─────────────┴─────────────┘
-                               │
-                               ▼
-    ┌─────────────────────────────────────────────────────────┐
-    │                  ⚙️ DATA PROCESSING                      │
-    ├─────────────┬─────────────┬─────────────────────────────┤
-    │ 🔍 Data     │ 🏭 Type     │ 💾 Cache Layer              │
-    │ Fetchers    │ Providers   │                            │
-    │             │             │ • Query Result Cache       │
-    │ • Resolve   │ • Generate  │ • Schema Cache             │
-    │   Fields    │   Types     │ • Redis/Memory             │
-    │ • Security  │ • Custom    │ • TTL Management           │
-    │   Check     │   Fields    │                            │
-    └─────────────┴─────────────┴─────────────────────────────┘
-                               │
-                               ▼
-    ╔═══════════════════════════════════════════════════════╗
-    ║                  💽 dotCMS CORE                       ║
-    ╠═══════════════╦═══════════════╦═══════════════════════╣
-    ║ 📑 Content    ║ 📄 Pages &    ║ 👥 Users &            ║
-    ║ Types         ║ Templates     ║ Permissions           ║
-    ║               ║               ║                       ║
-    ║ • Fields      ║ • HTML Pages  ║ • Role-based Access   ║
-    ║ • Relations   ║ • Layouts     ║ • Anonymous Users     ║
-    ║ • Validation  ║ • Containers  ║ • Content Permissions ║
-    ╚═══════════════╩═══════════════╩═══════════════════════╝
-```
+
+</div>
+
+### 🎯 Architecture Flow
+
+**Request Journey**: Client → Security → Schema → APIs → Data Processing → dotCMS Core
+
+| Layer | Purpose | Key Components |
+|-------|---------|----------------|
+| 🌐 **Clients** | External applications | SDKs, Browsers, Mobile Apps |
+| 🚪 **Endpoint** | Single API entry point | `/api/v1/graphql` with HTTP handling |
+| 🔐 **Security** | Auth & dynamic schema | JWT, permissions, user-aware schemas |
+| 🔧 **APIs** | GraphQL operations | Content, Page, Navigation, System APIs |
+| ⚙️ **Processing** | Data resolution | Fetchers, type providers, caching |
+| 💽 **Core** | dotCMS foundation | Content types, pages, users, permissions |
 
 ### 🎯 Key Features
 
