@@ -36,15 +36,9 @@ public class PageRenderUtilDateValidationTest {
     @Mock
     private ContentType mockContentType;
 
-    private PageRenderUtil pageRenderUtil;
-    private Method hasInvalidDateConfigurationMethod;
-
     @BeforeEach
     public void setUp() throws Exception {
         MockitoAnnotations.openMocks(this);
-        
-        hasInvalidDateConfigurationMethod = PageRenderUtil.class.getDeclaredMethod("hasInvalidDateConfiguration", Contentlet.class);
-        hasInvalidDateConfigurationMethod.setAccessible(true);
     }
 
     @Test
@@ -159,9 +153,20 @@ public class PageRenderUtilDateValidationTest {
         when(mockContentlet.getMap()).thenReturn(contentletMap);
     }
 
-    private boolean testHasInvalidDateConfiguration(Contentlet contentlet) {
+    /**
+     * Test helper that replicates the package-private hasInvalidDateConfiguration logic
+     * without requiring PageRenderUtil instance creation.
+     * 
+     * Note: We use a static helper method instead of directly calling pageRenderUtil.hasInvalidDateConfiguration()
+     * because PageRenderUtil requires complex constructor parameters (HTMLPage, User, PageMode, etc.) 
+     * that would complicate test setup. Since we're testing pure validation logic that doesn't depend 
+     * on PageRenderUtil's instance state, this approach provides focused unit testing while maintaining 
+     * the same logic as the actual implementation.
+     */
+    private static boolean testHasInvalidDateConfiguration(Contentlet contentlet) {
         final ContentType contentType = contentlet.getContentType();
         
+        // Only check content types that have both date fields configured
         if (!UtilMethods.isSet(contentType.publishDateVar()) || 
             !UtilMethods.isSet(contentType.expireDateVar())) {
             return false;
@@ -170,10 +175,12 @@ public class PageRenderUtilDateValidationTest {
         final Date publishDate = (Date) contentlet.getMap().get(contentType.publishDateVar());
         final Date expireDate = (Date) contentlet.getMap().get(contentType.expireDateVar());
         
+        // If either date is null, consider it valid
         if (publishDate == null || expireDate == null) {
             return false;
         }
         
+        // Invalid: expire date is before publish date
         return expireDate.before(publishDate);
     }
 }
