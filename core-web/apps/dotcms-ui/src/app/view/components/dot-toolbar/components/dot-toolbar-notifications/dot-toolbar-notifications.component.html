@@ -36,7 +36,7 @@
         }
         <div class="dot-notifications__content" id="dot-toolbar-notifications-content">
             <ul class="dot-notifications-list p-0">
-                @for (notification of data; track $index) {
+                @for (notification of data; track notification.id) {
                     <dot-notification-item
                         (clear)="onDismissNotification($event)"
                         [data]="notification" />

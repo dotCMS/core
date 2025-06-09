@@ -51,7 +51,7 @@
             </div>
         </div>
 
-        @for (item of $aboutLinks(); track $index) {
+        @for (item of $aboutLinks(); track item.title) {
             <h5 class="announcements__title">{{ item.title | dm }}</h5>
             <div class="announcements__about">
                 @for (link of item.items; track $index) {
