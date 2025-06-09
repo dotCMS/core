@@ -15,7 +15,6 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.repackage.com.csvreader.CsvReader;
-import com.dotcms.rest.api.v1.asset.AssetPathResolver;
 import com.dotcms.rest.api.v1.temp.DotTempFile;
 import com.dotcms.rest.api.v1.temp.TempFileAPI;
 import com.dotcms.util.LowerKeyMap;
