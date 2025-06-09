@@ -1726,7 +1726,7 @@
 										"exec": [
 											"pm.test(\"Test Contentlet created successfully\", function () {",
 											"    var jsonData = pm.response.json();",
-											"    pm.expect(jsonData.entity.summary.failCount).to.eql(\"An error occurred when creating the test Contentlet\", 0);",
+											"    pm.expect(jsonData.entity.summary.failCount).to.eql(0, \"An error occurred when creating the test Contentlet\");",
 											"    pm.expect(jsonData.errors.length).to.eql(0);",
 											"    var contentId = Object.keys(jsonData.entity.results[0]);",
 											"    pm.collectionVariables.set(\"testContentId\", jsonData.entity.results[0][contentId].identifier);",
