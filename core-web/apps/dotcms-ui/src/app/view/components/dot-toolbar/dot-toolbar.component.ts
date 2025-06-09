@@ -6,7 +6,6 @@ import { DotcmsEventsService, Site, SiteService } from '@dotcms/dotcms-js';
 import { FeaturedFlags } from '@dotcms/dotcms-models';
 
 import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
-import { DotNavigationService } from '../dot-navigation/services/dot-navigation.service';
 
 @Component({
     selector: 'dot-toolbar',
@@ -18,7 +17,6 @@ export class DotToolbarComponent implements OnInit {
     readonly #dotcmsEventsService = inject(DotcmsEventsService);
     readonly #siteService = inject(SiteService);
     readonly #destroyRef = inject(DestroyRef);
-    dotNavigationService = inject(DotNavigationService);
     iframeOverlayService = inject(IframeOverlayService);
 
     featureFlagAnnouncements = FeaturedFlags.FEATURE_FLAG_ANNOUNCEMENTS;
