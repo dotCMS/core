@@ -54,15 +54,15 @@
         @for (item of $aboutLinks(); track $index) {
             <h5 class="announcements__title">{{ item.title | dm }}</h5>
             <div class="announcements__about">
-                @for (item of item.items; track $index) {
+                @for (link of item.items; track $index) {
                     <a
                         (click)="hideOverlayPanel()"
-                        [href]="item.url"
+                        [href]="link.url"
                         class="announcements__about-link"
                         data-testId="announcements__about-link"
                         target="_blank"
                         rel="noopener">
-                        {{ item.label }}
+                        {{ link.label }}
                     </a>
                 }
             </div>

@@ -48,6 +48,12 @@ class MockDotNavigationService {
 })
 class MockToolbarUsersComponent {}
 
+@Component({
+    selector: 'dot-site-selector',
+    template: ''
+})
+class MockSiteSelectorComponent {}
+
 export const dotEventSocketURLFactory = () => {
     return new DotEventsSocketURL(
         `${window.location.hostname}:${window.location.port}/api/ws/v1/system/events`,
@@ -55,7 +61,7 @@ export const dotEventSocketURLFactory = () => {
     );
 };
 
-xdescribe('DotToolbarComponent', () => {
+fdescribe('DotToolbarComponent', () => {
     let spectator: Spectator<DotToolbarComponent>;
     let dotRouterService: SpyObject<DotRouterService>;
 
@@ -69,7 +75,6 @@ xdescribe('DotToolbarComponent', () => {
         declarations: [
             MockComponent(DotToolbarNotificationsComponent),
             MockComponent(DotCrumbtrailComponent),
-            MockComponent(DotSiteSelectorComponent)
         ],
         providers: [
             provideHttpClient(),
@@ -95,7 +100,10 @@ xdescribe('DotToolbarComponent', () => {
             LoggerService,
             StringUtils
         ],
-        componentImports: [[DotToolbarUserComponent, MockToolbarUsersComponent]]
+        componentImports: [
+            [DotToolbarUserComponent, MockToolbarUsersComponent],
+            [DotSiteSelectorComponent, MockSiteSelectorComponent]
+        ]
     });
 
     beforeEach(() => {
@@ -125,6 +133,7 @@ xdescribe('DotToolbarComponent', () => {
             url: ''
         });
         spyOn(dotRouterService, 'isEditPage').and.returnValue(true);
+        spectator.detectChanges();
         spectator.triggerEventHandler('dot-site-selector', 'switch', { value: siteMock });
 
         expect(dotRouterService.goToSiteBrowser).toHaveBeenCalled();
@@ -132,8 +141,9 @@ xdescribe('DotToolbarComponent', () => {
     });
 
     it(`should pass class and width`, () => {
+        spectator.detectChanges();
         const siteSelector = spectator.query('dot-site-selector');
-        expect(siteSelector.getAttribute('cssClass')).toBe('d-secondary');
-        expect(siteSelector.getAttribute('width')).toBe('200px');
+        expect(siteSelector.getAttribute('cssClass')).toContain('d-secondary');
+        expect(siteSelector.getAttribute('class')).toContain('w-12rem');
     });
 });
