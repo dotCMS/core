@@ -48,12 +48,21 @@ export class DotCrumbtrailService {
         );
     }
 
-    get crumbTrail$(): Observable<DotCrumb[]> {
-        return this.crumbTrail.asObservable();
+    private splitURL(url: string): string[] {
+        // Remove query parameters first
+        const cleanUrl = this.removeQueryParams(url);
+
+        return cleanUrl.split('/').filter((section: string) => section !== '' && section !== 'c');
     }
 
-    private splitURL(url: string): string[] {
-        return url.split('/').filter((section: string) => section !== '' && section !== 'c');
+    /**
+     * Remove query parameters from URL
+     * @param url - URL string that may contain query parameters
+     * @returns Clean URL without query parameters
+     */
+    private removeQueryParams(url: string): string {
+        // Handle relative URLs by splitting on '?' and taking the first part
+        return url.split('?')[0];
     }
 
     private getMenuLabel(portletId: string): Observable<DotCrumb[]> {
