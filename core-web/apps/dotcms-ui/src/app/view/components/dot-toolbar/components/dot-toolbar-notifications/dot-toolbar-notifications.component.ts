@@ -9,26 +9,14 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
-import { ButtonModule } from 'primeng/button';
-
 import { NotificationsService } from '@dotcms/app/api/services/notifications-service';
 import { DotcmsEventsService, LoginService } from '@dotcms/dotcms-js';
-import { DotMessagePipe } from '@dotcms/ui';
+import { INotification } from '@models/notifications';
 
-import { DotNotificationItemComponent } from './components/dot-notification-item/dot-notification-item.component';
-
-import { IToolbarNotification } from '../../dot-toolbar.models';
 import { DotToolbarBtnOverlayComponent } from '../dot-toolbar-overlay/dot-toolbar-btn-overlay.component';
 
 @Component({
     selector: 'dot-toolbar-notifications',
-    standalone: true,
-    imports: [
-        DotMessagePipe,
-        DotNotificationItemComponent,
-        DotToolbarBtnOverlayComponent,
-        ButtonModule
-    ],
     styleUrls: ['./dot-toolbar-notifications.component.scss'],
     templateUrl: 'dot-toolbar-notifications.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -42,7 +30,7 @@ export class DotToolbarNotificationsComponent implements OnInit {
     readonly $overlayPanel = viewChild.required<DotToolbarBtnOverlayComponent>('overlayPanel');
 
     $notifications = signal<{
-        data: IToolbarNotification[];
+        data: INotification[];
         unreadCount: number;
         hasMore: boolean;
     }>({
@@ -63,7 +51,7 @@ export class DotToolbarNotificationsComponent implements OnInit {
             .pipe(takeUntilDestroyed(this.#destroyRef))
             .subscribe((res) => {
                 this.$notifications.set({
-                    data: res.entity.notifications as IToolbarNotification[],
+                    data: res.entity.notifications,
                     unreadCount: res.entity.totalUnreadNotifications,
                     hasMore: false
                 });
@@ -76,7 +64,7 @@ export class DotToolbarNotificationsComponent implements OnInit {
             .pipe(takeUntilDestroyed(this.#destroyRef))
             .subscribe((res) => {
                 this.$notifications.set({
-                    data: res.entity.notifications as IToolbarNotification[],
+                    data: res.entity.notifications,
                     unreadCount: res.entity.totalUnreadNotifications,
                     hasMore: res.entity.total > res.entity.notifications.length
                 });
@@ -90,14 +78,14 @@ export class DotToolbarNotificationsComponent implements OnInit {
                 return;
             }
 
-            this.clearNotitications();
+            this.#clearNotitications();
         });
     }
 
     #subscribeToNotifications(): void {
         this.#dotcmsEventsService
-            .subscribeTo<IToolbarNotification>('NOTIFICATION')
-            .subscribe((data: IToolbarNotification) => {
+            .subscribeTo<INotification>('NOTIFICATION')
+            .subscribe((data: INotification) => {
                 this.$notifications.update((state) => ({
                     data: [data, ...state.data],
                     unreadCount: state.unreadCount + 1,
@@ -135,12 +123,12 @@ export class DotToolbarNotificationsComponent implements OnInit {
                 const { data, unreadCount } = this.$notifications();
 
                 if (data.length === 0 && unreadCount === 0) {
-                    this.clearNotitications();
+                    this.#clearNotitications();
                 }
             });
     }
 
-    private clearNotitications(): void {
+    #clearNotitications(): void {
         this.$notifications.set({
             data: [],
             unreadCount: 0,

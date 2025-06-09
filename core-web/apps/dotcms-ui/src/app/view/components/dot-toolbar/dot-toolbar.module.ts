@@ -9,7 +9,7 @@ import { DotCrumbtrailModule } from '@components/dot-crumbtrail/dot-crumbtrail.m
 import { DotShowHideFeatureDirective } from '@dotcms/app/shared/directives/dot-show-hide-feature/dot-show-hide-feature.directive';
 
 import { DotToolbarAnnouncementsComponent } from './components/dot-toolbar-announcements/dot-toolbar-announcements.component';
-import { DotToolbarNotificationsComponent } from './components/dot-toolbar-notifications/dot-toolbar-notifications.component';
+import { DotToolbarNotificationModule } from './components/dot-toolbar-notifications/dot-toolbar-notifications.module';
 import { DotToolbarUserComponent } from './components/dot-toolbar-user/dot-toolbar-user.component';
 import { DotToolbarComponent } from './dot-toolbar.component';
 
@@ -19,11 +19,11 @@ import { DotToolbarComponent } from './dot-toolbar.component';
         CommonModule,
         DotCrumbtrailModule,
         DotSiteSelectorModule,
-        DotToolbarNotificationsComponent,
+        DotToolbarNotificationModule,
+        DotToolbarAnnouncementsComponent,
         ToolbarModule,
         DotToolbarUserComponent,
-        DotShowHideFeatureDirective,
-        DotToolbarAnnouncementsComponent
+        DotShowHideFeatureDirective
     ],
     declarations: [DotToolbarComponent],
     exports: [DotToolbarComponent]

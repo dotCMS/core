@@ -98,6 +98,10 @@ export class DotToolbarBtnOverlayComponent {
         this.$overlayPanel().hide();
     }
 
+    /**
+     * Shows the overlay panel.
+     * @param event - The event that triggered the show.
+     */
     show(event: Event): void {
         this.$overlayPanel().show(event);
     }
