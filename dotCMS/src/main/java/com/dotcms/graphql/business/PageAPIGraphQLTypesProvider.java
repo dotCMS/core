@@ -211,6 +211,8 @@ public enum PageAPIGraphQLTypesProvider implements GraphQLTypesProvider {
         viewAsFields.put("mode", new TypeFetcher(GraphQLString,
                 PropertyDataFetcher.fetching((Function<ViewAsPageStatus, String>)
                         (viewAs)->viewAs.getPageMode().name())));
+        viewAsFields.put("variantId", new TypeFetcher(GraphQLString,
+                PropertyDataFetcher.fetching(ViewAsPageStatus::getVariantId)));
         if(LicenseManager.getInstance().isEnterprise()) {
             viewAsFields
                     .put("persona", new TypeFetcher(GraphQLTypeReference.typeRef("PersonaBaseType"),
