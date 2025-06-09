@@ -4,78 +4,96 @@ A comprehensive GraphQL API implementation for dotCMS that provides flexible con
 
 ## Architecture Overview
 
-```mermaid
-graph TB
-    subgraph "Client Layer"
-        A[GraphQL Client]
-        B[Web Browser]
-        C[Mobile App]
-    end
-
-    subgraph "dotCMS GraphQL API"
-        D["/api/v1/graphql<br/>HTTP Endpoint"]
-        E[GraphQL Schema Provider<br/>User-Aware Schema Generation]
-        F[Security Layer<br/>Permission & Authentication]
-        
-        subgraph "Core APIs"
-            G[Content Delivery API<br/>BlogCollection, ProductCollection]
-            H[Page API<br/>page() with templates & layouts]
-            I[Navigation API<br/>DotNavigation]
-            J[System APIs<br/>QueryMetadata, Pagination]
-        end
-        
-        subgraph "Data Layer"
-            K[Data Fetchers<br/>Field Resolution]
-            L[Type Providers<br/>Schema Generation]
-            M[Cache Layer<br/>Query & Schema Caching]
-        end
-    end
-
-    subgraph "dotCMS Core"
-        N[Content Types & Fields]
-        O[Pages & Templates]
-        P[Users & Permissions]
-        Q[Site Structure]
-    end
-
-    A --> D
-    B --> D
-    C --> D
-    D --> E
-    E --> F
-    F --> G
-    F --> H
-    F --> I
-    F --> J
-    G --> K
-    H --> K
-    I --> K
-    J --> K
-    K --> L
-    L --> M
-    K --> N
-    K --> O
-    K --> P
-    K --> Q
-
-    style D fill:#e1f5fe
-    style E fill:#f3e5f5
-    style F fill:#fff3e0
-    style G fill:#e8f5e8
-    style H fill:#e8f5e8
-    style I fill:#e8f5e8
-    style J fill:#e8f5e8
-    style M fill:#fce4ec
+```
+                    🌐 CLIENT APPLICATIONS
+    ┌─────────────────┬─────────────────┬─────────────────┐
+    │   GraphQL SDK   │   Web Browser   │   Mobile Apps   │
+    │   React/Vue     │   JavaScript    │   iOS/Android   │
+    └─────────────────┴─────────────────┴─────────────────┘
+                               │
+                               ▼ HTTP POST/GET
+                    ╔═══════════════════════╗
+                    ║   /api/v1/graphql     ║
+                    ║   🚪 Entry Point       ║
+                    ╚═══════════════════════╝
+                               │
+                               ▼
+                    ╔═══════════════════════╗
+                    ║  🔐 Security Layer     ║
+                    ║  • JWT Authentication ║
+                    ║  • User Permissions   ║
+                    ║  • Field-level Access ║
+                    ╚═══════════════════════╝
+                               │
+                               ▼
+                    ╔═══════════════════════╗
+                    ║  📋 Schema Provider    ║
+                    ║  • Dynamic Generation ║
+                    ║  • User-aware Schema  ║
+                    ║  • Content Type Based ║
+                    ╚═══════════════════════╝
+                               │
+                               ▼
+    ┌─────────────────────────────────────────────────────────┐
+    │                   🔧 GRAPHQL APIs                       │
+    ├─────────────┬─────────────┬─────────────┬─────────────┤
+    │ 📄 Content  │ 🏗️ Page API │ 🧭 Navigation│ 📊 System   │
+    │ Delivery    │             │             │ APIs        │
+    │             │ • page()    │ • DotNav    │             │
+    │ • search()  │ • render    │             │ • Metadata  │
+    │ • Blog      │ • template  │             │ • Pagination│
+    │ Collection  │ • layout    │             │             │
+    │ • Product   │ • containers│             │             │
+    │ Collection  │             │             │             │
+    └─────────────┴─────────────┴─────────────┴─────────────┘
+                               │
+                               ▼
+    ┌─────────────────────────────────────────────────────────┐
+    │                  ⚙️ DATA PROCESSING                      │
+    ├─────────────┬─────────────┬─────────────────────────────┤
+    │ 🔍 Data     │ 🏭 Type     │ 💾 Cache Layer              │
+    │ Fetchers    │ Providers   │                            │
+    │             │             │ • Query Result Cache       │
+    │ • Resolve   │ • Generate  │ • Schema Cache             │
+    │   Fields    │   Types     │ • Redis/Memory             │
+    │ • Security  │ • Custom    │ • TTL Management           │
+    │   Check     │   Fields    │                            │
+    └─────────────┴─────────────┴─────────────────────────────┘
+                               │
+                               ▼
+    ╔═══════════════════════════════════════════════════════╗
+    ║                  💽 dotCMS CORE                       ║
+    ╠═══════════════╦═══════════════╦═══════════════════════╣
+    ║ 📑 Content    ║ 📄 Pages &    ║ 👥 Users &            ║
+    ║ Types         ║ Templates     ║ Permissions           ║
+    ║               ║               ║                       ║
+    ║ • Fields      ║ • HTML Pages  ║ • Role-based Access   ║
+    ║ • Relations   ║ • Layouts     ║ • Anonymous Users     ║
+    ║ • Validation  ║ • Containers  ║ • Content Permissions ║
+    ╚═══════════════╩═══════════════╩═══════════════════════╝
 ```
 
-### Key Components
+### 🎯 Key Features
 
-- **GraphQL Endpoint**: Single `/api/v1/graphql` endpoint for all queries
-- **Schema Provider**: Dynamically generates user-aware schemas
-- **Security Layer**: Handles authentication and field-level permissions
-- **APIs**: Content, Page, Navigation, and System APIs
-- **Data Fetchers**: Resolve GraphQL fields to actual data
-- **Cache Layer**: Enterprise caching for performance optimization
+| Component | Purpose | Examples |
+|-----------|---------|----------|
+| **🚪 Single Endpoint** | Unified API access | `/api/v1/graphql` for all operations |
+| **🔐 Security First** | Permission-aware responses | Field-level access control, user context |
+| **📋 Dynamic Schema** | Real-time schema generation | Based on content types and user permissions |
+| **📄 Content API** | Query any content type | `BlogCollection`, `ProductCollection` |
+| **🏗️ Page API** | Full page rendering | Templates, layouts, containers, HTML output |
+| **🧭 Navigation** | Site structure | `DotNavigation` with hierarchical data |
+| **💾 Enterprise Caching** | High-performance caching | Query results, schema caching with TTL |
+
+### 🔄 Request Flow
+
+1. **Client** sends GraphQL query to `/api/v1/graphql`
+2. **Security Layer** authenticates user and checks permissions
+3. **Schema Provider** generates user-specific schema
+4. **GraphQL Engine** routes query to appropriate API
+5. **Data Fetchers** resolve fields with security checks
+6. **Cache Layer** stores/retrieves results for performance
+7. **dotCMS Core** provides the underlying data
 
 ## Overview
 
