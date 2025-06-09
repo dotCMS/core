@@ -3,7 +3,7 @@ import { BehaviorSubject, Observable, Subject, of } from 'rxjs';
 import { Injectable } from '@angular/core';
 import { ActivatedRoute, Data, NavigationEnd, Router } from '@angular/router';
 
-import { filter, map, switchMap, take } from 'rxjs/operators';
+import { filter, map, switchMap, take, tap } from 'rxjs/operators';
 
 import { DotMenu, DotMenuItem } from '@dotcms/dotcms-models';
 
@@ -39,7 +39,7 @@ export class DotCrumbtrailService {
                         return event.url;
                     }
                 }),
-                switchMap(this.getCrumbtrail.bind(this))
+                switchMap((url: string) => this.getCrumbtrail(url))
             )
             .subscribe((crumbTrail: DotCrumb[]) => this.crumbTrail.next(crumbTrail));
 
@@ -101,8 +101,8 @@ export class DotCrumbtrailService {
     }
 
     private getCrumbtrailSection(sectionKey: string): string {
-        const data: Data = this.getData();
-        let currentData: Data = data;
+        const data = this.getData();
+        let currentData = data;
         let section = '';
 
         if (Object.keys(data).length) {
