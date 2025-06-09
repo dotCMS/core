@@ -83,7 +83,7 @@ npm install @dotcms/angular@next @dotcms/uve@next @dotcms/client@next @dotcms/ty
 ### dotCMS Client Configuration
 
 ```typescript
-import { createDotCMSClient } from '@dotcms/client';
+import { createDotCMSClient } from '@dotcms/client/next';
 import { InjectionToken } from '@angular/core';
 
 export type DotCMSClient = ReturnType<typeof createDotCMSClient>;
