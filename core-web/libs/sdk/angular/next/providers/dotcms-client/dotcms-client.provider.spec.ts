@@ -7,179 +7,178 @@ import { provideDotCMSClient, DotCMSClient } from './dotcms-client.provider';
 // Mock the createDotCMSClient function since it's not available in test environment
 const mockCreateDotCMSClient = jest.fn();
 jest.mock('@dotcms/client/next', () => ({
-  createDotCMSClient: mockCreateDotCMSClient
+    createDotCMSClient: mockCreateDotCMSClient
 }));
 
 describe('provideDotCMSClient', () => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let mockClient: any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let mockClient: any;
 
-  const validConfig: DotCMSClientConfig = {
-    dotcmsUrl: 'https://demo.dotcms.com',
-    authToken: 'test-auth-token-123',
-    siteId: 'test-site-id',
-    requestOptions: {
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    }
-  };
-
-  const minimalConfig: DotCMSClientConfig = {
-    dotcmsUrl: 'https://demo.dotcms.com',
-    authToken: 'test-auth-token'
-  };
-
-  beforeEach(() => {
-    // Create mock client with all expected methods
-    mockClient = {
-      page: {
-        get: jest.fn(),
-        getPageAsset: jest.fn()
-      },
-      content: {
-        get: jest.fn(),
-        getCollection: jest.fn()
-      },
-      nav: {
-        get: jest.fn()
-      }
+    const validConfig: DotCMSClientConfig = {
+        dotcmsUrl: 'https://demo.dotcms.com',
+        authToken: 'test-auth-token-123',
+        siteId: 'test-site-id',
+        requestOptions: {
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        }
     };
 
-    mockCreateDotCMSClient.mockReturnValue(mockClient);
-  });
-
-  afterEach(() => {
-    jest.clearAllMocks();
-  });
-
-  describe('Success Scenarios', () => {
-    it('should create environment providers with valid config', () => {
-      const providers = provideDotCMSClient(validConfig);
-
-      expect(providers).toBeDefined();
-      expect(providers).toBeInstanceOf(Object);
-    });
-
-    it('should call createDotCMSClient with provided config', () => {
-      provideDotCMSClient(validConfig);
-
-      expect(mockCreateDotCMSClient).toHaveBeenCalledTimes(1);
-      expect(mockCreateDotCMSClient).toHaveBeenCalledWith(validConfig);
-    });
-
-    it('should create providers with minimal config', () => {
-      const providers = provideDotCMSClient(minimalConfig);
-
-      expect(providers).toBeDefined();
-      expect(mockCreateDotCMSClient).toHaveBeenCalledWith(minimalConfig);
-    });
-
-    it('should handle config with only required fields', () => {
-      const basicConfig: DotCMSClientConfig = {
-        dotcmsUrl: 'https://test.dotcms.com',
-        authToken: 'basic-token'
-      };
-
-      const providers = provideDotCMSClient(basicConfig);
-
-      expect(providers).toBeDefined();
-      expect(mockCreateDotCMSClient).toHaveBeenCalledWith(basicConfig);
-    });
-
-    it('should handle config with custom request options', () => {
-      const configWithCustomOptions: DotCMSClientConfig = {
+    const minimalConfig: DotCMSClientConfig = {
         dotcmsUrl: 'https://demo.dotcms.com',
-        authToken: 'test-token',
-        requestOptions: {
-          headers: {
-            'X-Custom-Header': 'custom-value',
-            'Accept': 'application/json'
-          },
-          cache: 'no-cache'
-        }
-      };
+        authToken: 'test-auth-token'
+    };
 
-      const providers = provideDotCMSClient(configWithCustomOptions);
-
-      expect(providers).toBeDefined();
-      expect(mockCreateDotCMSClient).toHaveBeenCalledWith(configWithCustomOptions);
-    });
-  });
-
-  describe('Provider Integration', () => {
     beforeEach(() => {
-      TestBed.configureTestingModule({
-        providers: [provideDotCMSClient(validConfig)]
-      });
+        // Create mock client with all expected methods
+        mockClient = {
+            page: {
+                get: jest.fn(),
+                getPageAsset: jest.fn()
+            },
+            content: {
+                get: jest.fn(),
+                getCollection: jest.fn()
+            },
+            nav: {
+                get: jest.fn()
+            }
+        };
+
+        mockCreateDotCMSClient.mockReturnValue(mockClient);
     });
 
-    it('should provide DotCMSClient instance through dependency injection', () => {
-      const client = TestBed.inject(DotCMSClient);
-
-      expect(client).toBeDefined();
-      expect(client).toBe(mockClient);
+    afterEach(() => {
+        jest.clearAllMocks();
     });
 
-    it('should return same instance when injected multiple times', () => {
-      const client1 = TestBed.inject(DotCMSClient);
-      const client2 = TestBed.inject(DotCMSClient);
+    describe('Success Scenarios', () => {
+        it('should create environment providers with valid config', () => {
+            const providers = provideDotCMSClient(validConfig);
 
-      expect(client1).toBe(client2);
+            expect(providers).toBeDefined();
+            expect(providers).toBeInstanceOf(Object);
+        });
+
+        it('should call createDotCMSClient with provided config', () => {
+            provideDotCMSClient(validConfig);
+
+            expect(mockCreateDotCMSClient).toHaveBeenCalledTimes(1);
+            expect(mockCreateDotCMSClient).toHaveBeenCalledWith(validConfig);
+        });
+
+        it('should create providers with minimal config', () => {
+            const providers = provideDotCMSClient(minimalConfig);
+
+            expect(providers).toBeDefined();
+            expect(mockCreateDotCMSClient).toHaveBeenCalledWith(minimalConfig);
+        });
+
+        it('should handle config with only required fields', () => {
+            const basicConfig: DotCMSClientConfig = {
+                dotcmsUrl: 'https://test.dotcms.com',
+                authToken: 'basic-token'
+            };
+
+            const providers = provideDotCMSClient(basicConfig);
+
+            expect(providers).toBeDefined();
+            expect(mockCreateDotCMSClient).toHaveBeenCalledWith(basicConfig);
+        });
+
+        it('should handle config with custom request options', () => {
+            const configWithCustomOptions: DotCMSClientConfig = {
+                dotcmsUrl: 'https://demo.dotcms.com',
+                authToken: 'test-token',
+                requestOptions: {
+                    headers: {
+                        'X-Custom-Header': 'custom-value',
+                        Accept: 'application/json'
+                    },
+                    cache: 'no-cache'
+                }
+            };
+
+            const providers = provideDotCMSClient(configWithCustomOptions);
+
+            expect(providers).toBeDefined();
+            expect(mockCreateDotCMSClient).toHaveBeenCalledWith(configWithCustomOptions);
+        });
     });
 
-    it('should provide client with expected structure', () => {
-      const client = TestBed.inject(DotCMSClient);
+    describe('Provider Integration', () => {
+        beforeEach(() => {
+            TestBed.configureTestingModule({
+                providers: [provideDotCMSClient(validConfig)]
+            });
+        });
 
-      // Verify the mock client structure is injected correctly
-      expect(client).toHaveProperty('page');
-      expect(client).toHaveProperty('content');
-      expect(client).toHaveProperty('nav');
-    });
-  });
+        it('should provide DotCMSClient instance through dependency injection', () => {
+            const client = TestBed.inject(DotCMSClient);
 
-  describe('Error Scenarios', () => {
-    it('should propagate error when createDotCMSClient throws', () => {
-      const errorMessage = 'Invalid configuration provided';
-      mockCreateDotCMSClient.mockImplementation(() => {
-        throw new Error(errorMessage);
-      });
+            expect(client).toBeDefined();
+            expect(client).toBe(mockClient);
+        });
 
-      expect(() => {
-        provideDotCMSClient(validConfig);
-      }).toThrow(errorMessage);
-    });
+        it('should return same instance when injected multiple times', () => {
+            const client1 = TestBed.inject(DotCMSClient);
+            const client2 = TestBed.inject(DotCMSClient);
 
-    it('should handle TypeError from createDotCMSClient', () => {
-      const typeError = new TypeError('Invalid URL format');
-      mockCreateDotCMSClient.mockImplementation(() => {
-        throw typeError;
-      });
+            expect(client1).toBe(client2);
+        });
 
-      expect(() => {
-        provideDotCMSClient(validConfig);
-      }).toThrow(TypeError);
-      expect(() => {
-        provideDotCMSClient(validConfig);
-      }).toThrow('Invalid URL format');
+        it('should provide client with expected structure', () => {
+            const client = TestBed.inject(DotCMSClient);
+
+            // Verify the mock client structure is injected correctly
+            expect(client).toHaveProperty('page');
+            expect(client).toHaveProperty('content');
+            expect(client).toHaveProperty('nav');
+        });
     });
 
-    it('should handle error in factory function', () => {
-      // Create a mock that fails when used as constructor
-      const failingMock = Object.create(Function.prototype);
-      failingMock.mockImplementation = jest.fn(() => {
-        throw new Error('Constructor failed');
-      });
+    describe('Error Scenarios', () => {
+        it('should propagate error when createDotCMSClient throws', () => {
+            const errorMessage = 'Invalid configuration provided';
+            mockCreateDotCMSClient.mockImplementation(() => {
+                throw new Error(errorMessage);
+            });
 
-      mockCreateDotCMSClient.mockReturnValue(failingMock);
+            expect(() => {
+                provideDotCMSClient(validConfig);
+            }).toThrow(errorMessage);
+        });
 
-      // The error might be thrown during provider creation or later during injection
-      expect(() => {
-        const providers = provideDotCMSClient(validConfig);
-        TestBed.configureTestingModule({ providers: [providers] });
-        TestBed.inject(DotCMSClient);
-      }).toThrow();
+        it('should handle TypeError from createDotCMSClient', () => {
+            const typeError = new TypeError('Invalid URL format');
+            mockCreateDotCMSClient.mockImplementation(() => {
+                throw typeError;
+            });
+
+            expect(() => {
+                provideDotCMSClient(validConfig);
+            }).toThrow(TypeError);
+            expect(() => {
+                provideDotCMSClient(validConfig);
+            }).toThrow('Invalid URL format');
+        });
+
+        it('should handle error in factory function', () => {
+            // Create a mock that fails when used as constructor
+            const failingMock = Object.create(Function.prototype);
+            failingMock.mockImplementation = jest.fn(() => {
+                throw new Error('Constructor failed');
+            });
+
+            mockCreateDotCMSClient.mockReturnValue(failingMock);
+
+            // The error might be thrown during provider creation or later during injection
+            expect(() => {
+                const providers = provideDotCMSClient(validConfig);
+                TestBed.configureTestingModule({ providers: [providers] });
+                TestBed.inject(DotCMSClient);
+            }).toThrow();
+        });
     });
-  });
-
 });

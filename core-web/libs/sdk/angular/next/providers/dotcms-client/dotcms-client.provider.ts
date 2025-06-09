@@ -49,15 +49,15 @@ export interface DotCMSClient extends clientType {}
  */
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export class DotCMSClient {
-  /**
-   * Creates a new DotCMSClient instance that wraps the provided client.
-   *
-   * @param client - The DotCMS client instance created by createDotCMSClient
-   * @returns The client instance (due to the return override)
-   */
-  constructor(client: clientType) {
-    return client;
-  }
+    /**
+     * Creates a new DotCMSClient instance that wraps the provided client.
+     *
+     * @param client - The DotCMS client instance created by createDotCMSClient
+     * @returns The client instance (due to the return override)
+     */
+    constructor(client: clientType) {
+        return client;
+    }
 }
 
 /**
@@ -94,15 +94,13 @@ export class DotCMSClient {
  * ```
  *
  */
-export function provideDotCMSClient(
-  options: DotCMSClientConfig,
-): EnvironmentProviders {
-  const client = createDotCMSClient(options);
+export function provideDotCMSClient(options: DotCMSClientConfig): EnvironmentProviders {
+    const client = createDotCMSClient(options);
 
-  return makeEnvironmentProviders([
-    {
-      provide: DotCMSClient,
-      useFactory: () => new DotCMSClient(client),
-    },
-  ]);
+    return makeEnvironmentProviders([
+        {
+            provide: DotCMSClient,
+            useFactory: () => new DotCMSClient(client)
+        }
+    ]);
 }
