@@ -298,14 +298,15 @@ public class PageRenderUtil implements Serializable {
                     final DotContentletTransformer transformer = new DotTransformerBuilder()
                             .defaultOptions().content(nonHydratedContentlet).build();
                     final Contentlet contentlet = transformer.hydrate().get(0);
-                    this.addContentletPageReferenceCount(contentlet);
 
                     // Skip content with invalid date configuration in LIVE mode
                     if (mode.showLive && hasInvalidDateConfiguration(contentlet)) {
-                        Logger.debug(this, ()-> "Skipping contentlet " + contentlet.getIdentifier()
-                                + " with invalid date configuration");
+                        Logger.warn(this, ()-> "Skipping contentlet " + contentlet.getIdentifier()
+                                + " with invalid date configuration (expireDate < publishDate)");
                         continue;
                     }
+
+                    this.addContentletPageReferenceCount(contentlet);
 
                     final long contentsSize = containerUuidPersona
                             .getSize(container, uniqueUUIDForRender, personalizedContentlet);
@@ -795,7 +796,7 @@ public class PageRenderUtil implements Serializable {
      * @param contentlet The {@link Contentlet} to check
      * @return true if the contentlet has expireDate < publishDate, false otherwise
      */
-    private boolean hasInvalidDateConfiguration(final Contentlet contentlet) {
+    boolean hasInvalidDateConfiguration(final Contentlet contentlet) {
         final ContentType contentType = contentlet.getContentType();
         
         // Only check content types that have both date fields configured
