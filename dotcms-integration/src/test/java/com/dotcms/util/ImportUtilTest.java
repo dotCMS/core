@@ -4,6 +4,7 @@ import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotmarketing.portlets.workflows.business.SystemWorkflowConstants.WORKFLOW_PUBLISH_ACTION_ID;
 import static com.dotmarketing.util.importer.ImportLineValidationCodes.INVALID_BINARY_URL;
 import static com.dotmarketing.util.importer.ImportLineValidationCodes.INVALID_DATE_FORMAT;
+import static com.dotmarketing.util.importer.ImportLineValidationCodes.INVALID_FILE_PATH;
 import static com.dotmarketing.util.importer.ImportLineValidationCodes.INVALID_LOCATION;
 import static com.dotmarketing.util.importer.ImportLineValidationCodes.REQUIRED_FIELD_MISSING;
 import static org.junit.Assert.assertEquals;
@@ -3294,7 +3295,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         String[] csvHeaders = csvreader.getHeaders();
         final ImmutableImportFileParams importFileParams = ImmutableImportFileParams.builder()
                 .importId(0L)
-                .siteId(defaultSite.getInode())
+                .siteId(defaultSite.getIdentifier())
                 .contentTypeInode(contentType.inode())
                 .keyFields(titleField.id())
                 .user(user)
@@ -3757,7 +3758,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         assertNotNull(result);
         assertFalse(result.error().isEmpty());
         assertTrue(result.error().get(0).code().isPresent());
-        assertEquals(INVALID_BINARY_URL.name(), result.error().get(0).code().get());
+        assertEquals(INVALID_FILE_PATH.name(), result.error().get(0).code().get());
         assertTrue(result.error().get(1).code().isPresent());
         assertEquals(INVALID_BINARY_URL.name(), result.error().get(1).code().get());
 

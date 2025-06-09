@@ -10,13 +10,14 @@ import com.dotcms.content.elasticsearch.util.ESUtils;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.HostFolderField;
-import com.dotcms.contenttype.model.field.ImageField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.repackage.com.csvreader.CsvReader;
+import com.dotcms.rest.api.v1.asset.AssetPathResolver;
 import com.dotcms.rest.api.v1.temp.DotTempFile;
+import com.dotcms.rest.api.v1.temp.TempFileAPI;
 import com.dotcms.util.LowerKeyMap;
 import com.dotcms.util.RelationshipUtil;
 import com.dotmarketing.beans.Host;
@@ -145,6 +146,7 @@ public class ImportUtil {
     private static final WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
     private static final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
     private static final FileAssetAPI fileAssetAPI = APILocator.getFileAssetAPI();
+    private static final TempFileAPI tempFileAPI = APILocator.getTempFileAPI();
 
     public static final String KEY_WARNINGS = "warnings";
     public static final String KEY_ERRORS = "errors";
@@ -175,6 +177,10 @@ public class ImportUtil {
     private static final String DATE_FIELD_FORMAT_PATTERN = "yyyyMMdd";
     private static final String DATE_TIME_FIELD_FORMAT_PATTERN = "MM/dd/yyyy";
     private static final String TIME_FIELD_FORMAT_PATTERN = "HHmmss";
+
+    private ImportUtil() {
+        // Prevent instantiation
+    }
 
     /**
      * Imports the data contained in a CSV file into dotCMS. The data can be
@@ -1815,7 +1821,7 @@ public class ImportUtil {
                 }
             }
         }
-
+         //Here we save the contentlet(s) and process the results
         final ProcessedContentResult processResult = processContent(
                 lineNumber,
                 contentlets,
@@ -1834,6 +1840,7 @@ public class ImportUtil {
                 contentTypePermissions,
                 wfActionIdIndex,
                 preview,
+                currentHostId,
                 user,
                 request,
                 line
@@ -1912,8 +1919,8 @@ public class ImportUtil {
 
         for (Integer column : headers.keySet()) {
 
-            Field field = headers.get(column);
-            String value = line[column];
+            final Field field = headers.get(column);
+            final String value = line[column];
 
             try {
                 final var fieldResult = processField(field, value, user, currentHostId,
@@ -2024,25 +2031,25 @@ public class ImportUtil {
         if (isDateField(field)) {
             processedValue = validateDateTypes(field, value, value);
         } else if (isCategoryField(field)) {
-            Set<Category> categories = processCategoryField(field, value, user, results);
+            Set<Category> categories = validateCategoryField(field, value, user, results);
             processedValue = categories;
             results.addCategories(categories);
         } else if (isSelectionField(field)) {
-            processedValue = processSelectionField(field, value);
+            processedValue = validateSelectionField(field, value);
         } else if (isTextField(field)) {
-            processedValue = processTextField(value);
+            processedValue = validateTextField(value);
         } else if (isTextAreaField(field)) {
             processedValue = value;
         } else if (isLocationField(field)) {
-            Pair<Host, Folder> location = processLocationField(field, value, user);
+            Pair<Host, Folder> location = validateLocationField(field, value, user);
             processedValue = value;
             results.setSiteAndFolder(location);
         } else if (isBinaryField(field)) {
-            processedValue = processBinaryField(field, value);
-        } else if (isImageField(field)) {
-            processedValue = processImageField(field, value);
+            //Binaries are loaded from an external source
+            processedValue = validateBinaryField(field, value);
         } else if (isFileField(field)) {
-            processedValue = processFileField(field, value, currentHostId, user, results);
+            // Files fields are images or file fields, they can be loaded from an external source or referenced by an internal path
+            processedValue = validateFileField(field, value, currentHostId, user);
         } else {
             processedValue = processDefaultField(value);
         }
@@ -2170,16 +2177,6 @@ public class ImportUtil {
     }
 
     /**
-     * Checks if the given field is an image field.
-     * @param field the field to check
-     * @return true if the field is an image field, false otherwise
-     */
-    private static boolean isImageField(final Field field) {
-        return new LegacyFieldTransformer(field).from().typeName()
-                .equals(ImageField.class.getName());
-    }
-
-    /**
      * Checks if the given field is a file field.
      * <p>
      * This method determines if the field type is either IMAGE or FILE.
@@ -2221,7 +2218,7 @@ public class ImportUtil {
      * @throws DotDataException     if a data access error occurs during processing
      * @throws DotSecurityException if a security violation occurs during processing
      */
-    private static Set<Category> processCategoryField(final Field field, final String value,
+    private static Set<Category> validateCategoryField(final Field field, final String value,
             final User user, final FieldProcessingResultBuilder resultBuilder
     ) throws DotDataException, DotSecurityException {
         Set<Category> categories = new HashSet<>();
@@ -2250,7 +2247,7 @@ public class ImportUtil {
      * @param value the value to process
      * @return the processed value, truncated to 255 characters if necessary
      */
-    private static Object processTextField(final String value) {
+    private static Object validateTextField(final String value) {
         if (value != null && value.length() > TEXT_FIELD_MAX_LENGTH) {
             return value.substring(0, TEXT_FIELD_MAX_LENGTH);
         }
@@ -2268,7 +2265,7 @@ public class ImportUtil {
      * @throws DotDataException     if a data access error occurs during processing
      * @throws DotSecurityException if a security violation occurs during processing
      */
-    private static Pair<Host, Folder> processLocationField(final Field field, final String value,
+    private static Pair<Host, Folder> validateLocationField(final Field field, final String value,
             final User user) throws DotDataException, DotSecurityException {
 
         Pair<Host, Folder> siteAndFolder = getSiteAndFolderFromIdOrName(value, user);
@@ -2291,8 +2288,8 @@ public class ImportUtil {
      * @return the processed value if the URL is valid
      * @throws ImportLineException if the URL is invalid
      */
-    private static Object processBinaryField(final Field field, final String value) {
-        if (UtilMethods.isSet(value) && !APILocator.getTempFileAPI().validUrl(value)) {
+    private static Object validateBinaryField(final Field field, final String value) {
+        if (UtilMethods.isSet(value) && !tempFileAPI.validUrl(value)) {
             throw ImportLineException.builder()
                     .message("URL is malformed or Response is not 200")
                     .code(ImportLineValidationCodes.INVALID_BINARY_URL.name())
@@ -2310,7 +2307,10 @@ public class ImportUtil {
      * @return the processed value if the URL is valid
      */
     private static Object processImageField(final Field field, final String value) {
-        if (UtilMethods.isSet(value) && !APILocator.getTempFileAPI().validUrl(value)) {
+        //Validate if we're looking at an internal file path or a URL
+        //webAssetHelper.getAssetInfo()
+
+        if (UtilMethods.isSet(value) && !tempFileAPI.validUrl(value)) {
             throw ImportLineException.builder()
                     .message("URL is malformed or Response is not 200")
                     .code(ImportLineValidationCodes.INVALID_BINARY_URL.name())
@@ -2338,17 +2338,57 @@ public class ImportUtil {
      * @param value         the raw value from the CSV line
      * @param currentHostId the ID of the current host
      * @param user          the user performing the import
-     * @param resultBuilder the builder to accumulate validation messages and results
      * @return the contentlet identifier if the file is valid, null otherwise
      * @throws DotDataException     if a data access error occurs during processing
      * @throws DotSecurityException if a security violation occurs during processing
      */
-    private static Object processFileField(final Field field, final String value,
-            final String currentHostId, final User user,
-            final FieldProcessingResultBuilder resultBuilder
+    private static Object validateFileField(final Field field, final String value,
+            final String currentHostId, final User user
     ) throws DotDataException, DotSecurityException {
-        String filePath = value;
+        //Here we need to determine if the value is a valid internal file path or an external URL
+        final boolean isUrl = UtilMethods.isValidStrictURL(value);
+        if (!isUrl) {
+            final Optional<String> internal = matchWithInternalIdentifier(value, currentHostId, user);
+            if (internal.isPresent()) {
+                // We found a matching object
+                return internal.get();
+            } else {
+               //Throw validation error as failed to match the given path with an internal object
+                throw ImportLineException.builder()
+                        .message("Invalid internal file path")
+                        .code(ImportLineValidationCodes.INVALID_FILE_PATH.name())
+                        .field(field.getVelocityVarName())
+                        .invalidValue(value)
+                        .build();
+            }
+        } else {
+            // If it's a URL, we need to validate if we can access it
+            if (!tempFileAPI.validUrl(value)) {
+                throw ImportLineException.builder()
+                        .message("URL is malformed or Response is not 200")
+                        .code(ImportLineValidationCodes.INVALID_BINARY_URL.name())
+                        .field(field.getVelocityVarName())
+                        .invalidValue(value)
+                        .build();
+            }
 
+            // if the URL is valid, we can return it as is
+            return value;
+        }
+    }
+
+    /**
+     * Matches a given value with an internal identifier.
+     * @param value the value to match, which can be a file path or URL
+     * @param currentHostId the ID of the current host
+     * @param user the user performing the import
+     * @return an Optional containing the contentlet identifier if a match is found,
+     * @throws DotDataException if a data access error occurs during processing
+     * @throws DotSecurityException if a security violation occurs during processing
+     */
+    private static Optional<String> matchWithInternalIdentifier(final String value, final String currentHostId, final User user) throws DotDataException, DotSecurityException {
+        //Here we need to determine if the value is a valid file path or URL
+        String filePath = value;
         Host fileHost = hostAPI.find(currentHostId, user, false);
         if (filePath.contains(StringPool.COLON)) {
             String[] fileInfo = filePath.split(StringPool.COLON);
@@ -2366,24 +2406,18 @@ public class ImportUtil {
                             APILocator.getLanguageAPI().getDefaultLanguage().getId(),
                             user, false);
             if (cont != null && InodeUtils.isSet(cont.getInode())) {
-                return cont.getIdentifier();
+                return Optional.of(cont.getIdentifier());
             }
-            resultBuilder.addWarning(String.format(
-                            "The file has not been found in %s:%s",
-                            fileHost.getHostname(), filePath
-                    ), ImportLineValidationCodes.FILE_NOT_FOUND.name(),
-                    field.getVelocityVarName()
-            );
         }
-        return null;
+        return Optional.empty();
     }
 
-    /**
-     * Processes a default field by escaping HTML text if necessary.
-     *
-     * @param value the value to process
-     * @return the processed value, with HTML text escaped if necessary
-     */
+        /**
+         * Processes a default field by escaping HTML text if necessary.
+         *
+         * @param value the value to process
+         * @return the processed value, with HTML text escaped if necessary
+         */
     private static Object processDefaultField(final String value) {
         return Config.getBooleanProperty("CONTENT_ESCAPE_HTML_TEXT", true) ?
                 UtilMethods.escapeUnicodeCharsForHTML(value) : value;
@@ -2450,14 +2484,14 @@ public class ImportUtil {
      * @implNote For checkbox fields, returns Boolean.TRUE if value contains "true", "yes" or "1",
      *           Boolean.FALSE otherwise. Other field types return null for unmatched values
      */
-    private static Object processSelectionField(final Field field, final String value) {
+    private static Object validateSelectionField(final Field field, final String value) {
         if (UtilMethods.isSet(value)) {
             String fieldEntriesString = field.getValues() != null ? field.getValues() : "";
             String[] fieldEntries = fieldEntriesString.split("\n");
 
             for (String fieldEntry : fieldEntries) {
-                String[] splittedValue = fieldEntry.split("\\|");
-                String entryValue = splittedValue[splittedValue.length - 1].trim();
+                String[] splitValue = fieldEntry.split("\\|");
+                String entryValue = splitValue[splitValue.length - 1].trim();
 
                 if (entryValue.equals(value) || value.contains(entryValue)) {
                     return value;
@@ -3085,6 +3119,7 @@ public class ImportUtil {
             final List<Permission> contentTypePermissions,
             final int wfActionIdIndex,
             final boolean preview,
+            final String siteId,
             final User user,
             final HttpServletRequest request,
             final String[] line
@@ -3094,22 +3129,13 @@ public class ImportUtil {
 
         for (Contentlet cont : contentlets) {
 
-            //Clean up any existing workflow action
-            cont.resetActionId();
-
-            // Handle workflow action ID from file
-            if (wfActionIdIndex >= 0) {
-                String wfActionIdStr = line[wfActionIdIndex];
-                if (UtilMethods.isSet(wfActionIdStr)) {
-                    cont.setActionId(wfActionIdStr);
-                }
-            }
+            setWorkflowAction(wfActionIdIndex, line, cont);
 
             // Set site and folder
             setSiteAndFolder(user, cont, siteAndFolder);
 
             // Set field values
-            processContentFields(cont, headers, values, request, preview);
+            processContentFields(cont, headers, values, request, siteId, user, preview);
 
             // Retaining Categories when content updated with partial imports
             if (UtilMethods.isSet(cont.getIdentifier())) {
@@ -3145,6 +3171,24 @@ public class ImportUtil {
         }
 
         return resultBuilder.build();
+    }
+
+    /**
+     * Sets the workflow action ID for a contentlet based on the provided index and line data.
+     * @param wfActionIdIndex The index of the workflow action ID in the line data.
+     * @param line
+     * @param cont
+     */
+    private static void setWorkflowAction(int wfActionIdIndex, String[] line, Contentlet cont) {
+        //Clean up any existing workflow action
+        cont.resetActionId();
+        // Handle workflow action ID from file
+        if (wfActionIdIndex >= 0) {
+            String wfActionIdStr = line[wfActionIdIndex];
+            if (UtilMethods.isSet(wfActionIdStr)) {
+                cont.setActionId(wfActionIdStr);
+            }
+        }
     }
 
     /**
@@ -3189,7 +3233,7 @@ public class ImportUtil {
                 conAPI.validateContentlet(cont, null, new ArrayList<>(categories), true);
             }
         } catch (DotContentletValidationException ex) {
-            final String code = getMappedCode(ex);
+            final String code = getErrorMappedCode(ex);
             throw ImportLineException.builder()
                     .message(ex.getMessage())
                     .code(code)
@@ -3205,7 +3249,7 @@ public class ImportUtil {
      * @param ex The exception to extract the code from.
      * @return The mapped error code as a string.
      */
-    private static String getMappedCode(final DotContentletValidationException ex) {
+    private static String getErrorMappedCode(final DotContentletValidationException ex) {
         String code = ImportLineValidationCodes.UNKNOWN_ERROR.name();
         if (null != ex.getNotValidRelationship() && !ex.getNotValidRelationship().isEmpty()) {
             code = ImportLineValidationCodes.RELATIONSHIP_VALIDATION_ERROR.name();
@@ -3271,6 +3315,8 @@ public class ImportUtil {
             final Map<Integer, Field> headers,
             final Map<Integer, Object> values,
             final HttpServletRequest request,
+            final String siteId,
+            final User user,
             final boolean preview
     ) throws IOException, DotSecurityException {
 
@@ -3294,8 +3340,8 @@ public class ImportUtil {
             try {
                 if (isBinaryField(field)) {
                     fetchAndSetBinaryField(cont, field, value, request, preview);
-                } else if (isImageField(field)) {
-                    fetchAndSetImageField(cont, field, value, request, preview);
+                } else if (isFileField(field)) {
+                    fetchAndSetFileField(cont, field, value, request, siteId, user, preview);
                 } else {
                     conAPI.setContentletProperty(cont, field, value);
                 }
@@ -3479,8 +3525,9 @@ public class ImportUtil {
                     new File(ConfigUtils.getAssetTempPath()));
             cont.setBinary(field.getVelocityVarName(), dummyFile);
         } else if (value != null && UtilMethods.isSet(value.toString())) {
-            DotTempFile tempFile = APILocator.getTempFileAPI()
-                    .createTempFileFromUrl(null, request, new URL(value.toString()), -1);
+            final URL url = URI.create(value.toString()).toURL();
+            final DotTempFile tempFile = tempFileAPI
+                    .createTempFileFromUrl(null, request, url, -1);
             cont.setBinary(field.getVelocityVarName(), tempFile.file);
         }
     }
@@ -3492,75 +3539,96 @@ public class ImportUtil {
      * @param value Value to set for the image field
      * @param request HTTP request object, used for context
      * @param preview Boolean flag indicating if this is a preview operation
-     * @throws IOException If an error occurs while fetching the image
-     * @throws DotSecurityException If a security exception occurs while accessing the contentlet
      */
-    private static void fetchAndSetImageField(final Contentlet cont, final Field field,
-            final Object value, final HttpServletRequest request, final boolean preview)
-            throws IOException, DotSecurityException {
-        if(preview){
-            fetchAndSetBinaryField(cont, field, value, request, true);
-        } else if (value != null && UtilMethods.isSet(value.toString())) {
-            try {
-            final Host defaultHost = hostAPI.findDefaultHost(APILocator.systemUser(), false);
-                final ContentType contentType = contentTypeAPI.find(
-                    FileAssetAPI.DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME);
-            final URL url = URI.create(value.toString()).toURL();
-            final DotTempFile tempFile = APILocator.getTempFileAPI()
-                    .createTempFileFromUrl(null, request, url, -1);
-                final Contentlet fileAsset = getFileAsset(tempFile,
-                        contentType, defaultHost);
+    private static void fetchAndSetFileField(final Contentlet cont, final Field field,
+            final Object value, final HttpServletRequest request, final String siteId, final User user, final boolean preview) {
+        if (value != null && UtilMethods.isSet(value.toString())) {
+            final String uriOrIdentifier = value.toString();
+            // First we need to determine if we're looking at an internal Path or an external URL
+            // if we're looking at an url we attempt a fetch
+            if (UtilMethods.isValidStrictURL(uriOrIdentifier)) {
+                try {
+                    final Host currentHost = Host.SYSTEM_HOST.equals(siteId) ?
+                            hostAPI.findDefaultHost(APILocator.systemUser(),false) :
+                            hostAPI.find(siteId, APILocator.systemUser(), false);
+                    final ContentType contentType = contentTypeAPI.find(
+                            FileAssetAPI.DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME);
+                    final URI uri = URI.create(uriOrIdentifier);
 
-                // Set the image field in the contentlet to the identifier of the file asset
-                // That's how image fields are constructed
-                cont.setProperty(field.getVelocityVarName(), fileAsset.getIdentifier());
-                //There is a lot of room for improvement here as we could be creating a new file asset for the same url could have been used already
-                Logger.warn(ImportUtil.class,
-                        String.format("A new file asset has been created with under default (%s) host to set imageField (%s) ",
-                                defaultHost.getName(), field.getVelocityVarName())
-                );
-            } catch (Exception e) {
-                Logger.error(ImportUtil.class, "Error setting image field", e);
+                    // Create a file asset from the temporary file or retrieve the existing one
+                    final Contentlet fileAsset = getFileAsset(uri, request, contentType, currentHost, user);
+
+                    // Set the image field in the contentlet to the identifier of the file asset
+                    // That's how image fields are constructed
+                    cont.setProperty(field.getVelocityVarName(), fileAsset.getIdentifier());
+
+                } catch (Exception e) {
+                    Logger.error(ImportUtil.class, "Error setting image field", e);
+                    throw ImportLineException.builder()
+                            .message("Error processing file asset from URL: " + uriOrIdentifier + " under site: " + siteId)
+                            .code(ImportLineValidationCodes.INVALID_LOCATION.name())
+                            .invalidValue(uriOrIdentifier)
+                            .build();
+                }
+            } else {
+                cont.setProperty(field.getVelocityVarName(), uriOrIdentifier);
             }
-
         }
-
     }
 
-
-
-    private static Contentlet getFileAsset(final DotTempFile tempFile, final ContentType contentType,
-            final Host defaultHost) throws DotDataException, DotSecurityException {
+    /**
+     * Retrieves or creates a file asset from a given URI.
+     * @param uri The URI of the file to be processed.
+     * @param request The HTTP request object, used to fetch the file.
+     * @param contentType The content type for the file asset, used to define its structure.
+     * @param site The default host where the file asset will be stored.
+     * @return A Contentlet object representing the file asset, either retrieved or created.
+     * @throws DotDataException If there is a data-related exception during the process.
+     * @throws DotSecurityException If the user does not have permission to access the requested
+     * @throws IOException If an I/O error occurs while fetching the file.
+     */
+    private static Contentlet getFileAsset(final URI uri, HttpServletRequest request, final ContentType contentType,
+            final Host site, final User user)
+            throws DotDataException, DotSecurityException, IOException {
         final long langId = langAPI.getDefaultLanguage().getId();
-        final File file = tempFile.file;
+
+        final String fileName = UtilMethods.fileName(uri);
 
         // Use filename + host as key since we're checking for filename existence on that host
-        final String fileKey = file.getName() + ":" + defaultHost.getIdentifier();
+        final String fileKey = fileName + ":" + site.getIdentifier();
         final ReentrantLock reentrantLock = fileLocks.computeIfAbsent(fileKey, k -> new ReentrantLock());
 
         reentrantLock.lock();
         try {
             final Folder root = folderAPI.findFolderByPath(FORWARD_SLASH,
-                    defaultHost, APILocator.systemUser(), false);
+                    site, APILocator.systemUser(), false);
 
-            final boolean exists = fileAssetAPI.fileNameExists(defaultHost, root, file.getName());
+            final boolean exists = fileAssetAPI.fileNameExists(site, root, fileName);
             if (exists) {
-                return fileAssetAPI.getFileByPath(FORWARD_SLASH + file.getName(),
-                        defaultHost, langId, false);
+                //Check if user has permission to access the file
+                final FileAsset file = fileAssetAPI.getFileByPath(FORWARD_SLASH + fileName,
+                        site, langId, false);
+                if (!permissionAPI.doesUserHavePermission(file, PermissionAPI.PERMISSION_READ, user)) {
+                    throw new DotSecurityException("User does not have permission to read the existing file: " + fileName);
+                }
+                return file;
             }
+            // if we determine that the file does not exist, we proceed to fetch it
+            final DotTempFile tempFile = APILocator.getTempFileAPI().createTempFileFromUrl(null, request, uri.toURL(), -1);
+            final File file = tempFile.file;
 
-            // Create a fileAsset with the uploaded image
+            // And create a new file asset from the temporary file we fetched
             final Contentlet fileAsset = new Contentlet();
             fileAsset.setContentType(contentType);
             fileAsset.setLanguageId(langId);
-            fileAsset.setHost(defaultHost.getIdentifier());
+            fileAsset.setHost(site.getIdentifier());
             fileAsset.setFolder(root.getInode());
             fileAsset.setProperty(FileAssetAPI.TITLE_FIELD, file.getName());
             fileAsset.setProperty(FileAssetAPI.FILE_NAME_FIELD, file.getName());
             fileAsset.setProperty(FileAssetAPI.BINARY_FIELD, file);
 
-            final Contentlet savedFileAsset = conAPI.checkin(fileAsset, APILocator.systemUser(), false);
-            conAPI.publish(savedFileAsset, APILocator.systemUser(), false);
+            final Contentlet savedFileAsset = conAPI.checkin(fileAsset, user, false);
+            conAPI.publish(savedFileAsset, user, false);
 
             return savedFileAsset;
 
