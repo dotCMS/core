@@ -84,7 +84,7 @@ npm install @dotcms/react@next @dotcms/uve@next @dotcms/client@next @dotcms/type
 ### dotCMS Client Configuration
 
 ```typescript
-import { createDotCMSClient } from '@dotcms/client';
+import { createDotCMSClient } from '@dotcms/client/next';
 
 type DotCMSClient = ReturnType<typeof createDotCMSClient>;
 
