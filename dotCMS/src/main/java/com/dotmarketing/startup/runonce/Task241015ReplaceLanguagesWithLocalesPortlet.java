@@ -53,6 +53,7 @@ public class Task241015ReplaceLanguagesWithLocalesPortlet implements StartupTask
                 final Map<String, Object> row = workflowLayoutPortlets.get(0);
                 final String layoutId = (String) row.get("layout_id");
                 final int portletOrder = Optional.ofNullable(ConversionUtils.toInt(row.get("portlet_order"), 0)).orElse(0) + 1;
+                insertLocalesPortlet(layoutId, portletOrder);
             }
         } else {
             languagesLayoutPortlets.forEach(this::replaceLanguage);
