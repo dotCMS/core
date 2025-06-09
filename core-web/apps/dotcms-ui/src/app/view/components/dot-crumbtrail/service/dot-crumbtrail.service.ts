@@ -48,6 +48,10 @@ export class DotCrumbtrailService {
         );
     }
 
+    get crumbTrail$(): Observable<DotCrumb[]> {
+        return this.crumbTrail.asObservable();
+    }
+
     private splitURL(url: string): string[] {
         // Remove query parameters first
         const cleanUrl = this.removeQueryParams(url);
