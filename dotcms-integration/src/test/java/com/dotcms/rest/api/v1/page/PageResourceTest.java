@@ -1963,7 +1963,12 @@ public class PageResourceTest {
     }
 
     /**
-     * Test for GitHub Issue #32261: Content with invalid date configuration should be filtered in LIVE mode.
+     * <ul>
+     *     <li><b>Method to Test:</b> {@link PageResource#render(HttpServletRequest, HttpServletResponse, String, String, String, String, String, String)}</li>
+     *     <li><b>Given Scenario:</b> A contentlet with invalid date configuration where expireDate (5 days future) is before publishDate (10 days future)</li>
+     *     <li><b>Expected Result:</b> In LIVE mode, the Page API should exclude the invalid content; In PREVIEW mode, it should include it for admin debugging</li>
+     *     <li><b>Issue:</b> Fixes #32261 - Page API returns expired content if publishDate is in the future</li>
+     * </ul>
      */
     @Test
     public void testPageAPIShouldHideContentWithInvalidDateConfiguration()
