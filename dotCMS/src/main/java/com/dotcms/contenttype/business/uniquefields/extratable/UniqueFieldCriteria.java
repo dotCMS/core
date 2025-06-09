@@ -203,10 +203,10 @@ public class UniqueFieldCriteria {
         }
 
         public UniqueFieldCriteria build(){
-            Objects.requireNonNull(contentType);
-            Objects.requireNonNull(field);
-            Objects.requireNonNull(value);
-            Objects.requireNonNull(language);
+            Objects.requireNonNull(contentType, "Content Type cannot be null");
+            Objects.requireNonNull(field, "Field cannot be null");
+            Objects.requireNonNull(value, "Value cannot be null");
+            Objects.requireNonNull(language, "Language cannot be null");
 
             if (isUniqueForSite(contentType.id(), field.variable())) {
                 Objects.requireNonNull(site);
