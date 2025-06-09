@@ -189,6 +189,6 @@ describe('DotToolbarComponent', () => {
         spectator.detectChanges();
         const siteSelector = spectator.query('dot-site-selector');
         expect(siteSelector.getAttribute('cssClass')).toContain('d-secondary');
-        expect(siteSelector.getAttribute('class')).toContain('w-12rem');
+        expect(siteSelector.getAttribute('width')).toContain('12.5rem');
     });
 });
