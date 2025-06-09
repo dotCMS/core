@@ -3,7 +3,7 @@ import { BehaviorSubject, Observable, Subject, of } from 'rxjs';
 import { Injectable } from '@angular/core';
 import { ActivatedRoute, Data, NavigationEnd, Router } from '@angular/router';
 
-import { filter, map, switchMap, take, tap } from 'rxjs/operators';
+import { filter, map, switchMap, take } from 'rxjs/operators';
 
 import { DotMenu, DotMenuItem } from '@dotcms/dotcms-models';
 
