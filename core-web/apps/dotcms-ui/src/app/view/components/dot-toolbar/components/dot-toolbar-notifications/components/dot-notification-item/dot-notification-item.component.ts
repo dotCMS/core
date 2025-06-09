@@ -58,10 +58,10 @@ export class DotNotificationItemComponent {
 
         return (
             actions &&
-            actions.actionType === 'LINK' &&
-            (actions.text || actions.text !== '') &&
-            actions.action &&
-            actions.action !== ''
+            actions?.actionType === 'LINK' &&
+            actions?.text !== '' &&
+            actions?.action &&
+            actions?.action !== ''
         );
     });
 
