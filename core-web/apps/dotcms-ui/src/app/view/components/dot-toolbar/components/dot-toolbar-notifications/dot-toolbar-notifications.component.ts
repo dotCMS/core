@@ -117,7 +117,7 @@ export class DotToolbarNotificationsComponent implements OnInit {
                 this.$notifications.update((state) => ({
                     ...state,
                     data: state.data.filter((item) => item.id !== notificationId),
-                    unreadCount: state.unreadCount - 1
+                    unreadCount: Math.max(0, state.unreadCount - 1)
                 }));
 
                 const { data, unreadCount } = this.$notifications();

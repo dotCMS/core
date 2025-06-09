@@ -18,7 +18,7 @@
                         [class]="typesIcons[item.type | lowercase] || typesIcons['important']"
                         class="announcements__image pi"></span>
                     <a
-                        (click)="hideOverlayPanel($event)"
+                        (click)="hideOverlayPanel()"
                         [href]="item.url"
                         class="announcements__url"
                         target="_blank"
