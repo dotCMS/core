@@ -2,6 +2,81 @@
 
 A comprehensive GraphQL API implementation for dotCMS that provides flexible content delivery and page rendering capabilities.
 
+## Architecture Overview
+
+```mermaid
+graph TB
+    subgraph "Client Layer"
+        A[GraphQL Client]
+        B[Web Browser]
+        C[Mobile App]
+    end
+
+    subgraph "dotCMS GraphQL API"
+        D["/api/v1/graphql<br/>HTTP Endpoint"]
+        E[GraphQL Schema Provider<br/>User-Aware Schema Generation]
+        F[Security Layer<br/>Permission & Authentication]
+        
+        subgraph "Core APIs"
+            G[Content Delivery API<br/>BlogCollection, ProductCollection]
+            H[Page API<br/>page() with templates & layouts]
+            I[Navigation API<br/>DotNavigation]
+            J[System APIs<br/>QueryMetadata, Pagination]
+        end
+        
+        subgraph "Data Layer"
+            K[Data Fetchers<br/>Field Resolution]
+            L[Type Providers<br/>Schema Generation]
+            M[Cache Layer<br/>Query & Schema Caching]
+        end
+    end
+
+    subgraph "dotCMS Core"
+        N[Content Types & Fields]
+        O[Pages & Templates]
+        P[Users & Permissions]
+        Q[Site Structure]
+    end
+
+    A --> D
+    B --> D
+    C --> D
+    D --> E
+    E --> F
+    F --> G
+    F --> H
+    F --> I
+    F --> J
+    G --> K
+    H --> K
+    I --> K
+    J --> K
+    K --> L
+    L --> M
+    K --> N
+    K --> O
+    K --> P
+    K --> Q
+
+    style D fill:#e1f5fe
+    style E fill:#f3e5f5
+    style F fill:#fff3e0
+    style G fill:#e8f5e8
+    style H fill:#e8f5e8
+    style I fill:#e8f5e8
+    style J fill:#e8f5e8
+    style M fill:#fce4ec
+```
+
+### Key Components
+
+- **GraphQL Endpoint**: Single `/api/v1/graphql` endpoint for all queries
+- **Schema Provider**: Dynamically generates user-aware schemas
+- **Security Layer**: Handles authentication and field-level permissions
+- **APIs**: Content, Page, Navigation, and System APIs
+- **Data Fetchers**: Resolve GraphQL fields to actual data
+- **Cache Layer**: Enterprise caching for performance optimization
+
 ## Overview
 
 The dotCMS GraphQL API enables developers to query content, pages, and other dotCMS resources using GraphQL. It supports both content delivery and page rendering functionality with built-in caching, security, and extensibility features.
