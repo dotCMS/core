@@ -77,11 +77,9 @@ export class DotNavigationComponent {
      * @memberof DotNavigationComponent
      */
     onMenuClick(event: { originalEvent: MouseEvent; data: DotMenu }): void {
-
         if (this.$isCollapsed()) {
             this.#dotNavigationService.goTo(event.data.menuItems[0].menuLink);
         } else {
-
             if (!event.data.isOpen) {
                 this.#dotNavigationService.goTo(event.data.menuItems[0].menuLink);
             }

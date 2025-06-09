@@ -139,7 +139,6 @@ export class DotCrumbtrailService {
         const isEditPage =
             (sections && sections[0] == 'edit-page') || sections[0].includes('edit-ema');
 
-
         return this.getMenuLabel(portletId).pipe(
             switchMap(
                 (crumbTrail: DotCrumb[]) =>
