@@ -1,0 +1,30 @@
+        <collectionProp name="HeaderManager.headers">
+          <elementProp name="Content-Type" elementType="Header">
+            <stringProp name="Header.name">Content-Type</stringProp>
+            <stringProp name="Header.value">application/json</stringProp>
+          </elementProp>
+          <elementProp name="Accept" elementType="Header">
+            <stringProp name="Header.name">Accept</stringProp>
+            <stringProp name="Header.value">application/json</stringProp>
+          </elementProp>
+          <elementProp name="User-Agent" elementType="Header">
+            <stringProp name="Header.name">User-Agent</stringProp>
+            <stringProp name="Header.value">Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36</stringProp>
+          </elementProp>
+        </collectionProp>
+        <elementProp name="analytics_host" elementType="Argument">
+          <stringProp name="Argument.name">analytics_host</stringProp>
+          <stringProp name="Argument.value">${__P(analytics.host,localhost)}</stringProp>
+          <stringProp name="Argument.metadata">=</stringProp>
+        </elementProp>
+        <elementProp name="analytics_port" elementType="Argument">
+          <stringProp name="Argument.name">analytics_port</stringProp>
+          <stringProp name="Argument.value">${__P(analytics.port,8001)}</stringProp>
+          <stringProp name="Argument.metadata">=</stringProp>
+        </elementProp>
+        <elementProp name="analytics_scheme" elementType="Argument">
+          <stringProp name="Argument.name">analytics_scheme</stringProp>
+          <stringProp name="Argument.value">${__P(analytics.scheme,http)}</stringProp>
+          <stringProp name="Argument.metadata">=</stringProp>
+        </elementProp>
+        <stringProp name="HTTPSampler.path">/api/v1/event?token=${analytics.key}</stringProp> 

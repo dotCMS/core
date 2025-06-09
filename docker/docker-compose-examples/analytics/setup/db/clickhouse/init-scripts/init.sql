@@ -72,11 +72,11 @@ ALTER TABLE clickhouse_test_db.events ADD COLUMN IF NOT EXISTS object_response S
 ALTER TABLE clickhouse_test_db.events ADD COLUMN IF NOT EXISTS object_forward_to String;
 ALTER TABLE clickhouse_test_db.events ADD COLUMN IF NOT EXISTS object_detail_page_url String;
 ALTER TABLE clickhouse_test_db.events ADD COLUMN IF NOT EXISTS object_url String;
-ALTER TABLE clickhouse_test_db.events ADD COLUMN IF NOT EXISTS comefromvanityurl bool;
+ALTER TABLE clickhouse_test_db.events ADD COLUMN IF NOT EXISTS comefromvanityurl Bool;
 ALTER TABLE clickhouse_test_db.events ADD COLUMN IF NOT EXISTS request_id String;
 ALTER TABLE clickhouse_test_db.events ADD COLUMN IF NOT EXISTS host String;
 ALTER TABLE clickhouse_test_db.events ADD COLUMN IF NOT EXISTS sessionid String;
-ALTER TABLE clickhouse_test_db.events ADD COLUMN IF NOT EXISTS sessionnew bool;
+ALTER TABLE clickhouse_test_db.events ADD COLUMN IF NOT EXISTS sessionnew Bool;
 ALTER TABLE clickhouse_test_db.events ADD COLUMN IF NOT EXISTS rendermode String;
 
 ALTER TABLE clickhouse_test_db.events ADD COLUMN IF NOT EXISTS languageid String;
