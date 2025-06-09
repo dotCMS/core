@@ -80,6 +80,10 @@ export class DotNavigationComponent {
         if (this.$isCollapsed()) {
             this.#dotNavigationService.goTo(event.data.menuItems[0].menuLink);
         } else {
+            if (!event.data.isOpen) {
+                this.#dotNavigationService.goTo(event.data.menuItems[0].menuLink);
+            }
+
             this.#dotNavigationService.setOpen(event.data.id);
         }
     }
