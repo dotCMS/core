@@ -28,6 +28,19 @@
     }
 }
 
+.announcements__badge {
+    background-color: $color-accessible-text-fuchsia;
+    border-radius: 50%;
+    color: $white;
+    font-size: $font-size-sm;
+    line-height: $font-size-sm;
+    width: 0.625rem;
+    height: 0.625rem;
+    position: absolute;
+    left: 39px;
+    top: 14px;
+}
+
 .announcements__about-link {
     padding: $spacing-1;
     &:hover {
@@ -102,19 +115,6 @@
     text-decoration: none;
     color: $black;
     width: 100%;
-}
-
-.announcements__badge {
-    background-color: $color-accessible-text-fuchsia;
-    border-radius: 50%;
-    color: $white;
-    font-size: $font-size-sm;
-    line-height: $font-size-sm;
-    width: 0.625rem;
-    height: 0.625rem;
-    position: absolute;
-    left: 39px;
-    top: 14px;
 }
 
 ::ng-deep {
