@@ -601,6 +601,10 @@ public class FolderAPIImpl implements FolderAPI  {
 					 final User user, final boolean respectFrontEndPermissions) throws DotDataException, DotStateException, DotSecurityException {
 
 		final Identifier existingID = APILocator.getIdentifierAPI().find(folder.getIdentifier());
+
+		if(!folder.getIdentifier().equalsIgnoreCase(folder.getInode()) ){
+			folder.setInode(existingID.getId());
+		}
 		if(existingID ==null || !UtilMethods.isSet(existingID.getId())){
 			throw new DotStateException("Folder must already have an identifier before saving");
 		}
