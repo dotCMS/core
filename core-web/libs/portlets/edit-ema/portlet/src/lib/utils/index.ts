@@ -83,7 +83,7 @@ export function insertContentletInContainer(action: ActionPayload): {
     if (!containerIsOnPageResponse) {
         pageContainers.push({
             ...container,
-            contentletsId: [...container.contentletsId]
+            contentletsId: [...(container.contentletsId ?? [])]
         });
     }
 
@@ -133,7 +133,7 @@ export function deleteContentletFromContainer(action: ActionPayload): {
     if (!containerIsOnPageResponse) {
         pageContainers.push({
             ...container,
-            contentletsId: [...container.contentletsId]
+            contentletsId: [...(container.contentletsId ?? [])]
         });
     }
 
@@ -211,7 +211,7 @@ function insertPositionedContentletInContainer(payload: ActionPayload): {
     if (!containerIsOnPageResponse) {
         pageContainers.push({
             ...container,
-            contentletsId: [...container.contentletsId]
+            contentletsId: [...(container.contentletsId ?? [])]
         });
     }
 
