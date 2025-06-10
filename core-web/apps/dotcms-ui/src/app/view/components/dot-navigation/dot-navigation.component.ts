@@ -80,6 +80,7 @@ export class DotNavigationComponent {
         if (this.$isCollapsed()) {
             this.#dotNavigationService.goTo(event.data.menuItems[0].menuLink);
         } else {
+            // Check if the menu is not already open to prevent redundant navigation actions.
             if (!event.data.isOpen) {
                 this.#dotNavigationService.goTo(event.data.menuItems[0].menuLink);
             }
