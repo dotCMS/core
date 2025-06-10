@@ -1015,6 +1015,7 @@ public class FolderFactoryImpl extends FolderFactory {
 		try(Connection connection = DbConnectionFactory.getConnection()) {
 			DotConnect dc = new DotConnect();
 
+			// if we are missing the system folder identifier, we create it
 			if (dc.setSQL(
 					"select count(id) as test from identifier where asset_type='folder' and host_inode='SYSTEM_HOST' "
 							+ "and ( id = 'SYSTEM_FOLDER' or lower(parent_path) = '/system folder') ").loadInt("test",connection)
@@ -1030,12 +1031,13 @@ public class FolderFactoryImpl extends FolderFactory {
 
 			}
 
+			// if we are missing the system folder folder, we create it
 			if (dc.setSQL(
 							"select count(inode) as test from folder where inode='SYSTEM_FOLDER' or identifier='SYSTEM_FOLDER' ")
 					.loadInt("test",connection) == 0) {
 
-				folder = new Folder();
-				String INSERT_FOLDER = "INSERT INTO FOLDER (INODE, NAME, TITLE, SHOW_ON_MENU, SORT_ORDER,IDENTIFIER, OWNER, IDATE) VALUES (?,?,?,?,?,?,?,?)";
+
+				String INSERT_FOLDER = "INSERT INTO FOLDER (INODE, NAME, TITLE, SHOW_ON_MENU, SORT_ORDER, IDENTIFIER, OWNER, IDATE) VALUES (?,?,?,?,?,?,?,?)";
 				dc.setSQL(INSERT_FOLDER);
 				dc.addParam(SYSTEM_FOLDER);
 				dc.addParam("system folder");
@@ -1044,18 +1046,19 @@ public class FolderFactoryImpl extends FolderFactory {
 				dc.addParam(0);
 				dc.addParam(SYSTEM_FOLDER);
 				dc.addParam(APILocator.getUserAPI().getSystemUser().getUserId());
-				dc.addParam(folder.getIDate());
+				dc.addParam(new Date());
 				dc.loadResult(connection);
 
-				return folder;
 			}
+			return find(SYSTEM_FOLDER);
+
+
 		}catch (Exception e) {
 			Logger.error(FolderFactoryImpl.class, "Error while trying to find or create the system folder", e);
 			throw new DotDataException("Error while trying to find or create the system folder", e);
 		}
 
 
-		throw new DotDataException("System Folder not found, should be created by default on installation");
 
 	}
 

@@ -1,5 +1,6 @@
 package com.dotmarketing.startup.runonce;
 
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -66,6 +67,7 @@ public class Task250604UpdateFolderInodes implements StartupTask {
 
         doFolderUpgrades();
 
+        CacheLocator.getPermissionCache().clearCache();
 
     }
 
