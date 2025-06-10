@@ -72,6 +72,21 @@ export function insertContentletInContainer(action: ActionPayload): {
 
     const { pageContainers, container, personaTag, newContentletId } = action;
 
+    const containerIsOnPageResponse = pageContainers.find((pageContainer) =>
+        areContainersEquals(pageContainer, container)
+    );
+
+    // We had a case where users are using the #parseContainer macro to hard code containers on their themes
+    // This case was not taken into account when we moved to design templates, so the container is not getting indexed on the PageAPI until we add some content
+    // That means, we have to trust the data we got from our SDK when we are adding a contentlet to a container and add the container to the pageContainers array if it's not there
+    // https://github.com/dotCMS/core/issues/31790#issuecomment-2945998795
+    if (!containerIsOnPageResponse) {
+        pageContainers.push({
+            ...container,
+            contentletsId: [...container.contentletsId]
+        });
+    }
+
     const newPageContainers = pageContainers.map((pageContainer) => {
         if (
             areContainersEquals(pageContainer, container) &&
@@ -106,6 +121,21 @@ export function deleteContentletFromContainer(action: ActionPayload): {
     const { pageContainers, container, contentlet, personaTag } = action;
 
     let contentletsId = [];
+
+    const containerIsOnPageResponse = pageContainers.find((pageContainer) =>
+        areContainersEquals(pageContainer, container)
+    );
+
+    // We had a case where users are using the #parseContainer macro to hard code containers on their themes
+    // This case was not taken into account when we moved to design templates, so the container is not getting indexed on the PageAPI until we add some content
+    // That means, we have to trust the data we got from our SDK when we are adding a contentlet to a container and add the container to the pageContainers array if it's not there
+    // https://github.com/dotCMS/core/issues/31790#issuecomment-2945998795
+    if (!containerIsOnPageResponse) {
+        pageContainers.push({
+            ...container,
+            contentletsId: [...container.contentletsId]
+        });
+    }
 
     const newPageContainers = pageContainers.map((currentContainer) => {
         if (areContainersEquals(currentContainer, container)) {
@@ -169,6 +199,21 @@ function insertPositionedContentletInContainer(payload: ActionPayload): {
 
     const { pageContainers, container, contentlet, personaTag, newContentletId, position } =
         payload;
+
+    const containerIsOnPageResponse = pageContainers.find((pageContainer) =>
+        areContainersEquals(pageContainer, container)
+    );
+
+    // We had a case where users are using the #parseContainer macro to hard code containers on their themes
+    // This case was not taken into account when we moved to design templates, so the container is not getting indexed on the PageAPI until we add some content
+    // That means, we have to trust the data we got from our SDK when we are adding a contentlet to a container and add the container to the pageContainers array if it's not there
+    // https://github.com/dotCMS/core/issues/31790#issuecomment-2945998795
+    if (!containerIsOnPageResponse) {
+        pageContainers.push({
+            ...container,
+            contentletsId: [...container.contentletsId]
+        });
+    }
 
     const newPageContainers = pageContainers.map((pageContainer) => {
         if (
