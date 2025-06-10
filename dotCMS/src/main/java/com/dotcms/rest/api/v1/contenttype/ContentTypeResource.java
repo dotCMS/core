@@ -13,6 +13,7 @@ import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.ContentTypeInternationalization;
 import com.dotcms.exception.ExceptionUtil;
+import com.dotcms.rendering.velocity.services.PageRenderUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
@@ -29,14 +30,20 @@ import com.dotcms.util.diff.DiffResult;
 import com.dotcms.util.pagination.ContentTypesPaginator;
 import com.dotcms.util.pagination.OrderDirection;
 import com.dotcms.workflow.helper.WorkflowHelper;
+import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
+import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRaw;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.SystemActionWorkflowActionMapping;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UUIDUtil;
@@ -44,6 +51,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 import com.google.common.collect.ImmutableMap;
+import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.swagger.v3.oas.annotations.ExternalDocumentation;
@@ -55,6 +63,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import io.vavr.Lazy;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
@@ -80,10 +89,14 @@ import javax.ws.rs.core.Response;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static com.dotcms.util.DotPreconditions.checkNotEmpty;
@@ -112,6 +125,8 @@ public class ContentTypeResource implements Serializable {
 	private final PaginationUtil 	paginationUtil;
 	private final WorkflowHelper 	workflowHelper;
 	private final PermissionAPI     permissionAPI;
+
+	private final Lazy<Set<String>> contentPaletteHiddenTypes = Lazy.of(()->Set.of(Config.getStringArrayProperty("CONTENT_PALETTE_HIDDEN_CONTENT_TYPES", new String[]{})));
 
 	public ContentTypeResource() {
 		this(ContentTypeHelper.getInstance(), new WebResource(),
@@ -1554,4 +1569,215 @@ public class ContentTypeResource implements Serializable {
 		return UtilMethods.isSet(form.getFilter().get(param)) ? (T) form.getFilter().get(param) : defaultValue;
 	}
 
+	/**
+	 * Returns a list of {@link ContentType} objects based on the filtering criteria. This is how
+	 * you can call this endpoint:
+	 * <pre>{@code
+	 * GET http://localhost:8080/api/v1/contenttype?sites=48190c8c-42c4-46af-8d1a-0cd5db894797,SYSTEM_HOST,&per_page=40&&orderby=variabledirection=DESC
+	 * }</pre>
+	 * <p>If you want results composed of 10 items per page and you want the third page, and you
+	 * don't have the Site's Identifier, you can call this URL:</p>
+	 * <pre>{@code
+	 * GET http://localhost:8080/api/v1/contenttype?sites=demo.dotcms.com&page=3&per_page=10
+	 * }</pre>
+	 *
+	 * @param httpRequest  The current instance of the {@link HttpServletRequest}.
+	 * @param httpResponse The current instance of the {@link HttpServletResponse}.
+	 * @param filter       Filtering parameter used to pass down the Content Types name, Velocity
+	 *                     Variable Name, or Inode. You can pass down part of the characters.
+	 * @param page         The selected results page, for pagination purposes.
+	 * @param perPage      The number of results to return per page, for pagination purposes.
+	 * @param orderByParam The column name that will be used to sort the paginated results. For
+	 *                     reference, please check
+	 *                     {@link com.dotmarketing.common.util.SQLUtil#ORDERBY_WHITELIST}.
+	 * @param direction    The direction of the sorting. It can be either "ASC" or "DESC".
+	 * @param type         The Velocity variable name of the Content Type  to retrieve.
+	 * @param siteId       The identifier of the Site where the requested Content Types live.
+	 * @param sites        A comma-separated list of Site identifiers or Site Keys where the
+	 *                     requested Content Types live.
+	 *
+	 * @return A JSON response with the paginated list of Content Types.
+	 *
+	 * @throws DotDataException An error occurred when retrieving information from the database.
+	 */
+	@GET
+	@Path("/page")
+	@JSONP
+	@NoCache
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+	@Operation(
+			operationId = "getPagesContentTypes",
+			summary = "Retrieves a list of content types for a page",
+			description = "Returns a list of content type objects based on the filtering criteria.",
+			tags = {"Content Type"},
+			responses = {
+					@ApiResponse(responseCode = "200", description = "Content types retrieved successfully",
+							content = @Content(
+									mediaType = "application/json",
+									examples = {
+											@ExampleObject(
+													value = "{\n" +
+															"  \"entity\": [\n" +
+															"    {\n" +
+															"      \"baseType\": \"string\",\n" +
+															"      \"clazz\": \"string\",\n" +
+															"      \"defaultType\": true,\n" +
+															"      \"description\": \"string\",\n" +
+															"      \"fixed\": true,\n" +
+															"      \"folder\": \"string\",\n" +
+															"      \"folderPath\": \"string\",\n" +
+															"      \"host\": \"string\",\n" +
+															"      \"iDate\": 0,\n" +
+															"      \"icon\": \"string\",\n" +
+															"      \"id\": \"string\",\n" +
+															"      \"layout\": [],\n" +
+															"      \"metadata\": {},\n" +
+															"      \"modDate\": 0,\n" +
+															"      \"multilingualable\": true,\n" +
+															"      \"nEntries\": 0,\n" +
+															"      \"name\": \"string\",\n" +
+															"      \"siteName\": \"string\",\n" +
+															"      \"sortOrder\": 0,\n" +
+															"      \"system\": true,\n" +
+															"      \"variable\": \"string\",\n" +
+															"      \"versionable\": true,\n" +
+															"      \"workflows\": []\n" +
+															"    }\n" +
+															"  ],\n" +
+															"  \"errors\": [],\n" +
+															"  \"i18nMessagesMap\": {},\n" +
+															"  \"messages\": [],\n" +
+															"  \"pagination\": {\n" +
+															"    \"currentPage\": 0,\n" +
+															"    \"perPage\": 0,\n" +
+															"    \"totalEntries\": 0\n" +
+															"  },\n" +
+															"  \"permissions\": []\n" +
+															"}\n"
+											)
+									}
+							)
+					),
+					@ApiResponse(responseCode = "403", description = "Forbidden"),
+					@ApiResponse(responseCode = "500", description = "Internal Server Error")
+			}
+	)
+	public final Response getPagesContentTypes(@Context final HttpServletRequest httpRequest,
+										  @Context final HttpServletResponse httpResponse,
+
+										   @QueryParam("pagePathOrId") @Parameter(schema = @Schema(type = "string"),
+												   description = "The URL or Identifier of the page to filter content types for the palette"
+										   ) final String pagePathOrId,
+										   @DefaultValue("-1") @QueryParam("language") @Parameter(
+												   schema = @Schema(type = "string"),
+												   description = "Optional Language id"
+										   ) String language,
+										   @QueryParam(PaginationUtil.FILTER) @Parameter(schema = @Schema(type = "string"),
+												   description = "String to filter/search for specific content types; leave blank to return all."
+										   ) final String filter,
+										  @QueryParam(PaginationUtil.PAGE) @Parameter(schema = @Schema(type = "integer"),
+												  description = "Page number in response pagination.\n\nDefault: `1`"
+										  ) final int page,
+										  @QueryParam(PaginationUtil.PER_PAGE) @Parameter(schema = @Schema(type = "integer"),
+												  description = "Number of results per page for pagination.\n\nDefault: `10`"
+										  ) final int perPage,
+										  @DefaultValue("upper(name)") @QueryParam(PaginationUtil.ORDER_BY) @Parameter(
+												  schema = @Schema(type = "string"),
+												  description = "Column(s) to sort the results. Multiple columns can be " +
+														  "combined in a comma-separated list. Column names can also be set " +
+														  "within a SQL string function, such as `upper()`.\n\n" +
+														  "Some possible values:\n\n" +
+														  "`name`, `velocity_var_name`, `mod_date`, `sort_order`\n\n" +
+														  "`description`, `structuretype`, `category`, `inode`"
+										  ) String orderByParam,
+										  @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION) @Parameter(
+												  schema = @Schema(
+														  type = "string",
+														  allowableValues = {"ASC", "DESC"},
+														  defaultValue = "ASC",
+														  required = true
+												  ),
+												  description = "Sort direction: choose between ascending or descending."
+										  ) String direction,
+										  @QueryParam(ContentTypesPaginator.HOST_PARAMETER_ID) @Parameter(schema = @Schema(type = "string"),
+												  description = "Filter by site identifier."
+										  ) final String siteId) throws DotDataException, DotSecurityException {
+
+		final User user = new WebResource.InitBuilder(this.webResource)
+				.requestAndResponse(httpRequest, httpResponse)
+				.rejectWhenNoUser(true)
+				.init().getUser();
+
+		if (Objects.isNull(pagePathOrId)) {
+
+			throw new BadRequestException("The 'pagePathOrId' parameter is required.");
+		}
+
+		Logger.debug(this, ()-> "Getting Content Types for page: " + pagePathOrId);
+
+		final PageMode pageMode = PageMode.get(httpRequest);
+		final long userLanguageId = LanguageUtil.getLanguageId(language);
+		final long languageId = userLanguageId > 0 ? userLanguageId : APILocator.getLanguageAPI().getDefaultLanguage().getId();
+		final Host site = UtilMethods.isSet(siteId) ?
+				APILocator.getHostAPI().find(siteId, user, pageMode.respectAnonPerms) :
+				APILocator.getHostAPI().findDefaultHost(user, pageMode.respectAnonPerms); // wondering if this should be current or default
+		final String orderBy = this.getOrderByRealName(orderByParam);
+		final List<String> typeVarNames = findPageContainersContentTypesVarnamesByPathOrId(pagePathOrId, site, languageId, pageMode, user);
+
+		final Map<String, Object> extraParams = new HashMap<>();
+		if (null != siteId) {
+			extraParams.put(ContentTypesPaginator.HOST_PARAMETER_ID,siteId);
+		}
+		if (UtilMethods.isSet(typeVarNames)) {
+
+			Logger.debug(this, ()-> "Found Content Types for page: " + pagePathOrId +
+					" in site: " + (Objects.nonNull(site) ? site.getHostname() : "null") +
+					" with languageId: " + languageId + " and pageMode: " + pageMode +
+					" with types: " + typeVarNames);
+			extraParams.put(ContentTypesPaginator.TYPES_PARAMETER_NAME, typeVarNames);
+		}
+		final PaginationUtil paginationUtil = new PaginationUtil(new ContentTypesPaginator(APILocator.getContentTypeAPI(user)));
+		return paginationUtil.getPage(httpRequest, user, filter, page, perPage, orderBy,
+				OrderDirection.valueOf(direction), extraParams);
+	} // getPagesContentTypes.
+
+	private List<String> findPageContainersContentTypesVarnamesByPathOrId(final String pagePathOrId,
+										 final Host site,
+										 final long languageId,
+										 final PageMode pageMode,
+										 final User user) throws DotDataException, DotSecurityException {
+
+		Logger.debug(this, ()-> "Getting Content Types for page: " + pagePathOrId +
+				" in site: " + (Objects.nonNull(site) ? site.getHostname() : "null") +
+				" with languageId: " + languageId + " and pageMode: " + pageMode);
+
+		IHTMLPage htmlPage = Try.of(()->APILocator.getHTMLPageAssetAPI().getPageByPath(
+				pagePathOrId, site, languageId, pageMode.showLive)).getOrNull();
+
+		if (Objects.isNull(htmlPage)) { // try fallback
+
+			final Optional<ContentletVersionInfo> contentletVersionInfoOpt = APILocator.getVersionableAPI().getContentletVersionInfo(pagePathOrId, languageId);
+			if (contentletVersionInfoOpt.isPresent()) {
+				htmlPage = APILocator.getHTMLPageAssetAPI().findPage(pageMode.showLive?
+								contentletVersionInfoOpt.get().getLiveInode(): contentletVersionInfoOpt.get().getWorkingInode(),
+						user, pageMode.respectAnonPerms);
+			} else {
+				// try as an inode.
+				htmlPage = APILocator.getHTMLPageAssetAPI().findPage(pagePathOrId, user, pageMode.respectAnonPerms);
+			}
+		}
+
+		if (Objects.isNull(htmlPage)) { // still null, so the page does not exist
+
+			throw new BadRequestException(
+					String.format("Page with path or ID '%s' was not found", pagePathOrId));
+		}
+
+		// Retrieves the containers associated to the page, then extracts the content types for each container filtering the ones do not allowed
+		return new PageRenderUtil(htmlPage, user, pageMode, languageId, site)
+				.getContainersRaw().stream().map(containerRaw -> containerRaw.getContainerStructures())
+				.flatMap(Collection::stream).map(ContainerStructure::getContentTypeVar)
+				.filter(Predicate.not(this.contentPaletteHiddenTypes.get()::contains)).collect(Collectors.toList());
+	}
 }
