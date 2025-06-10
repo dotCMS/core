@@ -63,10 +63,12 @@ import com.dotmarketing.portlets.contentlet.business.DotContentletStateException
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
+import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetValidationException;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.Field;
@@ -87,6 +89,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.thoughtworks.xstream.XStream;
+import io.vavr.API;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
 import org.apache.commons.lang3.tuple.Pair;
@@ -326,6 +329,12 @@ public class ContentHandler implements IHandler {
 						}
 					}
 				}
+
+				content.setIdentifier(this.findLocalIdentifier(content));
+
+
+
+
                 try{
 					final boolean isPushedContentArchived = wrapper.getInfo().isDeleted();
 					final String contentId = content.getIdentifier();
@@ -549,6 +558,11 @@ public class ContentHandler implements IHandler {
 					final ContentletVersionInfo versionInfoToSave = info;
 					Logger.debug(this, () -> "*********************** Saving content info: " + versionInfoToSave
 							+ ", language: " + versionInfoToSave.getLang());
+
+					String localIdentifier = findLocalIdentifier(content);
+
+
+					info.setIdentifier(localIdentifier);
                     APILocator.getVersionableAPI().saveContentletVersionInfo(info);
 
 	                if(isHost) {
@@ -588,6 +602,38 @@ public class ContentHandler implements IHandler {
 			throw new DotPublishingException(errorMsg, e);
 		}
     }
+
+	private String findLocalIdentifier(final Contentlet content) throws DotDataException {
+
+		String localIdentifier = Try.of(()->APILocator.getIdentifierAPI().find(content.getIdentifier()).getId()).getOrNull();
+
+		if(UtilMethods.isSet(localIdentifier)){
+			return localIdentifier;
+		}
+
+
+		if(content.isHTMLPage() || content.isFileAsset()){
+			Host host = Try.of(()->APILocator.getHostAPI().find(content.getHost(), APILocator.systemUser(), false)).getOrNull();
+
+			String uri = Try.of(()->content.isHTMLPage() ? APILocator.getHTMLPageAssetAPI().fromContentlet(content).getURI() : APILocator.getFileAssetAPI().fromContentlet(content).getURI()).getOrNull();
+
+			if(!UtilMethods.isSet(uri) || !UtilMethods.isSet(host) || !UtilMethods.isSet(host.getIdentifier())){
+				return content.getIdentifier();
+			}
+
+			Identifier identifier = identifierAPI.find(host,uri);
+			if(UtilMethods.isSet(identifier) && UtilMethods.isSet(identifier.getId())){
+				return identifier.getId();
+			}
+
+		}
+		return content.getIdentifier();
+
+	}
+
+
+
+
 	
 	private void addRelatedContentsToInfoToRemove(Contentlet content, ContentletVersionInfo info) {
 		try {
@@ -776,8 +822,11 @@ public class ContentHandler implements IHandler {
 
 		//Verify if this contentlet is a FileAsset
         if (BaseContentType.FILEASSET.equals(content.getContentType().baseType())) {
-            // Wiping out the thumbnails and resized versions
-            APILocator.getFileAssetAPI().cleanThumbnailsFromContentlet(content);
+			Folder testFolder = APILocator.getFolderAPI().find(content.getFolder(), userToUse, false);
+			if(testFolder != null || testFolder.getInode() != null) {
+				// Wiping out the thumbnails and resized versions
+				APILocator.getFileAssetAPI().cleanThumbnailsFromContentlet(content);
+			}
         }
 
         //Verify if this contentlet is a HTMLPage
