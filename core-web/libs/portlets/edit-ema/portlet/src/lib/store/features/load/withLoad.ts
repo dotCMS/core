@@ -88,6 +88,7 @@ export function withLoad() {
                         }),
                         switchMap((pageParams) => {
                             const allowedParams = getAllowedPageParams(pageParams);
+
                             return forkJoin({
                                 pageAsset: dotPageApiService.get(allowedParams).pipe(
                                     // This logic should be handled in the Shell component using an effect
