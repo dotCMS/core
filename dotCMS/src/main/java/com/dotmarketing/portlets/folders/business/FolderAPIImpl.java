@@ -102,6 +102,7 @@ public class FolderAPIImpl implements FolderAPI  {
 					new HashSet<>(CollectionsUtils
 							.set(Config.getStringArrayProperty("RESERVEDFOLDERNAMES",
 									new String[]{"WEB-INF", "META-INF", "assets", "dotcms", "html",
+											"System folder",
 											"portal",
 											"email_backups",
 											"DOTLESS", "DOTSASS", "dotAdmin", "custom_elements"})
@@ -653,15 +654,11 @@ public class FolderAPIImpl implements FolderAPI  {
 
 	}
 
-	final Lazy<Folder> loadSystemFolder = Lazy.of(
-	                ()-> { return Try.of(()->folderFactory.findSystemFolder())
-	                                .getOrElseThrow(e->new DotRuntimeException(e));
-	                                                });
 	
 	
 	@CloseDBIfOpened
 	public Folder findSystemFolder()  {
-		return loadSystemFolder.get();
+		return Try.of(()->folderFactory.findSystemFolder()).getOrElseThrow(DotRuntimeException::new);
 	}
 
 

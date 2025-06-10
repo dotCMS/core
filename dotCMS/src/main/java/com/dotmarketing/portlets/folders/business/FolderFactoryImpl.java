@@ -1,5 +1,11 @@
 package com.dotmarketing.portlets.folders.business;
 
+import static com.dotmarketing.portlets.folders.business.FolderAPI.OLD_SYSTEM_FOLDER_ID;
+import static com.dotmarketing.portlets.folders.business.FolderAPI.SYSTEM_FOLDER;
+import static com.dotmarketing.portlets.folders.business.FolderAPI.SYSTEM_FOLDER_PARENT_PATH;
+import static com.dotmarketing.portlets.folders.business.FolderFactorySql.GET_CONTENT_REPORT;
+import static com.dotmarketing.portlets.folders.business.FolderFactorySql.GET_CONTENT_TYPE_COUNT;
+
 import com.dotcms.browser.BrowserQuery;
 import com.dotcms.system.SimpleMapAppContext;
 import com.dotcms.util.ConversionUtils;
@@ -44,12 +50,8 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
-import org.apache.commons.lang3.mutable.MutableBoolean;
-import org.apache.oro.text.regex.Pattern;
-import org.apache.oro.text.regex.Perl5Compiler;
-import org.apache.oro.text.regex.Perl5Matcher;
-
 import java.io.IOException;
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -62,17 +64,15 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.Stack;
 import java.util.TimeZone;
 import java.util.stream.Collectors;
-
-import static com.dotmarketing.portlets.folders.business.FolderAPI.SYSTEM_FOLDER;
-import static com.dotmarketing.portlets.folders.business.FolderAPI.SYSTEM_FOLDER_ASSET_NAME;
-import static com.dotmarketing.portlets.folders.business.FolderAPI.SYSTEM_FOLDER_ID;
-import static com.dotmarketing.portlets.folders.business.FolderAPI.SYSTEM_FOLDER_PARENT_PATH;
-import static com.dotmarketing.portlets.folders.business.FolderFactorySql.GET_CONTENT_REPORT;
-import static com.dotmarketing.portlets.folders.business.FolderFactorySql.GET_CONTENT_TYPE_COUNT;
+import org.apache.commons.lang3.mutable.MutableBoolean;
+import org.apache.oro.text.regex.Pattern;
+import org.apache.oro.text.regex.Perl5Compiler;
+import org.apache.oro.text.regex.Perl5Matcher;
 
 /**
  * This class extends the {@link FolderFactory} class. It provides access to Folder information
@@ -95,7 +95,7 @@ public class FolderFactoryImpl extends FolderFactory {
 		dc.setSQL("select inode  from folder where identifier = ? or inode = ?");
 		dc.addParam(folderInode);
 		dc.addParam(folderInode);
-		return dc.loadResults().size() > 0;
+		return !dc.loadResults().isEmpty();
 
 	}
 
@@ -123,30 +123,36 @@ public class FolderFactoryImpl extends FolderFactory {
 
 
 	@Override
-	protected Folder find(final String folderInode) throws DotDataException {
-		Folder folder = folderCache.getFolder(folderInode);
-		if (folder == null) {
-			try{
-			     DotConnect dc    = new DotConnect()
-			             .setSQL("select * from folder where identifier = ? or inode = ?")
-			             .addParam(folderInode).addParam(folderInode);
-
-				List<Folder> folders = TransformerLocator.createFolderTransformer(dc.loadObjectResults()).asList();
-
-				if (folders.isEmpty()) {
-					return null;
-				}
-
-				folder = folders.get(0);
-				Identifier id = APILocator.getIdentifierAPI().find(folder.getIdentifier());
-				folderCache.addFolder(folder, id);
-			}
-			catch(Exception e){
-				throw new DotDataException(e.getMessage(),e);
-			}
-
+	protected Folder find(final String folderIdOrInode) throws DotDataException {
+		Optional<Folder> folder = Optional.ofNullable(folderCache.getFolder(folderIdOrInode));
+		if (folder.isPresent()) {
+			return folder.get();
 		}
-		return folder;
+
+		 DotConnect dc    = new DotConnect()
+				 .setSQL("select * from folder where identifier = ? or inode = ?")
+				 .addParam(folderIdOrInode)
+				 .addParam(folderIdOrInode);
+
+		folder = Try.of(()->TransformerLocator.createFolderTransformer(dc.loadObjectResults()).asList().get(0))
+				.onFailure(e->Logger.debug(FolderFactoryImpl.class,e.getMessage(),e))
+				.toJavaOptional();
+
+		if (folder.isPresent()) {
+			Identifier id = APILocator.getIdentifierAPI().find(folder.get().getIdentifier());
+			folderCache.addFolder(folder.get(), id);
+			return folder.get();
+		}
+
+		// if this is the old system folder id, return the new SYSTEM_FOLDER
+		if(OLD_SYSTEM_FOLDER_ID.equals(folderIdOrInode)) {
+			return find(SYSTEM_FOLDER);
+		}
+
+		return null;
+
+
+
 	}
 
 	/**
@@ -155,7 +161,6 @@ public class FolderFactoryImpl extends FolderFactory {
 	 * @return
 	 * @throws DotStateException
 	 * @throws DotDataException
-	 * @deprecated use {@link #getSubFoldersTitleSort(Folder)}
 	 */
 	@SuppressWarnings("unchecked")
 	@Override
@@ -389,7 +394,7 @@ public class FolderFactoryImpl extends FolderFactory {
 	}
 
 	@SuppressWarnings("unchecked")
-	private List getMenuItems(List<Folder> folders, int orderDirection) throws DotDataException {
+	private List getMenuItems(List<Folder> folders, int orderDirection)  {
 
 		List menuList = new ArrayList();
 
@@ -962,17 +967,17 @@ public class FolderFactoryImpl extends FolderFactory {
 				int length = filesMasksArray.length;
 
 				// Try to match de filters
-				for (int i = 0; i < length; i++) {
-					String regex = filesMasksArray[i];
-					regex = regex.replace(".", "\\.");
-					regex = regex.replace("*", ".*");
-					regex = "^" + regex.trim() + "$";
-					Pattern pattern = p5c.compile(regex, Perl5Compiler.CASE_INSENSITIVE_MASK);
-					match = match || p5m.matches(fileName, pattern);
-					if (match) {
-						break;
-					}
-				}
+                for (String s : filesMasksArray) {
+                    String regex = s;
+                    regex = regex.replace(".", "\\.");
+                    regex = regex.replace("*", ".*");
+                    regex = "^" + regex.trim() + "$";
+                    Pattern pattern = p5c.compile(regex, Perl5Compiler.CASE_INSENSITIVE_MASK);
+                    match = match || p5m.matches(fileName, pattern);
+                    if (match) {
+                        break;
+                    }
+                }
 			} else {
 				match = true;
 			}
@@ -993,59 +998,68 @@ public class FolderFactoryImpl extends FolderFactory {
 		return returnValue;
 	}
 
+
 	// http://jira.dotmarketing.net/browse/DOTCMS-3232
 	protected Folder findSystemFolder() throws DotDataException {
-		Folder folder = new Folder();
-		folder = folderCache.getFolder(SYSTEM_FOLDER);
-		if (folder!=null && folder.getInode().equalsIgnoreCase(SYSTEM_FOLDER)) {
+		Folder folder = find(SYSTEM_FOLDER);
+		if(folder!=null && UtilMethods.isSet(folder.getInode())){
 			return folder;
-		} else {
-			folder = find(SYSTEM_FOLDER);
 		}
-		if (UtilMethods.isSet(folder.getInode()) && folder.getInode().equalsIgnoreCase(SYSTEM_FOLDER)) {
-			folderCache.addFolder(folder,APILocator.getIdentifierAPI().find(folder.getIdentifier()));
+		folder = find(OLD_SYSTEM_FOLDER_ID);
+
+		if (folder!=null && UtilMethods.isSet(folder.getInode()) ) {
 			return folder;
-		} else {
+		}
+
+
+		List<Map<String, Object>> outerResults = new DotConnect().setSQL("select * from identifier").loadObjectResults();
+
+
+		try(Connection connection = DbConnectionFactory.getConnection()) {
 			DotConnect dc = new DotConnect();
-			Folder folder1 = new Folder();
-			String hostInode = "";
-			folder1.setInode(SYSTEM_FOLDER);
-			folder1.setName(SYSTEM_FOLDER_ASSET_NAME);
-			folder1.setTitle("System folder");
-			try {
-				hostInode = APILocator.getHostAPI().findSystemHost(APILocator.getUserAPI().getSystemUser(), true).getIdentifier();
-			} catch (DotSecurityException e) {
-				Logger.error(FolderFactoryImpl.class, e.getMessage(), e);
-				throw new DotDataException(e.getMessage(), e);
+
+			if (dc.setSQL(
+					"select count(id) as test from identifier where asset_type='folder' and host_inode='SYSTEM_HOST' "
+							+ "and ( id = 'SYSTEM_FOLDER' or lower(parent_path) = '/system folder') ").loadInt("test",connection)
+					== 0) {
+
+				dc.setSQL("INSERT INTO IDENTIFIER(ID,PARENT_PATH,ASSET_NAME,HOST_INODE,ASSET_TYPE) VALUES(?,?,?,?,?)");
+				dc.addParam(SYSTEM_FOLDER);
+				dc.addParam(SYSTEM_FOLDER_PARENT_PATH);
+				dc.addParam("system folder");
+				dc.addParam(Host.SYSTEM_HOST);
+				dc.addParam("folder");
+				dc.loadResult(connection);
+
 			}
-			folder1.setFilesMasks("");
-			folder1.setSortOrder(0);
-			folder1.setShowOnMenu(false);
 
-			String IdentifierQuery = "INSERT INTO IDENTIFIER(ID,PARENT_PATH,ASSET_NAME,HOST_INODE,ASSET_TYPE) VALUES(?,?,?,?,?)";
-			String uuid = SYSTEM_FOLDER_ID;
-			dc.setSQL(IdentifierQuery);
-			dc.addParam(uuid);
-			dc.addParam(SYSTEM_FOLDER_PARENT_PATH);
-			dc.addParam(folder1.getName());
-			dc.addParam(hostInode);
-			dc.addParam(folder1.getType());
-			dc.loadResult();
+			if (dc.setSQL(
+							"select count(inode) as test from folder where inode='SYSTEM_FOLDER' or identifier='SYSTEM_FOLDER' ")
+					.loadInt("test",connection) == 0) {
 
-			String hostQuery = "INSERT INTO FOLDER (INODE, NAME, TITLE, SHOW_ON_MENU, SORT_ORDER,FILES_MASKS,IDENTIFIER, OWNER, IDATE) VALUES (?,?,?,?,?,?,?,?,null,?)";
-			dc.setSQL(hostQuery);
-			dc.addParam(folder1.getInode());
-			dc.addParam(folder1.getName());
-			dc.addParam(folder1.getTitle());
-			dc.addParam(folder1.isShowOnMenu());
-			dc.addParam(folder1.getSortOrder());
-			dc.addParam(folder1.getFilesMasks());
-			dc.addParam(uuid);
-			dc.addParam(folder1.getIDate());
-			dc.loadResult();
-			folderCache.addFolder(folder1,APILocator.getIdentifierAPI().find(folder1.getIdentifier()));
-			return folder1;
+				folder = new Folder();
+				String INSERT_FOLDER = "INSERT INTO FOLDER (INODE, NAME, TITLE, SHOW_ON_MENU, SORT_ORDER,IDENTIFIER, OWNER, IDATE) VALUES (?,?,?,?,?,?,?,?)";
+				dc.setSQL(INSERT_FOLDER);
+				dc.addParam(SYSTEM_FOLDER);
+				dc.addParam("system folder");
+				dc.addParam("system folder");
+				dc.addParam(false);
+				dc.addParam(0);
+				dc.addParam(SYSTEM_FOLDER);
+				dc.addParam(APILocator.getUserAPI().getSystemUser().getUserId());
+				dc.addParam(folder.getIDate());
+				dc.loadResult(connection);
+
+				return folder;
+			}
+		}catch (Exception e) {
+			Logger.error(FolderFactoryImpl.class, "Error while trying to find or create the system folder", e);
+			throw new DotDataException("Error while trying to find or create the system folder", e);
 		}
+
+
+		throw new DotDataException("System Folder not found, should be created by default on installation");
+
 	}
 
 	@SuppressWarnings("unchecked")
@@ -1182,21 +1196,22 @@ public class FolderFactoryImpl extends FolderFactory {
 
 	@Override
 	public void save(Folder folder) throws DotDataException {
-
-		folderCache.removeFolder(folder, APILocator.getIdentifierAPI().find(folder.getIdentifier()));
-
+		if(folder!= null && OLD_SYSTEM_FOLDER_ID.equals(folder.getIdentifier())) {
+			folder.setIdentifier(SYSTEM_FOLDER);
+		}
+		Identifier id = APILocator.getIdentifierAPI().find(folder.getIdentifier());
+		if(UtilMethods.isSet(()->id.getId())) {
+			folderCache.removeFolder(folder, id);
+		}
 		upsertFolder(folder);
 	}
 
 
 	private void upsertFolder(final Folder folder) throws DotDataException {
+
+
 		final UpsertCommand upsertContentletCommand = UpsertCommandFactory.getUpsertCommand();
 		final SimpleMapAppContext replacements = new SimpleMapAppContext();
-
-		if (!UtilMethods.isSet(folder.getInode())) {
-			folder.setInode(folder.getIdentifier());
-		}
-
 
 		replacements.setAttribute(QueryReplacements.TABLE, "folder");
 		replacements.setAttribute(QueryReplacements.CONDITIONAL_COLUMN, "inode");
@@ -1221,7 +1236,10 @@ public class FolderFactoryImpl extends FolderFactory {
 			parameters.add(new Timestamp(folder.getIDate().getTime()));
 		}
 
+		Logger.info(this, "Upserting Folder: " + folder.getPath());
+
 		upsertContentletCommand.execute(new DotConnect(), replacements, parameters.toArray());
+
 	}
 
 	@Override
