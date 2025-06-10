@@ -671,10 +671,12 @@
 					href += "&relname=" + '<%= relationJsName %>';
 					href += "&relname_inodes=" + '<%= rel.getInode()%>';
 					href += "&referer=" + escape(referer);
-
+					debugger
+						console.log(href)
 					if (!confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.contentlet.lose.unsaved.changes")) %>'))
                         return;
 
+					debugger
 					window.location=href;
 				}
 

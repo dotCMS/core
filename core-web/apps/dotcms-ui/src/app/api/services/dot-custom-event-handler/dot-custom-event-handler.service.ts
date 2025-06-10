@@ -103,6 +103,7 @@ export class DotCustomEventHandlerService {
     }
 
     private createContentletLegacy($event: CustomEvent): void {
+        debugger;
         this.dotContentletEditorService.create({
             data: $event.detail.data
         });
@@ -133,10 +134,12 @@ export class DotCustomEventHandlerService {
     }
 
     private editContentletLegacy($event: CustomEvent): void {
+        debugger;
         this.dotRouterService.goToEditContentlet($event.detail.data.inode);
     }
 
     private editContentlet($event: CustomEvent): void {
+        debugger;
         this.dotContentTypeService
             .getContentType($event.detail.data.contentType)
             .pipe(take(1))

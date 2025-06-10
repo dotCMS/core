@@ -1,0 +1,31 @@
+@if (mode() === 'create') {
+    <!-- New Angular-based content editor -->
+    <div class="dot-create-content-dialog" data-testid="new-content-editor-dialog">
+        <!-- TODO: Integrate with DotEditContentLayoutComponent -->
+        <!-- This requires creating a service to initialize the store programmatically -->
+        <div class="dot-create-content-dialog__placeholder">
+            <p class="dot-create-content-dialog__placeholder-title">
+                Creating new {{ contentType()?.name }} content...
+            </p>
+            <p class="dot-create-content-dialog__placeholder-subtitle">
+                New content editor integration coming soon.
+            </p>
+        </div>
+    </div>
+} @else if (mode() === 'create-legacy') {
+    <!-- Legacy iframe-based content editor -->
+    <div class="dot-create-content-dialog" data-testid="legacy-content-editor-dialog">
+        @if (iframeUrl()) {
+            <iframe
+                #legacyIframe
+                [src]="sanitizedIframeUrl()"
+                data-testid="legacy-content-iframe"
+                frameborder="0"
+                width="100%"
+                height="100%"
+                class="dot-create-content-dialog__iframe"
+                (load)="onIframeLoad()"
+                title="Create Content"></iframe>
+        }
+    </div>
+}

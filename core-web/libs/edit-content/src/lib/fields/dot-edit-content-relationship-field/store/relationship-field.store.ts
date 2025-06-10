@@ -74,6 +74,7 @@ export const RelationshipFieldStore = signalStore(
              * @param {RelationshipFieldItem[]} data - The data to be set.
              */
             setData(data: DotCMSContentlet[]) {
+                console.log('data', data);
                 patchState(store, { data: [...data] });
             },
             /**

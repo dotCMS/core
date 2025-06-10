@@ -1,0 +1,33 @@
+@use "variables" as *;
+
+:host {
+    display: block;
+    height: 100%;
+    width: 100%;
+}
+
+.dot-create-content-dialog {
+    height: 100%;
+    width: 100%;
+}
+
+.dot-create-content-dialog__iframe {
+    min-height: 600px;
+    border: none;
+}
+
+.dot-create-content-dialog__placeholder {
+    padding: $spacing-4;
+    text-align: center;
+}
+
+.dot-create-content-dialog__placeholder-title {
+    font-size: $font-size-lg;
+    margin-bottom: $spacing-2;
+    color: $color-palette-gray-700;
+}
+
+.dot-create-content-dialog__placeholder-subtitle {
+    font-size: $font-size-sm;
+    color: $color-palette-gray-500;
+}

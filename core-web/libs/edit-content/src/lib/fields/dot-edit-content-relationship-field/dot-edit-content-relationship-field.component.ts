@@ -11,6 +11,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { Router } from '@angular/router';
 
 import { MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -19,20 +20,24 @@ import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { MenuModule } from 'primeng/menu';
 import { TableRowReorderEvent, TableModule } from 'primeng/table';
 
-import { filter } from 'rxjs/operators';
+import { filter, switchMap } from 'rxjs/operators';
 
-import { DotMessageService } from '@dotcms/data-access';
-import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
+import { DotContentTypeService, DotMessageService } from '@dotcms/data-access';
+import { DotCMSContentlet, DotCMSContentTypeField, FeaturedFlags } from '@dotcms/dotcms-models';
 import { ContentletStatusPipe } from '@dotcms/edit-content/pipes/contentlet-status.pipe';
 import { LanguagePipe } from '@dotcms/edit-content/pipes/language.pipe';
 import { DotMessagePipe } from '@dotcms/ui';
 
+import { DotCreateContentDialogComponent } from './components/dot-create-content-dialog';
 import { FooterComponent } from './components/dot-select-existing-content/components/footer/footer.component';
 import { HeaderComponent } from './components/dot-select-existing-content/components/header/header.component';
 import { DotSelectExistingContentComponent } from './components/dot-select-existing-content/dot-select-existing-content.component';
 import { PaginationComponent } from './components/pagination/pagination.component';
 import { RelationshipFieldStore } from './store/relationship-field.store';
 import { getContentTypeIdFromRelationship } from './utils';
+
+import { DotLegacyUrlBuilderService } from '../../services/dot-legacy-url-builder.service';
 
 @Component({
     selector: 'dot-edit-content-relationship-field',
@@ -73,6 +78,18 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
     readonly #dotMessageService = inject(DotMessageService);
 
     /**
+     * A readonly private field that injects the DotContentTypeService.
+     * This service is used for retrieving content type information and metadata.
+     */
+    readonly #dotContentTypeService = inject(DotContentTypeService);
+
+    /**
+     * A readonly private field that injects the Router service.
+     * This service is used for navigation to different routes.
+     */
+    readonly #router = inject(Router);
+
+    /**
      * A readonly private field that holds a reference to the `DestroyRef` service.
      * This service is injected into the component to manage the destruction lifecycle.
      */
@@ -86,6 +103,15 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
     readonly #dialogService = inject(DialogService);
 
     /**
+     * A readonly private field that holds an instance of the DotLegacyUrlBuilderService.
+     * This service is used to build URLs for the legacy content editor with the correct
+     * portlet parameters extracted from the JSP logic.
+     */
+    readonly #legacyUrlBuilder = inject(DotLegacyUrlBuilderService);
+
+    readonly #dotContentletEditorService = inject(DotContentletEditorService);
+
+    /**
      * Signal that tracks whether the component is disabled.
      * This is used to disable all interactive elements in the component.
      */
@@ -97,6 +123,11 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
      * @type {DynamicDialogRef | null}
      */
     #dialogRef: DynamicDialogRef | null = null;
+
+    /**
+     * Signal to track the URL for the legacy iframe dialog
+     */
+    readonly $legacyDialogUrl = signal<string | null>(null);
 
     /**
      * A signal that holds the menu items for the relationship field.
@@ -113,6 +144,13 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
                 disabled: isDisabledCreateNewContent || this.$isDisabled(),
                 command: () => {
                     this.showExistingContentDialog();
+                }
+            },
+            {
+                label: this.#dotMessageService.get('dot.file.relationship.field.table.new.content'),
+                disabled: isDisabledCreateNewContent || this.$isDisabled(),
+                command: () => {
+                    this.showCreateNewContentDialog();
                 }
             }
         ];
@@ -288,6 +326,145 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
             .subscribe((items: DotCMSContentlet[]) => {
                 this.store.setData(items);
             });
+    }
+
+    /**
+     * Shows the create new content dialog based on the relationship content type.
+     * It checks the CONTENT_EDITOR2_ENABLED flag in the content type metadata to determine
+     * whether to use the new Angular-based content editor or the legacy iframe-based editor.
+     */
+    showCreateNewContentDialog() {
+        if (this.$isDisabled()) {
+            return;
+        }
+
+        const contentTypeId = this.$attributes().contentTypeId;
+
+        // Get content type information to check the CONTENT_EDITOR2_ENABLED flag
+        this.#dotContentTypeService
+            .getContentType(contentTypeId)
+            .pipe(takeUntilDestroyed(this.#destroyRef))
+            .subscribe((contentType) => {
+                const isNewEditorEnabled =
+                    contentType.metadata?.[FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED] ===
+                    true;
+
+                if (isNewEditorEnabled) {
+                    this.#openNewContentEditorDialog(contentType);
+                } else {
+                    this.#openLegacyContentEditorDialog(contentType);
+                }
+            });
+    }
+
+    /**
+     * Opens the new Angular-based content editor in a dialog
+     * @private
+     */
+    #openNewContentEditorDialog(contentType: any) {
+        // TODO: For now, we'll use a placeholder component
+        // Later this should be replaced with the actual DotEditContentLayoutComponent
+        // configured to work in dialog mode
+
+        this.#dialogRef = this.#dialogService.open(DotCreateContentDialogComponent, {
+            appendTo: 'body',
+            closeOnEscape: true,
+            draggable: false,
+            keepInViewport: false,
+            modal: true,
+            resizable: false,
+            position: 'center',
+            width: '90%',
+            height: '90%',
+            maskStyleClass: 'p-dialog-mask-dynamic p-dialog-create-content-new',
+            style: { 'max-width': '1200px', 'max-height': '900px' },
+            data: {
+                contentType: contentType,
+                mode: 'create'
+            },
+            header: this.#dotMessageService.get(
+                'contenttypes.content.create.contenttype',
+                contentType.name
+            )
+        });
+
+        this.#dialogRef.onClose
+            .pipe(
+                filter((newContent) => !!newContent),
+                takeUntilDestroyed(this.#destroyRef)
+            )
+            .subscribe((newContent: DotCMSContentlet) => {
+                // Add the newly created content to the relationship
+                const currentData = this.store.data();
+                this.store.setData([...currentData, newContent]);
+            });
+    }
+
+    /**
+     * Opens the legacy iframe-based content editor in a dialog
+     * @private
+     */
+    #openLegacyContentEditorDialog(contentType: any) {
+        // Build the proper legacy content editor URL using the extracted JSP logic
+        const createUrl = this.#legacyUrlBuilder.buildCreateContentUrl({
+            contentTypeVariable: contentType.variable,
+            languageId: this.$contentlet().languageId || '1'
+        });
+        const url = this.#addNewContentletURL(contentType);
+
+        this.#dotContentletEditorService.create({
+            data: { url: url, contentType: contentType.variable }
+        });
+
+        // // Use a simple iframe dialog approach
+        // this.#dialogRef = this.#dialogService.open(DotCreateContentDialogComponent, {
+        //     appendTo: 'body',
+        //     closeOnEscape: true,
+        //     draggable: false,
+        //     keepInViewport: false,
+        //     modal: true,
+        //     resizable: false,
+        //     position: 'center',
+        //     width: '90%',
+        //     height: '90%',
+        //     maskStyleClass: 'p-dialog-mask-dynamic p-dialog-create-content-legacy',
+        //     style: { 'max-width': '1200px', 'max-height': '900px' },
+        //     data: {
+        //         contentType: contentType,
+        //         mode: 'create-legacy',
+        //         iframeUrl: createUrl
+        //     },
+        //     header: this.#dotMessageService.get(
+        //         'contenttypes.content.create.contenttype',
+        //         contentType.name
+        //     )
+        // });
+
+        // this.#dialogRef.onClose
+        //     .pipe(
+        //         filter((newContent) => !!newContent),
+        //         takeUntilDestroyed(this.#destroyRef)
+        //     )
+        //     .subscribe((newContent: DotCMSContentlet) => {
+        //         // Add the newly created content to the relationship
+        //         const currentData = this.store.data();
+        //         this.store.setData([...currentData, newContent]);
+        //     });
+    }
+
+    #addNewContentletURL(contentType: any) {
+        let href = '/c/portal/layout?p_p_id=content&p_p_action=1&p_p_state=maximized&p_p_mode=view';
+        href += '&_content_struts_action=%2Fext%2Fcontentlet%2Fedit_contentlet&_content_cmd=new';
+        href += '&selectedStructure=' + contentType.id + '&lang=1&is_rel_tab=true';
+        debugger;
+
+        href += '&relwith=' + '<%=contentletInode%>';
+        href += '&relisparent=' + '<%= isParent %>';
+        href += '&reltype=' + '<%= relationType.toString() %>';
+        href += '&relname=' + '<%= relationJsName %>';
+        href += '&relname_inodes=' + '<%= rel.getInode()%>';
+
+        return href;
     }
 
     /**

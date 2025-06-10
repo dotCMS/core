@@ -601,6 +601,8 @@
 			href += "&relname=" + '<%= relationJsName %>';
 			href += "&relname_inodes=" + '<%= relationship.getInode()%>';
 			href += "&referer=" + escape(referer);
+			debugger
+			console.log(href)
 
 			if (!confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.contentlet.lose.unsaved.changes")) %>'))
                       return;

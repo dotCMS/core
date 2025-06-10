@@ -853,6 +853,7 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
 
 
         function addNewContentlet(structureInode, contentType){
+                debugger
 
                 if(!contentType){
 
