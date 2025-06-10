@@ -23,6 +23,8 @@ export interface DotPageApiParams {
     experimentId?: string;
     clientHost?: string;
     publishDate?: string;
+    // We need this to allow any other query param to be passed by the user
+    [x: string]: any;
 }
 
 export enum DotPageAssetKeys {

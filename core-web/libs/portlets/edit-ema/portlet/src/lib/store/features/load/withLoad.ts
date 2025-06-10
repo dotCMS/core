@@ -15,7 +15,12 @@ import { DEFAULT_VARIANT_ID } from '@dotcms/dotcms-models';
 import { DotPageApiService } from '../../../services/dot-page-api.service';
 import { UVE_STATUS } from '../../../shared/enums';
 import { DotPageAssetParams } from '../../../shared/models';
-import { computeCanEditPage, computePageIsLocked, isForwardOrPage } from '../../../utils';
+import {
+    computeCanEditPage,
+    computePageIsLocked,
+    getAllowedPageParams,
+    isForwardOrPage
+} from '../../../utils';
 import { UVEState } from '../../models';
 import { withClient } from '../client/withClient';
 import { withWorkflow } from '../workflow/withWorkflow';
@@ -82,8 +87,9 @@ export function withLoad() {
                             });
                         }),
                         switchMap((pageParams) => {
+                            const allowedParams = getAllowedPageParams(pageParams);
                             return forkJoin({
-                                pageAsset: dotPageApiService.get(pageParams).pipe(
+                                pageAsset: dotPageApiService.get(allowedParams).pipe(
                                     // This logic should be handled in the Shell component using an effect
                                     switchMap((pageAsset) => {
                                         const { vanityUrl } = pageAsset;
