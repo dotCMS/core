@@ -85,6 +85,10 @@ public class ContentResource {
     private static final String REQUEST_METHOD = "requestMethod";
     private static final String ACCEPT_LANGUAGE = "acceptLanguage";
 
+    // set this only from an environmental variable so it cannot be overrriden in our Config class
+    private final boolean USE_XSTREAM_FOR_DESERIALIZATION = System.getenv("USE_XSTREAM_FOR_DESERIALIZATION") != null
+            && "true".equals(System.getenv("USE_XSTREAM_FOR_DESERIALIZATION"));
+
     private final WebResource webResource = new WebResource();
     private final ContentHelper contentHelper = ContentHelper.getInstance();
 
@@ -510,6 +514,63 @@ public class ContentResource {
         return responseResource.response(result, null, status);
     }
 
+    private static void maskAndHideFields(Map<String, Object> contentMap, User user) {
+
+        if (contentMap == null || contentMap.isEmpty()) {
+            return;
+        }
+
+        try {
+            final boolean isCMSAdmin = APILocator.getUserAPI().isCMSAdmin(user);
+            if (isCMSAdmin) {
+                return;
+            }
+        } catch (DotDataException e) {
+            Logger.warn(ContentResource.class, "Error checking if user is CMS Admin: " + e.getMessage(), e);
+        }
+
+        final String [] fieldsToMask = Config.getStringArrayProperty("CONTENT_API_FIELDS_TO_MASK",
+                new String[] { Contentlet.MOD_USER_KEY, Contentlet.OWNER_KEY });
+        for (String fieldKey : fieldsToMask) {
+            if (contentMap.containsKey(fieldKey)) {
+                final Object fieldValue = contentMap.get(fieldKey);
+                if (fieldValue instanceof String && UtilMethods.isSet(fieldValue)) {
+                    final String unmaskedValue = (String) fieldValue;
+                    final String [] emailAddressParts = unmaskedValue.split("@", 2);
+                    String maskedEmail = "";
+                    if (emailAddressParts.length > 0) {
+                        final String userName = emailAddressParts[0];
+                        if (userName.length() < 2) {
+                            maskedEmail += "*****";
+                        } else {
+                            final char firstChar = userName.charAt(0);
+                            final char lastChar = userName.charAt(userName.length() - 1);
+                            maskedEmail += firstChar + "*****" + (userName.length() > 1 ? lastChar : "");
+                        }
+                    }
+                    if (emailAddressParts.length > 1) {
+                        final String domain = emailAddressParts[1];
+                        if (domain.length() < 2) {
+                            maskedEmail += ".*****";
+                        } else {
+                            final char firstChar = domain.charAt(0);
+                            final char lastChar = domain.charAt(domain.length() - 1);
+                            maskedEmail += "." + firstChar + "*****" + (domain.length() > 1 ? lastChar : "");
+                        }
+                    }
+                    contentMap.put(fieldKey, maskedEmail);
+                }
+            }
+        }
+
+        final String [] fieldsToHide = Config.getStringArrayProperty("CONTENT_API_FIELDS_TO_HIDE", new String[0]);
+        for (String fieldKey : fieldsToHide) {
+            if (contentMap.containsKey(fieldKey) && UtilMethods.isSet(contentMap.get(fieldKey))) {
+                contentMap.remove(fieldKey);
+            }
+        }
+    }
+
     /**
      * This methods receives a Lucene query.
      * It processes the query looking for special scenarios like structure fields (i.e: stInode, stName) and replace them with valid Content fields
@@ -603,6 +664,7 @@ public class ContentResource {
         final ContentType type = contentlet.getContentType();
 
         m.putAll(ContentletUtil.getContentPrintableMap(user, contentlet));
+        maskAndHideFields(m, user);
 
         if (BaseContentType.WIDGET.equals(type.baseType()) && Boolean.toString(true)
                 .equalsIgnoreCase(render)) {
@@ -927,7 +989,10 @@ public class ContentResource {
             throws JSONException, IOException, DotDataException, DotSecurityException {
         JSONObject jo = new JSONObject();
         ContentType type = con.getContentType();
+        final Object conHostName = con.get("hostName");
         Map<String, Object> map = ContentletUtil.getContentPrintableMap(user, con);
+
+        maskAndHideFields(map, user);
 
         Set<String> jsonFields = getJSONFields(type);
 
@@ -950,6 +1015,10 @@ public class ContentResource {
 
         if (BaseContentType.HTMLPAGE.equals(type.baseType())) {
             jo.put(HTMLPageAssetAPI.URL_FIELD, ContentHelper.getInstance().getUrl(con));
+        }
+
+        if (!jo.has("hostname") && UtilMethods.isSet(conHostName) && ContentletUtil.isHost(con)) {
+            jo.put("hostname", conHostName);
         }
 
         return jo;
@@ -1526,6 +1595,11 @@ public class ContentResource {
     @SuppressWarnings("unchecked")
     protected void processXML(Contentlet contentlet, InputStream inputStream)
             throws IOException, DotSecurityException, DotDataException {
+
+        if(!USE_XSTREAM_FOR_DESERIALIZATION) {
+            SecurityLogger.logInfo(ContentResource.class, "Insecure XML PUT or Post Detected - possible vunerability probing");
+            throw new DotStateException("Unable to deserialize XML");
+        }
 
         String input = IOUtils.toString(inputStream, "UTF-8");
         // deal with XXE or SSRF security vunerabilities in XML docs
