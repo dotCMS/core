@@ -530,7 +530,7 @@ public class ContentResource {
         }
 
         final String [] fieldsToMask = Config.getStringArrayProperty("CONTENT_API_FIELDS_TO_MASK",
-                new String[] { Contentlet.MOD_USER_KEY, Contentlet.OWNER_KEY });
+                new String[] { Contentlet.MOD_USER_KEY, Contentlet.OWNER_KEY, Contentlet.MOD_USERNAME_KEY});
         for (String fieldKey : fieldsToMask) {
             if (contentMap.containsKey(fieldKey)) {
                 final Object fieldValue = contentMap.get(fieldKey);
