@@ -1012,9 +1012,6 @@ public class FolderFactoryImpl extends FolderFactory {
 		}
 
 
-		List<Map<String, Object>> outerResults = new DotConnect().setSQL("select * from identifier").loadObjectResults();
-
-
 		try(Connection connection = DbConnectionFactory.getConnection()) {
 			DotConnect dc = new DotConnect();
 
