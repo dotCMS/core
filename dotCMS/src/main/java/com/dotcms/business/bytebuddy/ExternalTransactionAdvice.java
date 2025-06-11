@@ -81,7 +81,7 @@ public class ExternalTransactionAdvice {
         }
     }
 
-    private static class TransactionInfo {
+    public static class TransactionInfo {
         private final Connection newTransactionConnection;
         private final Connection currentConnection;
         private final Session currentSession;
