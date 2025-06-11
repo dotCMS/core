@@ -60,30 +60,54 @@ export const castSingleSelectableValue = (
     }
 };
 
-// This function creates the model for the Components that use the Single Selectable Field, like the Select, Radio Button and Checkbox
+/**
+ * Parses field options for single selectable fields (Checkbox, Radio, Select).
+ * Supports both pipe format ("Option 1|1\r\nOption 2|2") and comma format ("1,2,3").
+ */
 export const getSingleSelectableFieldOptions = (
     options: string,
     dataType: string
 ): { label: string; value: DotEditContentFieldSingleSelectableDataTypes }[] => {
-    const lines = (options?.split('\r\n') ?? []).filter((line) => line.trim() !== '');
+    if (!options?.trim()) return [];
 
-    return lines
-        .map((line) => {
-            const [label, value = label] = line.split('|').map((value) => value.trim());
+    // Detect format: pipe-separated (has line breaks or pipes) vs comma-separated
+    const hasPipesOrLines = /\r\n|\n|\r|\|/.test(options);
 
-            const castedValue = castSingleSelectableValue(value, dataType);
-            if (castedValue === null) {
-                return null;
+    const items = hasPipesOrLines
+        ? options.split(/\r\n|\n|\r/).filter((line) => line.trim()) // Pipe format
+        : options
+              .split(',')
+              .map((v) => v.trim())
+              .filter((v) => v); // Comma format
+
+    return items
+        .map((item) => {
+            let label: string;
+            let value: string;
+
+            if (hasPipesOrLines) {
+                // Pipe format: "Option 1|1" -> label="Option 1", value="1"
+                // Special case: "|true" -> label="", value="true" (checkbox without label)
+                const parts = item.split('|');
+                label = parts[0]?.trim() || '';
+                value = parts[1]?.trim() || parts[0]?.trim() || '';
+            } else {
+                // Comma format: "1" -> label="1", value="1"
+                label = item;
+                value = item;
             }
 
-            return { label, value: castedValue };
+            // Skip only if value is empty (allow empty labels)
+            if (!value) return null;
+
+            const castedValue = castSingleSelectableValue(value, dataType);
+
+            return castedValue !== null ? { label, value: castedValue } : null;
         })
-        .filter(
-            (
-                item
-            ): item is { label: string; value: DotEditContentFieldSingleSelectableDataTypes } =>
-                item !== null
-        );
+        .filter(Boolean) as {
+        label: string;
+        value: DotEditContentFieldSingleSelectableDataTypes;
+    }[];
 };
 
 // This function is used to cast the value to a correct type for the Angular Form
