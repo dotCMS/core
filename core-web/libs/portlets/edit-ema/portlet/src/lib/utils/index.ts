@@ -661,25 +661,6 @@ export const checkClientHostAccess = (
 };
 
 /**
- * Retrieve the page params from the router query params
- *
- * @export
- * @param {Params} params
- * @return {*}  {DotPageApiParams}
- */
-export function getAllowedPageParams(params: Params): DotPageAssetParams {
-    const allowedParams: DotPageAssetKeys[] = Object.values(DotPageAssetKeys);
-
-    return Object.keys(params)
-        .filter((key) => key && allowedParams.includes(key as DotPageAssetKeys))
-        .reduce((obj, key) => {
-            obj[key] = params[key];
-
-            return obj;
-        }, {}) as DotPageAssetParams;
-}
-
-/**
  * Determines the target URL for navigation.
  *
  * If `urlContentMap` is present and contains a `URL_MAP_FOR_CONTENT`, it will be used.
