@@ -68,6 +68,14 @@ export class AngularFormBridge implements FormBridge {
      * @returns A function to unsubscribe this specific callback.
      */
     onChangeField(fieldId: string, callback: (value: FormFieldValue) => void): () => void {
+        const control = this.form.get(fieldId);
+        if (!control) {
+            console.warn(`Field '${fieldId}' not found in form`);
+
+            // eslint-disable-next-line @typescript-eslint/no-empty-function
+            return () => {};
+        }
+
         const callbackId = `callback_${++this.callbackIdCounter}`;
         const fieldCallback: FieldCallback = { id: callbackId, callback };
 
@@ -75,7 +83,7 @@ export class AngularFormBridge implements FormBridge {
 
         if (!fieldSubscription) {
             // Create new subscription for this field
-            const subscription = this.form.get(fieldId)?.valueChanges.subscribe((value) => {
+            const subscription = control.valueChanges.subscribe((value) => {
                 const currentFieldSubscription = this.fieldSubscriptions.get(fieldId);
                 if (currentFieldSubscription) {
                     // Execute all callbacks for this field
@@ -85,13 +93,11 @@ export class AngularFormBridge implements FormBridge {
                 }
             });
 
-            if (subscription) {
-                fieldSubscription = {
-                    subscription,
-                    callbacks: [fieldCallback]
-                };
-                this.fieldSubscriptions.set(fieldId, fieldSubscription);
-            }
+            fieldSubscription = {
+                subscription,
+                callbacks: [fieldCallback]
+            };
+            this.fieldSubscriptions.set(fieldId, fieldSubscription);
         } else {
             // Add callback to existing subscription
             fieldSubscription.callbacks.push(fieldCallback);
