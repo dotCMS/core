@@ -1,4 +1,10 @@
-import { Spectator, SpyObject, createComponentFactory, mockProvider } from '@ngneat/spectator';
+import {
+    Spectator,
+    SpyObject,
+    createComponentFactory,
+    mockProvider,
+    createMouseEvent
+} from '@ngneat/spectator';
 import { of } from 'rxjs';
 
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
@@ -256,6 +262,52 @@ describe('DotNavigationComponent expanded', () => {
             spectator.detectChanges();
 
             expect(spectator.debugElement.styles.cssText).toEqual('overflow-y: auto;');
+        });
+    });
+
+    describe('menuClick event expanded', () => {
+        it('should navigate and set open when menu is closed', () => {
+            spectator.detectChanges();
+
+            const mockMenu = {
+                ...dotMenuMock(),
+                isOpen: false
+            };
+
+            spectator.component.onMenuClick({
+                originalEvent: createMouseEvent('click'),
+                data: mockMenu
+            });
+
+            expect(navigationService.goTo).toHaveBeenCalledWith('url/link1');
+            expect(navigationService.setOpen).toHaveBeenCalledWith('123');
+        });
+
+        it('should only set open when menu is already open', () => {
+            spectator.detectChanges();
+
+            const mockMenu = {
+                ...dotMenuMock(),
+                isOpen: true
+            };
+
+            spectator.component.onMenuClick({
+                originalEvent: createMouseEvent('click'),
+                data: mockMenu
+            });
+
+            expect(navigationService.goTo).not.toHaveBeenCalled();
+            expect(navigationService.setOpen).toHaveBeenCalledWith('123');
+        });
+    });
+
+    describe('collapse button', () => {
+        it('should toggle navigation when collapse button is clicked', () => {
+            spectator.detectChanges();
+
+            spectator.component.handleCollapseButtonClick();
+
+            expect(navigationService.toggle).toHaveBeenCalledTimes(1);
         });
     });
 });
