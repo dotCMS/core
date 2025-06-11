@@ -623,4 +623,19 @@ import java.util.function.Predicate;
 	int getContentTypeCount(final Folder folder, final User user,
 							final boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException;
 
+
+	/**
+	 * Determines if the folder IDs in the current context require fixing.
+	 *
+	 * This method checks folder.identifiers and folder.inodes to see if they match
+	 *
+	 * @return true if the folder IDs need fixing, false otherwise.
+	 */
+    boolean folderIdsNeedFixing();
+
+	/**
+	 * Updates and corrects folder IDs within the system.
+	 * This method ensures that all folder identifiers and inodes are valid and consistent.
+	 */
+	void fixFolderIds();
 }

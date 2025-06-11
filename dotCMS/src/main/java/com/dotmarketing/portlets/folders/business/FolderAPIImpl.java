@@ -36,7 +36,9 @@ import com.dotmarketing.business.Treeable;
 import com.dotmarketing.business.query.GenericQueryFactory.Query;
 import com.dotmarketing.business.query.QueryUtil;
 import com.dotmarketing.business.query.ValidationException;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.util.SQLUtil;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.FlushCacheRunnable;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -60,11 +62,11 @@ import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
-import io.vavr.Lazy;
 import io.vavr.control.Try;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -603,7 +605,7 @@ public class FolderAPIImpl implements FolderAPI  {
 		final Identifier existingID = APILocator.getIdentifierAPI().find(folder.getIdentifier());
 
 		if(!folder.getIdentifier().equalsIgnoreCase(folder.getInode()) ){
-			folder.setInode(existingID.getId());
+			//folder.setInode(existingID.getId());
 		}
 		if(existingID ==null || !UtilMethods.isSet(existingID.getId())){
 			throw new DotStateException("Folder must already have an identifier before saving");
@@ -1295,5 +1297,103 @@ public class FolderAPIImpl implements FolderAPI  {
 		}
 		return this.folderFactory.getContentTypeCount(folder.getPath(), folder.getHostId());
 	}
+
+
+	@CloseDBIfOpened
+	@Override
+	public boolean folderIdsNeedFixing(){
+		String SHOULD_BE_EMPTY = "select * from folder where inode <> identifier limit 1";
+		String SHOULD_NOT_BE_EMPTY =
+				"select * from folder where inode ='" + Folder.SYSTEM_FOLDER + "' and identifier='" + Folder.SYSTEM_FOLDER
+						+ "'";
+
+
+			try (final Connection conn = DbConnectionFactory.getDataSource().getConnection()) {
+				DotConnect db = new DotConnect();
+				return !db.setSQL(SHOULD_BE_EMPTY).loadObjectResults(conn).isEmpty() || db.setSQL(SHOULD_NOT_BE_EMPTY)
+						.loadObjectResults(conn).isEmpty();
+			} catch (Exception e) {
+				Logger.error(this, e);
+				throw new DotRuntimeException(e);
+			}
+
+
+	}
+	String ALLOW_DEFER_CONSTRAINT_SQL = "ALTER TABLE folder ALTER CONSTRAINT folder_identifier_fk DEFERRABLE;";
+	String DENY_DEFER_CONSTRAINT_SQL = "ALTER TABLE folder ALTER CONSTRAINT folder_identifier_fk NOT DEFERRABLE;";
+	String DEFER_CONSTRAINT_SQL = "SET CONSTRAINTS folder_identifier_fk DEFERRED;";
+	String UPDATE_SYSTEM_FOLDER_IDENTIFIER = "update identifier set id ='SYSTEM_FOLDER' where parent_path = '/System folder' or id='"+ FolderAPI.OLD_SYSTEM_FOLDER_ID + "';";
+	String UPDATE_SYSTEM_FOLDER_FOLDER = "update folder set identifier ='SYSTEM_FOLDER' where inode = 'SYSTEM_FOLDER' or inode='"+ FolderAPI.OLD_SYSTEM_FOLDER_ID + "';";
+	String UPDATE_FOLDER_IDENTIFIERS="update identifier "
+			+ "set id =subquery.inode "
+			+ "from (select inode, identifier from folder) as subquery "
+			+ "where  "
+			+ "subquery.identifier =identifier.id;";
+
+
+
+	String UPDATE_ALL_FOLDERS = "update folder set identifier = inode;";
+
+
+	@CloseDBIfOpened
+	@Override
+	public void fixFolderIds() {
+		Logger.info(this,
+				"Found non-matching folder inodes/identifiers, Fixing folder IDs task.");
+
+		try (final Connection conn = DbConnectionFactory.getDataSource().getConnection()) {
+			// allow deferred constraints
+			conn.createStatement().execute(ALLOW_DEFER_CONSTRAINT_SQL);
+
+			conn.setAutoCommit(false);
+
+			// defer folder/identifier constraint
+			conn.createStatement().execute(DEFER_CONSTRAINT_SQL);
+
+			// update system folder identifier
+			conn.createStatement().execute(UPDATE_SYSTEM_FOLDER_IDENTIFIER);
+
+			// update system folder folder
+			conn.createStatement().execute(UPDATE_SYSTEM_FOLDER_FOLDER);
+
+			// update folder ids with the inodes
+			conn.createStatement().execute(UPDATE_FOLDER_IDENTIFIERS);
+
+			// set all folder inodes=identifer
+			conn.createStatement().execute(UPDATE_ALL_FOLDERS);
+
+			conn.commit();
+
+			conn.setAutoCommit(true);
+
+			// just in case
+			CacheLocator.getFolderCache().clearCache();
+			CacheLocator.getPermissionCache().clearCache();
+
+		} catch (Exception e) {
+			Logger.error(this, e);
+			throw new DotRuntimeException(e);
+		} finally {
+
+			// check that all folders have the same inode and identifier
+			try (final Connection conn = DbConnectionFactory.getDataSource().getConnection()) {
+				conn.createStatement().execute(DENY_DEFER_CONSTRAINT_SQL);
+			} catch (Exception e) {
+				Logger.error(this, e);
+				throw new DotRuntimeException(e);
+			}
+		}
+
+
+
+	}
+
+
+
+
+
+
+
+
 
 }

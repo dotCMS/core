@@ -19,40 +19,13 @@ import java.sql.Connection;
 public class Task250604UpdateFolderInodes implements StartupTask {
 
 
-    String ALLOW_DEFER_CONSTRAINT_SQL = "ALTER TABLE folder ALTER CONSTRAINT folder_identifier_fk DEFERRABLE;";
-    String DENY_DEFER_CONSTRAINT_SQL = "ALTER TABLE folder ALTER CONSTRAINT folder_identifier_fk NOT DEFERRABLE;";
-    String DEFER_CONSTRAINT_SQL = "SET CONSTRAINTS folder_identifier_fk DEFERRED;";
-    String UPDATE_SYSTEM_FOLDER_IDENTIFIER = "update identifier set id ='SYSTEM_FOLDER' where parent_path = '/System folder' or id='"+ FolderAPI.OLD_SYSTEM_FOLDER_ID + "';";
-    String UPDATE_SYSTEM_FOLDER_FOLDER = "update folder set identifier ='SYSTEM_FOLDER' where inode = 'SYSTEM_FOLDER' or inode='"+ FolderAPI.OLD_SYSTEM_FOLDER_ID + "';";
-    String UPDATE_FOLDER_IDENTIFIERS="update identifier "
-            + "set id =subquery.inode "
-            + "from (select inode, identifier from folder) as subquery "
-            + "where  "
-            + "subquery.identifier =identifier.id;";
 
-
-
-    String UPDATE_ALL_FOLDERS = "update folder set identifier = inode;";
-
-
-
-    String SHOULD_BE_EMPTY = "select * from folder where inode <> identifier limit 1";
-    String SHOULD_NOT_BE_EMPTY =
-            "select * from folder where inode ='" + Folder.SYSTEM_FOLDER + "' and identifier='" + Folder.SYSTEM_FOLDER
-                    + "'";
 
 
     @Override
     public boolean forceRun() {
 
-        try (final Connection conn = DbConnectionFactory.getDataSource().getConnection()) {
-            DotConnect db = new DotConnect();
-            return !db.setSQL(SHOULD_BE_EMPTY).loadObjectResults(conn).isEmpty() || db.setSQL(SHOULD_NOT_BE_EMPTY)
-                    .loadObjectResults(conn).isEmpty();
-        } catch (Exception e) {
-            Logger.error(this, e);
-            throw new DotRuntimeException(e);
-        }
+        return APILocator.getFolderAPI().folderIdsNeedFixing();
     }
 
 
@@ -65,62 +38,11 @@ public class Task250604UpdateFolderInodes implements StartupTask {
     @Override
     public void executeUpgrade() throws DotDataException, DotRuntimeException {
 
-        doFolderUpgrades();
+        APILocator.getFolderAPI().fixFolderIds();
 
-        CacheLocator.getPermissionCache().clearCache();
+
 
     }
 
-
-    void doFolderUpgrades(){
-        Logger.info(this,
-                "Found non-matching folder inodes/identifiers, running Task250604UpdateFolderInodes upgrade task.");
-
-
-
-        try (final Connection conn = DbConnectionFactory.getDataSource().getConnection()) {
-            // allow deferred constraints
-            conn.createStatement().execute(ALLOW_DEFER_CONSTRAINT_SQL);
-
-            conn.setAutoCommit(false);
-
-            // defer folder/identifier constraint
-            conn.createStatement().execute(DEFER_CONSTRAINT_SQL);
-
-            // update system folder identifier
-            conn.createStatement().execute(UPDATE_SYSTEM_FOLDER_IDENTIFIER);
-
-            // update system folder folder
-            conn.createStatement().execute(UPDATE_SYSTEM_FOLDER_FOLDER);
-
-            // update folder ids with the inodes
-            conn.createStatement().execute(UPDATE_FOLDER_IDENTIFIERS);
-
-            // set all folder inodes=identifer
-            conn.createStatement().execute(UPDATE_ALL_FOLDERS);
-
-            conn.commit();
-
-            conn.setAutoCommit(true);
-
-        } catch (Exception e) {
-            Logger.error(this, e);
-            throw new DotRuntimeException(e);
-        }finally {
-
-            // check that all folders have the same inode and identifier
-            try (final Connection conn = DbConnectionFactory.getDataSource().getConnection()) {
-                conn.createStatement().execute(DENY_DEFER_CONSTRAINT_SQL);
-            } catch (Exception e) {
-                Logger.error(this, e);
-                throw new DotRuntimeException(e);
-            }
-        }
-
-        // just in case
-        CacheLocator.getFolderCache().clearCache();
-
-
-    }
 
 }
