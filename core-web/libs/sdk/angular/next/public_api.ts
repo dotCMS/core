@@ -9,3 +9,6 @@ export { DotCMSBlockEditorRendererComponent } from './components/dotcms-block-ed
 export { DotCMSLayoutBodyComponent } from './components/dotcms-layout-body/dotcms-layout-body.component';
 
 export { DotCMSEditablePageService } from './services/dotcms-editable-page.service';
+
+export { DotCMSClientService as DotCMSClient } from './services/dotcms-client.service';
+export { provideDotCMSClient } from './providers/dotcms-client/dotcms-client.provider';

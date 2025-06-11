@@ -80,33 +80,46 @@ For detailed instructions, please refer to the [dotCMS API Documentation - Read-
 npm install @dotcms/angular@next @dotcms/uve@next @dotcms/client@next @dotcms/types@next @tinymce/tinymce-angular
 ```
 
-### dotCMS Client Configuration
+## Configuration
+
+The recommended way to configure the DotCMS client in your Angular application is to use the `provideDotCMSClient` function in your `app.config.ts`:
 
 ```typescript
-import { createDotCMSClient } from '@dotcms/client/next';
-import { InjectionToken } from '@angular/core';
-
-export type DotCMSClient = ReturnType<typeof createDotCMSClient>;
-
-const dotCMSClient: DotCMSClient = createDotCMSClient({
-    dotcmsUrl: 'https://your-dotcms-instance.com',
-    authToken: 'your-auth-token', // Optional for public content
-    siteId: 'your-site-id' // Optional site identifier/name
-});
-
-export const DOTCMS_CLIENT_TOKEN = new InjectionToken<DotCMSClient>('DOTCMS_CLIENT');
+import { ApplicationConfig } from '@angular/core';
+import { provideDotCMSClient } from '@dotcms/angular/next'; // Or '@dotcms/angular' depending on your setup
+import { environment } from './environments/environment'; // Assuming your environment variables are here
 
 export const appConfig: ApplicationConfig = {
-    providers: [
-        {
-            provide: DOTCMS_CLIENT_TOKEN,
-            useValue: dotCMSClient
-        }
-    ]
+  providers: [
+    provideDotCMSClient({
+      dotcmsUrl: environment.dotcmsUrl,
+      authToken: environment.authToken, // Optional: if you need to use an auth token
+      siteId: environment.siteId // Optional: if you need to specify a site ID
+    })
+  ]
 };
 ```
 
-This configuration makes the dotCMS client service available throughout your Angular application, allowing you to inject it wherever needed. For more details on how Angular's InjectionToken works, you can refer to the [Angular InjectionToken documentation](https://angular.dev/api/core/InjectionToken).
+Then, you can inject the `DotCMSClient` into your components or services:
+
+```typescript
+import { Component, inject } from '@angular/core';
+import { DotCMSClient } from '@dotcms/angular/next'; // Or '@dotcms/angular'
+
+@Component({
+  selector: 'app-my-component',
+  template: `<!-- Your component template -->`
+})
+export class MyComponent {
+  private dotcmsClient = inject(DotCMSClient);
+
+  constructor() {
+    // You can now use this.dotcmsClient.client to access the DotCMS SDK
+    // For example: this.dotcmsClient.client.page.get('/about-us')
+    // .then(page => console.log(page));
+  }
+}
+```
 
 ### Proxy Configuration for Static Assets
 
