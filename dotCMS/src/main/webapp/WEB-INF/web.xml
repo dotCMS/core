@@ -23,6 +23,11 @@
     <!-- END CONTEXT-PARAMS -->
 	<!-- DOTMARKETING FILTERS -->
 	<filter>
+		<filter-name>HealthCheckFilter</filter-name>
+		<filter-class>com.dotcms.health.filter.HealthCheckFilter</filter-class>
+		<async-supported>true</async-supported>
+	</filter>
+	<filter>
 		<filter-name>NormalizationFilter</filter-name>
 		<filter-class>com.dotcms.filters.NormalizationFilter</filter-class>
 		<async-supported>true</async-supported>
@@ -124,13 +129,17 @@
  	
 	<!--DOTMARKETING FILTER-MAPPINGS-->
 	<filter-mapping>
+		<filter-name>HealthCheckFilter</filter-name>
+		<url-pattern>/*</url-pattern>
+	</filter-mapping>
+	<filter-mapping>
 		<filter-name>NormalizationFilter</filter-name>
 		<url-pattern>/*</url-pattern>
 	</filter-mapping>
-    <filter-mapping>
-        <filter-name>HttpHeaderSecurityFilter</filter-name>
-        <url-pattern>/*</url-pattern>
-    </filter-mapping>
+	<filter-mapping>
+		<filter-name>HttpHeaderSecurityFilter</filter-name>
+		<url-pattern>/*</url-pattern>
+	</filter-mapping>
 	<filter-mapping>
 		<filter-name>InterceptorFilter</filter-name>
 		<url-pattern>/*</url-pattern>
