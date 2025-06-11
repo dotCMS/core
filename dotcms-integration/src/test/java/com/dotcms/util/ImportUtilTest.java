@@ -79,6 +79,7 @@ import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.dotmarketing.util.importer.model.ImportResult;
 import com.dotmarketing.util.importer.model.ResultData;
+import com.dotmarketing.util.importer.model.ValidationMessage;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.util.StringPool;
@@ -3788,9 +3789,21 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         assertNotNull(result);
         assertFalse(result.error().isEmpty());
 
-        Optional<String> errorCode = result.error().get(0).code();
+
+        final ValidationMessage error = result.error().get(0);
+        Optional<String> errorCode = error.code();
+        String errorMessage = error.message();
+
         assertTrue(errorCode.isPresent());
         assertEquals(INVALID_CATEGORY_KEY.name(), errorCode.get());
+        assertTrue(errorMessage.contains("Invalid category key found: '" + unrelatedCategory.getKey()));
+        assertTrue(errorMessage.contains("be a child of '" + configuredRoot.getCategoryName() + "'"));
+
+        final Optional<ResultData> resultData = result.data();
+        assertTrue(resultData.isPresent());
+        assertEquals(2, resultData.get().processed().parsedRows());
+        assertEquals(1, resultData.get().processed().failedRows());
+        assertEquals(0, resultData.get().summary().createdContent());
 
         List<Contentlet> saved = contentletAPI.findByStructure(contentType.inode(), user, false, 0, 0);
         assertEquals(0, saved.size());
@@ -3820,13 +3833,25 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         assertNotNull(result);
         assertFalse(result.error().isEmpty());
 
-        Optional<String> errorCode = result.error().get(0).code();
+        final ValidationMessage error = result.error().get(0);
+        Optional<String> errorCode = error.code();
+        String errorMessage = error.message();
+
         assertTrue(errorCode.isPresent());
         assertEquals(INVALID_CATEGORY_KEY.name(), errorCode.get());
+        assertTrue(errorMessage.contains("Invalid category key found: '" + invalidKey));
+        assertTrue(errorMessage.contains("be a child of '" + configuredRoot.getCategoryName() + "'"));
+
+        final Optional<ResultData> resultData = result.data();
+        assertTrue(resultData.isPresent());
+        assertEquals(2, resultData.get().processed().parsedRows());
+        assertEquals(1, resultData.get().processed().failedRows());
+        assertEquals(0, resultData.get().summary().createdContent());
 
         List<Contentlet> saved = contentletAPI.findByStructure(contentType.inode(), user, false, 0, 0);
         assertEquals(0, saved.size());
     }
+
 
     /**
      * Method to test: {@link ImportUtil#importFile(Long, String, String, String[], boolean, boolean, User, long, String[], CsvReader, int, int, Reader, String, HttpServletRequest)}
@@ -3854,12 +3879,17 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         assertNotNull(result);
         assertTrue(result.error().isEmpty());
 
+        final Optional<ResultData> resultData = result.data();
+        assertTrue(resultData.isPresent());
+        assertEquals(2, resultData.get().processed().parsedRows());
+        assertEquals(0, resultData.get().processed().failedRows());
+        assertEquals(1, resultData.get().summary().createdContent());
+
         List<Contentlet> saved = contentletAPI.findByStructure(contentType.inode(), user, false, 0, 0);
         assertEquals(1, saved.size());
 
         List<Category> assignedCategories = APILocator.getCategoryAPI().getParents(saved.get(0), user, false);
         assertTrue(assignedCategories.stream().anyMatch(cat -> cat.getInode().equals(validChild.getInode())));
     }
-
-
+    
 }
