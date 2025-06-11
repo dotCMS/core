@@ -6,7 +6,7 @@ import {
     createFakeRelationshipField
 } from '@dotcms/utils-testing';
 
-import { resolutionValue } from './utils';
+import { resolutionValue } from './dot-edit-content-form-resolutions';
 
 import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
 
