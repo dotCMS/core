@@ -343,7 +343,12 @@
                              *
                              * Initialize field interceptors using the external module
                              */
-                            const allFields = Object.values(<%= fieldJson %>);
+
+                            // Filter out SYSTEM fields (they don't need form control tracking)
+                            const allFields = Object.values(<%= fieldJson %>)
+                                .filter(field => field.dataType !== 'SYSTEM');
+
+
                             const contentlet = <%= contentletObj %>;
 
                             // Initialize field interceptors using the external module
