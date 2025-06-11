@@ -1,5 +1,5 @@
 import { animate, style, transition, trigger } from '@angular/animations';
-import { JsonPipe, NgTemplateOutlet } from '@angular/common';
+import { NgTemplateOutlet } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -98,8 +98,7 @@ import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit
         DotMessagePipe,
         InputSwitchModule,
         FormsModule,
-        MessagesModule,
-        JsonPipe
+        MessagesModule
     ],
     changeDetection: ChangeDetectionStrategy.OnPush,
     animations: [

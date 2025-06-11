@@ -11,15 +11,26 @@
  * Centralized configuration for performance tuning and debugging
  */
 const IFRAME_CONFIG = {
+    // Performance configuration
     heightCheckThrottle: 100,      // ms - throttle for height calculations
     resizeTimeout: 200,            // ms - timeout for resize events
     mutationTimeout: 100,          // ms - timeout for mutation events
     eventTimeout: 100,             // ms - timeout for user interaction events
     loadTimeout: 50,               // ms - timeout for load detection
     safetyTimeout: 3000,           // ms - safety timeout for load detection
-    enableLogging: true,          // enable/disable console logging
     maxRetries: 3,                 // max retries for failed operations
-    enableDebug: false             // enable/disable debug mode
+    enableDebug: false             // Deprecated - use shared logger instead
+};
+
+/**
+ * Logger instance for this module
+ */
+const iframeLogger = window.DotLegacyLogger?.createLogger('IframeHeight') || {
+    error: (msg) => console.error(`❌ [IframeHeight] ${msg}`),
+    warn: (msg) => console.warn(`⚠️ [IframeHeight] ${msg}`),
+    info: (msg) => console.log(`ℹ️ [IframeHeight] ${msg}`),
+    debug: (msg) => console.log(`🔧 [IframeHeight] ${msg}`),
+    trace: (msg) => console.log(`🔍 [IframeHeight] ${msg}`)
 };
 
 /**
@@ -41,6 +52,7 @@ class DotIframeLoadDetector {
         this._heightCheckThrottle = IFRAME_CONFIG.heightCheckThrottle;
         this.iframeId = null;
         this.inode = null;
+        this._heightChangeCount = 0;
     }
 
     init(iframeId, inode) {
@@ -48,9 +60,7 @@ class DotIframeLoadDetector {
         this.inode = inode || 'new';
 
         if (window.DotIframeLoadDetector_Instance) {
-            if (IFRAME_CONFIG.enableLogging) {
-                console.log('⚠️ WARNING: Another instance already exists!', window.DotIframeLoadDetector_Instance);
-            }
+            iframeLogger.warn(`Another instance already exists! Current: ${window.DotIframeLoadDetector_Instance}, New: ${this.instanceId}`);
         }
         window.DotIframeLoadDetector_Instance = this.instanceId;
         this.setupLoadDetection();
@@ -76,6 +86,7 @@ class DotIframeLoadDetector {
         if (this.isFullyLoaded) return;
         this.isFullyLoaded = true;
         const initialHeight = this.getCurrentHeight();
+        iframeLogger.info(`Iframe fully loaded. Initial height: ${initialHeight}px`);
         this.sendHeightToParent(initialHeight);
         this.startHeightMonitoring();
     }
@@ -84,9 +95,7 @@ class DotIframeLoadDetector {
         if (window.parent && window.parent !== window && height > 0 && this.iframeId) {
             const uniqueId = `${this.iframeId}-${this.inode}`;
 
-            if (IFRAME_CONFIG.enableLogging) {
-                console.log(`📤 Sending height to parent: ${height}px for iframe: ${uniqueId}`);
-            }
+            iframeLogger.debug(`Sending height to parent: ${height}px for iframe: ${uniqueId}`);
 
             window.parent.postMessage({
                 type: 'dotcms:iframe:resize',
@@ -100,9 +109,8 @@ class DotIframeLoadDetector {
     checkHeightChange() {
         const currentHeight = this.getCurrentHeight();
         if (this.lastHeight !== currentHeight && currentHeight > 0) {
-            if (IFRAME_CONFIG.enableLogging) {
-                console.log(`🔄 Height changed from ${this.lastHeight} to ${currentHeight}`);
-            }
+            this._heightChangeCount++;
+            iframeLogger.trace(`Height changed from ${this.lastHeight} to ${currentHeight} (change #${this._heightChangeCount})`);
             this.lastHeight = currentHeight;
             this.sendHeightToParent(currentHeight);
         }
@@ -122,9 +130,7 @@ class DotIframeLoadDetector {
     startHeightMonitoring() {
         this.lastHeight = this.getCurrentHeight();
 
-        if (IFRAME_CONFIG.enableLogging) {
-            console.log('👀 Starting height monitoring...');
-        }
+        iframeLogger.info('Starting height monitoring with multiple detection methods');
 
         // ResizeObserver with configurable throttling
         if (window.ResizeObserver) {
@@ -135,6 +141,7 @@ class DotIframeLoadDetector {
             const resizeObserver = new ResizeObserver(throttledCheck);
             resizeObserver.observe(document.body);
             this.observers.push(resizeObserver);
+            iframeLogger.debug('ResizeObserver monitoring enabled');
         }
 
         // MutationObserver with configurable throttling
@@ -150,6 +157,7 @@ class DotIframeLoadDetector {
             attributeFilter: ['style', 'class']
         });
         this.observers.push(mutationObserver);
+        iframeLogger.debug('MutationObserver monitoring enabled');
 
         // Combined event handler with configurable throttling
         const throttledEventCheck = this.createThrottledFunction(
@@ -170,6 +178,7 @@ class DotIframeLoadDetector {
                 });
             }
         });
+        iframeLogger.debug(`Event monitoring enabled for: ${eventTypes.join(', ')}`);
 
         // Window resize with configurable throttling
         const throttledResizeCheck = this.createThrottledFunction(
@@ -183,15 +192,11 @@ class DotIframeLoadDetector {
             }
         });
 
-        if (IFRAME_CONFIG.enableLogging) {
-            console.log('✅ Height monitoring started with multiple methods');
-        }
+        iframeLogger.info(`Height monitoring started with ${this.observers.length} methods`);
     }
 
     stopHeightMonitoring() {
-        if (IFRAME_CONFIG.enableLogging) {
-            console.log('🛑 Stopping height monitoring...');
-        }
+        iframeLogger.info(`Stopping height monitoring (${this._heightChangeCount} total height changes detected)`);
         this.observers.forEach(observer => observer.disconnect?.());
         this.observers = [];
         this.timeouts.forEach(timeout => clearTimeout(timeout));
@@ -200,10 +205,7 @@ class DotIframeLoadDetector {
     }
 
     setupLoadDetection() {
-        if (IFRAME_CONFIG.enableLogging) {
-            console.log('📡 Setting up load detection...');
-            console.log('📊 Current readyState:', document.readyState);
-        }
+        iframeLogger.debug(`Setting up load detection (readyState: ${document.readyState})`);
 
         if (document.readyState === 'complete') {
             const timeout = setTimeout(() => this.onFullyLoaded(), IFRAME_CONFIG.loadTimeout);
@@ -225,9 +227,7 @@ class DotIframeLoadDetector {
 
         const safetyTimeout = setTimeout(() => {
             if (!this.isFullyLoaded) {
-                if (IFRAME_CONFIG.enableLogging) {
-                    console.log('⏰ Safety timeout - forcing load detection');
-                }
+                iframeLogger.warn('Safety timeout reached - forcing load detection');
                 this.onFullyLoaded();
             }
         }, IFRAME_CONFIG.safetyTimeout);
@@ -243,9 +243,7 @@ class DotIframeLoadDetector {
 const setupCleanupHandlers = () => {
     // Cleanup before page unload
     window.addEventListener('beforeunload', () => {
-        if (IFRAME_CONFIG.enableLogging) {
-            console.log('🧹 Cleaning up resources before page unload...');
-        }
+        iframeLogger.debug('Cleaning up resources before page unload...');
 
         if (window.DotIframeLoadDetector && window.DotIframeLoadDetector.stopHeightMonitoring) {
             window.DotIframeLoadDetector.stopHeightMonitoring();
@@ -263,9 +261,7 @@ const setupCleanupHandlers = () => {
 
     // Cleanup on page hide (for mobile browsers)
     window.addEventListener('pagehide', () => {
-        if (IFRAME_CONFIG.enableLogging) {
-            console.log('🧹 Cleaning up resources on page hide...');
-        }
+        iframeLogger.debug('Cleaning up resources on page hide...');
 
         if (window.DotIframeLoadDetector && window.DotIframeLoadDetector.stopHeightMonitoring) {
             window.DotIframeLoadDetector.stopHeightMonitoring();
@@ -274,8 +270,8 @@ const setupCleanupHandlers = () => {
 
     // Cleanup on visibility change (when tab becomes hidden)
     document.addEventListener('visibilitychange', () => {
-        if (document.hidden && IFRAME_CONFIG.enableLogging) {
-            console.log('👁️ Page became hidden, monitoring continues...');
+        if (document.hidden) {
+            iframeLogger.trace('Page became hidden, monitoring continues...');
         }
     });
 };
@@ -292,9 +288,11 @@ const initializeHeightManager = (iframeId, inode, modalMode = false) => {
     if (!window.DotIframeLoadDetector_GlobalInit) {
         window.DotIframeLoadDetector_GlobalInit = true;
         if (!modalMode) {
+            iframeLogger.info(`Initializing iframe height manager for ${iframeId} (inline mode)`);
             window.DotIframeLoadDetector = new DotIframeLoadDetector();
             window.DotIframeLoadDetector.init(iframeId, inode);
         } else {
+            iframeLogger.info(`Iframe height manager initialized for ${iframeId} (modal mode - height disabled)`);
             window.DotIframeLoadDetector = new DotIframeLoadDetector();
         }
     }
@@ -308,5 +306,14 @@ window.DotIframeHeightManager = {
     DotIframeLoadDetector,
     initializeHeightManager,
     setupCleanupHandlers,
-    IFRAME_CONFIG
+    IFRAME_CONFIG,
+
+    // Set log level utility (delegates to shared logger)
+    setLogLevel: (level) => {
+        if (window.DotLegacyLogger) {
+            window.DotLegacyLogger.setGlobalLogLevel(level);
+        } else {
+            console.error('❌ Shared logger not available');
+        }
+    }
 };
