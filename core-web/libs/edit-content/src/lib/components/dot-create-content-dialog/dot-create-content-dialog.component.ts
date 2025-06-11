@@ -5,26 +5,43 @@ import {
     OnInit,
     effect,
     computed,
-    viewChild
+    viewChild,
+    signal
 } from '@angular/core';
 
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { DotContentTypeService } from '@dotcms/data-access';
-import { DotCMSContentlet, FeaturedFlags, ComponentStatus } from '@dotcms/dotcms-models';
+import { DotCMSContentlet, FeaturedFlags, ComponentStatus, DotCMSContentType } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { DotEditContentStore } from '../../store/edit-content.store';
 import { DotEditContentLayoutComponent } from '../dot-edit-content-layout/dot-edit-content.layout.component';
 
 /**
- * Configuration data passed to the create content dialog
+ * Configuration data passed to the edit content dialog
  */
-export interface CreateContentDialogData {
+export interface EditContentDialogData {
     /**
-     * The content type variable name or ID for which to create new content
+     * Mode determines whether we're creating new content or editing existing
      */
-    contentTypeId: string;
+    mode: 'new' | 'edit';
+
+    /**
+     * For new content: The content type variable name or ID
+     * For edit content: Not used (contentlet.contentType provides this)
+     */
+    contentTypeId?: string;
+
+    /**
+     * For edit content: The inode of the content to edit
+     * For new content: Not used
+     */
+    contentletInode?: string;
+
+    /**
+     * Depth for loading existing content (defaults to TWO)
+     */
+    depth?: number;
 
     /**
      * Optional relationship information when creating content for relationships
@@ -36,9 +53,14 @@ export interface CreateContentDialogData {
     };
 
     /**
-     * Optional callback for when content is successfully created
+     * Optional callback for when content is successfully created or updated
      */
-    onContentCreated?: (contentlet: DotCMSContentlet) => void;
+    onContentSaved?: (contentlet: DotCMSContentlet) => void;
+
+    /**
+     * Optional callback for when dialog is cancelled
+     */
+    onCancel?: () => void;
 }
 
 /**
@@ -50,37 +72,36 @@ export enum CreateContentMode {
 }
 
 /**
- * DotCreateContentDialogComponent
+ * DotEditContentDialogComponent
  *
  * A dialog wrapper component that embeds the full DotEditContentLayoutComponent
- * for creating new content. This component provides complete isolation from
- * other content editing instances in the application.
+ * for both creating new content and editing existing content. This component 
+ * provides a simple wrapper around the layout component without its own store dependency.
  *
  * ## Key Features:
- * - **Component-scoped store**: Each dialog instance gets its own isolated DotEditContentStore
- * - Content type initialization for new content creation
+ * - Simple dialog wrapper without store dependencies
+ * - Support for both new content creation and existing content editing
+ * - Content type compatibility checking
  * - Dialog lifecycle management
- * - Content creation completion and callback handling
+ * - Content save completion and callback handling
  * - Fallback for content types that don't support the new editor
  *
- * ## Store Isolation:
- * The component provides DotEditContentStore in its providers array, creating a
- * component-scoped instance that is isolated from other dialog instances and
- * the main content editor pages. The layout component and its children will
- * inherit this dialog-scoped store instance.
- *
- * This isolation ensures that:
- * - Multiple dialogs can be open simultaneously without interference
- * - Form state doesn't leak between dialog instances
- * - Each dialog maintains its own workflow state
- * - Store state is automatically cleaned up when the dialog closes
+ * ## Architecture:
+ * The dialog component acts as a simple wrapper that:
+ * - Validates input data
+ * - Checks content type compatibility
+ * - Passes data to the layout component which handles all content logic
+ * - Monitors the layout component for save events
+ * - Manages dialog closing and callbacks
  *
  * @example
  * ```typescript
- * this.dialogService.open(DotCreateContentDialogComponent, {
+ * // Create new content
+ * this.dialogService.open(DotEditContentDialogComponent, {
  *   data: {
+ *     mode: 'new',
  *     contentTypeId: 'blog-post',
- *     onContentCreated: (contentlet) => {
+ *     onContentSaved: (contentlet) => {
  *       console.log('Created:', contentlet);
  *     }
  *   },
@@ -88,34 +109,47 @@ export enum CreateContentMode {
  *   width: '95%',
  *   height: '95%'
  * });
+ *
+ * // Edit existing content
+ * this.dialogService.open(DotEditContentDialogComponent, {
+ *   data: {
+ *     mode: 'edit',
+ *     contentletInode: 'abc123',
+ *     onContentSaved: (contentlet) => {
+ *       console.log('Updated:', contentlet);
+ *     }
+ *   },
+ *   header: 'Edit Blog Post',
+ *   width: '95%',
+ *   height: '95%'
+ * });
  * ```
  */
 @Component({
-    selector: 'dot-create-content-dialog',
+    selector: 'dot-edit-content-dialog',
     standalone: true,
     imports: [DotEditContentLayoutComponent, DotMessagePipe],
-    providers: [
-        // This creates a component-scoped instance of DotEditContentStore
-        // that will be isolated from other instances in the app
-        DotEditContentStore
-    ],
-    templateUrl: './dot-create-content-dialog.component.html',
-    styleUrls: ['./dot-create-content-dialog.component.scss'],
+    templateUrl: './dot-edit-content-dialog.component.html',
+    styleUrls: ['./dot-edit-content-dialog.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotCreateContentDialogComponent implements OnInit {
+export class DotEditContentDialogComponent implements OnInit {
     readonly #dialogRef = inject(DynamicDialogRef);
     readonly #dialogConfig = inject(DynamicDialogConfig);
     readonly #dotContentTypeService = inject(DotContentTypeService);
-    // This injects the component-scoped store instance that is isolated from other app instances
-    readonly store = inject(DotEditContentStore);
+    
     readonly editContentLayout = viewChild<DotEditContentLayoutComponent>('editContentLayout');
+
+    // Dialog-specific state
+    protected readonly state = signal<ComponentStatus>(ComponentStatus.INIT);
+    protected readonly error = signal<string | null>(null);
+    protected readonly contentType = signal<DotCMSContentType | null>(null);
 
     /**
      * Computed property to check if this content type is compatible with the new editor in dialog mode
      */
     protected readonly isCompatible = computed(() => {
-        const contentType = this.store.contentType();
+        const contentType = this.contentType();
         if (!contentType) {
             return true; // Assume compatible until we know otherwise
         }
@@ -129,55 +163,132 @@ export class DotCreateContentDialogComponent implements OnInit {
      */
     protected readonly ComponentStatus = ComponentStatus;
 
-    ngOnInit(): void {
-        const data: CreateContentDialogData = this.#dialogConfig.data;
+    /**
+     * Expose dialog data to template
+     */
+    protected get data(): EditContentDialogData {
+        return this.#dialogConfig.data;
+    }
 
-        if (!data?.contentTypeId) {
-            throw new Error('Content type ID is required for creating content');
+    ngOnInit(): void {
+        const data: EditContentDialogData = this.#dialogConfig.data;
+
+        if (!data) {
+            throw new Error('Dialog data is required for edit content dialog');
         }
 
-        // this.store.enableDialogMode();
+        if (data.mode === 'new' && !data.contentTypeId) {
+            throw new Error('Content type ID is required when creating new content');
+        }
 
-        // Initialize the store for new content creation
-        //this.store.initializeNewContent(data.contentTypeId);
-        //this.editContentLayout().$store.enableDialogMode();
+        if (data.mode === 'edit' && !data.contentletInode) {
+            throw new Error('Contentlet inode is required when editing existing content');
+        }
+
+        // Debug logging
+        console.log('🚀 [DotEditContentDialogComponent] Initializing dialog in mode:', data.mode);
+
+        // Load content type for compatibility check if we're creating new content
+        if (data.mode === 'new' && data.contentTypeId) {
+            this.loadContentType(data.contentTypeId);
+        } else {
+            // For edit mode, we'll assume compatible and let the layout component handle it
+            this.state.set(ComponentStatus.LOADED);
+        }
     }
 
     constructor() {
-        // Effect to handle when content is successfully saved
-        // effect(() => {
-        //     const contentlet = this.store.contentlet();
-        //     const formValues = this.store.formValues();
-        //     const state = this.store.state();
-        //     const data: CreateContentDialogData = this.#dialogConfig.data;
-        //     // Check if we have a new contentlet that was just created
-        //     // We can detect this by checking if we have form values but the contentlet
-        //     // has an inode (meaning it was saved)
-        //     if (
-        //         contentlet?.inode &&
-        //         state === ComponentStatus.LOADED &&
-        //         Object.keys(formValues).length > 0
-        //     ) {
-        //         // Call the callback if provided
-        //         if (data.onContentCreated) {
-        //             data.onContentCreated(contentlet);
-        //         }
-        //         // Close dialog and return the created contentlet
-        //         this.#dialogRef.close(contentlet);
-        //     }
-        // });
-        // // Effect to handle errors and non-compatible content types
-        // effect(() => {
-        //     const error = this.store.error();
-        //     const isCompatible = this.isCompatible();
-        //     if (error) {
-        //         console.error('Error in create content dialog:', error);
-        //         // Could show a toast or handle error state
-        //     }
-        //     // If not compatible, we could potentially redirect or show alternative options
-        //     if (!isCompatible) {
-        //         console.warn('Content type not compatible with new editor in dialog mode');
-        //     }
-        // });
+        // Effect to monitor the layout component's store for save events
+        effect(() => {
+            const layoutComponent = this.editContentLayout();
+            if (!layoutComponent) {
+                return;
+            }
+
+            const layoutStore = layoutComponent.$store;
+            const contentlet = layoutStore.contentlet();
+            const layoutState = layoutStore.state();
+            const data: EditContentDialogData = this.#dialogConfig.data;
+            
+            // Only proceed if layout is in a loaded state and has a contentlet with an inode
+            if (layoutState !== ComponentStatus.LOADED || !contentlet?.inode) {
+                return;
+            }
+
+            // For new content: check if we have form values indicating it was just created
+            // For existing content: check if the content was modified (could add a dirty check)
+            const formValues = layoutStore.formValues();
+            const hasFormData = Object.keys(formValues).length > 0;
+
+            if (data.mode === 'new' && hasFormData) {
+                // New content was just created
+                this.handleContentSaved(contentlet, data);
+            } else if (data.mode === 'edit') {
+                // For edit mode, we might want to add a mechanism to detect if content was actually saved
+                // For now, we'll rely on external components to close the dialog when appropriate
+            }
+        });
+
+        // Effect to monitor layout component errors
+        effect(() => {
+            const layoutComponent = this.editContentLayout();
+            if (!layoutComponent) {
+                return;
+            }
+
+            const layoutError = layoutComponent.$store.error();
+            
+            if (layoutError) {
+                console.error('Error in edit content dialog layout:', layoutError);
+                this.error.set(layoutError);
+                this.state.set(ComponentStatus.ERROR);
+            }
+        });
+    }
+
+    /**
+     * Loads content type information for compatibility checking
+     */
+    private loadContentType(contentTypeId: string): void {
+        this.state.set(ComponentStatus.LOADING);
+        this.error.set(null);
+
+        this.#dotContentTypeService.getContentType(contentTypeId).subscribe({
+            next: (contentType) => {
+                this.contentType.set(contentType);
+                this.state.set(ComponentStatus.LOADED);
+            },
+            error: (error) => {
+                console.error('Error loading content type:', error);
+                this.error.set(`Failed to load content type: ${error.message}`);
+                this.state.set(ComponentStatus.ERROR);
+            }
+        });
+    }
+
+    /**
+     * Handles successful content save operation
+     */
+    private handleContentSaved(contentlet: DotCMSContentlet, data: EditContentDialogData): void {
+        // Call the callback if provided
+        if (data.onContentSaved) {
+            data.onContentSaved(contentlet);
+        }
+
+        // Close dialog and return the created/updated contentlet
+        this.#dialogRef.close(contentlet);
+    }
+
+    /**
+     * Handles dialog cancellation
+     */
+    closeDialog(): void {
+        const data: EditContentDialogData = this.#dialogConfig.data;
+        
+        if (data.onCancel) {
+            data.onCancel();
+        }
+
+        this.#dialogRef.close(null);
     }
 }

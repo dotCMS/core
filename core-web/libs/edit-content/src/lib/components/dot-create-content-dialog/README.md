@@ -1,68 +1,213 @@
-# DotCreateContentDialogComponent
+# DotEditContentDialogComponent
 
-A lightweight wrapper dialog component that embeds the full `DotEditContentLayoutComponent` for creating new content in dialog scenarios. This component provides the complete content editing experience including the sidebar functionality within a modal dialog.
+A comprehensive dialog wrapper component that embeds the full `DotEditContentLayoutComponent` for both creating new content and editing existing content in modal scenarios. This component provides the complete content editing experience including sidebar functionality within a modal dialog.
 
 ## Features
 
+- **Dual Mode Support**: Works for both creating new content and editing existing content
 - **Full Layout Experience**: Embeds the complete `DotEditContentLayoutComponent` with sidebar
 - **Content Type Support**: Works with any content type that supports the new editor
-- **Seamless Integration**: Uses the existing `DotEditContentStore` and infrastructure
+- **Store Isolation**: Each dialog instance gets its own isolated `DotEditContentStore`
+- **Seamless Integration**: Uses the existing content editing infrastructure
 - **Auto-Detection**: Automatically detects content type compatibility
 - **Graceful Fallback**: Shows appropriate message for unsupported content types
-- **Dialog Lifecycle**: Handles content creation completion and dialog closure
+- **Dialog Lifecycle**: Handles content save completion and dialog closure
+- **Callback System**: Provides callbacks for save and cancel events
 
 ## Usage
 
-### Basic Usage
+### Basic Usage with Service
+
+The recommended approach is to use the `DotEditContentDialogService`:
 
 ```typescript
-import { DotCreateContentDialogComponent, CreateContentDialogData } from '@dotcms/edit-content';
+import { DotEditContentDialogService } from '@dotcms/edit-content';
 
 // In your component
-openCreateContentDialog() {
-  const dialogData: CreateContentDialogData = {
-    contentTypeId: 'blog-post', // Content type variable name
-    onContentCreated: (contentlet) => {
+constructor(private editContentDialogService: DotEditContentDialogService) {}
+
+// Create new content
+openCreateDialog() {
+  this.editContentDialogService.openNewContentDialog('blog-post', {
+    header: 'Create Blog Post',
+    onContentSaved: (contentlet) => {
       console.log('Content created:', contentlet);
-      // Handle the created content
+      this.refreshContentList();
+    }
+  }).subscribe(result => {
+    if (result) {
+      console.log('Dialog completed with:', result);
+    }
+  });
+}
+
+// Edit existing content
+openEditDialog(contentletInode: string) {
+  this.editContentDialogService.openEditContentDialog(contentletInode, {
+    header: 'Edit Content',
+    onContentSaved: (contentlet) => {
+      console.log('Content updated:', contentlet);
+      this.refreshContentList();
+    }
+  }).subscribe(result => {
+    if (result) {
+      console.log('Dialog completed with:', result);
+    }
+  });
+}
+```
+
+### Direct Component Usage
+
+For more control, you can use the component directly:
+
+```typescript
+import { DotEditContentDialogComponent, EditContentDialogData } from '@dotcms/edit-content';
+
+// Create new content
+openCreateContentDialog() {
+  const dialogData: EditContentDialogData = {
+    mode: 'new',
+    contentTypeId: 'blog-post',
+    onContentSaved: (contentlet) => {
+      console.log('Content created:', contentlet);
     }
   };
 
-  this.dialogService.open(DotCreateContentDialogComponent, {
+  this.dialogService.open(DotEditContentDialogComponent, {
     data: dialogData,
     header: 'Create Blog Post',
     width: '95%',
-    height: '95%',
-    style: { 'max-width': '1400px', 'max-height': '900px' }
+    height: '95%'
+  });
+}
+
+// Edit existing content
+openEditContentDialog(inode: string) {
+  const dialogData: EditContentDialogData = {
+    mode: 'edit',
+    contentletInode: inode,
+    onContentSaved: (contentlet) => {
+      console.log('Content updated:', contentlet);
+    }
+  };
+
+  this.dialogService.open(DotEditContentDialogComponent, {
+    data: dialogData,
+    header: 'Edit Content',
+    width: '95%',
+    height: '95%'
   });
 }
 ```
 
 ### Relationship Context Usage
 
+When creating content within relationship contexts:
+
 ```typescript
-const dialogData: CreateContentDialogData = {
+const dialogData: EditContentDialogData = {
+  mode: 'new',
   contentTypeId: relatedContentTypeId,
   relationshipInfo: {
     parentContentletId: parentContentlet.inode,
     relationshipName: relationshipField.variable,
     isParent: true
   },
-  onContentCreated: (contentlet) => {
+  onContentSaved: (contentlet) => {
     // Add to relationship
     this.addToRelationship(contentlet);
   }
 };
 ```
 
+## Configuration Interfaces
+
+### EditContentDialogData
+
+```typescript
+interface EditContentDialogData {
+  mode: 'new' | 'edit';                           // Operation mode
+  contentTypeId?: string;                         // For new content: content type ID
+  contentletInode?: string;                       // For edit: contentlet inode
+  depth?: number;                                 // Loading depth for existing content
+  relationshipInfo?: {                            // Optional relationship context
+    parentContentletId: string;
+    relationshipName: string;
+    isParent: boolean;
+  };
+  onContentSaved?: (contentlet: DotCMSContentlet) => void; // Success callback
+  onCancel?: () => void;                          // Cancel callback
+}
+```
+
+### Service Methods
+
+The `DotEditContentDialogService` provides three main methods:
+
+```typescript
+// Create new content
+openNewContentDialog(
+  contentTypeId: string,
+  options?: {
+    header?: string;
+    width?: string;
+    height?: string;
+    relationshipInfo?: EditContentDialogData['relationshipInfo'];
+    onContentSaved?: (contentlet: DotCMSContentlet) => void;
+    onCancel?: () => void;
+  }
+): Observable<DotCMSContentlet | null>
+
+// Edit existing content
+openEditContentDialog(
+  contentletInode: string,
+  options?: {
+    header?: string;
+    width?: string;
+    height?: string;
+    depth?: DotContentletDepths;
+    onContentSaved?: (contentlet: DotCMSContentlet) => void;
+    onCancel?: () => void;
+  }
+): Observable<DotCMSContentlet | null>
+
+// Generic dialog with full control
+openDialog(
+  data: EditContentDialogData,
+  dialogOptions?: { [key: string]: any }
+): Observable<DotCMSContentlet | null>
+```
+
 ## How It Works
 
-The component is a simple wrapper that:
+### Store Isolation
 
-1. **Initializes Content Creation**: Uses `DotEditContentStore.initializeNewContent()` to set up a new content creation session
-2. **Embeds Full Layout**: Renders the complete `DotEditContentLayoutComponent` including sidebar
-3. **Detects Completion**: Watches for when content is successfully saved (contentlet has an inode)
-4. **Handles Callback**: Calls the provided callback and closes the dialog
+Each dialog instance gets its own `DotEditContentStore` by providing it in the component's providers array:
+
+```typescript
+@Component({
+  providers: [DotEditContentStore], // Component-scoped instance
+  // ...
+})
+```
+
+This ensures:
+- Multiple dialogs can be open simultaneously without interference
+- Form state doesn't leak between dialog instances
+- Each dialog maintains its own workflow state
+- Store state is automatically cleaned up when the dialog closes
+
+### Initialization Flow
+
+1. **Dialog Mode Enabled**: `store.enableDialogMode()` prevents route-based initialization
+2. **Content Initialization**: Based on mode:
+   - `mode: 'new'` → `store.initializeNewContent(contentTypeId)`
+   - `mode: 'edit'` → `store.initializeExistingContent({ inode, depth })`
+3. **Form Rendering**: The complete `DotEditContentLayoutComponent` renders with sidebar
+4. **Save Detection**: Effects monitor for successful save operations
+5. **Callback Execution**: Appropriate callbacks are triggered
+6. **Dialog Closure**: Dialog closes with the result contentlet
 
 ### Content Type Compatibility
 
@@ -73,23 +218,9 @@ The component automatically checks if a content type supports the new editor:
 // Content types without this flag will show a fallback message
 ```
 
-## Configuration Interface
-
-```typescript
-interface CreateContentDialogData {
-  contentTypeId: string;                              // Content type variable name
-  relationshipInfo?: {                                // Optional relationship context
-    parentContentletId: string;
-    relationshipName: string;
-    isParent: boolean;
-  };
-  onContentCreated?: (contentlet: DotCMSContentlet) => void; // Callback when content is saved
-}
-```
-
 ## State Management
 
-The component leverages the existing `DotEditContentStore` which provides:
+The dialog leverages the existing `DotEditContentStore` which provides:
 
 - Complete content editing state management
 - Workflow and sidebar functionality
@@ -112,37 +243,68 @@ The component follows the DotCMS design system:
 All interactive elements include `data-testid` attributes following Testing Library best practices:
 
 ```html
-<div data-testid="create-content-dialog">
-  <button data-testid="save-button">Save</button>
-  <button data-testid="cancel-button">Cancel</button>
+<div data-testid="edit-content-dialog">
+  <dot-edit-content-form-layout data-testid="edit-content-layout" />
 </div>
 ```
 
-## Implementation Status
+## Migration from Legacy Dialog
 
-- ✅ Component architecture with full layout integration
-- ✅ Content type initialization and compatibility detection
-- ✅ Dialog lifecycle and content creation completion handling
-- ✅ Integration with existing DotEditContentStore
-- ✅ Sidebar functionality and complete editing experience
-- ✅ Error handling and loading states
-- ✅ Responsive dialog sizing and styling
-- ✅ Accessibility with proper test IDs
-- ⚠️ Legacy content type fallback (placeholder message)
-- ⏳ Enhanced relationship-specific handling
-- ⏳ Custom dialog actions and toolbar integration
+If you were using the old `DotCreateContentDialogComponent`:
 
-## Next Steps
+```typescript
+// Old way
+const dialogData: CreateContentDialogData = {
+  contentTypeId: 'blog-post',
+  onContentCreated: (contentlet) => { /* ... */ }
+};
 
-1. **Legacy Editor Support**: For content types without `CONTENT_EDITOR2_ENABLED`, implement iframe-based editor or redirect to standard creation flow
-2. **Enhanced Relationship Integration**: Add specific handling for relationship context and validation
-3. **Custom Dialog Actions**: Add custom save/cancel buttons in dialog footer if needed
-4. **Performance Optimization**: Consider lazy loading of the layout component for better performance
+// New way
+const dialogData: EditContentDialogData = {
+  mode: 'new',
+  contentTypeId: 'blog-post',
+  onContentSaved: (contentlet) => { /* ... */ }
+};
+```
 
-## Dependencies
+## Examples
 
-- `@ngrx/signals` - State management
-- `primeng` - UI components
-- `@dotcms/data-access` - API services
-- `@dotcms/dotcms-models` - Type definitions
-- `@dotcms/ui` - Shared UI components 
+For comprehensive examples, see `edit-content-dialog-examples.component.ts` which demonstrates:
+
+- Creating new content
+- Editing existing content
+- Using relationship information
+- Custom dialog sizes
+- Advanced configurations
+- Error handling
+- Callback usage
+
+## Integration with Existing Code
+
+The dialog integrates seamlessly with existing DotCMS patterns:
+
+```typescript
+// In relationship fields
+private openContentDialog(contentType: DotCMSContentType): void {
+  this.editContentDialogService.openNewContentDialog(contentType.id, {
+    relationshipInfo: {
+      parentContentletId: this.parentInode,
+      relationshipName: this.fieldVariable,
+      isParent: true
+    },
+    onContentSaved: (contentlet) => {
+      this.addToRelationshipData(contentlet);
+    }
+  }).subscribe();
+}
+
+// In content listing components
+editContent(contentlet: DotCMSContentlet): void {
+  this.editContentDialogService.openEditContentDialog(contentlet.inode, {
+    header: `Edit ${contentlet.title}`,
+    onContentSaved: (updated) => {
+      this.updateContentInList(updated);
+    }
+  }).subscribe();
+}
+``` 

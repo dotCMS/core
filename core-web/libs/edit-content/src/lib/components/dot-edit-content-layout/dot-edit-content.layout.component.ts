@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, model } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input, model, effect } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
@@ -21,6 +21,10 @@ import { DotEditContentSidebarComponent } from '../dot-edit-content-sidebar/dot-
 
 /**
  * Component that displays the edit content layout.
+ * Can be used both in route-based contexts and dialog contexts.
+ * 
+ * When used in route-based contexts, it provides its own store instance.
+ * When used in dialog contexts with contentTypeId, it automatically handles initialization.
  *
  * @export
  * @class EditContentLayoutComponent
@@ -55,12 +59,69 @@ import { DotEditContentSidebarComponent } from '../dot-edit-content-sidebar/dot-
 })
 export class DotEditContentLayoutComponent {
     /**
+     * Whether this component is being used in a dialog context.
+     * When true, it will inherit the store from the parent dialog component.
+     * When false, it will provide its own store instance.
+     */
+    readonly isDialogMode = input<boolean>(false);
+
+    /**
+     * Content type ID for dialog mode initialization.
+     * When provided, the component will automatically enable dialog mode
+     * and initialize new content for the specified content type.
+     */
+    readonly contentTypeId = input<string>();
+
+    /**
+     * Contentlet inode for dialog mode initialization.
+     * When provided, the component will automatically enable dialog mode
+     * and initialize existing content for the specified inode.
+     */
+    readonly contentletInode = input<string>();
+
+    /**
      * The store instance.
+     * Will be injected from parent when in dialog mode, or from component-level provider when in route mode.
      *
      * @type {InstanceType<typeof DotEditContentStore>}
      * @memberof EditContentLayoutComponent
      */
     readonly $store: InstanceType<typeof DotEditContentStore> = inject(DotEditContentStore);
+
+    constructor() {
+        // Effect to handle dialog mode and initialization when inputs change
+        effect(() => {
+            const contentTypeId = this.contentTypeId();
+            const contentletInode = this.contentletInode();
+            const isDialogMode = this.isDialogMode();
+         
+            console.log('🔧 [DotEditContentLayoutComponent] contentTypeId:', contentTypeId);
+           
+            
+            // Check if we're in dialog mode based on inputs or explicit flag
+            const shouldUseDialogMode = isDialogMode || !!contentTypeId || !!contentletInode;
+            
+            if (shouldUseDialogMode) {
+                console.log('🔧 [DotEditContentLayoutComponent] Running in DIALOG mode');
+                this.$store.enableDialogMode();
+                
+                // Initialize based on provided inputs
+                if (contentTypeId) {
+                    console.log('🔧 [DotEditContentLayoutComponent] Initializing new content for type:', contentTypeId);
+                    this.$store.initializeNewContent(contentTypeId);
+                } else if (contentletInode) {
+                    console.log('🔧 [DotEditContentLayoutComponent] Initializing existing content for inode:', contentletInode);
+                    this.$store.initializeExistingContent({ inode: contentletInode, depth: '2' });
+                }
+            } else {
+                console.log('🔧 [DotEditContentLayoutComponent] Running in ROUTE mode - using normal initialization');
+                // Store will handle route-based initialization automatically in its onInit hook
+            }
+            
+            // Log store instance ID for debugging
+            console.log('🔧 [DotEditContentLayoutComponent] Store instance ID:', (this.$store as any)._id || 'no-id');
+        }, { allowSignalWrites: true });
+    }
 
     /**
      * Whether the select workflow dialog should be shown.

@@ -40,8 +40,8 @@ import { RelationshipFieldStore } from './store/relationship-field.store';
 import { getContentTypeIdFromRelationship } from './utils';
 
 import {
-    DotCreateContentDialogComponent,
-    CreateContentDialogData
+    DotEditContentDialogComponent,
+    EditContentDialogData
 } from '../../components/dot-create-content-dialog/dot-create-content-dialog.component';
 
 @Component({
@@ -361,21 +361,22 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
      * @param {DotCMSContentType} contentType - The content type to create content for
      */
     private openNewContentDialog(contentType: DotCMSContentType): void {
-        const dialogData: CreateContentDialogData = {
+        const dialogData: EditContentDialogData = {
+            mode: 'new',
             contentTypeId: contentType.id,
             relationshipInfo: {
                 parentContentletId: this.$contentlet().inode || '',
                 relationshipName: this.$field().variable || '',
                 isParent: true // This could be determined based on relationship configuration
             },
-            onContentCreated: (contentlet: DotCMSContentlet) => {
+            onContentSaved: (contentlet: DotCMSContentlet) => {
                 // Add the created contentlet to the relationship
                 const currentData = this.store.data();
                 this.store.setData([...currentData, contentlet]);
             }
         };
 
-        this.#dialogRef = this.#dialogService.open(DotCreateContentDialogComponent, {
+        this.#dialogRef = this.#dialogService.open(DotEditContentDialogComponent, {
             appendTo: 'body',
             closeOnEscape: true,
             draggable: false,

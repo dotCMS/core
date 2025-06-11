@@ -1,6 +1,6 @@
 @use "variables" as *;
 
-.create-content-dialog {
+.edit-content-dialog {
     height: 100%;
     display: flex;
     flex-direction: column;
@@ -8,7 +8,7 @@
 }
 
 // Loading state styles
-.create-content-dialog__loading {
+.edit-content-dialog__loading {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -19,7 +19,7 @@
     min-height: 200px;
 }
 
-.create-content-dialog__loading-spinner {
+.edit-content-dialog__loading-spinner {
     margin-bottom: $spacing-3;
 
     i {
@@ -28,14 +28,14 @@
     }
 }
 
-.create-content-dialog__loading-text {
+.edit-content-dialog__loading-text {
     margin: 0;
     color: $color-palette-gray-600;
     font-size: $font-size-md;
 }
 
 // Error state styles
-.create-content-dialog__error {
+.edit-content-dialog__error {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -46,26 +46,26 @@
     min-height: 200px;
 }
 
-.create-content-dialog__error-icon {
+.edit-content-dialog__error-icon {
     font-size: $font-size-xxl;
     color: $color-palette-secondary;
     margin-bottom: $spacing-3;
 }
 
-.create-content-dialog__error-title {
+.edit-content-dialog__error-title {
     margin: 0 0 $spacing-2 0;
     color: $color-palette-gray-700;
     font-size: $font-size-lg;
     font-weight: $font-weight-bold;
 }
 
-.create-content-dialog__error-message {
+.edit-content-dialog__error-message {
     margin: 0 0 $spacing-2 0;
     color: $color-palette-gray-600;
     font-size: $font-size-md;
 }
 
-.create-content-dialog__error-details {
+.edit-content-dialog__error-details {
     background: $color-palette-secondary-op-10;
     border: 1px solid $color-palette-secondary-op-30;
     border-radius: $border-radius-md;
@@ -78,7 +78,7 @@
 }
 
 // Legacy placeholder styles
-.create-content-dialog__legacy-placeholder {
+.edit-content-dialog__legacy-placeholder {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -87,7 +87,7 @@
     min-height: 300px;
 }
 
-.create-content-dialog__legacy-content {
+.edit-content-dialog__legacy-content {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -100,27 +100,27 @@
     width: 100%;
 }
 
-.create-content-dialog__legacy-icon {
+.edit-content-dialog__legacy-icon {
     font-size: 3rem;
     color: $color-palette-gray-400;
     margin-bottom: $spacing-3;
 }
 
-.create-content-dialog__legacy-title {
+.edit-content-dialog__legacy-title {
     margin: 0 0 $spacing-2 0;
     color: $color-palette-gray-700;
     font-size: $font-size-lg;
     font-weight: $font-weight-bold;
 }
 
-.create-content-dialog__legacy-description {
+.edit-content-dialog__legacy-description {
     margin: 0 0 $spacing-3 0;
     color: $color-palette-gray-600;
     font-size: $font-size-md;
     line-height: 1.5;
 }
 
-.create-content-dialog__legacy-subtitle {
+.edit-content-dialog__legacy-subtitle {
     margin: 0;
     color: $color-palette-gray-500;
     font-size: $font-size-sm;
@@ -138,38 +138,38 @@ dot-edit-content-form-layout {
 
 // Responsive design
 @media (max-width: $screen-md-max) {
-    .create-content-dialog {
+    .edit-content-dialog {
         min-height: 50vh;
     }
 
-    .create-content-dialog__loading,
-    .create-content-dialog__error {
+    .edit-content-dialog__loading,
+    .edit-content-dialog__error {
         padding: $spacing-4;
         min-height: 150px;
     }
 
-    .create-content-dialog__legacy-content {
+    .edit-content-dialog__legacy-content {
         padding: $spacing-4;
         margin: $spacing-2;
     }
 
-    .create-content-dialog__legacy-icon {
+    .edit-content-dialog__legacy-icon {
         font-size: 2.5rem;
     }
 
-    .create-content-dialog__error-title,
-    .create-content-dialog__legacy-title {
+    .edit-content-dialog__error-title,
+    .edit-content-dialog__legacy-title {
         font-size: $font-size-md;
     }
 }
 
 @media (max-width: $screen-sm-max) {
-    .create-content-dialog__loading,
-    .create-content-dialog__error {
+    .edit-content-dialog__loading,
+    .edit-content-dialog__error {
         padding: $spacing-3;
     }
 
-    .create-content-dialog__legacy-content {
+    .edit-content-dialog__legacy-content {
         padding: $spacing-3;
     }
 }
@@ -202,4 +202,4 @@ dot-edit-content-form-layout {
     .edit-content-layout__sidebar {
         border-left: 1px solid $color-palette-gray-300;
     }
-}
+} 

@@ -186,28 +186,43 @@ export const DotEditContentStore = signalStore(
     withActivities(),
     withHooks({
         onInit(store) {
-            // Load the current user
+            // Always load the current user
             store.loadCurrentUser();
+            console.log('🏪 [DotEditContentStore] OnInit', store.isDialogMode());
 
-            // Skip route-based initialization if in dialog mode
-            if (store.isDialogMode()) {
-                return;
-            }
-
+            // Inject ActivatedRoute in the injection context
             const activatedRoute = inject(ActivatedRoute);
-            const params = activatedRoute.snapshot?.params;
 
-            if (params) {
-                const contentType = params['contentType'];
-                const inode = params['id'];
-
-                // TODO: refactor this when we will use EditContent as sidebar
-                if (inode) {
-                    store.initializeExistingContent({ inode, depth: DotContentletDepths.TWO });
-                } else if (contentType) {
-                    store.initializeNewContent(contentType);
+            // Use setTimeout to allow components to call enableDialogMode() before route initialization
+            setTimeout(() => {
+                // Skip route-based initialization if in dialog mode
+                console.log('🏪 [DotEditContentStore] Dialog mode enabled:', store.isDialogMode());
+                if (store.isDialogMode()) {
+                    console.log('🏪 [DotEditContentStore] Skipping route initialization - dialog mode enabled');
+                    
+                    return;
                 }
-            }
+
+                console.log('🏪 [DotEditContentStore] Attempting route-based initialization');
+                
+                const params = activatedRoute.snapshot?.params;
+
+                if (params) {
+                    const contentType = params['contentType'];
+                    const inode = params['id'];
+
+                    // TODO: refactor this when we will use EditContent as sidebar
+                    if (inode) {
+                        console.log('🏪 [DotEditContentStore] Initializing existing content from route:', inode);
+                        store.initializeExistingContent({ inode, depth: DotContentletDepths.TWO });
+                    } else if (contentType) {
+                        console.log('🏪 [DotEditContentStore] Initializing new content from route:', contentType);
+                        store.initializeNewContent(contentType);
+                    }
+                } else {
+                    console.log('🏪 [DotEditContentStore] No route params found');
+                }
+            }, 0);
         }
     })
 );
