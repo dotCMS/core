@@ -20,9 +20,11 @@ import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.DateUtil;
+import com.dotmarketing.util.ImportUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.importer.exception.ImportLineException;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import java.io.ByteArrayInputStream;
@@ -570,16 +572,34 @@ public class ContentImportThread implements Job{
 							valueObj = null;
 						}
 					}
-				} else if (field.getFieldType().equals(Field.FieldType.CATEGORY.toString()) || field.getFieldType().equals(Field.FieldType.CATEGORIES_TAB.toString())) {
+				} else if (field.getFieldType().equals(Field.FieldType.CATEGORY.toString()) ||
+						field.getFieldType().equals(Field.FieldType.CATEGORIES_TAB.toString())) {
+
 					valueObj = value;
-					if(UtilMethods.isSet(value)) {
+
+					if (UtilMethods.isSet(value)) {
+						final Category configuredRootCategory = ImportUtil.findConfiguredRootCategory(field, user);
+
+						// Defensive check — should not normally occur
+						if (configuredRootCategory == null) {
+							throw new DotRuntimeException(String.format(
+									"Line #%d contains errors. Column: '%s', value: '%s', no root category found, line will be ignored.",
+									lineNumber, field.getFieldName(), value
+							));
+						}
+
 						String[] categoryKeys = value.split(",");
-						for(String catKey : categoryKeys) {
-							Category cat = catAPI.findByKey(catKey.trim(), user, false);
-							if(cat == null)
-								throw new DotRuntimeException("Line #" + lineNumber + " contains errors, Column: " + field.getFieldName() +
-										", value: " + value + ", invalid category key found, line will be ignored.");
-							categories.add(cat);
+						for (String rawKey : categoryKeys) {
+							String key = rawKey.trim();
+							try {
+								Category cat = ImportUtil.validateCategoryKey(key, configuredRootCategory, field, user);
+								categories.add(cat);
+							} catch (ImportLineException e) {
+								throw new DotRuntimeException(String.format(
+										"Line #%d contains errors, Column: '%s' value: '%s'. Reason: %s Line will be ignored.",
+										lineNumber, field.getFieldName(), value, e.getMessage()
+								), e);
+							}
 						}
 					}
 				}
