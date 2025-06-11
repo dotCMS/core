@@ -25,7 +25,9 @@ export class SideMenuPage {
    */
   async navigate(group: string, tool: string) {
     await this.openMenu();
-    await this.page.getByText(group, { exact: true }).click();
-    await this.page.getByRole("link", { name: tool }).click();
+
+    const navigationSidebar = this.page.getByTestId("navigation-sidebar");
+    await navigationSidebar.getByText(group, { exact: true }).click();
+    await navigationSidebar.getByRole("link", { name: tool }).click();
   }
 }
