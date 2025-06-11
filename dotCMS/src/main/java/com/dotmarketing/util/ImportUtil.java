@@ -2273,7 +2273,7 @@ public class ImportUtil {
      * @param user          the user performing the operation (for permission checks)
      * @return the configured root Category for the field, or null if not found or inaccessible
      */
-    public static Category findConfiguredRootCategory(final Field categoryField, final User user) {
+    private static Category findConfiguredRootCategory(final Field categoryField, final User user) {
         Category category = null;
         try {
             category = catAPI.find(categoryField.getValues(), user, false);
@@ -2307,7 +2307,7 @@ public class ImportUtil {
      * @throws DotSecurityException if a security or permission error occurs
      * @throws ImportLineException  if the category does not exist or is not under the root category
      */
-    public static Category validateCategoryKey(final String key, final Category rootCategory, final Field field, final User user) throws DotDataException, DotSecurityException {
+    private static Category validateCategoryKey(final String key, final Category rootCategory, final Field field, final User user) throws DotDataException, DotSecurityException {
         Category cat = catAPI.findByKey(key, user, false);
         if (cat == null || !catAPI.isParent(cat, rootCategory, user)) {
             throw ImportLineException.builder()
