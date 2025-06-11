@@ -106,11 +106,12 @@
 <script type="text/javascript" src="/dwr/interface/InodeAjax.js?b=<%= ReleaseInfo.getVersion() %>"></script>
 <%
     // Cache busting for development - use timestamp
-    String cacheBuster = String.valueOf(System.currentTimeMillis());
+    // String cacheBuster = String.valueOf(System.currentTimeMillis());
 %>
 
-<script type="text/javascript" src="/html/legacy_custom_field/iframe-height-manager.js?v=<%= cacheBuster %>"></script>
-<script type="text/javascript" src="/html/legacy_custom_field/field-interceptors.js?v=<%= cacheBuster %>"></script>
+<script type="text/javascript" src="/html/legacy_custom_field/shared-logger.js?v=<%=  ReleaseInfo.getVersion() %>"></script>
+<script type="text/javascript" src="/html/legacy_custom_field/iframe-height-manager.js?v=<%=  ReleaseInfo.getVersion() %>"></script>
+<script type="text/javascript" src="/html/legacy_custom_field/field-interceptors.js?v=<%=  ReleaseInfo.getVersion() %>"></script>
 
 <script type="text/javascript">
     dojo.require("dojo.data.ItemFileReadStore");
@@ -306,6 +307,7 @@
                     <body id="legacy-custom-field-body">
                         <%= HTMLString %>
                     </body>
+
                     <script>
                         /**
                          * Legacy Custom Field Integration Module
@@ -315,6 +317,16 @@
                          * 1. Automatic iframe height adjustment (via external module)
                          * 2. Two-way data binding between Angular and legacy fields
                          * 3. Support for dynamic field creation and updates
+                         *
+                         * === DEBUGGING UTILITIES ===
+                         * Use these console commands for debugging:
+                         *
+                         * // Change log levels globally (ERROR=0, WARN=1, INFO=2, DEBUG=3, TRACE=4)
+                         * DotLegacyLogger.setGlobalLogLevel('DEBUG');    // Enable verbose logging
+                         * DotLegacyLogger.setLoggingEnabled(false);      // Disable all logging
+                         *
+                         * // Force sync all fields
+                         * DotFieldInterceptors.syncNow();               // Force sync all fields
                          */
                         (() => {
                             // Initialize the height manager using the external module
@@ -338,7 +350,6 @@
                             if (window.DotFieldInterceptors) {
                                 window.DotFieldInterceptors.initializeFieldInterceptors(allFields, contentlet);
                             }
-
 
                         })();
                     </script>
