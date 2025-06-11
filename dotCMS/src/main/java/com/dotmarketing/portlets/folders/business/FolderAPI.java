@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.folders.business;
 
 import com.dotcms.api.tree.Parentable;
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.business.DotIdentifierStateException;
@@ -638,4 +639,7 @@ import java.util.function.Predicate;
 	 * This method ensures that all folder identifiers and inodes are valid and consistent.
 	 */
 	void fixFolderIds();
+
+	@CloseDBIfOpened
+	void fixFolderId(String inode, String identifier);
 }

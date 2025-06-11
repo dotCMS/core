@@ -597,6 +597,7 @@ public class FolderAPIImpl implements FolderAPI  {
 		}
 	}
 
+
 	@Override
 	@WrapInTransaction
 	public void save(final Folder folder, final String existingId,
@@ -604,9 +605,16 @@ public class FolderAPIImpl implements FolderAPI  {
 
 		final Identifier existingID = APILocator.getIdentifierAPI().find(folder.getIdentifier());
 
-		if(!folder.getIdentifier().equalsIgnoreCase(folder.getInode()) ){
-			//folder.setInode(existingID.getId());
+		// if we ingest bad folder ids, we should fix them
+		if(!folder.getIdentifier().equalsIgnoreCase(folder.getInode()) && Config.getBooleanProperty("FIX_FOLDER_IDS_AUTOMATICALLY", true)) {
+			final String FIX_FOLDER_IDS_JOB= "dotFixFolderIdsJob";
+			HibernateUtil.addCommitListener(FIX_FOLDER_IDS_JOB,()->{
+				if(folderIdsNeedFixing()){
+					fixFolderIds();
+				}
+			});
 		}
+
 		if(existingID ==null || !UtilMethods.isSet(existingID.getId())){
 			throw new DotStateException("Folder must already have an identifier before saving");
 		}
@@ -1299,18 +1307,18 @@ public class FolderAPIImpl implements FolderAPI  {
 	}
 
 
+	String BROKEN_FOLDERS_SHOULD_BE_EMPTY = "select * from folder where inode <> identifier limit 1";
+	String SYSTEM_FOLDER_SHOULD_NOT_BE_EMPTY =
+			"select * from folder where inode ='SYSTEM_FOLDER' and identifier='SYSTEM_FOLDER'";
+
+
 	@CloseDBIfOpened
 	@Override
 	public boolean folderIdsNeedFixing(){
-		String SHOULD_BE_EMPTY = "select * from folder where inode <> identifier limit 1";
-		String SHOULD_NOT_BE_EMPTY =
-				"select * from folder where inode ='" + Folder.SYSTEM_FOLDER + "' and identifier='" + Folder.SYSTEM_FOLDER
-						+ "'";
-
 
 			try (final Connection conn = DbConnectionFactory.getDataSource().getConnection()) {
 				DotConnect db = new DotConnect();
-				return !db.setSQL(SHOULD_BE_EMPTY).loadObjectResults(conn).isEmpty() || db.setSQL(SHOULD_NOT_BE_EMPTY)
+				return !db.setSQL(BROKEN_FOLDERS_SHOULD_BE_EMPTY).loadObjectResults(conn).isEmpty() || db.setSQL(SYSTEM_FOLDER_SHOULD_NOT_BE_EMPTY)
 						.loadObjectResults(conn).isEmpty();
 			} catch (Exception e) {
 				Logger.error(this, e);
@@ -1326,13 +1334,11 @@ public class FolderAPIImpl implements FolderAPI  {
 	String UPDATE_SYSTEM_FOLDER_FOLDER = "update folder set identifier ='SYSTEM_FOLDER' where inode = 'SYSTEM_FOLDER' or inode='"+ FolderAPI.OLD_SYSTEM_FOLDER_ID + "';";
 	String UPDATE_FOLDER_IDENTIFIERS="update identifier "
 			+ "set id =subquery.inode "
-			+ "from (select inode, identifier from folder) as subquery "
+			+ "from (select inode, identifier from folder where identifier <> inode) as subquery "
 			+ "where  "
 			+ "subquery.identifier =identifier.id;";
 
-
-
-	String UPDATE_ALL_FOLDERS = "update folder set identifier = inode;";
+	String UPDATE_ALL_FOLDERS = "update folder set identifier = inode where identifier <> inode;";
 
 
 	@CloseDBIfOpened
@@ -1375,7 +1381,52 @@ public class FolderAPIImpl implements FolderAPI  {
 			throw new DotRuntimeException(e);
 		} finally {
 
-			// check that all folders have the same inode and identifier
+			// chec
+			// k that all folders have the same inode and identifier
+			try (final Connection conn = DbConnectionFactory.getDataSource().getConnection()) {
+				conn.createStatement().execute(DENY_DEFER_CONSTRAINT_SQL);
+			} catch (Exception e) {
+				Logger.error(this, e);
+				throw new DotRuntimeException(e);
+			}
+		}
+
+	}
+
+
+
+	@CloseDBIfOpened
+	@Override
+	public void fixFolderId(String inode, String identifier) {
+		// allow deferred constraints
+
+		try (final Connection conn = DbConnectionFactory.getDataSource().getConnection()) {
+			conn.createStatement().execute(ALLOW_DEFER_CONSTRAINT_SQL);
+
+			conn.setAutoCommit(false);
+
+			// defer folder/identifier constraint
+			conn.createStatement().execute(DEFER_CONSTRAINT_SQL);
+
+			DotConnect db = new DotConnect();
+			db.setSQL("update identifier set id = ? where id = ?");
+			db.addParam(inode);
+			db.addParam(identifier);
+			db.loadResult(conn);
+
+			db.setSQL("update folder set identifier = ? where inode = ?");
+			db.addParam(inode);
+			db.addParam(inode);
+			db.loadResult(conn);
+
+
+
+		} catch (Exception e) {
+			Logger.error(this, e);
+			throw new DotRuntimeException(e);
+		} finally {
+
+			// chec k that all folders have the same inode and identifier
 			try (final Connection conn = DbConnectionFactory.getDataSource().getConnection()) {
 				conn.createStatement().execute(DENY_DEFER_CONSTRAINT_SQL);
 			} catch (Exception e) {
@@ -1387,12 +1438,6 @@ public class FolderAPIImpl implements FolderAPI  {
 
 
 	}
-
-
-
-
-
-
 
 
 

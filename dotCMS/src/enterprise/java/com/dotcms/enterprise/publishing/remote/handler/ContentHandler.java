@@ -9,6 +9,11 @@
 
 package com.dotcms.enterprise.publishing.remote.handler;
 
+import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.UNIQUE_PER_SITE_FIELD_VARIABLE_NAME;
+import static com.dotcms.contenttype.model.type.PageContentType.PAGE_FRIENDLY_NAME_FIELD_VAR;
+import static com.dotcms.publishing.FilterDescriptor.RELATIONSHIPS_KEY;
+import static com.liferay.util.StringPool.BLANK;
+
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.elasticsearch.util.ESUtils;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
@@ -28,7 +33,6 @@ import com.dotcms.publisher.receiver.handler.IHandler;
 import com.dotcms.publishing.DotPublishingException;
 import com.dotcms.publishing.FilterDescriptor;
 import com.dotcms.publishing.PublisherConfig;
-import com.dotcms.publishing.PublisherFilter;
 import com.dotcms.rendering.velocity.services.PageLoader;
 import com.dotcms.repackage.com.google.common.base.Strings;
 import com.dotcms.storage.FileMetadataAPI;
@@ -63,12 +67,10 @@ import com.dotmarketing.portlets.contentlet.business.DotContentletStateException
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
-import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetValidationException;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
-import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.Field;
@@ -89,11 +91,8 @@ import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.thoughtworks.xstream.XStream;
-import io.vavr.API;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
-import org.apache.commons.lang3.tuple.Pair;
-
 import java.io.File;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -104,15 +103,10 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.UNIQUE_PER_SITE_FIELD_VARIABLE_NAME;
-import static com.dotcms.contenttype.model.type.PageContentType.PAGE_FRIENDLY_NAME_FIELD_VAR;
-import static com.dotcms.publishing.FilterDescriptor.RELATIONSHIPS_KEY;
-import static com.liferay.util.StringPool.BLANK;
+import org.apache.commons.lang3.tuple.Pair;
 
 /**
  * This handler deals with Contentlet-related information inside a bundle and
@@ -822,8 +816,8 @@ public class ContentHandler implements IHandler {
 
 		//Verify if this contentlet is a FileAsset
         if (BaseContentType.FILEASSET.equals(content.getContentType().baseType())) {
-			Folder testFolder = APILocator.getFolderAPI().find(content.getFolder(), userToUse, false);
-			if(testFolder != null || testFolder.getInode() != null) {
+			Folder testFolder = APILocator.getFolderAPI().find(content.getFolder(), APILocator.systemUser(), false);
+			if(testFolder != null && testFolder.getInode() != null) {
 				// Wiping out the thumbnails and resized versions
 				APILocator.getFileAssetAPI().cleanThumbnailsFromContentlet(content);
 			}
