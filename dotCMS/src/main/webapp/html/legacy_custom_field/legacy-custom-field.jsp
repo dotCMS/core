@@ -104,6 +104,13 @@
 <script type="text/javascript" src="/dwr/interface/BrowserAjax.js?b=<%= ReleaseInfo.getVersion() %>"></script>
 <script type="text/javascript" src="/dwr/interface/UserAjax.js?b=<%= ReleaseInfo.getVersion() %>"></script>
 <script type="text/javascript" src="/dwr/interface/InodeAjax.js?b=<%= ReleaseInfo.getVersion() %>"></script>
+<%
+    // Cache busting for development - use timestamp
+    String cacheBuster = String.valueOf(System.currentTimeMillis());
+%>
+
+<script type="text/javascript" src="/html/legacy_custom_field/iframe-height-manager.js?v=<%= cacheBuster %>"></script>
+<script type="text/javascript" src="/html/legacy_custom_field/field-interceptors.js?v=<%= cacheBuster %>"></script>
 
 <script type="text/javascript">
     dojo.require("dojo.data.ItemFileReadStore");
@@ -204,36 +211,32 @@
 
     body {background: white}
 
+    .dijitTextBox, .dijitSelect{
+        max-width: initial;
+    }
+
   </style>
+</head>
+
+<%
+    String contentTypeVarName = request.getParameter("variable");
+    String fieldName = request.getParameter("field");
+    String isModal = request.getParameter("modal"); // Check if opened as modal
+    boolean modalMode = "true".equals(isModal);
+
+    // Use DotObjectMapperProvider to get properly configured ObjectMapper
+    ObjectMapper mapper = DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
+%>
+
 
 <script>
-  (function() {
-      /**
-       * @namespace DotCustomFieldApi
-       * @description Bridge API for DotCMS Custom Fields that enables communication between the custom field iframe and the parent form.
-       * This API allows custom fields to get/set values and listen to changes in the parent form.
-       *
-       * @example
-       * // Wait for API to be ready and use it
-       * DotCustomFieldApi.ready(() => {
-       *     // Get field value
-       *     const value = DotCustomFieldApi.get('fieldId');
-       *
-       *     // Set field value
-       *     DotCustomFieldApi.set('fieldId', 'new value');
-       *
-       *     // Listen to field changes
-       *     DotCustomFieldApi.onChangeField('fieldId', (newValue) => {
-       *         console.log('Field changed:', newValue);
-       *     });
-       * });
-       *
-       * @property {Function} ready - Callback executed when the API is ready to use
-       * @property {Function} get - Get a field value by ID
-       * @property {Function} set - Set a field value by ID
-       * @property {Function} onChangeField - Listen to field changes
-       */
-       window.DotCustomFieldApi = {
+/**
+ * @namespace DotCustomFieldApi
+ * @description Bridge API for DotCMS Custom Fields that enables communication between the custom field iframe and the parent form.
+ * This API allows custom fields to get/set values and listen to changes in the parent form.
+ */
+(function() {
+    window.DotCustomFieldApi = {
         ready(callback) {
             if (window.DotCustomFieldApi.get) {
                 callback(window.DotCustomFieldApi);
@@ -248,16 +251,10 @@
             });
         }
     };
-  })();
+})();
 </script>
 
-</head>
-
 <%
-    String contentTypeVarName = request.getParameter("variable");
-    String fieldName = request.getParameter("field");
-    // Use DotObjectMapperProvider to get properly configured ObjectMapper
-    ObjectMapper mapper = DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
 
     if (null != contentTypeVarName && null != fieldName) {
 
@@ -310,117 +307,40 @@
                         <%= HTMLString %>
                     </body>
                     <script>
-                        const allFields = Object.values(<%= fieldJson %>);
-                        const contentlet = <%= contentletObj %>;
-                        const bodyElement = document.querySelector('body');
+                        /**
+                         * Legacy Custom Field Integration Module
+                         *
+                         * This module handles the integration between legacy custom fields in iframes
+                         * and the parent Angular application. It provides:
+                         * 1. Automatic iframe height adjustment (via external module)
+                         * 2. Two-way data binding between Angular and legacy fields
+                         * 3. Support for dynamic field creation and updates
+                         */
+                        (() => {
+                            // Initialize the height manager using the external module
+                            const iframeId = '<%= field.variable() %>';
+                            const inode = '<%= inode != null ? inode : "new" %>';
+                            const modalMode = <%= modalMode %>;
 
-                        const currentFieldVariable = '<%= field.variable() %>';
+                            if (window.DotIframeHeightManager) {
+                                window.DotIframeHeightManager.initializeHeightManager(iframeId, inode, modalMode);
+                            }
 
-                        const createHiddenInput = (variable, value) => {
-                            const input = document.createElement('input');
-                            input.setAttribute('type', 'hidden');
-                            input.setAttribute('name', variable);
-                            input.setAttribute('id', variable);
-                            input.setAttribute('dojoType', 'dijit.form.TextBox');
-                            input.setAttribute('value', value);
-                            bodyElement.appendChild(input);
-                            addSmartInterceptor(input, variable);
+                            /**
+                             * Custom Field Inputs Management
+                             *
+                             * Initialize field interceptors using the external module
+                             */
+                            const allFields = Object.values(<%= fieldJson %>);
+                            const contentlet = <%= contentletObj %>;
 
-                            return input;
-                        };
+                            // Initialize field interceptors using the external module
+                            if (window.DotFieldInterceptors) {
+                                window.DotFieldInterceptors.initializeFieldInterceptors(allFields, contentlet);
+                            }
 
-                        // Smart interceptor that can differentiate between Angular updates and VTL changes
-                        const addSmartInterceptor = (input, variable) => {
-                            let isAngularUpdate = false;
-                            const valueDescriptor = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value');
 
-                            Object.defineProperty(input, 'value', {
-                                get: function() {
-                                    return valueDescriptor.get.apply(this);
-                                },
-                                set: function(value) {
-                                    const oldValue = valueDescriptor.get.apply(this);
-                                    valueDescriptor.set.apply(this, [value]);
-
-                                    if (oldValue !== value && !isAngularUpdate && DotCustomFieldApi) {
-                                        DotCustomFieldApi.set(variable, value);
-                                    }
-                                }
-                            });
-
-                            input.setFromAngular = (value) => {
-                                isAngularUpdate = true;
-                                input.value = value;
-                                isAngularUpdate = false;
-                            };
-
-                            return input;
-                        };
-
-                        const installGlobalInterceptors = () => {
-                            const originalSetAttribute = HTMLInputElement.prototype.setAttribute;
-                            HTMLInputElement.prototype.setAttribute = function(name, value) {
-                                                                const oldValue = this.value;
-                                originalSetAttribute.call(this, name, value);
-
-                                if (name === 'value' && oldValue !== value && this.hasAttribute('data-angular-tracked')) {
-                                    const variable = this.name || this.id;
-                                    if (variable && DotCustomFieldApi) {
-                                        DotCustomFieldApi.set(variable, value);
-                                    }
-                                }
-                            };
-
-                            const observer = new MutationObserver((mutations) => {
-                                mutations.forEach((mutation) => {
-                                                                        if (mutation.type === 'childList') {
-                                        mutation.addedNodes.forEach((node) => {
-                                            if (node.nodeType === 1) {
-                                                const inputs = node.tagName === 'INPUT' ? [node] : node.querySelectorAll ? node.querySelectorAll('input[type="hidden"]') : [];
-
-                                                inputs.forEach((input) => {
-                                                    const variable = input.name || input.id;
-                                                    if (variable && allFields.some(f => f.variable === variable)) {
-                                                        input.setAttribute('data-angular-tracked', 'true');
-                                                        addSmartInterceptor(input, variable);
-                                                    }
-                                                });
-                                            }
-                                        });
-                                    }
-                                });
-                            });
-
-                            observer.observe(document.body, {
-                                childList: true,
-                                subtree: true
-                            });
-                        };
-
-                        installGlobalInterceptors();
-
-                        allFields.forEach(({ variable }) => {
-                            const input = createHiddenInput(variable, contentlet[variable] || "");
-                            input.setAttribute('data-angular-tracked', 'true');
-                        });
-
-                        dojo.addOnLoad(function () {
-                            dojo.global.DWRUtil = dwr.util;
-                            dojo.global.DWREngine = dwr.engine;
-                            dwr.engine.setErrorHandler(DWRErrorHandler);
-                            dwr.engine.setWarningHandler(DWRErrorHandler);
-
-                            DotCustomFieldApi.ready(() => {
-                                allFields.forEach(({ variable }) => {
-                                    DotCustomFieldApi.onChangeField(variable, (value) => {
-                                        const dijitWidget = dijit.byId(variable);
-                                        if(dijitWidget && dijitWidget.setValue) {
-                                            dijitWidget.setValue(value);
-                                        }
-                                    });
-                                });
-                            });
-                        });
+                        })();
                     </script>
 <%
             }

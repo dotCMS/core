@@ -10,8 +10,10 @@ import {
 } from '@dotcms/dotcms-models';
 import { UVE_MODE } from '@dotcms/types';
 
+import { CustomFieldConfig } from '../models/dot-edit-content-custom-field.interface';
 import {
     CALENDAR_FIELD_TYPES,
+    DEFAULT_CUSTOM_FIELD_CONFIG,
     FLATTENED_FIELD_TYPES,
     TAB_FIELD_CLAZZ,
     UNCASTED_FIELD_TYPES
@@ -366,3 +368,71 @@ export const prepareContentletForCopy = (contentlet: DotCMSContentlet): DotCMSCo
     locked: false,
     lockedBy: undefined
 });
+
+/**
+ * Extracts and parses custom field options from field variables.
+ * Looks for 'customFieldOptions' key and parses its JSON value.
+ *
+ * @param fieldVariables - Array of field variables
+ * @returns Parsed custom field options object
+ *
+ * @example
+ * ```ts
+ * const options = getCustomFieldOptions(field.fieldVariables);
+ * console.log(options.showAsModal); // true
+ * ```
+ */
+export const getCustomFieldOptions = (
+    fieldVariables: DotCMSContentTypeFieldVariable[]
+): Partial<CustomFieldConfig> => {
+    const parsedVars = getFieldVariablesParsed<Record<string, string | boolean>>(fieldVariables);
+    const { customFieldOptions } = parsedVars;
+
+    return stringToJson(customFieldOptions as string);
+};
+
+/**
+ * Creates a complete custom field configuration by merging custom options with defaults
+ * and applying individual field variable overrides.
+ *
+ * @param fieldVariables - Array of field variables
+ * @returns Complete custom field configuration with defaults applied
+ *
+ * @example
+ * ```ts
+ * const config = createCustomFieldConfig(field.fieldVariables);
+ * console.log(config.width); // "90vw" or default "500px"
+ * ```
+ */
+export const createCustomFieldConfig = (
+    fieldVariables: DotCMSContentTypeFieldVariable[]
+): CustomFieldConfig => {
+    const customOptions = getCustomFieldOptions(fieldVariables);
+
+    const individualVars =
+        getFieldVariablesParsed<Record<string, string | boolean>>(fieldVariables);
+
+    // Use the default configuration from constants
+    const defaults: CustomFieldConfig = { ...DEFAULT_CUSTOM_FIELD_CONFIG };
+
+    // Merge with custom options from JSON
+    const mergedConfig: CustomFieldConfig = {
+        ...defaults,
+        ...customOptions
+    };
+
+    // Override with individual field variables (highest priority)
+    if (individualVars.showAsModal !== undefined) {
+        mergedConfig.showAsModal = individualVars.showAsModal as boolean;
+    }
+
+    if (individualVars.width) {
+        mergedConfig.width = individualVars.width as string;
+    }
+
+    if (individualVars.height) {
+        mergedConfig.height = individualVars.height as string;
+    }
+
+    return mergedConfig;
+};
