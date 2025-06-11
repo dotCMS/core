@@ -3,7 +3,14 @@
 # Script to update the LICENSE file Change Date line with current date
 # Format: "Change Date:     Four years from Month DD, YYYY"
 
-LICENSE_FILE="../LICENSE"
+# Find the git repository root directory
+REPO_ROOT=$(git rev-parse --show-toplevel)
+if [ $? -ne 0 ]; then
+    echo "Error: Not in a git repository"
+    exit 1
+fi
+
+LICENSE_FILE="${REPO_ROOT}/LICENSE"
 
 # Get current date in the required format (e.g., "June 01, 2025")
 CURRENT_DATE=$(date "+%B %d, %Y")
