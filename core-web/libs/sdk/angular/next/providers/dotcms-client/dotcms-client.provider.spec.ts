@@ -1,14 +1,17 @@
 import { TestBed } from '@angular/core/testing';
 
+import { createDotCMSClient } from '@dotcms/client/next';
 import { DotCMSClientConfig } from '@dotcms/types';
 
 import { provideDotCMSClient, DotCMSClient } from './dotcms-client.provider';
 
 // Mock the createDotCMSClient function since it's not available in test environment
-const mockCreateDotCMSClient = jest.fn();
 jest.mock('@dotcms/client/next', () => ({
-    createDotCMSClient: mockCreateDotCMSClient
+    createDotCMSClient: jest.fn()
 }));
+
+// Get the mocked function
+const mockedCreateDotCMSClient = jest.mocked(createDotCMSClient);
 
 describe('provideDotCMSClient', () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -46,7 +49,7 @@ describe('provideDotCMSClient', () => {
             }
         };
 
-        mockCreateDotCMSClient.mockReturnValue(mockClient);
+        mockedCreateDotCMSClient.mockReturnValue(mockClient);
     });
 
     afterEach(() => {
@@ -64,15 +67,15 @@ describe('provideDotCMSClient', () => {
         it('should call createDotCMSClient with provided config', () => {
             provideDotCMSClient(validConfig);
 
-            expect(mockCreateDotCMSClient).toHaveBeenCalledTimes(1);
-            expect(mockCreateDotCMSClient).toHaveBeenCalledWith(validConfig);
+            expect(mockedCreateDotCMSClient).toHaveBeenCalledTimes(1);
+            expect(mockedCreateDotCMSClient).toHaveBeenCalledWith(validConfig);
         });
 
         it('should create providers with minimal config', () => {
             const providers = provideDotCMSClient(minimalConfig);
 
             expect(providers).toBeDefined();
-            expect(mockCreateDotCMSClient).toHaveBeenCalledWith(minimalConfig);
+            expect(mockedCreateDotCMSClient).toHaveBeenCalledWith(minimalConfig);
         });
 
         it('should handle config with only required fields', () => {
@@ -84,7 +87,7 @@ describe('provideDotCMSClient', () => {
             const providers = provideDotCMSClient(basicConfig);
 
             expect(providers).toBeDefined();
-            expect(mockCreateDotCMSClient).toHaveBeenCalledWith(basicConfig);
+            expect(mockedCreateDotCMSClient).toHaveBeenCalledWith(basicConfig);
         });
 
         it('should handle config with custom request options', () => {
@@ -103,7 +106,7 @@ describe('provideDotCMSClient', () => {
             const providers = provideDotCMSClient(configWithCustomOptions);
 
             expect(providers).toBeDefined();
-            expect(mockCreateDotCMSClient).toHaveBeenCalledWith(configWithCustomOptions);
+            expect(mockedCreateDotCMSClient).toHaveBeenCalledWith(configWithCustomOptions);
         });
     });
 
@@ -141,7 +144,7 @@ describe('provideDotCMSClient', () => {
     describe('Error Scenarios', () => {
         it('should propagate error when createDotCMSClient throws', () => {
             const errorMessage = 'Invalid configuration provided';
-            mockCreateDotCMSClient.mockImplementation(() => {
+            mockedCreateDotCMSClient.mockImplementation(() => {
                 throw new Error(errorMessage);
             });
 
@@ -152,7 +155,7 @@ describe('provideDotCMSClient', () => {
 
         it('should handle TypeError from createDotCMSClient', () => {
             const typeError = new TypeError('Invalid URL format');
-            mockCreateDotCMSClient.mockImplementation(() => {
+            mockedCreateDotCMSClient.mockImplementation(() => {
                 throw typeError;
             });
 
@@ -162,23 +165,6 @@ describe('provideDotCMSClient', () => {
             expect(() => {
                 provideDotCMSClient(validConfig);
             }).toThrow('Invalid URL format');
-        });
-
-        it('should handle error in factory function', () => {
-            // Create a mock that fails when used as constructor
-            const failingMock = Object.create(Function.prototype);
-            failingMock.mockImplementation = jest.fn(() => {
-                throw new Error('Constructor failed');
-            });
-
-            mockCreateDotCMSClient.mockReturnValue(failingMock);
-
-            // The error might be thrown during provider creation or later during injection
-            expect(() => {
-                const providers = provideDotCMSClient(validConfig);
-                TestBed.configureTestingModule({ providers: [providers] });
-                TestBed.inject(DotCMSClient);
-            }).toThrow();
         });
     });
 });

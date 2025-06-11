@@ -2,7 +2,10 @@ export { DotCMSShowWhenDirective } from './directives/dotcms-show-when/dotcms-sh
 
 export { provideDotCMSImageLoader } from './providers/dotcms-image-loader/dotcms-image_loader';
 
-export { provideDotCMSClient } from './providers/dotcms-client/dotcms-client.provider';
+export {
+    provideDotCMSClient,
+    DotCMSClient
+} from './providers/dotcms-client/dotcms-client.provider';
 
 export { DotCMSEditableTextComponent } from './components/dotcms-editable-text/dotcms-editable-text.component';
 

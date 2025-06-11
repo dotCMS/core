@@ -7,7 +7,7 @@ import { DotCMSClientConfig } from '@dotcms/types';
  * Type alias for the return type of createDotCMSClient function.
  * Used to ensure type consistency across the DotCMSClient interface and class.
  */
-type clientType = ReturnType<typeof createDotCMSClient>;
+type ClientType = ReturnType<typeof createDotCMSClient>;
 
 // This is a hack inspired by https://github.com/angular/angularfire/blob/c1c6af9779154caff6bc0d9b837f6c3e2d913456/src/firestore/firestore.ts#L8
 
@@ -22,31 +22,8 @@ type clientType = ReturnType<typeof createDotCMSClient>;
  * ```
  */
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging, @typescript-eslint/no-empty-interface
-export interface DotCMSClient extends clientType {}
+export interface DotCMSClient extends ClientType {}
 
-/**
- * Injectable class that wraps the DotCMS client for use in Angular's dependency injection system.
- * This class acts as a bridge between the DotCMS client library and Angular's DI container,
- * allowing the client to be injected into components, services, and other Angular constructs.
- *
- * The class uses declaration merging with the interface above to provide both the contract
- * and the implementation while maintaining type safety.
- *
- * @example
- * ```typescript
- * @Component({
- *   // ...
- * })
- * export class MyComponent {
- *   dotcmsClient = inject(DotCMSClient);
- *
- *   async loadContent() {
- *     const content = await this.dotcmsClient.page.get();
- *     return content;
- *   }
- * }
- * ```
- */
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export class DotCMSClient {
     /**
@@ -55,7 +32,7 @@ export class DotCMSClient {
      * @param client - The DotCMS client instance created by createDotCMSClient
      * @returns The client instance (due to the return override)
      */
-    constructor(client: clientType) {
+    constructor(client: ClientType) {
         return client;
     }
 }
