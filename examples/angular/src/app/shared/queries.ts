@@ -1,4 +1,4 @@
-import { DotCMSPageRequestParams } from '@dotcms/types';
+import { DotCMSGraphQLParams, DotCMSPageRequestParams } from '@dotcms/types';
 
 export const blogQuery = `
     search(query: "+contenttype:Blog +live:true", limit: 3) {
@@ -68,7 +68,7 @@ fragment NavProps on DotNavigation {
 }
 `;
 
-export const BASE_EXTRA_QUERIES: DotCMSPageRequestParams['graphql'] = {
+export const BASE_EXTRA_QUERIES: DotCMSGraphQLParams = {
     content: {
         logoImage: `FileAssetCollection(query: "+title:logo.png") {
   fileAsset {

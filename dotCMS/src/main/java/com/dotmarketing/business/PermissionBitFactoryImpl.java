@@ -1777,7 +1777,6 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
           bitPermissionsList.forEach(p -> p.setBitPermission(true));
 
 		  Logger.debug(this.getClass(), "get() - Permissionable:" + permissionKey + " found permissions:" + bitPermissionsList);
-
           // adding to cache if found
           if (!bitPermissionsList.isEmpty()) {
               permissionCache.addToPermissionCache(permissionKey, bitPermissionsList);

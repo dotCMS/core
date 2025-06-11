@@ -16,9 +16,7 @@ export class BlogPostComponent implements OnChanges {
     post = input.required<BlogContentlet>();
 
     postContent = computed(() => {
-        const content = JSON.parse(this.post().blogContent);
-
-        return content as BlockEditorContent;
+        return this.post().blogContent;
     });
 
     get isEditMode() {
@@ -38,7 +36,6 @@ export class BlogPostComponent implements OnChanges {
     }
 
     customRenderers = {
-        // 'paragraph': import('./customRenderers/paragraph/paragraph.component').then(c => c.ParagraphComponent),
         Activity: import('./customRenderers/activity/activity.component').then(
             (c) => c.ActivityComponent
         )

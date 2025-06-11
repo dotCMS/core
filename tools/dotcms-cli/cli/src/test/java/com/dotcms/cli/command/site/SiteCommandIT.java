@@ -1142,7 +1142,6 @@ class SiteCommandIT extends CommandTest {
                 Assertions.assertNotNull(serverSite.entity().identifier());
                 Assertions.assertEquals(site2.siteName(), serverSite.entity().siteName());
                 Assertions.assertEquals(site2.identifier(), serverSite.entity().identifier());
-                Assertions.assertEquals(site2.modDate(), serverSite.entity().modDate());
                 Assertions.assertEquals(site2.isArchived(), serverSite.entity().isArchived());
             }
         } finally {

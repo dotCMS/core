@@ -58,6 +58,9 @@ export interface PageContainer {
     identifier: string;
     uuid: string;
     contentletsId: string[];
+    acceptTypes?: string;
+    maxContentlets?: number;
+    variantId?: string;
 }
 
 export interface ContainerPayload {

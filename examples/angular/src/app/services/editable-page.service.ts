@@ -66,9 +66,17 @@ export class EditablePageService<T extends DotCMSExtendedPageResponse> {
                 })
             )
             .subscribe((response) => {
-                if (response.errors && !getUVEState()) {
+                const vanityUrl = response.pageAsset?.vanityUrl;
+                const action = vanityUrl?.action ?? 0;
+
+                if (action > 200) {
+                    this.#router.navigate([vanityUrl?.forwardTo]);
+                    return;
+                }
+
+                if (response.error && !getUVEState()) {
                     this.#setError({
-                        message: response.errors.message,
+                        message: response.error.message,
                         status: 'Error'
                     });
                     return;

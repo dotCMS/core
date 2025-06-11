@@ -241,7 +241,7 @@ import static com.dotmarketing.portlets.personas.business.PersonaAPI.DEFAULT_PER
 public class ESContentletAPIImpl implements ContentletAPI {
 
     private static Lazy<Boolean> FEATURE_FLAG_DB_UNIQUE_FIELD_VALIDATION = Lazy.of(() ->
-            Config.getBooleanProperty(FeatureFlagName.FEATURE_FLAG_DB_UNIQUE_FIELD_VALIDATION, false));
+            Config.getBooleanProperty(FeatureFlagName.FEATURE_FLAG_DB_UNIQUE_FIELD_VALIDATION, true));
     private static final String CAN_T_CHANGE_STATE_OF_CHECKED_OUT_CONTENT = "Can't change state of checked out content or where inode is not set. Use Search or Find then use method";
     private static final String CANT_GET_LOCK_ON_CONTENT = "Only the CMS Admin or the user who locked the contentlet can lock/unlock it";
     private static final String FAILED_TO_DELETE_UNARCHIVED_CONTENT = "Failed to delete unarchived content. Content must be archived first before it can be deleted.";
@@ -3719,6 +3719,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             CacheLocator.getHTMLPageCache().remove(contentlet.getInode());
         }
+        final Set<String> inodes = Stream.of(contentlet).map(Contentlet::getInode).collect(Collectors.toSet());
+        updateModDate(inodes, user);
         invalidateLanguageVariableCache(contentlet);
         HibernateUtil.addCommitListener(
                 () -> this.contentletSystemEventUtil.pushArchiveEvent(workingContentlet), 1000);
@@ -4153,6 +4155,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             this.cleanFileAssetCache(contentlet, user, false);
         }
+
+        final Set<String> inodes = Stream.of(contentlet).map(Contentlet::getInode).collect(Collectors.toSet());
+        updateModDate(inodes, user);
 
         invalidateLanguageVariableCache(contentlet);
 
@@ -7001,6 +7006,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
     @Override
     public void restoreVersion(Contentlet contentlet, User user, boolean respectFrontendRoles)
             throws DotSecurityException, DotContentletStateException, DotDataException {
+        Logger.info(this.getClass(),
+                "Restoring version for contentlet: " + contentlet.getIdentifier() + " by user: "
+                        + (user != null ? user.getUserId() : "Unknown") + " inode: " + contentlet.getInode());
         if (contentlet.getInode().equals("")) {
             throw new DotContentletStateException(CAN_T_CHANGE_STATE_OF_CHECKED_OUT_CONTENT);
         }

@@ -9,6 +9,7 @@ import com.dotmarketing.portlets.workflows.model.*;
 import com.dotmarketing.util.Logger;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -47,6 +48,13 @@ public class PublishContentActionlet extends WorkFlowActionlet {
 
             if (processor.getContentlet().isArchived()) {
                 APILocator.getContentletAPI().unarchive(processor.getContentlet(), processor.getUser(), false);
+            }
+
+            //This should never happen, but just in case. Since evertime we publish a contentlet, we generate a new version.
+            if (contentlet.getModDate().before(new Date(System.currentTimeMillis() - 24 * 60 * 60 * 1000))) {
+                Logger.info(this,
+                        () -> "Publishing a content with an old mod date: " + contentlet);
+                Thread.dumpStack();
             }
 
             //First verify if we are handling a HTML page

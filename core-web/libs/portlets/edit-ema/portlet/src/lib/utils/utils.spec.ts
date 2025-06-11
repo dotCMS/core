@@ -1,8 +1,8 @@
 import { Params } from '@angular/router';
 
 import { CurrentUser } from '@dotcms/dotcms-js';
-import { DotDevice, DotExperiment, DotExperimentStatus } from '@dotcms/dotcms-models';
-import { UVE_MODE } from '@dotcms/types';
+import { DotContainer, DotDevice, DotExperiment, DotExperimentStatus } from '@dotcms/dotcms-models';
+import { DotCMSPage, DotCMSViewAsPersona, UVE_MODE } from '@dotcms/types';
 
 import {
     deleteContentletFromContainer,
@@ -29,14 +29,14 @@ import {
 import { DotPageApiParams } from '../services/dot-page-api.service';
 import { DEFAULT_PERSONA, PERSONA_KEY } from '../shared/consts';
 import { dotPageContainerStructureMock } from '../shared/mocks';
-import { ContentletDragPayload, ContentTypeDragPayload, DotPage } from '../shared/models';
+import { ContentletDragPayload, ContentTypeDragPayload } from '../shared/models';
 import { Orientation } from '../store/models';
 
 const generatePageAndUser = ({ locked, lockedBy, userId }) => ({
     page: {
         locked,
         lockedBy
-    } as DotPage,
+    } as DotCMSPage,
     currentUser: {
         userId
     } as CurrentUser
@@ -153,6 +153,51 @@ describe('utils functions', () => {
                 ],
                 contentletsId: ['test']
             });
+        });
+
+        it('should add container to pageContainers if it does not exist - issue #31790', () => {
+            // Current page with no containers
+            const pageContainers = [];
+
+            // Container where we want to delete the contentlet
+            const container = {
+                identifier: 'test',
+                uuid: 'test',
+                contentletsId: ['test'],
+                maxContentlets: 1,
+                acceptTypes: 'test',
+                variantId: '1'
+            };
+
+            // Contentlet to delete
+            const contentlet = {
+                identifier: 'test',
+                inode: 'test',
+                title: 'test',
+                contentType: 'test'
+            };
+
+            const result = deleteContentletFromContainer({
+                pageContainers,
+                container,
+                contentlet,
+                pageId: 'test',
+                language_id: 'test',
+                personaTag: 'persona-tag'
+            });
+
+            expect(result.pageContainers).toEqual([
+                {
+                    acceptTypes: 'test',
+                    maxContentlets: 1,
+                    variantId: '1',
+                    identifier: 'test',
+                    uuid: 'test',
+                    contentletsId: [],
+                    personaTag: 'persona-tag'
+                }
+            ]);
+            expect(result.contentletsId).toEqual([]);
         });
     });
 
@@ -306,6 +351,103 @@ describe('utils functions', () => {
                 ]
             });
         });
+
+        it('should add container to pageContainers if it does not exist - issue #31790', () => {
+            // Current page with no containers
+            const pageContainers = [];
+
+            // Container where we want to insert the contentlet
+            const container = {
+                identifier: 'test',
+                uuid: 'test',
+                contentletsId: [],
+                maxContentlets: 1,
+                acceptTypes: 'test',
+                variantId: '1'
+            };
+
+            // Contentlet position mark
+            const contentlet = {
+                identifier: 'contentlet-id',
+                inode: 'contentlet-inode',
+                title: 'test',
+                contentType: 'test'
+            };
+
+            const result = insertContentletInContainer({
+                pageContainers,
+                container,
+                contentlet,
+                pageId: 'page-id',
+                language_id: '1',
+                newContentletId: 'new-contentlet-id',
+                personaTag: 'persona-tag'
+            });
+
+            expect(result).toEqual({
+                didInsert: true,
+                pageContainers: [
+                    {
+                        identifier: 'test',
+                        uuid: 'test',
+                        contentletsId: ['new-contentlet-id'],
+                        personaTag: 'persona-tag',
+                        acceptTypes: 'test',
+                        maxContentlets: 1,
+                        variantId: '1'
+                    }
+                ]
+            });
+        });
+
+        it('should add container to pageContainers and insert in specific position - issue #31790', () => {
+            // Current page with no containers
+            const pageContainers = [];
+
+            // Container where we want to insert the contentlet
+            const container = {
+                identifier: 'test',
+                uuid: 'test',
+                contentletsId: ['test123'],
+                maxContentlets: 1,
+                acceptTypes: 'test',
+                variantId: '1'
+            };
+
+            // Contentlet to insert
+            const contentlet = {
+                identifier: 'test123',
+                inode: 'test',
+                title: 'test',
+                contentType: 'test'
+            };
+
+            const result = insertContentletInContainer({
+                pageContainers,
+                container,
+                contentlet,
+                pageId: 'test',
+                language_id: 'test',
+                position: 'after',
+                newContentletId: '000',
+                personaTag: 'persona-tag'
+            });
+
+            expect(result).toEqual({
+                didInsert: true,
+                pageContainers: [
+                    {
+                        identifier: 'test',
+                        uuid: 'test',
+                        contentletsId: ['test123', '000'],
+                        personaTag: 'persona-tag',
+                        acceptTypes: 'test',
+                        maxContentlets: 1,
+                        variantId: '1'
+                    }
+                ]
+            });
+        });
     });
 
     describe('url sanitize', () => {
@@ -341,13 +483,13 @@ describe('utils functions', () => {
             const personalization = getPersonalization({
                 contentType: 'persona',
                 keyTag: 'adminUser'
-            });
+            } as DotCMSViewAsPersona);
 
             expect(personalization).toBe('dot:persona:adminUser');
         });
 
         it('should return the correct personalization when persona does not exist', () => {
-            const personalization = getPersonalization({});
+            const personalization = getPersonalization({} as DotCMSViewAsPersona);
             expect(personalization).toBe('dot:default');
         });
     });
@@ -546,7 +688,7 @@ describe('utils functions', () => {
             const result = mapContainerStructureToDotContainerMap(dotPageContainerStructureMock);
 
             expect(result).toEqual({
-                '123': dotPageContainerStructureMock['123'].container
+                '123': dotPageContainerStructureMock['123'].container as unknown as DotContainer
             });
         });
     });

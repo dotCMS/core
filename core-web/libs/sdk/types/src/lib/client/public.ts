@@ -1,6 +1,36 @@
+import { UVE_MODE } from '../editor/public';
+
 /**
- * The parameters for the Page API.
+ * The GraphQL parameters for a page request.
  * @public
+ */
+export interface DotCMSGraphQLParams {
+    /**
+     * The GraphQL query for the page.
+     * @property {string} page - The GraphQL query for the page.
+     */
+    page?: string;
+    /**
+     * A record of GraphQL queries for content.
+     * @property {Record<string, string>} content - A record of GraphQL queries for content.
+     */
+    content?: Record<string, string>;
+    /**
+     * Variables for the GraphQL queries.
+     * @property {Record<string, string>} variables - Variables for the GraphQL queries.
+     */
+    variables?: Record<string, string>;
+    /**
+     * An array of GraphQL fragment strings.
+     * @property {string[]} fragments - An array of GraphQL fragment strings.
+     */
+    fragments?: string[];
+}
+
+/**
+ * Parameters for making a page request to DotCMS.
+ * @public
+ * @interface DotCMSPageRequestParams
  */
 export interface DotCMSPageRequestParams {
     /**
@@ -11,7 +41,7 @@ export interface DotCMSPageRequestParams {
     /**
      * The mode of the page you want to retrieve. Defaults to the site's default mode if not provided.
      */
-    mode?: 'EDIT_MODE' | 'PREVIEW_MODE' | 'LIVE';
+    mode?: keyof typeof UVE_MODE;
 
     /**
      * The language id of the page you want to retrieve. Defaults to the site's default language if not provided.
@@ -29,12 +59,17 @@ export interface DotCMSPageRequestParams {
     fireRules?: boolean | string;
 
     /**
-     * Allows access to related content via the Relationship fields of contentlets on a Page; 0 (default).
-     */
-    depth?: 0 | 1 | 2 | 3 | '0' | '1' | '2' | '3';
-
-    /**
      * The publish date of the page you want to retrieve.
+     * Must be an ISO 8601 formatted date string (e.g. '2025-06-19T12:59:41Z').
+     *
+     * @example
+     * // ✓ Correct usage:
+     * publishDate: '2025-06-19T12:59:41Z'
+     * publishDate: '2023-12-25T00:00:00Z'
+     *
+     * // ✗ Incorrect usage:
+     * publishDate: '19/06/2025'           // Wrong format
+     * publishDate: '2025-06-19 12:59:41'  // Not ISO 8601 format
      */
     publishDate?: string;
 
@@ -45,12 +80,7 @@ export interface DotCMSPageRequestParams {
     /**
      * The GraphQL options for the page.
      */
-    graphql?: {
-        page?: string;
-        content?: Record<string, string>;
-        variables?: Record<string, string>;
-        fragments?: string[];
-    };
+    graphql?: DotCMSGraphQLParams;
 }
 
 /**

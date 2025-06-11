@@ -3,9 +3,13 @@ package com.dotcms.graphql.datafetcher.page;
 import com.dotcms.graphql.DotGraphQLContext;
 import com.dotcms.graphql.exception.PermissionDeniedGraphQLException;
 import com.dotcms.rest.api.v1.page.PageResource;
+import com.dotcms.vanityurl.business.VanityUrlAPI;
+import com.dotcms.vanityurl.model.CachedVanityUrl;
+import com.dotcms.vanityurl.model.VanityUrlResult;
 import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.transform.DotContentletTransformer;
@@ -15,6 +19,7 @@ import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRend
 import com.dotmarketing.portlets.htmlpageasset.business.render.PageContext;
 import com.dotmarketing.portlets.htmlpageasset.business.render.PageContextBuilder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.rules.business.RulesEngine;
 import com.dotmarketing.portlets.rules.model.Rule.FireOn;
 import com.dotmarketing.util.DateUtil;
@@ -31,7 +36,7 @@ import java.time.Instant;
 import java.util.Date;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
+import java.util.Optional;
 /**
  * This DataFetcher returns a {@link HTMLPageAsset} given an URL. It also takes optional parameters
  * to find a specific version of the page: languageId and pageMode.
@@ -61,6 +66,7 @@ public class PageDataFetcher implements DataFetcher<Contentlet> {
             final String persona = environment.getArgument("persona");
             final String site = environment.getArgument("site");
             final String publishDate = environment.getArgument("publishDate");
+            final String variantName = environment.getArgument("variantName");
 
             context.addParam("url", url);
             context.addParam("languageId", languageId);
@@ -86,6 +92,10 @@ public class PageDataFetcher implements DataFetcher<Contentlet> {
                 request.setAttribute(Host.HOST_VELOCITY_VAR_NAME, site);
             }
 
+            if(UtilMethods.isSet(variantName)) {
+                request.setAttribute(VariantAPI.VARIANT_KEY, variantName);
+            }
+
             Date publishDateObj = null;
 
             if(UtilMethods.isSet(publishDate)) {
@@ -102,11 +112,43 @@ public class PageDataFetcher implements DataFetcher<Contentlet> {
                 }
             }
 
+            // Vanity URL resolution
+            String resolvedUri = url;
+            final Language language = UtilMethods.isSet(languageId) ?
+                    APILocator.getLanguageAPI().getLanguage(languageId) : APILocator.getLanguageAPI().getDefaultLanguage();
+            final Host host = WebAPILocator.getHostWebAPI().getHost(request);
+
+            final Optional<CachedVanityUrl> cachedVanityUrlOpt = APILocator.getVanityUrlAPI()
+                    .resolveVanityUrl(url, host, language);
+
+            if (cachedVanityUrlOpt.isPresent()) {
+                response.setHeader(VanityUrlAPI.VANITY_URL_RESPONSE_HEADER,
+                        cachedVanityUrlOpt.get().vanityUrlId);
+
+                // Store the CachedVanityUrl in the context
+                context.addParam("cachedVanityUrl", cachedVanityUrlOpt.get());
+
+                if (cachedVanityUrlOpt.get().isTemporaryRedirect() || 
+                    cachedVanityUrlOpt.get().isPermanentRedirect()) {
+                    // For redirects, return an empty page with vanity URL info
+                    final Contentlet emptyPage = new Contentlet();
+                    emptyPage.setLanguageId(language.getId());
+                    emptyPage.setHost(host.getIdentifier());
+                    context.markAsVanityRedirect();
+                    return emptyPage;
+                } else {
+                    // For forwards, use the resolved URI
+                    final VanityUrlResult vanityUrlResult = cachedVanityUrlOpt.get()
+                            .handle(url);
+                    resolvedUri = vanityUrlResult.getRewrite();
+                }
+            }
+
             Logger.debug(this, ()-> "Fetching page for URL: " + url);
 
             final PageContext pageContext = PageContextBuilder.builder()
                     .setUser(user)
-                    .setPageUri(url)
+                    .setPageUri(resolvedUri)
                     .setPageMode(mode)
                     .setGraphQL(true)
                     .build();
@@ -130,6 +172,8 @@ public class PageDataFetcher implements DataFetcher<Contentlet> {
             final HTMLPageAsset pageAsset = pageUrl.getHTMLPage();
             context.addParam("page", pageAsset);
             pageAsset.getMap().put("URLMapContent", pageUrl.getUrlMapInfo());
+
+
             if(fireRules) {
                 Logger.info(this, "Rules will be fired");
                 request.setAttribute("fireRules", true);

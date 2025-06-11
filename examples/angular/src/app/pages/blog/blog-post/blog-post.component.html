@@ -1,4 +1,5 @@
-<main class="flex flex-col gap-8 m-auto">
+<div class="flex flex-col gap-8 m-auto items-center">
+
     <h1 class="text-4xl font-bold">{{ post().title }}</h1>
 
     @if (post().image) {
@@ -11,6 +12,6 @@
         <dotcms-block-editor-renderer
             [blocks]="postContent()"
             [customRenderers]="customRenderers"
-            [className]="blockEditorClasses()" />
+            [class]="blockEditorClasses()" />
     </div>
-</main>
+</div>
