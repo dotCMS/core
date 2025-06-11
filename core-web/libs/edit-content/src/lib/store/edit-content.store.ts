@@ -35,6 +35,7 @@ export interface EditContentState {
     // Root state
     state: ComponentStatus;
     error: string | null;
+    isDialogMode: boolean;
 
     // Content state
     contentType: DotCMSContentType | null;
@@ -103,6 +104,7 @@ export const initialRootState: EditContentState = {
     // Root state
     state: ComponentStatus.INIT,
     error: null,
+    isDialogMode: false,
 
     // Content state
     contentType: null,
@@ -184,11 +186,16 @@ export const DotEditContentStore = signalStore(
     withActivities(),
     withHooks({
         onInit(store) {
-            const activatedRoute = inject(ActivatedRoute);
-            const params = activatedRoute.snapshot?.params;
-
             // Load the current user
             store.loadCurrentUser();
+
+            // Skip route-based initialization if in dialog mode
+            if (store.isDialogMode()) {
+                return;
+            }
+
+            const activatedRoute = inject(ActivatedRoute);
+            const params = activatedRoute.snapshot?.params;
 
             if (params) {
                 const contentType = params['contentType'];

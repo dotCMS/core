@@ -1,0 +1,47 @@
+<div class="create-content-dialog" data-testid="create-content-dialog">
+    <dot-edit-content-form-layout #editContentLayout data-testid="edit-content-layout" />
+    @if (isCompatible()) {
+        <!-- <dot-edit-content-form-layout #editContentLayout data-testid="edit-content-layout" /> -->
+
+        @if (store.isLoaded()) {
+            <!-- <dot-edit-content-form-layout #editContentLayout data-testid="edit-content-layout" /> -->
+        } @else if (store.state() === ComponentStatus.ERROR) {
+            <div class="create-content-dialog__error" data-testid="error-state">
+                <i class="pi pi-exclamation-triangle create-content-dialog__error-icon"></i>
+                <h3 class="create-content-dialog__error-title">
+                    {{ 'edit.content.create.dialog.error.title' | dm }}
+                </h3>
+                <p class="create-content-dialog__error-message">
+                    {{ 'edit.content.create.dialog.error.loading' | dm }}
+                </p>
+                <p class="create-content-dialog__error-details">
+                    {{ store.error() }}
+                </p>
+            </div>
+        } @else {
+            <div class="create-content-dialog__loading" data-testid="loading-state">
+                <div class="create-content-dialog__loading-spinner">
+                    <i class="pi pi-spin pi-spinner"></i>
+                </div>
+                <p class="create-content-dialog__loading-text">
+                    {{ 'edit.content.create.dialog.loading' | dm }}
+                </p>
+            </div>
+        }
+    } @else {
+        <div class="create-content-dialog__legacy-placeholder" data-testid="legacy-placeholder">
+            <div class="create-content-dialog__legacy-content">
+                <i class="pi pi-code create-content-dialog__legacy-icon"></i>
+                <h3 class="create-content-dialog__legacy-title">
+                    {{ 'edit.content.create.dialog.legacy.title' | dm }}
+                </h3>
+                <p class="create-content-dialog__legacy-description">
+                    {{ 'edit.content.create.dialog.legacy.description' | dm }}
+                </p>
+                <p class="create-content-dialog__legacy-subtitle">
+                    {{ 'edit.content.create.dialog.legacy.subtitle' | dm }}
+                </p>
+            </div>
+        </div>
+    }
+</div>
