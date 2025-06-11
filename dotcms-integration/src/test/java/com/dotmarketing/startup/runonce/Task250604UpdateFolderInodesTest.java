@@ -1,5 +1,6 @@
 package com.dotmarketing.startup.runonce;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
@@ -162,15 +163,16 @@ public class Task250604UpdateFolderInodesTest extends IntegrationTestBase {
                 .setSQL("SELECT inode FROM folder WHERE inode = '"+ Folder.SYSTEM_FOLDER+"'")
                 .getString("inode");
 
-
-        assertTrue("The inode for the system folder should be 'SYSTEM_FOLDER', but was: " + inode,  Folder.SYSTEM_FOLDER.equals(inode));
+        assertEquals("The inode for the system folder should be 'SYSTEM_FOLDER', but was: " + inode,
+                Folder.SYSTEM_FOLDER, inode);
 
 
 
         String identifier = new DotConnect()
                 .setSQL("SELECT identifier FROM folder WHERE identifier = '"+ Folder.SYSTEM_FOLDER+"'")
                 .getString("identifier");
-        assertTrue("The identifier for the system folder should be 'SYSTEM_FOLDER', but was: " + identifier,  Folder.SYSTEM_FOLDER.equals(identifier));
+        assertEquals("The identifier for the system folder should be 'SYSTEM_FOLDER', but was: " + identifier,
+                Folder.SYSTEM_FOLDER, identifier);
 
 
     }
@@ -181,9 +183,8 @@ public class Task250604UpdateFolderInodesTest extends IntegrationTestBase {
 
         Folder folder = new FolderDataGen().site(host).name("test-folder" + UUIDGenerator.shorty()).nextPersisted();
 
-
-        assertTrue("The inode for a new folder should be the same as the identifier: " + folder.getInode() + " / " + folder.getIdentifier(),
-                folder.getInode().equals(folder.getIdentifier()));
+        assertEquals("The inode for a new folder should be the same as the identifier: " + folder.getInode() + " / "
+                + folder.getIdentifier(), folder.getInode(), folder.getIdentifier());
 
         String folderId=new DotConnect()
                 .setSQL("SELECT id FROM identifier WHERE id = ?")
@@ -196,13 +197,10 @@ public class Task250604UpdateFolderInodesTest extends IntegrationTestBase {
                 .addParam(folder.getIdentifier())
                 .loadObjectResults().get(0).get("inode").toString();
 
+        assertEquals("The identifier should match the identifier table:" + folder.getIdentifier() + " / " + folderId,
+                folder.getIdentifier(), folderId);
 
-        assertTrue("The identifier should match the identifier table:" + folder.getIdentifier() + " / " + folderId,
-                folder.getIdentifier().equals(folderId));
-
-
-        assertTrue("The identifier should match the folder.inode table:",
-                folder.getIdentifier().equals(folderInode));
+        assertEquals("The identifier should match the folder.inode table:", folder.getIdentifier(), folderInode);
 
         DbConnectionFactory.closeSilently();
 
@@ -238,7 +236,7 @@ public class Task250604UpdateFolderInodesTest extends IntegrationTestBase {
         // test that the bad folder has permissions
         List<Permission> perms = APILocator.getPermissionAPI().getPermissions(folder);
         int origPermSize = perms.size();
-        assertTrue("The folder should have permissions", origPermSize==3);
+        assertEquals("The folder should have permissions", 3, origPermSize);
 
 
         // run task to fix the bad folder data
@@ -265,9 +263,9 @@ public class Task250604UpdateFolderInodesTest extends IntegrationTestBase {
         // load the permissions for the newly fixed folder, should have the same permissions as before
         perms = APILocator.getPermissionAPI().getPermissions(folder);
 
-        assertTrue("The folder should have permissions", !perms.isEmpty());
+        assertFalse("The folder should have permissions", perms.isEmpty());
 
-        assertTrue("The folder should have the same number of permissions as before", perms.size() == origPermSize);
+        assertEquals("The folder should have the same number of permissions as before", perms.size(), origPermSize);
 
 
 
@@ -280,7 +278,7 @@ public class Task250604UpdateFolderInodesTest extends IntegrationTestBase {
     public void test_trying_to_save_bad_folder() throws Exception {
 
         String badShorty = UUIDGenerator.shorty();
-        String inode = badInode(badShorty);
+        String badInode = badInode(badShorty);
         String identifier = badIdentifier(badShorty);
 
         Identifier id = new Identifier();
@@ -297,7 +295,7 @@ public class Task250604UpdateFolderInodesTest extends IntegrationTestBase {
 
 
         Folder folder = new Folder();
-        folder.setInode(inode);
+        folder.setInode(badInode);
         folder.setIdentifier(identifier);
         folder.setName(badAssetName(badShorty));
         folder.setTitle(badAssetName(badShorty));
