@@ -311,6 +311,27 @@ describe('DotEditContentSidebarActivitiesComponent', () => {
             expect(clearButton).toBeDisabled();
         });
 
+        it('should disable submit button when comment field is empty', () => {
+            // Initially check that it's disabled when comment is empty
+            let submitButton = spectator.query(byTestId('activities-submit'));
+            expect(submitButton).toBeDisabled();
+
+            // Type something to enable it
+            const commentInput = spectator.query(byTestId('activities-input'));
+            spectator.typeInElement('Test comment', commentInput);
+            spectator.detectChanges();
+
+            submitButton = spectator.query(byTestId('activities-submit'));
+            expect(submitButton).not.toBeDisabled();
+
+            // Delete the content to see if it gets disabled again
+            spectator.typeInElement('', commentInput);
+            spectator.detectChanges();
+
+            submitButton = spectator.query(byTestId('activities-submit'));
+            expect(submitButton).toBeDisabled();
+        });
+
         it('should reset form state when clearComment is called', () => {
             const commentInput = spectator.query(byTestId('activities-input'));
             spectator.typeInElement('Test comment', commentInput);
@@ -373,9 +394,14 @@ describe('DotEditContentSidebarActivitiesComponent', () => {
             expect(spectator.component['$isSaving']()).toBe(true);
         });
 
-        it('should not disable submit button when not saving', () => {
+        it('should not disable submit button when not saving and comment has content', () => {
             // Set loaded state
             spectator.setInput('status', ComponentStatus.LOADED);
+            spectator.detectChanges();
+
+            // Add content to comment field
+            const commentInput = spectator.query(byTestId('activities-input'));
+            spectator.typeInElement('Test comment', commentInput);
             spectator.detectChanges();
 
             const submitButton = spectator.query(byTestId('activities-submit'));

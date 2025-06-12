@@ -1,8 +1,9 @@
-import { DotContainerMap, DotLayout } from '@dotcms/dotcms-models';
+import { DotContainerMap } from '@dotcms/dotcms-models';
+import { DotCMSLayout } from '@dotcms/types';
 
 export interface LayoutProps {
     containersMap: DotContainerMap;
-    layout: DotLayout;
+    layout: DotCMSLayout;
     template: {
         identifier: string;
         themeId: string;

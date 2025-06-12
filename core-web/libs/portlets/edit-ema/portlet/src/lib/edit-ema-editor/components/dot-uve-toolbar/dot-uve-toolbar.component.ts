@@ -37,7 +37,7 @@ import {
     DotDeviceListItem,
     DotCMSContentlet
 } from '@dotcms/dotcms-models';
-import { UVE_MODE } from '@dotcms/types';
+import { DotCMSPage, UVE_MODE } from '@dotcms/types';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotEditorModeSelectorComponent } from './components/dot-editor-mode-selector/dot-editor-mode-selector.component';
@@ -50,7 +50,6 @@ import { EditEmaLanguageSelectorComponent } from './components/edit-ema-language
 import { EditEmaPersonaSelectorComponent } from './components/edit-ema-persona-selector/edit-ema-persona-selector.component';
 
 import { DEFAULT_DEVICES, DEFAULT_PERSONA, PERSONA_KEY } from '../../../shared/consts';
-import { DotPage } from '../../../shared/models';
 import { UVEStore } from '../../../store/dot-uve.store';
 import { convertLocalTimeToUTC } from '../../../utils';
 
@@ -88,7 +87,7 @@ export class DotUveToolbarComponent {
     $personaSelector = viewChild<EditEmaPersonaSelectorComponent>('personaSelector');
     $languageSelector = viewChild<EditEmaLanguageSelectorComponent>('languageSelector');
 
-    @Output() translatePage = new EventEmitter<{ page: DotPage; newLanguage: number }>();
+    @Output() translatePage = new EventEmitter<{ page: DotCMSPage; newLanguage: number }>();
     @Output() editUrlContentMap = new EventEmitter<DotCMSContentlet>();
 
     readonly #store = inject(UVEStore);
@@ -281,7 +280,7 @@ export class DotUveToolbarComponent {
      *
      * @return {void}
      */
-    private createNewTranslation(language: DotLanguage, page: DotPage): void {
+    private createNewTranslation(language: DotLanguage, page: DotCMSPage): void {
         this.#confirmationService.confirm({
             header: this.#dotMessageService.get(
                 'editpage.language-change-missing-lang-populate.confirm.header'

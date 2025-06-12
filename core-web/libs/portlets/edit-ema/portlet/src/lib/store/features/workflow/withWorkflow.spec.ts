@@ -4,11 +4,12 @@ import { patchState, signalStore, withMethods, withState } from '@ngrx/signals';
 import { of } from 'rxjs';
 
 import { DotWorkflowsActionsService } from '@dotcms/data-access';
+import { DotCMSPageAsset } from '@dotcms/types';
 import { mockWorkflowsActions } from '@dotcms/utils-testing';
 
 import { withWorkflow } from './withWorkflow';
 
-import { DotPageApiParams, DotPageApiResponse } from '../../../services/dot-page-api.service';
+import { DotPageApiParams } from '../../../services/dot-page-api.service';
 import { PERSONA_KEY } from '../../../shared/consts';
 import { UVE_STATUS } from '../../../shared/enums';
 import { MOCK_RESPONSE_HEADLESS } from '../../../shared/mocks';
@@ -40,7 +41,7 @@ export const uveStoreMock = signalStore(
     withState<UVEState>(initialState),
     withWorkflow(),
     withMethods((store) => ({
-        setPageAPIResponse: (pageAPIResponse: DotPageApiResponse) => {
+        setPageAPIResponse: (pageAPIResponse: DotCMSPageAsset) => {
             patchState(store, { pageAPIResponse });
         }
     }))

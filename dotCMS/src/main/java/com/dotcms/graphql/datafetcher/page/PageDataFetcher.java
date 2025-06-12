@@ -1,12 +1,12 @@
 package com.dotcms.graphql.datafetcher.page;
 
-import com.dotcms.contenttype.model.type.ImmutablePageContentType;
 import com.dotcms.graphql.DotGraphQLContext;
 import com.dotcms.graphql.exception.PermissionDeniedGraphQLException;
 import com.dotcms.rest.api.v1.page.PageResource;
 import com.dotcms.vanityurl.business.VanityUrlAPI;
 import com.dotcms.vanityurl.model.CachedVanityUrl;
 import com.dotcms.vanityurl.model.VanityUrlResult;
+import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -37,7 +37,6 @@ import java.util.Date;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.util.Optional;
-
 /**
  * This DataFetcher returns a {@link HTMLPageAsset} given an URL. It also takes optional parameters
  * to find a specific version of the page: languageId and pageMode.
@@ -67,6 +66,7 @@ public class PageDataFetcher implements DataFetcher<Contentlet> {
             final String persona = environment.getArgument("persona");
             final String site = environment.getArgument("site");
             final String publishDate = environment.getArgument("publishDate");
+            final String variantName = environment.getArgument("variantName");
 
             context.addParam("url", url);
             context.addParam("languageId", languageId);
@@ -90,6 +90,10 @@ public class PageDataFetcher implements DataFetcher<Contentlet> {
 
             if(UtilMethods.isSet(site)) {
                 request.setAttribute(Host.HOST_VELOCITY_VAR_NAME, site);
+            }
+
+            if(UtilMethods.isSet(variantName)) {
+                request.setAttribute(VariantAPI.VARIANT_KEY, variantName);
             }
 
             Date publishDateObj = null;
@@ -130,6 +134,7 @@ public class PageDataFetcher implements DataFetcher<Contentlet> {
                     final Contentlet emptyPage = new Contentlet();
                     emptyPage.setLanguageId(language.getId());
                     emptyPage.setHost(host.getIdentifier());
+                    context.markAsVanityRedirect();
                     return emptyPage;
                 } else {
                     // For forwards, use the resolved URI

@@ -55,7 +55,9 @@ export const EmptyContainer = (dotAttributes: DotContainerAttributes) => {
 
     return (
         <div {...dotAttributes} style={EMPTY_CONTAINER_STYLE_REACT}>
-            <span data-testid="empty-container-message">This container is empty.</span>
+            <span data-testid="empty-container-message" data-dot-object="empty-content">
+                This container is empty.
+            </span>
         </div>
     );
 };

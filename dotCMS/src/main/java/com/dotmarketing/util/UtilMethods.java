@@ -25,6 +25,9 @@ import com.dotmarketing.portlets.templates.model.TemplateVersionInfo;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.file.Paths;
 import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.index.Term;
@@ -510,6 +513,30 @@ public class UtilMethods {
                         "((http|ftp|https):\\/\\/w{3}[\\d]*.|(http|ftp|https):\\/\\/|w{3}[\\d]*.)([\\w\\d\\._\\-#\\(\\)\\[\\]\\\\,;:]+@[\\w\\d\\._\\-#\\(\\)\\[\\]\\\\,;:])?([a-z0-9]+.)*[a-z\\-0-9]+.([a-z]{2,3})?[a-z]{2,6}(:[0-9]+)?(\\/[\\/a-z0-9\\._\\-,]+)*[a-z0-9\\-_\\.\\s\\%]+(\\?[a-z0-9=%&\\.\\-,#]+)?",
                         url);
     }
+
+    public static boolean isValidStrictURL(String urlString) {
+        try {
+            URI uri = new URI(urlString);
+            return uri.getScheme() != null && uri.getHost() != null;
+        } catch (URISyntaxException e) {
+            return false;
+        }
+    }
+
+    public static String fileName(URI uri) {
+        if (uri == null) {
+            return null;
+        }
+
+        try {
+            return Paths.get(uri).getFileName().toString();
+        } catch (Exception e) {
+            // Fallback to manual extraction
+            String path = uri.getPath();
+            return path != null ? path.substring(path.lastIndexOf('/') + 1) : null;
+        }
+    }
+
 
     public static final boolean isValidEmail(Object email) {
         if (email == null) {
