@@ -27,6 +27,7 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotIdentifierStateException;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.business.IdentifierFactory;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionAPI.PermissionableType;
@@ -58,6 +59,7 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys.Cache;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
@@ -606,8 +608,8 @@ public class FolderAPIImpl implements FolderAPI  {
 		final Identifier existingID = APILocator.getIdentifierAPI().find(folder.getIdentifier());
 
 		// if we ingest bad folder ids, we should fix them
-		if(!folder.getIdentifier().equalsIgnoreCase(folder.getInode()) && Config.getBooleanProperty("FIX_FOLDER_IDS_AUTOMATICALLY", true)) {
-			final String FIX_FOLDER_IDS_JOB= "dotFixFolderIdsJob";
+		if(!folder.getIdentifier().equalsIgnoreCase(folder.getInode()) && Config.getBooleanProperty("FIX_FOLDER_IDS_AUTOMATICALLY", false)) {
+			final String FIX_FOLDER_IDS_JOB= "FIX_FOLDER_IDS_JOB";
 			HibernateUtil.addCommitListener(FIX_FOLDER_IDS_JOB,()->{
 				if(folderIdsNeedFixing()){
 					fixFolderIds();
@@ -1381,8 +1383,7 @@ public class FolderAPIImpl implements FolderAPI  {
 			throw new DotRuntimeException(e);
 		} finally {
 
-			// chec
-			// k that all folders have the same inode and identifier
+			// reset the constraint to not deferred
 			try (final Connection conn = DbConnectionFactory.getDataSource().getConnection()) {
 				conn.createStatement().execute(DENY_DEFER_CONSTRAINT_SQL);
 			} catch (Exception e) {
@@ -1414,11 +1415,13 @@ public class FolderAPIImpl implements FolderAPI  {
 			db.addParam(identifier);
 			db.loadResult(conn);
 
-			db.setSQL("update folder set identifier = ? where inode = ?");
-			db.addParam(inode);
+			db.setSQL("update folder set identifier = inode where inode = ?");
 			db.addParam(inode);
 			db.loadResult(conn);
 
+			conn.commit();
+
+			conn.setAutoCommit(true);
 
 
 		} catch (Exception e) {
@@ -1426,7 +1429,7 @@ public class FolderAPIImpl implements FolderAPI  {
 			throw new DotRuntimeException(e);
 		} finally {
 
-			// chec k that all folders have the same inode and identifier
+			// reset the constraint to not deferred
 			try (final Connection conn = DbConnectionFactory.getDataSource().getConnection()) {
 				conn.createStatement().execute(DENY_DEFER_CONSTRAINT_SQL);
 			} catch (Exception e) {
