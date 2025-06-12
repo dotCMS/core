@@ -1,19 +1,12 @@
-import { Subscription } from 'rxjs';
-
 import { NgZone } from '@angular/core';
 import { FormGroup } from '@angular/forms';
 
-import { FormBridge, FormFieldValue } from '../interfaces/form-bridge.interface';
-
-interface FieldCallback {
-    id: string;
-    callback: (value: FormFieldValue) => void;
-}
-
-interface FieldSubscription {
-    subscription: Subscription;
-    callbacks: FieldCallback[];
-}
+import {
+    FieldCallback,
+    FieldSubscription,
+    FormBridge,
+    FormFieldValue
+} from '../interfaces/form-bridge.interface';
 
 /**
  * Bridge class that enables form editing interoperability in Angular environments.
