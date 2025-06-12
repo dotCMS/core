@@ -1,5 +1,3 @@
-import { Params } from '@angular/router';
-
 import { CurrentUser } from '@dotcms/dotcms-js';
 import {
     DEFAULT_VARIANT_ID,
@@ -18,7 +16,7 @@ import {
 } from '@dotcms/types';
 
 import { EmaDragItem } from '../edit-ema-editor/components/ema-page-dropzone/types';
-import { DotPageAssetKeys, DotPageApiParams } from '../services/dot-page-api.service';
+import { DotPageApiParams } from '../services/dot-page-api.service';
 import {
     BASE_IFRAME_MEASURE_UNIT,
     COMMON_ERRORS,
@@ -704,25 +702,6 @@ export const checkClientHostAccess = (
 
     return sanitizedAllowedDevURLs.includes(sanitizedClientHost);
 };
-
-/**
- * Retrieve the page params from the router query params
- *
- * @export
- * @param {Params} params
- * @return {*}  {DotPageApiParams}
- */
-export function getAllowedPageParams(params: Params): DotPageAssetParams {
-    const allowedParams: DotPageAssetKeys[] = Object.values(DotPageAssetKeys);
-
-    return Object.keys(params)
-        .filter((key) => key && allowedParams.includes(key as DotPageAssetKeys))
-        .reduce((obj, key) => {
-            obj[key] = params[key];
-
-            return obj;
-        }, {}) as DotPageAssetParams;
-}
 
 /**
  * Determines the target URL for navigation.
