@@ -1,4 +1,4 @@
-import { makeEnvironmentProviders, EnvironmentProviders } from '@angular/core';
+import { makeEnvironmentProviders, EnvironmentProviders, InjectionToken, inject } from '@angular/core';
 
 import { createDotCMSClient } from '@dotcms/client/next';
 import { DotCMSClientConfig } from '@dotcms/types';
@@ -26,12 +26,6 @@ export interface DotCMSClient extends ClientType {}
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export class DotCMSClient {
-    /**
-     * Creates a new DotCMSClient instance that wraps the provided client.
-     *
-     * @param client - The DotCMS client instance created by createDotCMSClient
-     * @returns The client instance (due to the return override)
-     */
     constructor(client: ClientType) {
         return client;
     }
@@ -72,12 +66,12 @@ export class DotCMSClient {
  *
  */
 export function provideDotCMSClient(options: DotCMSClientConfig): EnvironmentProviders {
-    const client = createDotCMSClient(options);
+    const dotCMSClient = createDotCMSClient(options);
 
     return makeEnvironmentProviders([
         {
             provide: DotCMSClient,
-            useFactory: () => new DotCMSClient(client)
+            useFactory: () => new DotCMSClient(dotCMSClient)
         }
     ]);
 }
