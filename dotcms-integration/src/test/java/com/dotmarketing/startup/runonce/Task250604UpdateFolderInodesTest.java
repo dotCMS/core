@@ -27,6 +27,7 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.UUIDGenerator;
 import java.sql.SQLException;
 import java.util.List;
+import org.awaitility.Awaitility;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -134,8 +135,12 @@ public class Task250604UpdateFolderInodesTest extends IntegrationTestBase {
     @Test
     public void testTask250604UpdateFolderInodes() throws Exception {
 
-        // Check that we are starting with a clean slate
         Task250604UpdateFolderInodes task = new Task250604UpdateFolderInodes();
+
+        // Run the task and clean up any bad data
+        task.executeUpgrade();
+
+        // Check that we are starting with a clean slate
         assertFalse(task.forceRun());
 
         // Insert bad data
@@ -304,16 +309,38 @@ public class Task250604UpdateFolderInodesTest extends IntegrationTestBase {
         folder.setModDate(new java.util.Date());
         folder.setIDate(new java.util.Date());
 
-
-
+        // we could fix folders automatically, but it breaks old push publishing
+        // bundles, so we don't do it by default
         APILocator.getFolderAPI().save(folder, APILocator.systemUser(), false);
 
-        // assert that we have not added any bad data
-        assertFalse(new Task250604UpdateFolderInodes().forceRun());
+        DbConnectionFactory.closeSilently();
+
+        assertTrue("auto-fixer turned off by default - we have bad data which will be fixed at next startup",
+                bad_folders_not_fixed_automatically());
+
 
 
 
     }
+
+    boolean bad_folders_not_fixed_automatically() throws Exception {
+
+        try {
+            Awaitility
+                    .await()
+                    .pollInterval(100, java.util.concurrent.TimeUnit.MILLISECONDS)
+                    .atMost(10, java.util.concurrent.TimeUnit.SECONDS)
+                    .until(() -> {
+
+                        return APILocator.getFolderAPI().folderIdsNeedFixing();
+
+                    });
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
 
 
 
