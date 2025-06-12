@@ -10,7 +10,7 @@ function Header({ navigation }: { navigation: DotCMSNavigationItem }) {
         <div className="flex items-center justify-between p-4 bg-violet-800">
             <div className="flex items-center">
                 <h2 className="text-3xl font-bold text-white">
-                    <a href="/">TravelLux in NextJS</a>
+                    <a href="/">TravelLux in Astro</a>
                 </h2>
 
                 {isEditMode && <ReorderMenuButton />}

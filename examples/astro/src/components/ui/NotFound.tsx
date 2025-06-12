@@ -2,8 +2,8 @@ export function NotFound() {
   return (
     <div className="bg-slate-100 min-h-dvh w-full flex justify-center items-center">
       <section>
-        <div className="py-8 px-4 mx-auto max-w-(--breakpoint-xl) lg:py-16 lg:px-6">
-          <div className="mx-auto max-w-(--breakpoint-sm) text-center">
+        <div className="py-8 px-4 mx-auto max-w-5xl lg:py-16 lg:px-6">
+          <div className="mx-auto max-w-2xl text-center">
             <h1 className="mb-4 text-7xl tracking-tight font-extrabold lg:text-9xl text-primary-600">
               404
             </h1>
