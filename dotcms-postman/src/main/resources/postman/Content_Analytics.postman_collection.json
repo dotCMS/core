@@ -1,10 +1,10 @@
 {
 	"info": {
-		"_postman_id": "2bcae4b8-bb49-4fa7-911d-5ca9e7f6ddd5",
+		"_postman_id": "7ee5bd9d-3a24-4808-b8b6-a86214fe8b77",
 		"name": "Content Analytics",
 		"description": "Performs simple data validation for the Content Analytics REST Endpoint. It's very important to notice that, for the time being, the CICD instance does not start up any of the additional third-party tools required to actually run the Content Analytics feature.\n\nThis means that these test do not deal with retrieveing or saving data at all. It verifies that important/required information is present.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "36604690"
+		"_exporter_id": "30436704"
 	},
 	"item": [
 		{
@@ -513,6 +513,68 @@
 							"host": [
 								"{{serverURL}}"
 							],
+							"path": [
+								"api",
+								"v1",
+								"analytics",
+								"content",
+								"event"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Success event",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"HTTP Status code must be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"context\": {\n        \"siteKey\": \"xyz\",\n        \"sessionId\": \"abc\",\n        \"userId\": \"qwe\" \n    },\n    \"events\": [\n        {\n            \"eventType\": \"page_view\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://loquesea.com/index#pepito?a=b\",\n                    \"doc_encoding\": \"UTF8\",\n                    \"title\": \"This is my index page\",\n                    \"languageID\": \"23213\",\n                    \"persona\": \"ANY_PERSONA\",\n                    \"dot_path\": \"index\",\n                    \"dot_host\": \"loquesea.com\",\n                    \"doc_protocol\": \"http\",\n                    \"doc_hash\": \"pepito\",\n                    \"doc_search\": \"a=b\",\n                    \"referer\": \"referer\",\n                    \"useragent\": \"useragent=b\"\n                },\n                \"device\": {\n                    \"screenResolution\": \"1280x720\",\n                    \"language\": \"en\",\n                    \"viewportWidth\": \"1280\",\n                    \"viewportHeight\": \"720\"\n                },\n                \"utm\": {\n                    \"medium\": \"medium\",\n                    \"source\": \"source\",\n                    \"campaign\": \"campaign\",\n                    \"term\": \"term\",\n                    \"content\": \"content\"\n                }\n            }\n        },\n        {\n            \"eventType\": \"page_view\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://loquesea.com/another_page#pepe?c=d\",\n                    \"encoding\": \"UTF8\",\n                    \"title\": \"This is my another page\",\n                    \"languageID\": \"555555\",\n                    \"persona\": \"ANY_PERSONA_BUT_NOT_PREVIOUS_PERSONA\",\n                    \"dot_path\": \"another_page\",\n                    \"dot_host\": \"loquesea.com\",\n                    \"doc_protocol\": \"http\",\n                    \"doc_hash\": \"pepe\",\n                    \"doc_search\": \"c=d\",\n                    \"referer\": \"another_referer\",\n                    \"useragent\": \"another_useragent=b\"\n                },\n                \"device\": {\n                    \"screenResolution\": \"3840x2160\",\n                    \"language\": \"en\",\n                    \"viewportWidth\": \"3840\",\n                    \"viewportHeight\": \"2160\"\n                },\n                \"utm\": {\n                    \"medium\": \"another_medium\",\n                    \"source\": \"another_source\",\n                    \"campaign\": \"another_campaign\",\n                    \"term\": \"another_term\",\n                    \"content\": \"another_content\"\n                }\n            }\n        }\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8082/api/v1/analytics/content/event",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8082",
 							"path": [
 								"api",
 								"v1",
