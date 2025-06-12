@@ -188,7 +188,7 @@ describe('DotAppsService', () => {
                     if (_header === 'error-message') {
                         return null;
                     }
-                    
+
                     return null;
                 }
             },
