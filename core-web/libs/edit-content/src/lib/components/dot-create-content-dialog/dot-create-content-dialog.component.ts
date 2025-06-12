@@ -34,13 +34,11 @@ export interface EditContentDialogData {
 
     /**
      * For new content: The content type variable name or ID
-     * For edit content: Not used (contentlet.contentType provides this)
      */
     contentTypeId?: string;
 
     /**
      * For edit content: The inode of the content to edit
-     * For new content: Not used
      */
     contentletInode?: string;
 
@@ -70,68 +68,40 @@ export interface EditContentDialogData {
 }
 
 /**
- * Create Content Mode enum to distinguish between new and legacy editors
- */
-export enum CreateContentMode {
-    NEW_EDITOR = 'new',
-    LEGACY_EDITOR = 'legacy'
-}
-
-/**
- * DotEditContentDialogComponent
- *
- * A dialog wrapper component that embeds the full DotEditContentLayoutComponent
- * for both creating new content and editing existing content. This component
- * provides a simple wrapper around the layout component without its own store dependency.
- *
- * ## Key Features:
- * - Simple dialog wrapper without store dependencies
- * - Support for both new content creation and existing content editing
- * - Content type compatibility checking
- * - Dialog lifecycle management
- * - Content save completion and callback handling
- * - Fallback for content types that don't support the new editor
- * - Tracks content changes across multiple workflow actions
- * - Only calls callback once when dialog is closed
- *
- * ## Architecture:
- * The dialog component acts as a simple wrapper that:
- * - Validates input data
- * - Checks content type compatibility
- * - Passes data to the layout component which handles all content logic
- * - Monitors the layout component for save events
- * - Tracks content changes without closing immediately
- * - Calls callback with final content state when dialog closes
- *
- * @example
+ * Edit Content Dialog Component
+ * 
+ * A dialog component that provides content editing functionality in a modal interface.
+ * Supports both creating new content and editing existing content with automatic
+ * compatibility checking and isolated state management.
+ * 
+ * ## Features
+ * - **Dual Mode Support**: Create new content or edit existing content
+ * - **Compatibility Check**: Validates content type compatibility with the new editor
+ * - **Isolated State**: Each dialog instance maintains its own independent state
+ * - **Callback Support**: Provides callbacks for content save and cancellation events
+ * 
+ * ## Usage Examples
+ * 
+ * ### Creating New Content
  * ```typescript
- * // Create new content
- * this.dialogService.open(DotEditContentDialogComponent, {
- *   data: {
- *     mode: 'new',
- *     contentTypeId: 'blog-post',
- *     onContentSaved: (contentlet) => {
- *       console.log('Created:', contentlet);
- *     }
- *   },
- *   header: 'Create Blog Post',
- *   width: '95%',
- *   height: '95%'
- * });
- *
- * // Edit existing content
- * this.dialogService.open(DotEditContentDialogComponent, {
- *   data: {
- *     mode: 'edit',
- *     contentletInode: 'abc123',
- *     onContentSaved: (contentlet) => {
- *       console.log('Updated:', contentlet);
- *     }
- *   },
- *   header: 'Edit Blog Post',
- *   width: '95%',
- *   height: '95%'
- * });
+ * const data: EditContentDialogData = {
+ *   mode: 'new',
+ *   contentTypeId: 'blog-post',
+ *   onContentSaved: (contentlet) => {
+ *     // Handle saved content
+ *   }
+ * };
+ * ```
+ * 
+ * ### Editing Existing Content
+ * ```typescript
+ * const data: EditContentDialogData = {
+ *   mode: 'edit',
+ *   contentletInode: 'abc123',
+ *   onContentSaved: (contentlet) => {
+ *     // Handle updated content
+ *   }
+ * };
  * ```
  */
 @Component({
@@ -199,9 +169,6 @@ export class DotEditContentDialogComponent implements OnInit, OnDestroy {
             throw new Error('Contentlet inode is required when editing existing content');
         }
 
-        // Debug logging
-        console.log('🚀 [DotEditContentDialogComponent] Initializing dialog in mode:', data.mode);
-
         // Load content type for compatibility check if we're creating new content
         if (data.mode === 'new' && data.contentTypeId) {
             this.loadContentType(data.contentTypeId);
@@ -229,7 +196,6 @@ export class DotEditContentDialogComponent implements OnInit, OnDestroy {
             const layoutError = layoutComponent.$store.error();
 
             if (layoutError) {
-                console.error('Error in edit content dialog layout:', layoutError);
                 this.error.set(layoutError);
                 this.state.set(ComponentStatus.ERROR);
             }
@@ -247,10 +213,6 @@ export class DotEditContentDialogComponent implements OnInit, OnDestroy {
         const hasBeenSaved = this.hasContentBeenSaved();
 
         if (hasBeenSaved && savedContent && data.onContentSaved) {
-            console.log(
-                '🚀 [DotEditContentDialogComponent] Dialog closing - calling onContentSaved callback with final content:',
-                savedContent
-            );
             data.onContentSaved(savedContent);
         }
     }
@@ -261,15 +223,9 @@ export class DotEditContentDialogComponent implements OnInit, OnDestroy {
      * The callback will be called when the dialog is manually closed.
      */
     onContentSaved(contentlet: DotCMSContentlet): void {
-        console.log('🚀 [DotEditContentDialogComponent] Content saved event received:', contentlet);
-
         // Track the latest saved content and mark that content has been saved
         this.savedContentlet.set(contentlet);
         this.hasContentBeenSaved.set(true);
-
-        console.log(
-            '🚀 [DotEditContentDialogComponent] Content tracked, dialog remains open for further workflow actions'
-        );
     }
 
     /**
@@ -285,7 +241,6 @@ export class DotEditContentDialogComponent implements OnInit, OnDestroy {
                 this.state.set(ComponentStatus.LOADED);
             },
             error: (error) => {
-                console.error('Error loading content type:', error);
                 this.error.set(`Failed to load content type: ${error.message}`);
                 this.state.set(ComponentStatus.ERROR);
             }
@@ -293,7 +248,7 @@ export class DotEditContentDialogComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Handles dialog cancellation
+     * Handles dialog cancellation and cleanup
      */
     closeDialog(): void {
         this.isClosing = true;
@@ -305,10 +260,6 @@ export class DotEditContentDialogComponent implements OnInit, OnDestroy {
         const hasBeenSaved = this.hasContentBeenSaved();
 
         if (hasBeenSaved && savedContent && data.onContentSaved) {
-            console.log(
-                '🚀 [DotEditContentDialogComponent] Calling onContentSaved callback with final content:',
-                savedContent
-            );
             data.onContentSaved(savedContent);
         }
 

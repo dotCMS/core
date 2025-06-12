@@ -15,8 +15,17 @@ import {
 
 /**
  * Service for managing edit content dialog instances.
- * This service provides convenience methods for opening edit content dialogs
- * for both new content creation and existing content editing.
+ * 
+ * This service provides convenient methods for opening edit content dialogs
+ * for both new content creation and existing content editing with support
+ * for customization options and callbacks.
+ * 
+ * ## Features
+ * - **New Content Creation**: Open dialogs for creating new content
+ * - **Content Editing**: Open dialogs for editing existing content
+ * - **Flexible Configuration**: Support for custom dialog options
+ * - **Callback Support**: Built-in support for content save and cancel callbacks
+ * - **Observable Results**: Returns observables for handling dialog results
  */
 @Injectable({
     providedIn: 'root'
@@ -49,11 +58,6 @@ export class DotEditContentDialogService {
             onContentSaved: options.onContentSaved,
             onCancel: options.onCancel
         };
-
-        console.log(
-            '🎬 [DotEditContentDialogService] Opening new content dialog for:',
-            contentTypeId
-        );
 
         const dialogRef = this.#dialogService.open(DotEditContentDialogComponent, {
             data: dialogData,

@@ -190,7 +190,6 @@ export const DotEditContentStore = signalStore(
         onInit(store) {
             // Always load the current user
             store.loadCurrentUser();
-            console.log('🏪 [DotEditContentStore] OnInit - user loaded, waiting for explicit initialization');
         }
     }),
     // Add methods after all features to have access to all store methods
@@ -214,23 +213,17 @@ export const DotEditContentStore = signalStore(
             initializeDialogMode(options: DialogInitializationOptions): void {
                 const { contentTypeId, contentletInode } = options;
                 
-                console.log('🏪 [DotEditContentStore] Initializing dialog mode with options:', options);
-                
                 // Enable dialog mode to prevent route-based initialization
                 store.enableDialogMode();
                 
                 // Initialize based on provided parameters
                 if (contentTypeId) {
-                    console.log('🏪 [DotEditContentStore] Initializing new content for type:', contentTypeId);
                     store.initializeNewContent(contentTypeId);
                 } else if (contentletInode) {
-                    console.log('🏪 [DotEditContentStore] Initializing existing content for inode:', contentletInode);
                     store.initializeExistingContent({
                         inode: contentletInode,
                         depth: DotContentletDepths.TWO
                     });
-                } else {
-                    console.warn('🏪 [DotEditContentStore] No valid initialization parameters provided for dialog mode');
                 }
             },
 
@@ -240,15 +233,10 @@ export const DotEditContentStore = signalStore(
              * It will only initialize if dialog mode is not enabled.
              */
             initializeFromRoute(): void {
-                console.log('🏪 [DotEditContentStore] Route initialization requested');
-                
                 // Skip route-based initialization if in dialog mode
                 if (store.isDialogMode()) {
-                    console.log('🏪 [DotEditContentStore] Skipping route initialization - dialog mode enabled');
                     return;
                 }
-
-                console.log('🏪 [DotEditContentStore] Attempting route-based initialization');
 
                 // Use the ActivatedRoute that was injected in the closure
                 const params = activatedRoute.snapshot?.params;
@@ -259,20 +247,10 @@ export const DotEditContentStore = signalStore(
 
                     // TODO: refactor this when we will use EditContent as sidebar
                     if (inode) {
-                        console.log(
-                            '🏪 [DotEditContentStore] Initializing existing content from route:',
-                            inode
-                        );
                         store.initializeExistingContent({ inode, depth: DotContentletDepths.TWO });
                     } else if (contentType) {
-                        console.log(
-                            '🏪 [DotEditContentStore] Initializing new content from route:',
-                            contentType
-                        );
                         store.initializeNewContent(contentType);
                     }
-                } else {
-                    console.log('🏪 [DotEditContentStore] No route params found');
                 }
             }
         };

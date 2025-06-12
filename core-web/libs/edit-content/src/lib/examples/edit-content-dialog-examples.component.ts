@@ -1,5 +1,6 @@
 import { JsonPipe, NgIf } from '@angular/common';
 import { Component, inject } from '@angular/core';
+import { CommonModule } from '@angular/common';
 
 import { ButtonModule } from 'primeng/button';
 
@@ -8,35 +9,36 @@ import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DotEditContentDialogService } from '../services/dot-edit-content-dialog.service';
 
 /**
- * Example component demonstrating how to use the DotEditContentDialog functionality.
- * This component shows various ways to open edit content dialogs for both new and existing content.
+ * Example component demonstrating various usage patterns of the DotEditContentDialogService.
+ * 
+ * This component provides interactive examples of how to use the edit content dialog
+ * in different scenarios including creating new content, editing existing content,
+ * and handling various configuration options.
  */
 @Component({
     selector: 'dot-edit-content-dialog-examples',
     standalone: true,
-    imports: [ButtonModule, JsonPipe, NgIf],
+    imports: [CommonModule, ButtonModule],
     template: `
         <div class="edit-content-dialog-examples">
             <h2>Edit Content Dialog Examples</h2>
 
             <div class="examples-section">
-                <h3>Create New Content</h3>
+                <h3>Basic Usage</h3>
                 <p-button
-                    label="Create Blog Post"
+                    label="Create New Blog Post"
                     (onClick)="openNewBlogDialog()"
-                    icon="pi pi-plus" />
-
-                <p-button
-                    label="Create Product"
-                    (onClick)="openNewProductDialog()"
                     icon="pi pi-plus"
-                    severity="secondary" />
-            </div>
+                    severity="success" />
 
-            <div class="examples-section">
-                <h3>Edit Existing Content</h3>
                 <p-button
-                    label="Edit Content (Example Inode)"
+                    label="Create New Product"
+                    (onClick)="openNewProductDialog()"
+                    icon="pi pi-shopping-cart"
+                    severity="info" />
+
+                <p-button
+                    label="Edit Existing Content"
                     (onClick)="openEditContentDialog()"
                     icon="pi pi-pencil"
                     severity="success" />
@@ -117,16 +119,14 @@ export class DotEditContentDialogExamplesComponent {
             .openNewContentDialog('blog-post', {
                 header: 'Create New Blog Post',
                 onContentSaved: (contentlet) => {
-                    console.log('Blog post created:', contentlet);
                     this.lastResult = { action: 'created', contentlet };
                 },
                 onCancel: () => {
-                    console.log('Blog post creation cancelled');
                     this.lastResult = { action: 'cancelled' };
                 }
             })
             .subscribe((result) => {
-                console.log('Dialog closed with result:', result);
+                // Dialog closed
             });
     }
 
@@ -140,12 +140,11 @@ export class DotEditContentDialogExamplesComponent {
                 width: '90%',
                 height: '90%',
                 onContentSaved: (contentlet) => {
-                    console.log('Product created:', contentlet);
                     this.lastResult = { action: 'created', contentlet };
                 }
             })
             .subscribe((result) => {
-                console.log('Product dialog closed:', result);
+                // Dialog closed
             });
     }
 
@@ -160,12 +159,11 @@ export class DotEditContentDialogExamplesComponent {
             .openEditContentDialog(exampleInode, {
                 header: 'Edit Content',
                 onContentSaved: (contentlet) => {
-                    console.log('Content updated:', contentlet);
                     this.lastResult = { action: 'updated', contentlet };
                 }
             })
             .subscribe((result) => {
-                console.log('Edit dialog closed:', result);
+                // Dialog closed
             });
     }
 
@@ -182,13 +180,12 @@ export class DotEditContentDialogExamplesComponent {
                     isParent: true
                 },
                 onContentSaved: (contentlet) => {
-                    console.log('Related content created:', contentlet);
                     this.lastResult = { action: 'created', contentlet, hasRelationship: true };
                     // Here you would typically update the parent's relationship
                 }
             })
             .subscribe((result) => {
-                console.log('Relationship dialog closed:', result);
+                // Dialog closed
             });
     }
 
@@ -202,12 +199,11 @@ export class DotEditContentDialogExamplesComponent {
                 width: '80%',
                 height: '80%',
                 onContentSaved: (contentlet) => {
-                    console.log('News article created:', contentlet);
                     this.lastResult = { action: 'created', contentlet, customSize: true };
                 }
             })
             .subscribe((result) => {
-                console.log('Custom size dialog closed:', result);
+                // Dialog closed
             });
     }
 
@@ -221,7 +217,6 @@ export class DotEditContentDialogExamplesComponent {
                     mode: 'new',
                     contentTypeId: 'advanced-content',
                     onContentSaved: (contentlet) => {
-                        console.log('Advanced content created:', contentlet);
                         this.lastResult = { action: 'created', contentlet, advanced: true };
                     }
                 },
@@ -234,7 +229,7 @@ export class DotEditContentDialogExamplesComponent {
                 }
             )
             .subscribe((result) => {
-                console.log('Advanced dialog closed:', result);
+                // Dialog closed
             });
     }
 }

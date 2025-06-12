@@ -29,37 +29,49 @@ import { DotEditContentFormComponent } from '../dot-edit-content-form/dot-edit-c
 import { DotEditContentSidebarComponent } from '../dot-edit-content-sidebar/dot-edit-content-sidebar.component';
 
 /**
- * Component that displays the edit content layout.
- * Can be used both in route-based contexts and dialog contexts.
+ * Edit Content Layout Component
  * 
- * The component always provides its own DotEditContentStore instance and automatically
- * detects the mode based on input parameters:
- * - Route mode: When no contentTypeId or contentletInode inputs are provided
- * - Dialog mode: When contentTypeId (new content) or contentletInode (edit content) inputs are provided
- *
- * In dialog mode, the component emits contentSaved events when workflow actions succeed,
- * allowing parent components to react to content changes without the dialog closing automatically.
- *
- * @example
+ * A flexible component that provides the main layout for content editing functionality.
+ * Supports both route-based and dialog-based usage patterns with automatic mode detection.
+ * 
+ * ## Features
+ * - **Dual Mode Support**: Works in both route and dialog contexts
+ * - **Automatic Mode Detection**: Intelligently switches modes based on input parameters
+ * - **Isolated State Management**: Each instance maintains its own store
+ * - **Workflow Integration**: Handles content workflow actions and notifications
+ * 
+ * ## Usage Modes
+ * 
+ * ### Route Mode
+ * Used when embedded in route-based pages. Initializes from route parameters.
  * ```html
- * <!-- Route mode: Uses route parameters for initialization -->
  * <dot-edit-content-form-layout></dot-edit-content-form-layout>
+ * ```
  * 
- * <!-- Dialog mode: Create new content -->
+ * ### Dialog Mode - New Content
+ * Used in dialogs to create new content of a specific type.
+ * ```html
  * <dot-edit-content-form-layout 
  *   [contentTypeId]="'blog-post'"
  *   (contentSaved)="onContentSaved($event)">
  * </dot-edit-content-form-layout>
+ * ```
  * 
- * <!-- Dialog mode: Edit existing content -->
+ * ### Dialog Mode - Edit Existing Content
+ * Used in dialogs to edit existing content by inode.
+ * ```html
  * <dot-edit-content-form-layout 
  *   [contentletInode]="'abc123'"
  *   (contentSaved)="onContentSaved($event)">
  * </dot-edit-content-form-layout>
  * ```
- *
- * @export
- * @class EditContentLayoutComponent
+ * 
+ * ## Inputs
+ * - `contentTypeId`: String identifier for content type (dialog mode only)
+ * - `contentletInode`: String identifier for existing content (dialog mode only)
+ * 
+ * ## Outputs
+ * - `contentSaved`: Emitted when content is successfully saved (dialog mode only)
  */
 @Component({
     selector: 'dot-edit-content-form-layout',
@@ -81,7 +93,6 @@ import { DotEditContentSidebarComponent } from '../dot-edit-content-sidebar/dot-
         DotEditContentStore,
         DialogService
     ],
-
     host: {
         '[class.edit-content--with-sidebar]': '$store.isSidebarOpen()'
     },
@@ -92,122 +103,89 @@ import { DotEditContentSidebarComponent } from '../dot-edit-content-sidebar/dot-
 export class DotEditContentLayoutComponent {
     /**
      * Content type ID for dialog mode initialization.
-     * When provided, the component will automatically enable dialog mode
-     * and initialize new content for the specified content type.
+     * When provided, enables dialog mode and initializes new content for the specified type.
      */
     readonly contentTypeId = input<string>();
 
     /**
      * Contentlet inode for dialog mode initialization.
-     * When provided, the component will automatically enable dialog mode
-     * and initialize existing content for the specified inode.
+     * When provided, enables dialog mode and loads existing content for editing.
      */
     readonly contentletInode = input<string>();
 
     /**
-     * Event emitted when content is successfully saved/updated through workflow actions.
-     * Only emitted in dialog mode to notify parent components of content changes.
+     * Emitted when content is successfully saved through workflow actions.
+     * Only fires in dialog mode to notify parent components of content changes.
      */
     readonly contentSaved = output<DotCMSContentlet>();
 
     /**
-     * The store instance.
-     * Always provided by this component's own providers array, ensuring each layout
-     * component instance has its own isolated store for complete state independence.
-     *
-     * @type {InstanceType<typeof DotEditContentStore>}
-     * @memberof EditContentLayoutComponent
+     * Controls the visibility of the workflow selection dialog.
+     */
+    readonly $showDialog = model<boolean>(false);
+
+    /**
+     * The store instance for managing component state.
+     * Each component instance gets its own isolated store for complete state independence.
      */
     readonly $store: InstanceType<typeof DotEditContentStore> = inject(DotEditContentStore);
 
     constructor() {
-        // Effect to handle dialog mode initialization when inputs change
+        // Initialize component based on input parameters
         effect(
             () => {
                 const contentTypeId = this.contentTypeId();
                 const contentletInode = this.contentletInode();
 
-                // Check if we should initialize in dialog mode
                 if (contentTypeId || contentletInode) {
-                    console.log('🔧 [DotEditContentLayoutComponent] Initializing dialog mode with:', {
-                        contentTypeId,
-                        contentletInode
-                    });
-                    
-                    // Use the store's centralized dialog initialization method
+                    // Dialog mode: Initialize with provided parameters
                     this.$store.initializeDialogMode({
                         contentTypeId,
                         contentletInode
                     });
                 } else {
-                    // No dialog inputs provided, initialize from route
-                    console.log('🔧 [DotEditContentLayoutComponent] No dialog inputs, initializing from route');
+                    // Route mode: Initialize from route parameters
                     this.$store.initializeFromRoute();
                 }
-
-                // Log store instance ID for debugging
-                console.log(
-                    '🔧 [DotEditContentLayoutComponent] Store instance ID:',
-                    (this.$store as any)._id || 'no-id'
-                );
             },
             { allowSignalWrites: true }
         );
 
-        // Effect to monitor workflow action success and emit content saved event in dialog mode
+        // Handle workflow action success in dialog mode
         effect(() => {
             const isDialogMode = this.$store.isDialogMode();
             const workflowActionSuccess = this.$store.workflowActionSuccess();
 
-            // Only emit in dialog mode when a workflow action has been successfully executed
             if (isDialogMode && workflowActionSuccess) {
-                console.log(
-                    '🔧 [DotEditContentLayoutComponent] Workflow action succeeded in dialog mode, emitting event:',
-                    workflowActionSuccess
-                );
                 this.contentSaved.emit(workflowActionSuccess);
-
-                // Reset the success signal to prevent duplicate emissions
                 this.$store.clearWorkflowActionSuccess();
             }
         }, { allowSignalWrites: true });
     }
 
     /**
-     * Whether the select workflow dialog should be shown.
-     *
-     * @type {boolean}
-     * @memberof EditContentLayoutComponent
-     */
-    readonly $showDialog = model<boolean>(false);
-
-    /**
-     * Emits an event to show the select workflow dialog.
-     *
-     * @memberof EditContentLayoutComponent
+     * Opens the workflow selection dialog.
      */
     selectWorkflow() {
         this.$showDialog.set(true);
     }
 
     /**
-     * Handles the form change event.
-     *
-     * @param {Record<string, string>} value
-     * @memberof EditContentLayoutComponent
+     * Handles form value changes and updates the store.
+     * 
+     * @param value - The updated form values
      */
     onFormChange(value: FormValues) {
         this.$store.onFormChange(value);
     }
 
     /**
-     * Closes the beta message.
-     *
-     * @memberof EditContentLayoutComponent
+     * Closes beta feature messages.
+     * 
+     * @param message - The type of message to close
      */
     closeMessage(message: 'betaMessage') {
         if (message === 'betaMessage') {
-            // We need to store this in the store to persist the state
             this.$store.toggleBetaMessage();
         }
     }
