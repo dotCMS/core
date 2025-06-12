@@ -2,6 +2,7 @@ package com.dotcms.business.bytebuddy;
 
 import com.dotcms.business.CloseDB;
 import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.business.ExternalTransaction;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.util.EnterpriseFeature;
 import com.dotcms.util.LogTime;
@@ -49,7 +50,8 @@ public class ByteBuddyFactory {
             CloseDB.class, CloseDBAdvice.class,
             CloseDBIfOpened.class, CloseDBIfOpenedAdvice.class,
             LogTime.class, LogTimeAdvice.class,
-            EnterpriseFeature.class, EnterpriseFeatureAdvice.class
+            EnterpriseFeature.class, EnterpriseFeatureAdvice.class,
+            ExternalTransaction.class, ExternalTransactionAdvice.class
     );
 
 

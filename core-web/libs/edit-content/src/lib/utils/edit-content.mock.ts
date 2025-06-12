@@ -438,7 +438,7 @@ export const MOCK_CONTENTLET_1_TAB: DotCMSContentlet = {
     modUser: 'dotcms.org.1',
     modUserName: 'Admin User',
     owner: 'dotcms.org.1',
-    ownerName: 'Admin User',
+    ownerUserName: 'Admin User',
     publishDate: '1729024086674',
     publishUser: 'dotcms.org.1',
     publishUserName: 'Admin User',
