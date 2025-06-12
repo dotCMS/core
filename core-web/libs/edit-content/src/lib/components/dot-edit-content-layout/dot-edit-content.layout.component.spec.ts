@@ -198,10 +198,10 @@ describe('EditContentLayoutComponent', () => {
             const dialogSpectator = createComponent({ detectChanges: false });
             const dialogStore = dialogSpectator.inject(DotEditContentStore, true);
             const dialogEditContentService = dialogSpectator.inject(DotEditContentService, true);
-            
+
             // Mock the service method for this specific component instance
             dialogEditContentService.getContentById.mockReturnValue(of(MOCK_CONTENTLET_1_TAB));
-            
+
             const initializeDialogModeSpy = jest.spyOn(dialogStore, 'initializeDialogMode');
             const initializeFromRouteSpy = jest.spyOn(dialogStore, 'initializeFromRoute');
 
@@ -218,10 +218,10 @@ describe('EditContentLayoutComponent', () => {
             const dialogSpectator = createComponent({ detectChanges: false });
             const dialogStore = dialogSpectator.inject(DotEditContentStore, true);
             const dialogEditContentService = dialogSpectator.inject(DotEditContentService, true);
-            
+
             // Mock the service method for this specific component instance
             dialogEditContentService.getContentById.mockReturnValue(of(MOCK_CONTENTLET_1_TAB));
-            
+
             const initializeDialogModeSpy = jest.spyOn(dialogStore, 'initializeDialogMode');
 
             dialogSpectator.setInput({
@@ -262,7 +262,7 @@ describe('EditContentLayoutComponent', () => {
         it('should emit contentSaved when workflow action succeeds in dialog mode', () => {
             const dialogSpectator = createComponent({ detectChanges: false });
             const dialogStore = dialogSpectator.inject(DotEditContentStore, true);
-            
+
             // Mock store signals before setting up the component
             jest.spyOn(dialogStore, 'isDialogMode').mockReturnValue(true);
             jest.spyOn(dialogStore, 'workflowActionSuccess').mockReturnValue(MOCK_CONTENTLET_1_TAB);

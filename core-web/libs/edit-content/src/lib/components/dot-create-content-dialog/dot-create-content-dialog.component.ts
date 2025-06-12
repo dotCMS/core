@@ -69,19 +69,19 @@ export interface EditContentDialogData {
 
 /**
  * Edit Content Dialog Component
- * 
+ *
  * A dialog component that provides content editing functionality in a modal interface.
  * Supports both creating new content and editing existing content with automatic
  * compatibility checking and isolated state management.
- * 
+ *
  * ## Features
  * - **Dual Mode Support**: Create new content or edit existing content
  * - **Compatibility Check**: Validates content type compatibility with the new editor
  * - **Isolated State**: Each dialog instance maintains its own independent state
  * - **Callback Support**: Provides callbacks for content save and cancellation events
- * 
+ *
  * ## Usage Examples
- * 
+ *
  * ### Creating New Content
  * ```typescript
  * const data: EditContentDialogData = {
@@ -92,7 +92,7 @@ export interface EditContentDialogData {
  *   }
  * };
  * ```
- * 
+ *
  * ### Editing Existing Content
  * ```typescript
  * const data: EditContentDialogData = {

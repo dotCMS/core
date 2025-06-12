@@ -1,272 +1,166 @@
-import { Component, signal } from '@angular/core';
+import { of, throwError, Subject } from 'rxjs';
+
+import { NO_ERRORS_SCHEMA, Pipe, PipeTransform } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { By } from '@angular/platform-browser';
-import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
-import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
+import { DynamicDialogRef, DynamicDialogConfig } from 'primeng/dynamicdialog';
 
-import { DotMessageService, DotContentTypeService } from '@dotcms/data-access';
-import { ComponentStatus, FeaturedFlags, DotCMSContentType } from '@dotcms/dotcms-models';
-
+import { DotContentTypeService } from '@dotcms/data-access';
 import {
-    DotCreateContentDialogComponent,
-    CreateContentDialogData
-} from './dot-create-content-dialog.component';
+    DotCMSContentType,
+    DotCMSContentlet,
+    ComponentStatus,
+    FeaturedFlags
+} from '@dotcms/dotcms-models';
 
-import { DotEditContentStore } from '../../store/edit-content.store';
+import { DotEditContentDialogComponent } from './dot-create-content-dialog.component';
 
-// Mock component for DotEditContentLayoutComponent
-@Component({
-    selector: 'dot-edit-content-form-layout',
-    template: '<div data-testid="mock-layout">Mock Layout Component</div>',
-    standalone: true
-})
-class MockDotEditContentLayoutComponent {}
+// Mock DotMessagePipe
+@Pipe({ name: 'dm' })
+class MockDotMessagePipe implements PipeTransform {
+    transform(value: string): string {
+        return value;
+    }
+}
 
-describe('DotCreateContentDialogComponent', () => {
-    let component: DotCreateContentDialogComponent;
-    let fixture: ComponentFixture<DotCreateContentDialogComponent>;
-    let mockStore: jasmine.SpyObj<InstanceType<typeof DotEditContentStore>>;
-    let mockMessageService: jasmine.SpyObj<DotMessageService>;
-    let mockDialogRef: jasmine.SpyObj<DynamicDialogRef>;
-    let mockDialogConfig: DynamicDialogConfig;
-    let mockContentTypeService: jasmine.SpyObj<DotContentTypeService>;
+describe('DotEditContentDialogComponent', () => {
+    let fixture: ComponentFixture<DotEditContentDialogComponent>;
+    let component: DotEditContentDialogComponent;
+    let dialogConfig: DynamicDialogConfig;
+    let contentTypeService: Partial<DotContentTypeService>;
+    let dialogRef: Partial<DynamicDialogRef>;
+    let onCloseSubject: Subject<DotCMSContentlet | null>;
 
-    const mockDialogData: CreateContentDialogData = {
-        contentTypeId: 'test-content-type-id'
+    // Mock required services for DotEditContentLayoutComponent
+    const mockCurrentUserService = {};
+    const mockHttpErrorManagerService = {};
+
+    const mockContentType: DotCMSContentType = {
+        id: 'blog-post',
+        name: 'Blog Post',
+        variable: 'blogPost',
+        baseType: 'CONTENT',
+        clazz: '',
+        defaultType: false,
+        fields: [],
+        fixed: false,
+        folder: '',
+        host: '',
+        iDate: 0,
+        layout: [],
+        modDate: 0,
+        multilingualable: false,
+        nEntries: 0,
+        system: false,
+        versionable: false,
+        workflows: [],
+        metadata: {
+            [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: true
+        }
     };
 
     beforeEach(async () => {
-        // Create spy objects
-        mockStore = jasmine.createSpyObj('DotEditContentStore', [
-            'initializeNewContent',
-            'isLoaded',
-            'state',
-            'error',
-            'contentlet',
-            'contentType',
-            'formValues'
-        ]);
-
-        mockMessageService = jasmine.createSpyObj('DotMessageService', ['get']);
-        mockDialogRef = jasmine.createSpyObj('DynamicDialogRef', ['close']);
-        mockContentTypeService = jasmine.createSpyObj('DotContentTypeService', ['getContentType']);
-
-        mockDialogConfig = {
-            data: mockDialogData
-        };
-
-        // Set up default return values for store signals
-        mockStore.isLoaded.and.returnValue(signal(false));
-        mockStore.state.and.returnValue(signal(ComponentStatus.LOADING));
-        mockStore.error.and.returnValue(signal(null));
-        mockStore.contentlet.and.returnValue(signal(null));
-        mockStore.contentType.and.returnValue(signal(null));
-        mockStore.formValues.and.returnValue(signal({}));
-
-        mockMessageService.get.and.returnValue('Mocked message');
+        onCloseSubject = new Subject();
+        dialogConfig = { data: null } as DynamicDialogConfig;
+        contentTypeService = { getContentType: jest.fn() } as Partial<DotContentTypeService>;
+        (contentTypeService.getContentType as jest.Mock).mockReturnValue = jest.fn();
+        dialogRef = {
+            onClose: onCloseSubject.asObservable(),
+            close: jest.fn()
+        } as Partial<DynamicDialogRef>;
 
         await TestBed.configureTestingModule({
-            imports: [
-                DotCreateContentDialogComponent,
-                MockDotEditContentLayoutComponent,
-                NoopAnimationsModule
-            ],
+            imports: [DotEditContentDialogComponent],
             providers: [
-                { provide: DotEditContentStore, useValue: mockStore },
-                { provide: DotMessageService, useValue: mockMessageService },
-                { provide: DynamicDialogRef, useValue: mockDialogRef },
-                { provide: DynamicDialogConfig, useValue: mockDialogConfig },
-                { provide: DotContentTypeService, useValue: mockContentTypeService }
-            ]
+                { provide: DotContentTypeService, useValue: contentTypeService },
+                { provide: DynamicDialogRef, useValue: dialogRef },
+                { provide: DynamicDialogConfig, useValue: dialogConfig },
+                { provide: 'DotCurrentUserService', useValue: mockCurrentUserService },
+                { provide: 'DotHttpErrorManagerService', useValue: mockHttpErrorManagerService },
+                { provide: MockDotMessagePipe, useClass: MockDotMessagePipe }
+            ],
+            schemas: [NO_ERRORS_SCHEMA]
         }).compileComponents();
 
-        fixture = TestBed.createComponent(DotCreateContentDialogComponent);
+        fixture = TestBed.createComponent(DotEditContentDialogComponent);
         component = fixture.componentInstance;
     });
 
-    describe('Component Initialization', () => {
-        it('should create the component', () => {
-            expect(component).toBeTruthy();
-        });
-
-        it('should initialize store with correct parameters', () => {
-            fixture.detectChanges();
-
-            expect(mockStore.initializeNewContent).toHaveBeenCalledWith('test-content-type-id');
-        });
-
-        it('should throw error if content type ID is missing', () => {
-            mockDialogConfig.data = { contentTypeId: '' };
-
-            expect(() => {
-                fixture.detectChanges();
-            }).toThrowError('Content type ID is required for creating content');
-        });
+    it('should throw if no dialog data is provided', () => {
+        dialogConfig.data = null;
+        expect(() => fixture.detectChanges()).toThrow(
+            'Dialog data is required for edit content dialog'
+        );
     });
 
-    describe('Template Rendering', () => {
-        it('should show loading state when component is loading', () => {
-            mockStore.isLoaded.and.returnValue(signal(false));
-            mockStore.state.and.returnValue(signal(ComponentStatus.LOADING));
-            mockStore.contentType.and.returnValue(
-                signal({
-                    metadata: { [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: true }
-                } as Partial<DotCMSContentType>)
-            );
-
-            fixture.detectChanges();
-
-            const loadingElement = fixture.debugElement.query(
-                By.css('[data-testid="loading-state"]')
-            );
-            const layoutElement = fixture.debugElement.query(
-                By.css('[data-testid="edit-content-layout"]')
-            );
-
-            expect(loadingElement).toBeTruthy();
-            expect(layoutElement).toBeFalsy();
-        });
-
-        it('should show error state when there is an error', () => {
-            mockStore.isLoaded.and.returnValue(signal(false));
-            mockStore.state.and.returnValue(signal(ComponentStatus.ERROR));
-            mockStore.error.and.returnValue(signal('Test error message'));
-            mockStore.contentType.and.returnValue(
-                signal({
-                    metadata: { [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: true }
-                } as Partial<DotCMSContentType>)
-            );
-
-            fixture.detectChanges();
-
-            const errorElement = fixture.debugElement.query(By.css('[data-testid="error-state"]'));
-            const loadingElement = fixture.debugElement.query(
-                By.css('[data-testid="loading-state"]')
-            );
-
-            expect(errorElement).toBeTruthy();
-            expect(loadingElement).toBeFalsy();
-        });
-
-        it('should show edit content layout when loaded and compatible', () => {
-            mockStore.isLoaded.and.returnValue(signal(true));
-            mockStore.state.and.returnValue(signal(ComponentStatus.LOADED));
-            mockStore.contentType.and.returnValue(
-                signal({
-                    metadata: { [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: true }
-                } as Partial<DotCMSContentType>)
-            );
-
-            fixture.detectChanges();
-
-            const layoutElement = fixture.debugElement.query(
-                By.css('[data-testid="edit-content-layout"]')
-            );
-            const loadingElement = fixture.debugElement.query(
-                By.css('[data-testid="loading-state"]')
-            );
-
-            expect(layoutElement).toBeTruthy();
-            expect(loadingElement).toBeFalsy();
-        });
-
-        it('should show legacy placeholder when content type is not compatible', () => {
-            mockStore.contentType.and.returnValue(
-                signal({
-                    metadata: { [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: false }
-                } as Partial<DotCMSContentType>)
-            );
-
-            fixture.detectChanges();
-
-            const placeholderElement = fixture.debugElement.query(
-                By.css('[data-testid="legacy-placeholder"]')
-            );
-            const layoutElement = fixture.debugElement.query(
-                By.css('[data-testid="edit-content-layout"]')
-            );
-
-            expect(placeholderElement).toBeTruthy();
-            expect(layoutElement).toBeFalsy();
-        });
+    it('should throw if new mode and no contentTypeId', () => {
+        dialogConfig.data = { mode: 'new' };
+        expect(() => fixture.detectChanges()).toThrow(
+            'Content type ID is required when creating new content'
+        );
     });
 
-    describe('isCompatible computed property', () => {
-        it('should return true when content type has new editor enabled', () => {
-            mockStore.contentType.and.returnValue(
-                signal({
-                    metadata: { [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: true }
-                } as Partial<DotCMSContentType>)
-            );
-
-            fixture.detectChanges();
-
-            // Access the protected property using array notation
-            const isCompatible = (
-                component as unknown as { isCompatible(): boolean }
-            ).isCompatible();
-            expect(isCompatible).toBe(true);
-        });
-
-        it('should return false when content type has new editor disabled', () => {
-            mockStore.contentType.and.returnValue(
-                signal({
-                    metadata: { [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: false }
-                } as Partial<DotCMSContentType>)
-            );
-
-            fixture.detectChanges();
-
-            const isCompatible = (
-                component as unknown as { isCompatible(): boolean }
-            ).isCompatible();
-            expect(isCompatible).toBe(false);
-        });
-
-        it('should return true when content type is null (default assumption)', () => {
-            mockStore.contentType.and.returnValue(signal(null));
-
-            fixture.detectChanges();
-
-            const isCompatible = (
-                component as unknown as { isCompatible(): boolean }
-            ).isCompatible();
-            expect(isCompatible).toBe(true);
-        });
+    it('should throw if edit mode and no contentletInode', () => {
+        dialogConfig.data = { mode: 'edit' };
+        expect(() => fixture.detectChanges()).toThrow(
+            'Contentlet inode is required when editing existing content'
+        );
     });
 
-    describe('Message Service Integration', () => {
-        it('should use message service for localized strings', () => {
-            // The template uses the DotMessagePipe which would call the message service
-            fixture.detectChanges();
-
-            // We can verify the pipe is working by checking if the template renders
-            expect(fixture.debugElement.nativeElement).toBeTruthy();
-        });
+    it('should show loading then loaded state for new content', async () => {
+        dialogConfig.data = { mode: 'new', contentTypeId: 'blog-post' };
+        (contentTypeService.getContentType as jest.Mock).mockReturnValue(of(mockContentType));
+        fixture.detectChanges();
+        expect(component['state']()).toBe(ComponentStatus.LOADING);
+        await fixture.whenStable();
+        expect(component['state']()).toBe(ComponentStatus.LOADED);
     });
 
-    describe('CSS Classes', () => {
-        it('should have correct CSS classes applied', () => {
-            fixture.detectChanges();
-
-            const mainElement = fixture.debugElement.query(
-                By.css('[data-testid="create-content-dialog"]')
-            );
-
-            expect(mainElement.nativeElement.classList).toContain('create-content-dialog');
-        });
+    it('should show error state if content type fails to load', async () => {
+        dialogConfig.data = { mode: 'new', contentTypeId: 'blog-post' };
+        (contentTypeService.getContentType as jest.Mock).mockReturnValue(
+            throwError(() => new Error('fail'))
+        );
+        fixture.detectChanges();
+        await fixture.whenStable();
+        expect(component['state']()).toBe(ComponentStatus.ERROR);
+        expect(component['error']()).toContain('fail');
     });
 
-    describe('Accessibility', () => {
-        it('should have proper data-testid attributes for testing', () => {
-            fixture.detectChanges();
+    it('should set loaded state for edit mode', () => {
+        dialogConfig.data = { mode: 'edit', contentletInode: 'inode' };
+        fixture.detectChanges();
+        expect(component['state']()).toBe(ComponentStatus.LOADED);
+    });
 
-            const mainElement = fixture.debugElement.query(
-                By.css('[data-testid="create-content-dialog"]')
-            );
+    it('should show legacy placeholder if not compatible', async () => {
+        dialogConfig.data = { mode: 'new', contentTypeId: 'blog-post' };
+        (contentTypeService.getContentType as jest.Mock).mockReturnValue(
+            of({
+                ...mockContentType,
+                metadata: { [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: false }
+            })
+        );
+        fixture.detectChanges();
+        await fixture.whenStable();
+        expect(component['isCompatible']()).toBe(false);
+    });
 
-            expect(mainElement).toBeTruthy();
-        });
+    it('should call onContentSaved callback when dialog closes and content was saved', () => {
+        const onContentSaved = jest.fn();
+        dialogConfig.data = { mode: 'edit', contentletInode: 'inode', onContentSaved };
+        fixture.detectChanges();
+        const contentlet = { inode: 'inode' } as DotCMSContentlet;
+        component.onContentSaved(contentlet);
+        onCloseSubject.next();
+        expect(onContentSaved).toHaveBeenCalledWith(contentlet);
+    });
+
+    it('should call onCancel callback when closeDialog is called', () => {
+        const onCancel = jest.fn();
+        dialogConfig.data = { mode: 'edit', contentletInode: 'inode', onCancel };
+        fixture.detectChanges();
+        component.closeDialog();
+        expect(onCancel).toHaveBeenCalled();
     });
 });

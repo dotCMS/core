@@ -19,7 +19,7 @@ import {
     DotWorkflowsActionsService,
     DotWorkflowService
 } from '@dotcms/data-access';
-import { DotCMSContentlet, ComponentStatus } from '@dotcms/dotcms-models';
+import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { FormValues } from '../../models/dot-edit-content-form.interface';
@@ -30,46 +30,46 @@ import { DotEditContentSidebarComponent } from '../dot-edit-content-sidebar/dot-
 
 /**
  * Edit Content Layout Component
- * 
+ *
  * A flexible component that provides the main layout for content editing functionality.
  * Supports both route-based and dialog-based usage patterns with automatic mode detection.
- * 
+ *
  * ## Features
  * - **Dual Mode Support**: Works in both route and dialog contexts
  * - **Automatic Mode Detection**: Intelligently switches modes based on input parameters
  * - **Isolated State Management**: Each instance maintains its own store
  * - **Workflow Integration**: Handles content workflow actions and notifications
- * 
+ *
  * ## Usage Modes
- * 
+ *
  * ### Route Mode
  * Used when embedded in route-based pages. Initializes from route parameters.
  * ```html
  * <dot-edit-content-form-layout></dot-edit-content-form-layout>
  * ```
- * 
+ *
  * ### Dialog Mode - New Content
  * Used in dialogs to create new content of a specific type.
  * ```html
- * <dot-edit-content-form-layout 
+ * <dot-edit-content-form-layout
  *   [contentTypeId]="'blog-post'"
  *   (contentSaved)="onContentSaved($event)">
  * </dot-edit-content-form-layout>
  * ```
- * 
+ *
  * ### Dialog Mode - Edit Existing Content
  * Used in dialogs to edit existing content by inode.
  * ```html
- * <dot-edit-content-form-layout 
+ * <dot-edit-content-form-layout
  *   [contentletInode]="'abc123'"
  *   (contentSaved)="onContentSaved($event)">
  * </dot-edit-content-form-layout>
  * ```
- * 
+ *
  * ## Inputs
  * - `contentTypeId`: String identifier for content type (dialog mode only)
  * - `contentletInode`: String identifier for existing content (dialog mode only)
- * 
+ *
  * ## Outputs
  * - `contentSaved`: Emitted when content is successfully saved (dialog mode only)
  */
@@ -152,15 +152,18 @@ export class DotEditContentLayoutComponent {
         );
 
         // Handle workflow action success in dialog mode
-        effect(() => {
-            const isDialogMode = this.$store.isDialogMode();
-            const workflowActionSuccess = this.$store.workflowActionSuccess();
+        effect(
+            () => {
+                const isDialogMode = this.$store.isDialogMode();
+                const workflowActionSuccess = this.$store.workflowActionSuccess();
 
-            if (isDialogMode && workflowActionSuccess) {
-                this.contentSaved.emit(workflowActionSuccess);
-                this.$store.clearWorkflowActionSuccess();
-            }
-        }, { allowSignalWrites: true });
+                if (isDialogMode && workflowActionSuccess) {
+                    this.contentSaved.emit(workflowActionSuccess);
+                    this.$store.clearWorkflowActionSuccess();
+                }
+            },
+            { allowSignalWrites: true }
+        );
     }
 
     /**
@@ -172,7 +175,7 @@ export class DotEditContentLayoutComponent {
 
     /**
      * Handles form value changes and updates the store.
-     * 
+     *
      * @param value - The updated form values
      */
     onFormChange(value: FormValues) {
@@ -181,7 +184,7 @@ export class DotEditContentLayoutComponent {
 
     /**
      * Closes beta feature messages.
-     * 
+     *
      * @param message - The type of message to close
      */
     closeMessage(message: 'betaMessage') {

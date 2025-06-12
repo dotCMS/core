@@ -18,7 +18,7 @@ import {
     DotWorkflowsActionsService,
     DotWorkflowService
 } from '@dotcms/data-access';
-import { ComponentStatus, DotContentletDepth, DotContentletDepths, FeaturedFlags } from '@dotcms/dotcms-models';
+import { ComponentStatus, DotContentletDepth, FeaturedFlags } from '@dotcms/dotcms-models';
 
 import { DotEditContentService } from '../../../services/dot-edit-content.service';
 import { transformFormDataFn } from '../../../utils/functions.util';

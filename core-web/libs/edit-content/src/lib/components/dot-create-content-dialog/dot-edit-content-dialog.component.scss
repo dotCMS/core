@@ -127,15 +127,6 @@
     line-height: 1.4;
 }
 
-// Layout component styles
-dot-edit-content-form-layout {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
-    overflow: hidden;
-}
-
 // Responsive design
 @media (max-width: $screen-md-max) {
     .edit-content-dialog {

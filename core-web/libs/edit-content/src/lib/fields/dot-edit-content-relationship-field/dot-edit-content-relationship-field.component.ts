@@ -358,12 +358,12 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
      * Opens the new content dialog for creating content using the Angular editor
      *
      * @private
-     * @param {DotCMSContentType} contentType - The content type to create content for
+     * @param {DotCMSContentType} _contentType - The content type to create content for
      */
-    private openNewContentDialog(contentType: DotCMSContentType): void {
+    private openNewContentDialog(_contentType: DotCMSContentType): void {
         const dialogData: EditContentDialogData = {
             mode: 'new',
-            contentTypeId: contentType.id,
+            contentTypeId: _contentType.id,
             relationshipInfo: {
                 parentContentletId: this.$contentlet().inode || '',
                 relationshipName: this.$field().variable || '',
@@ -389,15 +389,15 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
             maskStyleClass: 'p-dialog-mask-dynamic p-dialog-create-content',
             style: { 'max-width': '1400px', 'max-height': '900px' },
             data: dialogData,
-            header: `Create ${contentType.name}`
+            header: `Create ${_contentType.name}`
         });
 
         this.#dialogRef.onClose
             .pipe(
-                filter((contentlet) => !!contentlet),
+                filter((_contentlet) => !!_contentlet),
                 takeUntilDestroyed(this.#destroyRef)
             )
-            .subscribe((contentlet: DotCMSContentlet) => {
+            .subscribe((_contentlet: DotCMSContentlet) => {
                 // Content was created and is already handled in the onContentCreated callback
                 // Successfully created contentlet: contentlet
             });
@@ -408,9 +408,9 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
      * This is a placeholder for the legacy implementation
      *
      * @private
-     * @param {DotCMSContentType} contentType - The content type to create content for
+     * @param {DotCMSContentType} _contentType - The content type to create content for
      */
-    private openLegacyContentDialog(contentType: DotCMSContentType): void {
+    private openLegacyContentDialog(_contentType: DotCMSContentType): void {
         // TODO: Implement legacy dialog opening
         // Legacy content creation not yet implemented for content type: contentType
         // This would eventually open an iframe dialog with the legacy editor

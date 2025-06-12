@@ -197,7 +197,7 @@ export const DotEditContentStore = signalStore(
     withMethods((store) => {
         // Inject ActivatedRoute in the proper injection context (within the factory function)
         const activatedRoute = inject(ActivatedRoute);
-        
+
         return {
             /**
              * Initializes the store for dialog mode with the provided parameters.
@@ -205,17 +205,17 @@ export const DotEditContentStore = signalStore(
              * - Enabling dialog mode
              * - Initializing content based on provided parameters
              * - Handling both new content creation and existing content editing
-             * 
+             *
              * @param options - The dialog initialization options
              * @param options.contentTypeId - Content type ID for creating new content
              * @param options.contentletInode - Contentlet inode for editing existing content
              */
             initializeDialogMode(options: DialogInitializationOptions): void {
                 const { contentTypeId, contentletInode } = options;
-                
+
                 // Enable dialog mode to prevent route-based initialization
                 store.enableDialogMode();
-                
+
                 // Initialize based on provided parameters
                 if (contentTypeId) {
                     store.initializeNewContent(contentTypeId);
