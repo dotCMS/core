@@ -185,7 +185,7 @@ describe('DotAppsService', () => {
                         return `attachment; filename=${fileName}`;
                     }
                     if (_header === 'error-message') {
-                        return null; 
+                        return null;
                     }
                     return null;
                 }
