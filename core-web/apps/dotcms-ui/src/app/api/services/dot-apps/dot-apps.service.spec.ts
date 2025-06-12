@@ -184,9 +184,11 @@ describe('DotAppsService', () => {
                     if (_header === 'content-disposition') {
                         return `attachment; filename=${fileName}`;
                     }
+
                     if (_header === 'error-message') {
                         return null;
                     }
+                    
                     return null;
                 }
             },
