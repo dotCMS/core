@@ -2,11 +2,7 @@ package com.dotcms.util;
 
 import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotmarketing.portlets.workflows.business.SystemWorkflowConstants.WORKFLOW_PUBLISH_ACTION_ID;
-import static com.dotmarketing.util.importer.ImportLineValidationCodes.INVALID_BINARY_URL;
-import static com.dotmarketing.util.importer.ImportLineValidationCodes.INVALID_DATE_FORMAT;
-import static com.dotmarketing.util.importer.ImportLineValidationCodes.INVALID_FILE_PATH;
-import static com.dotmarketing.util.importer.ImportLineValidationCodes.INVALID_LOCATION;
-import static com.dotmarketing.util.importer.ImportLineValidationCodes.REQUIRED_FIELD_MISSING;
+import static com.dotmarketing.util.importer.ImportLineValidationCodes.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -31,15 +27,7 @@ import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
-import com.dotcms.datagen.ContentTypeDataGen;
-import com.dotcms.datagen.ContentletDataGen;
-import com.dotcms.datagen.FieldDataGen;
-import com.dotcms.datagen.FolderDataGen;
-import com.dotcms.datagen.LanguageDataGen;
-import com.dotcms.datagen.SiteDataGen;
-import com.dotcms.datagen.TemplateDataGen;
-import com.dotcms.datagen.TestDataUtils;
-import com.dotcms.datagen.TestUserUtils;
+import com.dotcms.datagen.*;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
@@ -91,6 +79,7 @@ import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.dotmarketing.util.importer.model.ImportResult;
 import com.dotmarketing.util.importer.model.ResultData;
+import com.dotmarketing.util.importer.model.ValidationMessage;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.util.StringPool;
@@ -3770,4 +3759,137 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
 
     }
 
+
+    /**
+     * Method to test: {@link ImportUtil#importFile(Long, String, String, String[], boolean, boolean, User, long, String[], CsvReader, int, int, Reader, String, HttpServletRequest)}
+     * Given scenario: We try to import a category that exists but is not a child of the configured root
+     * Expected behavior: The import should fail with INVALID_CATEGORY_KEY and no content should be saved
+     */
+    @Test
+    public void importLine_shouldFailIfCategoryIsNotUnderConfiguredRoot() throws DotDataException, DotSecurityException, IOException {
+        final Category configuredRoot = TestDataUtils.createCategories(); // Has valid children
+        final Category unrelatedCategory = new CategoryDataGen()
+                .setCategoryName("Unrelated-Category-" + System.currentTimeMillis())
+                .setKey("unrelated-key-" + System.currentTimeMillis())
+                .setCategoryVelocityVarName("unrelatedVar")
+                .setSortOrder(1)
+                .nextPersisted(); // Not a child of configuredRoot
+
+        final ContentType contentType = TestDataUtils.newContentTypeFieldTypesGalore(configuredRoot);
+        final com.dotcms.contenttype.model.field.Field titleField = fieldAPI.byContentTypeAndVar(contentType, "textField");
+        final com.dotcms.contenttype.model.field.Field categoryField = contentType.fields(CategoryField.class).stream()
+                .findFirst()
+                .orElseThrow();
+
+        final String csvContent = String.format("textField,%s\r\nSome Title,%s", categoryField.variable(), unrelatedCategory.getKey());
+        final Reader reader = createTempFile(csvContent);
+
+        final ImportResult result = importAndValidate(contentType, titleField, reader, false, 1, WORKFLOW_PUBLISH_ACTION_ID);
+
+        assertNotNull(result);
+        assertFalse(result.error().isEmpty());
+
+
+        final ValidationMessage error = result.error().get(0);
+        Optional<String> errorCode = error.code();
+        String errorMessage = error.message();
+
+        assertTrue(errorCode.isPresent());
+        assertEquals(INVALID_CATEGORY_KEY.name(), errorCode.get());
+        assertTrue(errorMessage.contains("Invalid category key found: '" + unrelatedCategory.getKey()));
+        assertTrue(errorMessage.contains("be a child of '" + configuredRoot.getCategoryName() + "'"));
+
+        final Optional<ResultData> resultData = result.data();
+        assertTrue(resultData.isPresent());
+        assertEquals(2, resultData.get().processed().parsedRows());
+        assertEquals(1, resultData.get().processed().failedRows());
+        assertEquals(0, resultData.get().summary().createdContent());
+
+        List<Contentlet> saved = contentletAPI.findByStructure(contentType.inode(), user, false, 0, 0);
+        assertEquals(0, saved.size());
+    }
+
+    /**
+     * Method to test: {@link ImportUtil#importFile(Long, String, String, String[], boolean, boolean, User, long, String[], CsvReader, int, int, Reader, String, HttpServletRequest)}
+     * Given scenario: We try to import a category key that doesn't exist
+     * Expected behavior: The import should fail with INVALID_CATEGORY_KEY and no content should be saved
+     */
+    @Test
+    public void importLine_shouldFailIfCategoryKeyDoesNotExist() throws DotDataException, DotSecurityException, IOException {
+        final Category configuredRoot = TestDataUtils.createCategories(); // Has valid children
+
+        final ContentType contentType = TestDataUtils.newContentTypeFieldTypesGalore(configuredRoot);
+        final com.dotcms.contenttype.model.field.Field titleField = fieldAPI.byContentTypeAndVar(contentType, "textField");
+        final com.dotcms.contenttype.model.field.Field categoryField = contentType.fields(CategoryField.class).stream()
+                .findFirst()
+                .orElseThrow();
+
+        final String invalidKey = "non-existent-category-key";
+        final String csvContent = String.format("textField,%s\r\nSome Title,%s", categoryField.variable(), invalidKey);
+        final Reader reader = createTempFile(csvContent);
+
+        final ImportResult result = importAndValidate(contentType, titleField, reader, false, 1, WORKFLOW_PUBLISH_ACTION_ID);
+
+        assertNotNull(result);
+        assertFalse(result.error().isEmpty());
+
+        final ValidationMessage error = result.error().get(0);
+        Optional<String> errorCode = error.code();
+        String errorMessage = error.message();
+
+        assertTrue(errorCode.isPresent());
+        assertEquals(INVALID_CATEGORY_KEY.name(), errorCode.get());
+        assertTrue(errorMessage.contains("Invalid category key found: '" + invalidKey));
+        assertTrue(errorMessage.contains("be a child of '" + configuredRoot.getCategoryName() + "'"));
+
+        final Optional<ResultData> resultData = result.data();
+        assertTrue(resultData.isPresent());
+        assertEquals(2, resultData.get().processed().parsedRows());
+        assertEquals(1, resultData.get().processed().failedRows());
+        assertEquals(0, resultData.get().summary().createdContent());
+
+        List<Contentlet> saved = contentletAPI.findByStructure(contentType.inode(), user, false, 0, 0);
+        assertEquals(0, saved.size());
+    }
+
+
+    /**
+     * Method to test: {@link ImportUtil#importFile(Long, String, String, String[], boolean, boolean, User, long, String[], CsvReader, int, int, Reader, String, HttpServletRequest)}
+     * Given scenario: We import a valid category key that is a child of the configured root
+     * Expected behavior: The import should succeed and the category should be assigned
+     */
+    @Test
+    public void importLine_shouldSucceedIfCategoryIsValidChild() throws DotDataException, DotSecurityException, IOException {
+        final Category configuredRoot = TestDataUtils.createCategories(); // Has children
+        final List<Category> children = APILocator.getCategoryAPI().getAllChildren(configuredRoot, user, false);
+        assertFalse(children.isEmpty());
+        final Category validChild = children.get(0);
+
+        final ContentType contentType = TestDataUtils.newContentTypeFieldTypesGalore(configuredRoot);
+        final com.dotcms.contenttype.model.field.Field titleField = fieldAPI.byContentTypeAndVar(contentType, "textField");
+        final com.dotcms.contenttype.model.field.Field categoryField = contentType.fields(CategoryField.class).stream()
+                .findFirst()
+                .orElseThrow();
+
+        final String csvContent = String.format("textField,%s\r\nTest Title,%s", categoryField.variable(), validChild.getKey());
+        final Reader reader = createTempFile(csvContent);
+
+        final ImportResult result = importAndValidate(contentType, titleField, reader, false, 1, WORKFLOW_PUBLISH_ACTION_ID);
+
+        assertNotNull(result);
+        assertTrue(result.error().isEmpty());
+
+        final Optional<ResultData> resultData = result.data();
+        assertTrue(resultData.isPresent());
+        assertEquals(2, resultData.get().processed().parsedRows());
+        assertEquals(0, resultData.get().processed().failedRows());
+        assertEquals(1, resultData.get().summary().createdContent());
+
+        List<Contentlet> saved = contentletAPI.findByStructure(contentType.inode(), user, false, 0, 0);
+        assertEquals(1, saved.size());
+
+        List<Category> assignedCategories = APILocator.getCategoryAPI().getParents(saved.get(0), user, false);
+        assertTrue(assignedCategories.stream().anyMatch(cat -> cat.getInode().equals(validChild.getInode())));
+    }
+    
 }

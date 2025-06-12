@@ -1,6 +1,7 @@
 package com.dotcms.business;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.business.bytebuddy.ExternalTransactionAdvice;
 import com.dotcms.test.ExternalTransactionalTester;
 import com.dotcms.test.ReadOnlyTester;
 import com.dotcms.test.TransactionalTester;
@@ -288,7 +289,6 @@ public class LocalTransactionAndCloseDBIfOpenedFactoryTest extends IntegrationTe
      * So the count should be at the end + 2 than initial count.
      *
      */
-
     @Test
     @Ignore("need to add back in external transaction option")
     public void testUpdateExternalTransactionSuccess_Even_If_Current_Transaction_Fails() throws Exception {
@@ -346,4 +346,48 @@ public class LocalTransactionAndCloseDBIfOpenedFactoryTest extends IntegrationTe
         Assert.assertEquals(countInitial.intValue() + 2,  countExternal.intValue());
         Assert.assertEquals(currentCount,  countExternal.intValue());
     }
+
+    /**
+     * Method to test: ExternalTransaction annotation
+     * Given Scenario: Just annotated an method called inside a transaction
+     * ExpectedResult: The method annotated by external should has a different connection than the one used by the transaction
+     *
+     */
+    @Test
+    public void test_external_transaction_advice() throws Throwable {
+
+        final boolean isNewConnection = !DbConnectionFactory.connectionExists();
+        try {
+
+            DbConnectionFactory.startTransactionIfNeeded();
+
+            final String originalConn = DbConnectionFactory.getConnection().toString();
+
+            testExternalTransactionAnnotation(originalConn);
+        } finally {
+            if (isNewConnection) {
+                DbConnectionFactory.closeSilently();
+            }
+        }
+    } // test
+
+    // have to test in this way b/c the ExternalTransaction annotation does not work on
+    private void testExternalTransactionAnnotation (final String originalConn) throws Throwable {
+
+        final ExternalTransactionAdvice externalTransactionAdvice = new ExternalTransactionAdvice();
+        ExternalTransactionAdvice.TransactionInfo transactionInfo = null;
+
+        try {
+
+            transactionInfo = externalTransactionAdvice.enter("testExternalTransactionAnnotation");
+            String newConn = DbConnectionFactory.getConnection().toString();
+
+            Assert.assertNotEquals("The outside conn should be diff to the inside conn on external transaction", originalConn, newConn);
+        } finally {
+
+            externalTransactionAdvice.exit(transactionInfo,  null);
+        }
+
+    }
+
 }
