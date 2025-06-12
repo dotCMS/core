@@ -8,17 +8,13 @@ import { DotCMSPage } from "@/views/DotCMSPage";
 const params = Astro.params;
 
 const pageResponse = await getDotCMSPage(
-  params?.slug ?? "",
-  Astro.url.searchParams,
+  params?.slug ?? ""
 );
 
 const pageAsset = pageResponse?.pageAsset;
 const errors = pageResponse?.errors;
 const { vanityUrl } = pageAsset ?? {};
 
-if (vanityUrl && (vanityUrl.temporaryRedirect || vanityUrl.permanentRedirect)) {
-  return Astro.redirect(vanityUrl.forwardTo, vanityUrl.response);
-}
 
 const title = pageAsset ? pageAsset.page.title : "Error";
 ---

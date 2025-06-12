@@ -1,8 +1,11 @@
 import { defineConfig } from "astro/config";
+import { loadEnv } from "vite";
+
 import react from "@astrojs/react";
+import vercel from "@astrojs/vercel/serverless";
 import tailwindcss from "@tailwindcss/vite";
 
-import vercel from "@astrojs/vercel/serverless";
+const env = loadEnv(process.env.NODE_ENV, process.cwd(), '');
 
 // https://astro.build/config
 export default defineConfig({
@@ -13,7 +16,9 @@ export default defineConfig({
     plugins: [tailwindcss()],
     server: {
       proxy: {
-        "/dA": "http://localhost:8080",
+        /* Proxy to dotCMS API for Assets (images, videos, etc.)
+          Learn more: https://dev.dotcms.com/docs/image-resizing-and-processing#simpleShortyResize */
+        "/dA": env.PUBLIC_DOTCMS_HOST,
       },
     },
   },
