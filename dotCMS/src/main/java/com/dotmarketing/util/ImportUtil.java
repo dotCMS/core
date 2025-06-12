@@ -2371,11 +2371,16 @@ public class ImportUtil {
      * @throws ImportLineException if the URL is invalid
      */
     private static Object validateBinaryField(final Field field, final String value) {
-        final boolean validURL = UtilMethods.isValidURL(value);
+        if (UtilMethods.isNotSet(value) && !field.isRequired()) {
+            // If the value is not set and the field is required, we throw an exception
+            return value;
+        }
+        //Here we need to throw an exception if the value is not set and the value is required
+        final boolean validURL = UtilMethods.isValidStrictURL(value);
         if(!validURL) {
             // If the value is not a valid URL, we throw an exception
             throw ImportLineException.builder()
-                    .message("The provided value is not a valid URL")
+                    .message("The provided value is not a syntactically valid URL")
                     .code(ImportLineValidationCodes.INVALID_BINARY_URL.name())
                     .field(field.getVelocityVarName())
                     .invalidValue(value)
@@ -2406,6 +2411,10 @@ public class ImportUtil {
     private static Object validateFileField(final Field field, final String value,
             final String currentHostId, final User user
     ) throws DotDataException, DotSecurityException {
+        if(UtilMethods.isNotSet(value) && !field.isRequired()) {
+            // If the value is not set and the field is not required, we return null
+           return value;
+        }
         //Here we need to determine if the value is a valid internal file path or an external URL
         final boolean dotCMSPath = UtilMethods.isValidDotCMSPath(value);
         if (dotCMSPath) {
@@ -2423,11 +2432,11 @@ public class ImportUtil {
                         .build();
             }
         } else {
-            final boolean validURL = UtilMethods.isValidURL(value);
+            final boolean validURL = UtilMethods.isValidStrictURL(value);
             if(!validURL) {
                 // If the value is not a valid URL, we throw an exception
                 throw ImportLineException.builder()
-                        .message("The provided value is not a valid URL nor a valid dotCMS path")
+                        .message("The provided value is not a syntactically valid URL nor a valid dotCMS path")
                         .code(ImportLineValidationCodes.INVALID_BINARY_URL.name())
                         .field(field.getVelocityVarName())
                         .invalidValue(value)
@@ -3591,6 +3600,8 @@ public class ImportUtil {
     private static void fetchAndSetBinaryField(final Contentlet cont, final Field field,
             final Object value, final HttpServletRequest request, final boolean preview)
             throws IOException, DotSecurityException {
+        // At this point if we got this far with an empty value it's because it was determined that the field is not required
+        // so no need to re-check
         if (preview) {
             File dummyFile = File.createTempFile("dummy", ".txt",
                     new File(ConfigUtils.getAssetTempPath()));
@@ -3613,6 +3624,9 @@ public class ImportUtil {
      */
     private static void fetchAndSetFileField(final Contentlet cont, final Field field,
             final Object value, final HttpServletRequest request, final String siteId, final User user, final boolean preview) {
+        // At this point if we got this far with an empty value it's because it was determined that the field is not required So No need to re-check
+        // But we check if its set and not empty, so we don't try to process empty values.
+        // Otherwise, we might end-up throwing an exception for a non-required field
         if (value != null && UtilMethods.isSet(value.toString())) {
             final String uriOrIdentifier = value.toString();
             // First we need to determine if we're looking at an internal Path or an external URL
