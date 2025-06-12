@@ -1,12 +1,17 @@
-import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
-import { filter, take } from 'rxjs/operators';
+
+import { Injectable, inject } from '@angular/core';
 
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 
+import { filter, take } from 'rxjs/operators';
+
 import { DotCMSContentlet, DotContentletDepths } from '@dotcms/dotcms-models';
 
-import { DotEditContentDialogComponent, EditContentDialogData } from '../components/dot-create-content-dialog/dot-create-content-dialog.component';
+import {
+    DotEditContentDialogComponent,
+    EditContentDialogData
+} from '../components/dot-create-content-dialog/dot-create-content-dialog.component';
 
 /**
  * Service for managing edit content dialog instances.
@@ -21,7 +26,7 @@ export class DotEditContentDialogService {
 
     /**
      * Opens a dialog for creating new content
-     * 
+     *
      * @param contentTypeId - The content type variable name or ID
      * @param options - Additional configuration options
      * @returns Observable that emits the created contentlet or null if cancelled
@@ -45,8 +50,11 @@ export class DotEditContentDialogService {
             onCancel: options.onCancel
         };
 
-        console.log('🎬 [DotEditContentDialogService] Opening new content dialog for:', contentTypeId);
-        
+        console.log(
+            '🎬 [DotEditContentDialogService] Opening new content dialog for:',
+            contentTypeId
+        );
+
         const dialogRef = this.#dialogService.open(DotEditContentDialogComponent, {
             data: dialogData,
             header: options.header || `Create ${contentTypeId}`,
@@ -68,7 +76,7 @@ export class DotEditContentDialogService {
 
     /**
      * Opens a dialog for editing existing content
-     * 
+     *
      * @param contentletInode - The inode of the content to edit
      * @param options - Additional configuration options
      * @returns Observable that emits the updated contentlet or null if cancelled
@@ -113,7 +121,7 @@ export class DotEditContentDialogService {
 
     /**
      * Generic method for opening edit content dialog with full control
-     * 
+     *
      * @param data - Complete dialog data configuration
      * @param dialogOptions - PrimeNG dialog options
      * @returns Observable that emits the result contentlet or null if cancelled
@@ -149,4 +157,4 @@ export class DotEditContentDialogService {
 
         return dialogRef.onClose.pipe(take(1));
     }
-} 
+}

@@ -59,6 +59,7 @@ export interface EditContentState {
         status: ComponentStatus;
         error: string | null;
     };
+    workflowActionSuccess: DotCMSContentlet | null;
 
     // User state
     currentUser: DotCurrentUser;
@@ -121,6 +122,7 @@ export const initialRootState: EditContentState = {
         status: ComponentStatus.INIT,
         error: null
     },
+    workflowActionSuccess: null,
 
     // User state
     currentUser: null,
@@ -198,13 +200,15 @@ export const DotEditContentStore = signalStore(
                 // Skip route-based initialization if in dialog mode
                 console.log('🏪 [DotEditContentStore] Dialog mode enabled:', store.isDialogMode());
                 if (store.isDialogMode()) {
-                    console.log('🏪 [DotEditContentStore] Skipping route initialization - dialog mode enabled');
-                    
+                    console.log(
+                        '🏪 [DotEditContentStore] Skipping route initialization - dialog mode enabled'
+                    );
+
                     return;
                 }
 
                 console.log('🏪 [DotEditContentStore] Attempting route-based initialization');
-                
+
                 const params = activatedRoute.snapshot?.params;
 
                 if (params) {
@@ -213,10 +217,16 @@ export const DotEditContentStore = signalStore(
 
                     // TODO: refactor this when we will use EditContent as sidebar
                     if (inode) {
-                        console.log('🏪 [DotEditContentStore] Initializing existing content from route:', inode);
+                        console.log(
+                            '🏪 [DotEditContentStore] Initializing existing content from route:',
+                            inode
+                        );
                         store.initializeExistingContent({ inode, depth: DotContentletDepths.TWO });
                     } else if (contentType) {
-                        console.log('🏪 [DotEditContentStore] Initializing new content from route:', contentType);
+                        console.log(
+                            '🏪 [DotEditContentStore] Initializing new content from route:',
+                            contentType
+                        );
                         store.initializeNewContent(contentType);
                     }
                 } else {

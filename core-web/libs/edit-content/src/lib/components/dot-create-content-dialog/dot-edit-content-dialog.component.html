@@ -1,10 +1,11 @@
 <div class="edit-content-dialog" data-testid="edit-content-dialog">
     @if (isCompatible()) {
         @if (state() === ComponentStatus.LOADED) {
-            <dot-edit-content-form-layout 
-                #editContentLayout 
+            <dot-edit-content-form-layout
+                #editContentLayout
                 [contentTypeId]="data?.mode === 'new' ? data?.contentTypeId : undefined"
                 [contentletInode]="data?.mode === 'edit' ? data?.contentletInode : undefined"
+                (contentSaved)="onContentSaved($event)"
                 data-testid="edit-content-layout" />
         } @else if (state() === ComponentStatus.ERROR) {
             <div class="edit-content-dialog__error" data-testid="error-state">
@@ -45,4 +46,4 @@
             </div>
         </div>
     }
-</div> 
+</div>

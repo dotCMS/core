@@ -3,6 +3,7 @@ import {
     Component,
     inject,
     OnInit,
+    OnDestroy,
     effect,
     computed,
     viewChild,
@@ -12,7 +13,12 @@ import {
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { DotContentTypeService } from '@dotcms/data-access';
-import { DotCMSContentlet, FeaturedFlags, ComponentStatus, DotCMSContentType } from '@dotcms/dotcms-models';
+import {
+    DotCMSContentlet,
+    FeaturedFlags,
+    ComponentStatus,
+    DotCMSContentType
+} from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotEditContentLayoutComponent } from '../dot-edit-content-layout/dot-edit-content.layout.component';
@@ -75,7 +81,7 @@ export enum CreateContentMode {
  * DotEditContentDialogComponent
  *
  * A dialog wrapper component that embeds the full DotEditContentLayoutComponent
- * for both creating new content and editing existing content. This component 
+ * for both creating new content and editing existing content. This component
  * provides a simple wrapper around the layout component without its own store dependency.
  *
  * ## Key Features:
@@ -85,6 +91,8 @@ export enum CreateContentMode {
  * - Dialog lifecycle management
  * - Content save completion and callback handling
  * - Fallback for content types that don't support the new editor
+ * - Tracks content changes across multiple workflow actions
+ * - Only calls callback once when dialog is closed
  *
  * ## Architecture:
  * The dialog component acts as a simple wrapper that:
@@ -92,7 +100,8 @@ export enum CreateContentMode {
  * - Checks content type compatibility
  * - Passes data to the layout component which handles all content logic
  * - Monitors the layout component for save events
- * - Manages dialog closing and callbacks
+ * - Tracks content changes without closing immediately
+ * - Calls callback with final content state when dialog closes
  *
  * @example
  * ```typescript
@@ -133,17 +142,22 @@ export enum CreateContentMode {
     styleUrls: ['./dot-edit-content-dialog.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotEditContentDialogComponent implements OnInit {
+export class DotEditContentDialogComponent implements OnInit, OnDestroy {
     readonly #dialogRef = inject(DynamicDialogRef);
     readonly #dialogConfig = inject(DynamicDialogConfig);
     readonly #dotContentTypeService = inject(DotContentTypeService);
-    
+
     readonly editContentLayout = viewChild<DotEditContentLayoutComponent>('editContentLayout');
 
     // Dialog-specific state
     protected readonly state = signal<ComponentStatus>(ComponentStatus.INIT);
     protected readonly error = signal<string | null>(null);
     protected readonly contentType = signal<DotCMSContentType | null>(null);
+
+    // Track content changes for callback when dialog closes
+    private savedContentlet = signal<DotCMSContentlet | null>(null);
+    private hasContentBeenSaved = signal<boolean>(false);
+    private isClosing = false;
 
     /**
      * Computed property to check if this content type is compatible with the new editor in dialog mode
@@ -198,34 +212,10 @@ export class DotEditContentDialogComponent implements OnInit {
     }
 
     constructor() {
-        // Effect to monitor the layout component's store for save events
-        effect(() => {
-            const layoutComponent = this.editContentLayout();
-            if (!layoutComponent) {
-                return;
-            }
-
-            const layoutStore = layoutComponent.$store;
-            const contentlet = layoutStore.contentlet();
-            const layoutState = layoutStore.state();
-            const data: EditContentDialogData = this.#dialogConfig.data;
-            
-            // Only proceed if layout is in a loaded state and has a contentlet with an inode
-            if (layoutState !== ComponentStatus.LOADED || !contentlet?.inode) {
-                return;
-            }
-
-            // For new content: check if we have form values indicating it was just created
-            // For existing content: check if the content was modified (could add a dirty check)
-            const formValues = layoutStore.formValues();
-            const hasFormData = Object.keys(formValues).length > 0;
-
-            if (data.mode === 'new' && hasFormData) {
-                // New content was just created
-                this.handleContentSaved(contentlet, data);
-            } else if (data.mode === 'edit') {
-                // For edit mode, we might want to add a mechanism to detect if content was actually saved
-                // For now, we'll rely on external components to close the dialog when appropriate
+        // Subscribe to dialog close events to handle callback when dialog is closed by any means
+        this.#dialogRef.onClose.subscribe(() => {
+            if (!this.isClosing) {
+                this.handleDialogClose();
             }
         });
 
@@ -237,13 +227,49 @@ export class DotEditContentDialogComponent implements OnInit {
             }
 
             const layoutError = layoutComponent.$store.error();
-            
+
             if (layoutError) {
                 console.error('Error in edit content dialog layout:', layoutError);
                 this.error.set(layoutError);
                 this.state.set(ComponentStatus.ERROR);
             }
         });
+    }
+
+    /**
+     * Handles the dialog close event and executes callbacks if content was saved
+     */
+    private handleDialogClose(): void {
+        const data: EditContentDialogData = this.#dialogConfig.data;
+
+        // Check if content was saved during the dialog session
+        const savedContent = this.savedContentlet();
+        const hasBeenSaved = this.hasContentBeenSaved();
+
+        if (hasBeenSaved && savedContent && data.onContentSaved) {
+            console.log(
+                '🚀 [DotEditContentDialogComponent] Dialog closing - calling onContentSaved callback with final content:',
+                savedContent
+            );
+            data.onContentSaved(savedContent);
+        }
+    }
+
+    /**
+     * Handles content saved event from the layout component.
+     * This tracks content changes but doesn't close the dialog immediately.
+     * The callback will be called when the dialog is manually closed.
+     */
+    onContentSaved(contentlet: DotCMSContentlet): void {
+        console.log('🚀 [DotEditContentDialogComponent] Content saved event received:', contentlet);
+
+        // Track the latest saved content and mark that content has been saved
+        this.savedContentlet.set(contentlet);
+        this.hasContentBeenSaved.set(true);
+
+        console.log(
+            '🚀 [DotEditContentDialogComponent] Content tracked, dialog remains open for further workflow actions'
+        );
     }
 
     /**
@@ -267,28 +293,34 @@ export class DotEditContentDialogComponent implements OnInit {
     }
 
     /**
-     * Handles successful content save operation
-     */
-    private handleContentSaved(contentlet: DotCMSContentlet, data: EditContentDialogData): void {
-        // Call the callback if provided
-        if (data.onContentSaved) {
-            data.onContentSaved(contentlet);
-        }
-
-        // Close dialog and return the created/updated contentlet
-        this.#dialogRef.close(contentlet);
-    }
-
-    /**
      * Handles dialog cancellation
      */
     closeDialog(): void {
+        this.isClosing = true;
+
         const data: EditContentDialogData = this.#dialogConfig.data;
-        
+
+        // Check if content was saved during the dialog session
+        const savedContent = this.savedContentlet();
+        const hasBeenSaved = this.hasContentBeenSaved();
+
+        if (hasBeenSaved && savedContent && data.onContentSaved) {
+            console.log(
+                '🚀 [DotEditContentDialogComponent] Calling onContentSaved callback with final content:',
+                savedContent
+            );
+            data.onContentSaved(savedContent);
+        }
+
         if (data.onCancel) {
             data.onCancel();
         }
 
-        this.#dialogRef.close(null);
+        // Close dialog and return the final saved contentlet (or null if nothing was saved)
+        this.#dialogRef.close(hasBeenSaved ? savedContent : null);
+    }
+
+    ngOnDestroy(): void {
+        this.isClosing = true;
     }
 }

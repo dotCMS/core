@@ -144,7 +144,6 @@ export function withContent() {
                             }).pipe(
                                 tapResponse({
                                     next: ({ contentType, schemes }) => {
-                                        debugger;
                                         // Convert the schemes to an object with the schemeId as the key
                                         const parsedSchemes = parseWorkflows(schemes);
                                         const schemeIds = Object.keys(parsedSchemes);
@@ -234,7 +233,6 @@ export function withContent() {
                                         contentlet,
                                         workflowStatus
                                     }) => {
-                                        debugger;
                                         // Convert the schemes to an object with the schemeId as the key
                                         const parsedSchemes = parseWorkflows(schemes);
                                         // Parse the actions as an object with the schemeId as the key
