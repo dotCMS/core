@@ -18,7 +18,7 @@ import {
     DotWorkflowsActionsService,
     DotWorkflowService
 } from '@dotcms/data-access';
-import { ComponentStatus, DotContentletDepth, FeaturedFlags } from '@dotcms/dotcms-models';
+import { ComponentStatus, DotContentletDepth, DotContentletDepths, FeaturedFlags } from '@dotcms/dotcms-models';
 
 import { DotEditContentService } from '../../../services/dot-edit-content.service';
 import { transformFormDataFn } from '../../../utils/functions.util';
@@ -26,6 +26,16 @@ import { parseCurrentActions, parseWorkflows } from '../../../utils/workflows.ut
 import { EditContentState } from '../../edit-content.store';
 
 const DEFAULT_TITLE_PLATFORM = 'dotcms.content.management.platform.title';
+
+/**
+ * Options for initializing the store in dialog mode
+ */
+export interface DialogInitializationOptions {
+    /** Content type ID for creating new content */
+    contentTypeId?: string;
+    /** Contentlet inode for editing existing content */
+    contentletInode?: string;
+}
 
 export function withContent() {
     return signalStoreFeature(

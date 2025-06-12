@@ -1,4 +1,4 @@
-import { signalStore, withHooks, withState } from '@ngrx/signals';
+import { signalStore, withHooks, withState, withMethods } from '@ngrx/signals';
 
 import { inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
@@ -17,7 +17,7 @@ import {
 } from '@dotcms/dotcms-models';
 
 import { withActivities } from './features/activities/activities.feature';
-import { withContent } from './features/content/content.feature';
+import { withContent, DialogInitializationOptions } from './features/content/content.feature';
 import { withForm } from './features/form/form.feature';
 import { withInformation } from './features/information/information.feature';
 import { withLocales } from './features/locales/locales.feature';
@@ -176,10 +176,10 @@ export const initialRootState: EditContentState = {
  */
 export const DotEditContentStore = signalStore(
     withState<EditContentState>(initialRootState),
-    withContent(),
-    withWorkflow(),
     withUser(),
     withUI(),
+    withContent(),
+    withWorkflow(),
     withSidebar(),
     withInformation(),
     withLock(),
@@ -190,25 +190,67 @@ export const DotEditContentStore = signalStore(
         onInit(store) {
             // Always load the current user
             store.loadCurrentUser();
-            console.log('🏪 [DotEditContentStore] OnInit', store.isDialogMode());
+            console.log('🏪 [DotEditContentStore] OnInit - user loaded, waiting for explicit initialization');
+        }
+    }),
+    // Add methods after all features to have access to all store methods
+    // Now that withUI comes before withContent, this method can access both UI and content methods
+    withMethods((store) => {
+        // Inject ActivatedRoute in the proper injection context (within the factory function)
+        const activatedRoute = inject(ActivatedRoute);
+        
+        return {
+            /**
+             * Initializes the store for dialog mode with the provided parameters.
+             * This method handles all the logic for dialog initialization including:
+             * - Enabling dialog mode
+             * - Initializing content based on provided parameters
+             * - Handling both new content creation and existing content editing
+             * 
+             * @param options - The dialog initialization options
+             * @param options.contentTypeId - Content type ID for creating new content
+             * @param options.contentletInode - Contentlet inode for editing existing content
+             */
+            initializeDialogMode(options: DialogInitializationOptions): void {
+                const { contentTypeId, contentletInode } = options;
+                
+                console.log('🏪 [DotEditContentStore] Initializing dialog mode with options:', options);
+                
+                // Enable dialog mode to prevent route-based initialization
+                store.enableDialogMode();
+                
+                // Initialize based on provided parameters
+                if (contentTypeId) {
+                    console.log('🏪 [DotEditContentStore] Initializing new content for type:', contentTypeId);
+                    store.initializeNewContent(contentTypeId);
+                } else if (contentletInode) {
+                    console.log('🏪 [DotEditContentStore] Initializing existing content for inode:', contentletInode);
+                    store.initializeExistingContent({
+                        inode: contentletInode,
+                        depth: DotContentletDepths.TWO
+                    });
+                } else {
+                    console.warn('🏪 [DotEditContentStore] No valid initialization parameters provided for dialog mode');
+                }
+            },
 
-            // Inject ActivatedRoute in the injection context
-            const activatedRoute = inject(ActivatedRoute);
-
-            // Use setTimeout to allow components to call enableDialogMode() before route initialization
-            setTimeout(() => {
+            /**
+             * Initializes the store for route-based mode using ActivatedRoute parameters.
+             * This method should be called by route-based components after the store is created.
+             * It will only initialize if dialog mode is not enabled.
+             */
+            initializeFromRoute(): void {
+                console.log('🏪 [DotEditContentStore] Route initialization requested');
+                
                 // Skip route-based initialization if in dialog mode
-                console.log('🏪 [DotEditContentStore] Dialog mode enabled:', store.isDialogMode());
                 if (store.isDialogMode()) {
-                    console.log(
-                        '🏪 [DotEditContentStore] Skipping route initialization - dialog mode enabled'
-                    );
-
+                    console.log('🏪 [DotEditContentStore] Skipping route initialization - dialog mode enabled');
                     return;
                 }
 
                 console.log('🏪 [DotEditContentStore] Attempting route-based initialization');
 
+                // Use the ActivatedRoute that was injected in the closure
                 const params = activatedRoute.snapshot?.params;
 
                 if (params) {
@@ -232,7 +274,7 @@ export const DotEditContentStore = signalStore(
                 } else {
                     console.log('🏪 [DotEditContentStore] No route params found');
                 }
-            }, 0);
-        }
+            }
+        };
     })
 );
