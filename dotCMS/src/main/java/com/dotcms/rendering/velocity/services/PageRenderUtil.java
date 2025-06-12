@@ -57,7 +57,6 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Table;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-import io.vavr.Lazy;
 import io.vavr.control.Try;
 import java.io.Serializable;
 import java.io.StringWriter;
@@ -80,9 +79,6 @@ import org.apache.velocity.context.Context;
  * @since Feb 22nd, 2019
  */
 public class PageRenderUtil implements Serializable {
-
-    private static final Lazy<Boolean> DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE =
-            Lazy.of(() -> Config.getBooleanProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", false));
 
     public static String CONTAINER_UUID_PREFIX = "uuid-";
     private static final long serialVersionUID = 1L;
@@ -544,9 +540,9 @@ public class PageRenderUtil implements Serializable {
      */
     private Contentlet getContentlet(final String contentletIdentifier,
             final String variantName, final Date timeMachineDate) throws DotSecurityException {
-        final boolean defaultContentToDefaultLang = DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE.get();
+
         try {
-            return defaultContentToDefaultLang ?
+            return Config.getBooleanProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", false) ?
                     getContentletOrFallback(contentletIdentifier, variantName, timeMachineDate) :
                     getSpecificContentlet(contentletIdentifier, variantName, timeMachineDate);
         } catch (final DotSecurityException se) {
