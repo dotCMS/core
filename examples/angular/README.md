@@ -107,6 +107,19 @@ Note: When accessing `localhost:4200/about`, ensure that the `/about` page exist
 
 ## Key Features
 
+### How dotCMS Routes Pages
+dotCMS can use multiple paths for the same page. For example, your "Home" page might be available at both / and /index. Both paths will give you the exact same content from dotCMS. This flexibility helps dotCMS support various content delivery setups.
+
+A modern web framework (like Next.js, Angular, Astro, etc.) usually sees / and /index as two separate routes. Because dotCMS can serve the same page from different paths, your app needs to handle this. If your framework expects / but doesn't have a route for /index, trying to access /index could result in a 404 or 500 error on your frontend, even if dotCMS delivered the content.
+
+To ensure your app works smoothly, we advise handling dotCMS's flexible paths within your JavaScript framework's routing. Here's how:
+
+- Use a "Catch-All" or Dynamic Route: Set up your framework's router to capture multiple paths that point to the same content. For instance, a route like [...slug].js can grab all URL segments.
+- Canonical URL Mapping: Once you get content from dotCMS, normalize the path to a single, consistent URL within your framework. This means / and /index both lead to the same internal page.
+- Proxying or URL Rewriting (Optional): For advanced setups or when using dotCMS's User View Editor (UVE), consider using a proxy or URL rewriting. This can change incoming requests (like /index) to your preferred route (like /) before they hit your frontend. This is super helpful when previewing pages from dotCMS tools, as UVE might generate paths like /index in its iframe.
+
+You can learn more about Angular routing stategies [here](https://angular.dev/guide/routing/common-router-tasks)
+
 ### Handling Vanity URLs
 
 This example demonstrates how to integrate dotCMS Vanity URLs with Angular routing. Vanity URLs in dotCMS provide alternative paths to internal or external URLs, enhancing site maintenance and SEO.
