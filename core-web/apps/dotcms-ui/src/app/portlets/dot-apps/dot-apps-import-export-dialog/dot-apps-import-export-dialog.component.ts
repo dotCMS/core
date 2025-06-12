@@ -141,9 +141,10 @@ export class DotAppsImportExportDialogComponent implements OnChanges, OnDestroy 
                         .exportConfiguration(requestConfiguration)
                         .then((errorMsg: string) => {
                             if (errorMsg) {
-                                this.errorMessage = this.dotMessageService.get(
-                                    'apps.confirmation.export.error'
-                                ) + ': ' + errorMsg;
+                                this.errorMessage =
+                                    this.dotMessageService.get('apps.confirmation.export.error') +
+                                    ': ' +
+                                    errorMsg;
                             } else {
                                 this.closeExportDialog();
                             }

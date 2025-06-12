@@ -149,9 +149,8 @@ export class DotAppsService {
             body: JSON.stringify(conf)
         })
             .then((res: Response) => {
-
                 const message = res.headers.get('error-message');
-                if (message){
+                if (message) {
                     throw new Error(message);
                 }
 
