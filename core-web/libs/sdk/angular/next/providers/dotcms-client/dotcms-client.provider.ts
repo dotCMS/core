@@ -1,4 +1,4 @@
-import { makeEnvironmentProviders, EnvironmentProviders, InjectionToken, inject } from '@angular/core';
+import { makeEnvironmentProviders, EnvironmentProviders } from '@angular/core';
 
 import { createDotCMSClient } from '@dotcms/client/next';
 import { DotCMSClientConfig } from '@dotcms/types';
