@@ -2,7 +2,13 @@ package com.dotcms.util;
 
 import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotmarketing.portlets.workflows.business.SystemWorkflowConstants.WORKFLOW_PUBLISH_ACTION_ID;
-import static com.dotmarketing.util.importer.ImportLineValidationCodes.*;
+import static com.dotmarketing.util.importer.ImportLineValidationCodes.INVALID_BINARY_URL;
+import static com.dotmarketing.util.importer.ImportLineValidationCodes.INVALID_CATEGORY_KEY;
+import static com.dotmarketing.util.importer.ImportLineValidationCodes.INVALID_DATE_FORMAT;
+import static com.dotmarketing.util.importer.ImportLineValidationCodes.INVALID_FILE_PATH;
+import static com.dotmarketing.util.importer.ImportLineValidationCodes.INVALID_LOCATION;
+import static com.dotmarketing.util.importer.ImportLineValidationCodes.REQUIRED_FIELD_MISSING;
+import static com.dotmarketing.util.importer.ImportLineValidationCodes.UNREACHABLE_URL_CONTENT;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -27,7 +33,16 @@ import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
-import com.dotcms.datagen.*;
+import com.dotcms.datagen.CategoryDataGen;
+import com.dotcms.datagen.ContentTypeDataGen;
+import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.FieldDataGen;
+import com.dotcms.datagen.FolderDataGen;
+import com.dotcms.datagen.LanguageDataGen;
+import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.TemplateDataGen;
+import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
@@ -2536,8 +2551,8 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             //Validations
             validate(results, false, false, false);
 
-            assertEquals(results.get("warnings").size(), 0);
-            assertEquals(results.get("errors").size(), 0);
+            assertEquals(0, results.get("warnings").size());
+            assertEquals(0, results.get("errors").size());
 
             final List<Contentlet> savedData = contentletAPI
                     .findByStructure(contentType.inode(), user, false, 0, 0);
@@ -3682,8 +3697,9 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
 
         final Reader reader = createTempFile("title,bin \r\n" +
                 "Company Logo, https://www.dotcms.com/assets/logo.svg?w=3840 " + "\r\n" +
-                "Non-Existing file path, /fake/path" + "\r\n" +
-                "Non-Existing url, https://demo.dotcms.com/lol.jpg" + "\r\n"
+                "Non-Existing-file path, /fake/path" + "\r\n" +
+                "Non-Existing-url, https://demo.dotcms.com/lol.jpg" + "\r\n" +
+                "Non-Valid-url, https://demo.dotcms.com/ lol.jpg" + "\r\n"
         );
         final ImportResult result = importAndValidate(contentType, titleField, reader, false, 1, WORKFLOW_PUBLISH_ACTION_ID);
 
@@ -3692,7 +3708,9 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         assertTrue(result.error().get(0).code().isPresent());
         assertEquals(INVALID_BINARY_URL.name(), result.error().get(0).code().get());
         assertTrue(result.error().get(1).code().isPresent());
-        assertEquals(INVALID_BINARY_URL.name(), result.error().get(1).code().get());
+        assertEquals(UNREACHABLE_URL_CONTENT.name(), result.error().get(1).code().get());
+        assertTrue(result.error().get(2).code().isPresent());
+        assertEquals(INVALID_BINARY_URL.name(), result.error().get(2).code().get());
 
         final List<Contentlet> byStructure = contentletAPI.findByStructure(contentType.inode(),
                 user, false, 0, 0);
@@ -3740,7 +3758,8 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         final Reader reader = createTempFile("title,image \r\n" +
                 "Company Logo, https://www.dotcms.com/assets/logo.svg?w=3840 " + "\r\n" +
                 "Non-Existing file path, /fake/path" + "\r\n" +
-                "Non-Existing url, https://demo.dotcms.com/lol.jpg" + "\r\n"
+                "Non-Existing-url, https://demo.dotcms.com/lol.jpg" + "\r\n" +
+                "Non-Valid-url, https://www.dotcms.com/ assets/logo.svg?w=3840" + "\r\n"
         );
         final ImportResult result = importAndValidate(contentType, titleField, reader, false, 1, WORKFLOW_PUBLISH_ACTION_ID);
 
@@ -3749,7 +3768,9 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         assertTrue(result.error().get(0).code().isPresent());
         assertEquals(INVALID_FILE_PATH.name(), result.error().get(0).code().get());
         assertTrue(result.error().get(1).code().isPresent());
-        assertEquals(INVALID_BINARY_URL.name(), result.error().get(1).code().get());
+        assertEquals(UNREACHABLE_URL_CONTENT.name(), result.error().get(1).code().get());
+        assertTrue(result.error().get(2).code().isPresent());
+        assertEquals(INVALID_BINARY_URL.name(), result.error().get(2).code().get());
 
         //Make sure we got one row with the image as the other two should have failed
         final List<Contentlet> byStructure = contentletAPI.findByStructure(contentType.inode(),
@@ -3891,5 +3912,5 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         List<Category> assignedCategories = APILocator.getCategoryAPI().getParents(saved.get(0), user, false);
         assertTrue(assignedCategories.stream().anyMatch(cat -> cat.getInode().equals(validChild.getInode())));
     }
-    
+
 }
