@@ -3,13 +3,9 @@ import "@/styles/global.css";
 import Layout from "@/components/common/Layout.astro";
 import Error from "@/components/common/Error.astro";
 import { getDotCMSPage } from "@/dotcms-integration";
-import { DotCMSPage } from "@/views/DotCMSPage";
+import { BlogListingPage } from "@/views/BlogListingPage";
 
-const params = Astro.params;
-
-const pageResponse = await getDotCMSPage(
-  params?.slug ?? ""
-);
+const pageResponse = await getDotCMSPage("/blog");
 
 const pageAsset = pageResponse?.pageAsset;
 const errors = pageResponse?.errors;
@@ -21,18 +17,18 @@ if (vanityUrl && (vanityUrl.temporaryRedirect || vanityUrl.permanentRedirect)) {
 
 const title = pageAsset ? pageAsset.page.title : "Error";
 ---
-
 {
-  (
-    <Layout title={title}>
-      {errors ? (
-        <Error error={errors} />
-      ) : (
-        <DotCMSPage
-          client:only="react"
-          pageResponse={pageResponse}
-        />
-      )}
-    </Layout>
-  )
-}
+    (
+      <Layout title={title}>
+        {errors ? (
+          <Error error={errors} />
+        ) : (
+          <BlogListingPage
+            client:only="react"
+            pageResponse={pageResponse}
+          />
+        )}
+      </Layout>
+    )
+  }
+  

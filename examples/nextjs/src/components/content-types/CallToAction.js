@@ -9,7 +9,7 @@ function CallToAction({
     buttonUrl2,
 }) {
     return (
-        <div className="flex flex-col justify-center w-full h-full p-8 bg-linear-to-r from-blue-900 to-violet-800 rounded-xl">
+        <div className="flex flex-col justify-center w-full h-full p-8 bg-gradient-to-r from-blue-900 to-violet-800 rounded-xl">
             <h2 className="block mb-2 text-5xl antialiased font-semibold leading-snug tracking-normal text-blue-gray-900">
                 {title}
             </h2>
