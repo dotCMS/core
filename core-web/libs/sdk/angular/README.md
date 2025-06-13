@@ -80,33 +80,48 @@ For detailed instructions, please refer to the [dotCMS API Documentation - Read-
 npm install @dotcms/angular@next @dotcms/uve@next @dotcms/client@next @dotcms/types@next @tinymce/tinymce-angular
 ```
 
-### dotCMS Client Configuration
+## Configuration
 
-```typescript
-import { createDotCMSClient } from '@dotcms/client';
-import { InjectionToken } from '@angular/core';
+The recommended way to configure the DotCMS client in your Angular application is to use the `provideDotCMSClient` function in your `app.config.ts`:
 
-export type DotCMSClient = ReturnType<typeof createDotCMSClient>;
-
-const dotCMSClient: DotCMSClient = createDotCMSClient({
-    dotcmsUrl: 'https://your-dotcms-instance.com',
-    authToken: 'your-auth-token', // Optional for public content
-    siteId: 'your-site-id' // Optional site identifier/name
-});
-
-export const DOTCMS_CLIENT_TOKEN = new InjectionToken<DotCMSClient>('DOTCMS_CLIENT');
+```ts
+import { ApplicationConfig } from '@angular/core';
+import { provideDotCMSClient } from '@dotcms/angular';
+import { environment } from './environments/environment'; // Assuming your environment variables are here
 
 export const appConfig: ApplicationConfig = {
-    providers: [
-        {
-            provide: DOTCMS_CLIENT_TOKEN,
-            useValue: dotCMSClient
-        }
-    ]
+  providers: [
+    provideDotCMSClient({
+      dotcmsUrl: environment.dotcmsUrl,
+      authToken: environment.authToken,
+      siteId: environment.siteId
+    })
+  ]
 };
 ```
 
-This configuration makes the dotCMS client service available throughout your Angular application, allowing you to inject it wherever needed. For more details on how Angular's InjectionToken works, you can refer to the [Angular InjectionToken documentation](https://angular.dev/api/core/InjectionToken).
+Then, you can inject the `DotCMSClient` into your components or services:
+
+```ts
+import { Component, inject } from '@angular/core';
+import { DotCMSClient } from '@dotcms/angular';
+
+@Component({
+  selector: 'app-my-component',
+  template: `<!-- Your component template -->`
+})
+export class MyComponent {
+  dotcmsClient = inject(DotCMSClient);
+
+  ngOnInit() {
+    this.dotcmsClient.page
+        .get({ url: '/about-us' })
+        .then(({ pageAsset }) => {
+            console.log(pageAsset);
+        });
+  }
+}
+```
 
 ### Proxy Configuration for Static Assets
 
@@ -204,7 +219,7 @@ Once configured, you can use the `NgOptimizedImage` directive to render dotCMS i
 })
 export class MyDotCMSImageComponent {
   @Input() contentlet!: DotCMSBasicContentlet;
-  
+
   get imagePath() {
     return this.contentlet.image.versionPath;
   }

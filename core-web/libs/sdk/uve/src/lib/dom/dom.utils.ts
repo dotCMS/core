@@ -158,7 +158,10 @@ export function findDotCMSElement(element: HTMLElement | null): HTMLElement | nu
 
     if (
         element?.dataset?.['dotObject'] === 'contentlet' ||
-        (element?.dataset?.['dotObject'] === 'container' && emptyContent)
+        // The container inside Headless components have a span with the data-dot-object="container" attribute
+        (element?.dataset?.['dotObject'] === 'container' && emptyContent) ||
+        // The container inside Traditional have no content inside
+        (element?.dataset?.['dotObject'] === 'container' && element.children.length === 0)
     ) {
         return element;
     }

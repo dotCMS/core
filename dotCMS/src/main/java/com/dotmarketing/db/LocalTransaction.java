@@ -225,7 +225,7 @@ public class LocalTransaction {
     } // handleException.
 
 
-    private static void handleTransactionInteruption(final Connection conn,
+    public static void handleTransactionInteruption(final Connection conn,
             final StackTraceElement[] threadStack) throws DotDataException {
         if (DbConnectionFactory.getConnection() != conn) {
             final String action = Config.getStringProperty("LOCAL_TRANSACTION_INTERUPTED_ACTION",
@@ -243,7 +243,7 @@ public class LocalTransaction {
     }
 
 
-    private static void throwException(final Throwable e) throws Exception {
+    public static void throwException(final Throwable e) throws Exception {
 
         if (e instanceof Exception) {
 
