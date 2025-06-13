@@ -6,6 +6,8 @@ import com.dotcms.api.system.event.message.SystemMessageEventUtil;
 import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.auth.providers.jwt.JsonWebTokenUtils;
+import com.dotcms.auth.providers.jwt.beans.ApiToken;
+import com.dotcms.auth.providers.jwt.factories.ApiTokenAPI;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.enterprise.LicenseUtil;
@@ -325,6 +327,7 @@ public class LoginServiceAPIFactory implements Serializable {
                 if (Config.getBooleanProperty("show.lts.eol.message", false)) {
                     messageLTSVersionEOL(logInUser);
                 }
+                messageTokensToExpire(logInUser);
             }
 
             if (authResult != Authenticator.SUCCESS) {
@@ -698,6 +701,57 @@ public class LoginServiceAPIFactory implements Serializable {
             return this.getLoggedInUser(request);
         }
     }
+
+    /**
+     * This function notifies API Tokens that are about to expire within the next 7 days.
+     * If the user is an admin, it checks all users in the system, and notifies about all of them.
+     * If the user is not an admin, it checks and notifies only the logged in user.
+     */
+    private void messageTokensToExpire(User logInUser) throws DotDataException {
+
+        SystemMessageBuilder message = null;
+        ApiTokenAPI apiToken = APILocator.getApiTokenAPI();
+        if (logInUser.isAdmin()) {
+            List<User> users = APILocator.getUserAPI().findAllUsers();
+            for (User user : users) {
+                List<ApiToken> tokens = apiToken.findApiTokensByUserId(user.getUserId(), false, logInUser);
+                if (UtilMethods.isSet(tokens)) {
+                    if (apiToken.hasAnyTokenExpiring(tokens)) {
+                         message = new SystemMessageBuilder()
+                                .setMessage("User " + user.getFullName() + " has API Tokens that are about to expire within the next 7 days. Please review their tokens.")
+                                .setSeverity(MessageSeverity.WARNING)
+                                .setType(MessageType.SIMPLE_MESSAGE)
+                                .setLife(86400000);
+                         sendMessageDelayed(message, logInUser);
+                    }
+                }
+            }
+        } else {
+            List<ApiToken> tokens = apiToken.findApiTokensByUserId(logInUser.getUserId(), false, logInUser);
+            if (UtilMethods.isSet(tokens)) {
+
+                if (apiToken.hasAnyTokenExpiring(tokens)) {
+                     message = new SystemMessageBuilder()
+                            .setMessage("You have API Tokens that are about to expire within the next 7 days. Please review your tokens.")
+                            .setSeverity(MessageSeverity.WARNING)
+                            .setType(MessageType.SIMPLE_MESSAGE)
+                            .setLife(86400000);
+                    sendMessageDelayed(message, logInUser);
+                }
+            }
+        }
+
+    }
+
+    private void sendMessageDelayed(SystemMessageBuilder message, User user) {
+        final SystemMessageBuilder finalMessage = message;
+        DotConcurrentFactory.getInstance().getSubmitter().delay(() -> {
+                    SystemMessageEventUtil.getInstance().pushMessage(finalMessage.create(), list(user.getUserId()));
+                    Logger.info("", finalMessage.create().getMessage().toString());
+                },
+                3000, TimeUnit.MILLISECONDS);
+    }
+    
 
     /**
      * Message to show LTS version is reaching or already reached EOL.

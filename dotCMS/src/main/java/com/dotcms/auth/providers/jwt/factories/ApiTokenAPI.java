@@ -14,6 +14,7 @@ import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.json.JSONObject;
@@ -494,6 +495,18 @@ public class ApiTokenAPI {
             return true;
         }
 
+    }
+
+    /**
+     * Validates from a token list if there is at least one that is about to expire within the next 7 days.
+     * */
+    public boolean hasAnyTokenExpiring (List<ApiToken> tokens) {
+        return tokens.stream()
+                .filter(token -> token.getExpiresDate() != null)
+                .anyMatch(token -> {
+                    final long daysLeftToExpire = DateUtil.diffDates(new Date(), token.getExpiresDate()).get("diffDays");
+                    return daysLeftToExpire <= 7;
+                });
     }
 
 }
