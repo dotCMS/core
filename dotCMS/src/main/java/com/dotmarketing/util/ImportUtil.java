@@ -2206,7 +2206,13 @@ public class ImportUtil {
      * Processes a category field from a CSV line.
      * <p>
      * This method validates and processes the category field, converting the comma-separated
-     * category keys into a set of Category objects. If any category key is invalid, an error is
+     * category keys into a set of Category objects.
+     * Each category must:
+     * <ul>
+     *   <li>Exist in the system</li>
+     *   <li>Be a descendant of the configured root category (i.e. within the allowed hierarchy)</li>
+     * </ul>
+     * If any category key is invalid, an error is
      * added to the resultBuilder and a DotRuntimeException is thrown.
      *
      * @param field         the field definition containing type and validation rules
@@ -2217,27 +2223,104 @@ public class ImportUtil {
      * @throws DotDataException     if a data access error occurs during processing
      * @throws DotSecurityException if a security violation occurs during processing
      */
-    private static Set<Category> validateCategoryField(final Field field, final String value,
-            final User user, final FieldProcessingResultBuilder resultBuilder
+    private static Set<Category> validateCategoryField(
+            final Field field,
+            final String value,
+            final User user,
+            final FieldProcessingResultBuilder resultBuilder
     ) throws DotDataException, DotSecurityException {
+
         Set<Category> categories = new HashSet<>();
-        if (UtilMethods.isSet(value)) {
-            String[] categoryKeys = value.split(",");
-            for (String catKey : categoryKeys) {
-                Category cat = catAPI.findByKey(catKey.trim(), user, false);
-                if (cat == null) {
-                    throw ImportLineException.builder()
-                            .message("Invalid category key found")
-                            .code(ImportLineValidationCodes.INVALID_CATEGORY_KEY.name())
-                            .field(field.getVelocityVarName())
-                            .invalidValue(value)
-                            .build();
-                }
-                categories.add(cat);
-                resultBuilder.addCategory(cat);
-            }
+        if (!UtilMethods.isSet(value)) {
+            return categories;
         }
+
+        final Category configuredRootCategory = findConfiguredRootCategory(field, user);
+
+        // Defensive check — should not normally occur
+        if (configuredRootCategory == null) {
+            throw ImportLineException.builder()
+                    .message(String.format(
+                            "Root category configured for field '%s' could not be found. Please check the field configuration.",
+                            field.getVelocityVarName()
+                    ))
+                    .code(ImportLineValidationCodes.INVALID_CATEGORY_KEY.name())
+                    .field(field.getVelocityVarName())
+                    .invalidValue(value)
+                    .build();
+        }
+
+        String[] categoryKeys = value.split(",");
+        for (String catKey : categoryKeys) {
+            String key = catKey.trim();
+            Category cat = validateCategoryKey(key, configuredRootCategory, field, user);
+            categories.add(cat);
+            resultBuilder.addCategory(cat);
+        }
+
         return categories;
+    }
+
+
+    /**
+     * Given a field previously determined to be of type Category, this method retrieves
+     * the configured root category associated with that field.
+     * <p>
+     * The root category defines the top-level constraint under which all assigned
+     * categories must reside. If no such category is found, the method returns null.
+     *
+     * @param categoryField the field whose associated root category is to be retrieved
+     * @param user          the user performing the operation (for permission checks)
+     * @return the configured root Category for the field, or null if not found or inaccessible
+     */
+    private static Category findConfiguredRootCategory(final Field categoryField, final User user) {
+        Category category = null;
+        try {
+            category = catAPI.find(categoryField.getValues(), user, false);
+        } catch (final DotSecurityException | DotDataException e) {
+            Logger.error(ImportUtil.class, String.format(
+                    "User '%s' couldn't get the configured root Category from field '%s': %s",
+                    user != null ? user.getUserId() : null,
+                    categoryField.getCategoryId(),
+                    e.getMessage()), e);
+        }
+        return category;
+    }
+
+
+    /**
+     * Validates a single category key against the configured root category for a field.
+     * <p>
+     * This method ensures that:
+     * <ul>
+     *   <li>The category identified by the given key exists in the system</li>
+     *   <li>The category is a descendant (child, grandchild, etc.) of the specified root category</li>
+     * </ul>
+     * If the key is invalid, an {@link ImportLineException} is thrown with context for debugging.
+     *
+     * @param key           the raw category key to validate
+     * @param rootCategory  the root category that all valid categories must descend from
+     * @param field         the field definition this key is associated with (used for error reporting)
+     * @param user          the user performing the operation (used for permission checks)
+     * @return the valid {@link Category} object corresponding to the key
+     * @throws DotDataException     if a data access error occurs
+     * @throws DotSecurityException if a security or permission error occurs
+     * @throws ImportLineException  if the category does not exist or is not under the root category
+     */
+    private static Category validateCategoryKey(final String key, final Category rootCategory, final Field field, final User user) throws DotDataException, DotSecurityException {
+        Category cat = catAPI.findByKey(key, user, false);
+        if (cat == null || !catAPI.isParent(cat, rootCategory, user)) {
+            throw ImportLineException.builder()
+                    .message(String.format(
+                            "Invalid category key found: '%s'. It must exist and be a child of '%s'.",
+                            key, rootCategory.getCategoryName()
+                    ))
+                    .code(ImportLineValidationCodes.INVALID_CATEGORY_KEY.name())
+                    .field(field.getVelocityVarName())
+                    .invalidValue(key)
+                    .build();
+        }
+        return cat;
     }
 
     /**
