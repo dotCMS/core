@@ -251,7 +251,8 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
         this.editField.emit({
             ...this.currentField,
             clazz: 'com.dotcms.contenttype.model.field.ImmutableStoryBlockField',
-            fieldType: 'Story-Block'
+            fieldType: 'Story-Block',
+            dataType: 'LONG_TEXT'
         });
         this.toggleDialog();
     }

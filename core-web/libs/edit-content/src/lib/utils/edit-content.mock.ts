@@ -500,7 +500,6 @@ export const MOCK_CONTENTTYPE_2_TABS: DotCMSContentType = {
             fixed: false,
             fieldVariables: [],
             fieldTypeLabel: 'Column',
-
             contentTypeId: '196c8d303e265143806ad19356406ae3',
             clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField'
         },

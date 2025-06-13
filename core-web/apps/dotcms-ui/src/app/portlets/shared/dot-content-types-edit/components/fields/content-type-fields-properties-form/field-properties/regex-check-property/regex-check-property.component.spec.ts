@@ -7,7 +7,7 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
-import { dotcmsContentTypeFieldBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
+import { MockDotMessageService, createFakeTextField } from '@dotcms/utils-testing';
 
 import { RegexCheckPropertyComponent } from './index';
 
@@ -43,9 +43,10 @@ describe('RegexCheckPropertyComponent', () => {
         comp.property = {
             name: 'regexCheck',
             value: 'value',
-            field: {
-                ...dotcmsContentTypeFieldBasicMock
-            }
+            field: createFakeTextField({
+                id: '1',
+                name: 'field-1'
+            })
         };
     }));
 

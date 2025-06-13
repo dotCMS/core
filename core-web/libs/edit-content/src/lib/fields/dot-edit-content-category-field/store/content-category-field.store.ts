@@ -9,7 +9,7 @@ import { computed, inject } from '@angular/core';
 import { filter, switchMap, tap } from 'rxjs/operators';
 
 import { DotHttpErrorManagerService } from '@dotcms/data-access';
-import { ComponentStatus, DotCategory, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { ComponentStatus, DotCategory, ContentTypeCategoryField } from '@dotcms/dotcms-models';
 
 import {
     CategoryFieldViewMode,
@@ -34,7 +34,7 @@ import {
 } from '../utils/category-field.utils';
 
 export type CategoryFieldState = {
-    field: DotCMSContentTypeField;
+    field: ContentTypeCategoryField | null;
     selected: DotCategoryFieldKeyValueObj[]; // <- source of selected
     categories: DotCategory[][];
     keyParentPath: string[]; // Delete when we have the endpoint for this
@@ -51,7 +51,7 @@ export type CategoryFieldState = {
 };
 
 export const initialState: CategoryFieldState = {
-    field: {} as DotCMSContentTypeField,
+    field: null,
     selected: [],
     categories: [],
     keyParentPath: [],
@@ -83,12 +83,12 @@ export const CategoryFieldStore = signalStore(
         /**
          * Get the root category inode.
          */
-        rootCategoryInode: computed(() => store.field().values),
+        rootCategoryInode: computed(() => store.field()?.values),
 
         /**
          * Retrieves the value of the field variable.
          */
-        fieldVariableName: computed(() => store.field().variable),
+        fieldVariableName: computed(() => store.field()?.variable),
 
         /**
          * Status of the List Component

@@ -1,5 +1,5 @@
-import { DotCategory, DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
-import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DotCategory, DotCMSContentlet } from '@dotcms/dotcms-models';
+import { createFakeCategoryField, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotCategoryFieldKeyValueObj, HierarchyParent } from '../models/dot-category-field.models';
 import { transformCategories } from '../utils/category-field.utils';
@@ -51,7 +51,7 @@ export const CATEGORY_FIELD_CONTENTLET_MOCK: DotCMSContentlet = {
 /**
  * Mock of the Field Category
  */
-export const CATEGORY_FIELD_MOCK: DotCMSContentTypeField = {
+export const CATEGORY_FIELD_MOCK = createFakeCategoryField({
     categories: {
         categoryName: 'Categorias',
         description: null,
@@ -81,7 +81,7 @@ export const CATEGORY_FIELD_MOCK: DotCMSContentTypeField = {
     unique: false,
     values: 'b3da6475e34655bed79919984bc34fc4',
     variable: CATEGORY_FIELD_VARIABLE_NAME
-};
+});
 
 /**
  * Represent a Category List of level 1 with children `childrenCount`
