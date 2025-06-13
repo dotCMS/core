@@ -128,7 +128,7 @@ function getTemplateCallBack(data) {
         imageEl.src  = "/html/images/shim.gif";
         imageEl.style.border = '0px';
     }
-    
+
 }
 
 dojo.ready(function(){
@@ -141,7 +141,7 @@ dojo.ready(function(){
     const templateStore = new dotcms.dojo.data.TemplateReadStore({
         hostId: '',
         templateSelected: templateId,
-        allSiteLabel: true
+        allSiteLabel: true,
     });
 
     const templateSelect = new dijit.form.FilteringSelect({
@@ -175,8 +175,7 @@ dojo.ready(function(){
         },
         queryOptions: {},
         start: 0,
-        count: 1000,
-        sort: [],
+        count: 15,
         onComplete: onTemplateFetchComplete
     };
 
