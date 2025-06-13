@@ -1,14 +1,16 @@
 {
   "name": "@dotcms/angular",
   "version": "0.0.1-beta.2",
-  "dependencies": {
+  "peerDependencies": {
+    "rxjs": ">=7.0.0",
     "@angular/common": ">=17.0.0",
     "@angular/core": ">=17.0.0",
-    "@angular/router": ">=17.0.0",
+    "@angular/router": ">=17.0.0"
+  },
+  "dependencies": {
     "@dotcms/uve": "next",
     "@dotcms/client": "next",
-    "@tinymce/tinymce-angular": "8.0.0",
-    "rxjs": ">=7.0.0"
+    "@tinymce/tinymce-angular": "8.0.0"
   },
   "devDependencies": {
     "@dotcms/types": "next"

@@ -1,13 +1,17 @@
 {
   "name": "@dotcms/react",
   "version": "0.0.1-beta-2",
-  "dependencies": {
+  "peerDependencies": {
     "react": ">=18",
-    "react-dom": ">=18",
+    "react-dom": ">=18"
+  },
+  "dependencies": {
     "@dotcms/uve": "next",
     "@dotcms/client": "next",
-    "@dotcms/types": "next",
     "@tinymce/tinymce-react": "6.2.1"
+  },
+  "devDependencies": {
+    "@dotcms/types": "next"
   },
   "description": "Official React Components library to render a dotCMS page.",
   "repository": {
