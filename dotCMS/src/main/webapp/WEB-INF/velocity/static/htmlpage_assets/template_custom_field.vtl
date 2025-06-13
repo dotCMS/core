@@ -5,6 +5,7 @@
     // Configuration
     const CONFIG = {
         DEBUG_MODE: false,
+        DEBUG_MODE: true,
         PAGE_SIZE: 15,
         SEARCH_DELAY: 300,
         FILTER_SELECT_WIDTH: '350px',
@@ -240,7 +241,7 @@
                 }
             })
             .catch((error) => {
-                Logger.error('Error fetching template image:', error);
+                Logger.warn('Error fetching template image:', error);
                 this.resetTemplateImage();
             });
         },
@@ -316,6 +317,7 @@
     // Event Handlers
     const EventHandlers = {
         onTemplateFetchComplete: function(templates, currentRequest) {
+
             try {
                 Logger.log('Template fetch completed with', templates ? templates.length : 0, 'templates');
 
@@ -332,7 +334,11 @@
                 const template = isTemplateValid ? mapById[templateId] : mapByName[normalizedName];
 
                 if (template) {
-                    TemplateManager.setSelectedTemplate(template);
+
+                    // Change only if the template is different from the current selected template
+                    if (templateId !== currentRequest.query.templateSelected) {
+                        TemplateManager.setSelectedTemplate(template);
+                    }
                 } else {
                     Logger.warn('No matching template found for current selection');
                 }
