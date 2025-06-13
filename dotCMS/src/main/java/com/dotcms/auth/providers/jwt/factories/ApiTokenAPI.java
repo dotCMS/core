@@ -505,7 +505,7 @@ public class ApiTokenAPI {
                 .filter(token -> token.getExpiresDate() != null)
                 .anyMatch(token -> {
                     final long daysLeftToExpire = DateUtil.diffDates(new Date(), token.getExpiresDate()).get("diffDays");
-                    return daysLeftToExpire <= 7;
+                    return daysLeftToExpire >= 0 && daysLeftToExpire <= 7;
                 });
     }
 
