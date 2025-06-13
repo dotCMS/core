@@ -67,8 +67,13 @@ public class ElasticsearchHealthCheck extends HealthCheckBase {
     }
     
     @Override
+    protected HealthCheckMode getDefaultMode() {
+        return HealthCheckMode.MONITOR_MODE;
+    }
+    
+    @Override
     public int getOrder() {
-        return 40; // Lower priority - search dependency
+        return 40; // Medium priority - search dependency
     }
     
     /**

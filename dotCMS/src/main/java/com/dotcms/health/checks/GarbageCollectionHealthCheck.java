@@ -166,6 +166,11 @@ public class GarbageCollectionHealthCheck extends HealthCheckBase {
     }
     
     @Override
+    protected HealthCheckMode getDefaultMode() {
+        return HealthCheckMode.MONITOR_MODE;
+    }
+    
+    @Override
     public int getOrder() {
         return 50; // Lower priority - performance monitoring
     }

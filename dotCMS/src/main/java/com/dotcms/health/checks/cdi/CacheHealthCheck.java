@@ -48,6 +48,11 @@ public class CacheHealthCheck extends HealthCheckBase {
     }
     
     @Override
+    protected HealthCheckMode getDefaultMode() {
+        return HealthCheckMode.MONITOR_MODE;
+    }
+    
+    @Override
     public int getOrder() {
         return 30; // Medium priority - dependency check
     }

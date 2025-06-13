@@ -122,15 +122,41 @@ public abstract class HealthCheckBase implements HealthCheck {
     protected abstract CheckResult performCheck() throws Exception;
     
     /**
+     * Returns whether system details should be included in health check results.
+     * This is controlled by the global health.include.system-details property.
+     */
+    protected boolean shouldIncludeSystemDetails() {
+        return HealthCheckConfig.INCLUDE_SYSTEM_DETAILS;
+    }
+    
+    /**
+     * Returns whether performance metrics should be included in health check results.
+     * This is controlled by the global health.include.performance-metrics property.
+     */
+    protected boolean shouldIncludePerformanceMetrics() {
+        return HealthCheckConfig.INCLUDE_PERFORMANCE_METRICS;
+    }
+    
+    /**
      * Gets the safety mode for this health check from configuration.
      * Uses the naming convention: health.check.{getName()}.mode
      */
     protected HealthCheckMode getMode() {
         String modeString = Config.getStringProperty(
             "health.check." + getName() + ".mode", 
-            "PRODUCTION"
+            getDefaultMode().name()
         );
         return HealthCheckConfig.parseMode(modeString);
+    }
+    
+    /**
+     * Returns the default mode for this health check.
+     * Override this method to provide a different default mode.
+     * 
+     * @return The default HealthCheckMode for this health check
+     */
+    protected HealthCheckMode getDefaultMode() {
+        return HealthCheckMode.PRODUCTION;
     }
     
     /**
@@ -202,7 +228,7 @@ public abstract class HealthCheckBase implements HealthCheck {
             message.append("[").append(mode.name()).append(" mode] ");
         }
         
-        boolean includeDetails = Config.getBooleanProperty("health.include.system-details", true);
+        boolean includeDetails = shouldIncludeSystemDetails();
         
         if (!includeDetails) {
             return message.toString() + createBasicMessage(result.healthy, mode, finalStatus);
@@ -211,13 +237,13 @@ public abstract class HealthCheckBase implements HealthCheck {
         // Detailed message
         String baseMessage = result.details;
         if (finalStatus == HealthStatus.DEGRADED && !result.healthy) {
-            baseMessage += " (converted to DEGRADED for safe deployment)";
+            baseMessage += " (converted to DEGRADED for MONITOR_MODE)";
         }
         
         message.append(baseMessage);
         
         // Add performance metrics if enabled
-        boolean includeMetrics = HealthCheckConfig.INCLUDE_PERFORMANCE_METRICS;
+        boolean includeMetrics = shouldIncludePerformanceMetrics();
         if (includeMetrics && result.healthy) {
             message.append(String.format(" [%dms]", result.durationMs));
         }
