@@ -1,4 +1,13 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    computed,
+    DestroyRef,
+    inject,
+    input,
+    OnInit
+} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ControlContainer, FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 import { CheckboxModule } from 'primeng/checkbox';
@@ -6,6 +15,7 @@ import { CheckboxModule } from 'primeng/checkbox';
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
 import { getSingleSelectableFieldOptions } from '../../utils/functions.util';
+
 @Component({
     selector: 'dot-edit-content-checkbox-field',
     standalone: true,
@@ -18,34 +28,73 @@ import { getSingleSelectableFieldOptions } from '../../utils/functions.util';
         }
     ],
     template: `
-        @for (option of $options(); track $index) {
+        @for (option of $options(); track option.value) {
             <p-checkbox
                 [name]="$field().variable"
-                [formControl]="formControl"
+                [formControl]="$safeFormControl()"
                 [value]="option.value"
-                [label]="option.label"
-                [inputId]="option.value.toString() + $index" />
+                [label]="option.label || null"
+                [inputId]="$field().variable + '-' + option.value"
+                data-testid="checkbox-option" />
         }
     `,
     styleUrls: ['./dot-edit-content-checkbox-field.component.scss']
 })
-export class DotEditContentCheckboxFieldComponent {
-    private readonly controlContainer = inject(ControlContainer);
+export class DotEditContentCheckboxFieldComponent implements OnInit {
+    #controlContainer = inject(ControlContainer);
+    #destroyRef = inject(DestroyRef);
 
     $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
-    $options = computed(() => {
-        const field = this.$field();
 
-        return getSingleSelectableFieldOptions(field.values || '', field.dataType);
-    });
+    #safeControl: FormControl | null = null;
+
+    $options = computed(() =>
+        getSingleSelectableFieldOptions(this.$field().values || '', this.$field().dataType)
+    );
 
     /**
-     * Returns the form control for the select field.
-     * @returns {AbstractControl} The form control for the select field.
+     * Returns a FormControl that ensures values are always arrays for PrimeNG checkbox compatibility.
      */
-    get formControl() {
-        const field = this.$field();
+    $safeFormControl = computed(() => this.#safeControl!);
 
-        return this.controlContainer.control.get(field.variable) as FormControl;
+    ngOnInit() {
+        const originalControl = this.formControl;
+        const initialValue = this.toArray(originalControl.value);
+
+        // Create safe control with array values
+        this.#safeControl = new FormControl(initialValue);
+
+        // Sync: array (safe) → string (original) with automatic cleanup
+        this.#safeControl.valueChanges
+            .pipe(takeUntilDestroyed(this.#destroyRef))
+            .subscribe((arrayValue) => {
+                const stringValue = Array.isArray(arrayValue) ? arrayValue.join(',') : '';
+                originalControl.setValue(stringValue, { emitEvent: false });
+            });
+
+        // Initialize the original control with proper string format
+        originalControl.setValue(initialValue.join(','), { emitEvent: false });
+    }
+
+    /**
+     * Converts any value to array format for checkbox handling.
+     */
+    private toArray(value: unknown): string[] {
+        if (Array.isArray(value)) return value;
+        if (value && typeof value === 'string') {
+            return value
+                .split(',')
+                .map((v) => v.trim())
+                .filter((v) => v);
+        }
+
+        return [];
+    }
+
+    /**
+     * Returns the original FormControl for the checkbox field.
+     */
+    get formControl(): FormControl {
+        return this.#controlContainer.control.get(this.$field().variable) as FormControl;
     }
 }

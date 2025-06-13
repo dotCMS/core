@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, Input, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core';
 import { ControlContainer, ReactiveFormsModule } from '@angular/forms';
 
 import { InputTextModule } from 'primeng/inputtext';
@@ -22,7 +22,7 @@ import { INPUT_TEXT_OPTIONS } from './utils';
     ]
 })
 export class DotEditContentTextFieldComponent {
-    @Input() field!: DotCMSContentTypeField;
+    $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
 
     readonly inputTextOptions = INPUT_TEXT_OPTIONS;
 }

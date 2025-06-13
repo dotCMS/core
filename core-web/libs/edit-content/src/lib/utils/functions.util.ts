@@ -10,8 +10,10 @@ import {
 } from '@dotcms/dotcms-models';
 import { UVE_MODE } from '@dotcms/types';
 
+import { CustomFieldConfig } from '../models/dot-edit-content-custom-field.interface';
 import {
     CALENDAR_FIELD_TYPES,
+    DEFAULT_CUSTOM_FIELD_CONFIG,
     FLATTENED_FIELD_TYPES,
     TAB_FIELD_CLAZZ,
     UNCASTED_FIELD_TYPES
@@ -58,30 +60,70 @@ export const castSingleSelectableValue = (
     }
 };
 
-// This function creates the model for the Components that use the Single Selectable Field, like the Select, Radio Button and Checkbox
+/**
+ * Parses field options for single selectable fields (Checkbox, Radio, Select).
+ * Supports dotCMS formats as per official documentation:
+ * - Multi-line pipe format: "foo|1\r\nbar|2\r\nthird item|c"
+ * - Special case: "|true" creates checkbox without label
+ * - Simple comma format: "1,2,3" (when no pipes present or single-line with pipes)
+ */
 export const getSingleSelectableFieldOptions = (
     options: string,
     dataType: string
 ): { label: string; value: DotEditContentFieldSingleSelectableDataTypes }[] => {
-    const lines = (options?.split('\r\n') ?? []).filter((line) => line.trim() !== '');
+    if (!options?.trim()) return [];
 
-    return lines
-        .map((line) => {
-            const [label, value = label] = line.split('|').map((value) => value.trim());
+    const hasLineBreaks = /\r\n|\n|\r/.test(options);
+    const hasPipes = /\|/.test(options);
 
-            const castedValue = castSingleSelectableValue(value, dataType);
-            if (castedValue === null) {
-                return null;
+    let items: string[] = [];
+    let isPipeFormat = false;
+
+    if (hasPipes && hasLineBreaks) {
+        // Multi-line pipe format (standard dotCMS format)
+        items = options.split(/\r\n|\n|\r/).filter((line) => line.trim());
+        isPipeFormat = true;
+    } else if (hasPipes && !hasLineBreaks && options.trim().startsWith('|')) {
+        // Special case: "|true" (checkbox without label)
+        items = [options.trim()];
+        isPipeFormat = true;
+    } else {
+        // Simple comma format or single-line with pipes treated as comma format
+        items = options
+            .split(',')
+            .map((v) => v.trim())
+            .filter((v) => v);
+        isPipeFormat = false;
+    }
+
+    return items
+        .map((item) => {
+            let label: string;
+            let value: string;
+
+            if (isPipeFormat) {
+                // Pipe format: "foo|1" -> label="foo", value="1"
+                // Special case: "|true" -> label="", value="true" (checkbox without label)
+                const parts = item.split('|');
+                label = (parts[0] || '').trim(); // Allow empty label for "|true" case
+                value = parts[1]?.trim() || parts[0]?.trim() || '';
+            } else {
+                // Comma format: "1" -> label="1", value="1"
+                label = item;
+                value = item;
             }
 
-            return { label, value: castedValue };
+            // Skip only if value is empty (allow empty labels for "|true" case)
+            if (!value) return null;
+
+            const castedValue = castSingleSelectableValue(value, dataType);
+
+            return castedValue !== null ? { label, value: castedValue } : null;
         })
-        .filter(
-            (
-                item
-            ): item is { label: string; value: DotEditContentFieldSingleSelectableDataTypes } =>
-                item !== null
-        );
+        .filter(Boolean) as {
+        label: string;
+        value: DotEditContentFieldSingleSelectableDataTypes;
+    }[];
 };
 
 // This function is used to cast the value to a correct type for the Angular Form
@@ -366,3 +408,71 @@ export const prepareContentletForCopy = (contentlet: DotCMSContentlet): DotCMSCo
     locked: false,
     lockedBy: undefined
 });
+
+/**
+ * Extracts and parses custom field options from field variables.
+ * Looks for 'customFieldOptions' key and parses its JSON value.
+ *
+ * @param fieldVariables - Array of field variables
+ * @returns Parsed custom field options object
+ *
+ * @example
+ * ```ts
+ * const options = getCustomFieldOptions(field.fieldVariables);
+ * console.log(options.showAsModal); // true
+ * ```
+ */
+export const getCustomFieldOptions = (
+    fieldVariables: DotCMSContentTypeFieldVariable[]
+): Partial<CustomFieldConfig> => {
+    const parsedVars = getFieldVariablesParsed<Record<string, string | boolean>>(fieldVariables);
+    const { customFieldOptions } = parsedVars;
+
+    return stringToJson(customFieldOptions as string);
+};
+
+/**
+ * Creates a complete custom field configuration by merging custom options with defaults
+ * and applying individual field variable overrides.
+ *
+ * @param fieldVariables - Array of field variables
+ * @returns Complete custom field configuration with defaults applied
+ *
+ * @example
+ * ```ts
+ * const config = createCustomFieldConfig(field.fieldVariables);
+ * console.log(config.width); // "90vw" or default "500px"
+ * ```
+ */
+export const createCustomFieldConfig = (
+    fieldVariables: DotCMSContentTypeFieldVariable[]
+): CustomFieldConfig => {
+    const customOptions = getCustomFieldOptions(fieldVariables);
+
+    const individualVars =
+        getFieldVariablesParsed<Record<string, string | boolean>>(fieldVariables);
+
+    // Use the default configuration from constants
+    const defaults: CustomFieldConfig = { ...DEFAULT_CUSTOM_FIELD_CONFIG };
+
+    // Merge with custom options from JSON
+    const mergedConfig: CustomFieldConfig = {
+        ...defaults,
+        ...customOptions
+    };
+
+    // Override with individual field variables (highest priority)
+    if (individualVars.showAsModal !== undefined) {
+        mergedConfig.showAsModal = individualVars.showAsModal as boolean;
+    }
+
+    if (individualVars.width) {
+        mergedConfig.width = individualVars.width as string;
+    }
+
+    if (individualVars.height) {
+        mergedConfig.height = individualVars.height as string;
+    }
+
+    return mergedConfig;
+};
