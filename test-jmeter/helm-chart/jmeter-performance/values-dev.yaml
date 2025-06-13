@@ -1,0 +1,31 @@
+# Development environment values
+namespace:
+  name: "analytics-dev"
+
+endpoints:
+  dotcms:
+    host: "dev-auth.dotcms.cloud"
+  analytics:
+    host: "jitsu-api.analytics-dev.svc.cluster.local"
+
+environment:
+  name: "dev"
+  cluster: "dev-cluster"
+  customer: "example-customer-dev"
+  docHost: "dev-auth.dotcms.cloud"
+
+pod:
+  resources:
+    requests:
+      cpu: "1000m"
+      memory: "2Gi"
+    limits:
+      cpu: "2000m"
+      memory: "4Gi"
+
+testing:
+  limits:
+    dotcms:
+      levels: [10, 25, 50, 75]  # Lower limits for dev
+    analytics:
+      levels: [50, 100, 200, 300]  # Lower limits for dev 

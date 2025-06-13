@@ -1,0 +1,43 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: jmeter-test-pod
+  namespace: analytics-dev
+  labels:
+    app: jmeter-load-test
+spec:
+  containers:
+  - name: jmeter
+    image: alpine:3.18
+    resources:
+      requests:
+        cpu: "2000m"
+        memory: "4Gi"
+      limits:
+        cpu: "4000m"
+        memory: "8Gi"
+    env:
+    - name: HEAP
+      value: "-Xms4g -Xmx6g"
+    - name: JMETER_JVM_ARGS
+      value: "-Xms4g -Xmx6g -XX:+UseG1GC -XX:MaxGCPauseMillis=100 -XX:G1ReservePercent=20"
+    command: ["/bin/sh"]
+    args: ["-c", "apk add --no-cache openjdk11-jre curl bash && wget https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-5.6.2.tgz && tar -xzf apache-jmeter-5.6.2.tgz && mv apache-jmeter-5.6.2 /opt/jmeter && export PATH=/opt/jmeter/bin:$PATH && while true; do sleep 3600; done"]
+    volumeMounts:
+    - name: jmeter-scripts
+      mountPath: /opt/jmeter-scripts
+    - name: jmx-tests
+      mountPath: /opt/jmx-tests
+    - name: test-results
+      mountPath: /opt/test-results
+  volumes:
+  - name: jmeter-scripts
+    configMap:
+      name: jmeter-scripts
+      defaultMode: 0755
+  - name: jmx-tests
+    configMap:
+      name: jmeter-jmx-tests
+  - name: test-results
+    emptyDir: {}
+  restartPolicy: Never 
