@@ -107,6 +107,17 @@ Note: When accessing `localhost:4200/about`, ensure that the `/about` page exist
 
 ## Key Features
 
+### How dotCMS Routes Pages
+dotCMS allows a single page to be accessed via multiple URL paths (e.g., / and /index for the same "Home" page). This flexibility means your Angular application needs to handle these variations.
+
+To ensure all paths to the same content are properly managed and to prevent 404/500 errors, we recommend using a catch-all route strategy in Angular.
+
+How to Implement in Angular:
+
+Configure a wildcard route `(**)` as the last route in your Angular application's routing configuration. This route will capture any undefined paths, allowing you to fetch content from dotCMS based on the full URL.
+
+You can learn more about Angular routing strategies [here](https://angular.dev/guide/routing/common-router-tasks)
+
 ### Handling Vanity URLs
 
 This example demonstrates how to integrate dotCMS Vanity URLs with Angular routing. Vanity URLs in dotCMS provide alternative paths to internal or external URLs, enhancing site maintenance and SEO.
