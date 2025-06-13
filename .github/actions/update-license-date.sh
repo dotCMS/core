@@ -15,54 +15,14 @@ LICENSE_FILE="${REPO_ROOT}/LICENSE"
 # Get current date in the required format (e.g., "June 01, 2025")
 CURRENT_DATE=$(date "+%B %d, %Y")
 
-# Find the line containing "Change Date:" and extract the current date
-CURRENT_LINE=$(grep "^Change Date:" "$LICENSE_FILE")
-
-if [ -z "$CURRENT_LINE" ]; then
-    echo "Error: Could not find 'Change Date:' line in LICENSE file"
-    exit 1
-fi
-
-# Extract the date from the current line (everything after "Four years from ")
-CURRENT_DATE_IN_FILE=$(echo "$CURRENT_LINE" | sed 's/.*Four years from //')
-
-# Validate the date format (should match Month DD, YYYY pattern)
-if ! echo "$CURRENT_DATE_IN_FILE" | grep -qE "^[A-Za-z]+ [0-9]{1,2}, [0-9]{4}$"; then
-    echo "Warning: Invalid date format found in LICENSE file: '$CURRENT_DATE_IN_FILE'"
-    echo "Updating to current date: $CURRENT_DATE"
-    sed -i.bak "s/^Change Date:.*/Change Date:     Four years from $CURRENT_DATE/" "$LICENSE_FILE"
-    if [ $? -eq 0 ]; then
-        echo "Successfully updated LICENSE file with current date"
-        echo "Backup created as ${LICENSE_FILE}.bak"
-    else
-        echo "Error updating LICENSE file"
-        exit 1
-    fi
-    exit 0
-fi
-
-# Normalize both dates by removing leading zeros from days
-NORMALIZED_CURRENT_DATE=$(echo "$CURRENT_DATE" | sed 's/ 0\([0-9]\),/, \1,/')
-NORMALIZED_DATE_IN_FILE=$(echo "$CURRENT_DATE_IN_FILE" | sed 's/ 0\([0-9]\),/, \1,/')
-
-# Check if the date needs to be updated
-if [ "$NORMALIZED_DATE_IN_FILE" = "$NORMALIZED_CURRENT_DATE" ]; then
-    echo "LICENSE file already has the current date: $CURRENT_DATE"
-    echo "No update needed."
-    exit 0
-fi
-
-echo "Updating LICENSE file Change Date from '$CURRENT_DATE_IN_FILE' to '$CURRENT_DATE'"
-
 # Create the new line with the current date
 NEW_LINE="Change Date:     Four years from $CURRENT_DATE"
 
 # Update the file using sed to replace the line that starts with "Change Date:"
-sed -i.bak "s/^Change Date:.*/Change Date:     Four years from $CURRENT_DATE/" "$LICENSE_FILE"
+sed -i "s/^Change Date:.*/$NEW_LINE/" "$LICENSE_FILE"
 
 if [ $? -eq 0 ]; then
     echo "Successfully updated LICENSE file"
-    echo "Backup created as ${LICENSE_FILE}.bak"
 else
     echo "Error updating LICENSE file"
     exit 1
