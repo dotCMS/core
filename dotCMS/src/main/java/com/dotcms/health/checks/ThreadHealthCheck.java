@@ -18,7 +18,11 @@ import java.util.Map;
  * - health.check.threads.mode = Safety mode (PRODUCTION, DEGRADED_SAFE, MONITORING_ONLY, DISABLED)
  * - health.check.threads.timeout-ms = Thread check timeout (default: 2000ms)
  * - health.check.threads.deadlock-detection = Enable deadlock detection (default: true)
- * - health.check.threads.pool-threshold-multiplier = Thread count threshold multiplier (default: 4)
+ * - health.check.threads.pool-threshold-multiplier = Thread count threshold multiplier (default: 20)
+ * 
+ * Note: This check is disabled by default (DISABLED mode) to allow for testing and tuning
+ * of the thread threshold multiplier in production environments. Once an appropriate
+ * threshold is determined, the mode can be changed to PRODUCTION or DEGRADED_SAFE.
  */
 public class ThreadHealthCheck extends HealthCheckBase {
     
@@ -28,7 +32,7 @@ public class ThreadHealthCheck extends HealthCheckBase {
     @Override
     protected CheckResult performCheck() throws Exception {
         boolean enableDeadlockDetection = getConfigProperty("deadlock-detection", true);
-        int threadThresholdMultiplier = getConfigProperty("pool-threshold-multiplier", 4);
+        int threadThresholdMultiplier = getConfigProperty("pool-threshold-multiplier", 20);
         
         // Use utility for the actual thread health check
         return measureExecution(() -> 
@@ -119,7 +123,7 @@ public class ThreadHealthCheck extends HealthCheckBase {
     public String getDescription() {
         HealthCheckMode mode = getMode();
         boolean deadlockDetection = getConfigProperty("deadlock-detection", true);
-        int threadThresholdMultiplier = getConfigProperty("pool-threshold-multiplier", 4);
+        int threadThresholdMultiplier = getConfigProperty("pool-threshold-multiplier", 20);
         
         return String.format("Monitors thread health (deadlock detection: %s, threshold multiplier: %dx) (Mode: %s)", 
             deadlockDetection, threadThresholdMultiplier, mode.name());
