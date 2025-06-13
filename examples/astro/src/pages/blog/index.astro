@@ -5,11 +5,7 @@ import Error from "@/components/common/Error.astro";
 import { getDotCMSPage } from "@/dotcms-integration";
 import { BlogListingPage } from "@/views/BlogListingPage";
 
-const params = Astro.params;
-
-const pageResponse = await getDotCMSPage(
-  params?.slug ?? ""
-);
+const pageResponse = await getDotCMSPage("/blog");
 
 const pageAsset = pageResponse?.pageAsset;
 const errors = pageResponse?.errors;
