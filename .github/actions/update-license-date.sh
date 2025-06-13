@@ -26,6 +26,21 @@ fi
 # Extract the date from the current line (everything after "Four years from ")
 CURRENT_DATE_IN_FILE=$(echo "$CURRENT_LINE" | sed 's/.*Four years from //')
 
+# Validate the date format (should match Month DD, YYYY pattern)
+if ! echo "$CURRENT_DATE_IN_FILE" | grep -qE "^[A-Za-z]+ [0-9]{1,2}, [0-9]{4}$"; then
+    echo "Warning: Invalid date format found in LICENSE file: '$CURRENT_DATE_IN_FILE'"
+    echo "Updating to current date: $CURRENT_DATE"
+    sed -i.bak "s/^Change Date:.*/Change Date:     Four years from $CURRENT_DATE/" "$LICENSE_FILE"
+    if [ $? -eq 0 ]; then
+        echo "Successfully updated LICENSE file with current date"
+        echo "Backup created as ${LICENSE_FILE}.bak"
+    else
+        echo "Error updating LICENSE file"
+        exit 1
+    fi
+    exit 0
+fi
+
 # Normalize both dates by removing leading zeros from days
 NORMALIZED_CURRENT_DATE=$(echo "$CURRENT_DATE" | sed 's/ 0\([0-9]\),/, \1,/')
 NORMALIZED_DATE_IN_FILE=$(echo "$CURRENT_DATE_IN_FILE" | sed 's/ 0\([0-9]\),/, \1,/')
