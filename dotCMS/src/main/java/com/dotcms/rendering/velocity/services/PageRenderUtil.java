@@ -298,6 +298,14 @@ public class PageRenderUtil implements Serializable {
                     final DotContentletTransformer transformer = new DotTransformerBuilder()
                             .defaultOptions().content(nonHydratedContentlet).build();
                     final Contentlet contentlet = transformer.hydrate().get(0);
+
+                    // Skip content with invalid date configuration in LIVE mode
+                    if (mode.showLive && hasInvalidDateConfiguration(contentlet)) {
+                        Logger.warn(this, ()-> "Skipping contentlet " + contentlet.getIdentifier()
+                                + " with invalid date configuration (expireDate < publishDate)");
+                        continue;
+                    }
+
                     this.addContentletPageReferenceCount(contentlet);
 
                     final long contentsSize = containerUuidPersona
@@ -780,6 +788,33 @@ public class PageRenderUtil implements Serializable {
         public Set<? extends Map.Entry<String, List<String>>> entrySet() {
             return contents.entrySet();
         }
+    }
+
+    /**
+     * Checks if a contentlet has an invalid date configuration where the expireDate is before the publishDate.
+     *
+     * @param contentlet The {@link Contentlet} to check
+     * @return true if the contentlet has expireDate < publishDate, false otherwise
+     */
+    boolean hasInvalidDateConfiguration(final Contentlet contentlet) {
+        final ContentType contentType = contentlet.getContentType();
+        
+        // Only check content types that have both date fields configured
+        if (!UtilMethods.isSet(contentType.publishDateVar()) || 
+            !UtilMethods.isSet(contentType.expireDateVar())) {
+            return false;
+        }
+        
+        final Date publishDate = (Date) contentlet.getMap().get(contentType.publishDateVar());
+        final Date expireDate = (Date) contentlet.getMap().get(contentType.expireDateVar());
+        
+        // If either date is null, consider it valid
+        if (publishDate == null || expireDate == null) {
+            return false;
+        }
+        
+        // Invalid: expire date is before publish date
+        return expireDate.before(publishDate);
     }
 
 }
