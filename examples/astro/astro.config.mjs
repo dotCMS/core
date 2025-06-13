@@ -1,12 +1,9 @@
 import { defineConfig } from "astro/config";
-import { loadEnv } from "vite";
 
 import react from "@astrojs/react";
 import vercel from "@astrojs/vercel/serverless";
 import tailwindcss from "@tailwindcss/vite";
 import { getDotCMSHost } from "./src/utils/env";
-
-const env = loadEnv(process.env.NODE_ENV, process.cwd(), '');
 
 // https://astro.build/config
 export default defineConfig({
