@@ -28,11 +28,16 @@ import java.io.IOException;
 import java.io.Reader;
 import java.util.HashMap;
 import java.util.Map;
+import javax.servlet.annotation.WebServlet;
 
 /**
  * Handles files with extension .js and runs those when accessed
  * @author jsanca
  */
+@WebServlet(
+    name = "JavascriptServlet",
+    urlPatterns = {"/servlets/JavascriptServlet"}
+)
 public class JsServlet extends HttpServlet {
 
     private final UserWebAPIImpl userApi;

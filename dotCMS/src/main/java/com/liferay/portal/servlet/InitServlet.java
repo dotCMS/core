@@ -23,6 +23,7 @@
 package com.liferay.portal.servlet;
 
 import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 
 import com.dotmarketing.business.APILocator;
@@ -41,6 +42,7 @@ import com.liferay.util.SystemProperties;
  * @version $Revision: 1.3 $
  *
  */
+@WebServlet(urlPatterns = {"/InitServlet"}, loadOnStartup = 1)
 public class InitServlet extends HttpServlet {
 
 	public void init() throws ServletException {

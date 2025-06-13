@@ -43,6 +43,7 @@ import com.dotmarketing.util.Logger;
 import com.liferay.portal.ejb.ImageLocalUtil;
 import com.liferay.portal.model.Image;
 import com.liferay.util.ParamUtil;
+import javax.servlet.annotation.WebServlet;
 
 /**
  * <a href="ImageServlet.java.html"><b><i>View Source</i></b></a>
@@ -52,6 +53,11 @@ import com.liferay.util.ParamUtil;
  * @version $Revision: 1.9 $
  *
  */
+@WebServlet(
+	name = "ImageServlet",
+	loadOnStartup = 400,
+	urlPatterns = {"/image/company_logo"}
+)
 public class ImageServlet extends HttpServlet {
 
 	public void init(ServletConfig sc) throws ServletException {

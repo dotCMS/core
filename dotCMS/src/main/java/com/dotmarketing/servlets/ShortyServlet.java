@@ -51,12 +51,17 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
+import javax.servlet.annotation.WebServlet;
 
 
 /**
  * Resolves a shorty or long id, image or assets.
  * if the path has an jpeg or jpegp would be taken as a image and can resize
  */
+@WebServlet(
+    name = "ShortyServlet",
+    urlPatterns = {"/dA/*"}
+)
 public class ShortyServlet extends HttpServlet {
 
   private static final long serialVersionUID = 1L;

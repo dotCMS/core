@@ -23,6 +23,12 @@ import javax.servlet.ServletException;
  * not necessary to modify the web.xml file to add any new interceptors, and they can even be added
  * programmatically via OSGi plug-ins.
  *
+ * IMPORTANT: This filter is registered programmatically via FilterRegistration.java
+ * Do NOT add @WebFilter annotation - it would create duplicate registrations.
+ * 
+ * To add new filters that run AFTER the ordered filter chain, use @WebFilter annotation.
+ * See FilterRegistration.java for the complete ordered filter chain configuration.
+ *
  * @author jsanca
  */
 public class InterceptorFilter extends AbstractWebInterceptorSupportFilter {

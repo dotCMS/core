@@ -9,6 +9,7 @@ import javax.servlet.ServletContextListener;
 import javax.servlet.http.HttpSession;
 import javax.servlet.http.HttpSessionEvent;
 import javax.servlet.http.HttpSessionListener;
+import javax.servlet.annotation.WebListener;
 
 import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.beans.Clickstream;
@@ -25,6 +26,7 @@ import com.dotmarketing.util.Logger;
  * 
  * @author <a href="plightbo@hotmail.com">Patrick Lightbody </a>
  */
+@WebListener
 public class ClickstreamListener implements ServletContextListener, HttpSessionListener {
 
   public static final String CLICKSTREAMS_ATTRIBUTE_KEY = "clickstreams";

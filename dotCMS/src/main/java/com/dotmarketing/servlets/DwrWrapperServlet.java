@@ -6,6 +6,8 @@ import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.annotation.WebInitParam;
 
 import com.dotcms.repackage.org.directwebremoting.Container;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -14,8 +16,19 @@ import com.dotmarketing.util.SecurityLogger;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
+import com.dotcms.repackage.org.directwebremoting.servlet.DwrServlet;
 
-public class DwrWrapperServlet extends com.dotcms.repackage.org.directwebremoting.servlet.DwrServlet {
+@WebServlet(
+	name = "dwr-invoker",
+	urlPatterns = {"/dwr/*"},
+	initParams = {
+		@WebInitParam(name = "debug", value = "false"),
+		@WebInitParam(name = "accessLogLevel", value = "EXCEPTION"),
+		@WebInitParam(name = "compressor", value = "none"),
+		@WebInitParam(name = "crossDomainSessionSecurity", value = "false")
+	}
+)
+public class DwrWrapperServlet extends DwrServlet {
 
 	/**
 	 * 

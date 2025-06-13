@@ -12,6 +12,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.annotation.WebServlet;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -34,6 +35,10 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 
+@WebServlet(
+    name = "SpeedyAssetServlet",
+    urlPatterns = {"/dotAsset/*"}
+)
 public class SpeedyAssetServlet extends HttpServlet {
 
 	private static final long serialVersionUID = 1L;

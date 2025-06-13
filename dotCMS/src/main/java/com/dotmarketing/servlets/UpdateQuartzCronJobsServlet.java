@@ -11,6 +11,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.annotation.WebServlet;
 
 import org.quartz.CronTrigger;
 
@@ -18,6 +19,11 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.util.Logger;
 
+@WebServlet(
+    name = "UpdateQuartzCronJobs",
+    loadOnStartup = 98,
+    urlPatterns = {"/updateQuartzCronJobs"}
+)
 public class UpdateQuartzCronJobsServlet extends HttpServlet {
 	/**
 	 * 

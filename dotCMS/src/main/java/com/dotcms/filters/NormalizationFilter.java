@@ -18,6 +18,12 @@ import io.vavr.Lazy;
 /**
  * Filter created to wrap all the incoming requests to override the
  * {@link HttpServletRequest#getRequestURI()} method in order to normalize the requested URIs.
+ * 
+ * IMPORTANT: This filter is registered programmatically via FilterRegistration.java
+ * Do NOT add @WebFilter annotation - it would create duplicate registrations.
+ * 
+ * To add new filters that run AFTER the ordered filter chain, use @WebFilter annotation.
+ * See FilterRegistration.java for the complete ordered filter chain configuration.
  */
 public class NormalizationFilter implements Filter {
 

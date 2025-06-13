@@ -38,6 +38,13 @@ import javax.servlet.http.HttpServletResponse;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 
+/**
+ * IMPORTANT: This filter is registered programmatically via FilterRegistration.java
+ * Do NOT add @WebFilter annotation - it would create duplicate registrations.
+ * 
+ * To add new filters that run AFTER the ordered filter chain, use @WebFilter annotation.
+ * See FilterRegistration.java for the complete ordered filter chain configuration.
+ */
 public class VisitorFilter implements Filter {
 
 

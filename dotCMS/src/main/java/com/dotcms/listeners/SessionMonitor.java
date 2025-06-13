@@ -23,14 +23,18 @@ import javax.servlet.http.HttpSessionAttributeListener;
 import javax.servlet.http.HttpSessionBindingEvent;
 import javax.servlet.http.HttpSessionEvent;
 import javax.servlet.http.HttpSessionListener;
+import javax.servlet.annotation.WebListener;
+import javax.servlet.ServletContextListener;
+import javax.servlet.ServletContextEvent;
 
 /**
  * Listener that keeps track of logged in users by monitoring for USER_ID session attribute addition.
  * <p>
  * By: IPFW Web Team
  */
+@WebListener
 public class SessionMonitor implements ServletRequestListener,
-        HttpSessionAttributeListener, HttpSessionListener {
+        HttpSessionAttributeListener, HttpSessionListener, ServletContextListener {
 
     public static final String DOT_CLUSTER_SESSION = "DOT_CLUSTER_SESSION";
     public static final String IGNORE_REMEMBER_ME_ON_INVALIDATION = "IGNORE_REMEMBER_ME_ON_INVALIDATION";
@@ -170,6 +174,16 @@ public class SessionMonitor implements ServletRequestListener,
             }
         }
 
+    }
+
+    @Override
+    public void contextInitialized(ServletContextEvent event) {
+        // Not implemented
+    }
+
+    @Override
+    public void contextDestroyed(ServletContextEvent event) {
+        // Not implemented
     }
 
 }

@@ -49,6 +49,7 @@ import javax.management.NotCompliantMBeanException;
 import javax.management.ObjectName;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import org.apache.commons.lang.SystemUtils;
 import org.apache.felix.framework.OSGISystem;
@@ -61,6 +62,7 @@ import org.apache.lucene.search.BooleanQuery;
  * @author root
  *
  */
+@WebServlet(urlPatterns = {"/Init"}, loadOnStartup = 8)
 public class InitServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;

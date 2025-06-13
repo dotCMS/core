@@ -81,6 +81,8 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Optional;
 import java.util.TreeMap;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.annotation.WebInitParam;
 
 /**
  * <a href="MainServlet.java.html"><b><i>View Source</i></b></a>
@@ -90,6 +92,18 @@ import java.util.TreeMap;
  * @version $Revision: 1.41 $
  *
  */
+@WebServlet(
+    name = "MainServlet",
+    loadOnStartup = 2,
+    urlPatterns = {"/c/*", "/dotAdmin/c/*"},
+    initParams = {
+        @WebInitParam(name = "ctx_path", value = "/"),
+        @WebInitParam(name = "config", value = "/WEB-INF/struts-config.xml,/WEB-INF/struts-config-ext.xml"),
+        @WebInitParam(name = "debug", value = "0"),
+        @WebInitParam(name = "detail", value = "0"),
+        @WebInitParam(name = "stxxInit", value = "/stxx.properties")
+    }
+)
 public class MainServlet extends ActionServlet {
 
   public static final String SKIP_UPGRADE = "skip-upgrade";

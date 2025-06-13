@@ -17,12 +17,14 @@ import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 import javax.websocket.server.ServerContainer;
+import javax.servlet.annotation.WebListener;
 
 /**
  *
  * @author Andres Olarte
  *
  */
+@WebListener
 public class ContextLifecycleListener implements ServletContextListener {
 
 	public ContextLifecycleListener() {

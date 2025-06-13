@@ -6,18 +6,23 @@ import com.dotmarketing.util.Logger;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
-//import javax.servlet.annotation.WebServlet;
+import javax.servlet.annotation.WebServlet;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 /**
  * This servlet is used to perform final startup tasks after all other servlets have loaded.
  * It runs with the highest loadOnStartup value to ensure it executes last.
- * 
+ *
  * Current responsibilities:
  * 1. Refresh health checks to notify external systems that the server is ready
  * 2. Check if the server should be shutdown on startup (shutdown-on-startup property)
  */
+@WebServlet(
+    name = "FinalStartupServlet",
+    loadOnStartup = 99999,
+    urlPatterns = {"/finalStartup"}
+)
 public class FinalStartupServlet extends HttpServlet {
 
     // init method
@@ -25,7 +30,7 @@ public class FinalStartupServlet extends HttpServlet {
     public void init(ServletConfig cfg) throws ServletException {
         super.init(cfg);
         Logger.info(this, "Starting FinalStartupServlet");
-        
+
         // Force refresh servlet container health check now that startup is truly complete
         // This ensures HTTP connectors are detected as ready without refreshing slower checks
         try {
@@ -46,7 +51,7 @@ public class FinalStartupServlet extends HttpServlet {
         } catch (Exception e) {
             Logger.warn(this, "Failed to schedule servlet container health check refresh after final startup: " + e.getMessage());
         }
-        
+
         if (Config.getBooleanProperty("shutdown-on-startup", false)) {
             Logger.info(this, "shutdown-on-startup is true, shutting down the server");
             System.exit(0);

@@ -24,7 +24,12 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
+import javax.servlet.annotation.WebServlet;
 
+@WebServlet(
+    name = "login_edit_mode",
+    urlPatterns = {"/edit/*", "/admin/*", "/edit", "/admin"}
+)
 public class LoginEditModeServlet extends HttpServlet {
 
 	/**

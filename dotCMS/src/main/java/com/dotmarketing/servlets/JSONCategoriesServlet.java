@@ -23,7 +23,12 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.*;
+import javax.servlet.annotation.WebServlet;
 
+@WebServlet(
+    name = "CategoriesServlet",
+    urlPatterns = {"/categoriesServlet"}
+)
 public class JSONCategoriesServlet extends HttpServlet implements Servlet {
 
 	private static final long serialVersionUID = 1L;

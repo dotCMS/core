@@ -34,7 +34,12 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import org.apache.velocity.exception.ResourceNotFoundException;
+import javax.servlet.annotation.WebServlet;
 
+@WebServlet(
+    name = "VelocityServlet",
+    urlPatterns = {"/servlets/VelocityServlet"}
+)
 public class VelocityServlet extends HttpServlet {
 
 

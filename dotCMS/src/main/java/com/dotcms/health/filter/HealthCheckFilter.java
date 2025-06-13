@@ -33,6 +33,12 @@ import java.io.IOException;
  * 3. CookiesFilter (Cookie security handling)
  * 4. HealthCheckFilter (Health check bypass)
  * 5. All other filters (bypassed for health endpoints)...
+ * 
+ * IMPORTANT: This filter is registered programmatically via FilterRegistration.java
+ * Do NOT add @WebFilter annotation - it would create duplicate registrations.
+ * 
+ * To add new filters that run AFTER the ordered filter chain, use @WebFilter annotation.
+ * See FilterRegistration.java for the complete ordered filter chain configuration.
  */
 public class HealthCheckFilter implements Filter {
 

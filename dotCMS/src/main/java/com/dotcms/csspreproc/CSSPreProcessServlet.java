@@ -25,6 +25,7 @@ import com.liferay.util.StringPool;
 import org.apache.http.HttpStatus;
 
 import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -48,6 +49,7 @@ import java.util.Optional;
  * @author Jorge Urdaneta
  * @since Jan 23rd, 2014
  */
+@WebServlet(urlPatterns = {"/DOTLESS/*", "*.dotsass", "/DOTSASS/*"})
 public class CSSPreProcessServlet extends HttpServlet {
 
     private static final long serialVersionUID = -3315180323197314439L;
