@@ -125,7 +125,7 @@ public class EventLogWebInterceptor implements WebInterceptor {
     private void submitEventToJitSuServer(HttpServletRequest request, Map<String, Object> eventMap, String realIp, List<Map<String, Object>> experiments) {
         eventMap.remove("experiments");
 
-        final EventsPayload eventPayload = new EventsPayload(eventMap);
+        final ExperimentEventsPayload eventPayload = new ExperimentEventsPayload(eventMap);
         final String mungedIp = (realIp.lastIndexOf(".") > -1)
                 ? realIp.substring(0, realIp.lastIndexOf(".")) + ".1"
                 : "0.0.0.0";
@@ -138,7 +138,7 @@ public class EventLogWebInterceptor implements WebInterceptor {
 
         try {
 
-            addRunningExperimentAsPayload(experiments, eventPayload);
+            addRunningExperimentAsPayload(experiments,  eventPayload);
 
             if (!eventPayload.isEmpty()) {
                 final Host host = WebAPILocator.getHostWebAPI().getCurrentHost(request);
@@ -165,7 +165,8 @@ public class EventLogWebInterceptor implements WebInterceptor {
         }
     }
 
-    private void addRunningExperimentAsPayload(List<Map<String, Object>> experiments, EventsPayload eventPayload) throws DotDataException {
+    private void addRunningExperimentAsPayload(List<Map<String, Object>> experiments,
+                                               ExperimentEventsPayload eventPayload) throws DotDataException {
         final Collection<String> runningExperimentIds = experimentsAPI.getRunningExperiments().stream()
                 .map(Experiment::getIdentifier)
                 .collect(Collectors.toSet());
