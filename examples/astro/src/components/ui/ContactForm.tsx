@@ -25,7 +25,7 @@ export function ContactUs({ description }: { description: string }) {
         e.preventDefault();
         setIsSubmitting(true);
         setTimeout(() => {
-            setIsSuccess(true);
+            setIsSuccess(false);
             resetForm();
         }, 3000);
     };
