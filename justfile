@@ -46,6 +46,18 @@ build-quicker:
 build-prod:
     ./mvnw -DskipTests clean install -Pprod
 
+# Builds core-web module
+build-core-web:
+    ./mvnw clean install -pl :dotcms-core-web -am -DskipTests
+
+# Builds core-web module with Nx cache reset
+build-core-web-reset-nx:
+    ./mvnw clean install -pl :dotcms-core-web -am -DskipTests -Dnx.reset
+
+# Builds core-web module with Nx cache reset
+build-test-core-web:
+    ./mvnw clean install -pl :dotcms-core-web -am
+
 # Runs a comprehensive test suite including core integration and postman tests, suitable for final validation
 build-test-full:
     ./mvnw clean install -Dcoreit.test.skip=false -Dpostman.test.skip=false -Dkarate.test.skip=false
