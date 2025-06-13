@@ -10,6 +10,7 @@ interface BannerCarouselProps extends DotCMSBasicContentlet {
     }[];
   };
 }
+
 export default function BannerCarousel({
   widgetCodeJSON,
 }: BannerCarouselProps) {
@@ -17,9 +18,11 @@ export default function BannerCarousel({
   const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {
-    const length = banners?.length || 1;
+    // Only set up the interval if we have banners
+    if (banners.length === 0) return;
+
     const slideInterval = setInterval(() => {
-      setCurrentIndex((prevIndex) => (prevIndex + 1) % length);
+      setCurrentIndex((prevIndex) => (prevIndex + 1) % banners.length);
     }, 3000);
     return () => clearInterval(slideInterval);
   }, [banners.length]);
@@ -34,7 +37,8 @@ export default function BannerCarousel({
     );
   };
 
-  if (!banners) return null;
+  // Don't render anything if there are no banners
+  if (!banners.length) return null;
 
   return (
     <div className="relative w-full mx-auto">
