@@ -16,6 +16,7 @@ interface CalendarEventProps extends DotCMSBasicContentlet {
 
 function CalendarEvent({
   image,
+  inode,
   title,
   urlMap,
   description,
@@ -26,7 +27,7 @@ function CalendarEvent({
   return (
     <div className="relative flex bg-clip-border rounded-xl shadow-md w-full flex-row bg-slate-100">
       <div className="relative w-2/5 m-0 overflow-hidden bg-slate-100 rounded-r-none bg-clip-border rounded-xl shrink-0">
-        {image && <img src={`/dA/${image}`} alt={title} />}
+        {image && <img src={`/dA/${inode}`} alt={title} />}
       </div>
       <div className="p-6">
         <h4 className="block mb-2 text-2xl antialiased font-semibold leading-snug tracking-normal text-blue-gray-900">
