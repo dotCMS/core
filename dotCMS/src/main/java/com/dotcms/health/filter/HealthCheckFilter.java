@@ -1,5 +1,6 @@
 package com.dotcms.health.filter;
 
+import com.dotcms.health.util.HealthCheckEndpointUtil;
 import com.dotmarketing.util.Logger;
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
@@ -40,8 +41,8 @@ public class HealthCheckFilter implements Filter {
         HttpServletRequest httpRequest = (HttpServletRequest) request;
         String requestURI = httpRequest.getRequestURI();
 
-        // Check if this is a health check endpoint
-        if (isHealthCheckEndpoint(requestURI)) {
+        // Check if this is a health check endpoint using the centralized utility
+        if (HealthCheckEndpointUtil.isHealthCheckEndpoint(requestURI)) {
             Logger.debug(this, "Health check endpoint detected: " + requestURI);
             
             // Create a custom filter chain that only includes essential filters
@@ -56,8 +57,11 @@ public class HealthCheckFilter implements Filter {
                         chain.doFilter(req, res);
                     } else {
                         Logger.debug(this, "Skipping non-essential filter: " + currentFilter);
-                        // Skip this filter and continue with the next one
-                        chain.doFilter(req, res);
+                        // Skip this filter by not calling chain.doFilter()
+                        // Instead, continue with the next filter in the chain
+                        if (chain instanceof FilterChain) {
+                            ((FilterChain) chain).doFilter(req, res);
+                        }
                     }
                 }
             };
@@ -73,16 +77,5 @@ public class HealthCheckFilter implements Filter {
     @Override
     public void destroy() {
         Logger.info(this, "HealthCheckFilter destroyed");
-    }
-
-    /**
-     * Determines if the given URI is a health check endpoint
-     */
-    private boolean isHealthCheckEndpoint(String uri) {
-        return uri != null && (
-            uri.equals("/livez") ||
-            uri.equals("/readyz") ||
-            uri.startsWith("/api/v1/health/")
-        );
     }
 } 
