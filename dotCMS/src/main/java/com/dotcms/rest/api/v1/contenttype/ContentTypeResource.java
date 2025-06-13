@@ -1723,7 +1723,8 @@ public class ContentTypeResource implements Serializable {
 				APILocator.getHostAPI().find(siteId, user, pageMode.respectAnonPerms) :
 				APILocator.getHostAPI().findDefaultHost(user, pageMode.respectAnonPerms); // wondering if this should be current or default
 		final String orderBy = this.getOrderByRealName(orderByParam);
-		final List<String> typeVarNames = findPageContainersContentTypesVarnamesByPathOrId(pagePathOrId, site, languageId, pageMode, user);
+		final List<String> typeVarNames = findPageContainersContentTypesVarnamesByPathOrId(pagePathOrId, site,
+				languageId, pageMode, user, filter);
 
 		final Map<String, Object> extraParams = new HashMap<>();
 		if (null != siteId) {
@@ -1746,7 +1747,8 @@ public class ContentTypeResource implements Serializable {
 										 final Host site,
 										 final long languageId,
 										 final PageMode pageMode,
-										 final User user) throws DotDataException, DotSecurityException {
+										 final User user,
+										 final String filter) throws DotDataException, DotSecurityException {
 
 		Logger.debug(this, ()-> "Getting Content Types for page: " + pagePathOrId +
 				" in site: " + (Objects.nonNull(site) ? site.getHostname() : "null") +
@@ -1777,7 +1779,10 @@ public class ContentTypeResource implements Serializable {
 		// Retrieves the containers associated to the page, then extracts the content types for each container filtering the ones do not allowed
 		return new PageRenderUtil(htmlPage, user, pageMode, languageId, site)
 				.getContainersRaw().stream().map(containerRaw -> containerRaw.getContainerStructures())
-				.flatMap(Collection::stream).map(ContainerStructure::getContentTypeVar)
-				.filter(Predicate.not(this.contentPaletteHiddenTypes.get()::contains)).collect(Collectors.toList());
-	}
+				.flatMap(Collection::stream)
+				.map(ContainerStructure::getContentTypeVar)
+				.filter(Predicate.not(this.contentPaletteHiddenTypes.get()::contains))
+				.filter(varname -> filter == null || varname.toLowerCase().contains(filter.toLowerCase()))
+				.collect(Collectors.toList());
+	} // findPageContainersContentTypesVarnamesByPathOrId
 }
