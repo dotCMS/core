@@ -241,6 +241,7 @@ public class TestDataUtils {
                                 .indexed(true)
                                 .next()
                 );
+                /*
                 fields.add(
                         new FieldDataGen()
                                 .name("Publish")
@@ -251,8 +252,24 @@ public class TestDataUtils {
                 );
                 fields.add(
                         new FieldDataGen()
+                                .name("Expire")
+                                .velocityVarName("sysExpireDate")
+                                .defaultValue(null)
+                                .type(DateField.class)
+                                .next()
+                );*/
+                fields.add(
+                        new FieldDataGen()
                                 .name("postingDate")
                                 .velocityVarName("publishDate")
+                                .defaultValue(null)
+                                .type(DateField.class)
+                                .next()
+                );
+                fields.add(
+                        new FieldDataGen()
+                                .name("expireDate")
+                                .velocityVarName("expireDate")
                                 .defaultValue(null)
                                 .type(DateField.class)
                                 .next()
@@ -311,6 +328,7 @@ public class TestDataUtils {
                         .fields(fields)
                         .workflowId(workflowIds)
                         .publishDateFieldVarName("publishDate")
+                        .expireDateFieldVarName("expireDate")
                         .nextPersisted();
             }
         } catch (Exception e) {
