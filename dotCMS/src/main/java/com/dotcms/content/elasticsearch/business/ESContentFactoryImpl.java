@@ -1,5 +1,6 @@
 package com.dotcms.content.elasticsearch.business;
 
+import com.dotcms.business.ExternalTransaction;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.business.json.ContentletJsonAPI;
 import com.dotcms.content.business.json.ContentletJsonHelper;
@@ -42,7 +43,6 @@ import com.dotmarketing.common.db.Params;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
-import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.db.commands.DatabaseCommand.QueryReplacements;
 import com.dotmarketing.db.commands.UpsertCommand;
 import com.dotmarketing.db.commands.UpsertCommandFactory;
@@ -235,7 +235,11 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
     private static final int MAX_FIELDS_ALLOWED = 25;
     private static final Lazy<Integer> OLD_CONTENT_BATCH_SIZE = Lazy.of(
-            () -> Config.getIntProperty("OLD_CONTENT_BATCH_SIZE", 8192));
+            () -> Config.getIntProperty("OLD_CONTENT_BATCH_SIZE", 100));
+    private static final Lazy<Long> OLD_CONTENT_JOB_PAUSE_MS = Lazy.of(
+            () -> Config.getLongProperty("OLD_CONTENT_JOB_PAUSE_MS", 200));
+    private static final Lazy<Integer> OLD_CONTENT_BATCHES_BEFORE_PAUSE = Lazy.of(
+            () -> Config.getIntProperty("OLD_CONTENT_BATCHES_BEFORE_PAUSE", 10));
 
     private final ContentletCache contentletCache;
 	private final LanguageAPI languageAPI;
@@ -716,9 +720,15 @@ public class ESContentFactoryImpl extends ContentletFactory {
         final int before = Integer.parseInt(result.get(0).get("count"));
 
         final int batchSize = OLD_CONTENT_BATCH_SIZE.get();
+        int deleteContentBatchExecutionCount = 0;
         int oldInodesCount;
         do {
             oldInodesCount = deleteContentBatch(date, batchSize);
+            // Pause if needed to avoid overloading the system
+            if (oldInodesCount > 0) {
+                deleteContentBatchExecutionCount++;
+                pauseDeleteContentIfNeeded(deleteContentBatchExecutionCount);
+            }
         } while (oldInodesCount == batchSize);
 
         dc = new DotConnect();
@@ -740,7 +750,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
      * @return The number of Contentlets deleted by this operation.
      * @throws DotDataException An error occurred when interacting with the data source.
      */
-    @WrapInTransaction(externalize = true)
+    @ExternalTransaction
     private int deleteContentBatch(final Date date, final int batchSize) throws DotDataException {
         final String query = "SELECT c.inode FROM contentlet c"
                 + " WHERE c.identifier <> 'SYSTEM_HOST' AND c.mod_date < ?"
@@ -759,6 +769,22 @@ public class ESContentFactoryImpl extends ContentletFactory {
             deleteContentData(inodeList);
         }
         return resultCount;
+    }
+
+    /**
+     * Pauses the deletion of old content if the number of batches executed so far is a multiple of
+     * {@code OLD_CONTENT_BATCHES_BEFORE_PAUSE} to avoid overloading the system.
+     *
+     * @param deleteContentBatchExecutionCount The number of batches executed so far.
+     */
+    private void pauseDeleteContentIfNeeded(final int deleteContentBatchExecutionCount) {
+        if (deleteContentBatchExecutionCount % OLD_CONTENT_BATCHES_BEFORE_PAUSE.get() == 0) {
+            try {
+                Thread.sleep(OLD_CONTENT_JOB_PAUSE_MS.get());
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
     }
 
     /**
