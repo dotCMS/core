@@ -39,10 +39,8 @@ import { PaginationComponent } from './components/pagination/pagination.componen
 import { RelationshipFieldStore } from './store/relationship-field.store';
 import { getContentTypeIdFromRelationship } from './utils';
 
-import {
-    DotEditContentDialogComponent,
-    EditContentDialogData
-} from '../../components/dot-create-content-dialog/dot-create-content-dialog.component';
+import { DotEditContentDialogComponent } from '../../components/dot-create-content-dialog/dot-create-content-dialog.component';
+import { EditContentDialogData } from '../../models/dot-edit-content-dialog.interface';
 
 @Component({
     selector: 'dot-edit-content-relationship-field',
@@ -391,16 +389,6 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
             data: dialogData,
             header: `Create ${_contentType.name}`
         });
-
-        this.#dialogRef.onClose
-            .pipe(
-                filter((_contentlet) => !!_contentlet),
-                takeUntilDestroyed(this.#destroyRef)
-            )
-            .subscribe((_contentlet: DotCMSContentlet) => {
-                // Content was created and is already handled in the onContentCreated callback
-                // Successfully created contentlet: contentlet
-            });
     }
 
     /**

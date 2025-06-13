@@ -7,7 +7,7 @@
     min-height: 60vh;
 }
 
-// Loading state styles
+// Loading state
 .edit-content-dialog__loading {
     display: flex;
     flex-direction: column;
@@ -16,25 +16,20 @@
     padding: $spacing-6;
     text-align: center;
     flex: 1;
-    min-height: 200px;
-}
-
-.edit-content-dialog__loading-spinner {
-    margin-bottom: $spacing-3;
 
     i {
         font-size: $font-size-xxl;
         color: $color-palette-primary;
+        margin-bottom: $spacing-3;
+    }
+
+    p {
+        margin: 0;
+        color: $color-palette-gray-600;
     }
 }
 
-.edit-content-dialog__loading-text {
-    margin: 0;
-    color: $color-palette-gray-600;
-    font-size: $font-size-md;
-}
-
-// Error state styles
+// Error state
 .edit-content-dialog__error {
     display: flex;
     flex-direction: column;
@@ -43,125 +38,31 @@
     padding: $spacing-6;
     text-align: center;
     flex: 1;
-    min-height: 200px;
-}
 
-.edit-content-dialog__error-icon {
-    font-size: $font-size-xxl;
-    color: $color-palette-secondary;
-    margin-bottom: $spacing-3;
-}
-
-.edit-content-dialog__error-title {
-    margin: 0 0 $spacing-2 0;
-    color: $color-palette-gray-700;
-    font-size: $font-size-lg;
-    font-weight: $font-weight-bold;
-}
-
-.edit-content-dialog__error-message {
-    margin: 0 0 $spacing-2 0;
-    color: $color-palette-gray-600;
-    font-size: $font-size-md;
-}
-
-.edit-content-dialog__error-details {
-    background: $color-palette-secondary-op-10;
-    border: 1px solid $color-palette-secondary-op-30;
-    border-radius: $border-radius-md;
-    padding: $spacing-2 $spacing-3;
-    color: $color-palette-secondary;
-    font-size: $font-size-sm;
-    max-width: 100%;
-    word-break: break-word;
-    margin: 0;
-}
-
-// Legacy placeholder styles
-.edit-content-dialog__legacy-placeholder {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex: 1;
-    padding: $spacing-3;
-    min-height: 300px;
-}
-
-.edit-content-dialog__legacy-content {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    background: $color-palette-gray-100;
-    border: 2px dashed $color-palette-gray-300;
-    border-radius: $border-radius-lg;
-    padding: $spacing-6;
-    max-width: 500px;
-    width: 100%;
-}
-
-.edit-content-dialog__legacy-icon {
-    font-size: 3rem;
-    color: $color-palette-gray-400;
-    margin-bottom: $spacing-3;
-}
-
-.edit-content-dialog__legacy-title {
-    margin: 0 0 $spacing-2 0;
-    color: $color-palette-gray-700;
-    font-size: $font-size-lg;
-    font-weight: $font-weight-bold;
-}
-
-.edit-content-dialog__legacy-description {
-    margin: 0 0 $spacing-3 0;
-    color: $color-palette-gray-600;
-    font-size: $font-size-md;
-    line-height: 1.5;
-}
-
-.edit-content-dialog__legacy-subtitle {
-    margin: 0;
-    color: $color-palette-gray-500;
-    font-size: $font-size-sm;
-    line-height: 1.4;
-}
-
-// Responsive design
-@media (max-width: $screen-md-max) {
-    .edit-content-dialog {
-        min-height: 50vh;
+    i {
+        font-size: $font-size-xxl;
+        color: $color-palette-secondary;
+        margin-bottom: $spacing-3;
     }
 
-    .edit-content-dialog__loading,
-    .edit-content-dialog__error {
-        padding: $spacing-4;
-        min-height: 150px;
+    h3 {
+        margin: 0 0 $spacing-2 0;
+        color: $color-palette-gray-700;
     }
 
-    .edit-content-dialog__legacy-content {
-        padding: $spacing-4;
-        margin: $spacing-2;
-    }
+    p {
+        margin: 0 0 $spacing-2 0;
+        color: $color-palette-gray-600;
 
-    .edit-content-dialog__legacy-icon {
-        font-size: 2.5rem;
-    }
-
-    .edit-content-dialog__error-title,
-    .edit-content-dialog__legacy-title {
-        font-size: $font-size-md;
-    }
-}
-
-@media (max-width: $screen-sm-max) {
-    .edit-content-dialog__loading,
-    .edit-content-dialog__error {
-        padding: $spacing-3;
-    }
-
-    .edit-content-dialog__legacy-content {
-        padding: $spacing-3;
+        &:last-child {
+            background: $color-palette-secondary-op-10;
+            border: 1px solid $color-palette-secondary-op-30;
+            border-radius: $border-radius-md;
+            padding: $spacing-2 $spacing-3;
+            color: $color-palette-secondary;
+            font-size: $font-size-sm;
+            word-break: break-word;
+        }
     }
 }
 

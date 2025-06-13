@@ -189,6 +189,7 @@ export class DotEditContentLayoutComponent {
      */
     closeMessage(message: 'betaMessage') {
         if (message === 'betaMessage') {
+            // We need to store this in the store to persist the state
             this.$store.toggleBetaMessage();
         }
     }
