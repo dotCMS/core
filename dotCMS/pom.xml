@@ -1862,6 +1862,11 @@
                                     <SDKMAN_JAVA_VERSION>${runtime.docker.sdkman.java.version}</SDKMAN_JAVA_VERSION>
                                 </args>
                             </build>
+                            <run>
+                                <env combine.children="append">
+                                    <DOT_HEALTH_DETAILED_AUTHENTICATION_REQUIRED>false</DOT_HEALTH_DETAILED_AUTHENTICATION_REQUIRED>
+                                </env>
+                            </run>
                         </dotcms>
                     </imagesMap>
                 </configuration>
