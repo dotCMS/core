@@ -18,10 +18,18 @@ CURRENT_DATE=$(date "+%B %d, %Y")
 # Create the new line with the current date
 NEW_LINE="Change Date:     Four years from $CURRENT_DATE"
 
-# Update the file using sed to replace the line that starts with "Change Date:"
-sed -i "s/^Change Date:.*/$NEW_LINE/" "$LICENSE_FILE"
+# Check if a Change Date line exists (case-insensitive)
+if grep -qi '^Change Date:' "$LICENSE_FILE"; then
+    # Replace the line (case-insensitive)
+    awk -v new_line="$NEW_LINE" 'BEGIN{IGNORECASE=1} {if ($0 ~ /^Change Date:/) print new_line; else print $0}' "$LICENSE_FILE" > "${LICENSE_FILE}.tmp" && mv "${LICENSE_FILE}.tmp" "$LICENSE_FILE"
+    RESULT=$?
+else
+    # Append the new line if not found
+    echo "$NEW_LINE" >> "$LICENSE_FILE"
+    RESULT=$?
+fi
 
-if [ $? -eq 0 ]; then
+if [ $RESULT -eq 0 ]; then
     echo "Successfully updated LICENSE file"
 else
     echo "Error updating LICENSE file"
