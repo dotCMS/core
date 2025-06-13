@@ -26,8 +26,12 @@ fi
 # Extract the date from the current line (everything after "Four years from ")
 CURRENT_DATE_IN_FILE=$(echo "$CURRENT_LINE" | sed 's/.*Four years from //')
 
+# Normalize both dates by removing leading zeros from days
+NORMALIZED_CURRENT_DATE=$(echo "$CURRENT_DATE" | sed 's/ 0\([0-9]\),/, \1,/')
+NORMALIZED_DATE_IN_FILE=$(echo "$CURRENT_DATE_IN_FILE" | sed 's/ 0\([0-9]\),/, \1,/')
+
 # Check if the date needs to be updated
-if [ "$CURRENT_DATE_IN_FILE" = "$CURRENT_DATE" ]; then
+if [ "$NORMALIZED_DATE_IN_FILE" = "$NORMALIZED_CURRENT_DATE" ]; then
     echo "LICENSE file already has the current date: $CURRENT_DATE"
     echo "No update needed."
     exit 0
