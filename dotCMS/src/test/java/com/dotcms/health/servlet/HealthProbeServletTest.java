@@ -182,47 +182,6 @@ public class HealthProbeServletTest {
         assertEquals("alive", responseWriter.toString());
     }
 
-    @Test
-    public void testHealthLiveEndpointReturnsJsonResponse() throws Exception {
-        // Setup - JSON liveness endpoint
-        when(request.getServletPath()).thenReturn("/health/live");
-        
-        HealthResponse healthResponse = HealthResponse.builder()
-            .status(HealthStatus.UP)
-            .checks(Collections.emptyList())
-            .timestamp(Instant.now())
-            .build();
-        when(healthStateManager.getLivenessHealth()).thenReturn(healthResponse);
-        
-        // Execute
-        servlet.doGet(request, response);
-        
-        // Verify JSON response setup
-        verify(response).setStatus(HttpServletResponse.SC_OK);
-        verify(response).setContentType("application/json");
-        verify(response).setCharacterEncoding("UTF-8");
-    }
-
-    @Test
-    public void testHealthReadyEndpointReturnsJsonResponse() throws Exception {
-        // Setup - JSON readiness endpoint
-        when(request.getServletPath()).thenReturn("/health/ready");
-        
-        HealthResponse healthResponse = HealthResponse.builder()
-            .status(HealthStatus.UP)
-            .checks(Collections.emptyList())
-            .timestamp(Instant.now())
-            .build();
-        when(healthStateManager.getReadinessHealth()).thenReturn(healthResponse);
-        
-        // Execute
-        servlet.doGet(request, response);
-        
-        // Verify JSON response setup
-        verify(response).setStatus(HttpServletResponse.SC_OK);
-        verify(response).setContentType("application/json");
-        verify(response).setCharacterEncoding("UTF-8");
-    }
 
     @Test
     public void testReadyzWithDegradedStatusReturns200() throws Exception {
@@ -274,26 +233,5 @@ public class HealthProbeServletTest {
         verify(response).setContentType("text/plain");
         printWriter.flush();
         assertEquals("not ready", responseWriter.toString());
-    }
-
-    @Test
-    public void testFullHealthEndpointReturnsJsonResponse() throws Exception {
-        // Setup - Full health endpoint
-        when(request.getServletPath()).thenReturn("/health");
-        
-        HealthResponse healthResponse = HealthResponse.builder()
-            .status(HealthStatus.UP)
-            .checks(Collections.emptyList())
-            .timestamp(Instant.now())
-            .build();
-        when(healthStateManager.getCurrentHealth()).thenReturn(healthResponse);
-        
-        // Execute
-        servlet.doGet(request, response);
-        
-        // Verify JSON response setup
-        verify(response).setStatus(HttpServletResponse.SC_OK);
-        verify(response).setContentType("application/json");
-        verify(response).setCharacterEncoding("UTF-8");
     }
 } 

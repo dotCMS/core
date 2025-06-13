@@ -44,9 +44,6 @@ import java.util.concurrent.atomic.AtomicLong;
  * Infrastructure Endpoints (READ-ONLY for monitoring tools):
  * - /livez - Kubernetes liveness probe (minimal text: "alive" | "unhealthy") 
  * - /readyz - Kubernetes readiness probe (minimal text: "ready" | "not ready")
- * - /health - Infrastructure monitoring (detailed JSON, requires authentication)
- * 
- * Note: /healthz endpoint removed - deprecated since Kubernetes v1.16
  * 
  * Application management endpoints are available via /api/v1/health/* REST API
  * 
@@ -54,7 +51,7 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 @WebServlet(
     name = "HealthProbeServlet",
-    urlPatterns = {"/health", "/health/live", "/health/ready", "/livez", "/readyz"},
+    urlPatterns = {"/livez", "/readyz"},
     loadOnStartup = 1 // Load early in startup process
 )
 public class HealthProbeServlet extends HttpServlet {
@@ -104,14 +101,9 @@ public class HealthProbeServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) 
             throws ServletException, IOException {
-        
-        // Get the request URI to determine which endpoint was called
-        String requestURI = request.getRequestURI();
-        String contextPath = request.getContextPath();
-        String servletPath = request.getServletPath();
-        
+
         // Extract the actual endpoint from the request
-        String endpoint = servletPath;
+        String endpoint = request.getServletPath();
         
         // Route to appropriate handler based on endpoint
         switch (endpoint) {
@@ -123,21 +115,8 @@ public class HealthProbeServlet extends HttpServlet {
                 // K8s readiness probe - minimal text response, public access  
                 handleReadinessProbe(request, response, true);
                 break;
-            case "/health/live":
-                // Detailed liveness JSON response, requires authentication
-                if (!requireAuthentication(request, response)) return;
-                handleLivenessProbe(request, response, false);
-                break;
-            case "/health/ready":
-                // Detailed readiness JSON response, requires authentication
-                if (!requireAuthentication(request, response)) return;
-                handleReadinessProbe(request, response, false);
-                break;
-            case "/health":
             default:
-                // Infrastructure monitoring - detailed JSON, requires authentication
-                if (!requireAuthentication(request, response)) return;
-                handleFullHealth(request, response, false);
+                handleLivenessProbe(request, response, true);
                 break;
         }
     }

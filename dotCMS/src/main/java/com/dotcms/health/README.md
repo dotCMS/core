@@ -440,8 +440,8 @@ When CDI initialization fails:
 ```bash
 #!/bin/bash
 # Extract structured data for automated responses
-MEMORY_USAGE=$(curl -s /health | jq '.checks[] | select(.name=="application") | .data.memoryUsagePercent')
-THRESHOLD=$(curl -s /health | jq '.checks[] | select(.name=="application") | .data.criticalThreshold')
+MEMORY_USAGE=$(curl -s /api/v1/health | jq '.checks[] | select(.name=="application") | .data.memoryUsagePercent')
+THRESHOLD=$(curl -s /api/v1/health | jq '.checks[] | select(.name=="application") | .data.criticalThreshold')
 
 if (( $(echo "$MEMORY_USAGE > $THRESHOLD" | bc -l) )); then
     echo "Triggering memory cleanup - usage: ${MEMORY_USAGE}% > ${THRESHOLD}%"
@@ -449,8 +449,8 @@ if (( $(echo "$MEMORY_USAGE > $THRESHOLD" | bc -l) )); then
 fi
 
 # Check GC pressure
-GC_TIME=$(curl -s /health | jq '.checks[] | select(.name=="gc") | .data.gcTimePercent')
-GC_THRESHOLD=$(curl -s /health | jq '.checks[] | select(.name=="gc") | .data.timeThresholdPercent')
+GC_TIME=$(curl -s /api/v1/health | jq '.checks[] | select(.name=="gc") | .data.gcTimePercent')
+GC_THRESHOLD=$(curl -s /api/v1/health | jq '.checks[] | select(.name=="gc") | .data.timeThresholdPercent')
 
 if (( $(echo "$GC_TIME > $GC_THRESHOLD" | bc -l) )); then
     echo "High GC pressure detected: ${GC_TIME}% > ${GC_THRESHOLD}%"
@@ -458,7 +458,7 @@ if (( $(echo "$GC_TIME > $GC_THRESHOLD" | bc -l) )); then
 fi
 
 # Check system resources
-FREE_DISK=$(curl -s /health | jq '.checks[] | select(.name=="system") | .data.freeDiskMB')
+FREE_DISK=$(curl -s /api/v1/health | jq '.checks[] | select(.name=="system") | .data.freeDiskMB')
 if (( $(echo "$FREE_DISK < 1000" | bc -l) )); then
     echo "Low disk space: ${FREE_DISK}MB remaining"
     # Trigger cleanup actions
@@ -545,11 +545,6 @@ health.check.elasticsearch.event-driven.enabled=true
 - **`/livez`** - Liveness probe (text: "alive" or "unhealthy")
 - **`/readyz`** - Readiness probe (text: "ready" or "not ready")  
 - **`/healthz`** - Simple server check (text: "ok")
-
-### Monitoring Endpoints (JSON Responses)
-- **`/health`** - Complete health status with all checks
-- **`/health/live`** - Detailed liveness information
-- **`/health/ready`** - Detailed readiness information
 
 ### REST API Endpoints (Admin Only)
 - **`/api/v1/health`** - Overall health (requires CMS Admin role)
@@ -1176,19 +1171,19 @@ curl -v http://localhost:8080/livez     # Should return "alive" or "unhealthy"
 curl -v http://localhost:8080/readyz    # Should return "ready" or "not ready"
 
 # Check detailed status:
-curl -v http://localhost:8080/health    # Detailed JSON response
+curl -v http://localhost:8080/api/v1/health    # Detailed JSON response
 
 # Check structured data:
-curl -s http://localhost:8080/health | jq '.checks[].data'
+curl -s http://localhost:8080/api/v1/health | jq '.checks[].data'
 ```
 
 #### 4. Structured Data Missing or Incorrect
 ```bash
 # Test individual health check structured data
-curl -s http://localhost:8080/health | jq '.checks[] | select(.name=="database") | .data'
+curl -s http://localhost:8080/api/v1/health | jq '.checks[] | select(.name=="database") | .data'
 
 # Verify data field types
-curl -s http://localhost:8080/health | jq '.checks[] | select(.data) | {name, data}'
+curl -s http://localhost:8080/api/v1/health | jq '.checks[] | select(.data) | {name, data}'
 ```
 
 #### 5. Performance Issues
@@ -1418,8 +1413,7 @@ public final class HealthCheckUtils {
 1. **Start with MONITOR_MODE for all new checks**
 2. **Use /livez and /readyz for Kubernetes probes**
 3. **Monitor logs for DEGRADED conditions**
-4. **Progressively enable stricter checking**  
-5. **Network-restrict detailed /health endpoint in production**
+4. **Progressively enable stricter checking**
 6. **Use structured data for automated monitoring and alerting**
 
 ### Configuration Guidelines
@@ -1527,7 +1521,6 @@ The filter chain is configured in `web.xml` with the `HealthCheckFilter` as the 
 ### Health Check Endpoints
 
 The filter chain applies to all health check endpoints:
-- `/health` - Complete health status
 - `/livez` - Kubernetes liveness probe
 - `/readyz` - Kubernetes readiness probe
 - `/api/v1/health/*` - Health check API endpoints

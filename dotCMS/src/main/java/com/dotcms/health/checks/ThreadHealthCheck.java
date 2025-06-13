@@ -81,7 +81,13 @@ public class ThreadHealthCheck extends HealthCheckBase {
     public String getName() {
         return "threads";
     }
-    
+
+    @Override
+    protected HealthCheckMode getDefaultMode() {
+        // Further testing to see if any problems arise with this check
+        return HealthCheckMode.DISABLED;
+    }
+
     @Override
     public int getOrder() {
         return 40; // Medium priority - advanced monitoring
@@ -126,7 +132,7 @@ public class ThreadHealthCheck extends HealthCheckBase {
         
         // Always include thread count and threshold as they're threshold-based checks
         int currentThreadCount = THREAD_BEAN.getThreadCount();
-        int threadThresholdMultiplier = getConfigProperty("pool-threshold-multiplier", 4);
+        int threadThresholdMultiplier = getConfigProperty("pool-threshold-multiplier", 20);
         int threshold = AVAILABLE_PROCESSORS * threadThresholdMultiplier;
         boolean enableDeadlockDetection = getConfigProperty("deadlock-detection", true);
         

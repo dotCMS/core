@@ -80,7 +80,6 @@ public class HealthCheckFilter implements Filter {
      */
     private boolean isHealthCheckEndpoint(String uri) {
         return uri != null && (
-            uri.equals("/health") ||
             uri.equals("/livez") ||
             uri.equals("/readyz") ||
             uri.startsWith("/api/v1/health/")

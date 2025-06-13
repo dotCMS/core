@@ -61,7 +61,6 @@ The dotCMS Health Check System is a production-ready, Kubernetes-compatible heal
 - **FR4.5**: System SHALL support runtime configuration changes without restart
 
 #### FR5: Monitoring and Observability
-- **FR5.1**: System SHALL provide detailed JSON health responses at `/health` endpoint
 - **FR5.2**: System SHALL include RFC-compliant health check response format
 - **FR5.3**: System SHALL support filtering health responses by liveness/readiness categorization
 - **FR5.4**: System SHALL provide comprehensive logging with structured messages
@@ -115,14 +114,14 @@ The dotCMS Health Check System is a production-ready, Kubernetes-compatible heal
 │                        Health Check System                     │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
-│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐ │
-│  │   Kubernetes    │  │   Monitoring    │  │   Admin REST    │ │
-│  │   Endpoints     │  │   Endpoints     │  │   Endpoints     │ │
-│  │                 │  │                 │  │                 │ │
-│  │ /livez          │  │ /health         │  │ /api/v1/health  │ │
-│  │ /readyz         │  │ /health/live    │  │ (authenticated) │ │
-│  │                 │  │ /health/ready   │  │                 │ │
-│  └─────────────────┘  └─────────────────┘  └─────────────────┘ │
+│  ┌─────────────────┐                        ┌─────────────────┐ │
+│  │   Kubernetes    │                        │   Admin REST    │ │
+│  │   Endpoints     │                        │   Endpoints     │ │
+│  │                 │                        │                 │ │
+│  │ /livez          │                        │ /api/v1/health  │ │
+│  │ /readyz         │                        │ (authenticated) │ │
+│  │                 │                        │                 │ │
+│  └─────────────────┘                        └─────────────────┘ │
 │                                                                 │
 │  ┌─────────────────────────────────────────────────────────────┐ │
 │  │                Health State Manager                        │ │
@@ -208,23 +207,6 @@ The system applies safety mode conversions at the health check level, ensuring c
 
 ### Monitoring Endpoints (Public)
 
-#### GET /health
-**Purpose**: Complete health status with all checks
-**Response**: JSON health response (RFC-compliant)
-**Status Codes**: 200 (any status), 503 (if overall DOWN)
-**Content-Type**: application/json
-
-#### GET /health/live
-**Purpose**: Detailed liveness health information  
-**Response**: JSON with liveness checks only
-**Status Codes**: 200 (alive), 503 (unhealthy)
-**Content-Type**: application/json
-
-#### GET /health/ready
-**Purpose**: Detailed readiness health information
-**Response**: JSON with readiness checks only  
-**Status Codes**: 200 (ready), 503 (not ready)
-**Content-Type**: application/json
 
 ### Admin REST Endpoints (Authenticated)
 
@@ -275,7 +257,6 @@ The system applies safety mode conversions at the health check level, ensuring c
 
 ### Public Endpoints (No Authentication)
 - `/livez`, `/readyz` - Minimal text responses for Kubernetes
-- `/health`, `/health/live`, `/health/ready` - JSON responses with controlled information disclosure
 
 ### Authenticated Endpoints (Admin Role Required)
 - `/api/v1/health/*` - Complete administrative access to health system
