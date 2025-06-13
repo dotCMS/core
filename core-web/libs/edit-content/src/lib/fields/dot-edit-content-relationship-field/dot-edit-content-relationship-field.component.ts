@@ -1,3 +1,5 @@
+import { EMPTY } from 'rxjs';
+
 import {
     ChangeDetectionStrategy,
     Component,
@@ -19,9 +21,13 @@ import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { MenuModule } from 'primeng/menu';
 import { TableRowReorderEvent, TableModule } from 'primeng/table';
 
-import { filter } from 'rxjs/operators';
+import { catchError, filter } from 'rxjs/operators';
 
-import { DotContentTypeService, DotMessageService } from '@dotcms/data-access';
+import {
+    DotContentTypeService,
+    DotHttpErrorManagerService,
+    DotMessageService
+} from '@dotcms/data-access';
 import {
     DotCMSContentlet,
     DotCMSContentType,
@@ -98,6 +104,12 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
      * This service is used for retrieving content type information and metadata.
      */
     readonly #dotContentTypeService = inject(DotContentTypeService);
+
+    /**
+     * A readonly private field that injects the DotHttpErrorManagerService.
+     * This service is used for handling HTTP errors in a consistent manner.
+     */
+    readonly #dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
 
     /**
      * Signal that tracks whether the component is disabled.
@@ -326,7 +338,14 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
         // Get content type information to check the CONTENT_EDITOR2_ENABLED flag
         this.#dotContentTypeService
             .getContentType(contentTypeId)
-            .pipe(takeUntilDestroyed(this.#destroyRef))
+            .pipe(
+                takeUntilDestroyed(this.#destroyRef),
+                catchError((error) => {
+                    this.#dotHttpErrorManagerService.handle(error);
+
+                    return EMPTY;
+                })
+            )
             .subscribe((contentType) => {
                 const isNewEditorEnabled =
                     contentType.metadata?.[FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED] ===

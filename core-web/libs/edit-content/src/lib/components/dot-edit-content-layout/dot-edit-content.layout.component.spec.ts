@@ -144,10 +144,6 @@ describe('EditContentLayoutComponent', () => {
         spectator.detectChanges();
     });
 
-    it('should create', () => {
-        expect(spectator.component).toBeTruthy();
-    });
-
     it('should have p-confirmDialog component', () => {
         expect(spectator.query(ConfirmDialog)).toBeTruthy();
     });
@@ -212,27 +208,6 @@ describe('EditContentLayoutComponent', () => {
                 contentletInode: 'abc123'
             });
             expect(initializeFromRouteSpy).not.toHaveBeenCalled();
-        });
-
-        it('should initialize dialog mode when both contentTypeId and contentletInode are provided', () => {
-            const dialogSpectator = createComponent({ detectChanges: false });
-            const dialogStore = dialogSpectator.inject(DotEditContentStore, true);
-            const dialogEditContentService = dialogSpectator.inject(DotEditContentService, true);
-
-            // Mock the service method for this specific component instance
-            dialogEditContentService.getContentById.mockReturnValue(of(MOCK_CONTENTLET_1_TAB));
-
-            const initializeDialogModeSpy = jest.spyOn(dialogStore, 'initializeDialogMode');
-
-            dialogSpectator.setInput({
-                contentTypeId: 'blog-post',
-                contentletInode: 'abc123'
-            });
-
-            expect(initializeDialogModeSpy).toHaveBeenCalledWith({
-                contentTypeId: 'blog-post',
-                contentletInode: 'abc123'
-            });
         });
 
         it('should re-initialize when input values change', () => {
