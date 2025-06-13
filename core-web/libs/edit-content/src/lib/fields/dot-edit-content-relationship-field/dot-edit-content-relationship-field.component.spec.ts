@@ -1,12 +1,19 @@
 import { Spectator, createComponentFactory, mockProvider } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ControlContainer, FormGroupDirective } from '@angular/forms';
 
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { Table } from 'primeng/table';
 
-import { DotContentTypeService, DotMessageService } from '@dotcms/data-access';
+import {
+    DotContentTypeService,
+    DotCurrentUserService,
+    DotHttpErrorManagerService,
+    DotMessageService
+} from '@dotcms/data-access';
 import { DotCMSContentType, FeaturedFlags } from '@dotcms/dotcms-models';
 import { createFormGroupDirectiveMock } from '@dotcms/edit-content/utils/mocks';
 import { createFakeContentlet, createFakeRelationshipField } from '@dotcms/utils-testing';
@@ -78,10 +85,14 @@ describe('DotEditContentRelationshipFieldComponent', () => {
         ],
         providers: [
             FormGroupDirective,
+            provideHttpClient(),
+            provideHttpClientTesting(),
             mockProvider(DotMessageService, {
                 get: jest.fn().mockReturnValue('Mock Message')
             }),
             mockProvider(DotContentTypeService),
+            mockProvider(DotHttpErrorManagerService),
+            mockProvider(DotCurrentUserService),
             DialogService
         ],
         detectChanges: false
@@ -98,7 +109,6 @@ describe('DotEditContentRelationshipFieldComponent', () => {
         store = spectator.inject(RelationshipFieldStore, true);
         dialogService = spectator.inject(DialogService);
         contentTypeService = spectator.inject(DotContentTypeService);
-        messageService = spectator.inject(DotMessageService);
     });
 
     describe('Component Initialization', () => {
