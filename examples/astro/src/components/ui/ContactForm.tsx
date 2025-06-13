@@ -25,12 +25,15 @@ export function ContactUs({ description }: { description: string }) {
         e.preventDefault();
         setIsSubmitting(true);
         setTimeout(() => {
-            setIsSuccess(false);
+            setIsSuccess(true);
             resetForm();
         }, 3000);
     };
 
-    const resetForm = () => setFormData(initialFormData);
+    const resetForm = () => { 
+        setIsSubmitting(false);
+        setFormData(initialFormData);
+    }
 
     return (
         <div className="max-w-lg mx-auto my-10 p-6 bg-white rounded-lg shadow-md">
