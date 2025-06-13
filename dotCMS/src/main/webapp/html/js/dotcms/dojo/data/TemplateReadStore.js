@@ -28,7 +28,6 @@ dojo.declare('dotcms.dojo.data.TemplateReadStore', null, {
         this.hostId = options.hostId;
         this.allSiteLabel = options.allSiteLabel;
         this.templateSelected = options.templateSelected;
-        this.sort = options.sort;
     },
 
     getValue: function (item, attribute, defaultValue) {
