@@ -1,4 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+jest.mock('consola');
+
+import * as consola from 'consola';
+
 import {
     DotCMSClientConfig,
     DotCMSPageRequestParams,
@@ -112,6 +116,41 @@ describe('PageClient', () => {
             });
         });
 
+        it('should print graphql errors ', async () => {
+            const pageClient = new PageClient(validConfig, requestOptions);
+            const graphQLOptions = {
+                graphql: {
+                    page: `containers {
+                        containerContentlets {
+                            contentlets {
+                                ... on Banner {
+                                    title
+                                }
+                            }
+                        }
+                    }`,
+                    content: { content: 'query Content { items { title } }' }
+                }
+            };
+
+            mockFetchGraphQL.mockResolvedValue({
+                data: {
+                    page: {
+                        title: 'GraphQL Page'
+                    }
+                },
+                errors: [{ message: 'Some internal server error' }]
+            });
+
+            await pageClient.get('/graphql-page', graphQLOptions);
+
+            const consolaSpy = jest.spyOn(consola, 'error');
+            expect(consolaSpy).toHaveBeenCalledWith(
+                '[DotCMS GraphQL Error]: ',
+                'Some internal server error'
+            );
+        });
+
         it('should return an error if the page is not found', async () => {
             const pageClient = new PageClient(validConfig, requestOptions);
             const graphQLOptions = {
@@ -133,7 +172,7 @@ describe('PageClient', () => {
                 data: {
                     page: null
                 },
-                errors: [{ message: 'Page not found' }]
+                errors: [{ message: 'No page data found' }]
             });
 
             try {
@@ -141,7 +180,7 @@ describe('PageClient', () => {
             } catch (response: unknown) {
                 const responseData = response as DotCMSPageResponse;
 
-                expect(responseData.error?.message).toBe('Page not found');
+                expect(responseData.error?.message).toBe('No page data found');
             }
         });
 
