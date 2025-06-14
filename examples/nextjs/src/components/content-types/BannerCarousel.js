@@ -40,7 +40,7 @@ export default function BannerCarousel({ widgetCodeJSON }) {
                         <Image
                             src={image}
                             fill={true}
-                            className="absolute block w-full "
+                            className="absolute block w-full h-full object-cover"
                             alt={title}
                         />
                     </div>
