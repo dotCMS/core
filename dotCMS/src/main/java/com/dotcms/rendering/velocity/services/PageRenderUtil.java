@@ -419,10 +419,8 @@ public class PageRenderUtil implements Serializable {
             throws DotSecurityException {
         final String contentletIdentifier = personalizedContentlet.getContentletId();
         final Contentlet contentlet = this.getContentlet(contentletIdentifier, currentVariantId, timeMachineDate);
-        if(null != timeMachineDate){
-            return contentlet;
-        }
-        if (!UtilMethods.isSet(contentlet)) {
+        // If the contentlet is not found, we will try to get the default variant
+        if (UtilMethods.isNotSet(contentlet) && UtilMethods.isNotSet(timeMachineDate)) {
             return this.getContentlet(contentletIdentifier, VariantAPI.DEFAULT_VARIANT.name(), null);
         }
 
