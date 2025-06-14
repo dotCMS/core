@@ -1,5 +1,9 @@
 package com.dotcms.rest.api.v1.page;
 
+import static com.dotcms.rest.api.v1.page.PageScenarioUtils.extractPageViewFromResponse;
+import static com.dotcms.rest.api.v1.page.PageScenarioUtils.validateAllContentletTitlesContaining;
+import static com.dotcms.rest.api.v1.page.PageScenarioUtils.validateContentletTitlesContainingInternal;
+import static com.dotcms.rest.api.v1.page.PageScenarioUtils.validateNoContentlets;
 import static com.dotcms.util.CollectionsUtils.list;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -45,6 +49,7 @@ import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.RestUtilTest;
 import com.dotcms.rest.WebResource;
+import com.dotcms.rest.api.v1.page.PageScenarioUtils.ContentConfig;
 import com.dotcms.rest.api.v1.personalization.PersonalizationPersonaPageView;
 import com.dotcms.util.FiltersUtil;
 import com.dotcms.util.IntegrationTestInitService;
@@ -1969,74 +1974,6 @@ public class PageResourceTest {
 
     }
 
-    /**
-     * Configuration class for content date ranges
-     * Unified class that can handle both expired and valid content configurations
-     */
-    static class ContentConfig {
-        final String title;
-        final int daysBeforeCurrentForPublish;    // Days before current date for publishDate
-        final Integer daysBeforeCurrentForExpire; // Days before current date for expireDate (null if not used)
-        final Integer daysAfterCurrentForExpire;  // Days after current date for expireDate (null if not used)
-
-        /**
-         * Private constructor - use static factory methods instead
-         */
-        private ContentConfig(String title, int daysBeforePublish, Integer daysBeforeExpire, Integer daysAfterExpire) {
-            this.title = title;
-            this.daysBeforeCurrentForPublish = daysBeforePublish;
-            this.daysBeforeCurrentForExpire = daysBeforeExpire;
-            this.daysAfterCurrentForExpire = daysAfterExpire;
-        }
-
-        /**
-         * Static factory method for content that never expires
-         * @param title Content title
-         * @param daysBeforePublish Days before reference date for publishDate
-         * @return ContentConfig for content that never expires
-         */
-        static ContentConfig neverExpires(String title, int daysBeforePublish) {
-            return new ContentConfig(title, daysBeforePublish, null, null);
-        }
-
-        /**
-         * Static factory method for expired content
-         * @param title Content title
-         * @param daysBeforePublish Days before reference date for publishDate
-         * @param daysBeforeExpire Days before reference date for expireDate
-         * @return ContentConfig for expired content
-         */
-        static ContentConfig expired(String title, int daysBeforePublish, int daysBeforeExpire) {
-            return new ContentConfig(title, daysBeforePublish, daysBeforeExpire, null);
-        }
-
-        /**
-         * Static factory method for valid content with future expiration
-         * @param title Content title
-         * @param daysBeforePublish Days before reference date for publishDate
-         * @param daysAfterExpire Days after reference date for expireDate
-         * @return ContentConfig for valid content
-         */
-        static ContentConfig validWithExpiration(String title, int daysBeforePublish, int daysAfterExpire) {
-            return new ContentConfig(title, daysBeforePublish, null, daysAfterExpire);
-        }
-
-        /**
-         * Determines if this content will be expired relative to the reference date
-         * @return true if content will be expired, false otherwise
-         */
-        boolean isExpiredContent() {
-            return daysBeforeCurrentForExpire != null;
-        }
-
-        /**
-         * Determines if this content has an expiration date
-         * @return true if content has expiration date, false if never expires
-         */
-        boolean hasExpirationDate() {
-            return daysBeforeCurrentForExpire != null || daysAfterCurrentForExpire != null;
-        }
-    }
 
 
     /**
@@ -2255,199 +2192,6 @@ public class PageResourceTest {
         return createTestPageWithContentConfigs(contentConfigs, referenceDate);
     }
 
-    /**
-     * Extracts PageView from Response
-     *
-     * @param response The response containing the PageView
-     * @return PageView extracted from response
-     * @throws IllegalArgumentException if response format is invalid
-     */
-    private static PageView extractPageViewFromResponse(final Response response) {
-        try {
-            return (PageView) ((ResponseEntityView<?>) response.getEntity()).getEntity();
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Failed to extract PageView from response: " + e.getMessage(), e);
-        }
-    }
-
-    /**
-     * Internal validation method that works with PageView directly
-     *
-     * @param pageView The page view to validate
-     * @param containsText Text that should be contained in all titles (ignored if expectNone is true)
-     * @param expectNone If true, validates that NO contentlets are present. containsText is ignored.
-     * @return true if validation passes, false otherwise
-     */
-    private static boolean validateContentletTitlesContainingInternal(final PageView pageView,
-            final String containsText,
-            final boolean expectNone) {
-
-        final List<? extends ContainerRaw> containers = (List<? extends ContainerRaw>)pageView.getContainers();
-        assertEquals(1, containers.size());
-        final Map<String, List<Contentlet>> contentlets = containers.get(0).getContentlets();
-
-        // If expecting no contentlets
-        if (expectNone) {
-            boolean isEmpty = contentlets.isEmpty() ||
-                    contentlets.values().stream().allMatch(List::isEmpty);
-
-            if (isEmpty) {
-                Logger.info(PageResourceTest.class, "VALIDATION PASSED: No contentlets found as expected");
-                return true;
-            } else {
-                int totalContentlets = contentlets.values().stream()
-                        .mapToInt(List::size)
-                        .sum();
-                Logger.error(PageResourceTest.class,
-                        "VALIDATION FAILED: Expected no contentlets but found " + totalContentlets);
-                return false;
-            }
-        }
-
-        // Validate containsText is provided when not expecting none
-        if (null == containsText || containsText.trim().isEmpty()) {
-            Logger.error(PageResourceTest.class,
-                    "VALIDATION FAILED: containsText is required when expectNone is false");
-            return false;
-        }
-
-        // If expecting contentlets but none found
-        if (contentlets.isEmpty()) {
-            Logger.error(PageResourceTest.class,
-                    "VALIDATION FAILED: Expected contentlets containing '" + containsText + "' but found none");
-            return false;
-        }
-
-        final List<String> foundTitles = new ArrayList<>();
-        final List<String> matchedTitles = new ArrayList<>();
-        final List<String> unmatchedTitles = new ArrayList<>();
-        boolean allMatch = true;
-
-        // Extract all titles and check for contains text
-        for (Map.Entry<String, List<Contentlet>> entry : contentlets.entrySet()) {
-            final String containerKey = entry.getKey();
-            final List<Contentlet> contentletList = entry.getValue();
-
-            Logger.info(PageResourceTest.class, "Processing container key: " + containerKey);
-
-            for (Contentlet contentlet : contentletList) {
-                try {
-                    final String title = contentlet.getStringProperty("title");
-                    if (null != title && !title.trim().isEmpty()) {
-                        foundTitles.add(title);
-
-                        // Check if title contains the specified text (case-insensitive)
-                        if (title.toLowerCase().contains(containsText.toLowerCase())) {
-                            matchedTitles.add(title);
-                            Logger.info(PageResourceTest.class, "✓ CONTAINS '" + containsText + "': " + title);
-                        } else {
-                            unmatchedTitles.add(title);
-                            allMatch = false;
-                            Logger.error(PageResourceTest.class, "✗ DOES NOT CONTAIN '" + containsText + "': " + title);
-                        }
-                    } else {
-                        Logger.warn(PageResourceTest.class, "Found contentlet with empty or null title");
-                        allMatch = false;
-                    }
-                } catch (Exception e) {
-                    Logger.error(PageResourceTest.class, "Error getting title from contentlet: " + e.getMessage());
-                    allMatch = false;
-                }
-            }
-        }
-
-        // Log summary
-        Logger.info(PageResourceTest.class, "=== VALIDATION SUMMARY ===");
-        Logger.info(PageResourceTest.class, "Total contentlets found: " + foundTitles.size());
-        Logger.info(PageResourceTest.class, "Titles containing '" + containsText + "': " + matchedTitles.size());
-        Logger.info(PageResourceTest.class, "Titles NOT containing '" + containsText + "': " + unmatchedTitles.size());
-
-        if (allMatch && !foundTitles.isEmpty()) {
-            Logger.info(PageResourceTest.class, "✓ VALIDATION PASSED: All " + foundTitles.size() +
-                    " contentlets contain '" + containsText + "'");
-            return true;
-        } else if (foundTitles.isEmpty()) {
-            Logger.error(PageResourceTest.class, "✗ VALIDATION FAILED: No contentlets found");
-            return false;
-        } else {
-            Logger.error(PageResourceTest.class, "✗ VALIDATION FAILED: " + unmatchedTitles.size() +
-                    " out of " + foundTitles.size() + " contentlets do NOT contain '" + containsText + "'");
-            return false;
-        }
-    }
-
-    /**
-     * Validates that all contentlets in a page match the specified criteria
-     *
-     * @param response The response containing the PageView to validate
-     * @param containsText Text that should be contained in all titles (ignored if expectNone is true)
-     * @param expectNone If true, validates that NO contentlets are present. containsText is ignored.
-     * @return true if validation passes, false otherwise
-     */
-    public static boolean validateAllContentletTitlesContaining(final Response response,
-            final String containsText,
-            final boolean expectNone) {
-        final PageView pageView = extractPageViewFromResponse(response);
-        return validateContentletTitlesContainingInternal(pageView, containsText, expectNone);
-    }
-
-    /**
-     * Overloaded method for backward compatibility when expectNone is false
-     *
-     * @param response The response containing the PageView to validate
-     * @param containsText Text that should be contained in all titles
-     * @return true if all contentlets contain the specified text, false otherwise
-     */
-    public static boolean validateAllContentletTitlesContaining(final Response response,
-            final String containsText) {
-        return validateAllContentletTitlesContaining(response, containsText, false);
-    }
-
-    /**
-     * Convenience method to validate that no contentlets are present
-     *
-     * @param response The response containing the PageView to validate
-     * @return true if no contentlets are found, false otherwise
-     */
-    public static boolean validateNoContentlets(final Response response) {
-        return validateAllContentletTitlesContaining(response, null, true);
-    }
-
-    /**
-     * Legacy method that works with PageView directly (for backward compatibility)
-     *
-     * @param pageView The page view to validate
-     * @param containsText Text that should be contained in all titles (ignored if expectNone is true)
-     * @param expectNone If true, validates that NO contentlets are present. containsText is ignored.
-     * @return true if validation passes, false otherwise
-     */
-    public static boolean validateAllContentletTitlesContaining(final PageView pageView,
-            final String containsText,
-            final boolean expectNone) {
-        return validateContentletTitlesContainingInternal(pageView, containsText, expectNone);
-    }
-
-    /**
-     * Legacy overloaded method for backward compatibility when expectNone is false
-     *
-     * @param pageView The page view to validate
-     * @param containsText Text that should be contained in all titles
-     * @return true if all contentlets contain the specified text, false otherwise
-     */
-    public static boolean validateAllContentletTitlesContaining(final PageView pageView,
-            final String containsText) {
-        return validateContentletTitlesContainingInternal(pageView, containsText, false);
-    }
-
-    /**
-     * Legacy convenience method to validate that no contentlets are present
-     *
-     * @param pageView The page view to validate
-     * @return true if no contentlets are found, false otherwise
-     */
-    public static boolean validateNoContentlets(final PageView pageView) {
-        return validateContentletTitlesContainingInternal(pageView, null, true);
-    }
 
     @Test
     public void TestPageWithExpiredContentNotShowing() throws Exception{
@@ -2515,8 +2259,21 @@ public class PageResourceTest {
                     .loadJson(this.request, this.response, pageInfo.pageUri, PageMode.LIVE.name(), null,
                             "1", null, matchingFutureIso8601);
 
-
-            validateAllContentletTitlesContaining(currentDateResponse, "Past Published");
+            final PageView pageView = extractPageViewFromResponse(currentDateResponse);
+            //Already expired content should not be present
+            assertEquals(0, validateContentletTitlesContainingInternal(pageView, "Past Published - Already Expired").matched);
+            //Expires today but still makes the cut
+            assertEquals(1, validateContentletTitlesContainingInternal(pageView, "Past Published - Expires Today").matched);
+            //This one should make the cut as it has a future expiration date
+            assertEquals(1, validateContentletTitlesContainingInternal(pageView, "Past Published - Future Expiration").matched);
+            // This one should make the cut as it has no expiration date
+            assertEquals(1, validateContentletTitlesContainingInternal(pageView, "Past Published - Never Expires").matched);
+            // This one should make the cut as it has a future expiration date and was published today
+            assertEquals(1, validateContentletTitlesContainingInternal(pageView, "Published Today - Future Expiration").matched);
+            // This one should make the cut as it has no expiration date and was published today
+            assertEquals(1, validateContentletTitlesContainingInternal(pageView, "Published Today - Never Expires").matched);
+            // Edge case: Published yesterday, expired yesterday should not be present
+            assertEquals(0, validateContentletTitlesContainingInternal(pageView, "Yesterday Published - Yesterday Expired").matched);
 
         } finally {
             TimeZone.setDefault(defaultZone);
