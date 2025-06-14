@@ -9,7 +9,7 @@ import { ResponseView } from './util/response-view';
 
 @Injectable()
 export class NoHttpCoreWebServiceMock {
-    constructor(private data: any) {}
+    constructor(private data: any) { }
 
     public requestView(): Observable<ResponseView<any>> {
         return of(
