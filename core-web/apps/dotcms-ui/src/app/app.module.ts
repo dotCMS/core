@@ -42,4 +42,4 @@ import { SharedModule } from './shared/shared.module';
     providers: [ENV_PROVIDERS],
     schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })
-export class AppModule {}
+export class AppModule { }

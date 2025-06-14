@@ -1,7 +1,5 @@
 import { signalStore, withHooks, withState } from '@ngrx/signals';
 
-import { inject } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
 
 import {
     ComponentStatus,
@@ -9,7 +7,6 @@ import {
     DotCMSContentType,
     DotCMSWorkflow,
     DotCMSWorkflowAction,
-    DotContentletDepths,
     DotCurrentUser,
     DotLanguage,
     WorkflowStep,
@@ -30,6 +27,7 @@ import { withWorkflow } from './features/workflow/workflow.feature';
 import { CurrentContentActionsWithScheme } from '../models/dot-edit-content-field.type';
 import { FormValues } from '../models/dot-edit-content-form.interface';
 import { Activity, DotContentletState, UIState } from '../models/dot-edit-content.model';
+import { withDebug } from './features/debug/debug.feature';
 
 export interface EditContentState {
     // Root state
@@ -182,25 +180,11 @@ export const DotEditContentStore = signalStore(
     withForm(),
     withLocales(),
     withActivities(),
+    withDebug(),
     withHooks({
         onInit(store) {
-            const activatedRoute = inject(ActivatedRoute);
-            const params = activatedRoute.snapshot?.params;
-
-            // Load the current user
+            // Only load the current user - let the component handle content initialization
             store.loadCurrentUser();
-
-            if (params) {
-                const contentType = params['contentType'];
-                const inode = params['id'];
-
-                // TODO: refactor this when we will use EditContent as sidebar
-                if (inode) {
-                    store.initializeExistingContent({ inode, depth: DotContentletDepths.TWO });
-                } else if (contentType) {
-                    store.initializeNewContent(contentType);
-                }
-            }
         }
     })
 );
