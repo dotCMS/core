@@ -440,8 +440,12 @@ public class UtilMethods {
         return (x != null);
     }
 
-    public static final boolean isSet(Object x) {
+    public static boolean isSet(Object x) {
         return (x != null);
+    }
+
+    public static boolean isNotSet(Object x) {
+        return !isSet(x);
     }
 
     public static final boolean isSetCrumb(String x) {
