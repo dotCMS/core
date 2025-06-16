@@ -117,6 +117,7 @@ describe('PageClient', () => {
         });
 
         it('should print graphql errors ', async () => {
+            const consolaSpy = jest.spyOn(consola, 'error');
             const pageClient = new PageClient(validConfig, requestOptions);
             const graphQLOptions = {
                 graphql: {
@@ -144,7 +145,6 @@ describe('PageClient', () => {
 
             await pageClient.get('/graphql-page', graphQLOptions);
 
-            const consolaSpy = jest.spyOn(consola, 'error');
             expect(consolaSpy).toHaveBeenCalledWith(
                 '[DotCMS GraphQL Error]: ',
                 'Some internal server error'
