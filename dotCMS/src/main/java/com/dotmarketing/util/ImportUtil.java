@@ -2371,8 +2371,8 @@ public class ImportUtil {
      * @throws ImportLineException if the URL is invalid
      */
     private static Object validateBinaryField(final Field field, final String value) {
-        if (UtilMethods.isNotSet(value) && !field.isRequired()) {
-            // If the value is not set and the field is required, we throw an exception
+        if (UtilMethods.isNotSet(value)) {
+            // If the value is not set and the field is NOT required we return
             return value;
         }
         //Here we need to throw an exception if the value is not set and the value is required
@@ -2411,8 +2411,8 @@ public class ImportUtil {
     private static Object validateFileField(final Field field, final String value,
             final String currentHostId, final User user
     ) throws DotDataException, DotSecurityException {
-        if(UtilMethods.isNotSet(value) && !field.isRequired()) {
-            // If the value is not set and the field is not required, we return null
+        if(UtilMethods.isNotSet(value)) {
+            // If the value is not set and the field is not required, we return
            return value;
         }
         //Here we need to determine if the value is a valid internal file path or an external URL
