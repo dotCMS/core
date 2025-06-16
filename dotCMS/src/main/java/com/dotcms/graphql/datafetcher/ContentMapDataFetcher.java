@@ -68,15 +68,6 @@ public class ContentMapDataFetcher implements DataFetcher<Object> {
             }
 
             final User user = ((DotGraphQLContext) environment.getContext()).getUser();
-
-            final DotTransformerBuilder transformerBuilder = new DotTransformerBuilder();
-
-            if(UtilMethods.isSet(render) && render) {
-                transformerBuilder.hydratedContentMapTransformer(RENDER_FIELDS);
-            } else {
-                render = false;
-                transformerBuilder.hydratedContentMapTransformer();
-            }
             // Resolve hydrated contentlet map with optional variant handling
             Map<String, Object> hydratedMap = getHydratedMapWithVariantFallback(request, user, contentlet, render);
             final JSONObject contentMapInJSON = new JSONObject();
