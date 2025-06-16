@@ -6,7 +6,6 @@ import com.dotcms.rest.ContentHelper;
 import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.contentlet.transform.DotTransformerBuilder;
 import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -26,7 +25,6 @@ import java.util.stream.Collectors;
 
 import static com.dotmarketing.portlets.contentlet.transform.strategy.RenderFieldStrategy.isFieldRenderable;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.RenderFieldStrategy.renderFieldValue;
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.RENDER_FIELDS;
 
 /**
  * {@link DataFetcher} that fetches the data when the special <code>_map<code/> GraphQL Field is requested.
