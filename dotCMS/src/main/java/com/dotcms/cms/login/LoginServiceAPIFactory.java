@@ -713,19 +713,21 @@ public class LoginServiceAPIFactory implements Serializable {
         ApiTokenAPI apiToken = APILocator.getApiTokenAPI();
         if (logInUser.isAdmin()) {
             List<User> users = APILocator.getUserAPI().findAllUsers();
-            for (User user : users) {
-                List<ApiToken> tokens = apiToken.findApiTokensByUserId(user.getUserId(), false, logInUser);
-                if (UtilMethods.isSet(tokens)) {
-                    if (apiToken.hasAnyTokenExpiring(tokens)) {
-                         message = new SystemMessageBuilder()
-                                .setMessage("User " + user.getFullName() + " has API Tokens that are about to expire within the next 7 days. Please review their tokens.")
-                                .setSeverity(MessageSeverity.WARNING)
-                                .setType(MessageType.SIMPLE_MESSAGE)
-                                .setLife(86400000);
-                         sendMessageDelayed(message, logInUser);
-                    }
-                }
-            }
+            List<String> usersWithTokensExpiring = users.stream()
+                    .filter(user -> {
+                        List<ApiToken> tokens = apiToken.findApiTokensByUserId(user.getUserId(), false, logInUser);
+                        return UtilMethods.isSet(tokens) && apiToken.hasAnyTokenExpiring(tokens);
+                    })
+                    .map(User::getFullName)
+                    .collect(Collectors.toList());
+
+            message = new SystemMessageBuilder()
+                    .setMessage("The following users have API Tokens that are about to expire within the next 7 days: " +
+                             String.join(", ", usersWithTokensExpiring))
+                    .setSeverity(MessageSeverity.WARNING)
+                    .setType(MessageType.SIMPLE_MESSAGE)
+                    .setLife(86400000);
+            sendMessageDelayed(message, logInUser);
         } else {
             List<ApiToken> tokens = apiToken.findApiTokensByUserId(logInUser.getUserId(), false, logInUser);
             if (UtilMethods.isSet(tokens)) {
