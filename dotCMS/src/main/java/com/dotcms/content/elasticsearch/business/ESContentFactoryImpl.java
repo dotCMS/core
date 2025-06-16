@@ -724,14 +724,14 @@ public class ESContentFactoryImpl extends ContentletFactory {
         final int before = Integer.parseInt(result.get(0).get("count"));
 
         final int batchSize = OLD_CONTENT_BATCH_SIZE.get();
-        int deleteContentBatchExecutionCount = 0;
+        int batchExecutionCount = 0;
         int oldInodesCount;
         do {
             oldInodesCount = deleteContentBatch(date, batchSize);
             // Pause if needed to avoid overloading the system
             if (oldInodesCount > 0) {
-                deleteContentBatchExecutionCount++;
-                pauseDeleteContentIfNeeded(deleteContentBatchExecutionCount);
+                batchExecutionCount++;
+                pauseDeleteContentIfNeeded(batchExecutionCount);
             }
         } while (oldInodesCount == batchSize);
 
@@ -779,11 +779,12 @@ public class ESContentFactoryImpl extends ContentletFactory {
      * Pauses the deletion of old content if the number of batches executed so far is a multiple of
      * {@code OLD_CONTENT_BATCHES_BEFORE_PAUSE} to avoid overloading the system.
      *
-     * @param deleteContentBatchExecutionCount The number of batches executed so far.
+     * @param batchExecutionCount The number of batches executed so far.
      */
-    private void pauseDeleteContentIfNeeded(final int deleteContentBatchExecutionCount) {
-        if (deleteContentBatchExecutionCount % OLD_CONTENT_BATCHES_BEFORE_PAUSE.get() == 0) {
+    private void pauseDeleteContentIfNeeded(final int batchExecutionCount) {
+        if (batchExecutionCount % OLD_CONTENT_BATCHES_BEFORE_PAUSE.get() == 0) {
             try {
+                // Schedule a no-op task to pause the deletion process
                 DotConcurrentFactory.getScheduledThreadPoolExecutor()
                     .schedule(() -> {},
                         OLD_CONTENT_JOB_PAUSE_MS.get(), TimeUnit.MILLISECONDS)
