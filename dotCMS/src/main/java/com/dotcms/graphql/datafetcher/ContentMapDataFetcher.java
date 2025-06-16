@@ -48,8 +48,8 @@ public class ContentMapDataFetcher implements DataFetcher<Object> {
             final Contentlet contentlet = environment.getSource();
             final String key = environment.getArgument("key");
             final int depth = environment.getArgument("depth");
-            Boolean renderArg = environment.getArgument("render");
-            boolean render = Boolean.TRUE.equals(renderArg);
+            final Boolean renderArg = environment.getArgument("render");
+            final boolean render = Boolean.TRUE.equals(renderArg);
 
             final HttpServletRequest request = ((DotGraphQLContext) environment.getContext())
                     .getHttpServletRequest();
