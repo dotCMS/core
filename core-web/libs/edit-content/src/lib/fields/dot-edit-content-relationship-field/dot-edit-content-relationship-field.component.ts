@@ -382,8 +382,8 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
             mode: 'new',
             contentTypeId: _contentType.id,
             relationshipInfo: {
-                parentContentletId: this.$contentlet().inode || '',
-                relationshipName: this.$field().variable || '',
+                parentContentletId: this.$contentlet()?.inode,
+                relationshipName: this.$field()?.variable,
                 isParent: true // This could be determined based on relationship configuration
             },
             onContentSaved: (contentlet: DotCMSContentlet) => {
