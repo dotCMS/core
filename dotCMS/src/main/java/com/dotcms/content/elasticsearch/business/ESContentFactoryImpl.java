@@ -2,6 +2,7 @@ package com.dotcms.content.elasticsearch.business;
 
 import com.dotcms.business.ExternalTransaction;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.content.business.json.ContentletJsonAPI;
 import com.dotcms.content.business.json.ContentletJsonHelper;
 import com.dotcms.content.elasticsearch.ESQueryCache;
@@ -126,6 +127,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.MAX_LIMIT;
@@ -780,9 +784,20 @@ public class ESContentFactoryImpl extends ContentletFactory {
     private void pauseDeleteContentIfNeeded(final int deleteContentBatchExecutionCount) {
         if (deleteContentBatchExecutionCount % OLD_CONTENT_BATCHES_BEFORE_PAUSE.get() == 0) {
             try {
-                Thread.sleep(OLD_CONTENT_JOB_PAUSE_MS.get());
+                DotConcurrentFactory.getScheduledThreadPoolExecutor()
+                    .schedule(() -> {},
+                        OLD_CONTENT_JOB_PAUSE_MS.get(), TimeUnit.MILLISECONDS)
+                    .get();
+            } catch (RejectedExecutionException e) {
+                Logger.warn(this.getClass(), "Scheduled task for pauseDeleteContentIfNeeded was rejected: "
+                        + e.getMessage(), e);
             } catch (InterruptedException e) {
+                Logger.warn(this.getClass(), "Thread interrupted during pauseDeleteContentIfNeeded: "
+                        + e.getMessage(), e);
                 Thread.currentThread().interrupt();
+            } catch (ExecutionException e) {
+                Logger.warn(this.getClass(), "Execution exception during pauseDeleteContentIfNeeded: "
+                        + e.getMessage(), e);
             }
         }
     }
