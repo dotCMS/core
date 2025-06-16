@@ -7,7 +7,7 @@ import { UVE_MODE } from "@dotcms/types";
  * Check if the user is in edit mode
  * @returns {boolean}
  */
-export function useIsEditMode() {
+export function useIsEditMode(): boolean {
   const [isEditMode, setIsEditMode] = useState(false);
 
   useEffect(() => {
