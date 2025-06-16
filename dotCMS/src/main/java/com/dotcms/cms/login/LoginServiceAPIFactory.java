@@ -721,13 +721,15 @@ public class LoginServiceAPIFactory implements Serializable {
                     .map(User::getFullName)
                     .collect(Collectors.toList());
 
-            message = new SystemMessageBuilder()
-                    .setMessage("The following users have API Tokens that are about to expire within the next 7 days: " +
-                             String.join(", ", usersWithTokensExpiring))
-                    .setSeverity(MessageSeverity.WARNING)
-                    .setType(MessageType.SIMPLE_MESSAGE)
-                    .setLife(86400000);
-            sendMessageDelayed(message, logInUser);
+            if (!usersWithTokensExpiring.isEmpty()) {
+                message = new SystemMessageBuilder()
+                        .setMessage("The following users have API Tokens that are about to expire within the next 7 days: " +
+                                String.join(", ", usersWithTokensExpiring))
+                        .setSeverity(MessageSeverity.WARNING)
+                        .setType(MessageType.SIMPLE_MESSAGE)
+                        .setLife(86400000);
+                sendMessageDelayed(message, logInUser);
+            }
         } else {
             List<ApiToken> tokens = apiToken.findApiTokensByUserId(logInUser.getUserId(), false, logInUser);
             if (UtilMethods.isSet(tokens)) {
