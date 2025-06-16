@@ -48,7 +48,8 @@ public class ContentMapDataFetcher implements DataFetcher<Object> {
             final Contentlet contentlet = environment.getSource();
             final String key = environment.getArgument("key");
             final int depth = environment.getArgument("depth");
-            Boolean render = environment.getArgument("render");
+            Boolean renderArg = environment.getArgument("render");
+            boolean render = Boolean.TRUE.equals(renderArg);
 
             final HttpServletRequest request = ((DotGraphQLContext) environment.getContext())
                     .getHttpServletRequest();
@@ -59,7 +60,7 @@ public class ContentMapDataFetcher implements DataFetcher<Object> {
             Logger.debug(this, ()-> "Fetching content map for contentlet: " + contentlet.getIdentifier());
             if(UtilMethods.isSet(key)) {
                 Object fieldValue;
-                if(UtilMethods.isSet(render) && render) {
+                if(render) {
                     fieldValue = getRenderedFieldValue(request, response, contentlet, key);
                 } else {
                     fieldValue = contentlet.get(key);
@@ -69,14 +70,6 @@ public class ContentMapDataFetcher implements DataFetcher<Object> {
 
             final User user = ((DotGraphQLContext) environment.getContext()).getUser();
 
-            final DotTransformerBuilder transformerBuilder = new DotTransformerBuilder();
-
-            if(UtilMethods.isSet(render) && render) {
-                transformerBuilder.hydratedContentMapTransformer(RENDER_FIELDS);
-            } else {
-                render = false;
-                transformerBuilder.hydratedContentMapTransformer();
-            }
             // Resolve hydrated contentlet map with optional variant handling
             Map<String, Object> hydratedMap = getHydratedMapWithVariantFallback(request, user, contentlet, render);
             final JSONObject contentMapInJSON = new JSONObject();
@@ -84,7 +77,7 @@ public class ContentMapDataFetcher implements DataFetcher<Object> {
             // this only adds relationships to any json. We would need to return them with the transformations already
 
             final JSONObject jsonWithRels = ContentHelper.getInstance().addRelationshipsToJSON(request, response,
-                    render.toString(), user, depth, false, contentlet,
+                    Boolean.toString(render), user, depth, false, contentlet,
                     contentMapInJSON, null, 1, true, false,
                     true);
 
