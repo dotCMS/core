@@ -160,6 +160,8 @@ public class ContentMapDataFetcher implements DataFetcher<Object> {
             final Contentlet contentlet,
             final boolean render
     ) {
+        // Create a defensive copy to avoid modifying the original contentlet
+        final Contentlet contentletCopy = new Contentlet(contentlet.getMap());
         final Object variantAttr = request.getAttribute(VariantAPI.VARIANT_KEY);
 
         // Set variantId only if explicitly requested
@@ -169,25 +171,25 @@ public class ContentMapDataFetcher implements DataFetcher<Object> {
             // Avoid fallback loop if DEFAULT is already being used
             assert VariantAPI.DEFAULT_VARIANT.name() != null;
             if (VariantAPI.DEFAULT_VARIANT.name().equals(variantName)) {
-                contentlet.setVariantId(variantName);
-                return ContentletUtil.getContentPrintableMap(user, contentlet, false, render);
+                contentletCopy.setVariantId(variantName);
+                return ContentletUtil.getContentPrintableMap(user, contentletCopy, false, render);
             }
 
             try {
-                contentlet.setVariantId(variantName);
-                return ContentletUtil.getContentPrintableMap(user, contentlet, false, render);
+                contentletCopy.setVariantId(variantName);
+                return ContentletUtil.getContentPrintableMap(user, contentletCopy, false, render);
             } catch (DotStateException e) {
                 Logger.debug(this, () -> String.format(
                         "Variant '%s' not found for contentlet '%s'. Falling back to DEFAULT variant.",
-                        variantName, contentlet.getIdentifier()
+                        variantName, contentletCopy.getIdentifier()
                 ));
 
-                contentlet.setVariantId(VariantAPI.DEFAULT_VARIANT.name());
-                return ContentletUtil.getContentPrintableMap(user, contentlet, false, render);
+                contentletCopy.setVariantId(VariantAPI.DEFAULT_VARIANT.name());
+                return ContentletUtil.getContentPrintableMap(user, contentletCopy, false, render);
             }
         }
 
         // No variantAttr: implicitly uses DEFAULT variant
-        return ContentletUtil.getContentPrintableMap(user, contentlet, false, render);
+        return ContentletUtil.getContentPrintableMap(user, contentletCopy, false, render);
     }
 }

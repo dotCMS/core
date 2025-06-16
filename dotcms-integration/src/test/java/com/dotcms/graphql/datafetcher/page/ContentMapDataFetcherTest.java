@@ -18,7 +18,6 @@ import com.liferay.portal.model.User;
 import graphql.schema.DataFetchingEnvironment;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.mockito.Mockito;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
