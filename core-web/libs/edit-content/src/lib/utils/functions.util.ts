@@ -62,10 +62,30 @@ export const castSingleSelectableValue = (
 
 /**
  * Parses field options for single selectable fields (Checkbox, Radio, Select).
- * Supports dotCMS formats as per official documentation:
- * - Multi-line pipe format: "foo|1\r\nbar|2\r\nthird item|c"
- * - Special case: "|true" creates checkbox without label
- * - Simple comma format: "1,2,3" (when no pipes present or single-line with pipes)
+ *
+ * The function handles the following formats:
+ *
+ * 1. Multi-line pipe format (standard format):
+ *    ```
+ *    label1|value1
+ *    label2|value2
+ *    ```
+ *    Each line represents a separate option with label and value separated by pipe.
+ *
+ * 2. Special case for checkboxes:
+ *    ```
+ *    |true
+ *    ```
+ *    Creates a checkbox without label, using the value after the pipe.
+ *
+ * 3. Simple value format:
+ *    ```
+ *    value1,value2,value3
+ *    ```
+ *    When no pipes are present, each comma-separated value is used as both label and value.
+ *
+ * Note: If the input contains line breaks, it will be treated as a single option,
+ * preserving the line breaks as part of the option text.
  *
  * @param options - The string containing the options to parse
  * @param dataType - The data type of the field

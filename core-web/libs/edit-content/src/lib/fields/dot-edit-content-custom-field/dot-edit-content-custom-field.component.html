@@ -8,30 +8,14 @@
         @if (showAsModal) {
             <!-- Modal mode: Show input with button -->
             <div class="flex gap-2 legacy-custom-field__modal-trigger">
-                @switch (field.dataType) {
-                    @case ('TEXT') {
-                        <input
-                            class="disabled-input"
-                            [id]="field.variable"
-                            [attr.data-testId]="field.variable"
-                            [value]="$field()?.name"
-                            [readonly]="true"
-                            [formControlName]="field.variable"
-                            type="text"
-                            pInputText />
-                    }
-                    @default {
-                        <input
-                            class="disabled-input"
-                            [id]="field.variable"
-                            [attr.data-testId]="field.variable"
-                            [value]="$field()?.name"
-                            [readonly]="true"
-                            [formControlName]="field.variable"
-                            type="text"
-                            pInputText />
-                    }
-                }
+                <input
+                    class="disabled-input"
+                    [id]="field.variable"
+                    [attr.data-testId]="field.variable"
+                    [formControlName]="field.variable"
+                    [readonly]="true"
+                    type="text"
+                    pInputText />
 
                 <button
                     pButton
