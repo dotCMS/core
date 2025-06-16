@@ -1,9 +1,19 @@
-import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
-import { getFieldVariableValue, setAttributesToTag } from '.';
 import { h } from '@stencil/core';
 
+import {
+    ContentTypeCheckboxField,
+    ContentTypeMultiSelectField,
+    ContentTypeRadioField,
+    ContentTypeSelectField,
+    ContentTypeTextAreaField,
+    ContentTypeTextField,
+    DotCMSContentTypeField
+} from '@dotcms/dotcms-models';
+
+import { getFieldVariableValue, setAttributesToTag } from '.';
+
 export const DotFormFields = {
-    Text: (field: DotCMSContentTypeField) => (
+    Text: (field: ContentTypeTextField) => (
         <dot-textfield
             hint={field.hint}
             label={field.name}
@@ -17,7 +27,7 @@ export const DotFormFields = {
         />
     ),
 
-    Textarea: (field: DotCMSContentTypeField) => (
+    Textarea: (field: ContentTypeTextAreaField) => (
         <dot-textarea
             hint={field.hint}
             label={field.name}
@@ -31,7 +41,7 @@ export const DotFormFields = {
         />
     ),
 
-    Checkbox: (field: DotCMSContentTypeField) => (
+    Checkbox: (field: ContentTypeCheckboxField) => (
         <dot-checkbox
             hint={field.hint}
             label={field.name}
@@ -45,7 +55,7 @@ export const DotFormFields = {
         />
     ),
 
-    'Multi-Select': (field: DotCMSContentTypeField) => (
+    'Multi-Select': (field: ContentTypeMultiSelectField) => (
         <dot-multi-select
             hint={field.hint}
             label={field.name}
@@ -70,7 +80,7 @@ export const DotFormFields = {
         />
     ),
 
-    Select: (field: DotCMSContentTypeField) => (
+    Select: (field: ContentTypeSelectField) => (
         <dot-select
             hint={field.hint}
             label={field.name}
@@ -84,7 +94,7 @@ export const DotFormFields = {
         />
     ),
 
-    Radio: (field: DotCMSContentTypeField) => (
+    Radio: (field: ContentTypeRadioField) => (
         <dot-radio
             hint={field.hint}
             label={field.name}
