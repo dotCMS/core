@@ -11,7 +11,7 @@ The `@dotcms/angular` SDK is the DotCMS official Angular library. It empowers An
     -   [Installation](#installation)
     -   [dotCMS Client Configuration](#dotcms-client-configuration)
     -   [Proxy Configuration for Static Assets](#proxy-configuration-for-static-assets)
-    -   [Using dotCMS Images with Angular’s `NgOptimizedImage` Directive (Recommended)](#using-dotcms-images-with-angulars-ngoptimizedimage-directive-recommended)
+    -   [Using dotCMS Images with Angular's `NgOptimizedImage` Directive (Recommended)](#using-dotcms-images-with-angulars-ngoptimizedimage-directive-recommended)
 -   [Quickstart: Render a Page with dotCMS](#quickstart-render-a-page-with-dotcms)
     -   [Example Project](#example-project-)
 -   [SDK Reference](#sdk-reference)
@@ -77,8 +77,12 @@ For detailed instructions, please refer to the [dotCMS API Documentation - Read-
 ### Installation
 
 ```bash
-npm install @dotcms/angular@next @dotcms/uve@next @dotcms/client@next @dotcms/types@next @tinymce/tinymce-angular
+npm install @dotcms/angular@next 
 ```
+
+This will automatically install the required dependencies:
+- `@dotcms/uve`: Enables interaction with the [Universal Visual Editor](https://dev.dotcms.com/docs/uve-headless-config) for real-time content editing
+- `@dotcms/client`: Provides the core client functionality for fetching and managing dotCMS data
 
 ## Configuration
 
@@ -182,7 +186,7 @@ class MyDotCMSImageComponent {
 }
 ```
 
-### Using dotCMS Images with Angular’s `NgOptimizedImage` Directive (Recommended)
+### Using dotCMS Images with Angular's `NgOptimizedImage` Directive (Recommended)
 
 To optimize images served from dotCMS in your Angular app, we recommend using the built-in `NgOptimizedImage` directive. This integration supports automatic image preloading, lazy loading, and improved performance.
 
