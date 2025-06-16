@@ -11,7 +11,7 @@ const params = Astro.params;
 const pageResponse = await getDotCMSPage<DotCMSCustomDetailPageResponse>("/blog/post/" + params?.post);
 
 const pageAsset = pageResponse?.pageAsset;
-const errors = pageResponse?.errors;
+const errors = pageResponse?.error;
 const { vanityUrl } = pageAsset ?? {};
 
 if (vanityUrl && (vanityUrl.temporaryRedirect || vanityUrl.permanentRedirect)) {
