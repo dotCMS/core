@@ -12,7 +12,7 @@ function DotCMSImage({
   inode,
 }: ImageComponentProps) {
   return (
-    <div className="relative overflow-hidden bg-white rounded-sm shadow-lg group">
+    <div className="relative overflow-hidden bg-white rounded-sm shadow-lg group mb-4">
       <div className="relative w-full bg-gray-200 h-96">
         {fileAsset && (
           <img

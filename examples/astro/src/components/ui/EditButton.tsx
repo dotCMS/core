@@ -1,4 +1,4 @@
-import type { DotCMSBasicContentlet } from '@dotcms/types';
+import type { Contentlet, DotCMSBasicContentlet } from '@dotcms/types';
 import { editContentlet } from '@dotcms/uve';
 import { useIsEditMode } from '@/hooks';
 

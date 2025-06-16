@@ -22,7 +22,7 @@ import { Contentlet } from '../../../../contentlet.model';
             <app-edit-contentlet-button [contentlet]="contentlet()" />
             <a class="relative min-w-32" [href]="contentlet().urlMap ?? contentlet().url">
                 <img
-                    [ngSrc]="contentlet().image.fileAsset.versionPath"
+                    [ngSrc]="imageUrl()"
                     [fill]="true"
                     [alt]="contentlet().urlTitle ?? contentlet().title"
                     [loaderParams]="{ languageId: contentlet().languageId || 1 }"
@@ -46,7 +46,11 @@ export class RecommendedCardComponent {
 
     uveMode = UVE_MODE;
 
-    editContentlet(contentlet: Contentlet) {
+    protected readonly editContentlet = (contentlet: Contentlet) => {
         editContentlet(contentlet);
+    }
+
+    protected readonly imageUrl = () => {
+        return `/dA/${this.contentlet().inode}`
     }
 }

@@ -4,9 +4,6 @@ export const blogQuery = `
         identifier
         ... on Blog {
             inode
-            image {
-                fileName
-            }
             urlMap
             modDate
             urlTitle
@@ -26,9 +23,6 @@ export const destinationQuery = `
         identifier
         ... on Destination {
                 inode
-                image {
-                fileName
-                }
                 urlMap
                 modDate
                 url
@@ -37,12 +31,12 @@ export const destinationQuery = `
 `;
 
 export const navigationQuery = `
-DotNavigation(uri: "/", depth: 2) {
-    ...NavProps
-    children {
+    DotNavigation(uri: "/", depth: 2) {
         ...NavProps
+        children {
+            ...NavProps
+        }
     }
-}
 `;
 
 export const fragmentNav = `

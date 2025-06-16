@@ -16,19 +16,17 @@ export const RecommendedCard = ({
 }: {
   contentlet: RecommendedCardProps;
 }) => {
-  const { url, title, inode, image, urlMap, modDate } = contentlet;
+  const { url, title, inode, urlMap, modDate } = contentlet;
 
   return (
     <div className="flex gap-7 relative">
       <EditButton contentlet={contentlet} />
       <a className="relative min-w-32" href={urlMap || url}>
-        {image && (
           <img
             src={`/dA/${inode}/250w`}
             alt={title}
             className="object-cover w-[128px] h-[88px]"
           />
-        )}
       </a>
       <div className="flex flex-col gap-1">
         <a className="text-sm text-white font-bold" href={urlMap || url}>
