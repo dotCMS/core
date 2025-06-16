@@ -12,7 +12,7 @@ const pageResponse = await getDotCMSPage(
 );
 
 const pageAsset = pageResponse?.pageAsset;
-const errors = pageResponse?.errors;
+const errors = pageResponse?.error;
 const { vanityUrl } = pageAsset ?? {};
 
 if (vanityUrl && (vanityUrl.temporaryRedirect || vanityUrl.permanentRedirect)) {
