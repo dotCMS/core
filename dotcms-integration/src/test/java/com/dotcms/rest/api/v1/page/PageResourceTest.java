@@ -2193,6 +2193,11 @@ public class PageResourceTest {
     }
 
 
+    /**
+     * Given scenario: A page with a container and a contentlet is created. The contentlet is set to be published in the future.
+     * Expected result: When no publish date is passed, the contentlet should not be shown.
+     * @throws Exception
+     */
     @Test
     public void TestPageWithExpiredContentNotShowing() throws Exception{
         final TimeZone defaultZone = TimeZone.getDefault();
@@ -2234,6 +2239,11 @@ public class PageResourceTest {
         }
     }
 
+    /**
+     * Given scenario: A page with a container and a contentlet is created. The contentlet has overlapping time ranges.
+     * Expected result: The contentlet should be rendered in the page when the current date is used.
+     * @throws Exception
+     */
     @Test
     public void TestPageWithOverlappingTimeRanges() throws Exception{
         final TimeZone defaultZone = TimeZone.getDefault();

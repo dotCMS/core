@@ -241,23 +241,6 @@ public class TestDataUtils {
                                 .indexed(true)
                                 .next()
                 );
-                /*
-                fields.add(
-                        new FieldDataGen()
-                                .name("Publish")
-                                .velocityVarName("sysPublishDate")
-                                .defaultValue(null)
-                                .type(DateField.class)
-                                .next()
-                );
-                fields.add(
-                        new FieldDataGen()
-                                .name("Expire")
-                                .velocityVarName("sysExpireDate")
-                                .defaultValue(null)
-                                .type(DateField.class)
-                                .next()
-                );*/
                 fields.add(
                         new FieldDataGen()
                                 .name("postingDate")
