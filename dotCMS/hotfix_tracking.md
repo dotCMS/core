@@ -48,3 +48,4 @@ This maintenance release includes the following code fixes:
 42. https://github.com/dotCMS/core/issues/30864 : Display Bug in Template Dropdown: Missing Templates and Console Error #30864
 43. https://github.com/dotCMS/core/issues/32131 : IntegrityChecker serialization error #32131
 44. https://github.com/dotCMS/core/issues/31894 : Contentlets with Relationships breaks block editor #31894
+45. https://github.com/dotCMS/core/issues/32414 : Old Edit Content: Template Selector is losing current template reference #32414
