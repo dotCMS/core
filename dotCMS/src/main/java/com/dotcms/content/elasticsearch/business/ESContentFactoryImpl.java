@@ -782,23 +782,27 @@ public class ESContentFactoryImpl extends ContentletFactory {
      * @param batchExecutionCount The number of batches executed so far.
      */
     private void pauseDeleteContentIfNeeded(final int batchExecutionCount) {
-        if (batchExecutionCount % OLD_CONTENT_BATCHES_BEFORE_PAUSE.get() == 0) {
+        final int batchesBeforePause = OLD_CONTENT_BATCHES_BEFORE_PAUSE.get();
+        
+        // Skip the pause logic if batchesBeforePause is zero or negative
+        if (batchesBeforePause <= 0) {
+            return;
+        }
+        
+        if (batchExecutionCount % batchesBeforePause == 0) {
             try {
                 // Schedule a no-op task to pause the deletion process
                 DotConcurrentFactory.getScheduledThreadPoolExecutor()
                     .schedule(() -> {},
                         OLD_CONTENT_JOB_PAUSE_MS.get(), TimeUnit.MILLISECONDS)
-                    .get();
+                    .get(); // Wait for the pause to complete
             } catch (RejectedExecutionException e) {
-                Logger.warn(this.getClass(), "Scheduled task for pauseDeleteContentIfNeeded was rejected: "
-                        + e.getMessage(), e);
-            } catch (InterruptedException e) {
-                Logger.warn(this.getClass(), "Thread interrupted during pauseDeleteContentIfNeeded: "
-                        + e.getMessage(), e);
-                Thread.currentThread().interrupt();
+                Logger.warn(this, "Delete content job pause task was rejected", e);
             } catch (ExecutionException e) {
-                Logger.warn(this.getClass(), "Execution exception during pauseDeleteContentIfNeeded: "
-                        + e.getMessage(), e);
+                Logger.warn(this, "Error executing task to pause delete content job", e);
+            } catch (InterruptedException e) {
+                Logger.warn(this, "Thread interrupted in delete content job pause task", e);
+                Thread.currentThread().interrupt();
             }
         }
     }
