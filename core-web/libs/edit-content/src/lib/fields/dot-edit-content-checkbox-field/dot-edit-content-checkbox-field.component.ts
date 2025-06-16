@@ -48,7 +48,8 @@ export class DotEditContentCheckboxFieldComponent implements OnInit {
 
     $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
 
-    #safeControl: FormControl | null = null;
+    // Initialize with a default FormControl to avoid null issues
+    #safeControl = new FormControl<string[]>([]);
 
     $options = computed(() =>
         getSingleSelectableFieldOptions(this.$field().values || '', this.$field().dataType)
@@ -57,14 +58,14 @@ export class DotEditContentCheckboxFieldComponent implements OnInit {
     /**
      * Returns a FormControl that ensures values are always arrays for PrimeNG checkbox compatibility.
      */
-    $safeFormControl = computed(() => this.#safeControl!);
+    $safeFormControl = computed(() => this.#safeControl);
 
     ngOnInit() {
         const originalControl = this.formControl;
         const initialValue = this.toArray(originalControl.value);
 
-        // Create safe control with array values
-        this.#safeControl = new FormControl(initialValue);
+        // Update the safe control with initial value
+        this.#safeControl.setValue(initialValue);
 
         // Sync: array (safe) → string (original)
         this.#safeControl.valueChanges
@@ -81,8 +82,8 @@ export class DotEditContentCheckboxFieldComponent implements OnInit {
             .pipe(takeUntilDestroyed(this.#destroyRef), distinctUntilChanged())
             .subscribe((stringValue) => {
                 const arrayValue = this.toArray(stringValue);
-                if (JSON.stringify(this.#safeControl!.value) !== JSON.stringify(arrayValue)) {
-                    this.#safeControl!.setValue(arrayValue, { emitEvent: false });
+                if (JSON.stringify(this.#safeControl.value) !== JSON.stringify(arrayValue)) {
+                    this.#safeControl.setValue(arrayValue, { emitEvent: false });
                 }
             });
 
