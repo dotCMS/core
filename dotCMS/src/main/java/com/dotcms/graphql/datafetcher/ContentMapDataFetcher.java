@@ -3,9 +3,11 @@ package com.dotcms.graphql.datafetcher;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.graphql.DotGraphQLContext;
 import com.dotcms.rest.ContentHelper;
+import com.dotcms.variant.VariantAPI;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.contentlet.transform.DotContentletTransformer;
 import com.dotmarketing.portlets.contentlet.transform.DotTransformerBuilder;
+import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONObject;
@@ -75,10 +77,8 @@ public class ContentMapDataFetcher implements DataFetcher<Object> {
                 render = false;
                 transformerBuilder.hydratedContentMapTransformer();
             }
-
-            final DotContentletTransformer myTransformer = transformerBuilder.content(contentlet).build();
-
-            final Map<String, Object> hydratedMap =  myTransformer.toMaps().get(0);
+            // Resolve hydrated contentlet map with optional variant handling
+            Map<String, Object> hydratedMap = getHydratedMapWithVariantFallback(request, user, contentlet, render);
             final JSONObject contentMapInJSON = new JSONObject();
 
             // this only adds relationships to any json. We would need to return them with the transformations already
@@ -142,5 +142,61 @@ public class ContentMapDataFetcher implements DataFetcher<Object> {
         }
 
         return renderFieldValue(request, response, (String) contentlet.get(key), contentlet, field.variable());
+    }
+
+    /**
+     * Attempts to retrieve a hydrated contentlet map, respecting an explicitly requested variant if present.
+     * <p>
+     * Behavior:
+     * <ul>
+     *   <li>If a variant is explicitly provided via {@link VariantAPI#VARIANT_KEY} in the request,
+     *       it is set on the contentlet.</li>
+     *   <li>If the variant is {@code DEFAULT}, no fallback is performed on error.</li>
+     *   <li>If no variant is provided, the contentlet will implicitly use the {@code DEFAULT} variant.</li>
+     *   <li>If a variant is set and fails to resolve (e.g., the contentlet has no version for it),
+     *       a fallback attempt is made using the {@code DEFAULT} variant.</li>
+     * </ul>
+     *
+     * @param request    the current HTTP request, used to extract the variant key if provided
+     * @param user       the user requesting the content, used for permissions and rendering
+     * @param contentlet the contentlet to hydrate
+     * @param render     whether renderable fields should be velocity-rendered
+     * @return a hydrated content map including field values (rendered if requested)
+     */
+    private Map<String, Object> getHydratedMapWithVariantFallback(
+            final HttpServletRequest request,
+            final User user,
+            final Contentlet contentlet,
+            final boolean render
+    ) {
+        final Object variantAttr = request.getAttribute(VariantAPI.VARIANT_KEY);
+
+        // Set variantId only if explicitly requested
+        if (UtilMethods.isSet(variantAttr)) {
+            final String variantName = variantAttr.toString();
+
+            // Avoid fallback loop if DEFAULT is already being used
+            assert VariantAPI.DEFAULT_VARIANT.name() != null;
+            if (VariantAPI.DEFAULT_VARIANT.name().equals(variantName)) {
+                contentlet.setVariantId(variantName);
+                return ContentletUtil.getContentPrintableMap(user, contentlet, false, render);
+            }
+
+            try {
+                contentlet.setVariantId(variantName);
+                return ContentletUtil.getContentPrintableMap(user, contentlet, false, render);
+            } catch (DotStateException e) {
+                Logger.debug(this, () -> String.format(
+                        "Variant '%s' not found for contentlet '%s'. Falling back to DEFAULT variant.",
+                        variantName, contentlet.getIdentifier()
+                ));
+
+                contentlet.setVariantId(VariantAPI.DEFAULT_VARIANT.name());
+                return ContentletUtil.getContentPrintableMap(user, contentlet, false, render);
+            }
+        }
+
+        // No variantAttr: implicitly uses DEFAULT variant
+        return ContentletUtil.getContentPrintableMap(user, contentlet, false, render);
     }
 }
