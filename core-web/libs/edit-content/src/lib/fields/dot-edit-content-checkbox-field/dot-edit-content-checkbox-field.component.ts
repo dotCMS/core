@@ -33,7 +33,7 @@ import { getSingleSelectableFieldOptions } from '../../utils/functions.util';
         @for (option of $options(); track option.value) {
             <p-checkbox
                 [name]="$field().variable"
-                [formControl]="$safeFormControl()"
+                [formControl]="safeControl"
                 [value]="option.value"
                 [label]="option.label || null"
                 [inputId]="$field().variable + '-' + option.value"
@@ -48,27 +48,24 @@ export class DotEditContentCheckboxFieldComponent implements OnInit {
 
     $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
 
-    // Initialize with a default FormControl to avoid null issues
-    #safeControl = new FormControl<string[]>([]);
-
     $options = computed(() =>
         getSingleSelectableFieldOptions(this.$field().values || '', this.$field().dataType)
     );
 
     /**
-     * Returns a FormControl that ensures values are always arrays for PrimeNG checkbox compatibility.
+     * FormControl that ensures values are always arrays for PrimeNG checkbox compatibility.
      */
-    $safeFormControl = computed(() => this.#safeControl);
+    protected safeControl = new FormControl<string[]>([]);
 
     ngOnInit() {
         const originalControl = this.formControl;
         const initialValue = this.toArray(originalControl.value);
 
         // Update the safe control with initial value
-        this.#safeControl.setValue(initialValue);
+        this.safeControl.setValue(initialValue);
 
         // Sync: array (safe) → string (original)
-        this.#safeControl.valueChanges
+        this.safeControl.valueChanges
             .pipe(takeUntilDestroyed(this.#destroyRef))
             .subscribe((arrayValue) => {
                 const stringValue = Array.isArray(arrayValue) ? arrayValue.join(',') : '';
@@ -82,8 +79,8 @@ export class DotEditContentCheckboxFieldComponent implements OnInit {
             .pipe(takeUntilDestroyed(this.#destroyRef), distinctUntilChanged())
             .subscribe((stringValue) => {
                 const arrayValue = this.toArray(stringValue);
-                if (JSON.stringify(this.#safeControl.value) !== JSON.stringify(arrayValue)) {
-                    this.#safeControl.setValue(arrayValue, { emitEvent: false });
+                if (JSON.stringify(this.safeControl.value) !== JSON.stringify(arrayValue)) {
+                    this.safeControl.setValue(arrayValue, { emitEvent: false });
                 }
             });
 

@@ -1,113 +1,235 @@
-import {
-    createFakeCategoryField,
-    createFakeContentlet,
-    createFakeHostFolderField,
-    createFakeLineDividerField,
-    createFakeRelationshipField
-} from '@dotcms/utils-testing';
+import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { getRelationshipFromContentlet } from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/utils';
 
 import { resolutionValue } from './dot-edit-content-form-resolutions';
 
 import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
 
-describe('Utils', () => {
-    describe('resolutionValue', () => {
-        // Host Folder Tests
-        describe('Host Folder Resolution', () => {
-            it('should return hostName when hostName and url exist', () => {
-                const contentlet = createFakeContentlet({
-                    hostName: 'demo.dotcms.com',
-                    url: '/content/generic/index'
-                });
-                const field = createFakeHostFolderField({ defaultValue: '' });
+jest.mock('@dotcms/edit-content/fields/dot-edit-content-relationship-field/utils', () => ({
+    getRelationshipFromContentlet: jest.fn()
+}));
 
-                expect(resolutionValue[FIELD_TYPES.HOST_FOLDER](contentlet, field)).toBe(
-                    'demo.dotcms.com'
-                );
-            });
+describe('DotEditContentFormResolutions', () => {
+    const mockField: DotCMSContentTypeField = {
+        variable: 'testField',
+        defaultValue: 'default value',
+        clazz: 'test-class',
+        contentTypeId: 'test-content-type',
+        dataType: 'text',
+        fieldType: 'text',
+        fieldTypeLabel: 'Text',
+        fixed: false,
+        indexed: true,
+        listed: true,
+        readOnly: false,
+        required: false,
+        searchable: true,
+        sortOrder: 0,
+        unique: false,
+        fieldVariables: [],
+        iDate: 1710892800000, // 2024-03-20T00:00:00.000Z
+        id: 'test-field-id',
+        modDate: 1710892800000, // 2024-03-20T00:00:00.000Z
+        name: 'Test Field'
+    };
 
-            it('should return default value when hostName or url is missing', () => {
-                const contentlet = createFakeContentlet({ hostName: null, url: null });
-                const field = createFakeHostFolderField({ defaultValue: 'default' });
+    const mockContentlet: DotCMSContentlet = {
+        testField: 'test value',
+        hostName: 'https://example.com',
+        url: '/content/test',
+        archived: false,
+        baseType: 'CONTENT',
+        contentType: 'test-content-type',
+        folder: 'test-folder',
+        hasTitleImage: false,
+        host: 'test-host',
+        identifier: 'test-identifier',
+        inode: 'test-inode',
+        languageId: 1,
+        live: true,
+        locked: false,
+        modDate: '2024-03-20T00:00:00.000Z',
+        modUser: 'test-user',
+        modUserName: 'Test User',
+        owner: 'test-owner',
+        publishDate: '2024-03-20T00:00:00.000Z',
+        sortOrder: 0,
+        stInode: 'test-st-inode',
+        title: 'Test Title',
+        titleImage: 'test-image.jpg',
+        working: true
+    };
 
-                expect(resolutionValue[FIELD_TYPES.HOST_FOLDER](contentlet, field)).toBe('default');
-            });
+    beforeEach(() => {
+        jest.clearAllMocks();
+    });
 
-            it('should return empty string when no default value and no path', () => {
-                const contentlet = createFakeContentlet({
-                    hostName: null,
-                    url: null
-                });
-                const field = createFakeHostFolderField({ defaultValue: null });
+    describe('defaultResolutionFn', () => {
+        it('should return field value from contentlet', () => {
+            const result = resolutionValue[FIELD_TYPES.TEXTAREA](mockContentlet, mockField);
+            expect(result).toBe('test value');
+        });
 
-                expect(resolutionValue[FIELD_TYPES.HOST_FOLDER](contentlet, field)).toBe('');
+        it('should return defaultValue when field value is not in contentlet', () => {
+            const contentlet = { ...mockContentlet };
+            delete contentlet.testField;
+
+            const result = resolutionValue[FIELD_TYPES.TEXTAREA](contentlet, mockField);
+            expect(result).toBe('default value');
+        });
+
+        it('should return defaultValue when contentlet is null', () => {
+            const result = resolutionValue[FIELD_TYPES.TEXTAREA](null, mockField);
+            expect(result).toBe('default value');
+        });
+    });
+
+    describe('textFieldResolutionFn', () => {
+        it('should remove leading slash from URL', () => {
+            const contentlet = {
+                ...mockContentlet,
+                testField: '/test-url'
+            };
+
+            const result = resolutionValue[FIELD_TYPES.TEXT](contentlet, mockField);
+            expect(result).toBe('test-url');
+        });
+
+        it('should not modify non-URL values', () => {
+            const contentlet = {
+                ...mockContentlet,
+                testField: 'test-value'
+            };
+
+            const result = resolutionValue[FIELD_TYPES.TEXT](contentlet, mockField);
+            expect(result).toBe('test-value');
+        });
+
+        it('should handle null values', () => {
+            const result = resolutionValue[FIELD_TYPES.TEXT](null, mockField);
+            expect(result).toBe('default value');
+        });
+    });
+
+    describe('hostFolderResolutionFn', () => {
+        it('should construct host folder path from hostName and url', () => {
+            const result = resolutionValue[FIELD_TYPES.HOST_FOLDER](mockContentlet, mockField);
+            expect(result).toBe('https://example.com');
+        });
+
+        it('should return defaultValue when hostName is missing', () => {
+            const contentlet = { ...mockContentlet };
+            delete contentlet.hostName;
+
+            const result = resolutionValue[FIELD_TYPES.HOST_FOLDER](contentlet, mockField);
+            expect(result).toBe('default value');
+        });
+
+        it('should return defaultValue when url is missing', () => {
+            const contentlet = { ...mockContentlet };
+            delete contentlet.url;
+
+            const result = resolutionValue[FIELD_TYPES.HOST_FOLDER](contentlet, mockField);
+            expect(result).toBe('default value');
+        });
+    });
+
+    describe('categoryResolutionFn', () => {
+        it('should extract keys from array of objects', () => {
+            const contentlet = {
+                ...mockContentlet,
+                testField: [{ key1: 'value1' }, { key2: 'value2' }]
+            };
+
+            const result = resolutionValue[FIELD_TYPES.CATEGORY](contentlet, mockField);
+            expect(result).toEqual(['key1', 'key2']);
+        });
+
+        it('should return defaultValue when field is not an array', () => {
+            const contentlet = {
+                ...mockContentlet,
+                testField: 'not-an-array'
+            };
+
+            const result = resolutionValue[FIELD_TYPES.CATEGORY](contentlet, mockField);
+            expect(result).toBe('default value');
+        });
+
+        it('should return empty array when no defaultValue is provided', () => {
+            const field = { ...mockField };
+            delete field.defaultValue;
+
+            const result = resolutionValue[FIELD_TYPES.CATEGORY](mockContentlet, field);
+            expect(result).toEqual([]);
+        });
+    });
+
+    describe('relationshipResolutionFn', () => {
+        const mockRelationships = [{ identifier: 'id1' }, { identifier: 'id2' }];
+
+        beforeEach(() => {
+            (getRelationshipFromContentlet as jest.Mock).mockReturnValue(mockRelationships);
+        });
+
+        it('should join relationship identifiers with commas', () => {
+            const result = resolutionValue[FIELD_TYPES.RELATIONSHIP](mockContentlet, mockField);
+            expect(result).toBe('id1,id2');
+        });
+
+        it('should call getRelationshipFromContentlet with correct parameters', () => {
+            resolutionValue[FIELD_TYPES.RELATIONSHIP](mockContentlet, mockField);
+            expect(getRelationshipFromContentlet).toHaveBeenCalledWith({
+                contentlet: mockContentlet,
+                variable: mockField.variable
             });
         });
 
-        // Category Tests
-        describe('Category Resolution', () => {
-            it('should return array of category keys', () => {
-                const contentlet = createFakeContentlet({
-                    categories: [{ key1: 'value1' }, { key2: 'value2' }]
-                });
-                const field = createFakeCategoryField({ variable: 'categories' });
+        it('should handle empty relationships', () => {
+            (getRelationshipFromContentlet as jest.Mock).mockReturnValue([]);
+            const result = resolutionValue[FIELD_TYPES.RELATIONSHIP](mockContentlet, mockField);
+            expect(result).toBe('');
+        });
+    });
 
-                expect(resolutionValue[FIELD_TYPES.CATEGORY](contentlet, field)).toEqual([
-                    'key1',
-                    'key2'
-                ]);
-            });
+    describe('emptyResolutionFn', () => {
+        it('should always return empty string', () => {
+            const result = resolutionValue[FIELD_TYPES.LINE_DIVIDER](mockContentlet, mockField);
+            expect(result).toBe('');
+        });
+    });
 
-            it('should return default value when no categories exist', () => {
-                const contentlet = createFakeContentlet();
-                const field = createFakeCategoryField({ defaultValue: '[]' });
-
-                expect(resolutionValue[FIELD_TYPES.CATEGORY](contentlet, field)).toEqual('[]');
-            });
-
-            it('should handle non-array values gracefully', () => {
-                const contentlet = createFakeContentlet({
-                    categories: 'invalid'
-                });
-                const field = createFakeCategoryField({
-                    variable: 'categories',
-                    defaultValue: null
-                });
-
-                expect(resolutionValue[FIELD_TYPES.CATEGORY](contentlet, field)).toEqual([]);
+    describe('field type mappings', () => {
+        it('should have resolution functions for all field types', () => {
+            Object.values(FIELD_TYPES).forEach((fieldType) => {
+                expect(resolutionValue[fieldType]).toBeDefined();
             });
         });
 
-        // Relationship Tests
-        describe('Relationship Resolution', () => {
-            it('should return comma-separated identifiers', () => {
-                const contentlet = createFakeContentlet({
-                    relationship: [{ identifier: 'id1' }, { identifier: 'id2' }]
-                });
-                const field = createFakeRelationshipField({ variable: 'relationship' });
+        it('should use defaultResolutionFn for most field types', () => {
+            const defaultFieldTypes = [
+                FIELD_TYPES.BINARY,
+                FIELD_TYPES.FILE,
+                FIELD_TYPES.IMAGE,
+                FIELD_TYPES.BLOCK_EDITOR,
+                FIELD_TYPES.CHECKBOX,
+                FIELD_TYPES.CONSTANT,
+                FIELD_TYPES.CUSTOM_FIELD,
+                FIELD_TYPES.DATE,
+                FIELD_TYPES.DATE_AND_TIME,
+                FIELD_TYPES.TIME,
+                FIELD_TYPES.HIDDEN,
+                FIELD_TYPES.JSON,
+                FIELD_TYPES.KEY_VALUE,
+                FIELD_TYPES.MULTI_SELECT,
+                FIELD_TYPES.RADIO,
+                FIELD_TYPES.SELECT,
+                FIELD_TYPES.TAG,
+                FIELD_TYPES.TEXTAREA,
+                FIELD_TYPES.WYSIWYG
+            ];
 
-                expect(resolutionValue[FIELD_TYPES.RELATIONSHIP](contentlet, field)).toBe(
-                    'id1,id2'
-                );
-            });
-
-            it('should handle empty relationships', () => {
-                const contentlet = createFakeContentlet({
-                    relationship: []
-                });
-                const field = createFakeRelationshipField({ variable: 'relationship' });
-
-                expect(resolutionValue[FIELD_TYPES.RELATIONSHIP](contentlet, field)).toBe('');
-            });
-        });
-
-        // Line Divider Tests
-        describe('Line Divider Resolution', () => {
-            it('should always return empty string', () => {
-                const contentlet = createFakeContentlet();
-                const field = createFakeLineDividerField();
-
-                expect(resolutionValue[FIELD_TYPES.LINE_DIVIDER](contentlet, field)).toBe('');
+            defaultFieldTypes.forEach((fieldType) => {
+                expect(resolutionValue[fieldType]).toBe(resolutionValue[FIELD_TYPES.TEXTAREA]);
             });
         });
     });

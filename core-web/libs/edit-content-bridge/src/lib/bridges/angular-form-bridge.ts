@@ -17,7 +17,6 @@ import {
  */
 export class AngularFormBridge implements FormBridge {
     private fieldSubscriptions: Map<string, FieldSubscription> = new Map();
-    private callbackIdCounter = 0;
 
     constructor(
         private form: FormGroup,
@@ -69,7 +68,7 @@ export class AngularFormBridge implements FormBridge {
             return () => {};
         }
 
-        const callbackId = `callback_${++this.callbackIdCounter}`;
+        const callbackId = Symbol('fieldCallback');
         const fieldCallback: FieldCallback = { id: callbackId, callback };
 
         let fieldSubscription = this.fieldSubscriptions.get(fieldId);
@@ -106,7 +105,7 @@ export class AngularFormBridge implements FormBridge {
      * @param fieldId - The ID of the field.
      * @param callbackId - The ID of the callback to remove.
      */
-    private unsubscribeCallback(fieldId: string, callbackId: string): void {
+    private unsubscribeCallback(fieldId: string, callbackId: symbol): void {
         const fieldSubscription = this.fieldSubscriptions.get(fieldId);
         if (!fieldSubscription) return;
 

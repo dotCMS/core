@@ -1,7 +1,7 @@
 import { FormBridge, FormFieldValue } from '../interfaces/form-bridge.interface';
 
 interface FieldCallback {
-    id: string;
+    id: symbol;
     callback: (value: FormFieldValue) => void;
 }
 
@@ -21,7 +21,6 @@ interface FieldListener {
 export class DojoFormBridge implements FormBridge {
     private fieldListeners: Map<string, FieldListener> = new Map();
     private loadHandler?: () => void;
-    private callbackIdCounter = 0;
 
     constructor() {
         document.addEventListener('beforeunload', () => this.destroy());
@@ -78,7 +77,7 @@ export class DojoFormBridge implements FormBridge {
      */
     onChangeField(fieldId: string, callback: (value: FormFieldValue) => void): () => void {
         try {
-            const callbackId = `callback_${++this.callbackIdCounter}`;
+            const callbackId = Symbol('fieldCallback');
             const fieldCallback: FieldCallback = { id: callbackId, callback };
 
             let listener = this.fieldListeners.get(fieldId);
@@ -153,7 +152,7 @@ export class DojoFormBridge implements FormBridge {
      * @param fieldId - The ID of the field.
      * @param callbackId - The ID of the callback to remove.
      */
-    private unsubscribeCallback(fieldId: string, callbackId: string): void {
+    private unsubscribeCallback(fieldId: string, callbackId: symbol): void {
         const listener = this.fieldListeners.get(fieldId);
         if (!listener) return;
 

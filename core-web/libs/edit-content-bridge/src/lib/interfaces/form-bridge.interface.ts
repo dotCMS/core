@@ -51,7 +51,7 @@ export type FormFieldValue = string | number | boolean | null;
  * @param {FormFieldValue} value - The new value of the field.
  */
 export interface FieldCallback {
-    id: string;
+    id: symbol;
     callback: (value: FormFieldValue) => void;
 }
 

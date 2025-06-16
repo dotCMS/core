@@ -64,7 +64,7 @@ const hostFolderResolutionFn: FnResolutionValue<string> = (contentlet, field) =>
         return `${finalPath}`;
     }
 
-    return field.defaultValue ?? '';
+    return field.defaultValue || '';
 };
 
 /**

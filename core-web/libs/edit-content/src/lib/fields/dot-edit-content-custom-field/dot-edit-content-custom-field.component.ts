@@ -1,4 +1,3 @@
-import { JsonPipe } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -39,7 +38,6 @@ import { INPUT_TEXT_OPTIONS } from '../dot-edit-content-text-field/utils';
         SafeUrlPipe,
         DotIconModule,
         ButtonModule,
-        JsonPipe,
         InputTextModule,
         DialogModule,
         ReactiveFormsModule
@@ -79,7 +77,7 @@ export class DotEditContentCustomFieldComponent implements OnDestroy {
     /**
      * The iframe element to render the custom field in.
      */
-    iframe = viewChild<ElementRef<HTMLIFrameElement>>('iframe');
+    $iframe = viewChild<ElementRef<HTMLIFrameElement>>('iframe');
 
     /**
      * The window object.
@@ -239,7 +237,7 @@ export class DotEditContentCustomFieldComponent implements OnDestroy {
             return;
         }
 
-        const iframeEl = this.iframe()?.nativeElement;
+        const iframeEl = this.$iframe()?.nativeElement;
         if (!iframeEl) {
             return;
         }
@@ -261,7 +259,7 @@ export class DotEditContentCustomFieldComponent implements OnDestroy {
      * Handles the iframe load event.
      */
     onIframeLoad() {
-        const iframeEl = this.iframe()?.nativeElement;
+        const iframeEl = this.$iframe()?.nativeElement;
         if (!iframeEl) return;
 
         iframeEl.classList.add('loaded');
@@ -308,7 +306,7 @@ export class DotEditContentCustomFieldComponent implements OnDestroy {
      * Gets the iframe window.
      */
     private getIframeWindow(): Window | null {
-        const iframeEl = this.iframe()?.nativeElement;
+        const iframeEl = this.$iframe()?.nativeElement;
         if (!iframeEl) {
             console.warn('Iframe not initialized');
 
