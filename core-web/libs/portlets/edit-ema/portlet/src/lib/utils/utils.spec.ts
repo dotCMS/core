@@ -1,5 +1,3 @@
-import { Params } from '@angular/router';
-
 import { CurrentUser } from '@dotcms/dotcms-js';
 import { DotContainer, DotDevice, DotExperiment, DotExperimentStatus } from '@dotcms/dotcms-models';
 import { DotCMSPage, DotCMSViewAsPersona, UVE_MODE } from '@dotcms/types';
@@ -20,13 +18,11 @@ import {
     createFullURL,
     getDragItemData,
     createReorderMenuURL,
-    getAllowedPageParams,
     getOrientation,
     getWrapperMeasures,
     normalizeQueryParams
 } from '.';
 
-import { DotPageApiParams } from '../services/dot-page-api.service';
 import { DEFAULT_PERSONA, PERSONA_KEY } from '../shared/consts';
 import { dotPageContainerStructureMock } from '../shared/mocks';
 import { ContentletDragPayload, ContentTypeDragPayload } from '../shared/models';
@@ -893,53 +889,6 @@ describe('utils functions', () => {
             expect(result).toEqual(
                 'http://localhost/c/portal/layout?p_l_id=2df9f117-b140-44bf-93d7-5b10a36fb7f9&p_p_id=site-browser&p_p_action=1&p_p_state=maximized&_site_browser_struts_action=%2Fext%2Ffolders%2Forder_menu&startLevel=1&depth=1&pagePath=123&hostId=456'
             );
-        });
-    });
-
-    describe('getAllowedPageParams', () => {
-        it('should filter and return only allowed page params', () => {
-            const expected = {
-                url: 'some-url',
-                mode: UVE_MODE.EDIT,
-                depth: '2',
-                clientHost: 'localhost',
-                variantName: 'variant',
-                language_id: '1',
-                experimentId: 'exp123',
-                [PERSONA_KEY]: 'persona123'
-            } as DotPageApiParams;
-
-            const params: Params = {
-                ...expected,
-                invalidParam: 'invalid'
-            };
-
-            const result = getAllowedPageParams(params);
-
-            expect(result).toEqual(expected);
-        });
-
-        it('should return an empty object if no allowed params are present', () => {
-            const params: Params = {
-                invalidParam1: 'invalid1',
-                invalidParam2: 'invalid2'
-            };
-
-            const expected = {} as DotPageApiParams;
-
-            const result = getAllowedPageParams(params);
-
-            expect(result).toEqual(expected);
-        });
-
-        it('should return an empty object if params is empty', () => {
-            const params: Params = {};
-
-            const expected = {} as DotPageApiParams;
-
-            const result = getAllowedPageParams(params);
-
-            expect(result).toEqual(expected);
         });
     });
 
