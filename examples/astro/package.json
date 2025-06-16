@@ -18,19 +18,19 @@
     "@dotcms/types": "next",
     "@dotcms/uve": "next",
     "@tailwindcss/typography": "^0.5.16",
-    "@tailwindcss/vite": "^4.1.8",
+    "@tailwindcss/vite": "^4.1.10",
     "@tinymce/tinymce-react": "6.2.1",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
     "astro": "^4.14.3",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "tailwindcss": "^4.1.8",
+    "tailwindcss": "^4.1.10",
     "typescript": "^5.5.4"
   },
   "devDependencies": {
-    "@types/node": "^24.0.1",
-    "prettier": "^3.5.3",
-    "prettier-plugin-astro": "^0.14.1"
+    "@types/node": "^20.11.19",
+    "prettier": "^3.2.5",
+    "prettier-plugin-astro": "^0.13.0"
   }
 }
