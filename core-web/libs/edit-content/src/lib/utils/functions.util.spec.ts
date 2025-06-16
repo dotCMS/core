@@ -247,6 +247,13 @@ describe('Utils Functions', () => {
                 ]);
             });
 
+            it('should handle options without explicit values (label as value) for boolean type', () => {
+                expect(getSingleSelectableFieldOptions('True\r\nFalse', 'text')).toEqual([
+                    { label: 'True', value: 'True' },
+                    { label: 'False', value: 'False' }
+                ]);
+            });
+
             it('should trim labels and values', () => {
                 expect(
                     getSingleSelectableFieldOptions(

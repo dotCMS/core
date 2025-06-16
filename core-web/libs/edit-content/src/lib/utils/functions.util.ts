@@ -66,6 +66,10 @@ export const castSingleSelectableValue = (
  * - Multi-line pipe format: "foo|1\r\nbar|2\r\nthird item|c"
  * - Special case: "|true" creates checkbox without label
  * - Simple comma format: "1,2,3" (when no pipes present or single-line with pipes)
+ *
+ * @param options - The string containing the options to parse
+ * @param dataType - The data type of the field
+ * @returns Array of parsed options with label and value
  */
 export const getSingleSelectableFieldOptions = (
     options: string,
@@ -73,15 +77,17 @@ export const getSingleSelectableFieldOptions = (
 ): { label: string; value: DotEditContentFieldSingleSelectableDataTypes }[] => {
     if (!options?.trim()) return [];
 
-    const hasLineBreaks = /\r\n|\n|\r/.test(options);
-    const hasPipes = /\|/.test(options);
+    const LINE_BREAKS_REGEX = /\r\n|\n|\r/;
+    const PIPE_REGEX = /\|/;
+    const hasLineBreaks = LINE_BREAKS_REGEX.test(options);
+    const hasPipes = PIPE_REGEX.test(options);
 
     let items: string[] = [];
     let isPipeFormat = false;
 
     if (hasPipes && hasLineBreaks) {
         // Multi-line pipe format (standard dotCMS format)
-        items = options.split(/\r\n|\n|\r/).filter((line) => line.trim());
+        items = options.split(LINE_BREAKS_REGEX).filter((line) => line.trim());
         isPipeFormat = true;
     } else if (hasPipes && !hasLineBreaks && options.trim().startsWith('|')) {
         // Special case: "|true" (checkbox without label)
@@ -92,8 +98,12 @@ export const getSingleSelectableFieldOptions = (
         items = options
             .split(',')
             .map((v) => v.trim())
-            .filter((v) => v);
-        isPipeFormat = false;
+            .filter(Boolean);
+    }
+
+    // Handle nested line breaks in single items
+    if (items.length === 1 && LINE_BREAKS_REGEX.test(items[0])) {
+        items = items[0].split(LINE_BREAKS_REGEX).filter((line) => line.trim());
     }
 
     return items
@@ -102,28 +112,29 @@ export const getSingleSelectableFieldOptions = (
             let value: string;
 
             if (isPipeFormat) {
-                // Pipe format: "foo|1" -> label="foo", value="1"
-                // Special case: "|true" -> label="", value="true" (checkbox without label)
                 const parts = item.split('|');
-                label = (parts[0] || '').trim(); // Allow empty label for "|true" case
-                value = parts[1]?.trim() || parts[0]?.trim() || '';
+                // Si hay pipe, el label es la primera parte y el value es la segunda
+                // Si no hay segunda parte, el value es igual al label
+                label = (parts[0] || '').trim();
+                value = parts[1]?.trim() || label;
             } else {
-                // Comma format: "1" -> label="1", value="1"
+                // Si no hay pipe, tanto label como value son el mismo valor
                 label = item;
                 value = item;
             }
 
-            // Skip only if value is empty (allow empty labels for "|true" case)
             if (!value) return null;
 
             const castedValue = castSingleSelectableValue(value, dataType);
 
             return castedValue !== null ? { label, value: castedValue } : null;
         })
-        .filter(Boolean) as {
-        label: string;
-        value: DotEditContentFieldSingleSelectableDataTypes;
-    }[];
+        .filter(
+            (
+                item
+            ): item is { label: string; value: DotEditContentFieldSingleSelectableDataTypes } =>
+                item !== null
+        );
 };
 
 // This function is used to cast the value to a correct type for the Angular Form

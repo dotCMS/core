@@ -12,6 +12,8 @@ import { ControlContainer, FormControl, FormsModule, ReactiveFormsModule } from 
 
 import { CheckboxModule } from 'primeng/checkbox';
 
+import { distinctUntilChanged } from 'rxjs/operators';
+
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
 import { getSingleSelectableFieldOptions } from '../../utils/functions.util';
@@ -64,16 +66,31 @@ export class DotEditContentCheckboxFieldComponent implements OnInit {
         // Create safe control with array values
         this.#safeControl = new FormControl(initialValue);
 
-        // Sync: array (safe) → string (original) with automatic cleanup
+        // Sync: array (safe) → string (original)
         this.#safeControl.valueChanges
             .pipe(takeUntilDestroyed(this.#destroyRef))
             .subscribe((arrayValue) => {
                 const stringValue = Array.isArray(arrayValue) ? arrayValue.join(',') : '';
-                originalControl.setValue(stringValue, { emitEvent: false });
+                if (originalControl.value !== stringValue) {
+                    originalControl.setValue(stringValue, { emitEvent: false });
+                }
             });
 
-        // Initialize the original control with proper string format
-        originalControl.setValue(initialValue.join(','), { emitEvent: false });
+        // Sync: string (original) → array (safe)
+        originalControl.valueChanges
+            .pipe(takeUntilDestroyed(this.#destroyRef), distinctUntilChanged())
+            .subscribe((stringValue) => {
+                const arrayValue = this.toArray(stringValue);
+                if (JSON.stringify(this.#safeControl!.value) !== JSON.stringify(arrayValue)) {
+                    this.#safeControl!.setValue(arrayValue, { emitEvent: false });
+                }
+            });
+
+        // Only normalize if needed
+        const normalized = initialValue.join(',');
+        if (originalControl.value !== normalized) {
+            originalControl.setValue(normalized, { emitEvent: false });
+        }
     }
 
     /**

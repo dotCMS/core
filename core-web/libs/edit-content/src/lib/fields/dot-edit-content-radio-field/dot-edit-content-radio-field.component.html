@@ -1,4 +1,6 @@
-<!-- TODO: Investigate how to control a repeated option value -->
+@let options = $options();
+@let field = $field();
+
 @for (option of options; track option; let i = $index) {
     <p-radioButton
         [inputId]="field.variable + i"
