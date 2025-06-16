@@ -2372,7 +2372,7 @@ public class ImportUtil {
      */
     private static Object validateBinaryField(final Field field, final String value) {
         if (UtilMethods.isNotSet(value)) {
-            // If the value is not set and the field is NOT required we return
+            // If the value is not set return as REQUIRED_FIELD_MISSING is handled by contentlet checkin
             return value;
         }
         //Here we need to throw an exception if the value is not set and the value is required
@@ -2412,7 +2412,7 @@ public class ImportUtil {
             final String currentHostId, final User user
     ) throws DotDataException, DotSecurityException {
         if(UtilMethods.isNotSet(value)) {
-            // If the value is not set and the field is not required, we return
+            // If the value is not set return as REQUIRED_FIELD_MISSING is handled by contentlet checkin
            return value;
         }
         //Here we need to determine if the value is a valid internal file path or an external URL
