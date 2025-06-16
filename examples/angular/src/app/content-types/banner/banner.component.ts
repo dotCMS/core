@@ -11,14 +11,12 @@ import { Banner } from '../../shared/contentlet.model';
     imports: [RouterLink, NgOptimizedImage, DotCMSEditableTextComponent],
     template: `<div
         class="flex overflow-hidden relative justify-center items-center w-full h-96 bg-gray-200">
-        @if (contentlet().image.identifier; as imageIdentifier) {
         <img
             class="object-cover w-full"
-            [ngSrc]="imageIdentifier"
+            [ngSrc]="contentlet().inode"
             [alt]="contentlet().title"
             fill
             priority />
-        }
         <div
             class="flex absolute inset-0 flex-col justify-center items-center p-4 text-center text-white">
             <h2 class="mb-2 text-6xl font-bold text-shadow">

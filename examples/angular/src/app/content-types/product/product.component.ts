@@ -10,14 +10,12 @@ import { Product } from '../../shared/contentlet.model';
     imports: [RouterLink, NgOptimizedImage],
     template: ` <div class="overflow-hidden bg-white rounded shadow-lg my-2">
         <div class="p-4">
-            @if (contentlet().image.versionPath; as imageVersionPath) {
             <img
                 class="w-full"
-                [ngSrc]="imageVersionPath"
+                [ngSrc]="contentlet().inode"
                 width="100"
                 height="100"
                 alt="Product Image" />
-            }
         </div>
         <div class="px-6 py-4 bg-slate-100">
             <div class="mb-2 text-xl font-bold">{{ contentlet().title }}</div>
