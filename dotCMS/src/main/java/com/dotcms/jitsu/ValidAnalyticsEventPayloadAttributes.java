@@ -1,5 +1,12 @@
 package com.dotcms.jitsu;
 
+/**
+ * Defines a set of attributes supported in the Analytics Event Payload.
+ *
+ * <p>This class does not represent the complete set of supported attributes.
+ * Instead, it contains only the subset of attributes that require special
+ * validation or processing.</p>
+ */
 public interface ValidAnalyticsEventPayloadAttributes {
 
     String SESSION_ID_ATTRIBUTE_NAME = "session_id";
@@ -11,4 +18,7 @@ public interface ValidAnalyticsEventPayloadAttributes {
     String UTM_ATTRIBUTE_NAME = "utm";
 
     String SESSION_ID_JITSU_ATTRIBUTE_NAME = "sessionid";
+
+    String URL_ATTRIBUTE_NAME = "url";
+
 }

@@ -27,6 +27,8 @@ import java.util.function.Supplier;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import static com.dotcms.jitsu.ValidAnalyticsEventPayloadAttributes.URL_ATTRIBUTE_NAME;
+
 public class ContentAnalyticsUtil {
 
     private static final EventLogSubmitter SUBMITTER  = new EventLogSubmitter();
@@ -54,7 +56,10 @@ public class ContentAnalyticsUtil {
                     .getOrDefault(Collector.EVENT_TYPE, EventType.CUSTOM_USER_EVENT.getType()));
         }
 
-        userEventPayload.put("url", "");
+        if (!userEventPayload.containsKey(URL_ATTRIBUTE_NAME)) {
+            userEventPayload.put(URL_ATTRIBUTE_NAME, "");
+        }
+
         userEventPayload.put("request_id", requestId);
 
         try {
