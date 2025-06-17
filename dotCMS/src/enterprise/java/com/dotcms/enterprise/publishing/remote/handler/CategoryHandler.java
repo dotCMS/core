@@ -12,6 +12,7 @@ package com.dotcms.enterprise.publishing.remote.handler;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.enterprise.publishing.remote.bundler.CategoryBundler;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.publisher.pusher.wrapper.CategoryWrapper;
 import com.dotcms.publisher.receiver.handler.IHandler;
 import com.dotcms.publisher.util.PushCategoryUtil;
@@ -174,7 +175,7 @@ public class CategoryHandler implements IHandler {
             }
         } catch (final Exception e) {
             final String errorMsg = String.format("An error occurred when publishing Category Inode '%s', children [ " +
-                    "%s ]: %s", categoryInode, categoryChildren, e.getMessage());
+                    "%s ]: %s", categoryInode, categoryChildren, ExceptionUtil.getErrorMessage(e));
             Logger.error(this, errorMsg, e);
             throw new DotPublishingException(errorMsg, e);
         }
