@@ -31,7 +31,7 @@ export class EditablePageService<T extends DotCMSExtendedPageResponse> {
      * @param route Optional override for the current route
      * @returns Observable that completes when initial page load is done
      */
-    initializePage(extraParams?: DotCMSPageRequestParams): Signal<PageState<T>> {
+    initializePage(extraParams: DotCMSPageRequestParams = {}): Signal<PageState<T>> {
         this.#setLoading();
 
         // Wait for the router to navigate to the page
@@ -52,17 +52,8 @@ export class EditablePageService<T extends DotCMSExtendedPageResponse> {
                     // If the path is empty, use the root path
                     const url = path || '/';
 
-                    // Get the query params from the current route, avoid passing mode to let the UVE handle it
-                    const { mode, ...queryParams } = this.#activatedRoute.snapshot.queryParams;
-
-                    // Combine the query params with the extra params
-                    const fullParams = {
-                        ...queryParams,
-                        ...extraParams
-                    };
-
                     // Fetch the page asset
-                    return this.#pageService.getPageAsset<T>(url, fullParams);
+                    return this.#pageService.getPageAsset<T>(url, extraParams);
                 })
             )
             .subscribe((response) => {
