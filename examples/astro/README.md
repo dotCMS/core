@@ -403,6 +403,18 @@ export function MyPage({ page }) {
 
 Learn more about the `@dotcms/react` package [here](https://www.npmjs.com/package/@dotcms/react/v/next).
 
+### How dotCMS Routes Pages
+dotCMS allows a single page to be accessed via multiple URL paths (e.g., / and /index for the same "Home" page). This flexibility means your Angular application needs to handle these variations.
+
+To ensure all paths to the same content are properly managed and to prevent 404/500 errors, we recommend using a catch-all route strategy in Angular.
+
+How to Implement in Astro:
+
+Create a dynamic route using `[...slug].astro` in your `src/pages` directory. This catch-all route will handle any undefined paths, allowing you to fetch content from dotCMS based on the full URL. The `slug` parameter will contain the full path segments, which you can use to request the corresponding content from dotCMS.
+
+You can learn more about Astro routing strategies [here](https://docs.astro.build/en/guides/routing/)
+
+
 #### Content Type to React Component Mapping
 
 One of the key concepts in this integration is mapping dotCMS Content Types to React components. This mapping tells the framework which React component should render which type of content from dotCMS.

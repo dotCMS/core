@@ -1,3 +1,5 @@
+import consola from 'consola';
+
 import {
     DotCMSClientConfig,
     DotCMSComposedPageResponse,
@@ -122,6 +124,7 @@ export class PageClient {
             fireRules = false,
             personaId,
             publishDate,
+            variantName,
             graphql = {}
         } = options || {};
         const { page, content = {}, variables, fragments } = graphql;
@@ -142,6 +145,7 @@ export class PageClient {
             fireRules,
             publishDate,
             siteId,
+            variantName,
             ...variables
         };
 
@@ -157,7 +161,7 @@ export class PageClient {
 
             if (errors) {
                 errors.forEach((error: { message: string }) => {
-                    throw new Error(error.message);
+                    consola.error('[DotCMS GraphQL Error]: ', error.message);
                 });
             }
 
