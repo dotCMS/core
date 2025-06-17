@@ -56,7 +56,7 @@ These examples handle UVE integration, routing, rendering, and more—out of the
 > 💡 We recommend using one of our official framework SDKs, which are designed to handle UVE integration, routing, rendering, and more—out of the box.
 
 You can use `@dotcms/uve` directly, but **it’s not recommended or supported** unless you’re building a highly custom integration. Here’s how the pieces fit together:
-
+dasds
 1. **You must use `@dotcms/client` to fetch content and page data.**
 2. **You must render pages based on dotCMS’s layout schema.**
 3. **You must apply the correct `data-dot-*` attributes to containers and contentlets.**
