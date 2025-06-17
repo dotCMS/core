@@ -74,12 +74,7 @@ import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction;
-import com.dotmarketing.portlets.workflows.model.SystemActionWorkflowActionMapping;
-import com.dotmarketing.portlets.workflows.model.WorkflowAction;
-import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
-import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
-import com.dotmarketing.portlets.workflows.model.WorkflowStep;
-import com.dotmarketing.portlets.workflows.model.WorkflowTask;
+import com.dotmarketing.portlets.workflows.model.*;
 import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
 import com.dotmarketing.portlets.workflows.util.WorkflowSchemeImportExportObject;
 import com.dotmarketing.util.Config;
@@ -97,6 +92,7 @@ import com.liferay.util.HttpHeaders;
 import com.liferay.util.StringPool;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -3239,6 +3235,103 @@ public class WorkflowResource {
         }
         return new ResponseContentletWorkflowStatusView(new ContentletWorkflowStatusView(scheme,
                 wfStep, wfTask));
+    }
+
+    /**
+     * Returns the status of a specific piece of Content in the Workflow it is assigned to. In
+     * summary:
+     * <ul>
+     *     <li>The Workflow Scheme that the Contentlet is in.</li>
+     *     <li>The Step that the Contentlet is in.</li>
+     *     <li>The User assigned to such a Step.</li>
+     * </ul>
+     * Here's an example of how to use this endpoint:
+     * <pre>
+     *     http://localhost:8080/api/v1/workflow/status/{contentletInode}
+     * </pre>
+     *
+     * @param request         The current instance of the {@link HttpServletRequest}.
+     * @param response        The current instance of the {@link HttpServletResponse}.
+     * @param contentletIdentifier The inode of the Contentlet whose status will be checked.
+     *
+     * @return The status information of the Contentlet in the Workflow it is assigned to.
+     *
+     * @throws DotDataException          The specified Contentlet Inode was not found.
+     * @throws DotSecurityException      The User calling this endpoint does not have required
+     *                                   permissions to do so.
+     * @throws InvocationTargetException Failed to transform the {@link WorkflowTask} data for this
+     *                                   view.
+     * @throws IllegalAccessException    Failed to transform the {@link WorkflowTask} data for this
+     *                                   view.
+     */
+    @GET
+    @Path("/tasks/history/comments/{contentletIdentifier}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Operation(operationId = "getWorkflowTasksHistoryComments", summary = "Find workflow tasks history and comments of content",
+            description = "Retrieve the workflow tasks comments of a contentlet by its [id]" +
+                    "(https://www.dotcms.com/docs/latest/content-versions#IdentifiersInodes).\n\n" +
+                    "Returns an object containing the associated [workflow history or comments]" +
+                    "https://www2.dotcms.com/docs/latest/workflow-tasks, [workflow task]",
+            tags = {"Workflow"},
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Action(s) returned successfully",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ResponseEntityWorkflowHistoryCommentsView.class)
+                            )
+                    ),
+                    @ApiResponse(responseCode = "400", description = "Bad Request")
+            }
+    )
+    public final ResponseEntityWorkflowHistoryCommentsView getWorkflowTasksHistoryComments(@Context final HttpServletRequest request,
+                                                                                           @Context final HttpServletResponse response,
+                                                                                           @PathParam("contentletIdentifier") @Parameter(
+                                                                                                   required = true,
+                                                                                                   description = "Id of content  to inspect for workflow tasks.\n\n",
+                                                                                                   schema = @Schema(type = "string")
+                                                                                           ) final String contentletIdentifier,
+                                                                                           @DefaultValue("-1") @QueryParam("language") @Parameter(
+                                                                                                   description = "Language version of target content.",
+                                                                                                   schema = @Schema(type = "string")) final String language
+    )
+            throws DotDataException, DotSecurityException, InvocationTargetException, IllegalAccessException {
+
+        Logger.debug(this, String.format("Retrieving Workflow tasks for Contentlet with identifier " +
+                "'%s'", contentletIdentifier));
+        final InitDataObject initDataObject = new WebResource.InitBuilder(webResource)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .requiredBackendUser(true).requiredFrontendUser(false).init();
+
+        final User user = initDataObject.getUser();
+        final long languageId = LanguageUtil.getLanguageId(language);
+        final PageMode mode = PageMode.get(request);
+
+        final Optional<Contentlet> currentContentlet =  languageId <= 0?
+                this.workflowHelper.getContentletByIdentifier(contentletIdentifier, mode, initDataObject.getUser(),
+                        ()->WebAPILocator.getLanguageWebAPI().getLanguage(request).getId()):
+                this.contentletAPI.findContentletByIdentifierOrFallback
+                        (contentletIdentifier, mode.showLive, languageId, initDataObject.getUser(), mode.respectAnonPerms);
+
+        if (currentContentlet.isPresent()) {
+
+            final WorkflowTask currentWorkflowTask = this.workflowAPI.findTaskByContentlet(currentContentlet.get());
+            final List<WorkflowTimelineItem> workflowComments = this.workflowAPI.getCommentsAndChangeHistory(currentWorkflowTask);
+            final List<WorkflowTimelineItemView> workflowTimelineItemViews = workflowComments.stream()
+                    .map(this::toWorkflowTimelineItemView)
+                    .collect(Collectors.toList());
+            return new ResponseEntityWorkflowHistoryCommentsView(workflowTimelineItemViews);
+        }
+
+        throw new DoesNotExistException("Contentlet with identifier " + contentletIdentifier + " does not exist.");
+    }
+
+    private WorkflowTimelineItemView toWorkflowTimelineItemView(final WorkflowTimelineItem wfTimeLine) {
+
+        final String postedBy = this.workflowHelper.getPostedBy(wfTimeLine.roleId());
+        return new WorkflowTimelineItemView(wfTimeLine.createdDate(), wfTimeLine.roleId(), postedBy,
+                wfTimeLine.commentDescription(), wfTimeLine.taskId(), wfTimeLine.type());
     }
 
 } // E:O:F:WorkflowResource.
