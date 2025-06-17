@@ -6,6 +6,7 @@ import com.dotcms.rest.ContentHelper;
 import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.transform.DotTransformerBuilder;
 import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -25,6 +26,7 @@ import java.util.stream.Collectors;
 
 import static com.dotmarketing.portlets.contentlet.transform.strategy.RenderFieldStrategy.isFieldRenderable;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.RenderFieldStrategy.renderFieldValue;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.RENDER_FIELDS;
 
 /**
  * {@link DataFetcher} that fetches the data when the special <code>_map<code/> GraphQL Field is requested.
@@ -69,7 +71,7 @@ public class ContentMapDataFetcher implements DataFetcher<Object> {
             final User user = ((DotGraphQLContext) environment.getContext()).getUser();
 
             // Resolve hydrated contentlet map with optional variant handling
-            Map<String, Object> hydratedMap = getHydratedMapWithVariantFallback(request, user, contentlet, render);
+            Map<String, Object> hydratedMap = getHydratedMapWithVariantFallback(request, contentlet, render);
             final JSONObject contentMapInJSON = new JSONObject();
 
             // this only adds relationships to any json. We would need to return them with the transformations already
@@ -156,12 +158,17 @@ public class ContentMapDataFetcher implements DataFetcher<Object> {
      */
     private Map<String, Object> getHydratedMapWithVariantFallback(
             final HttpServletRequest request,
-            final User user,
             final Contentlet contentlet,
             final boolean render
     ) {
         // Create a defensive copy to avoid modifying the original contentlet
         final Contentlet contentletCopy = new Contentlet(contentlet.getMap());
+        final DotTransformerBuilder transformerBuilder = new DotTransformerBuilder();
+        if(render) {
+            transformerBuilder.hydratedContentMapTransformer(RENDER_FIELDS);
+        } else {
+            transformerBuilder.hydratedContentMapTransformer();
+        }
         final Object variantAttr = request.getAttribute(VariantAPI.VARIANT_KEY);
 
         // Set variantId only if explicitly requested
@@ -172,12 +179,12 @@ public class ContentMapDataFetcher implements DataFetcher<Object> {
             assert VariantAPI.DEFAULT_VARIANT.name() != null;
             if (VariantAPI.DEFAULT_VARIANT.name().equals(variantName)) {
                 contentletCopy.setVariantId(variantName);
-                return ContentletUtil.getContentPrintableMap(user, contentletCopy, false, render);
+                return transformContentlet(transformerBuilder, contentletCopy);
             }
 
             try {
                 contentletCopy.setVariantId(variantName);
-                return ContentletUtil.getContentPrintableMap(user, contentletCopy, false, render);
+                return transformContentlet(transformerBuilder, contentletCopy);
             } catch (DotStateException e) {
                 Logger.debug(this, () -> String.format(
                         "Variant '%s' not found for contentlet '%s'. Falling back to DEFAULT variant.",
@@ -185,11 +192,26 @@ public class ContentMapDataFetcher implements DataFetcher<Object> {
                 ));
 
                 contentletCopy.setVariantId(VariantAPI.DEFAULT_VARIANT.name());
-                return ContentletUtil.getContentPrintableMap(user, contentletCopy, false, render);
+                return transformContentlet(transformerBuilder, contentletCopy);
             }
         }
 
         // No variantAttr: implicitly uses DEFAULT variant
-        return ContentletUtil.getContentPrintableMap(user, contentletCopy, false, render);
+        return transformContentlet(transformerBuilder, contentletCopy);
     }
+
+    /**
+     * Transforms the given {@link Contentlet} using the provided {@link DotTransformerBuilder}
+     * and returns the first entry from the resulting hydrated content map.
+     *
+     * @param builder     the transformer builder preconfigured with hydration settings
+     * @param contentlet  the contentlet to transform into a hydrated map
+     * @return the first (and typically only) map resulting from the contentlet transformation
+     */
+    private Map<String, Object> transformContentlet(final DotTransformerBuilder builder, final Contentlet contentlet) {
+        return builder.content(contentlet).build().toMaps().get(0);
+    }
+
+
+
 }
