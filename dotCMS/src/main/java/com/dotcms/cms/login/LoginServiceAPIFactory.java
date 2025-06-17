@@ -722,9 +722,12 @@ public class LoginServiceAPIFactory implements Serializable {
                     .collect(Collectors.toList());
 
             if (!usersWithTokensExpiring.isEmpty()) {
+                String msg = "Some user's API token are about to expire: <br>" +
+                        usersWithTokensExpiring.stream().limit(3).collect(Collectors.joining("<br> - ")) + "<br>" +
+                        "And " + (usersWithTokensExpiring.size() - 3) + " more." + "<br>" +
+                        "Go to <a href=\"#/c/users\">Users</a> to renovate them";
                 message = new SystemMessageBuilder()
-                        .setMessage("The following users have API Tokens that are about to expire within the next 7 days: " +
-                                String.join(", ", usersWithTokensExpiring))
+                        .setMessage(msg)
                         .setSeverity(MessageSeverity.WARNING)
                         .setType(MessageType.SIMPLE_MESSAGE)
                         .setLife(86400000);
@@ -736,7 +739,7 @@ public class LoginServiceAPIFactory implements Serializable {
 
                 if (apiToken.hasAnyTokenExpiring(tokens)) {
                      message = new SystemMessageBuilder()
-                            .setMessage("You have API Tokens that are about to expire within the next 7 days. Please review your tokens.")
+                            .setMessage("You have API Tokens that are about to expire. Please let your Administrator know about this.")
                             .setSeverity(MessageSeverity.WARNING)
                             .setType(MessageType.SIMPLE_MESSAGE)
                             .setLife(86400000);
