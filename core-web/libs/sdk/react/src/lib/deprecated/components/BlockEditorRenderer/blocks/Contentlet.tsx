@@ -9,7 +9,7 @@ export interface Contentlet {
     baseType: string;
     inode: string;
     archived: boolean;
-    ownerName: string;
+    ownerUserName: string;
     host: string;
     working: boolean;
     locked: boolean;

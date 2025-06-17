@@ -124,13 +124,13 @@ code {
 .dot-mask {
     background-color: transparent;
     backdrop-filter: none;
-    -webkit-backdrop-filter: none;
     pointer-events: auto;
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
+    z-index: 999;
 }
 
 .cursor-not-allowed {

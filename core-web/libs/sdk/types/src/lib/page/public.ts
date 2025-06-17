@@ -320,6 +320,7 @@ export interface DotCMSContainer {
  * @property {string} modUser - User who last modified
  * @property {string} modUserName - Display name of user who last modified
  * @property {string} owner - Owner of the contentlet
+ * @property {string} ownerUserName - Display name of owner of the contentlet
  * @property {number} sortOrder - Sort order position
  * @property {string} stInode - Structure inode
  * @property {string} title - Title of the contentlet
@@ -346,6 +347,7 @@ export interface DotCMSBasicContentlet {
     file?: string;
     folder: string;
     hasLiveVersion?: boolean;
+    ownerUserName?: string;
     hasTitleImage: boolean;
     host: string;
     hostName: string;
