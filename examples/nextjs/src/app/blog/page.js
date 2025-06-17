@@ -20,14 +20,6 @@ export async function generateMetadata() {
 export default async function Home() {
     const pageResponse = await getDotCMSPage(`/blog`);
 
-    // TEST
-    const vanityUrl = pageResponse?.pageAsset?.vanityUrl;
-    const action = vanityUrl?.action ?? 0;
-
-    if (action > 200) {
-        return redirect(pageContent.pageAsset.vanityUrl.forwardTo);
-    }
-
     if (!pageResponse) {
         return <NotFound />;
     }
