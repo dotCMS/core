@@ -53,6 +53,12 @@ public class DatabaseHealthCheck extends HealthCheckBase {
 
     @Override
     protected CheckResult performCheck() throws Exception {
+        // Skip expensive database operations during shutdown
+        if (isShutdownInProgress()) {
+            Logger.debug(this, "Skipping database connectivity test during shutdown");
+            return new CheckResult(false, 0L, "Database health check skipped during shutdown to avoid connection attempts while database services are shutting down");
+        }
+        
         // Check if we should use event-driven result
         if (isEventDriven()) {
             Logger.debug(this, "Database health check using event-driven monitoring");

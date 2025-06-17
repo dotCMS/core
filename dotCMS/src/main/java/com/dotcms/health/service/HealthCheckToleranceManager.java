@@ -43,6 +43,9 @@ public class HealthCheckToleranceManager {
         HealthStatus rawStatus = originalResult.status();
         Instant now = Instant.now();
         
+        // Check if this is a monitor mode result (DEGRADED status from monitor mode conversion)
+        boolean isMonitorModeConversion = rawStatus == HealthStatus.DEGRADED && isMonitorModeResult(checkName);
+        
         // CRITICAL: During startup phase, do NOT apply tolerance logic
         // Startup failures should return genuine DOWN status (503) so K8s doesn't route traffic
         if (isInStartupPhase) {
@@ -101,6 +104,9 @@ public class HealthCheckToleranceManager {
         String checkName = result.name();
         HealthStatus rawStatus = result.status();
         Instant now = Instant.now();
+        
+        // Check if this DEGRADED status is from MONITOR_MODE conversion (underlying failure)
+        boolean isMonitorModeConversion = rawStatus == HealthStatus.DEGRADED && isMonitorModeResult(checkName);
         
         // If check is genuinely passing (UP), reset the failure window
         // NOTE: DEGRADED status should NOT be treated as recovery - it indicates ongoing issues

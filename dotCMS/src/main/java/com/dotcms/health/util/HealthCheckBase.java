@@ -124,6 +124,19 @@ public abstract class HealthCheckBase implements HealthCheck {
     protected abstract CheckResult performCheck() throws Exception;
     
     /**
+     * Check if system shutdown is in progress.
+     * Health checks can use this to avoid expensive operations during shutdown.
+     */
+    protected boolean isShutdownInProgress() {
+        try {
+            return com.dotcms.shutdown.ShutdownCoordinator.isShutdownStarted();
+        } catch (Exception e) {
+            // If we can't check shutdown status, assume not shutting down
+            return false;
+        }
+    }
+    
+    /**
      * Returns whether system details should be included in health check results.
      * This is controlled by the global health.include.system-details property.
      */

@@ -4,6 +4,7 @@ import com.dotcms.health.checks.ApplicationHealthCheck;
 import com.dotcms.health.checks.CdiInitializationHealthCheck;
 import com.dotcms.health.checks.GarbageCollectionHealthCheck;
 import com.dotcms.health.checks.ServletContainerHealthCheck;
+import com.dotcms.health.checks.ShutdownHealthCheck;
 import com.dotcms.health.checks.SystemHealthCheck;
 import com.dotcms.health.checks.ThreadHealthCheck;
 import com.dotcms.health.model.HealthResponse;
@@ -191,6 +192,10 @@ public class HealthProbeServlet extends HttpServlet {
             // CDI initialization check - readiness only
             CdiInitializationHealthCheck cdiCheck = new CdiInitializationHealthCheck();
             healthStateManager.registerHealthCheck(cdiCheck);
+            
+            // Shutdown status check - readiness only (fails when shutdown begins to stop new traffic)
+            ShutdownHealthCheck shutdownCheck = new ShutdownHealthCheck();
+            healthStateManager.registerHealthCheck(shutdownCheck);
             
             Logger.info(this, "Core health checks registered successfully");
         } catch (Exception e) {
