@@ -29,10 +29,8 @@ iframe {
     left: 0;
 }
 
-p-button {
-    position: absolute;
-    top: $spacing-4;
-    right: $spacing-9;
-    z-index: 99999;
-    cursor: pointer;
+.disabled-input {
+    background-color: $color-palette-gray-100;
+    color: $color-palette-gray-500;
+    cursor: not-allowed;
 }
