@@ -677,6 +677,12 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
                     // If no jobs were found, wait for a short time before checking again
                     // Implement exponential backoff when queue is repeatedly empty
                     long sleepTime = calculateBackoffTime(emptyQueueCount, MAX_EMPTY_QUEUE_COUNT);
+                    
+                    // During shutdown, use shorter sleep times to be more responsive
+                    if (isShuttingDown) {
+                        sleepTime = Math.min(sleepTime, 100); // Max 100ms during shutdown
+                    }
+                    
                     Thread.sleep(sleepTime);
                     emptyQueueCount = incrementAndResetEmptyQueueCount(
                             emptyQueueCount, MAX_EMPTY_QUEUE_COUNT, EMPTY_QUEUE_RESET_THRESHOLD
@@ -687,10 +693,72 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
                 Thread.currentThread().interrupt();
                 break; // Exit the loop immediately on interruption
             } catch (Exception e) {
+                // Check if this is a database-related error during shutdown
+                if (isShuttingDown && isDatabaseShutdownError(e)) {
+                    Logger.debug(this, "Database connection lost during shutdown (expected), stopping job processing");
+                    break;
+                }
+                
                 Logger.error(this, "Unexpected error in job processing loop: " + e.getMessage(), e);
                 getCircuitBreaker().recordFailure();
+                
+                // During shutdown, don't continue processing on errors
+                if (isShuttingDown) {
+                    Logger.debug(this, "Stopping job processing due to error during shutdown");
+                    break;
+                }
             }
         }
+        
+        Logger.debug(this, "Job processing thread exiting (interrupted: " + 
+            Thread.currentThread().isInterrupted() + ", shuttingDown: " + isShuttingDown + ")");
+    }
+    
+    /**
+     * Check if the exception is related to database shutdown or connectivity issues
+     * This handles both Docker container shutdowns and production database connectivity issues
+     */
+    private boolean isDatabaseShutdownError(Exception e) {
+        if (e == null) return false;
+        
+        String message = e.getMessage();
+        if (message == null) return false;
+        
+        // PostgreSQL specific errors
+        if (message.contains("terminating connection due to administrator command") ||
+            message.contains("This connection has been closed") ||
+            message.contains("Connection is closed") ||
+            message.contains("Database error while fetching next job") ||
+            message.contains("connection has been closed") ||
+            message.contains("Connection refused") ||
+            message.contains("No route to host") ||
+            message.contains("Connection timed out")) {
+            return true;
+        }
+        
+        // HikariCP connection pool errors during shutdown
+        if (message.contains("HikariPool") && 
+            (message.contains("shutdown") || message.contains("closed") || message.contains("interrupted"))) {
+            return true;
+        }
+        
+        // General database connectivity issues
+        if (message.contains("SQLException") || message.contains("ConnectException")) {
+            return true;
+        }
+        
+        // Thread interruption (normal during shutdown)
+        if (e instanceof InterruptedException) {
+            return true;
+        }
+        
+        // Check the root cause as well
+        Throwable cause = e.getCause();
+        if (cause != null && cause != e) {
+            return isDatabaseShutdownError(new Exception(cause));
+        }
+        
+        return false;
     }
 
     /**
@@ -702,8 +770,19 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
     private boolean processNextJob() throws DotDataException {
 
         try {
+            // Skip database calls during shutdown to avoid blocking threads
+            if (isShuttingDown) {
+                Logger.debug(this, "Skipping job processing during shutdown");
+                return false;
+            }
+            
             Job job = jobQueue.nextJob();
             if (job != null) {
+                // Double-check shutdown status before processing
+                if (isShuttingDown) {
+                    Logger.debug(this, "Shutdown detected, skipping job processing");
+                    return false;
+                }
                 processJobWithRetry(job);
                 return true;
             }
@@ -717,21 +796,41 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
 
     /**
      * Closes an ExecutorService, shutting it down and waiting for any running jobs to complete.
+     * Uses a shorter timeout during shutdown to be responsive to dotCMS shutdown coordination.
      *
      * @param executor The ExecutorService to close.
      */
     private void closeExecutorService(final ExecutorService executor) {
 
+        Logger.info(this, "Shutting down job queue executor service");
         executor.shutdown();
 
         try {
-            if (!executor.awaitTermination(60, TimeUnit.SECONDS)) {
-                executor.shutdownNow();
+            // Use shorter timeout to be more responsive to shutdown coordination
+            // Most job processing threads should exit quickly due to shutdown checks
+            int gracefulTimeoutSeconds = 3;
+            
+            if (!executor.awaitTermination(gracefulTimeoutSeconds, TimeUnit.SECONDS)) {
+                Logger.warn(this, "Job queue executor did not terminate gracefully within " + 
+                    gracefulTimeoutSeconds + " seconds, forcing shutdown");
+                
+                // Interrupt all threads to break out of blocking operations
+                var cancelledTasks = executor.shutdownNow();
+                Logger.debug(this, "Cancelled " + cancelledTasks.size() + " pending tasks during forced shutdown");
+                
+                // Give forced shutdown a brief moment to complete
+                if (!executor.awaitTermination(2, TimeUnit.SECONDS)) {
+                    Logger.error(this, "Job queue executor did not terminate even after forced shutdown");
+                } else {
+                    Logger.info(this, "Job queue executor terminated after forced shutdown");
+                }
+            } else {
+                Logger.info(this, "Job queue executor shut down gracefully");
             }
         } catch (InterruptedException e) {
+            Logger.warn(this, "Job queue shutdown interrupted, forcing immediate termination");
             executor.shutdownNow();
             Thread.currentThread().interrupt();
-            Logger.error(this, "Interrupted while waiting for jobs to complete", e);
         }
     }
 
@@ -747,7 +846,13 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
             Logger.warn(this, "Circuit breaker is open. Pausing job processing for a while.");
 
             try {
-                Thread.sleep(5000); // Wait for 5 seconds before checking again
+                // During shutdown, use shorter sleep intervals to be more responsive
+                int sleepInterval = isShuttingDown ? 100 : 1000; // 100ms during shutdown, 1s normally
+                int totalSleepTime = isShuttingDown ? 500 : 5000; // 500ms during shutdown, 5s normally
+                
+                for (int elapsed = 0; elapsed < totalSleepTime && !isShuttingDown; elapsed += sleepInterval) {
+                    Thread.sleep(sleepInterval);
+                }
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
@@ -835,6 +940,12 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
      * @param job The job to process.
      */
     private void processJob(final Job job) throws DotDataException {
+
+        // Skip job processing if shutdown is in progress
+        if (isShuttingDown) {
+            Logger.debug(this, "Skipping job processing for job " + job.id() + " due to shutdown");
+            return;
+        }
 
         final Optional<JobProcessor> optional = getProcessorInstance(job);
         if (optional.isPresent()) {

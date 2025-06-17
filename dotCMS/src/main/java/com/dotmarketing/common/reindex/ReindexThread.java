@@ -9,6 +9,7 @@ import com.dotcms.content.elasticsearch.util.ESReindexationProcessStatus;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.notifications.business.NotificationAPI;
+import com.dotcms.shutdown.ShutdownCoordinator;
 import com.dotcms.util.I18NMessage;
 import com.dotmarketing.business.*;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -184,9 +185,15 @@ public class ReindexThread {
     private BulkProcessor finalizeReIndex(BulkProcessor bulkProcessor)
             throws InterruptedException, LanguageException, DotDataException, SQLException {
         bulkProcessor = closeBulkProcessor(bulkProcessor);
-        switchOverIfNeeded();
-        if (!indexAPI.isInFullReindex()) {
-            ReindexThread.pause();
+        
+        // Don't perform switchover operations during shutdown
+        if (!ShutdownCoordinator.isRequestDraining()) {
+            switchOverIfNeeded();
+            if (!indexAPI.isInFullReindex()) {
+                ReindexThread.pause();
+            }
+        } else {
+            Logger.debug(this, "Skipping reindex finalization due to shutdown in progress");
         }
         return bulkProcessor;
 
@@ -205,6 +212,11 @@ public class ReindexThread {
         BulkProcessorListener bulkProcessorListener = null;
         while (state.get() != ThreadState.STOPPED) {
             try {
+                // Check for shutdown before doing any database operations
+                if (ShutdownCoordinator.isRequestDraining()) {
+                    Logger.info(this, "Shutdown detected, stopping reindex operations");
+                    break;
+                }
 
                 final Map<String, ReindexEntry> workingRecords = queueApi.findContentToReindex();
 
@@ -213,6 +225,12 @@ public class ReindexThread {
                 }
 
                 if (!workingRecords.isEmpty()) {
+                    // Check again before processing records
+                    if (ShutdownCoordinator.isRequestDraining()) {
+                        Logger.info(this, "Shutdown detected during record processing, stopping reindex operations");
+                        break;
+                    }
+
                     Logger.debug(this,
                             "Found  " + workingRecords + " index items to process");
 
@@ -228,6 +246,11 @@ public class ReindexThread {
 
                 }
             } catch (Throwable ex) {
+                // Check if this is a shutdown-related exception
+                if (isShutdownRelated(ex) || ShutdownCoordinator.isRequestDraining()) {
+                    Logger.info(this, "Shutdown-related exception in ReindexThread, stopping operations: " + ex.getMessage());
+                    break;
+                }
                 Logger.error(this, "ReindexThread Exception", ex);
                 ThreadUtils.sleep(SLEEP_ON_ERROR);
             } finally {
@@ -235,6 +258,40 @@ public class ReindexThread {
             }
             sleep();
         }
+        
+        // Clean up bulk processor on exit
+        try {
+            if (bulkProcessor != null) {
+                closeBulkProcessor(bulkProcessor);
+            }
+        } catch (Exception e) {
+            Logger.debug(this, "Exception while closing bulk processor during shutdown: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Check if an exception is related to shutdown (database connection closed, etc.)
+     */
+    private boolean isShutdownRelated(Throwable ex) {
+        if (ex == null) return false;
+        
+        String message = ex.getMessage();
+        if (message != null) {
+            message = message.toLowerCase();
+            // Common shutdown-related error messages
+            if (message.contains("connection") && (message.contains("closed") || message.contains("terminated"))) {
+                return true;
+            }
+            if (message.contains("database") && message.contains("shutdown")) {
+                return true;
+            }
+            if (message.contains("terminating connection due to administrator command")) {
+                return true;
+            }
+        }
+        
+        // Check cause recursively
+        return isShutdownRelated(ex.getCause());
     }
 
     private void sleep() {
@@ -253,6 +310,12 @@ public class ReindexThread {
 
     private boolean switchOverIfNeeded()
             throws LanguageException, DotDataException, SQLException, InterruptedException {
+        // Skip switchover operations during shutdown
+        if (ShutdownCoordinator.isRequestDraining()) {
+            Logger.debug(this, "Skipping reindex switchover due to shutdown in progress");
+            return false;
+        }
+        
         if (ESReindexationProcessStatus.inFullReindexation() && queueApi.recordsInQueue() == 0) {
             // The re-indexation process has finished successfully
             if (indexAPI.reindexSwitchover(false)) {
@@ -279,8 +342,17 @@ public class ReindexThread {
      * Tells the thread to stop processing. Doesn't shut down the thread.
      */
     public static void stopThread() {
+        Logger.info(ReindexThread.class, "Stopping ReindexThread...");
         getInstance().state(ThreadState.STOPPED);
-
+        
+        // Give the thread a moment to notice the state change and exit gracefully
+        try {
+            Thread.sleep(100);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+        
+        Logger.info(ReindexThread.class, "ReindexThread stopped");
     }
 
 

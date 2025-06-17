@@ -56,6 +56,11 @@
 	</filter>
 	
 	<filter>
+		<filter-name>RequestTrackingFilter</filter-name>
+		<filter-class>com.dotcms.filters.RequestTrackingFilter</filter-class>
+		<async-supported>true</async-supported>
+	</filter>
+	<filter>
 		<filter-name>ThreadNameFilter</filter-name>
 		<filter-class>com.dotmarketing.filters.ThreadNameFilter</filter-class>
 		<async-supported>true</async-supported>
@@ -155,12 +160,12 @@
 	</filter-mapping>
 	
 	<filter-mapping>
-		<filter-name>ThreadNameFilter</filter-name>
+		<filter-name>RequestTrackingFilter</filter-name>
 		<url-pattern>/*</url-pattern>
 	</filter-mapping>
 
 	<filter-mapping>
-		<filter-name>HealthCheckFilter</filter-name>
+		<filter-name>ThreadNameFilter</filter-name>
 		<url-pattern>/*</url-pattern>
 	</filter-mapping>
 
