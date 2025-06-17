@@ -109,6 +109,7 @@
     // String cacheBuster = String.valueOf(System.currentTimeMillis());
 %>
 
+<script type="text/javascript" src="/html/js/util.js?v=<%=  ReleaseInfo.getVersion() %>"></script>
 <script type="text/javascript" src="/html/legacy_custom_field/shared-logger.js?v=<%=  ReleaseInfo.getVersion() %>"></script>
 <script type="text/javascript" src="/html/legacy_custom_field/iframe-height-manager.js?v=<%=  ReleaseInfo.getVersion() %>"></script>
 <script type="text/javascript" src="/html/legacy_custom_field/field-interceptors.js?v=<%=  ReleaseInfo.getVersion() %>"></script>
