@@ -723,8 +723,10 @@ public class LoginServiceAPIFactory implements Serializable {
 
             if (!usersWithTokensExpiring.isEmpty()) {
                 String msg = "Some user's API token are about to expire: <br>" +
-                        usersWithTokensExpiring.stream().limit(3).collect(Collectors.joining("<br> - ")) + "<br>" +
-                        "And " + (usersWithTokensExpiring.size() - 3) + " more." + "<br>" +
+                        " - " +
+                        usersWithTokensExpiring.stream().limit(3).collect(Collectors.joining("<br> - ")) +
+                        "<br>" +
+                        (usersWithTokensExpiring.size() > 3 ? "And " + (usersWithTokensExpiring.size() - 3) + " more." + "<br>" : "") +
                         "Go to <a href=\"#/c/users\">Users</a> to renovate them";
                 message = new SystemMessageBuilder()
                         .setMessage(msg)
