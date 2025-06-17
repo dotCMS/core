@@ -381,12 +381,44 @@ public class QuartzUtils {
 	 */
 	public static void stopSchedulers() throws SchedulerException {
 		Collection<Scheduler> list= DotSchedulerFactory.getInstance().getAllSchedulers();
-		for (Scheduler s:list) {
-			s.shutdown();
+		Logger.info(QuartzUtils.class, "Shutting down " + list.size() + " Quartz scheduler(s)");
+		
+		for (Scheduler s : list) {
+			try {
+				if (s != null && !s.isShutdown()) {
+					String schedulerName = s.getSchedulerName();
+					Logger.info(QuartzUtils.class, "Shutting down Quartz scheduler: " + schedulerName);
+					
+					// Use shutdown(true) to wait for jobs to complete during graceful shutdown
+					// This prevents jobs from reinitializing components after shutdown
+					Logger.info(QuartzUtils.class, "Waiting for running jobs to complete before shutdown: " + schedulerName);
+					s.shutdown(true);
+					
+					// Verify shutdown completed
+					int waitCount = 0;
+					while (!s.isShutdown() && waitCount < 50) { // Max 5 seconds
+						try {
+							Thread.sleep(100);
+							waitCount++;
+						} catch (InterruptedException e) {
+							Thread.currentThread().interrupt();
+							break;
+						}
+					}
+					
+					if (!s.isShutdown()) {
+						Logger.warn(QuartzUtils.class, "Quartz scheduler did not shutdown cleanly within timeout: " + schedulerName);
+					}
+					
+					Logger.info(QuartzUtils.class, "Quartz scheduler shutdown completed: " + schedulerName);
+				}
+			} catch (Exception e) {
+				Logger.warn(QuartzUtils.class, "Failed to shutdown Quartz scheduler: " + e.getMessage(), e);
+				// Continue with other schedulers even if one fails
+			}
 		}
-
-
-
+		
+		Logger.info(QuartzUtils.class, "All Quartz schedulers shutdown process completed");
 	}
 
 	/**
