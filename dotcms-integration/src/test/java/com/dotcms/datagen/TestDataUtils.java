@@ -243,6 +243,14 @@ public class TestDataUtils {
                 );
                 fields.add(
                         new FieldDataGen()
+                                .name("Publish")
+                                .velocityVarName("sysPublishDate")
+                                .defaultValue(null)
+                                .type(DateField.class)
+                                .next()
+                );
+                fields.add(
+                        new FieldDataGen()
                                 .name("postingDate")
                                 .velocityVarName("publishDate")
                                 .defaultValue(null)
