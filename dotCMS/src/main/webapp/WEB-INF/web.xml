@@ -60,7 +60,11 @@
 		<filter-class>com.dotmarketing.filters.ThreadNameFilter</filter-class>
 		<async-supported>true</async-supported>
 	</filter>
-	
+	<filter>
+		<filter-name>HealthCheckFilter</filter-name>
+		<filter-class>com.dotcms.health.filter.HealthCheckFilter</filter-class>
+		<async-supported>true</async-supported>
+	</filter>
 	<filter>
 		<filter-name>CharsetEncodingFilter</filter-name>
 		<filter-class>com.dotmarketing.filters.CharsetEncodingFilter</filter-class>
@@ -123,26 +127,30 @@
  	<!-- END FILTER-MAPPINGS -->
  	
 	<!--DOTMARKETING FILTER-MAPPINGS-->
+	<!-- Essential security and HTTP compliance filters run first -->
 	<filter-mapping>
 		<filter-name>NormalizationFilter</filter-name>
 		<url-pattern>/*</url-pattern>
 	</filter-mapping>
-    <filter-mapping>
-        <filter-name>HttpHeaderSecurityFilter</filter-name>
-        <url-pattern>/*</url-pattern>
-    </filter-mapping>
+
 	<filter-mapping>
-		<filter-name>InterceptorFilter</filter-name>
-		<url-pattern>/*</url-pattern>
+			<filter-name>HttpHeaderSecurityFilter</filter-name>
+			<url-pattern>/*</url-pattern>
 	</filter-mapping>
-    
-	<filter-mapping>
-		<filter-name>CharsetEncodingFilter</filter-name>
-		<url-pattern>/*</url-pattern>
-	</filter-mapping>
-	
+
 	<filter-mapping>
 		<filter-name>CookiesFilter</filter-name>
+		<url-pattern>/*</url-pattern>
+	</filter-mapping>
+
+	<!-- CRITICAL: HealthCheckFilter runs after essential security filters but before expensive ones -->
+	<filter-mapping>
+		<filter-name>HealthCheckFilter</filter-name>
+		<url-pattern>/*</url-pattern>
+	</filter-mapping>
+
+	<filter-mapping>
+		<filter-name>CharsetEncodingFilter</filter-name>
 		<url-pattern>/*</url-pattern>
 	</filter-mapping>
 	
@@ -150,7 +158,17 @@
 		<filter-name>ThreadNameFilter</filter-name>
 		<url-pattern>/*</url-pattern>
 	</filter-mapping>
-	
+
+	<filter-mapping>
+		<filter-name>HealthCheckFilter</filter-name>
+		<url-pattern>/*</url-pattern>
+	</filter-mapping>
+
+	<filter-mapping>
+		<filter-name>InterceptorFilter</filter-name>
+		<url-pattern>/*</url-pattern>
+	</filter-mapping>
+
 	<filter-mapping>
 		<filter-name>TimeMachineFilter</filter-name>
 		<url-pattern>/*</url-pattern>
@@ -385,6 +403,12 @@
 		<servlet-name>DotGraphQLHttpServlet</servlet-name>
 		<servlet-class>com.dotcms.graphql.DotGraphQLHttpServlet</servlet-class>
 	</servlet>
+	
+	<servlet>
+		<servlet-name>HealthProbeServlet</servlet-name>
+		<servlet-class>com.dotcms.health.servlet.HealthProbeServlet</servlet-class>
+		<load-on-startup>1</load-on-startup>
+	</servlet>
     
 	<!--END DOTMARKETING SERVLETS-->
 	
@@ -514,6 +538,16 @@
 	<servlet-mapping>
 		<servlet-name>DotGraphQLHttpServlet</servlet-name>
 		<url-pattern>/api/v1/graphql</url-pattern>
+	</servlet-mapping>
+	
+	<servlet-mapping>
+		<servlet-name>HealthProbeServlet</servlet-name>
+		<url-pattern>/livez</url-pattern>
+	</servlet-mapping>
+	
+	<servlet-mapping>
+		<servlet-name>HealthProbeServlet</servlet-name>
+		<url-pattern>/readyz</url-pattern>
 	</servlet-mapping>
 
 	<!--END DOTMARKETING SERVLET-MAPPING-->

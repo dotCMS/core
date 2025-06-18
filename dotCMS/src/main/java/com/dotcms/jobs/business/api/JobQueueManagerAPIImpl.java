@@ -683,8 +683,9 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
                     );
                 }
             } catch (InterruptedException e) {
-                Logger.error(this, "Job processing thread interrupted: " + e.getMessage(), e);
+                Logger.debug(this, "Job processing thread interrupted during shutdown");
                 Thread.currentThread().interrupt();
+                break; // Exit the loop immediately on interruption
             } catch (Exception e) {
                 Logger.error(this, "Unexpected error in job processing loop: " + e.getMessage(), e);
                 getCircuitBreaker().recordFailure();
