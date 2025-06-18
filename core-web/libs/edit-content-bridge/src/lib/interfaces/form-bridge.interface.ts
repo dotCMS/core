@@ -1,3 +1,5 @@
+import { Subscription } from 'rxjs';
+
 /**
  * Interface for bridging form functionality between different frameworks.
  * Provides a unified API for form operations like getting/setting values and handling changes.
@@ -19,10 +21,12 @@ export interface FormBridge {
 
     /**
      * Subscribes to changes of a specific form field.
+     * Supports multiple callbacks per field.
      * @param fieldId - The unique identifier of the form field to watch
      * @param callback - Function to execute when the field value changes
+     * @returns Function to unsubscribe this specific callback
      */
-    onChangeField(fieldId: string, callback: (value: FormFieldValue) => void): void;
+    onChangeField(fieldId: string, callback: (value: FormFieldValue) => void): () => void;
 
     /**
      * Optional method to handle bridge initialization.
@@ -40,3 +44,24 @@ export interface FormBridge {
  * Valid types for form field values.
  */
 export type FormFieldValue = string | number | boolean | null;
+
+/**
+ * A callback function that is executed when the value of a form field changes.
+ *
+ * @param {FormFieldValue} value - The new value of the field.
+ */
+export interface FieldCallback {
+    id: symbol;
+    callback: (value: FormFieldValue) => void;
+}
+
+/**
+ * A subscription to a form field.
+ *
+ * @param {Subscription} subscription - The subscription to the field.
+ * @param {FieldCallback[]} callbacks - The callbacks to execute when the field value changes.
+ */
+export interface FieldSubscription {
+    subscription: Subscription;
+    callbacks: FieldCallback[];
+}
