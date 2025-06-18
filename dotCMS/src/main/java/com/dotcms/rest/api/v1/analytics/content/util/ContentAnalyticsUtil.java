@@ -9,7 +9,16 @@ import com.dotcms.analytics.track.matchers.PagesAndUrlMapsRequestMatcher;
 import com.dotcms.analytics.track.matchers.RequestMatcher;
 import com.dotcms.analytics.track.matchers.UserCustomDefinedRequestMatcher;
 import com.dotcms.analytics.track.matchers.VanitiesRequestMatcher;
+import com.dotcms.jitsu.EventLogSubmitter;
+import com.dotcms.jitsu.ValidAnalyticsEventPayload;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.UUIDUtil;
+import com.liferay.portal.PortalException;
+import com.liferay.portal.SystemException;
+
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
@@ -18,8 +27,11 @@ import java.util.function.Supplier;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import static com.dotcms.jitsu.ValidAnalyticsEventPayloadAttributes.URL_ATTRIBUTE_NAME;
+
 public class ContentAnalyticsUtil {
 
+    private static final EventLogSubmitter SUBMITTER  = new EventLogSubmitter();
     private static final UserCustomDefinedRequestMatcher USER_CUSTOM_DEFINED_REQUEST_MATCHER =  new UserCustomDefinedRequestMatcher();
 
     private static final Map<String, Supplier<RequestMatcher>> MATCHER_MAP = Map.of(
@@ -32,18 +44,30 @@ public class ContentAnalyticsUtil {
     public static void registerContentAnalyticsRestEvent(HttpServletRequest request, HttpServletResponse response,
             Map<String, Serializable> userEventPayload) {
 
-        request.setAttribute("requestId", Objects.nonNull(request.getAttribute("requestId")) ? request.getAttribute("requestId") : UUIDUtil.uuid());
+        final String requestId = Objects.nonNull(request.getAttribute("requestId")) ?
+                request.getAttribute("requestId").toString() : UUIDUtil.uuid();
+        request.setAttribute("requestId", requestId);
 
         final Map<String, Serializable> userEventPayloadWithDefaults = new HashMap<>(
                 userEventPayload);
         userEventPayloadWithDefaults.put(Collector.EVENT_SOURCE, EventSource.REST_API.getName());
         if (!userEventPayloadWithDefaults.containsKey(Collector.EVENT_TYPE)){
-            userEventPayloadWithDefaults.put(Collector.EVENT_TYPE,   userEventPayload.getOrDefault(Collector.EVENT_TYPE, EventType.CUSTOM_USER_EVENT.getType()));
+            userEventPayloadWithDefaults.put(Collector.EVENT_TYPE,   userEventPayload
+                    .getOrDefault(Collector.EVENT_TYPE, EventType.CUSTOM_USER_EVENT.getType()));
         }
-        WebEventsCollectorServiceFactory.getInstance().getWebEventsCollectorService().fireCollectorsAndEmitEvent(
-                request, response,
-                loadRequestMatcher(userEventPayload), userEventPayloadWithDefaults, fromPayload(
-                        userEventPayload));
+
+        if (!userEventPayload.containsKey(URL_ATTRIBUTE_NAME)) {
+            userEventPayload.put(URL_ATTRIBUTE_NAME, "");
+        }
+
+        userEventPayload.put("request_id", requestId);
+
+        try {
+            final Host host = WebAPILocator.getHostWebAPI().getCurrentHost(request);
+            SUBMITTER.logEvent(host, new ValidAnalyticsEventPayload((Map<String, Object>) (Map<?, ?>) userEventPayload));
+        } catch (DotDataException | DotSecurityException | PortalException | SystemException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private static Map<String, Object> fromPayload(final Map<String, Serializable> userEventPayload) {
