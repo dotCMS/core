@@ -598,7 +598,7 @@ public class PageRenderUtil implements Serializable {
             DotSecurityException {
         final long resolveLanguageId = this.resolveLanguageId();
         try {
-            if(null != timeMachineDate && hasPublishDate(contentletIdentifier)){
+            if(null != timeMachineDate && hasPublishOrExpireDateSet(contentletIdentifier)){
                 // if a time machine date is provided we need to return regardless of the result.
                 Logger.debug(this, "Trying to find contentlet with Time Machine date");
                 return contentletAPI.findContentletByIdentifier(
@@ -628,10 +628,10 @@ public class PageRenderUtil implements Serializable {
      * @param identifier The identifier of the Contentlet to check.
      * @return {@code true} if the Contentlet has a publish-date set, {@code false} otherwise.
      */
-    boolean hasPublishDate(final String identifier) {
+    boolean hasPublishOrExpireDateSet(final String identifier) {
         try {
             final Identifier found = identifierAPI.find(identifier);
-            if (found != null && found.getSysPublishDate() != null) {
+            if (found != null && (found.getSysPublishDate() != null || found.getSysExpireDate() != null)) {
                 return true;
             }
         } catch (DotDataException e) {
@@ -682,7 +682,7 @@ public class PageRenderUtil implements Serializable {
         try {
             // Apply the Time Machine date if it is provided and the Contentlet has a publish-date set
             //This helps to avoid applying time that are not set to be published in the future
-            if(null != timeMachineDate && hasPublishDate(contentletIdentifier)) {
+            if(null != timeMachineDate && hasPublishOrExpireDateSet(contentletIdentifier)) {
                 //This code shouldn't return contentlets that have a sys-publish date unless they match the tm date
                 Logger.debug(this, "Trying to find contentlet with Fallback and Time Machine date");
                 final Optional<Contentlet> contentlet = contentletAPI.findContentletByIdentifierOrFallback(
