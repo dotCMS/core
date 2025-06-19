@@ -25,6 +25,6 @@
     "isolatedModules": true,
     "noEmit": true
   },
-  "include": [".astro/types.d.ts", "src/**/*"],
+  "include": [".astro/types.d.ts", "astro.config.mjs", "src/**/*"],
   "exclude": ["node_modules", "dist"]
 }
