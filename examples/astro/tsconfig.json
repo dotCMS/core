@@ -5,6 +5,7 @@
     "jsxImportSource": "react",
     "module": "es2020",
     "baseUrl": "./",
+    "plugins": [ { "name": "@astrojs/ts-plugin" } ],
     "paths": {
       "@/components/*": ["./src/components/*"],
       "@/components/common/*": ["./src/components/common/*"],
@@ -25,6 +26,6 @@
     "isolatedModules": true,
     "noEmit": true
   },
-  "include": [".astro/types.d.ts", "src/**/*"],
+  "include": [".astro/types.d.ts", "**/*"],
   "exclude": ["node_modules", "dist"]
 }
