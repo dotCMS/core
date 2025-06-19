@@ -23,6 +23,7 @@ import com.rainerhahnekamp.sneakythrow.Sneaky;
 import io.vavr.control.Try;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -102,8 +103,12 @@ public class ContentTypesPaginator implements PaginatorOrdered<Map<String, Objec
             final List<Map<String, Object>> contentTypesTransform = transformContentTypesToMap(contentTypes);
             setEntriesAttribute(user, contentTypesTransform,
                     this.workflowAPI.findSchemesMapForContentType(contentTypes),
-                    this.workflowAPI.findSystemActionsMapByContentType(contentTypes, user));
-            result.addAll(contentTypesTransform);
+                    this.workflowAPI.findSystemActionsMapByContentType(contentTypes, user),
+                    extraParams);
+
+            result.addAll(extraParams.containsKey("comparator")?
+                    contentTypesTransform.stream().sorted((Comparator<Map<String, Object>>) extraParams.get("comparator")).collect(Collectors.toList())
+                    :contentTypesTransform);
             return result;
         } catch (final DotDataException | DotSecurityException e) {
             final String errorMsg = String.format("An error occurred when retrieving paginated Content Types: " +
@@ -127,13 +132,15 @@ public class ContentTypesPaginator implements PaginatorOrdered<Map<String, Objec
      */
     private void setEntriesAttribute(final User user, final List<Map<String, Object>> contentTypesTransform,
                                      final Map<String, List<WorkflowScheme>> workflowSchemes,
-                                     final Map<String, List<SystemActionWorkflowActionMapping>> systemActionMappings)  {
+                                     final Map<String, List<SystemActionWorkflowActionMapping>> systemActionMappings,
+                                     final Map<String, Object> extraParams)  {
 
         Map<String, Long> entriesByContentTypes = null;
 
         try {
-            entriesByContentTypes = APILocator.getContentTypeAPI
-                    (user, true).getEntriesByContentTypes();
+            entriesByContentTypes = extraParams.containsKey("entriesByContentTypes")?
+                    (Map<String, Long>)extraParams.get("entriesByContentTypes"):
+                    APILocator.getContentTypeAPI(user, true).getEntriesByContentTypes();
         } catch (final DotStateException | DotDataException e) {
             final String errorMsg = String.format("Error trying to retrieve total entries by Content Type: %s", e.getMessage());
             Logger.error(ContentTypesPaginator.class, errorMsg, e);

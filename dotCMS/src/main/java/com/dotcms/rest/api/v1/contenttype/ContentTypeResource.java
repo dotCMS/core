@@ -24,6 +24,7 @@ import com.dotcms.rest.annotation.PermissionsUtil;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
+import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.diff.DiffItem;
 import com.dotcms.util.diff.DiffResult;
@@ -35,6 +36,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
@@ -88,7 +90,10 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -1674,13 +1679,13 @@ public class ContentTypeResource implements Serializable {
 										   @QueryParam(PaginationUtil.FILTER) @Parameter(schema = @Schema(type = "string"),
 												   description = "String to filter/search for specific content types; leave blank to return all."
 										   ) final String filter,
-										  @QueryParam(PaginationUtil.PAGE) @Parameter(schema = @Schema(type = "integer"),
+										  @DefaultValue("1") @QueryParam(PaginationUtil.PAGE) @Parameter(schema = @Schema(type = "integer"),
 												  description = "Page number in response pagination.\n\nDefault: `1`"
 										  ) final int page,
-										  @QueryParam(PaginationUtil.PER_PAGE) @Parameter(schema = @Schema(type = "integer"),
+										  @DefaultValue("10")  @QueryParam(PaginationUtil.PER_PAGE) @Parameter(schema = @Schema(type = "integer"),
 												  description = "Number of results per page for pagination.\n\nDefault: `10`"
 										  ) final int perPage,
-										  @DefaultValue("upper(name)") @QueryParam(PaginationUtil.ORDER_BY) @Parameter(
+										  @DefaultValue("usage") @QueryParam(PaginationUtil.ORDER_BY) @Parameter(
 												  schema = @Schema(type = "string"),
 												  description = "Column(s) to sort the results. Multiple columns can be " +
 														  "combined in a comma-separated list. Column names can also be set " +
@@ -1721,25 +1726,70 @@ public class ContentTypeResource implements Serializable {
 				APILocator.getHostAPI().find(siteId, user, pageMode.respectAnonPerms) :
 				APILocator.getHostAPI().findDefaultHost(user, pageMode.respectAnonPerms); // wondering if this should be current or default
 		final String orderBy = this.getOrderByRealName(orderByParam);
-		final List<String> typeVarNames = findPageContainersContentTypesVarnamesByPathOrId(pagePathOrId, site,
+		List<String> typeVarNames = findPageContainersContentTypesVarnamesByPathOrId(pagePathOrId, site,
 				languageId, pageMode, user, filter);
 
 		final Map<String, Object> extraParams = new HashMap<>();
+		final boolean isUsage = "usage".equalsIgnoreCase(orderBy);
 		if (null != siteId) {
 			extraParams.put(ContentTypesPaginator.HOST_PARAMETER_ID,siteId);
 		}
+
+		if (isUsage) {
+
+			final boolean isAscending =  "ASC".equalsIgnoreCase(direction);
+			final Map<String, Long> entriesByContentTypes = APILocator.getContentTypeAPI
+					(user, true).getEntriesByContentTypes();
+			// here are filtered and sorted, but we need to paginate them.
+			this.sort(typeVarNames, isAscending, user, entriesByContentTypes);
+			typeVarNames = this.paginate(typeVarNames, page, perPage);
+			extraParams.put("entriesByContentTypes", entriesByContentTypes);
+			final Comparator<Map<String, Object>> comparator = Comparator
+					.comparing((Map<String, Object> contentTypeMap) ->
+							ConversionUtils.toLong(contentTypeMap.getOrDefault("nEntries", -1l),-1l));
+			extraParams.put("comparator", isAscending?comparator:comparator.reversed());
+		}
+
 		if (UtilMethods.isSet(typeVarNames)) {
 
-			Logger.debug(this, ()-> "Found Content Types for page: " + pagePathOrId +
+			Logger.debug(this, "Found Content Types for page: " + pagePathOrId +
 					" in site: " + (Objects.nonNull(site) ? site.getHostname() : "null") +
 					" with languageId: " + languageId + " and pageMode: " + pageMode +
 					" with types: " + typeVarNames);
 			extraParams.put(ContentTypesPaginator.TYPES_PARAMETER_NAME, typeVarNames);
 		}
+
 		final PaginationUtil paginationUtil = new PaginationUtil(new ContentTypesPaginator(APILocator.getContentTypeAPI(user)));
-		return paginationUtil.getPage(httpRequest, user, filter, page, perPage, orderBy,
-				OrderDirection.valueOf(direction), extraParams);
+		return isUsage?
+				paginationUtil.getPage(httpRequest, user, filter, PaginationUtil.FIRST_PAGE_INDEX, // we already paginate the results, so we start at page 1.
+						perPage, SQLUtil.DOT_NOT_SORT , // if usage is set, I do not want sort on the db, so use dotNONE.
+						OrderDirection.valueOf(direction), extraParams):
+				paginationUtil.getPage(httpRequest, user, filter, page, perPage, orderBy,
+				        OrderDirection.valueOf(direction), extraParams);
 	} // getPagesContentTypes.
+
+	public List<String> paginate(final List<String> typeVarNames, final int page, final int perPage) {
+
+		if (typeVarNames == null || typeVarNames.isEmpty() || perPage <= 0 || page <= 0) {
+			return Collections.emptyList();
+		}
+
+		int total = typeVarNames.size();
+		int fromIndex = Math.min((page - 1) * perPage, total);
+		int toIndex = Math.min(fromIndex + perPage, total);
+
+		return typeVarNames.subList(fromIndex, toIndex);
+	}
+
+	private void sort(final List<String> typeVarNames, final boolean ascending,
+					  final User user, final Map<String, Long> entriesByContentTypes)  {
+
+		final Comparator<String> comparator = Comparator
+				.comparing((String contentTypeVarName) ->
+						entriesByContentTypes.getOrDefault(contentTypeVarName.toLowerCase(), -1l));
+
+		typeVarNames.sort(ascending ? comparator : comparator.reversed());
+	}
 
 	private List<String> findPageContainersContentTypesVarnamesByPathOrId(final String pagePathOrId,
 										 final Host site,
@@ -1774,12 +1824,16 @@ public class ContentTypeResource implements Serializable {
 					String.format("Page with path or ID '%s' was not found", pagePathOrId));
 		}
 
+		final Set<String> repeatedTypes = new HashSet<>();
+
 		// Retrieves the containers associated to the page, then extracts the content types for each container filtering the ones do not allowed
 		return new PageRenderUtil(htmlPage, user, pageMode, languageId, site)
 				.getContainersRaw().stream().map(containerRaw -> containerRaw.getContainerStructures())
 				.flatMap(Collection::stream)
 				.map(ContainerStructure::getContentTypeVar)
+				.filter(Objects::nonNull)
 				.filter(Predicate.not(this.contentPaletteHiddenTypes.get()::contains))
+				.filter(repeatedTypes::add)
 				.filter(varname -> filter == null || varname.toLowerCase().contains(filter.toLowerCase()))
 				.collect(Collectors.toList());
 	} // findPageContainersContentTypesVarnamesByPathOrId
