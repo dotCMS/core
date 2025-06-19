@@ -23,7 +23,7 @@ data:
     
     # Run JMeter test
     jmeter -n \
-      -t {{ .Values.configMaps.jmx.mountPath }}/direct-analytics-cluster-test.jmx \
+      -t {{ .Values.configMaps.jmx.mountPath }}/analytics-direct-cluster-test.jmx \
       -l {{ .Values.volumes.results.mountPath }}/results-$(date +%Y%m%d-%H%M%S).jtl \
       -j {{ .Values.volumes.results.mountPath }}/jmeter-$(date +%Y%m%d-%H%M%S).log \
       -Jthread.number=${THREADS} \
@@ -61,7 +61,7 @@ data:
     
     # Run JMeter test
     jmeter -n \
-      -t {{ .Values.configMaps.jmx.mountPath }}/dotcms-api-cluster-test.jmx \
+      -t {{ .Values.configMaps.jmx.mountPath }}/analytics-api-cluster-test.jmx \
       -l {{ .Values.volumes.results.mountPath }}/dotcms-results-$(date +%Y%m%d-%H%M%S).jtl \
       -j {{ .Values.volumes.results.mountPath }}/dotcms-jmeter-$(date +%Y%m%d-%H%M%S).log \
       -Jthread.number=${THREADS} \
@@ -165,7 +165,7 @@ data:
         
         # Run test with timeout protection
         timeout 120s jmeter -n \
-            -t {{ .Values.configMaps.jmx.mountPath }}/dotcms-api-cluster-test.jmx \
+            -t {{ .Values.configMaps.jmx.mountPath }}/analytics-api-cluster-test.jmx \
             -l "$jtl_file" \
             -j "$RESULTS_DIR/${test_name}.log" \
             -Jthread.number=$threads \
@@ -196,7 +196,7 @@ data:
         
         # Run test with timeout protection
         timeout 120s jmeter -n \
-            -t {{ .Values.configMaps.jmx.mountPath }}/direct-analytics-cluster-test.jmx \
+            -t {{ .Values.configMaps.jmx.mountPath }}/analytics-direct-cluster-test.jmx \
             -l "$jtl_file" \
             -j "$RESULTS_DIR/${test_name}.log" \
             -Jthread.number=$threads \

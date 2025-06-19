@@ -33,35 +33,44 @@ helm install my-jmeter jmeter-performance/jmeter-performance
 helm install my-jmeter ./helm-chart/jmeter-performance
 ```
 
-### Environment-Specific Deployment
+
 
 ```bash
-# Development environment
-helm install jmeter-dev ./helm-chart/jmeter-performance -f values-dev.yaml
-
-# Production environment  
-helm install jmeter-prod ./helm-chart/jmeter-performance -f values-prod.yaml
-
-# Custom JWT token
+# Install with required parameters
 helm install my-jmeter ./helm-chart/jmeter-performance \
-  --set auth.jwtToken="your-jwt-token-here"
+  --set auth.jwtToken="eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..." \
+  --set endpoints.dotcms.host="demo.dotcms.com"
+
+# Install with custom analytics configuration
+helm install my-jmeter ./helm-chart/jmeter-performance \
+  --set auth.jwtToken="eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..." \
+  --set endpoints.dotcms.host="your-instance.dotcms.cloud" \
+  --set endpoints.analytics.host="custom-analytics.example.com"
 ```
 
 ## Configuration
 
 ### Key Parameters
 
-| Parameter | Description | Default |
-|-----------|-------------|---------|
-| `namespace.name` | Kubernetes namespace | `analytics-dev` |
-| `namespace.create` | Create namespace if not exists | `true` |
-| `auth.jwtToken` | JWT token for authentication | (long JWT string) |
-| `endpoints.dotcms.host` | DotCMS API hostname | `your-dotcms-instance.dotcms.cloud` |
-| `endpoints.analytics.host` | Analytics API hostname | `jitsu-api.analytics-dev.svc.cluster.local` |
-| `pod.resources.requests.cpu` | CPU request | `2000m` |
-| `pod.resources.requests.memory` | Memory request | `4Gi` |
-| `pod.resources.limits.cpu` | CPU limit | `4000m` |
-| `pod.resources.limits.memory` | Memory limit | `8Gi` |
+| Parameter | Description | Default | Required |
+|-----------|-------------|---------|----------|
+| **REQUIRED CONFIGURATION** | | | |
+| `auth.jwtToken` | DotCMS API JWT token | *(none)* | ✅ **YES** |
+| `endpoints.dotcms.host` | DotCMS API hostname | *(none)* | ✅ **YES** |
+| **OPTIONAL CONFIGURATION** | | | |
+| `namespace.name` | Kubernetes namespace | `analytics-dev` | No |
+| `namespace.create` | Create namespace if not exists | `false` | No |
+| `endpoints.analytics.host` | Analytics API hostname | `jitsu-api.analytics-dev.svc.cluster.local` | No |
+| `endpoints.analytics.key` | Analytics key from DotCMS App | *(from secret)* | No* |
+| **RESOURCE LIMITS** | | | |
+| `pod.resources.requests.cpu` | CPU request | `2000m` | No |
+| `pod.resources.requests.memory` | Memory request | `8Gi` | No |
+| `pod.resources.limits.cpu` | CPU limit | `4000m` | No |
+| `pod.resources.limits.memory` | Memory limit | `16Gi` | No |
+
+**Notes:**
+- ✅ **Required**: Must be provided via `--set` or values file
+- *Analytics key: Required but managed via Kubernetes secret when using `auth.useSecret=true`
 
 ### Full Configuration
 
@@ -75,12 +84,62 @@ See [values.yaml](./values.yaml) for all available configuration options.
 # Quick DotCMS API test
 kubectl exec my-jmeter-pod -n analytics-dev -- bash -c "
   export PATH=/opt/jmeter/bin:\$PATH &&
-  jmeter -n -t /opt/jmx-tests/dotcms-api-cluster-test.jmx \\
+  jmeter -n -t /opt/jmx-tests/analytics-api-cluster-test.jmx \\
     -l /opt/test-results/test.jtl \\
     -Jthread.number=10 -Jevents.per.second=25 -Jtest.duration=30"
 
 # Performance limits testing
 kubectl exec my-jmeter-pod -n analytics-dev -- bash /opt/jmeter-scripts/performance-limits-test.sh
+```
+
+### Using Custom Values Files
+
+Custom values files allow you to override any configuration in the default `values.yaml`:
+
+```bash
+# ⚠️ IMPORTANT: Copy the example file - DO NOT edit the example directly
+cp ../../custom-values.yaml.example my-values.yaml
+
+# Edit your copy (NOT the .example file) with your specific configuration
+# Edit my-values.yaml with your actual settings
+
+# Install with custom values
+helm install my-jmeter ./helm-chart/jmeter-performance -f my-values.yaml
+
+# Combine multiple values files
+helm install my-jmeter ./helm-chart/jmeter-performance \
+  -f base-values.yaml \
+  -f environment-specific.yaml
+```
+
+### Values File Hierarchy
+
+Values are applied in order (later overrides earlier):
+1. Default values (`values.yaml`)
+2. Custom values files (`-f custom.yaml`)
+3. Command line overrides (`--set key=value`)
+
+### Example Custom Values
+
+```yaml
+# production-values.yaml
+endpoints:
+  dotcms:
+    host: "production.dotcms.cloud"
+
+pod:
+  resources:
+    requests:
+      cpu: "8000m"
+      memory: "32Gi"
+    limits:
+      cpu: "16000m"
+      memory: "64Gi"
+
+testing:
+  defaults:
+    threads: 2000
+    eventsPerSecond: 5000
 ```
 
 ### Advanced Configuration

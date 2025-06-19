@@ -34,13 +34,25 @@ pod:
 
 # Authentication configuration
 auth:
-  # JWT token for both DotCMS API and Direct Analytics
-  jwtToken: "YOUR_JWT_TOKEN_HERE"
+  # Use Kubernetes secret for secure token storage (recommended)
+  useSecret: false
+  
+  # DEPRECATED: Direct token values (insecure - only for testing)
+  # These values are ignored when useSecret=true
+  # Use environment variables DOTCMS_JWT_TOKEN and DOTCMS_ANALYTICS_KEY instead
+  # 
+  # JWT Token: DotCMS API token for authenticated requests
+  # - Create in DotCMS: Admin → User Tools → API Tokens
+  # - Or generate via /api/v1/authentication endpoint
+  # - Format: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...
+  jwtToken: ""
 
 # Endpoint configurations
 endpoints:
   dotcms:
-    host: "your-dotcms-instance.dotcms.cloud"
+    # REQUIRED: DotCMS API hostname - must be provided via --set or values file
+    # Example: demo.dotcms.com, your-instance.dotcms.cloud
+    host: ""
     port: 443
     scheme: "https"
     path: "/api/v1/analytics/content/event"
@@ -50,8 +62,14 @@ endpoints:
     port: 8001
     scheme: "http"
     path: "/api/v1/event"
-    # Analytics platform specific key
-    key: "YOUR_ANALYTICS_KEY_HERE"
+    # Analytics Key from DotCMS Analytics App (ignored when auth.useSecret=true)
+    # Use environment variable DOTCMS_ANALYTICS_KEY instead
+    #
+    # Analytics Key: From DotCMS Analytics App Configuration
+    # - Location: DotCMS → Apps → Analytics → Configuration → Analytics Key
+    # - Format: js.cluster1.customer1.vgwy3nli4co84u531c
+    # - Purpose: Identifies your analytics tracking in the analytics platform
+    key: ""
 
 # Environment configuration
 environment:
@@ -103,6 +121,10 @@ configMaps:
   jmx:
     name: "jmeter-jmx-tests"
     mountPath: "/opt/jmx-tests"
+    
+  config:
+    name: "jmeter-config"
+    mountPath: "/opt/config"
 
 # Volume configuration
 volumes:
@@ -118,4 +140,4 @@ labels:
 
 annotations:
   description: "JMeter Performance Testing for DotCMS Analytics APIs - MEMORY EXHAUSTION TEST"
-  contact: "contact@example.com"
+  contact: "teamplatform@dotcms.com"

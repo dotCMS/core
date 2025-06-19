@@ -24,6 +24,7 @@ ANALYTICS_KEY="${ANALYTICS_KEY:-YOUR_ANALYTICS_KEY_HERE}"
 NAMESPACE="${NAMESPACE:-analytics-dev}"
 TEST_DURATION="${TEST_DURATION:-180}"
 RAMPUP="${RAMPUP:-30}"
+VALUES_FILE="${VALUES_FILE:-custom-values.yaml}"
 
 print_header() {
     echo -e "${CYAN}${BOLD}"
@@ -80,22 +81,50 @@ usage() {
     echo "  ${BOLD}analyze${NC}                    Analyze results from the latest test"
     echo "  ${BOLD}analyze-all${NC}               Analyze all available test results"
     echo "  ${BOLD}generate-report${NC}           Generate comprehensive performance report"
+    echo "  ${BOLD}download-results${NC}          Download all test result files to local directory"
     echo "  ${BOLD}status${NC}                     Check infrastructure status"
+    echo "  ${BOLD}refresh-tokens${NC}            Refresh JWT and analytics authentication tokens"
     echo "  ${BOLD}cleanup${NC}                    Remove testing infrastructure"
     echo "  ${BOLD}logs${NC}                       View test execution logs"
     echo ""
     echo "OPTIONS:"
     echo "  --analytics-host HOST           Analytics endpoint host (default: $ANALYTICS_HOST)"
     echo "  --analytics-key KEY             Analytics key (default: [configured])"
+    echo "  --dotcms-host HOST              DotCMS API hostname (required for setup)"
     echo "  --namespace NAMESPACE           Kubernetes namespace (default: $NAMESPACE)"
     echo "  --duration SECONDS              Test duration (default: $TEST_DURATION)"
     echo "  --max-eps MAX                   Maximum EPS for scaling tests (default: 2000)"
+    echo "  --values-file FILE              Custom Helm values file (default: custom-values.yaml)"
     echo "  --help                          Show this help message"
+    echo ""
+    echo "SECURE AUTHENTICATION:"
+    echo ""
+    echo "  Environment Variables (recommended for CI/CD):"
+    echo "    DOTCMS_JWT_TOKEN              DotCMS API token for authenticated requests"
+    echo "                                  • Create in DotCMS: Admin → User Tools → API Tokens"
+    echo "                                  • Or generate via /api/v1/authentication endpoint"
+    echo "    DOTCMS_ANALYTICS_KEY          Analytics Key from DotCMS Analytics App"
+    echo "                                  • Find in DotCMS: Apps → Analytics → Configuration"  
+    echo "                                  • Format: js.cluster1.customer1.vgwy3nli4co84u531c"
+    echo ""
+    echo "  Interactive Setup:"
+    echo "    - Prompts for DotCMS username/password securely (no echo for password)"
+    echo "    - Auto-generates temporary JWT token via DotCMS API (30-minute expiry)"
+    echo "    - Prompts for Analytics Key from DotCMS Analytics App Configuration"
+    echo "    - Stores tokens in Kubernetes secret (not in files or command history)"
     echo ""
     echo "WORKFLOW EXAMPLES:"
     echo ""
-    echo "  # Basic setup and testing"
+    echo "  # Secure setup with environment variables (CI/CD)"
+    echo "  export DOTCMS_JWT_TOKEN=\"eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...\""
+    echo "  export DOTCMS_ANALYTICS_KEY=\"js.cluster1.customer1.vgwy3nli4co84u531c\""
     echo "  $0 setup && $0 quick-test"
+    echo ""
+    echo "  # Interactive setup (prompts for credentials)"
+    echo "  $0 setup && $0 quick-test"
+    echo ""
+    echo "  # Refresh tokens when expired"
+    echo "  $0 refresh-tokens"
     echo ""
     echo "  # Compare endpoints to identify bottlenecks"
     echo "  $0 compare-endpoints"
@@ -106,12 +135,368 @@ usage() {
     echo "  # Find maximum capacity"
     echo "  $0 find-maximum-rate"
     echo ""
+    echo "  # Using custom values file"
+    echo "  $0 setup --values-file production-values.yaml"
+    echo "  $0 setup --dotcms-host demo.dotcms.com --values-file custom-values.yaml"
+    echo ""
     echo "    sustained-load-test [endpoint] [start_eps] [max_eps] [step_size]  - Sustained load testing to find queue limits"
     echo "                        endpoint: 'direct' or 'dotcms' or 'both'"
     echo "                        start_eps: Starting EPS rate (default: 100)"
     echo "                        max_eps: Maximum EPS to test (default: 2000)"  
     echo "                        step_size: EPS increment per test (default: 200)"
     echo "                        Tests run for up to 10 minutes or until connection failures"
+}
+
+# =============================================================================
+# SECURE TOKEN MANAGEMENT
+# =============================================================================
+
+prompt_for_credentials() {
+    local dotcms_host="$1"
+    local creds_file="$2"
+    
+    print_info "DotCMS API Authentication Setup for: $dotcms_host"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "🔐 DotCMS API Token Generation"
+    echo "   Your DotCMS username/password will generate a temporary JWT API token"
+    echo "   • Alternative: Create permanent token in DotCMS → Admin → User Tools → API Tokens"
+    echo "   • Credentials are NOT stored or logged (used only for token generation)"
+    echo "   • Generated token expires in 30 minutes for security"
+    echo "   • Only the JWT token is stored in Kubernetes (not credentials)"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo ""
+    
+    read -p "DotCMS Username (email): " DOTCMS_USER
+    if [ -z "$DOTCMS_USER" ]; then
+        print_error "Username is required"
+        return 1
+    fi
+    
+    # Use secure password input (no echo)
+    echo -n "DotCMS Password: "
+    read -s DOTCMS_PASSWORD
+    echo ""
+    
+    if [ -z "$DOTCMS_PASSWORD" ]; then
+        print_error "Password is required"
+        return 1
+    fi
+    
+    # Store temporarily for token generation (will be unset after use)
+    echo "DOTCMS_USER='$DOTCMS_USER'" > "$creds_file"
+    echo "DOTCMS_PASSWORD='$DOTCMS_PASSWORD'" >> "$creds_file"
+    chmod 600 "$creds_file"
+    
+    # Clear from script memory
+    unset DOTCMS_USER DOTCMS_PASSWORD
+    
+    return 0
+}
+
+generate_jwt_token() {
+    local dotcms_host="$1"
+    local dotcms_port="$2"
+    local dotcms_scheme="$3"
+    local creds_file="$4"
+    
+    print_info "Generating temporary JWT token..."
+    
+    # Load credentials
+    if [ ! -f "$creds_file" ]; then
+        print_error "Credentials file not found"
+        return 1
+    fi
+    
+    source "$creds_file"
+    
+    # Generate JWT token using DotCMS REST API
+    local auth_url="${dotcms_scheme}://${dotcms_host}:${dotcms_port}/api/v1/authentication"
+    local response
+    
+    print_info "Authenticating with DotCMS at $auth_url"
+    
+    response=$(curl -s -X POST "$auth_url" \
+        -H "Content-Type: application/json" \
+        -H "Accept: application/json" \
+        -d "{
+            \"userId\": \"$DOTCMS_USER\",
+            \"password\": \"$DOTCMS_PASSWORD\",
+            \"rememberMe\": false,
+            \"expirationDays\": 0.02
+        }" 2>/dev/null)
+    
+    # Clear credentials immediately
+    unset DOTCMS_USER DOTCMS_PASSWORD
+    rm -f "$creds_file"
+    
+    if [ $? -ne 0 ] || [ -z "$response" ]; then
+        print_error "Failed to connect to DotCMS authentication endpoint"
+        return 1
+    fi
+    
+    # Extract JWT token from response
+    local jwt_token
+    jwt_token=$(echo "$response" | jq -r '.entity.token // empty' 2>/dev/null)
+    
+    if [ -z "$jwt_token" ] || [ "$jwt_token" = "null" ]; then
+        print_error "Authentication failed. Please check your credentials."
+        print_warning "Response: $(echo "$response" | jq -r '.message // .error // "Unknown error"' 2>/dev/null || echo "Invalid response format")"
+        return 1
+    fi
+    
+    print_success "JWT token generated successfully (expires in 30 minutes)"
+    echo "$jwt_token"
+    return 0
+}
+
+create_or_update_secret() {
+    local namespace="$1"
+    local jwt_token="$2"
+    local analytics_key="$3"
+    
+    print_info "Creating/updating Kubernetes secret for secure token storage..."
+    
+    # Check if secret exists
+    if kubectl get secret dotcms-auth-secret -n "$namespace" &>/dev/null; then
+        print_info "Updating existing secret..."
+        kubectl delete secret dotcms-auth-secret -n "$namespace"
+    else
+        print_info "Creating new secret..."
+    fi
+    
+    # Create secret with both tokens
+    kubectl create secret generic dotcms-auth-secret \
+        --from-literal=jwt-token="$jwt_token" \
+        --from-literal=analytics-key="$analytics_key" \
+        -n "$namespace"
+    
+    if [ $? -eq 0 ]; then
+        print_success "Secret created/updated successfully"
+        return 0
+    else
+        print_error "Failed to create/update secret"
+        return 1
+    fi
+}
+
+get_secure_tokens() {
+    local dotcms_host="${1:-$DOTCMS_HOST}"
+    local dotcms_port="${2:-443}"
+    local dotcms_scheme="${3:-https}"
+    
+    # Priority 1: Check for environment variables (highest priority)
+    if [ -n "$DOTCMS_JWT_TOKEN" ] && [ -n "$DOTCMS_ANALYTICS_KEY" ]; then
+        print_info "Found JWT token and analytics key in environment variables"
+        print_success "Using tokens from environment (DOTCMS_JWT_TOKEN, DOTCMS_ANALYTICS_KEY)"
+        
+        # Create/update secret with environment variables
+        if create_or_update_secret "$NAMESPACE" "$DOTCMS_JWT_TOKEN" "$DOTCMS_ANALYTICS_KEY"; then
+            print_success "Environment tokens stored in Kubernetes secret"
+            return 0
+        else
+            print_warning "Failed to store environment tokens in secret, but continuing with environment variables"
+            return 0
+        fi
+    elif [ -n "$DOTCMS_JWT_TOKEN" ]; then
+        print_warning "Found DOTCMS_JWT_TOKEN but missing DOTCMS_ANALYTICS_KEY in environment"
+        print_info "Please set DOTCMS_ANALYTICS_KEY environment variable or use interactive setup"
+    elif [ -n "$DOTCMS_ANALYTICS_KEY" ]; then
+        print_warning "Found DOTCMS_ANALYTICS_KEY but missing DOTCMS_JWT_TOKEN in environment"  
+        print_info "Please set DOTCMS_JWT_TOKEN environment variable or use interactive setup"
+    fi
+    
+    # Priority 2: Check for existing Kubernetes secret
+    if kubectl get secret dotcms-auth-secret -n "$NAMESPACE" &>/dev/null; then
+        print_info "Found existing authentication secret in Kubernetes"
+        
+        # Check if token is still valid (basic check)
+        local existing_token
+        existing_token=$(kubectl get secret dotcms-auth-secret -n "$NAMESPACE" -o jsonpath='{.data.jwt-token}' | base64 -d 2>/dev/null)
+        
+        if [ -n "$existing_token" ]; then
+            echo -n "Use existing Kubernetes secret? [Y/n]: "
+            read -r use_existing
+            if [ "$use_existing" != "n" ] && [ "$use_existing" != "N" ]; then
+                print_success "Using existing authentication secret from Kubernetes"
+                return 0
+            fi
+        fi
+    fi
+    
+    # Prompt for DotCMS host if not provided
+    if [ -z "$dotcms_host" ]; then
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        echo "🌐 DotCMS Instance Configuration"
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        read -p "DotCMS Host (e.g., demo.dotcms.com): " dotcms_host
+        
+        if [ -z "$dotcms_host" ]; then
+            print_error "DotCMS host is required"
+            return 1
+        fi
+        
+        read -p "DotCMS Port [443]: " user_port
+        if [ -n "$user_port" ]; then
+            dotcms_port="$user_port"
+        fi
+        
+        read -p "DotCMS Scheme [https]: " user_scheme  
+        if [ -n "$user_scheme" ]; then
+            dotcms_scheme="$user_scheme"
+        fi
+    fi
+    
+    # Prompt for analytics key
+    echo ""
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "🔑 Analytics Key Configuration"
+    echo "   This is the Analytics Key from your DotCMS Analytics App Configuration"
+    echo "   📍 Location: DotCMS → Apps → Analytics → Configuration → Analytics Key"
+    echo "   📝 Format: js.cluster1.customer1.vgwy3nli4co84u531c"
+    echo "   ℹ️  This key identifies your analytics tracking in the analytics platform"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    read -p "Analytics Key (js.cluster1.customer1.xxxxx): " analytics_key
+    
+    if [ -z "$analytics_key" ]; then
+        print_error "Analytics key is required"
+        return 1
+    fi
+    
+    # Create temporary credentials file
+    local temp_creds="/tmp/dotcms-creds-$$"
+    
+    # Get credentials securely
+    if ! prompt_for_credentials "$dotcms_host" "$temp_creds"; then
+        rm -f "$temp_creds"
+        return 1
+    fi
+    
+    # Generate JWT token
+    local jwt_token
+    jwt_token=$(generate_jwt_token "$dotcms_host" "$dotcms_port" "$dotcms_scheme" "$temp_creds")
+    
+    if [ $? -ne 0 ] || [ -z "$jwt_token" ]; then
+        rm -f "$temp_creds"
+        return 1
+    fi
+    
+    # Create/update Kubernetes secret
+    if ! create_or_update_secret "$NAMESPACE" "$jwt_token" "$analytics_key"; then
+        # Clear token from memory
+        unset jwt_token
+        return 1
+    fi
+    
+    # Clear token from memory
+    unset jwt_token
+    
+    # Export DotCMS configuration for use in setup
+    export DOTCMS_HOST="$dotcms_host"
+    export DOTCMS_PORT="$dotcms_port" 
+    export DOTCMS_SCHEME="$dotcms_scheme"
+    
+    print_success "Secure token management setup complete!"
+    return 0
+}
+
+create_custom_values_file() {
+    local values_file="$1"
+    local dotcms_host="$2"
+    local dotcms_port="$3"
+    local dotcms_scheme="$4"
+    
+    print_info "Creating custom values file: $values_file"
+    
+    # Check if custom values file already exists
+    if [ -f "$values_file" ]; then
+        echo -n "Custom values file exists. Overwrite? [y/N]: "
+        read -r overwrite
+        if [ "$overwrite" != "y" ] && [ "$overwrite" != "Y" ]; then
+            print_info "Using existing custom values file"
+            return 0
+        fi
+    fi
+    
+    # Check if example file exists
+    local example_file="custom-values.yaml.example"
+    if [ ! -f "$example_file" ]; then
+        print_error "Example file not found: $example_file"
+        print_error "Please ensure you're running from the test-jmeter directory"
+        return 1
+    fi
+    
+    # Copy example file and customize with current configuration
+    print_info "Copying from example file: $example_file"
+    cp "$example_file" "$values_file"
+    
+    # Update the copied file with actual configuration values
+    # Uncomment and set the required DotCMS configuration
+    sed -i.bak \
+        -e "/^# DotCMS API Configuration/,/^# =/ s/    host: \"demo.dotcms.com\"/    host: \"$dotcms_host\"/" \
+        -e "/^# DotCMS API Configuration/,/^# =/ s/^#     port: 443/    port: $dotcms_port/" \
+        -e "/^# DotCMS API Configuration/,/^# =/ s/^#     scheme: \"https\"/    scheme: \"$dotcms_scheme\"/" \
+        -e "/^# Authentication Configuration/,/^# =/ s/^#   useSecret: true/  useSecret: true/" \
+        "$values_file"
+    
+    # Uncomment analytics configuration if using non-default values
+    if [ "$ANALYTICS_HOST" != "analytics-dev.dotcms.site" ] || [ "$ANALYTICS_PORT" != "443" ] || [ "$ANALYTICS_SCHEME" != "https" ]; then
+        sed -i.bak2 \
+            -e "/# Analytics Platform Settings/,/^$/s/^# endpoints:/endpoints:/" \
+            -e "/# Analytics Platform Settings/,/^$/s/^#   analytics:/  analytics:/" \
+            -e "/# Analytics Platform Settings/,/^$/s/^#     host: \"analytics.example.com\"/    host: \"$ANALYTICS_HOST\"/" \
+            -e "/# Analytics Platform Settings/,/^$/s/^#     port: 8001/    port: $ANALYTICS_PORT/" \
+            -e "/# Analytics Platform Settings/,/^$/s/^#     scheme: \"http\"/    scheme: \"$ANALYTICS_SCHEME\"/" \
+            -e "/# Analytics Platform Settings/,/^$/s/^#     path: \"/    path: \"/" \
+            -e "/# Analytics Platform Settings/,/^$/s/^#     key: \"/    key: \"/" \
+            "$values_file"
+        rm -f "${values_file}.bak2"
+    fi
+    
+    # Uncomment namespace configuration if using non-default namespace
+    if [ "$NAMESPACE" != "analytics-dev" ]; then
+        sed -i.bak3 \
+            -e "/# Namespace Configuration/,/^$/s/^# namespace:/namespace:/" \
+            -e "/# Namespace Configuration/,/^$/s/^#   name: \"analytics-prod\"/  name: \"$NAMESPACE\"/" \
+            -e "/# Namespace Configuration/,/^$/s/^#   create: false/  create: false/" \
+            "$values_file"
+        rm -f "${values_file}.bak3"
+    fi
+    
+    # Always uncomment environment docHost to match DotCMS host
+    sed -i.bak4 \
+        -e "/# Environment Settings/,/^$/s/^# environment:/environment:/" \
+        -e "/# Environment Settings/,/^$/s/^#   docHost: \"demo.dotcms.com\"/  docHost: \"$dotcms_host\"/" \
+        "$values_file"
+    rm -f "${values_file}.bak4"
+    
+    # Remove backup file
+    rm -f "${values_file}.bak"
+    
+    # Remove the entire warning block (from start until the first configuration section)
+    # and replace with clean header for the custom file
+    sed -i.bak5 -e '1,/^# =============================================================================$/c\
+# Custom Values for DotCMS JMeter Performance Testing\
+# ====================================================\
+# Generated on: '"$(date)"'\
+# Base configuration from: '"$example_file"'\
+#\
+# ✅ EDIT THIS FILE: This is your custom configuration file\
+# \
+# This file contains your specific DotCMS testing configuration.\
+# Customize the settings below for your testing environment.\
+# All commented sections can be uncommented and modified as needed.\
+#\
+# =============================================================================
+' "$values_file"
+    rm -f "${values_file}.bak5"
+    
+    chmod 600 "$values_file"  # Secure permissions
+    print_success "Custom values file created: $values_file"
+    print_info "💡 Based on: $example_file"
+    print_info "💡 Edit this file to customize your testing configuration"
+    print_info "💡 This file is excluded from git (contains configuration details)"
+    
+    return 0
 }
 
 check_prerequisites() {
@@ -152,13 +537,40 @@ setup_infrastructure() {
         exit 1
     fi
     
-    # Deploy with Helm
+    # Secure token management
+    print_info "Setting up secure authentication..."
+    if ! get_secure_tokens; then
+        print_error "Failed to setup secure authentication"
+        exit 1
+    fi
+    
+    # Deploy with Helm (tokens are now in Kubernetes secret)
     print_info "Deploying JMeter test infrastructure with Helm..."
+    
+    # Use captured DotCMS configuration or fallback to defaults
+    local dotcms_host="${DOTCMS_HOST:-}"
+    local dotcms_port="${DOTCMS_PORT:-443}"
+    local dotcms_scheme="${DOTCMS_SCHEME:-https}"
+    
+    # Validate required DotCMS host
+    if [ -z "$dotcms_host" ]; then
+        print_error "DotCMS host is required. Please run setup again or provide --dotcms-host parameter."
+        exit 1
+    fi
+    
+    print_info "Using DotCMS endpoint: ${dotcms_scheme}://${dotcms_host}:${dotcms_port}"
+    
+    # Create custom values file for configuration persistence
+    if ! create_custom_values_file "$VALUES_FILE" "$dotcms_host" "$dotcms_port" "$dotcms_scheme"; then
+        print_error "Failed to create custom values file"
+        exit 1
+    fi
+    
+    print_info "Deploying with custom values file: $VALUES_FILE"
+    print_info "All configuration is stored in the values file for consistency and persistence"
+    
     if helm upgrade --install jmeter-test helm-chart/jmeter-performance/ \
-        --set endpoints.analytics.host="$ANALYTICS_HOST" \
-        --set endpoints.analytics.port="$ANALYTICS_PORT" \
-        --set endpoints.analytics.scheme="$ANALYTICS_SCHEME" \
-        --set endpoints.analytics.key="$ANALYTICS_KEY" \
+        -f "$VALUES_FILE" \
         --namespace "$NAMESPACE" \
         --wait --timeout=300s; then
         print_success "Infrastructure deployed successfully"
@@ -192,9 +604,9 @@ run_kubernetes_test() {
     # Select the appropriate JMX file based on endpoint
     local jmx_file
     if [ "$endpoint" = "dotcms" ]; then
-        jmx_file="/opt/jmx-tests/dotcms-api-cluster-test.jmx"
+        jmx_file="/opt/jmx-tests/analytics-api-cluster-test.jmx"
     else
-        jmx_file="/opt/jmx-tests/direct-analytics-cluster-test.jmx"
+        jmx_file="/opt/jmx-tests/analytics-direct-cluster-test.jmx"
     fi
     
     # Run the test
@@ -206,14 +618,41 @@ run_kubernetes_test() {
         rm -f $result_file $log_file
     "
     
-    kubectl exec jmeter-test-pod -n "$NAMESPACE" -- bash -c "
-        jmeter -n -t $jmx_file \
-          -l $result_file \
-          -j $log_file \
-          -Jthread.number=$threads \
-          -Jevents.per.second=$eps \
-          -Jtest.duration=$duration
-    "
+    kubectl exec jmeter-test-pod -n "$NAMESPACE" -- bash -c '
+        # Read authentication tokens from secret if available
+        if [ -f /opt/secrets/jwt-token ] && [ -f /opt/secrets/analytics-key ]; then
+            JWT_TOKEN=$(cat /opt/secrets/jwt-token)
+            ANALYTICS_KEY=$(cat /opt/secrets/analytics-key)
+        else
+            # Fallback to environment variables or defaults
+            JWT_TOKEN="${DOTCMS_JWT_TOKEN:-}"
+            ANALYTICS_KEY="${DOTCMS_ANALYTICS_KEY:-'$ANALYTICS_KEY'}"
+        fi
+        
+        # Read DotCMS configuration from configmap if available
+        if [ -f /opt/config/dotcms-host ]; then
+            DOTCMS_HOST=$(cat /opt/config/dotcms-host)
+            DOTCMS_PORT=$(cat /opt/config/dotcms-port)
+            DOTCMS_SCHEME=$(cat /opt/config/dotcms-scheme)
+        else
+            # Fallback values
+            DOTCMS_HOST="${DOTCMS_HOST:-}"
+            DOTCMS_PORT="${DOTCMS_PORT:-443}"
+            DOTCMS_SCHEME="${DOTCMS_SCHEME:-https}"
+        fi
+        
+        jmeter -n -t '$jmx_file' \
+          -l '$result_file' \
+          -j '$log_file' \
+          -Jthread.number='$threads' \
+          -Jevents.per.second='$eps' \
+          -Jtest.duration='$duration' \
+          -Janalytics.key="${ANALYTICS_KEY}" \
+          -Jjwt.token="${JWT_TOKEN}" \
+          -Jdotcms.host="${DOTCMS_HOST}" \
+          -Jdotcms.port="${DOTCMS_PORT}" \
+          -Jdotcms.scheme="${DOTCMS_SCHEME}"
+    '
     
     # Store test metadata for analysis
     kubectl exec jmeter-test-pod -n "$NAMESPACE" -- bash -c "
@@ -1121,6 +1560,81 @@ analyze_all() {
     '
 }
 
+# Download all test result files to local directory
+download_results() {
+    print_info "Downloading test result files from Kubernetes pod..."
+    
+    # Check if pod exists
+    if ! kubectl get pod jmeter-test-pod -n "$NAMESPACE" &> /dev/null; then
+        print_error "JMeter test pod not found. Run setup first."
+        exit 1
+    fi
+    
+    # Create local results directory with timestamp
+    local timestamp=$(date +%Y%m%d-%H%M%S)
+    local base_dir="downloaded-results"
+    local local_dir="$base_dir/results-${timestamp}"
+    
+    mkdir -p "$local_dir"
+    print_info "Created local directory: $local_dir"
+    
+    # Get list of result files from pod
+    local result_files=$(kubectl exec jmeter-test-pod -n "$NAMESPACE" -- ls /opt/test-results/ 2>/dev/null || echo "")
+    
+    if [ -z "$result_files" ]; then
+        print_warning "No result files found in pod"
+        return 0
+    fi
+    
+    print_info "Found result files:"
+    echo "$result_files" | while read file; do
+        if [ -n "$file" ]; then
+            print_info "  • $file"
+        fi
+    done
+    
+    # Download all files
+    local downloaded=0
+    local failed=0
+    
+    echo "$result_files" | while read file; do
+        if [ -n "$file" ]; then
+            if kubectl cp "$NAMESPACE/jmeter-test-pod:/opt/test-results/$file" "$local_dir/$file" 2>/dev/null; then
+                downloaded=$((downloaded + 1))
+            else
+                print_warning "Failed to download: $file"
+                failed=$((failed + 1))
+            fi
+        fi
+    done
+    
+    # Summary
+    local total_files=$(echo "$result_files" | grep -c .)
+    print_success "Download completed!"
+    print_info "Local directory: $local_dir"
+    print_info "Total files: $total_files"
+    print_info "📊 Result files (.jtl): $(ls "$local_dir"/*.jtl 2>/dev/null | wc -l)"
+    print_info "📋 Log files (.log): $(ls "$local_dir"/*.log 2>/dev/null | wc -l)"
+    print_info "📝 Other files: $(ls "$local_dir" 2>/dev/null | grep -v -E '\.(jtl|log)$' | wc -l)"
+    
+    # Provide usage examples
+    echo ""
+    print_info "💡 Usage examples:"
+    echo "  # View latest results:"
+    echo "  ls -la $local_dir/"
+    echo ""
+    echo "  # Analyze .jtl files with custom tools:"
+    echo "  head $local_dir/*.jtl"
+    echo ""
+    echo "  # Import into JMeter GUI for detailed analysis:"
+    echo "  # File → Open Recent Results → Select .jtl file"
+    echo ""
+    echo "  # Archive results:"
+    echo "  tar -czf $base_dir/analytics-test-results-${timestamp}.tar.gz $local_dir/"
+    echo ""
+    print_info "📁 All downloads are stored in '$base_dir/' (excluded from git)"
+}
+
 # Sustained load testing to find queue limits
 sustained_load_test() {
     local endpoint="$1"
@@ -1284,7 +1798,7 @@ COMMAND_ARGS=()
 
 while [[ $# -gt 0 ]]; do
     case $1 in
-        setup|quick-test|dotcms-test|compare-endpoints|performance-test|stress-test|single-test|analyze|status|cleanup|logs|bottleneck-analysis|find-maximum-rate|scaling-test|analyze-all|generate-report|sustained-load-test)
+        setup|quick-test|dotcms-test|compare-endpoints|performance-test|stress-test|single-test|analyze|status|cleanup|logs|bottleneck-analysis|find-maximum-rate|scaling-test|analyze-all|generate-report|download-results|sustained-load-test)
             COMMAND="$1"
             shift
             # Capture remaining arguments for commands that need them
@@ -1303,6 +1817,10 @@ while [[ $# -gt 0 ]]; do
             ANALYTICS_KEY="$2"
             shift 2
             ;;
+        --dotcms-host)
+            DOTCMS_HOST="$2"
+            shift 2
+            ;;
         --namespace)
             NAMESPACE="$2"
             shift 2
@@ -1313,6 +1831,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         --max-eps)
             MAX_EPS="$2"
+            shift 2
+            ;;
+        --values-file)
+            VALUES_FILE="$2"
             shift 2
             ;;
         --help|-h)
@@ -1362,6 +1884,10 @@ case $COMMAND in
     logs)
         show_logs
         ;;
+    refresh-tokens)
+        print_info "Refreshing authentication tokens..."
+        get_secure_tokens
+        ;;
     cleanup)
         cleanup_infrastructure
         ;;
@@ -1379,6 +1905,9 @@ case $COMMAND in
         ;;
     generate-report)
         generate_report
+        ;;
+    download-results)
+        download_results
         ;;
     sustained-load-test)
         endpoint=${COMMAND_ARGS[0]:-"both"}
