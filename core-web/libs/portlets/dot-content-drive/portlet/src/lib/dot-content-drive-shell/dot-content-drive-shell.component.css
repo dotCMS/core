@@ -36,7 +36,7 @@
     width: 16.5rem;
 }
 
-dot-list-view {
+dot-folder-list-view {
     background-color: lightgreen;
 
     grid-column: 2 / 3;
