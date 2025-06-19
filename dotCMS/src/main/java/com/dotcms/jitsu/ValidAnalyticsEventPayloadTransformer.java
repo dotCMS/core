@@ -124,7 +124,7 @@ public enum ValidAnalyticsEventPayloadTransformer {
         final Map<String, Object> deviceAttributes = (Map<String, Object> ) dataAttributes.get(DEVICE_ATTRIBUTE_NAME);
 
         moveToRoot(jsonObject, pageAttributes,
-                Map.of("title", "page_title", "language", "userlanguage"));
+                Map.of("title", "page_title", "languageID", "userlanguage"));
         moveToRoot(jsonObject, deviceAttributes, Map.of("language", "user_language"));
 
 
