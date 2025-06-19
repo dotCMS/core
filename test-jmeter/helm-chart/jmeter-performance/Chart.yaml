@@ -1,0 +1,20 @@
+apiVersion: v2
+name: jmeter-performance
+description: JMeter Performance Testing Framework for DotCMS Analytics APIs
+type: application
+version: 1.0.0
+appVersion: "5.6.2"
+keywords:
+  - jmeter
+  - performance
+  - testing
+  - dotcms
+  - analytics
+home: https://github.com/your-org/jmeter-performance
+sources:
+  - https://github.com/your-org/jmeter-performance
+maintainers:
+  - name: DotCMS Team
+    email: contact@example.com
+annotations:
+  category: Testing 
