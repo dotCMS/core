@@ -6,7 +6,6 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.UtilMethods;
 
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -98,8 +97,18 @@ public interface CacheableEagerFactory<K, V> {
             value = this.getCache().get(key);
             if (Objects.isNull(value) && Objects.isNull((getCache().get(this.getLoadedKey())))) {
 
-                this.findAll();
-                return find(key);
+                try {
+                    this.findAll();
+                    // Only retry if findAll() succeeded - check if cache is now loaded
+                    if (Objects.nonNull(getCache().get(this.getLoadedKey()))) {
+                        value = this.getCache().get(key);
+                    }
+                } catch (Exception e) {
+                    // If findAll() fails (e.g., database not available), don't retry recursively
+                    // This prevents infinite recursion during shutdown or database issues
+                    com.dotmarketing.util.Logger.debug(this, "Failed to load all records from database, returning empty result: " + e.getMessage());
+                    return Optional.empty();
+                }
             }
         }
 

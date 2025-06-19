@@ -1267,13 +1267,15 @@ public class ESContentFactoryImpl extends ContentletFactory {
                 + "INNER JOIN identifier i ON i.id = c.identifier\n"
                 + "INNER JOIN contentlet_version_info cvi ON cvi.identifier = c.identifier\n"
                 + "INNER JOIN inode ci ON ci.inode = c.inode\n"
-                +" WHERE (? AT TIME ZONE 'UTC') >= (i.syspublish_date AT TIME ZONE 'UTC')"
-                +" AND ((? AT TIME ZONE 'UTC') <= (i.sysexpire_date AT TIME ZONE 'UTC') OR i.sysexpire_date IS NULL)"
+                + " WHERE ((? AT TIME ZONE 'UTC') >= (i.syspublish_date AT TIME ZONE 'UTC') OR i.syspublish_date IS NULL)"
+                + " AND ((? AT TIME ZONE 'UTC') <= (i.sysexpire_date AT TIME ZONE 'UTC') OR i.sysexpire_date IS NULL)"
                 + "   AND cvi.working_inode = c.inode \n"
                 + "   AND cvi.lang  = ?\n"
                 + "   AND cvi.deleted = false\n"
                 + "   AND c.identifier = ?\n"
                 + "   AND cvi.variant_id = ?\n"
+                // at least one of the dates must be set
+                + "   AND (i.syspublish_date IS NOT NULL OR i.sysexpire_date IS NOT NULL)\n"
                 + ";";
 
         final DotConnect dotConnect = new DotConnect().setSQL(query)
