@@ -3,7 +3,7 @@ export default {
     displayName: 'content-drive-ui',
     preset: '../../../../jest.preset.js',
     setupFilesAfterEnv: ['<rootDir>/src/test-setup.ts'],
-    coverageDirectory: '../../../../coverage/libs/portlets/dot-content-drive/content-drive-ui',
+    coverageDirectory: '../../../../coverage/libs/portlets/dot-content-drive/ui',
     transform: {
         '^.+\\.(ts|mjs|js|html)$': [
             'jest-preset-angular',
