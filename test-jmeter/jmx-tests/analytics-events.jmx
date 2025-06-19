@@ -64,7 +64,7 @@
           </elementProp>
           <elementProp name="analytics.key" elementType="Argument">
             <stringProp name="Argument.name">analytics.key</stringProp>
-            <stringProp name="Argument.value">${__P(analytics.key,js.cluster1.customer1.loadtest)}</stringProp>
+            <stringProp name="Argument.value">${__P(analytics.key,js.cluster1.customer1.vgwy3nli4co84u531c)}</stringProp>
             <stringProp name="Argument.metadata">=</stringProp>
           </elementProp>
           <elementProp name="max.response.time" elementType="Argument">

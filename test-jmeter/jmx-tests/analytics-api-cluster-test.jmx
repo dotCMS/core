@@ -89,7 +89,7 @@
           </elementProp>
           <elementProp name="analytics_key" elementType="Argument">
             <stringProp name="Argument.name">analytics_key</stringProp>
-            <stringProp name="Argument.value">${__P(analytics.key)}</stringProp>
+            <stringProp name="Argument.value">${__P(analytics.key,YOUR_ANALYTICS_KEY_HERE)}</stringProp>
             <stringProp name="Argument.metadata">=</stringProp>
           </elementProp>
         </collectionProp>

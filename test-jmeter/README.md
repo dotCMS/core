@@ -37,6 +37,68 @@ Traditional JMeter tests for general dotCMS functionality using Maven integratio
 - **Analytics namespace** existing in your cluster (default: `analytics-dev`)
 - **Analytics platform** deployed and running
 
+## 🔐 Authentication Setup
+
+The testing framework requires two authentication tokens:
+
+### DotCMS API Token (JWT Token)
+**Purpose**: Authenticates requests to DotCMS API endpoints  
+**Format**: `eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...`
+
+**Option 1: Manual Creation (Recommended for production)**
+1. Login to DotCMS Admin
+2. Navigate to **Admin → User Tools → API Tokens**
+3. Create new token for your user
+4. Copy the generated JWT token
+
+**Option 2: Interactive Generation (Development)**
+- The script can generate temporary tokens using your DotCMS username/password
+- Tokens expire in 30 minutes for security
+- Credentials are never stored
+
+### Analytics Key
+**Purpose**: Identifies your analytics tracking in the analytics platform  
+**Format**: `js.cluster1.customer1.vgwy3nli4co84u531c`
+
+**Location in DotCMS**:
+1. Navigate to **Apps → Analytics → Configuration**
+2. Copy the **Analytics Key** value
+3. This key connects your DotCMS instance to the analytics platform
+
+### Usage Options
+
+**Environment Variables (CI/CD)**:
+```bash
+# Set secure authentication via environment variables
+export DOTCMS_JWT_TOKEN="eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
+export DOTCMS_ANALYTICS_KEY="js.cluster1.customer1.vgwy3nli4co84u531c"
+
+# Setup creates custom-values.yaml with your configuration
+./dotcms-analytics-test.sh setup --dotcms-host demo.dotcms.com
+
+# All subsequent deployments use the persistent configuration
+./dotcms-analytics-test.sh quick-test
+```
+
+**Interactive Setup**:
+```bash
+./dotcms-analytics-test.sh setup
+# Prompts for DotCMS host, username, password, and analytics key
+```
+
+**Manual Setup with Parameters**:
+```bash
+./dotcms-analytics-test.sh setup \
+  --dotcms-host your-instance.dotcms.cloud \
+  --analytics-host analytics.example.com \
+  --namespace production-analytics
+```
+
+**Refresh Expired Tokens**:
+```bash
+./dotcms-analytics-test.sh refresh-tokens
+```
+
 ## 📖 All Available Commands
 
 ```bash
@@ -73,17 +135,202 @@ Traditional JMeter tests for general dotCMS functionality using Maven integratio
 The script uses sensible defaults but can be customized:
 
 ```bash
+# Required: Specify DotCMS host for setup
+./dotcms-analytics-test.sh setup --dotcms-host demo.dotcms.com
+
 # Use different analytics endpoint
-./dotcms-analytics-test.sh setup --analytics-host your-analytics.domain.com
+./dotcms-analytics-test.sh setup \
+  --dotcms-host demo.dotcms.com \
+  --analytics-host your-analytics.domain.com
 
 # Use different analytics key
-./dotcms-analytics-test.sh setup --analytics-key js.cluster1.customer1.yourkey
+./dotcms-analytics-test.sh setup \
+  --dotcms-host demo.dotcms.com \
+  --analytics-key js.cluster1.customer1.vgwy3nli4co84u531c
 
 # Use different namespace
-./dotcms-analytics-test.sh setup --namespace your-namespace
+./dotcms-analytics-test.sh setup \
+  --dotcms-host demo.dotcms.com \
+  --namespace your-namespace
 
 # Custom test duration
 ./dotcms-analytics-test.sh quick-test --duration 300
+```
+
+## 📝 Custom Values Files
+
+### Overview
+
+Helm values files allow you to override any configuration in the default `values.yaml`. This provides a powerful way to customize your testing environment without modifying the base configuration.
+
+### File Types
+
+**🔧 `custom-values.yaml.example`** - Template file with examples (DO NOT EDIT)
+- Contains comprehensive examples and documentation
+- Committed to git as reference documentation
+- Use as template to create your own values files
+
+**📝 `custom-values.yaml`** - Your actual configuration file (edit this)
+- Created automatically by the setup script
+- Contains your specific DotCMS host and settings
+- Excluded from git (contains configuration details)
+- Safe to edit and customize
+
+**⚙️ `values.yaml`** - Default Helm chart values (DO NOT EDIT)
+- Contains sensible defaults for all configuration
+- Part of the Helm chart itself
+- Override with custom values files, not direct edits
+
+### Using Custom Values Files
+
+**🚀 Recommended: Automatic Generation**
+```bash
+# The script automatically copies the example file and customizes it for you
+# Creates custom-values.yaml with your DotCMS host and current settings
+./dotcms-analytics-test.sh setup --dotcms-host demo.dotcms.com
+
+# Use a different values file name (also auto-generated)
+./dotcms-analytics-test.sh setup --values-file production-values.yaml
+
+# What happens automatically:
+# 1. Copies custom-values.yaml.example → custom-values.yaml (or your filename)
+# 2. Uncomments and sets your DotCMS host configuration
+# 3. Sets useSecret: true for secure authentication
+# 4. Includes all example configurations as comments for easy customization
+```
+
+**Manual Creation (Advanced Users)**:
+```bash
+# ⚠️ IMPORTANT: Copy the example file - DO NOT edit the example directly
+cp custom-values.yaml.example my-values.yaml
+
+# Edit your copy (NOT the .example file) with your configuration  
+# Edit my-values.yaml with your specific settings
+./dotcms-analytics-test.sh setup --values-file my-values.yaml
+
+# Note: The script will still auto-generate if the file doesn't exist
+```
+
+**Direct Helm Usage**:
+```bash
+# Use directly with Helm
+helm install my-jmeter ./helm-chart/jmeter-performance -f custom-values.yaml
+
+# Combine multiple values files
+helm install my-jmeter ./helm-chart/jmeter-performance \
+  -f custom-values.yaml \
+  -f production-overrides.yaml
+```
+
+### Example Configurations
+
+**High-Performance Production**:
+```yaml
+# production-values.yaml
+endpoints:
+  dotcms:
+    host: "production.dotcms.cloud"
+
+pod:
+  resources:
+    requests:
+      cpu: "8000m"
+      memory: "32Gi"
+    limits:
+      cpu: "16000m"
+      memory: "64Gi"
+  jvm:
+    heap: "-Xms24g -Xmx48g"
+
+testing:
+  defaults:
+    threads: 2000
+    eventsPerSecond: 5000
+    duration: 1800  # 30 minutes
+```
+
+**Development/Testing**:
+```yaml
+# dev-values.yaml
+endpoints:
+  dotcms:
+    host: "dev.dotcms.com"
+
+namespace:
+  name: "analytics-dev"
+
+pod:
+  resources:
+    requests:
+      cpu: "1000m"
+      memory: "4Gi"
+    limits:
+      cpu: "2000m"
+      memory: "8Gi"
+
+testing:
+  defaults:
+    threads: 100
+    eventsPerSecond: 200
+    duration: 300  # 5 minutes
+```
+
+**Custom Analytics Platform**:
+```yaml
+# custom-analytics-values.yaml
+endpoints:
+  dotcms:
+    host: "demo.dotcms.com"
+  analytics:
+    host: "analytics.company.com"
+    port: 9000
+    scheme: "https"
+    
+environment:
+  name: "production"
+  customer: "your-company"
+```
+
+### Values File Hierarchy
+
+Values are applied in the following order (later values override earlier ones):
+
+1. **Default values** (`helm-chart/jmeter-performance/values.yaml`)
+2. **Custom values file** (`-f custom-values.yaml`)
+3. **Additional values files** (`-f override-values.yaml`)
+4. **Command line overrides** (`--set key=value`)
+
+### Security Considerations
+
+- **Custom values files are excluded from git** (see `.gitignore`)
+- **Files contain configuration details** - treat as sensitive
+- **Use environment variables** for truly sensitive data like tokens
+- **Set restrictive file permissions** (600) for values files containing secrets
+
+### Common Overrides
+
+```yaml
+# Resource scaling
+pod:
+  resources:
+    requests:
+      memory: "16Gi"
+      cpu: "4000m"
+
+# Test parameters
+testing:
+  defaults:
+    eventsPerSecond: 1000
+    duration: 600
+
+# Environment configuration
+environment:
+  name: "staging"
+  cluster: "staging-cluster"
+
+# Namespace
+namespace:
+  name: "analytics-staging"
 ```
 
 ## 📊 Understanding Test Results
@@ -254,7 +501,7 @@ The tool automatically identifies:
 
 ### Test Configuration
 
-The traditional JMeter tests are configured in `jmx-tests/sessions.jmx`. The default configuration includes:
+The traditional JMeter tests are configured in `jmx-tests/core-sessions.jmx`. The default configuration includes:
 
 - Host: dotcms.local
 - Port: 443
@@ -280,7 +527,7 @@ just run-jmeter-tests
 
 ```bash
 cd test-jmeter
-../mvnw jmeter:configure jmeter:gui -DguiTestFile=jmx-tests/sessions.jmx
+../mvnw jmeter:configure jmeter:gui -DguiTestFile=jmx-tests/core-sessions.jmx
 ```
 
 ### Overriding Test Parameters
@@ -320,7 +567,7 @@ export JMETER_ADMIN_PASSWORD=mysecretpassword
 
 ### Configuration Files
 
-- Main JMeter test file: `jmx-tests/sessions.jmx`
+- Main JMeter test file: `jmx-tests/core-sessions.jmx`
 - Maven configuration: `pom.xml`
 
 ### Default Properties

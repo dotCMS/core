@@ -31,12 +31,12 @@ Dual-purpose performance testing infrastructure:
 
 ### Test Plans (JMX Files)
 **Analytics Tests:**
-- **`direct-analytics-cluster-test.jmx`** - Tests analytics platform directly
-- **`dotcms-api-cluster-test.jmx`** - Tests DotCMS API analytics endpoints
+- **`analytics-direct-cluster-test.jmx`** - Tests analytics platform directly
+- **`analytics-api-cluster-test.jmx`** - Tests DotCMS API analytics endpoints
 - **`analytics-events.jmx`** - General analytics events testing
 
 **Traditional dotCMS Tests:**
-- **`sessions.jmx`** - Core dotCMS functionality and session testing
+- **`core-sessions.jmx`** - Core dotCMS functionality and session testing
 
 ## Essential Commands Reference
 
@@ -76,8 +76,6 @@ just run-jmeter-tests
 
 ### Configuration Files
 - **`helm-chart/jmeter-performance/values.yaml`** - Default Helm values
-- **`helm-chart/jmeter-performance/values-dev.yaml`** - Development environment
-- **`helm-chart/jmeter-performance/values-prod.yaml`** - Production environment
 
 ### Test Results
 - **`test-results/`** - Directory for JMeter output files (.jtl, .csv)
@@ -91,7 +89,26 @@ just run-jmeter-tests
 3. **Focus on bottleneck identification** - This is the primary use case
 4. **Include analysis step** - Always run `analyze` after tests
 
+### Authentication Quick Reference
+
+**DotCMS API Token (JWT)**: 
+- **Purpose**: Authenticates requests to DotCMS API endpoints
+- **Format**: `eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...`
+- **Source**: DotCMS Admin → User Tools → API Tokens OR /api/v1/authentication
+- **Environment**: `DOTCMS_JWT_TOKEN`
+
+**Analytics Key**:
+- **Purpose**: Identifies analytics tracking in analytics platform  
+- **Format**: `js.cluster1.customer1.vgwy3nli4co84u531c`
+- **Source**: DotCMS → Apps → Analytics → Configuration → Analytics Key
+- **Environment**: `DOTCMS_ANALYTICS_KEY`
+
 ### Common Developer Questions
+
+**Authentication:**
+- **"Where do I get the JWT token?"** → DotCMS Admin → User Tools → API Tokens
+- **"Where do I find the Analytics Key?"** → DotCMS → Apps → Analytics → Configuration
+- **"Token expired?"** → Run `./dotcms-analytics-test.sh refresh-tokens`
 
 **Analytics Performance:**
 - **"How do I test analytics performance?"** → Start with `./dotcms-analytics-test.sh quick-test`
@@ -101,7 +118,7 @@ just run-jmeter-tests
 
 **Traditional dotCMS Performance:**
 - **"How do I test general dotCMS performance?"** → Use `./mvnw install -Djmeter.test.skip=false -pl :dotcms-test-jmeter`
-- **"How do I modify test scenarios?"** → Open with `../mvnw jmeter:configure jmeter:gui -DguiTestFile=jmx-tests/sessions.jmx`
+- **"How do I modify test scenarios?"** → Open with `../mvnw jmeter:configure jmeter:gui -DguiTestFile=jmx-tests/core-sessions.jmx`
 - **"How do I test against my instance?"** → Use `-Djmeter.host=myhost -Djmeter.port=443`
 - **"Where are the test results?"** → Check `target/jmeter/reports/` and `target/jmeter/results/`
 

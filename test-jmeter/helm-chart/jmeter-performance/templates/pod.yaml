@@ -26,8 +26,15 @@ spec:
       mountPath: {{ .Values.configMaps.scripts.mountPath }}
     - name: {{ .Values.configMaps.jmx.name }}
       mountPath: {{ .Values.configMaps.jmx.mountPath }}
+    - name: {{ .Values.configMaps.config.name }}
+      mountPath: {{ .Values.configMaps.config.mountPath }}
     - name: {{ .Values.volumes.results.name }}
       mountPath: {{ .Values.volumes.results.mountPath }}
+    {{- if .Values.auth.useSecret }}
+    - name: auth-secret
+      mountPath: /opt/secrets
+      readOnly: true
+    {{- end }}
   volumes:
   - name: {{ .Values.configMaps.scripts.name }}
     configMap:
@@ -36,6 +43,15 @@ spec:
   - name: {{ .Values.configMaps.jmx.name }}
     configMap:
       name: {{ .Values.configMaps.jmx.name }}
+  - name: {{ .Values.configMaps.config.name }}
+    configMap:
+      name: {{ .Values.configMaps.config.name }}
   - name: {{ .Values.volumes.results.name }}
     emptyDir: {}
+  {{- if .Values.auth.useSecret }}
+  - name: auth-secret
+    secret:
+      secretName: dotcms-auth-secret
+      defaultMode: 0400
+  {{- end }}
   restartPolicy: {{ .Values.pod.restartPolicy }} 
