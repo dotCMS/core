@@ -106,7 +106,7 @@ public class ContentAnalyticsUtil {
             userEventPayload.put(REFERER_ATTRIBUTE_NAME, referer);
         }
 
-        final String userAGent = request.getHeader("User-Agent\"");
+        final String userAGent = request.getHeader("User-Agent");
         if (UtilMethods.isSet(userAGent)) {
             userEventPayload.put(USER_AGENT_ATTRIBUTE_NAME, userAGent);
         }
