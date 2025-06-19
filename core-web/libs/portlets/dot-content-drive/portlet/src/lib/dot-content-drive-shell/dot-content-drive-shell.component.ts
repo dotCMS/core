@@ -1,9 +1,11 @@
 import { Component } from '@angular/core';
 
+import { DotListViewComponent } from '@dotcms/portlets/content-drive/ui';
+
 @Component({
-    selector: 'lib-dot-content-drive-shell',
+    selector: 'dot-content-drive-shell',
     standalone: true,
-    imports: [],
+    imports: [DotListViewComponent],
     templateUrl: './dot-content-drive-shell.component.html',
     styleUrl: './dot-content-drive-shell.component.css'
 })
