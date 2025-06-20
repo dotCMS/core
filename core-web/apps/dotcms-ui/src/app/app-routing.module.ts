@@ -152,7 +152,8 @@ const PORTLETS_ANGULAR: Route[] = [
     },
     {
         path: 'content-drive',
-        loadChildren: () => import('@dotcms/content-drive').then((m) => m.DotContentDriveRoutes)
+        loadChildren: () =>
+            import('@dotcms/portlets/content-drive/portlet').then((m) => m.DotContentDriveRoutes)
     },
     {
         path: '',

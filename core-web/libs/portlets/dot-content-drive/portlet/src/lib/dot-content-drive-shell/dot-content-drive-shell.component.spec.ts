@@ -1,22 +1,32 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+
+import { DotFolderListViewComponent } from '@dotcms/portlets/content-drive/ui';
 
 import { DotContentDriveShellComponent } from './dot-content-drive-shell.component';
 
 describe('DotContentDriveShellComponent', () => {
-    let component: DotContentDriveShellComponent;
-    let fixture: ComponentFixture<DotContentDriveShellComponent>;
+    let spectator: Spectator<DotContentDriveShellComponent>;
 
-    beforeEach(async () => {
-        await TestBed.configureTestingModule({
-            imports: [DotContentDriveShellComponent]
-        }).compileComponents();
-
-        fixture = TestBed.createComponent(DotContentDriveShellComponent);
-        component = fixture.componentInstance;
-        fixture.detectChanges();
+    const createComponent = createComponentFactory({
+        component: DotContentDriveShellComponent,
+        imports: [],
+        declarations: [],
+        detectChanges: true
     });
 
-    it('should create', () => {
-        expect(component).toBeTruthy();
+    beforeEach(() => {
+        spectator = createComponent();
+    });
+
+    describe('DOM', () => {
+        it('should have a dot-folder-list-view', () => {
+            const folderListView = spectator.query(DotFolderListViewComponent);
+
+            expect(folderListView).toBeTruthy();
+        });
+    });
+
+    describe('Interactions', () => {
+        // Add tests for component interactions when implemented
     });
 });
