@@ -86,6 +86,8 @@ public class LocalSystemEventSubscribersInitializer implements DotInitializer {
         try {
 
             final User user  = APILocator.systemUser();
+
+
             final List<Host> hosts = APILocator.getHostAPI().findAllFromDB(user,
                     HostAPI.SearchType.INCLUDE_SYSTEM_HOST);
             final ApplicationContainerFolderListener listener = new ApplicationContainerFolderListener();

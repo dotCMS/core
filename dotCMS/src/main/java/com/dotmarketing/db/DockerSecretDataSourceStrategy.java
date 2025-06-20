@@ -79,20 +79,32 @@ public class DockerSecretDataSourceStrategy implements DotDataSourceStrategy {
         config.setPassword(dockerSecretsMap.get(DataSourceStrategyProvider.CONNECTION_DB_PASSWORD));
         config.setMaximumPoolSize(Integer.parseInt(
                 dockerSecretsMap.getOrDefault(DataSourceStrategyProvider.CONNECTION_DB_MAX_TOTAL, "60")));
+        
+        config.setMinimumIdle(Integer.parseInt(
+                dockerSecretsMap.getOrDefault(DataSourceStrategyProvider.CONNECTION_DB_MIN_IDLE, "10")));
+        
+        // ConnectionTimeout: Time in milliseconds to wait for a connection from the pool
+        // Default: 30 seconds (30000ms)
         config.setConnectionTimeout(Integer.parseInt(
-                dockerSecretsMap.getOrDefault(DataSourceStrategyProvider.CONNECTION_DB_CONNECTION_TIMEOUT, "5000")));
-        config.setIdleTimeout(
-                Integer.parseInt(dockerSecretsMap.getOrDefault(
-                        DataSourceStrategyProvider.CONNECTION_DB_MIN_IDLE, "10"))
-                        * 1000);
+                dockerSecretsMap.getOrDefault(DataSourceStrategyProvider.CONNECTION_DB_CONNECTION_TIMEOUT, "30000")));
+        
+        // IdleTimeout: Time in milliseconds that a connection can sit idle in the pool
+        // Default: 10 minutes (600000ms)
+        config.setIdleTimeout(Integer.parseInt(
+                dockerSecretsMap.getOrDefault(DataSourceStrategyProvider.CONNECTION_DB_IDLE_TIMEOUT, "600000")));
+        
+        // MaxLifetime: Maximum lifetime of a connection in the pool in milliseconds
+        // Default: 30 minutes (1800000ms) - should be less than database connection timeout
         config.setMaxLifetime(Integer.parseInt(
-                dockerSecretsMap.getOrDefault(DataSourceStrategyProvider.CONNECTION_DB_MAX_WAIT, "60000")));
+                dockerSecretsMap.getOrDefault(DataSourceStrategyProvider.CONNECTION_DB_MAX_WAIT, "1800000")));
         config.setConnectionTestQuery(dockerSecretsMap.get(
                 DataSourceStrategyProvider.CONNECTION_DB_VALIDATION_QUERY));
 
-        // This property controls the amount of time that a connection can be out of the pool before a message
-        // is logged indicating a possible connection leak. A value of 0 means leak detection is disabled.
-        // Lowest acceptable value for enabling leak detection is 2000 (2 seconds). Default: 0
+        // LeakDetectionThreshold: Time in milliseconds that a connection can be out of the pool 
+        // before a message is logged indicating a possible connection leak. 
+        // A value of 0 means leak detection is disabled.
+        // Lowest acceptable value for enabling leak detection is 2000 (2 seconds).
+        // Default: 60 seconds (60000ms) - reasonable for detecting actual leaks
         config.setLeakDetectionThreshold(Integer.parseInt(dockerSecretsMap
                 .getOrDefault(DataSourceStrategyProvider.CONNECTION_DB_LEAK_DETECTION_THRESHOLD, "60000")));
 

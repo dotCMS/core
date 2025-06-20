@@ -5,6 +5,7 @@ import com.dotcms.business.WrapInTransaction;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.util.CloseUtils;
+import com.dotmarketing.db.DatabaseConnectionHealthManager;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -76,6 +77,22 @@ public class DotConnect {
 
     public DotConnect() {
         Logger.debug(this, "------------ DotConnect() --------------------");
+    }
+
+    /**
+     * Logs database operation errors with circuit breaker awareness to reduce noise during known outages.
+     * When circuit breaker is open, logs at debug level. Otherwise logs at error level with full details.
+     */
+    private void logDatabaseError(String operation, Exception e) {
+        DatabaseConnectionHealthManager healthManager = DatabaseConnectionHealthManager.getInstance();
+        if (!healthManager.isOperationAllowed()) {
+            // Circuit breaker is open - log at debug level to reduce noise
+            Logger.debug(this, operation + ": " + e.getMessage());
+        } else {
+            // Circuit breaker is closed or half-open - this is an unexpected failure, log with full details
+            String sqlInfo = (SQL != null ? SQL + " " : "") + (paramList != null ? paramList.toString() + " " : "");
+            Logger.error(this, operation + ": unable to execute query. Bad SQL? : " + sqlInfo + e.getMessage(), e);
+        }
     }
 
     public void setForceQuery(boolean force) {
@@ -249,8 +266,7 @@ public class DotConnect {
         try {
             executeQuery(dataSource);
         } catch (Exception e) {
-            Logger.error(this, "getResult(): unable to execute query.  Bad SQL? : " + (SQL != null ? SQL + " " : "")
-                    + (paramList != null ? paramList.toString() + " " : "") + e.getMessage(), e);
+            logDatabaseError("getResult()", e);
             throw new DotRuntimeException(e.toString(), e);
         }
 
@@ -263,8 +279,7 @@ public class DotConnect {
         try {
             executeQuery(conn);
         } catch (Exception e) {
-            Logger.error(this, "getResult(): unable to execute query.  Bad SQL? : " + (SQL != null ? SQL + " " : "")
-                    + (paramList != null ? paramList.toString() + " " : "") + e.getMessage(), e);
+            logDatabaseError("getResult()", e);
             throw new DotRuntimeException(e.toString(), e);
         }
 
@@ -277,7 +292,7 @@ public class DotConnect {
         try {
             executeQuery(conn);
         } catch (Exception e) {
-            Logger.debug(this, "getResult(): unable to execute query " + e.getMessage(), e);
+            logDatabaseError("loadResult()", e);
             throw new DotDataException(e.getMessage(), e);
         }
 
@@ -307,6 +322,7 @@ public class DotConnect {
         try {
             executeQuery();
         } catch (Exception e) {
+            logDatabaseError("loadResult()", e);
             throw new DotDataException(e.getMessage() + toString(), e);
         }
     }
@@ -322,8 +338,7 @@ public class DotConnect {
         try {
             executeQuery();
         } catch (Exception e) {
-            Logger.error(this, "getResult(): unable to execute query.  Bad SQL? : " + (SQL != null ? SQL + " " : "")
-                    + (paramList != null ? paramList.toString() + " " : "") + e.getMessage(), e);
+            logDatabaseError("getResult()", e);
             throw new DotRuntimeException(e.toString(), e);
         }
 

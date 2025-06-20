@@ -95,10 +95,8 @@ public class JobQueueManagerAPIIntegrationTest extends com.dotcms.Junit5WeldBase
 
     @BeforeEach
     void reset() {
-        // Reset circuit breaker
-        if(null != jobQueueManagerAPI) {
-            jobQueueManagerAPI.getCircuitBreaker().reset();
-        }
+        // Circuit breaker functionality now handled by DatabaseConnectionHealthManager
+        // No manual reset needed - database circuit breaker manages its own state
 
         // Reset retry attempts
         attempts = 0;

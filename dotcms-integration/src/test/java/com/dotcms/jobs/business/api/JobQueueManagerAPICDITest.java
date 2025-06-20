@@ -65,8 +65,7 @@ public class JobQueueManagerAPICDITest extends Junit5WeldBaseTest {
         assertInstanceOf(JobQueue.class, jobQueueManagerAPI.getJobQueue(),
                 "Injected object should implement JobQueue interface");
 
-        assertNotNull(jobQueueManagerAPI.getCircuitBreaker(),
-                "CircuitBreaker should be injected");
+        // Circuit breaker functionalitevy now handled by DatabaseConnectionHealthManager
         assertNotNull(jobQueueManagerAPI.getDefaultRetryStrategy(),
                 "Retry strategy should be injected");
 

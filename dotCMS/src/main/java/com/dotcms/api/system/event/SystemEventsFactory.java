@@ -15,6 +15,7 @@ import com.dotcms.util.marshal.MarshalFactory;
 import com.dotcms.util.marshal.MarshalUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.db.DatabaseConnectionHealthManager;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -231,10 +232,18 @@ public class SystemEventsFactory implements Serializable {
 				final List<SystemEventDTO> result = (List<SystemEventDTO>) this.systemEventsDAO.getEventsSince(createdDate);
 				return this.conversionUtils.convert(result, this::convertSystemEventDTO);
 			} catch (DotDataException e) {
-				final String msg = "An error occurred when retreiving system events created since: ["
-						+ new Date(createdDate) + "]";
-				Logger.error(this, msg, e);
-				throw new DotDataException(msg, e);
+				// Check if circuit breaker is open to reduce log noise during known outages
+				DatabaseConnectionHealthManager healthManager = DatabaseConnectionHealthManager.getInstance();
+				if (!healthManager.isOperationAllowed()) {
+					// Circuit breaker is open - log at debug level to reduce noise
+					Logger.debug(this, "Failed to retrieve system events: " + e.getMessage());
+				} else {
+					// Circuit breaker is closed or half-open - this is an unexpected failure, log with full details
+					final String msg = "An error occurred when retreiving system events created since: ["
+							+ new Date(createdDate) + "]";
+					Logger.error(this, msg, e);
+				}
+				throw new DotDataException(e.getMessage(), e);
 			}
 		}
 
@@ -245,9 +254,17 @@ public class SystemEventsFactory implements Serializable {
 				final List<SystemEventDTO> result = (List<SystemEventDTO>) this.systemEventsDAO.getAll();
 				return this.conversionUtils.convert(result, this::convertSystemEventDTO);
 			} catch (DotDataException e) {
-				final String msg = "An error occurred when retreiving all system events.";
-				Logger.error(this, msg, e);
-				throw new DotDataException(msg, e);
+				// Check if circuit breaker is open to reduce log noise during known outages
+				DatabaseConnectionHealthManager healthManager = DatabaseConnectionHealthManager.getInstance();
+				if (!healthManager.isOperationAllowed()) {
+					// Circuit breaker is open - log at debug level to reduce noise
+					Logger.debug(this, "Failed to retrieve all system events: " + e.getMessage());
+				} else {
+					// Circuit breaker is closed or half-open - this is an unexpected failure, log with full details
+					final String msg = "An error occurred when retreiving all system events.";
+					Logger.error(this, msg, e);
+				}
+				throw new DotDataException(e.getMessage(), e);
 			}
 		}
 
