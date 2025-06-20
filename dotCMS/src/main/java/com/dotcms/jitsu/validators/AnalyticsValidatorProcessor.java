@@ -52,7 +52,7 @@ import java.util.Map;
  *     "type": "json array",
  *     "array_type": "json_object",
  *     "required": true,
- *     "items_attributes": {
+ *     "attributes": {
  *       "eventType": {
  *         "type": "string",
  *         "required": true
@@ -171,7 +171,7 @@ public class AnalyticsValidatorProcessor {
                 }
 
                 if (ValidatorType.JSON_OBJECT == type) {
-                    processValidatorsRecursive(jsonValue.getJSONObject("items_attributes"),
+                    processValidatorsRecursive(jsonValue.getJSONObject("allowed_attributes"),
                             currentPath, jsonPathValidatorsList);
                 }
             }

@@ -248,7 +248,7 @@ public class AnalyticsValidatorUtilTest {
 
         final List<AnalyticsValidatorUtil.Error> errors = new AnalyticsValidatorUtil().validateGlobalContext(jsonObject);
 
-        assertEquals(4, errors.size());
+        assertEquals(7, errors.size());
         final List<String> errorFields =
                 errors.stream().map(AnalyticsValidatorUtil.Error::getField).collect(Collectors.toList());
 
@@ -256,6 +256,9 @@ public class AnalyticsValidatorUtilTest {
         assertTrue(errorFields.contains("context.session_id"));
         assertTrue(errorFields.contains("context.user_id"));
         assertTrue(errorFields.contains("context"));
+        assertTrue(errorFields.contains("site_key"));
+        assertTrue(errorFields.contains("session_id"));
+        assertTrue(errorFields.contains("user_id"));
 
         for (AnalyticsValidatorUtil.Error error : errors) {
             if (error.getField().equals("context.site_key")) {
@@ -270,10 +273,24 @@ public class AnalyticsValidatorUtilTest {
                 assertEquals("context.user_id", error.getField());
                 assertEquals("REQUIRED_FIELD_MISSING", error.getCode().toString());
                 assertEquals("Required field is missing: context.user_id", error.getMessage());
-            } else {
+            } else  if (error.getField().equals("context")){
                 assertEquals("context", error.getField());
                 assertEquals("REQUIRED_FIELD_MISSING", error.getCode().toString());
                 assertEquals("Required field is missing: context", error.getMessage());
+            } else  if (error.getField().equals("site_key")){
+                assertEquals("site_key", error.getField());
+                assertEquals("UNKNOWN_FIELD", error.getCode().toString());
+                assertEquals("Unknown field 'site_key'", error.getMessage());
+            } else  if (error.getField().equals("session_id")){
+                assertEquals("session_id", error.getField());
+                assertEquals("UNKNOWN_FIELD", error.getCode().toString());
+                assertEquals("Unknown field 'session_id'", error.getMessage());
+            } else  if (error.getField().equals("user_id")){
+                assertEquals("user_id", error.getField());
+                assertEquals("UNKNOWN_FIELD", error.getCode().toString());
+                assertEquals("Unknown field 'user_id'", error.getMessage());
+            } else {
+                throw new AssertionError("Unexpected field: " + errorFields);
             }
         }
     }
