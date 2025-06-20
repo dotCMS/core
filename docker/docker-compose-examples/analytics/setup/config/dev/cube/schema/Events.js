@@ -186,12 +186,6 @@ cube('request', {
     }
   },*/
   dimensions: {
-    id: {
-      sql: `CONCAT(${CUBE}.request_id, '-', ${CUBE}.event_type, '-', ${CUBE}.object_identifier)`,
-      type: `string`,
-      primaryKey: true
-    },
-
     userAgent: { sql: 'user_agent', type: `string` },
     referer: { sql: 'referer', type: `string` },
     url: { sql: 'url', type: `string` },
