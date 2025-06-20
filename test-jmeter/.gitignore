@@ -1,0 +1,25 @@
+# Custom values files (may contain sensitive information)
+custom-values.yaml
+custom-values-*.yaml
+values-*.yaml
+
+# Test results and logs
+test-results/
+test-results-*/
+downloaded-results/
+*.jtl
+*.log
+
+# Temporary files
+*.tmp
+.DS_Store
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Local configuration backups
+*.bak
+*.backup

@@ -1,0 +1,266 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.configMaps.scripts.name }}
+  namespace: {{ .Values.namespace.name }}
+  labels:
+    {{- include "jmeter-performance.labels" . | nindent 4 }}
+data:
+  test.sh: |
+    #!/bin/bash
+    set -e
+    
+    echo "Starting Direct Analytics Load Test from within cluster"
+    echo "Target: {{ .Values.endpoints.analytics.host }}:{{ .Values.endpoints.analytics.port }}"
+    
+    # Test parameters
+    THREADS=${THREADS:-{{ .Values.testing.defaults.threads }}}
+    EVENTS_PER_SEC=${EVENTS_PER_SEC:-{{ .Values.testing.defaults.eventsPerSecond }}}
+    DURATION=${DURATION:-{{ .Values.testing.defaults.duration }}}
+    RAMPUP=${RAMPUP:-{{ .Values.testing.defaults.rampup }}}
+    
+    echo "Test config: ${THREADS} threads, ${EVENTS_PER_SEC} eps, ${DURATION}s duration"
+    
+    # Run JMeter test
+    jmeter -n \
+      -t {{ .Values.configMaps.jmx.mountPath }}/analytics-direct-cluster-test.jmx \
+      -l {{ .Values.volumes.results.mountPath }}/results-$(date +%Y%m%d-%H%M%S).jtl \
+      -j {{ .Values.volumes.results.mountPath }}/jmeter-$(date +%Y%m%d-%H%M%S).log \
+      -Jthread.number=${THREADS} \
+      -Jevents.per.second=${EVENTS_PER_SEC} \
+      -Jtest.duration=${DURATION} \
+      -Jrampup=${RAMPUP} \
+      -Janalytics.host={{ .Values.endpoints.analytics.host }} \
+      -Janalytics.port={{ .Values.endpoints.analytics.port }} \
+      -Janalytics.scheme={{ .Values.endpoints.analytics.scheme }} \
+      -Janalytics.key={{ .Values.endpoints.analytics.key }} \
+      -Jdoc.host={{ .Values.environment.docHost }} \
+      -Jenvironment.name={{ .Values.environment.name }} \
+      -Jcluster.name={{ .Values.environment.cluster }} \
+      -Jcustomer.name={{ .Values.environment.customer }} \
+      -Jmax.response.time={{ .Values.testing.defaults.maxResponseTime }}
+    
+    echo "Test completed! Results in {{ .Values.volumes.results.mountPath }}/"
+    echo "Summary:"
+    tail -20 {{ .Values.volumes.results.mountPath }}/jmeter-*.log | grep summary
+
+  dotcms-api-test.sh: |
+    #!/bin/bash
+    set -e
+    
+    echo "Starting DotCMS API Load Test from within cluster"
+    echo "Target: {{ .Values.endpoints.dotcms.host }}"
+    
+    # Test parameters
+    THREADS=${THREADS:-{{ .Values.testing.defaults.threads }}}
+    EVENTS_PER_SEC=${EVENTS_PER_SEC:-{{ .Values.testing.defaults.eventsPerSecond }}}
+    DURATION=${DURATION:-{{ .Values.testing.defaults.duration }}}
+    RAMPUP=${RAMPUP:-{{ .Values.testing.defaults.rampup }}}
+    
+    echo "Test config: ${THREADS} threads, ${EVENTS_PER_SEC} eps, ${DURATION}s duration"
+    
+    # Run JMeter test
+    jmeter -n \
+      -t {{ .Values.configMaps.jmx.mountPath }}/analytics-api-cluster-test.jmx \
+      -l {{ .Values.volumes.results.mountPath }}/dotcms-results-$(date +%Y%m%d-%H%M%S).jtl \
+      -j {{ .Values.volumes.results.mountPath }}/dotcms-jmeter-$(date +%Y%m%d-%H%M%S).log \
+      -Jthread.number=${THREADS} \
+      -Jevents.per.second=${EVENTS_PER_SEC} \
+      -Jtest.duration=${DURATION} \
+      -Jrampup=${RAMPUP} \
+      -Jdotcms.host={{ .Values.endpoints.dotcms.host }} \
+      -Jdotcms.port={{ .Values.endpoints.dotcms.port }} \
+      -Jdotcms.scheme={{ .Values.endpoints.dotcms.scheme }} \
+      -Jdoc.host={{ .Values.environment.docHost }} \
+      -Jenvironment.name={{ .Values.environment.name }} \
+      -Jcluster.name={{ .Values.environment.cluster }} \
+      -Jcustomer.name={{ .Values.environment.customer }} \
+      -Jmax.response.time={{ .Values.testing.defaults.maxResponseTime }}
+    
+    echo "Test completed! Results in {{ .Values.volumes.results.mountPath }}/"
+    echo "Summary:"
+    tail -20 {{ .Values.volumes.results.mountPath }}/dotcms-jmeter-*.log | grep summary
+
+  performance-limits-test.sh: |
+    #!/bin/bash
+
+    # Performance Limits Testing Script - Cluster Version
+    # Tests both DotCMS API and Direct Analytics Platform to failure points
+    # Collects data for response time vs throughput vs error rate analysis
+
+    set -e
+
+    echo "=== PERFORMANCE LIMITS TESTING ==="
+    echo "Testing both DotCMS API and Direct Analytics Platform to failure"
+
+    # Create results directory
+    RESULTS_DIR="{{ .Values.volumes.results.mountPath }}/performance-limits-$(date +%Y%m%d-%H%M%S)"
+    mkdir -p "$RESULTS_DIR"
+
+    # Test configuration
+    DURATION={{ .Values.testing.limits.testDuration }}  # seconds per test
+    RAMPUP={{ .Values.testing.limits.rampupTime }}    # ramp up time
+
+    # Define test levels from values
+    DOTCMS_LEVELS=({{ range .Values.testing.limits.dotcms.levels }}{{ . }} {{ end }})
+    DIRECT_LEVELS=({{ range .Values.testing.limits.analytics.levels }}{{ . }} {{ end }})
+
+    # Results file
+    RESULTS_CSV="$RESULTS_DIR/performance_results.csv"
+    echo "endpoint,target_eps,actual_eps,avg_response_ms,min_response_ms,max_response_ms,error_count,error_rate_percent,total_requests,success_rate_percent" > "$RESULTS_CSV"
+
+    # Function to extract metrics from JTL file
+    extract_metrics() {
+        local jtl_file="$1"
+        local target_eps="$2"
+        local endpoint_name="$3"
+        
+        if [[ ! -f "$jtl_file" ]]; then
+            echo "$endpoint_name,$target_eps,0,0,0,0,0,100,0,0" >> "$RESULTS_CSV"
+            return
+        fi
+        
+        # Calculate metrics using awk
+        local metrics=$(awk -F',' '
+        NR==1 { next }  # Skip header
+        {
+            total++
+            if ($8 == "true") success++
+            else errors++
+            
+            response_time = $2
+            if (response_time > 0) {
+                sum += response_time
+                if (min_time == 0 || response_time < min_time) min_time = response_time
+                if (response_time > max_time) max_time = response_time
+            }
+        }
+        END {
+            if (total > 0) {
+                avg_time = (sum > 0) ? sum/total : 0
+                error_rate = (errors/total) * 100
+                success_rate = (success/total) * 100
+                actual_eps = total/'$DURATION'
+                printf "%.1f,%.0f,%.0f,%.0f,%d,%.2f,%d,%.2f", actual_eps, avg_time, min_time, max_time, errors, error_rate, total, success_rate
+            } else {
+                printf "0,0,0,0,0,100,0,0"
+            }
+        }' "$jtl_file")
+        
+        echo "$endpoint_name,$target_eps,$metrics" >> "$RESULTS_CSV"
+    }
+
+    # Function to test DotCMS API
+    test_dotcms_api() {
+        local target_eps="$1"
+        echo "Testing DotCMS API at $target_eps eps..."
+        
+        local test_name="dotcms-$target_eps-eps"
+        local jtl_file="$RESULTS_DIR/${test_name}.jtl"
+        
+        # Calculate threads needed
+        local threads=$((target_eps / {{ .Values.testing.limits.dotcms.threadsPerEps }}))
+        if [[ $threads -gt {{ .Values.testing.limits.dotcms.maxThreads }} ]]; then threads={{ .Values.testing.limits.dotcms.maxThreads }}; fi
+        if [[ $threads -lt {{ .Values.testing.limits.dotcms.minThreads }} ]]; then threads={{ .Values.testing.limits.dotcms.minThreads }}; fi
+        
+        # Run test with timeout protection
+        timeout 120s jmeter -n \
+            -t {{ .Values.configMaps.jmx.mountPath }}/analytics-api-cluster-test.jmx \
+            -l "$jtl_file" \
+            -j "$RESULTS_DIR/${test_name}.log" \
+            -Jthread.number=$threads \
+            -Jevents.per.second=$target_eps \
+            -Jtest.duration=$DURATION \
+            -Jrampup=$RAMPUP \
+            -Jdotcms.host={{ .Values.endpoints.dotcms.host }} \
+            -Jdotcms.port={{ .Values.endpoints.dotcms.port }} \
+            -Jdotcms.scheme={{ .Values.endpoints.dotcms.scheme }} \
+            -Jmax.response.time=10000 || echo "Test timed out or failed for DotCMS $target_eps eps"
+        
+        # Extract metrics
+        extract_metrics "$jtl_file" "$target_eps" "dotcms"
+    }
+
+    # Function to test Direct Analytics
+    test_direct_analytics() {
+        local target_eps="$1"
+        echo "Testing Direct Analytics at $target_eps eps..."
+        
+        local test_name="direct-$target_eps-eps"
+        local jtl_file="$RESULTS_DIR/${test_name}.jtl"
+        
+        # Calculate threads needed
+        local threads=$((target_eps / {{ .Values.testing.limits.analytics.threadsPerEps }}))
+        if [[ $threads -gt {{ .Values.testing.limits.analytics.maxThreads }} ]]; then threads={{ .Values.testing.limits.analytics.maxThreads }}; fi
+        if [[ $threads -lt {{ .Values.testing.limits.analytics.minThreads }} ]]; then threads={{ .Values.testing.limits.analytics.minThreads }}; fi
+        
+        # Run test with timeout protection
+        timeout 120s jmeter -n \
+            -t {{ .Values.configMaps.jmx.mountPath }}/analytics-direct-cluster-test.jmx \
+            -l "$jtl_file" \
+            -j "$RESULTS_DIR/${test_name}.log" \
+            -Jthread.number=$threads \
+            -Jevents.per.second=$target_eps \
+            -Jtest.duration=$DURATION \
+            -Jrampup=$RAMPUP \
+            -Janalytics.host={{ .Values.endpoints.analytics.host }} \
+            -Janalytics.port={{ .Values.endpoints.analytics.port }} \
+            -Janalytics.scheme={{ .Values.endpoints.analytics.scheme }} \
+            -Jmax.response.time=10000 || echo "Test timed out or failed for Direct Analytics $target_eps eps"
+        
+        # Extract metrics
+        extract_metrics "$jtl_file" "$target_eps" "direct"
+    }
+
+    # Function to check if we should stop testing (high error rate)
+    should_stop_testing() {
+        local endpoint="$1"
+        local last_line=$(tail -n 1 "$RESULTS_CSV" | grep "^$endpoint," || echo "")
+        if [[ -n "$last_line" ]]; then
+            local error_rate=$(echo "$last_line" | cut -d',' -f7)
+            local success_rate=$(echo "$last_line" | cut -d',' -f9)
+            # Stop if error rate > threshold or success rate < threshold
+            local error_int=$(echo "$error_rate" | cut -d'.' -f1)
+            local success_int=$(echo "$success_rate" | cut -d'.' -f1)
+            if [[ $error_int -gt {{ .Values.testing.limits.errorThreshold }} ]] || [[ $success_int -lt {{ .Values.testing.limits.errorThreshold }} ]]; then
+                return 0  # Should stop
+            fi
+        fi
+        return 1  # Continue testing
+    }
+
+    echo "Starting DotCMS API limit testing..."
+    for level in "${DOTCMS_LEVELS[@]}"; do
+        test_dotcms_api "$level"
+        
+        # Check if we should stop
+        if should_stop_testing "dotcms"; then
+            echo "Stopping DotCMS testing due to high error rate at $level eps"
+            break
+        fi
+        
+        # Brief pause between tests
+        sleep 10
+    done
+
+    echo ""
+    echo "Starting Direct Analytics limit testing..."
+    for level in "${DIRECT_LEVELS[@]}"; do
+        test_direct_analytics "$level"
+        
+        # Check if we should stop
+        if should_stop_testing "direct"; then
+            echo "Stopping Direct Analytics testing due to high error rate at $level eps"
+            break
+        fi
+        
+        # Brief pause between tests
+        sleep 10
+    done
+
+    echo ""
+    echo "=== TESTING COMPLETE ==="
+    echo "Results saved to: $RESULTS_CSV"
+    echo ""
+    echo "Copy results to host with:"
+    echo "kubectl exec {{ .Values.pod.name }} -n {{ .Values.namespace.name }} -- cat $RESULTS_CSV > performance_results_k8s.csv" 

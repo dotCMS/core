@@ -1,0 +1,378 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.configMaps.jmx.name }}
+  namespace: {{ .Values.namespace.name }}
+  labels:
+    {{- include "jmeter-performance.labels" . | nindent 4 }}
+data:
+  analytics-direct-cluster-test.jmx: |
+    <?xml version="1.0" encoding="UTF-8"?>
+    <jmeterTestPlan version="1.2" properties="5.0" jmeter="5.6.2">
+      <hashTree>
+        <TestPlan guiclass="TestPlanGui" testclass="TestPlan" testname="Direct Analytics Cluster Load Test">
+          <elementProp name="TestPlan.user_defined_variables" elementType="Arguments" guiclass="ArgumentsPanel" testclass="Arguments" testname="User Defined Variables">
+            <collectionProp name="Arguments.arguments">
+              <elementProp name="event_timestamp" elementType="Argument">
+                <stringProp name="Argument.name">event_timestamp</stringProp>
+                <stringProp name="Argument.value">${__time(yyyy-MM-dd'T'HH:mm:ss.SSS'Z')}</stringProp>
+                <stringProp name="Argument.metadata">=</stringProp>
+              </elementProp>
+              <elementProp name="thread_id" elementType="Argument">
+                <stringProp name="Argument.name">thread_id</stringProp>
+                <stringProp name="Argument.value">${__threadNum}</stringProp>
+                <stringProp name="Argument.metadata">=</stringProp>
+              </elementProp>
+              <elementProp name="iteration_id" elementType="Argument">
+                <stringProp name="Argument.name">iteration_id</stringProp>
+                <stringProp name="Argument.value">${__counter(FALSE,)}</stringProp>
+                <stringProp name="Argument.metadata">=</stringProp>
+              </elementProp>
+              <elementProp name="random_request_id" elementType="Argument">
+                <stringProp name="Argument.name">random_request_id</stringProp>
+                <stringProp name="Argument.value">${__UUID()}</stringProp>
+                <stringProp name="Argument.metadata">=</stringProp>
+              </elementProp>
+              <elementProp name="random_session_id" elementType="Argument">
+                <stringProp name="Argument.name">random_session_id</stringProp>
+                <stringProp name="Argument.value">${__Random(100000000,999999999)}</stringProp>
+                <stringProp name="Argument.metadata">=</stringProp>
+              </elementProp>
+            </collectionProp>
+          </elementProp>
+          <boolProp name="TestPlan.functional_mode">false</boolProp>
+          <boolProp name="TestPlan.serialize_threadgroups">false</boolProp>
+        </TestPlan>
+        <hashTree>
+          <Arguments guiclass="ArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true">
+            <collectionProp name="Arguments.arguments">
+              <elementProp name="analytics_host" elementType="Argument">
+                <stringProp name="Argument.name">analytics_host</stringProp>
+                <stringProp name="Argument.value">${__P(analytics.host,{{ .Values.endpoints.analytics.host }})}</stringProp>
+                <stringProp name="Argument.metadata">=</stringProp>
+              </elementProp>
+              <elementProp name="analytics_port" elementType="Argument">
+                <stringProp name="Argument.name">analytics_port</stringProp>
+                <stringProp name="Argument.value">${__P(analytics.port,{{ .Values.endpoints.analytics.port }})}</stringProp>
+                <stringProp name="Argument.metadata">=</stringProp>
+              </elementProp>
+              <elementProp name="analytics_scheme" elementType="Argument">
+                <stringProp name="Argument.name">analytics_scheme</stringProp>
+                <stringProp name="Argument.value">${__P(analytics.scheme,{{ .Values.endpoints.analytics.scheme }})}</stringProp>
+                <stringProp name="Argument.metadata">=</stringProp>
+              </elementProp>
+              <elementProp name="thread.number" elementType="Argument">
+                <stringProp name="Argument.name">thread.number</stringProp>
+                <stringProp name="Argument.value">${__P(thread.number,{{ .Values.testing.defaults.threads }})}</stringProp>
+                <stringProp name="Argument.metadata">=</stringProp>
+              </elementProp>
+              <elementProp name="rampup" elementType="Argument">
+                <stringProp name="Argument.name">rampup</stringProp>
+                <stringProp name="Argument.value">${__P(rampup,{{ .Values.testing.defaults.rampup }})}</stringProp>
+                <stringProp name="Argument.metadata">=</stringProp>
+              </elementProp>
+              <elementProp name="test.duration" elementType="Argument">
+                <stringProp name="Argument.name">test.duration</stringProp>
+                <stringProp name="Argument.value">${__P(test.duration,{{ .Values.testing.defaults.duration }})}</stringProp>
+                <stringProp name="Argument.metadata">=</stringProp>
+              </elementProp>
+              <elementProp name="events.per.second" elementType="Argument">
+                <stringProp name="Argument.name">events.per.second</stringProp>
+                <stringProp name="Argument.value">${__P(events.per.second,{{ .Values.testing.defaults.eventsPerSecond }})}</stringProp>
+                <stringProp name="Argument.metadata">=</stringProp>
+              </elementProp>
+              <elementProp name="analytics.key" elementType="Argument">
+                <stringProp name="Argument.name">analytics.key</stringProp>
+                <stringProp name="Argument.value">${__P(analytics.key,{{ .Values.endpoints.analytics.key }})}</stringProp>
+                <stringProp name="Argument.metadata">=</stringProp>
+              </elementProp>
+              <elementProp name="max.response.time" elementType="Argument">
+                <stringProp name="Argument.name">max.response.time</stringProp>
+                <stringProp name="Argument.value">${__P(max.response.time,{{ .Values.testing.defaults.maxResponseTime }})}</stringProp>
+                <stringProp name="Argument.metadata">=</stringProp>
+              </elementProp>
+            </collectionProp>
+          </Arguments>
+          <hashTree/>
+          <ConfigTestElement guiclass="HttpDefaultsGui" testclass="ConfigTestElement" testname="HTTP Request Defaults" enabled="true">
+            <elementProp name="HTTPsampler.Arguments" elementType="Arguments" guiclass="HTTPArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true">
+              <collectionProp name="Arguments.arguments"/>
+            </elementProp>
+            <stringProp name="HTTPSampler.domain">${analytics_host}</stringProp>
+            <stringProp name="HTTPSampler.port">${analytics_port}</stringProp>
+            <stringProp name="HTTPSampler.protocol">${analytics_scheme}</stringProp>
+            <stringProp name="HTTPSampler.connect_timeout">{{ .Values.testing.defaults.connectTimeout }}</stringProp>
+            <stringProp name="HTTPSampler.response_timeout">{{ .Values.testing.defaults.responseTimeout }}</stringProp>
+          </ConfigTestElement>
+          <hashTree/>
+          <HeaderManager guiclass="HeaderPanel" testclass="HeaderManager" testname="Direct Analytics API Headers" enabled="true">
+            <collectionProp name="HeaderManager.headers">
+              <elementProp name="Content-Type" elementType="Header">
+                <stringProp name="Header.name">Content-Type</stringProp>
+                <stringProp name="Header.value">application/json</stringProp>
+              </elementProp>
+              <elementProp name="Accept" elementType="Header">
+                <stringProp name="Header.name">Accept</stringProp>
+                <stringProp name="Header.value">application/json</stringProp>
+              </elementProp>
+              <elementProp name="User-Agent" elementType="Header">
+                <stringProp name="Header.name">User-Agent</stringProp>
+                <stringProp name="Header.value">JMeter/Analytics-ClusterTest</stringProp>
+              </elementProp>
+            </collectionProp>
+          </HeaderManager>
+          <hashTree/>
+          <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="Direct Analytics Events Load Test" enabled="true">
+            <stringProp name="ThreadGroup.num_threads">${thread.number}</stringProp>
+            <stringProp name="ThreadGroup.ramp_time">${rampup}</stringProp>
+            <stringProp name="ThreadGroup.duration">${test.duration}</stringProp>
+            <boolProp name="ThreadGroup.scheduler">true</boolProp>
+            <boolProp name="ThreadGroup.same_user_on_next_iteration">false</boolProp>
+            <stringProp name="ThreadGroup.on_sample_error">continue</stringProp>
+            <elementProp name="ThreadGroup.main_controller" elementType="LoopController" guiclass="LoopControlPanel" testclass="LoopController" testname="Loop Controller" enabled="true">
+              <intProp name="LoopController.loops">-1</intProp>
+              <boolProp name="LoopController.continue_forever">false</boolProp>
+            </elementProp>
+          </ThreadGroup>
+          <hashTree>
+            <ConstantThroughputTimer guiclass="TestBeanGUI" testclass="ConstantThroughputTimer" testname="Constant Throughput Timer" enabled="true">
+              <intProp name="calcMode">2</intProp>
+              <stringProp name="throughput">${__javaScript(${events.per.second} * 60)}</stringProp>
+            </ConstantThroughputTimer>
+            <hashTree/>
+            <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Direct Analytics Event Request" enabled="true">
+              <boolProp name="HTTPSampler.postBodyRaw">true</boolProp>
+              <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
+                <collectionProp name="Arguments.arguments">
+                  <elementProp name="" elementType="HTTPArgument">
+                    <boolProp name="HTTPArgument.always_encode">false</boolProp>
+                    <stringProp name="Argument.value">{"utc_time":"${event_timestamp}","event_type":"PAGE_REQUEST","key":"${analytics.key}","url":"/test-page-${thread_id}-${iteration_id}","doc_host":"{{ .Values.environment.docHost }}","environment_name":"{{ .Values.environment.name }}","sessionId":"CLUSTERTEST${random_session_id}","request_id":"${random_request_id}","user":{"identifier":"clustertest.user.${thread_id}","email":"clustertest${thread_id}@dotcms.com"},"customer_name":"{{ .Values.environment.customer }}","cluster":"{{ .Values.environment.cluster }}","src":"dotAnalytics-ClusterTest","type":"track","timestamp":"${event_timestamp}","comefromvanityurl":0,"sessionnew":0,"isexperimentpage":0,"istargetpage":0}</stringProp>
+                    <stringProp name="Argument.metadata">=</stringProp>
+                  </elementProp>
+                </collectionProp>
+              </elementProp>
+              <stringProp name="HTTPSampler.domain"></stringProp>
+              <stringProp name="HTTPSampler.port"></stringProp>
+              <stringProp name="HTTPSampler.protocol"></stringProp>
+              <stringProp name="HTTPSampler.contentEncoding">UTF-8</stringProp>
+              <stringProp name="HTTPSampler.path">{{ .Values.endpoints.analytics.path }}?token={{ .Values.endpoints.analytics.key }}</stringProp>
+              <stringProp name="HTTPSampler.method">POST</stringProp>
+              <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
+              <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
+              <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
+              <boolProp name="HTTPSampler.DO_MULTIPART_POST">false</boolProp>
+              <boolProp name="HTTPSampler.BROWSER_COMPATIBLE_MULTIPART">false</boolProp>
+              <boolProp name="HTTPSampler.image_parser">false</boolProp>
+              <boolProp name="HTTPSampler.concurrentDwn">false</boolProp>
+              <stringProp name="HTTPSampler.concurrentPool">6</stringProp>
+              <boolProp name="HTTPSampler.md5">false</boolProp>
+              <intProp name="HTTPSampler.ipSourceType">0</intProp>
+            </HTTPSamplerProxy>
+            <hashTree>
+              <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="Success Response Assertion" enabled="true">
+                <collectionProp name="Asserion.test_strings">
+                  <stringProp name="49586">200</stringProp>
+                  <stringProp name="49587">201</stringProp>
+                  <stringProp name="49588">202</stringProp>
+                  <stringProp name="51511">204</stringProp>
+                </collectionProp>
+                <stringProp name="Assertion.custom_message">Direct analytics event request failed</stringProp>
+                <stringProp name="Assertion.test_field">Assertion.response_code</stringProp>
+                <boolProp name="Assertion.assume_success">false</boolProp>
+                <intProp name="Assertion.test_type">33</intProp>
+              </ResponseAssertion>
+              <hashTree/>
+              <DurationAssertion guiclass="DurationAssertionGui" testclass="DurationAssertion" testname="Response Time Assertion" enabled="true">
+                <stringProp name="DurationAssertion.duration">${max.response.time}</stringProp>
+              </DurationAssertion>
+              <hashTree/>
+            </hashTree>
+          </hashTree>
+        </hashTree>
+      </hashTree>
+    </jmeterTestPlan>
+
+  analytics-api-cluster-test.jmx: |
+    <?xml version="1.0" encoding="UTF-8"?>
+    <jmeterTestPlan version="1.2" properties="5.0" jmeter="5.6.2">
+      <hashTree>
+        <TestPlan guiclass="TestPlanGui" testclass="TestPlan" testname="DotCMS API Cluster Load Test">
+          <elementProp name="TestPlan.user_defined_variables" elementType="Arguments" guiclass="ArgumentsPanel" testclass="Arguments" testname="User Defined Variables">
+            <collectionProp name="Arguments.arguments">
+              <elementProp name="event_timestamp" elementType="Argument">
+                <stringProp name="Argument.name">event_timestamp</stringProp>
+                <stringProp name="Argument.value">${__time(yyyy-MM-dd'T'HH:mm:ss.SSS'Z')}</stringProp>
+                <stringProp name="Argument.metadata">=</stringProp>
+              </elementProp>
+              <elementProp name="thread_id" elementType="Argument">
+                <stringProp name="Argument.name">thread_id</stringProp>
+                <stringProp name="Argument.value">${__threadNum}</stringProp>
+                <stringProp name="Argument.metadata">=</stringProp>
+              </elementProp>
+              <elementProp name="iteration_id" elementType="Argument">
+                <stringProp name="Argument.name">iteration_id</stringProp>
+                <stringProp name="Argument.value">${__counter(FALSE,)}</stringProp>
+                <stringProp name="Argument.metadata">=</stringProp>
+              </elementProp>
+              <elementProp name="random_request_id" elementType="Argument">
+                <stringProp name="Argument.name">random_request_id</stringProp>
+                <stringProp name="Argument.value">${__UUID()}</stringProp>
+                <stringProp name="Argument.metadata">=</stringProp>
+              </elementProp>
+              <elementProp name="random_session_id" elementType="Argument">
+                <stringProp name="Argument.name">random_session_id</stringProp>
+                <stringProp name="Argument.value">${__Random(100000000,999999999)}</stringProp>
+                <stringProp name="Argument.metadata">=</stringProp>
+              </elementProp>
+            </collectionProp>
+          </elementProp>
+          <boolProp name="TestPlan.functional_mode">false</boolProp>
+          <boolProp name="TestPlan.serialize_threadgroups">false</boolProp>
+        </TestPlan>
+        <hashTree>
+          <Arguments guiclass="ArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true">
+            <collectionProp name="Arguments.arguments">
+              <elementProp name="dotcms_host" elementType="Argument">
+                <stringProp name="Argument.name">dotcms_host</stringProp>
+                <stringProp name="Argument.value">${__P(dotcms.host,{{ .Values.endpoints.dotcms.host }})}</stringProp>
+                <stringProp name="Argument.metadata">=</stringProp>
+              </elementProp>
+              <elementProp name="dotcms_port" elementType="Argument">
+                <stringProp name="Argument.name">dotcms_port</stringProp>
+                <stringProp name="Argument.value">${__P(dotcms.port,{{ .Values.endpoints.dotcms.port }})}</stringProp>
+                <stringProp name="Argument.metadata">=</stringProp>
+              </elementProp>
+              <elementProp name="dotcms_scheme" elementType="Argument">
+                <stringProp name="Argument.name">dotcms_scheme</stringProp>
+                <stringProp name="Argument.value">${__P(dotcms.scheme,{{ .Values.endpoints.dotcms.scheme }})}</stringProp>
+                <stringProp name="Argument.metadata">=</stringProp>
+              </elementProp>
+              <elementProp name="thread.number" elementType="Argument">
+                <stringProp name="Argument.name">thread.number</stringProp>
+                <stringProp name="Argument.value">${__P(thread.number,{{ .Values.testing.defaults.threads }})}</stringProp>
+                <stringProp name="Argument.metadata">=</stringProp>
+              </elementProp>
+              <elementProp name="rampup" elementType="Argument">
+                <stringProp name="Argument.name">rampup</stringProp>
+                <stringProp name="Argument.value">${__P(rampup,{{ .Values.testing.defaults.rampup }})}</stringProp>
+                <stringProp name="Argument.metadata">=</stringProp>
+              </elementProp>
+              <elementProp name="test.duration" elementType="Argument">
+                <stringProp name="Argument.name">test.duration</stringProp>
+                <stringProp name="Argument.value">${__P(test.duration,{{ .Values.testing.defaults.duration }})}</stringProp>
+                <stringProp name="Argument.metadata">=</stringProp>
+              </elementProp>
+              <elementProp name="events.per.second" elementType="Argument">
+                <stringProp name="Argument.name">events.per.second</stringProp>
+                <stringProp name="Argument.value">${__P(events.per.second,{{ .Values.testing.defaults.eventsPerSecond }})}</stringProp>
+                <stringProp name="Argument.metadata">=</stringProp>
+              </elementProp>
+              <elementProp name="max.response.time" elementType="Argument">
+                <stringProp name="Argument.name">max.response.time</stringProp>
+                <stringProp name="Argument.value">${__P(max.response.time,{{ .Values.testing.defaults.maxResponseTime }})}</stringProp>
+                <stringProp name="Argument.metadata">=</stringProp>
+              </elementProp>
+            </collectionProp>
+          </Arguments>
+          <hashTree/>
+          <ConfigTestElement guiclass="HttpDefaultsGui" testclass="ConfigTestElement" testname="HTTP Request Defaults" enabled="true">
+            <elementProp name="HTTPsampler.Arguments" elementType="Arguments" guiclass="HTTPArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true">
+              <collectionProp name="Arguments.arguments"/>
+            </elementProp>
+            <stringProp name="HTTPSampler.domain">${dotcms_host}</stringProp>
+            <stringProp name="HTTPSampler.port">${dotcms_port}</stringProp>
+            <stringProp name="HTTPSampler.protocol">${dotcms_scheme}</stringProp>
+            <stringProp name="HTTPSampler.connect_timeout">{{ .Values.testing.defaults.connectTimeout }}</stringProp>
+            <stringProp name="HTTPSampler.response_timeout">{{ .Values.testing.defaults.responseTimeout }}</stringProp>
+          </ConfigTestElement>
+          <hashTree/>
+          <HeaderManager guiclass="HeaderPanel" testclass="HeaderManager" testname="DotCMS API Headers" enabled="true">
+            <collectionProp name="HeaderManager.headers">
+              <elementProp name="Content-Type" elementType="Header">
+                <stringProp name="Header.name">Content-Type</stringProp>
+                <stringProp name="Header.value">application/json</stringProp>
+              </elementProp>
+              <elementProp name="Accept" elementType="Header">
+                <stringProp name="Header.name">Accept</stringProp>
+                <stringProp name="Header.value">application/json</stringProp>
+              </elementProp>
+              <elementProp name="User-Agent" elementType="Header">
+                <stringProp name="Header.name">User-Agent</stringProp>
+                <stringProp name="Header.value">JMeter/DotCMS-ClusterTest</stringProp>
+              </elementProp>
+              <elementProp name="Authorization" elementType="Header">
+                <stringProp name="Header.name">Authorization</stringProp>
+                <stringProp name="Header.value">Bearer ${__P(jwt.token,{{ .Values.auth.jwtToken }})}</stringProp>
+              </elementProp>
+            </collectionProp>
+          </HeaderManager>
+          <hashTree/>
+          <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="DotCMS Analytics Events Load Test" enabled="true">
+            <stringProp name="ThreadGroup.num_threads">${thread.number}</stringProp>
+            <stringProp name="ThreadGroup.ramp_time">${rampup}</stringProp>
+            <stringProp name="ThreadGroup.duration">${test.duration}</stringProp>
+            <boolProp name="ThreadGroup.scheduler">true</boolProp>
+            <boolProp name="ThreadGroup.same_user_on_next_iteration">false</boolProp>
+            <stringProp name="ThreadGroup.on_sample_error">continue</stringProp>
+            <elementProp name="ThreadGroup.main_controller" elementType="LoopController" guiclass="LoopControlPanel" testclass="LoopController" testname="Loop Controller" enabled="true">
+              <intProp name="LoopController.loops">-1</intProp>
+              <boolProp name="LoopController.continue_forever">false</boolProp>
+            </elementProp>
+          </ThreadGroup>
+          <hashTree>
+            <ConstantThroughputTimer guiclass="TestBeanGUI" testclass="ConstantThroughputTimer" testname="Constant Throughput Timer" enabled="true">
+              <intProp name="calcMode">2</intProp>
+              <stringProp name="throughput">${__javaScript(${events.per.second} * 60)}</stringProp>
+            </ConstantThroughputTimer>
+            <hashTree/>
+            <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="DotCMS Analytics Event Request" enabled="true">
+              <boolProp name="HTTPSampler.postBodyRaw">true</boolProp>
+              <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
+                <collectionProp name="Arguments.arguments">
+                  <elementProp name="" elementType="HTTPArgument">
+                    <boolProp name="HTTPArgument.always_encode">false</boolProp>
+                    <stringProp name="Argument.value">{"event_type":"PAGE_REQUEST","utc_time":"${event_timestamp}","local_tz_offset":-60,"referer":"","page_title":"","doc_path":"/test-page","doc_host":"{{ .Values.environment.docHost }}","doc_protocol":"https:","doc_hash":"","doc_search":"","screen_resolution":"1920x1080","vp_size":"845x543","user_agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36","user_language":"en-US","doc_encoding":"UTF-8","utm":{},"src":"dotAnalytics","type":"track","key":"{{ .Values.endpoints.analytics.key }}","timestamp":"${event_timestamp}","comefromvanityurl":0,"sessionnew":0,"isexperimentpage":0,"istargetpage":0}</stringProp>
+                    <stringProp name="Argument.metadata">=</stringProp>
+                  </elementProp>
+                </collectionProp>
+              </elementProp>
+              <stringProp name="HTTPSampler.domain"></stringProp>
+              <stringProp name="HTTPSampler.port"></stringProp>
+              <stringProp name="HTTPSampler.protocol"></stringProp>
+              <stringProp name="HTTPSampler.contentEncoding">UTF-8</stringProp>
+              <stringProp name="HTTPSampler.path">{{ .Values.endpoints.dotcms.path }}</stringProp>
+              <stringProp name="HTTPSampler.method">POST</stringProp>
+              <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
+              <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
+              <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
+              <boolProp name="HTTPSampler.DO_MULTIPART_POST">false</boolProp>
+              <boolProp name="HTTPSampler.BROWSER_COMPATIBLE_MULTIPART">false</boolProp>
+              <boolProp name="HTTPSampler.image_parser">false</boolProp>
+              <boolProp name="HTTPSampler.concurrentDwn">false</boolProp>
+              <stringProp name="HTTPSampler.concurrentPool">6</stringProp>
+              <boolProp name="HTTPSampler.md5">false</boolProp>
+              <intProp name="HTTPSampler.ipSourceType">0</intProp>
+            </HTTPSamplerProxy>
+            <hashTree>
+              <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="Success Response Assertion" enabled="true">
+                <collectionProp name="Asserion.test_strings">
+                  <stringProp name="49586">200</stringProp>
+                  <stringProp name="49587">201</stringProp>
+                  <stringProp name="49588">202</stringProp>
+                  <stringProp name="51511">204</stringProp>
+                </collectionProp>
+                <stringProp name="Assertion.custom_message">DotCMS analytics event request failed</stringProp>
+                <stringProp name="Assertion.test_field">Assertion.response_code</stringProp>
+                <boolProp name="Assertion.assume_success">false</boolProp>
+                <intProp name="Assertion.test_type">33</intProp>
+              </ResponseAssertion>
+              <hashTree/>
+              <DurationAssertion guiclass="DurationAssertionGui" testclass="DurationAssertion" testname="Response Time Assertion" enabled="true">
+                <stringProp name="DurationAssertion.duration">${max.response.time}</stringProp>
+              </DurationAssertion>
+              <hashTree/>
+            </hashTree>
+          </hashTree>
+        </hashTree>
+      </hashTree>
+    </jmeterTestPlan> 
