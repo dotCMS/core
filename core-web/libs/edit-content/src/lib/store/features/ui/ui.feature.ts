@@ -95,6 +95,21 @@ export function withUI() {
                     activeSidebarTab: tab
                 };
                 patchState(store, { uiState: newState });
+            },
+
+            /**
+             * Enables dialog mode to bypass route-based initialization
+             * This should be called when the store is used from DotCreateContentDialogComponent
+             */
+            enableDialogMode(): void {
+                patchState(store, { isDialogMode: true });
+            },
+
+            /**
+             * Disables dialog mode to enable route-based initialization
+             */
+            disableDialogMode(): void {
+                patchState(store, { isDialogMode: false });
             }
         })),
         withHooks({
