@@ -3,9 +3,7 @@ package com.dotcms.rest.api.v1.job;
 import com.dotcms.jobs.business.error.JobValidationException;
 import com.dotcms.jobs.business.job.Job;
 import com.dotcms.jobs.business.job.JobPaginatedResult;
-import com.dotcms.rest.ResponseEntityJobStatusView;
-import com.dotcms.rest.ResponseEntityView;
-import com.dotcms.rest.WebResource;
+import com.dotcms.rest.*;
 import com.dotcms.rest.WebResource.InitBuilder;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -28,6 +26,15 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import org.glassfish.jersey.media.sse.EventOutput;
 import org.glassfish.jersey.media.sse.SseFeature;
 
@@ -37,6 +44,7 @@ public class JobQueueResource {
     private final WebResource webResource;
     private final JobQueueHelper helper;
     private final SSEMonitorUtil sseMonitorUtil;
+
 
     @Inject
     public JobQueueResource(final JobQueueHelper helper, final SSEMonitorUtil sseMonitorUtil) {
@@ -51,14 +59,72 @@ public class JobQueueResource {
         this.sseMonitorUtil = sseMonitorUtil;
     }
 
+    /**
+     * Creates and enqueues a job whose parameters are supplied as a multipart
+     * form. Typical use-cases include uploading a file together with a JSON
+     * payload of options.
+     */
     @POST
     @Path("/{queueName}")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.APPLICATION_JSON)
+    @Operation(
+            operationId = "createMultipartJob",
+            summary     = "Create and enqueue a job (multipart)",
+            description = "Enqueues a new job in the specified queue. The request must be "
+                    + "sent as *multipart/form-data* so it can include file uploads "
+                    + "and/or additional fields. On success, the API returns the newly "
+                    + "created job’s UUID and a *statusUrl* for progress tracking.",
+            tags        = {"Job Queue"},
+            requestBody = @RequestBody(
+                    description = JobQueueDocs.FORM_FIELD_DOC,
+                    required = false,
+                    content = @Content(
+                            mediaType = MediaType.MULTIPART_FORM_DATA,
+                            schema = @Schema(implementation = JobParamsSchema.class)
+                    )
+            ),
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description  = "Job successfully created and enqueued.",
+                            content = @Content(
+                                    mediaType = MediaType.APPLICATION_JSON,
+                                    schema = @Schema(implementation = ResponseEntityJobStatusView.class),
+                                    examples = @ExampleObject(value = "{\n" +
+                                            "  \"entity\": {\n" +
+                                            "    \"jobId\": \"e6d9bae8-657b-4e2f-8524-c0222db66355\",\n" +
+                                            "    \"statusUrl\": \"http://localhost:8080/api/v1/_import/e6d9bae8-657b-4e2f-8524-c0222db66355\"\n" +
+                                            "  },\n" +
+                                            "  \"errors\": [],\n" +
+                                            "  \"i18nMessagesMap\": {},\n" +
+                                            "  \"messages\": [],\n" +
+                                            "  \"pagination\": null,\n" +
+                                            "  \"permissions\": []\n" +
+                                            "}")
+                            )
+                    ),
+                    @ApiResponse(responseCode = "400", description = "Bad Request: Invalid parameters, malformed multipart payload, or file issues."),
+                    @ApiResponse(responseCode = "401", description = "Unauthorized: Invalid or missing user authentication."),
+                    @ApiResponse(responseCode = "403", description = "Forbidden: User lacks permission to enqueue jobs in the specified queue."),
+                    @ApiResponse(responseCode = "404", description = "Not Found: Queue with the specified name does not exist."),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error: An unexpected error occurred while creating the job.")
+            }
+    )
     public Response createJob(
-            @Context final HttpServletRequest request, @Context final HttpServletResponse response,
-            @PathParam("queueName") String queueName,
-            @BeanParam JobParams form) throws JsonProcessingException, DotDataException {
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @PathParam("queueName")
+            @Parameter(
+                    name        = "queueName",
+                    in          = ParameterIn.PATH,
+                    required    = true,
+                    description = "Logical name of the queue where the job will be enqueued.",
+                    schema      = @Schema(type = "string", example = "image-processing")
+            )
+            final String queueName,
+            @BeanParam final JobParams form
+    ) throws JsonProcessingException, DotDataException {
 
         final var initDataObject = new InitBuilder(webResource)
                 .requiredBackendUser(true)
@@ -77,14 +143,84 @@ public class JobQueueResource {
         }
     }
 
+    /**
+     * REST resource for queueing arbitrary jobs.
+     *
+     * <p>This endpoint accepts a JSON payload with job-specific parameters and
+     * enqueues the job on the specified queue, returning a handle that can later
+     * be polled for status updates.</p>
+     */
     @POST
     @Path("/{queueName}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
+    @Operation(
+            operationId = "createJob",
+            summary     = "Create and enqueue a job",
+            description = "Enqueues a new job in the specified queue. "
+                    + "The request body must be a JSON object containing the parameters "
+                    + "your job processor understands (these are opaque to the API layer). "
+                    + "On success, the API returns the newly created job’s UUID and a "
+                    + "statusUrl that can be used to query job progress.",
+            tags        = {"Job Queue"},
+            requestBody = @RequestBody(
+                    required    = true,
+                    description = "Opaque key/value map with job-specific parameters.",
+
+                    content     = @Content(
+                            mediaType = MediaType.APPLICATION_JSON,
+                            examples  = @ExampleObject(
+                                    name  = "ThumbnailJob",
+                                    value = "{\n"
+                                            + "  \"sourceUrl\": \"https://example.com/image.jpeg\",\n"
+                                            + "  \"width\"    : 320,\n"
+                                            + "  \"height\"   : 240\n"
+                                            + "}"
+                            )
+                    )
+            ),
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description  = "Job successfully created and enqueued.",
+                            content = @Content(
+                                    mediaType = MediaType.APPLICATION_JSON,
+                                    schema = @Schema(implementation = ResponseEntityJobStatusView.class),
+                                    examples = @ExampleObject(value = "{\n" +
+                                            "  \"entity\": {\n" +
+                                            "    \"jobId\": \"e6d9bae8-657b-4e2f-8524-c0222db66355\",\n" +
+                                            "    \"statusUrl\": \"http://localhost:8080/api/v1/_import/e6d9bae8-657b-4e2f-8524-c0222db66355\"\n" +
+                                            "  },\n" +
+                                            "  \"errors\": [],\n" +
+                                            "  \"i18nMessagesMap\": {},\n" +
+                                            "  \"messages\": [],\n" +
+                                            "  \"pagination\": null,\n" +
+                                            "  \"permissions\": []\n" +
+                                            "}")
+                            )
+                    ),
+                    @ApiResponse(responseCode = "400", description = "Bad Request: Invalid parameters or malformed JSON."),
+                    @ApiResponse(responseCode = "401", description = "Unauthorized: Invalid or missing user authentication."),
+                    @ApiResponse(responseCode = "403", description = "Forbidden: User lacks permission to enqueue jobs in the specified queue."),
+                    @ApiResponse(responseCode = "404", description = "Not Found: Queue with the specified name does not exist."),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error: An unexpected error occurred while creating the job.")
+            }
+    )
     public Response createJob(
-            @Context final HttpServletRequest request, @Context final HttpServletResponse response,
-            @PathParam("queueName") String queueName,
-            Map<String, Object> parameters) throws DotDataException {
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @PathParam("queueName")
+            @Parameter(
+                    name        = "queueName",
+                    in          = ParameterIn.PATH,
+                    required    = true,
+                    description = "Logical name of the queue where the job will be enqueued.",
+                    schema      = @Schema(type = "string", example = "image-processing")
+            )
+            final String queueName,
+            /* Captured as a generic map because parameters are queue-specific. */
+            final Map<String, Object> parameters
+    ) throws DotDataException {
 
         final var initDataObject = new InitBuilder(webResource)
                 .requiredBackendUser(true)
@@ -103,9 +239,34 @@ public class JobQueueResource {
         }
     }
 
+
+
+
+    /**
+     * Lists all available job queues.
+     */
     @GET
     @Path("/queues")
     @Produces(MediaType.APPLICATION_JSON)
+    @Operation(
+            operationId = "getQueues",
+            summary     = "Retrieves available queues",
+            description = "Returns the list of queue names that can accept new jobs.",
+            tags        = {"Job Queue"},
+            responses   = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description  = "Successfully retrieved queue names.",
+                            content      = @Content(
+                                    mediaType = MediaType.APPLICATION_JSON,
+                                    schema    = @Schema(implementation = ResponseEntityListView.class)
+                            )
+                    ),
+                    @ApiResponse(responseCode = "401", description = "Unauthorized: Invalid or missing user authentication."),
+                    @ApiResponse(responseCode = "403", description = "Forbidden: User does not have permission to view queues."),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error: An unexpected error occurred while retrieving queues.")
+            }
+    )
     public ResponseEntityView<Set<String>> getQueues(
             @Context final HttpServletRequest request, @Context final HttpServletResponse response) {
         new InitBuilder(webResource)
@@ -117,12 +278,50 @@ public class JobQueueResource {
         return new ResponseEntityView<>(helper.getQueueNames());
     }
 
+    /**
+     * Retrieves the status of a  job based on the provided job ID.
+     *
+     * @param request The HTTP servlet request containing user and context information.
+     * @param response The HTTP servlet response that will contain the response to the client.
+     * @param jobId The ID of the job whose status is to be retrieved.
+     * @return A ResponseEntityView containing the job status.
+     * @throws DotDataException If there is an issue with DotData during the retrieval process.
+     */
     @GET
     @Path("/{jobId}/status")
     @Produces(MediaType.APPLICATION_JSON)
+    @Operation(
+            operationId = "getJobQueueStatus",
+            summary     = "Get job status",
+            description = "Fetches the current status and metadata of a specific job identified by its ID.",
+            tags        = {"Job Queue"},
+            responses   = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description  = "Successfully retrieved job status.",
+                            content      = @Content(
+                                    mediaType = MediaType.APPLICATION_JSON,
+                                    schema    = @Schema(implementation = ResponseEntityJobView.class)
+                            )
+                    ),
+                    @ApiResponse(responseCode = "401", description = "Unauthorized: Invalid or missing user authentication."),
+                    @ApiResponse(responseCode = "403", description = "Forbidden: User does not have permission to view this job."),
+                    @ApiResponse(responseCode = "404", description = "Not Found: Job with the specified ID does not exist."),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error: An unexpected error occurred while retrieving the job status.")
+            }
+    )
     public ResponseEntityView<Job> getJobStatus(
-            @Context final HttpServletRequest request, @Context final HttpServletResponse response,
-            @PathParam("jobId") String jobId) throws DotDataException {
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @PathParam("jobId")
+            @Parameter(
+                    name        = "jobId",
+                    in          = ParameterIn.PATH,
+                    required    = true,
+                    description = "Unique identifier (UUID) of the job.",
+                    schema      = @Schema(type = "string", format = "uuid", example = "e6d9bae8-657b-4e2f-8524-c0222db66355")
+            )
+            final String jobId) throws DotDataException {
 
         new InitBuilder(webResource)
                 .requiredBackendUser(true)
@@ -135,13 +334,59 @@ public class JobQueueResource {
         return new ResponseEntityView<>(job);
     }
 
+    /**
+     * Cancels a  job based on the provided job ID.
+     *
+     * @param request The HTTP servlet request containing user and context information.
+     * @param response The HTTP servlet response that will contain the response to the client.
+     * @param jobId The ID of the job to be canceled.
+     * @return A ResponseEntityView containing a message indicating the cancellation status.
+     * @throws DotDataException If there is an issue with DotData during the cancellation process.
+     */
     @POST
     @Path("/{jobId}/cancel")
-    @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.WILDCARD)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(
+            operationId = "cancelJobQueueJob",
+            summary     = "Cancel a job",
+            description = "Sends an asynchronous cancellation request for the specified job. "
+                    + "The job may still complete if it has already finished or cannot be interrupted.",
+            tags        = {"Job Queue"},
+            responses   = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description  = "Cancellation request accepted.",
+                            content      = @Content(
+                                    mediaType = MediaType.APPLICATION_JSON,
+                                    schema    = @Schema(implementation = ResponseEntityStringView.class),
+                                    examples  = @ExampleObject(
+                                            value = "{\n"
+                                                    + "  \"entity\": "
+                                                    + "\"Cancellation request successfully sent to job "
+                                                    + "e6d9bae8-657b-4e2f-8524-c0222db66355\"\n"
+                                                    + "}"
+                                    )
+                            )
+                    ),
+                    @ApiResponse(responseCode = "401", description = "Unauthorized: Invalid or missing user authentication."),
+                    @ApiResponse(responseCode = "403", description = "Forbidden: User does not have permission to cancel this job."),
+                    @ApiResponse(responseCode = "404", description = "Not Found: Job with the specified ID does not exist or is already completed/cancelled."),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error: An unexpected error occurred while attempting to cancel the job.")
+            }
+    )
     public ResponseEntityView<String> cancelJob(
-            @Context final HttpServletRequest request, @Context final HttpServletResponse response,
-            @PathParam("jobId") String jobId) throws DotDataException {
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @PathParam("jobId")
+            @Parameter(
+                    name        = "jobId",
+                    in          = ParameterIn.PATH,
+                    required    = true,
+                    description = "Unique identifier (UUID) of the job to cancel.",
+                    schema      = @Schema(type = "string", format = "uuid", example = "e6d9bae8-657b-4e2f-8524-c0222db66355")
+            )
+            final String jobId) throws DotDataException {
         new InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
@@ -152,14 +397,60 @@ public class JobQueueResource {
         return new ResponseEntityView<>("Cancellation request successfully sent to job " + jobId);
     }
 
+    /**
+     * Retrieves the status of active jobs on a given queue.
+     *
+     * @param request The HTTP servlet request containing user and context information.
+     * @param response The HTTP servlet response that will contain the response to the client.
+     * @param queueName The name of the queue to search for active jobs.
+     * @param page The page number for pagination (default is 1).
+     * @param pageSize The number of jobs per page (default is 20).
+     * @return A ResponseEntityView containing the paginated result of active  jobs.
+     */
     @GET
     @Path("/{queueName}/active")
     @Produces(MediaType.APPLICATION_JSON)
+    @Operation(
+            operationId = "getActiveJobsByQueue",
+            summary     = "Retrieves active jobs in a queue",
+            description = "Fetches a paginated list of active  jobs. Results can be paginated using query parameters."
+                    + "for the specified queue.",
+            tags        = {"Job Queue"},
+            responses   = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description  = "Successfully retrieved active jobs for the queue.",
+                            content      = @Content(
+                                    mediaType = MediaType.APPLICATION_JSON,
+                                    schema    = @Schema(implementation = ResponseEntityJobPaginatedResultView.class)
+                            )
+                    ),
+                    @ApiResponse(responseCode = "401", description = "Unauthorized: Invalid or missing user authentication."),
+                    @ApiResponse(responseCode = "403", description = "Forbidden: User does not have permission to view jobs in this queue."),
+                    @ApiResponse(responseCode = "404", description = "Not Found: Queue with the specified name does not exist."),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error: An unexpected error occurred while retrieving jobs.")
+            }
+    )
     public ResponseEntityView<JobPaginatedResult> activeJobs(
-            @Context final HttpServletRequest request, @Context final HttpServletResponse response,
-            @PathParam("queueName") String queueName,
-            @QueryParam("page") @DefaultValue("1") int page,
-            @QueryParam("pageSize") @DefaultValue("20") int pageSize) {
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @PathParam("queueName")
+            @Parameter(
+                    name        = "queueName",
+                    in          = ParameterIn.PATH,
+                    required    = true,
+                    description = "Logical name of the queue.",
+                    schema      = @Schema(type = "string", example = "image-processing")
+            )
+            final String queueName,
+            @Parameter(
+                    description = "Page number to retrieve (1-based indexing)."
+            )
+            @QueryParam("page") @DefaultValue("1") final int page,
+            @Parameter(
+                    description = "Number of records per page."
+            )
+            @QueryParam("pageSize") @DefaultValue("20") final int pageSize) {
         new InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
@@ -170,12 +461,47 @@ public class JobQueueResource {
         return new ResponseEntityView<>(result);
     }
 
+    /**
+     * Retrieves the status of all  jobs.
+     *
+     * @param request The HTTP servlet request containing user and context information.
+     * @param response The HTTP servlet response that will contain the response to the client.
+     * @param page The page number for pagination (default is 1).
+     * @param pageSize The number of jobs per page (default is 20).
+     * @return A ResponseEntityView containing the paginated result of  jobs.
+     */
     @GET
     @Produces(MediaType.APPLICATION_JSON)
+    @Operation(
+            operationId = "listJobs",
+            summary = "Retrieves  jobs",
+            description = "Fetches a paginated list of all  jobs regardless of state. Results can be paginated using query parameters.",
+            tags        = {"Job Queue"},
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Successfully retrieved the paginated list of  jobs.",
+                            content = @Content(
+                                    mediaType = MediaType.APPLICATION_JSON,
+                                    schema = @Schema(implementation = ResponseEntityJobPaginatedResultView.class)
+                            )
+                    ),
+                    @ApiResponse(responseCode = "401", description = "Unauthorized: Invalid or missing user authentication."),
+                    @ApiResponse(responseCode = "403", description = "Forbidden: User does not have necessary permissions to view jobs."),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error: An unexpected error occurred while retrieving jobs.")
+            }
+    )
     public ResponseEntityView<JobPaginatedResult> listJobs(
-            @Context final HttpServletRequest request, @Context final HttpServletResponse response,
-            @QueryParam("page") @DefaultValue("1") int page,
-            @QueryParam("pageSize") @DefaultValue("20") int pageSize) {
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @Parameter(
+                    description = "Page number to retrieve (1-based indexing)."
+            )
+            @QueryParam("page") @DefaultValue("1") final int page,
+            @Parameter(
+                    description = "Number of records per page."
+            )
+            @QueryParam("pageSize") @DefaultValue("20") final int pageSize) {
         new InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
@@ -186,13 +512,48 @@ public class JobQueueResource {
         return new ResponseEntityView<>(result);
     }
 
+    /**
+     * Retrieves the status of active  jobs.
+     *
+     * @param request The HTTP servlet request containing user and context information.
+     * @param response The HTTP servlet response that will contain the response to the client.
+     * @param page The page number for pagination (default is 1).
+     * @param pageSize The number of jobs per page (default is 20).
+     * @return A ResponseEntityView containing the paginated result of active  jobs.
+     */
     @GET
     @Path("/active")
     @Produces(MediaType.APPLICATION_JSON)
+    @Operation(
+            operationId = "getActiveJobs",
+            summary = "Retrieves active  jobs",
+            description = "Fetches a paginated list of active  jobs. Results can be paginated using query parameters.",
+            tags        = {"Job Queue"},
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Successfully retrieved the paginated list of active  jobs.",
+                            content = @Content(
+                                    mediaType = MediaType.APPLICATION_JSON,
+                                    schema = @Schema(implementation = ResponseEntityJobPaginatedResultView.class)
+                            )
+                    ),
+                    @ApiResponse(responseCode = "401", description = "Unauthorized: Invalid or missing user authentication."),
+                    @ApiResponse(responseCode = "403", description = "Forbidden: User does not have necessary permissions to view jobs."),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error: An unexpected error occurred while retrieving jobs.")
+            }
+    )
     public ResponseEntityView<JobPaginatedResult> activeJobs(
-            @Context final HttpServletRequest request, @Context final HttpServletResponse response,
-            @QueryParam("page") @DefaultValue("1") int page,
-            @QueryParam("pageSize") @DefaultValue("20") int pageSize) {
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @Parameter(
+                    description = "Page number to retrieve (1-based indexing)."
+            )
+            @QueryParam("page") @DefaultValue("1") final int page,
+            @Parameter(
+                    description = "Number of records per page."
+            )
+            @QueryParam("pageSize") @DefaultValue("20") final int pageSize) {
         new InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
@@ -203,13 +564,48 @@ public class JobQueueResource {
         return new ResponseEntityView<>(result);
     }
 
+    /**
+     * Retrieves the status of completed  jobs.
+     *
+     * @param request The HTTP servlet request containing user and context information.
+     * @param response The HTTP servlet response that will contain the response to the client.
+     * @param page The page number for pagination (default is 1).
+     * @param pageSize The number of jobs per page (default is 20).
+     * @return A ResponseEntityView containing the paginated result of completed  jobs.
+     */
     @GET
     @Path("/completed")
     @Produces(MediaType.APPLICATION_JSON)
+    @Operation(
+            operationId = "getCompletedJobs",
+            summary = "Retrieves completed  jobs",
+            description = "Fetches a paginated list of completed jobs. Results can be paginated using query parameters.",
+            tags        = {"Job Queue"},
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Successfully retrieved the paginated list of completed  jobs.",
+                            content = @Content(
+                                    mediaType = MediaType.APPLICATION_JSON,
+                                    schema = @Schema(implementation = ResponseEntityJobPaginatedResultView.class)
+                            )
+                    ),
+                    @ApiResponse(responseCode = "401", description = "Unauthorized: Invalid or missing user authentication."),
+                    @ApiResponse(responseCode = "403", description = "Forbidden: User does not have necessary permissions to view jobs."),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error: An unexpected error occurred while retrieving jobs.")
+            }
+    )
     public ResponseEntityView<JobPaginatedResult> completedJobs(
-            @Context final HttpServletRequest request, @Context final HttpServletResponse response,
-            @QueryParam("page") @DefaultValue("1") int page,
-            @QueryParam("pageSize") @DefaultValue("20") int pageSize) {
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @Parameter(
+                    description = "Page number to retrieve (1-based indexing)."
+            )
+            @QueryParam("page") @DefaultValue("1") final int page,
+            @Parameter(
+                    description = "Number of records per page."
+            )
+            @QueryParam("pageSize") @DefaultValue("20") final int pageSize) {
         new InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
@@ -220,13 +616,48 @@ public class JobQueueResource {
         return new ResponseEntityView<>(result);
     }
 
+    /**
+     * Retrieves the status of successful  jobs.
+     *
+     * @param request The HTTP servlet request containing user and context information.
+     * @param response The HTTP servlet response that will contain the response to the client.
+     * @param page The page number for pagination (default is 1).
+     * @param pageSize The number of jobs per page (default is 20).
+     * @return A ResponseEntityView containing the paginated result of successful  jobs.
+     */
     @GET
     @Path("/successful")
     @Produces(MediaType.APPLICATION_JSON)
+    @Operation(
+            operationId = "getSuccessfulJobs",
+            summary = "Retrieves successful  jobs",
+            description = "Fetches a paginated list of successful jobs. Results can be paginated using query parameters.",
+            tags        = {"Job Queue"},
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Successfully retrieved the paginated list of successful  jobs.",
+                            content = @Content(
+                                    mediaType = MediaType.APPLICATION_JSON,
+                                    schema = @Schema(implementation = ResponseEntityJobPaginatedResultView.class)
+                            )
+                    ),
+                    @ApiResponse(responseCode = "401", description = "Unauthorized: Invalid or missing user authentication."),
+                    @ApiResponse(responseCode = "403", description = "Forbidden: User does not have necessary permissions to view jobs."),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error: An unexpected error occurred while retrieving jobs.")
+            }
+    )
     public ResponseEntityView<JobPaginatedResult> successfulJobs(
-            @Context final HttpServletRequest request, @Context final HttpServletResponse response,
-            @QueryParam("page") @DefaultValue("1") int page,
-            @QueryParam("pageSize") @DefaultValue("20") int pageSize) {
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @QueryParam("page")
+            @DefaultValue("1")
+            @Parameter(description = "Page number to retrieve (1-based).")
+            final int page,
+            @QueryParam("pageSize")
+            @DefaultValue("20")
+            @Parameter(description = "Number of records per page.")
+            final int pageSize) {
         new InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
@@ -237,13 +668,48 @@ public class JobQueueResource {
         return new ResponseEntityView<>(result);
     }
 
+    /**
+     * Retrieves the status of canceled jobs.
+     *
+     * @param request The HTTP servlet request containing user and context information.
+     * @param response The HTTP servlet response that will contain the response to the client.
+     * @param page The page number for pagination (default is 1).
+     * @param pageSize The number of jobs per page (default is 20).
+     * @return A ResponseEntityView containing the paginated result of canceled jobs.
+     */
     @GET
     @Path("/canceled")
     @Produces(MediaType.APPLICATION_JSON)
+    @Operation(
+            operationId = "getCanceledJobs",
+            summary     = "Retrieves canceled jobs",
+            description = "Fetches a paginated list of canceled jobs. Results can be paginated using query parameters.",
+            tags        = {"Job Queue"},
+            responses   = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description  = "Successfully retrieved the paginated list of canceled jobs.",
+                            content      = @Content(
+                                    mediaType = MediaType.APPLICATION_JSON,
+                                    schema    = @Schema(implementation = ResponseEntityJobPaginatedResultView.class)
+                            )
+                    ),
+                    @ApiResponse(responseCode = "401", description = "Unauthorized: Invalid or missing user authentication."),
+                    @ApiResponse(responseCode = "403", description = "Forbidden: User lacks permission to view jobs."),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error: An unexpected error occurred while retrieving jobs.")
+            }
+    )
     public ResponseEntityView<JobPaginatedResult> canceledJobs(
-            @Context final HttpServletRequest request, @Context final HttpServletResponse response,
-            @QueryParam("page") @DefaultValue("1") int page,
-            @QueryParam("pageSize") @DefaultValue("20") int pageSize) {
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @Parameter(
+                    description = "Page number to retrieve (1-based indexing)."
+            )
+            @QueryParam("page") @DefaultValue("1") final int page,
+            @Parameter(
+                    description = "Number of records per page."
+            )
+            @QueryParam("pageSize") @DefaultValue("20") final int pageSize) {
         new InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
@@ -254,13 +720,48 @@ public class JobQueueResource {
         return new ResponseEntityView<>(result);
     }
 
+    /**
+     * Retrieves the status of failed  jobs.
+     *
+     * @param request The HTTP servlet request containing user and context information.
+     * @param response The HTTP servlet response that will contain the response to the client.
+     * @param page The page number for pagination (default is 1).
+     * @param pageSize The number of jobs per page (default is 20).
+     * @return A ResponseEntityView containing the paginated result of failed  jobs.
+     */
     @GET
     @Path("/failed")
     @Produces(MediaType.APPLICATION_JSON)
+    @Operation(
+            operationId = "getFailedJobs",
+            summary     = "Retrieves failed  jobs",
+            description = "Fetches a paginated list of failed  jobs. Results can be paginated using query parameters.",
+            tags        = {"Job Queue"},
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Successfully retrieved the paginated list of failed  jobs.",
+                            content = @Content(
+                                    mediaType = MediaType.APPLICATION_JSON,
+                                    schema = @Schema(implementation = ResponseEntityJobPaginatedResultView.class)
+                            )
+                    ),
+                    @ApiResponse(responseCode = "401", description = "Unauthorized: Invalid or missing user authentication."),
+                    @ApiResponse(responseCode = "403", description = "Forbidden: User does not have necessary permissions to view jobs."),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error: An unexpected error occurred while retrieving jobs.")
+            }
+    )
     public ResponseEntityView<JobPaginatedResult> failedJobs(
-            @Context final HttpServletRequest request, @Context final HttpServletResponse response,
-            @QueryParam("page") @DefaultValue("1") int page,
-            @QueryParam("pageSize") @DefaultValue("20") int pageSize) {
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @Parameter(
+                    description = "Page number to retrieve (1-based indexing)."
+            )
+            @QueryParam("page") @DefaultValue("1") final int page,
+            @Parameter(
+                    description = "Number of records per page."
+            )
+            @QueryParam("pageSize") @DefaultValue("20") final int pageSize) {
         new InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
@@ -271,13 +772,49 @@ public class JobQueueResource {
         return new ResponseEntityView<>(result);
     }
 
+    /**
+     * Retrieves the status of abandoned  jobs.
+     *
+     * @param request The HTTP servlet request containing user and context information.
+     * @param response The HTTP servlet response that will contain the response to the client.
+     * @param page The page number for pagination (default is 1).
+     * @param pageSize The number of jobs per page (default is 20).
+     * @return A ResponseEntityView containing the paginated result of abandoned  jobs.
+     */
     @GET
     @Path("/abandoned")
     @Produces(MediaType.APPLICATION_JSON)
+    @Operation(
+            operationId = "getAbandonedJobs",
+            summary = "Retrieves abandoned  jobs",
+            description = "Fetches a paginated list of abandoned  jobs. Results can be paginated using query parameters.",
+            tags        = {"Job Queue"},
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Successfully retrieved the paginated list of abandoned  jobs.",
+                            content = @Content(
+                                    mediaType = MediaType.APPLICATION_JSON,
+                                    schema = @Schema(implementation = ResponseEntityJobPaginatedResultView.class)
+                            )
+                    ),
+                    @ApiResponse(responseCode = "401", description = "Unauthorized: Invalid or missing user authentication."),
+                    @ApiResponse(responseCode = "403", description = "Forbidden: User does not have necessary permissions to view jobs."),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error: An unexpected error occurred while retrieving jobs.")
+            }
+    )
     public ResponseEntityView<JobPaginatedResult> abandonedJobs(
-            @Context final HttpServletRequest request, @Context final HttpServletResponse response,
-            @QueryParam("page") @DefaultValue("1") int page,
-            @QueryParam("pageSize") @DefaultValue("20") int pageSize) {
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @Parameter(
+                    description = "Page number to retrieve (1-based indexing)."
+            )
+            @QueryParam("page") @DefaultValue("1") final int page,
+
+            @Parameter(
+                    description = "Number of records per page."
+            )
+            @QueryParam("pageSize") @DefaultValue("20") final int pageSize) {
         new InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
@@ -288,14 +825,51 @@ public class JobQueueResource {
         return new ResponseEntityView<>(result);
     }
 
+    /**
+     * Monitors the progress of a specific  job identified by its jobId.
+     *
+     * @param request The HTTP servlet request containing user and context information.
+     * @param response The HTTP servlet response that will contain the response to the client.
+     * @param jobId The ID of the job whose progress is to be monitored.
+     * @return An EventOutput for real-time job progress updates.
+     */
     @GET
     @Path("/{jobId}/monitor")
     @Produces(SseFeature.SERVER_SENT_EVENTS)
     @SuppressWarnings("java:S1854") // jobWatcher assignment is needed for cleanup in catch blocks
+    @Operation(
+            operationId = "monitorJob",
+            summary     = "Monitor a job in real time",
+            description = "Establishes a Server-Sent Events (SSE) connection to monitor the progress of a specific  job in real-time. This endpoint will continuously send updates as the job progresses, including status changes and completion information.",
+            tags        = {"Job Queue"},
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Server-Sent Events stream established successfully. Events will be sent as the job progresses.",
+                            content = @Content(
+                                    mediaType = SseFeature.SERVER_SENT_EVENTS,
+                                    schema = @Schema(implementation = EventOutput.class)
+                            )
+                    ),
+                    @ApiResponse(responseCode = "401", description = "Unauthorized: Invalid or missing user authentication."),
+                    @ApiResponse(responseCode = "403", description = "Forbidden: User does not have permissions to monitor the specified job."),
+                    @ApiResponse(responseCode = "404", description = "Not Found: Job with the specified ID could not be found."),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error: An unexpected error occurred while establishing the monitoring connection.")
+            }
+    )
     public EventOutput monitorJob(
-            @Context final HttpServletRequest request, @Context final HttpServletResponse response,
-            @PathParam("jobId") String jobId) {
-
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @PathParam("jobId")
+            @Parameter(
+                    name = "jobId",
+                    in = ParameterIn.PATH,
+                    required = true,
+                    description = "The unique identifier (UUID) of the job whose status is to be retrieved.",
+                    schema = @Schema(type = "string", format = "uuid", example = "e6d9bae8-657b-4e2f-8524-c0222db66355")
+            )
+            final String jobId
+    ) {
         new InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
