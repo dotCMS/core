@@ -1,6 +1,7 @@
 import { TiptapBubbleMenuDirective } from 'ngx-tiptap';
 
-import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
 import { Editor } from '@tiptap/core';
 
@@ -8,10 +9,10 @@ import { Editor } from '@tiptap/core';
     selector: 'dot-bubble-menu',
     templateUrl: './bubble-menu.component.html',
     styleUrls: ['./bubble-menu.component.scss'],
-    imports: [TiptapBubbleMenuDirective],
+    imports: [CommonModule, TiptapBubbleMenuDirective],
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class BubbleMenuComponent {
-    @Input() editor: Editor;
+    editor = input.required<Editor>();
 }

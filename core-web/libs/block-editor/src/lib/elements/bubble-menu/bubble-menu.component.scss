@@ -1,46 +1,78 @@
 @use "variables" as *;
 
 :host {
-    height: 100%;
-    width: 100%;
+    display: contents;
 }
 
 .bubble-menu {
-    box-sizing: border-box;
-    align-items: center;
-    background: $white;
-    border-radius: $border-radius-xs;
-    box-shadow: $shadow-s;
     display: flex;
-    justify-content: center;
-    padding: 0.35 * $dot-editor-size;
-    height: 2.5 * $dot-editor-size;
-
-    .btn-dropdown {
-        background: none;
-        border: none;
-        outline: none;
-        padding: 0.25 * $dot-editor-size;
-        cursor: pointer;
-
-        &:hover {
-            background: $color-palette-gray-200;
-        }
-
-        &::after {
-            content: "";
-            border: solid $black;
-            border-width: 0 (0.125 * $dot-editor-size) (0.125 * $dot-editor-size) 0;
-            display: inline-block;
-            padding: 0.2 * $dot-editor-size;
-            transform: rotate(45deg);
-            margin-left: 0.75 * $dot-editor-size;
-        }
-    }
+    align-items: center;
+    background-color: $white;
+    border-radius: $border-radius-md;
+    box-shadow: $shadow-m;
+    padding: 0.25rem;
+    gap: 0.125rem;
+    width: 100%;
 
     .divider {
         border-left: 1px solid $color-palette-gray-200;
-        height: 100%;
-        margin: 0 (0.5 * $dot-editor-size);
+        height: 1.5rem;
+        margin: 0 0.25rem;
+    }
+
+    .bubble-menu-button {
+        background: none;
+        border: none;
+        outline: none;
+        cursor: pointer;
+        border-radius: $border-radius-xs;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background-color 0.2s;
+        padding: 0.3rem 0.4rem;
+        font-size: 0.9rem;
+        // color: $color-primary;
+
+        &:hover {
+            background-color: $color-palette-gray-100;
+        }
+
+        &.is-active {
+            background-color: $color-palette-gray-200;
+            // color: $color-primary-dark;
+        }
+
+        &:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .material-icons {
+            font-size: 1.25rem;
+        }
+
+        &--char {
+            font-weight: bold;
+            width: 1.75rem;
+            height: 1.75rem;
+            padding: 0;
+
+            i {
+                font-style: italic;
+            }
+            u {
+                text-decoration: underline;
+            }
+            s {
+                text-decoration: line-through;
+            }
+        }
+
+        &--icon {
+            width: 1.75rem;
+            height: 1.75rem;
+            padding: 0;
+        }
     }
 }
