@@ -108,7 +108,7 @@ public class AnalyticsValidatorsTest {
         config.put("type", "string");
         assertFalse(validator.test(config));
 
-        config.put("type", "json object");
+        config.put("type", "json_object");
         assertTrue(validator.test(config));
 
         // Test validate() method
@@ -141,7 +141,7 @@ public class AnalyticsValidatorsTest {
         config.put("type", "string");
         assertFalse(validator.test(config));
 
-        config.put("type", "json array");
+        config.put("type", "json_array");
         assertTrue(validator.test(config));
 
         // Test validate() method
