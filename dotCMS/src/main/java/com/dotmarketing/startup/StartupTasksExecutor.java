@@ -421,7 +421,7 @@ public class StartupTasksExecutor {
                 Thread.currentThread().interrupt();
                 Logger.debug(this,"Thread was interrupted", ex);
             }
-            System.exit(1);
+            com.dotcms.shutdown.SystemExitManager.startupFailureExit("Startup task execution failed: " + e.getMessage());
         }
     }
 

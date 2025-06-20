@@ -979,6 +979,14 @@ public class HealthStateManager {
     private void runSingleHealthCheck(HealthCheck healthCheck) {
         String checkName = healthCheck.getName();
         
+        // Skip expensive health checks during shutdown to avoid accessing services that are shutting down
+        if (shouldSkipHealthCheckDuringShutdown(healthCheck)) {
+            Logger.debug(this, "Skipping health check during shutdown: " + checkName);
+            HealthCheckResult shutdownResult = createShutdownSkippedResult(checkName);
+            updateHealthCheckResult(checkName, shutdownResult);
+            return;
+        }
+        
         // Try event-driven result first for faster failure detection
         if (healthCheck instanceof com.dotcms.health.util.HealthCheckBase) {
             com.dotcms.health.util.HealthCheckBase baseCheck = (com.dotcms.health.util.HealthCheckBase) healthCheck;
@@ -1145,6 +1153,10 @@ public class HealthStateManager {
     private boolean shouldSkipHealthCheckDuringShutdown(HealthCheck healthCheck) {
         // Import ShutdownCoordinator to check shutdown status
         try {
+            boolean shutdownInProgress = com.dotcms.shutdown.ShutdownCoordinator.isShutdownStarted();
+            if (!shutdownInProgress) {
+                return false; // Not shutting down, run all checks normally
+            }
             
             String checkName = healthCheck.getName();
             
