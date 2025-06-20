@@ -104,6 +104,8 @@ public class SystemEnvDataSourceStrategy implements DotDataSourceStrategy {
                         != null ? systemEnvironmentProperties
                         .getVariable(CONNECTION_DB_VALIDATION_TIMEOUT) : "5000"));
 
+        config.setRegisterMbeans(com.dotmarketing.util.Config.getBooleanProperty("hikari.register.mbeans", true));
+
         return new HikariDataSource(config);
     }
 }

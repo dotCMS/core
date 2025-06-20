@@ -18,6 +18,7 @@ public class TestDataSourceProvider implements DotDataSourceStrategy {
         HikariConfig config = new HikariConfig(getProperties());
 
         config.setPoolName("jdbc/dotCMSPool");
+        config.setRegisterMbeans(com.dotmarketing.util.Config.getBooleanProperty("hikari.register.mbeans", true));
 
         return new HikariDataSource(config);
     }
