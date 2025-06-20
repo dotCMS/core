@@ -1,13 +1,5 @@
-import {
-    ANALYTICS_PAGEVIEW_EVENT,
-    EventType,
-    EXPECTED_UTM_KEYS
-} from './dot-content-analytics.constants';
-
 /**
  * Configuration interface for DotAnalytics SDK.
- *
- * @interface DotAnalyticsConfig
  */
 export interface DotContentAnalyticsConfig {
     /**
@@ -26,7 +18,7 @@ export interface DotContentAnalyticsConfig {
     autoPageView?: boolean;
 
     /**
-     * The API key for authenticating with the Analytics service.
+     * The site key for authenticating with the Analytics service.
      */
     siteKey: string;
 
@@ -34,30 +26,43 @@ export interface DotContentAnalyticsConfig {
      * Custom redirect function handler.
      * When provided, this function will be called instead of the default browser redirect
      * for handling URL redirections.
-     *
-     * @param {string} url - The URL to redirect to
      */
     redirectFn?: (url: string) => void;
 }
 
-// UTM parameters generated from the expected UTM keys
-type UTMParams = {
-    [key in (typeof EXPECTED_UTM_KEYS)[number] as key extends `utm_${infer U}`
-        ? U
-        : never]?: string;
-};
-
-// Base event data that all events must have
-interface BaseEventData {
-    anonymousId?: string;
-    src: string;
-    utc_time: string;
-    local_tz_offset: number;
-    doc_path: string;
-    doc_host: string;
+/**
+ * Individual analytics event structure.
+ * Represents a single event within an analytics request.
+ */
+export interface DotAnalyticsEvent {
+    event_type: 'pageview' | 'track';
+    page: PageData;
+    device: DeviceData;
+    utm?: UtmData;
 }
 
-// Browser-specific data that we collect
+/**
+ * Analytics request body for page view events.
+ * Structure sent to the analytics server for page tracking.
+ */
+export interface PageViewRequestBody extends Record<string, unknown> {
+    context: DotAnalyticsContext;
+    events: DotAnalyticsEvent[];
+}
+
+/**
+ * Analytics request body for track events.
+ * Structure sent to the analytics server for custom event tracking.
+ */
+export interface TrackRequestBody extends Record<string, unknown> {
+    key: string;
+}
+
+/**
+ * Browser event data collected from the user's session.
+ * Contains comprehensive information about the user's browser environment,
+ * page context, and session details for analytics tracking.
+ */
 export interface BrowserEventData {
     utc_time: string;
     local_tz_offset: number;
@@ -73,91 +78,30 @@ export interface BrowserEventData {
     referrer: string;
     page_title: string;
     url: string;
-    utm: UTMParams;
-}
-
-// PageView specific data
-export interface PageViewEvent extends BaseEventData, BrowserEventData {
-    event_type: typeof ANALYTICS_PAGEVIEW_EVENT;
-}
-
-export interface TrackEvent {
-    event_type: 'track';
-    custom_event: string; // Name of the custom event sent by the client
-    // Allow any additional properties from client
-    [key: string]: unknown;
-}
-
-// Payload structure for incoming track events
-export interface TrackPayload extends DotAnalyticsPayload {
-    type: EventType.Track;
-    properties: DotCMSAnalyticsProperties;
-}
-
-// Payload structure for incoming pageview events
-export interface PageViewPayload extends DotAnalyticsPayload {
-    type: EventType.PageView;
-    properties: DotCMSAnalyticsProperties;
+    utm: Record<string, string>;
 }
 
 /**
- * Base properties from Analytics.js
- */
-export interface BaseAnalyticsProperties {
-    title: string;
-    url: string;
-    path: string;
-    hash: string;
-    search: string;
-    width: number;
-    height: number;
-    source: string;
-}
-
-/**
- * Extended properties specific to DotCMS analytics
- */
-export interface DotCMSAnalyticsProperties extends BaseAnalyticsProperties {
-    // DotCMS-specific properties that can come from query params or context
-    language_id?: string;
-    persona?: string;
-    // Allow additional dynamic properties
-    [key: string]: unknown;
-}
-
-/**
- * The payload for a track event.
+ * The payload structure for analytics events.
+ * This interface represents the complete data structure that flows through
+ * the analytics pipeline, including original event data and enriched context.
  */
 export interface DotAnalyticsPayload {
     type: string;
-    properties: DotCMSAnalyticsProperties;
+    properties: Record<string, unknown>;
     event: string;
     options: Record<string, unknown>;
 
     // Properties added by enricher plugin
-    context: AnalyticsContext;
+    context: DotAnalyticsContext;
     page: PageData;
     device: DeviceData;
     utm?: UtmData;
 }
 
 /**
- * Add ServerEvent type for HTTP layer
- */
-export interface ServerEvent extends Record<string, unknown> {
-    timestamp: string;
-    key: string;
-}
-
-/**
- * Interface for the AnalyticsTracker.
- */
-export interface DotContentAnalyticsCustomHook {
-    track: (eventName: string, payload?: Record<string, unknown>) => void;
-}
-
-/**
- * Params for the DotAnalytics plugin
+ * Parameters passed to DotAnalytics plugin methods.
+ * Contains the configuration and payload data needed for processing analytics events.
  */
 export interface DotAnalyticsParams {
     config: DotContentAnalyticsConfig;
@@ -165,24 +109,38 @@ export interface DotAnalyticsParams {
 }
 
 /**
- * Shared interface for the DotAnalytics plugin
+ * Main interface for the DotAnalytics SDK.
+ * Provides the core methods for tracking page views and custom events.
  */
 export interface DotAnalytics {
+    /**
+     * Track a page view event.
+     * @param payload - Optional additional data to include with the page view
+     */
     pageView: (payload?: Record<string, unknown>) => void;
+
+    /**
+     * Track a custom event.
+     * @param eventName - The name/type of the event to track
+     * @param payload - Optional additional data to include with the event
+     */
     track: (eventName: string, payload?: Record<string, unknown>) => void;
 }
 
 /**
- * Analytics payload structure for page view events
+ * Analytics context shared across all events.
+ * Contains session and user identification data that provides
+ * continuity across multiple analytics events.
  */
-export interface AnalyticsContext {
+export interface DotAnalyticsContext {
     site_key: string;
     session_id: string;
     user_id: string;
 }
 
 /**
- * Device and browser information for analytics tracking
+ * Device and browser information for analytics tracking.
+ * Contains technical details about the user's device and browser environment.
  */
 export interface DeviceData {
     screen_resolution: string;
@@ -192,7 +150,8 @@ export interface DeviceData {
 }
 
 /**
- * UTM (Urchin Tracking Module) parameters for campaign tracking
+ * UTM (Urchin Tracking Module) parameters for campaign tracking.
+ * Contains marketing campaign attribution data extracted from URL parameters.
  */
 export interface UtmData {
     medium?: string;
@@ -203,7 +162,9 @@ export interface UtmData {
 }
 
 /**
- * Page data structure for DotCMS analytics
+ * Page data structure for DotCMS analytics.
+ * Contains comprehensive information about the current page and its context
+ * within the DotCMS environment.
  */
 export interface PageData {
     url: string;
@@ -220,7 +181,9 @@ export interface PageData {
 }
 
 /**
- * Analytics.js hook parameter types
+ * Analytics.js hook parameter types.
+ * Represents the payload structure used by Analytics.js lifecycle hooks
+ * for intercepting and modifying analytics events.
  */
 export interface AnalyticsHookPayload {
     type: string;
@@ -244,6 +207,11 @@ export interface AnalyticsHookPayload {
     };
 }
 
+/**
+ * Analytics.js instance structure.
+ * Represents the internal structure of an Analytics.js instance,
+ * providing access to plugins, storage, and event configuration.
+ */
 export interface AnalyticsInstance {
     plugins: Record<string, unknown>;
     storage: Record<string, unknown>;
@@ -253,6 +221,11 @@ export interface AnalyticsInstance {
     };
 }
 
+/**
+ * Parameters passed to Analytics.js hook functions.
+ * Contains all the context and data needed for Analytics.js lifecycle hooks
+ * to process and modify analytics events.
+ */
 export interface AnalyticsHookParams {
     payload: AnalyticsHookPayload;
     instance: AnalyticsInstance;
