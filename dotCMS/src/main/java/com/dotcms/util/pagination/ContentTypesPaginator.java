@@ -19,6 +19,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import io.vavr.control.Try;
 
@@ -40,11 +41,17 @@ import static com.liferay.util.StringPool.BLANK;
  */
 public class ContentTypesPaginator implements PaginatorOrdered<Map<String, Object>>{
 
-    private static final String N_ENTRIES_FIELD_NAME = "nEntries";
+    public static final String N_ENTRIES_FIELD_NAME = "nEntries";
     public  static final String TYPE_PARAMETER_NAME  = "type";
     public static final String TYPES_PARAMETER_NAME  = "types";
     public static final String HOST_PARAMETER_ID = "host";
     public static final String SITES_PARAMETER_NAME = "sites";
+    public static final String COMPARATOR = "comparator";
+    public static final String ENTRIES_BY_CONTENT_TYPES = "entriesByContentTypes";
+    public static final String VARIABLE = "variable";
+    public static final String WORKFLOWS = "workflows";
+    public static final String SYSTEM_ACTION_MAPPINGS = "systemActionMappings";
+
 
     private final ContentTypeAPI contentTypeAPI;
     private final WorkflowAPI    workflowAPI;
@@ -106,8 +113,8 @@ public class ContentTypesPaginator implements PaginatorOrdered<Map<String, Objec
                     this.workflowAPI.findSystemActionsMapByContentType(contentTypes, user),
                     extraParams);
 
-            result.addAll(extraParams.containsKey("comparator")?
-                    contentTypesTransform.stream().sorted((Comparator<Map<String, Object>>) extraParams.get("comparator")).collect(Collectors.toList())
+            result.addAll(extraParams.containsKey(COMPARATOR)?
+                    contentTypesTransform.stream().sorted((Comparator<Map<String, Object>>) extraParams.get(COMPARATOR)).collect(Collectors.toList())
                     :contentTypesTransform);
             return result;
         } catch (final DotDataException | DotSecurityException e) {
@@ -138,8 +145,8 @@ public class ContentTypesPaginator implements PaginatorOrdered<Map<String, Objec
         Map<String, Long> entriesByContentTypes = null;
 
         try {
-            entriesByContentTypes = extraParams.containsKey("entriesByContentTypes")?
-                    (Map<String, Long>)extraParams.get("entriesByContentTypes"):
+            entriesByContentTypes = extraParams.containsKey(ENTRIES_BY_CONTENT_TYPES)?
+                    (Map<String, Long>)extraParams.get(ENTRIES_BY_CONTENT_TYPES):
                     APILocator.getContentTypeAPI(user, true).getEntriesByContentTypes();
         } catch (final DotStateException | DotDataException e) {
             final String errorMsg = String.format("Error trying to retrieve total entries by Content Type: %s", e.getMessage());
@@ -149,7 +156,7 @@ public class ContentTypesPaginator implements PaginatorOrdered<Map<String, Objec
 
         for (final Map<String, Object> contentTypeEntry : contentTypesTransform) {
 
-            final String variable = (String) contentTypeEntry.get("variable");
+            final String variable = (String) contentTypeEntry.get(VARIABLE);
             if (entriesByContentTypes != null) {
 
                 final String key = variable.toLowerCase();
@@ -157,17 +164,17 @@ public class ContentTypesPaginator implements PaginatorOrdered<Map<String, Objec
                         entriesByContentTypes.get(key);
                 contentTypeEntry.put(N_ENTRIES_FIELD_NAME, contentTypeEntriesNumber);
             } else {
-                contentTypeEntry.put(N_ENTRIES_FIELD_NAME, "N/A");
+                contentTypeEntry.put(N_ENTRIES_FIELD_NAME, StringPool.NA);
             }
 
             if (workflowSchemes.containsKey(variable)) {
 
-                contentTypeEntry.put("workflows", workflowSchemes.get(variable));
+                contentTypeEntry.put(WORKFLOWS, workflowSchemes.get(variable));
             }
 
             if (systemActionMappings.containsKey(variable)) {
 
-                contentTypeEntry.put("systemActionMappings", workflowSchemes.get(variable));
+                contentTypeEntry.put(SYSTEM_ACTION_MAPPINGS, workflowSchemes.get(variable));
             }
         }
     }

@@ -1719,35 +1719,22 @@ public class ContentTypeResource implements Serializable {
 
 		Logger.debug(this, ()-> "Getting Content Types for page: " + pagePathOrId);
 
-		final PageMode pageMode = PageMode.get(httpRequest);
-		final long userLanguageId = LanguageUtil.getLanguageId(language);
-		final long languageId = userLanguageId > 0 ? userLanguageId : APILocator.getLanguageAPI().getDefaultLanguage().getId();
-		final Host site = UtilMethods.isSet(siteId) ?
-				APILocator.getHostAPI().find(siteId, user, pageMode.respectAnonPerms) :
-				APILocator.getHostAPI().findDefaultHost(user, pageMode.respectAnonPerms); // wondering if this should be current or default
-		final String orderBy = this.getOrderByRealName(orderByParam);
-		List<String> typeVarNames = findPageContainersContentTypesVarnamesByPathOrId(pagePathOrId, site,
-				languageId, pageMode, user, filter);
-
 		final Map<String, Object> extraParams = new HashMap<>();
+		final PageMode pageMode = PageMode.get(httpRequest);
+		final long languageId   = getLanguageId(language);
+		final Host site = getSite(siteId, user, pageMode.respectAnonPerms); // wondering if this should be current or default
+		final String orderBy = this.getOrderByRealName(orderByParam);
+		List<String> typeVarNames = findPageContainersContentTypesVarnamesByPathOrIdAndFilter(pagePathOrId, site,
+				languageId, pageMode, user, filter);
 		final boolean isUsage = "usage".equalsIgnoreCase(orderBy);
-		if (null != siteId) {
-			extraParams.put(ContentTypesPaginator.HOST_PARAMETER_ID,siteId);
-		}
 
 		if (isUsage) {
 
-			final boolean isAscending =  "ASC".equalsIgnoreCase(direction);
-			final Map<String, Long> entriesByContentTypes = APILocator.getContentTypeAPI
-					(user, true).getEntriesByContentTypes();
-			// here are filtered and sorted, but we need to paginate them.
-			this.sort(typeVarNames, isAscending, user, entriesByContentTypes);
-			typeVarNames = this.paginate(typeVarNames, page, perPage);
-			extraParams.put("entriesByContentTypes", entriesByContentTypes);
-			final Comparator<Map<String, Object>> comparator = Comparator
-					.comparing((Map<String, Object> contentTypeMap) ->
-							ConversionUtils.toLong(contentTypeMap.getOrDefault("nEntries", -1l),-1l));
-			extraParams.put("comparator", isAscending?comparator:comparator.reversed());
+			typeVarNames = doUsage(page, perPage, direction, user, typeVarNames, extraParams);
+		}
+
+		if (null != siteId) {
+			extraParams.put(ContentTypesPaginator.HOST_PARAMETER_ID,siteId);
 		}
 
 		if (UtilMethods.isSet(typeVarNames)) {
@@ -1767,6 +1754,39 @@ public class ContentTypeResource implements Serializable {
 				paginationUtil.getPage(httpRequest, user, filter, page, perPage, orderBy,
 				        OrderDirection.valueOf(direction), extraParams);
 	} // getPagesContentTypes.
+
+	private static long getLanguageId(final String language) {
+
+		final long userLanguageId = LanguageUtil.getLanguageId(language);
+		final long languageId = userLanguageId > 0 ? userLanguageId : APILocator.getLanguageAPI().getDefaultLanguage().getId();
+		return languageId;
+	}
+
+	private static Host getSite(final String siteId, final User user, final boolean respectAnonPerms) throws DotDataException, DotSecurityException {
+		return UtilMethods.isSet(siteId) ?
+				APILocator.getHostAPI().find(siteId, user, respectAnonPerms) :
+				APILocator.getHostAPI().findDefaultHost(user, respectAnonPerms);
+	}
+
+	private List<String> doUsage(final int page,
+								 final int perPage,
+								 final String direction,
+								 final User user, List<String> typeVarNames,
+								 final Map<String, Object> extraParams) throws DotDataException {
+
+		final boolean isAscending =  OrderDirection.ASC.name().equalsIgnoreCase(direction);
+		final Map<String, Long> entriesByContentTypes = APILocator.getContentTypeAPI
+				(user, true).getEntriesByContentTypes();
+		// here are filtered and sorted, but we need to paginate them.
+		this.sort(typeVarNames, isAscending, user, entriesByContentTypes);
+		typeVarNames = this.paginate(typeVarNames, page, perPage);
+		extraParams.put(ContentTypesPaginator.ENTRIES_BY_CONTENT_TYPES, entriesByContentTypes);
+		final Comparator<Map<String, Object>> comparator = Comparator
+				.comparing((Map<String, Object> contentTypeMap) ->
+						ConversionUtils.toLong(contentTypeMap.getOrDefault(ContentTypesPaginator.N_ENTRIES_FIELD_NAME, -1l),-1l));
+		extraParams.put(ContentTypesPaginator.COMPARATOR, isAscending?comparator:comparator.reversed());
+		return typeVarNames;
+	}
 
 	public List<String> paginate(final List<String> typeVarNames, final int page, final int perPage) {
 
@@ -1791,12 +1811,16 @@ public class ContentTypeResource implements Serializable {
 		typeVarNames.sort(ascending ? comparator : comparator.reversed());
 	}
 
-	private List<String> findPageContainersContentTypesVarnamesByPathOrId(final String pagePathOrId,
-										 final Host site,
-										 final long languageId,
-										 final PageMode pageMode,
-										 final User user,
-										 final String filter) throws DotDataException, DotSecurityException {
+	/*
+	 * This methods retrieves the page by path or ID, then extracts the content types from the containers
+	 * Matching the filter criteria and removing the repeated ones and the ones from the blacklist.
+	 */
+	private List<String> findPageContainersContentTypesVarnamesByPathOrIdAndFilter(final String pagePathOrId,
+																				   final Host site,
+																				   final long languageId,
+																				   final PageMode pageMode,
+																				   final User user,
+																				   final String filter) throws DotDataException, DotSecurityException {
 
 		Logger.debug(this, ()-> "Getting Content Types for page: " + pagePathOrId +
 				" in site: " + (Objects.nonNull(site) ? site.getHostname() : "null") +
@@ -1805,7 +1829,7 @@ public class ContentTypeResource implements Serializable {
 		IHTMLPage htmlPage = Try.of(()->APILocator.getHTMLPageAssetAPI().getPageByPath(
 				pagePathOrId, site, languageId, pageMode.showLive)).getOrNull();
 
-		if (Objects.isNull(htmlPage)) { // try fallback
+		if (Objects.isNull(htmlPage)) { // try fallback by identifier
 
 			final Optional<ContentletVersionInfo> contentletVersionInfoOpt = APILocator.getVersionableAPI().getContentletVersionInfo(pagePathOrId, languageId);
 			if (contentletVersionInfoOpt.isPresent()) {
@@ -1836,5 +1860,5 @@ public class ContentTypeResource implements Serializable {
 				.filter(repeatedTypes::add)
 				.filter(varname -> filter == null || varname.toLowerCase().contains(filter.toLowerCase()))
 				.collect(Collectors.toList());
-	} // findPageContainersContentTypesVarnamesByPathOrId
+	} // findPageContainersContentTypesVarnamesByPathOrIdAndFilter
 }
