@@ -46,6 +46,9 @@
     },
     "private": false,
     "dependencies": {
+        "@analytics/activity-utils": "^0.1.16",
+        "@analytics/listener-utils": "^0.4.0",
+        "@analytics/storage-utils": "^0.4.2",
         "@angular-devkit/core": "18.2.3",
         "@angular/animations": "18.2.3",
         "@angular/cdk": "18.2.3",

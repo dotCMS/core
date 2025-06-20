@@ -28,7 +28,7 @@ export interface DotContentAnalyticsConfig {
     /**
      * The API key for authenticating with the Analytics service.
      */
-    apiKey: string;
+    siteKey: string;
 
     /**
      * Custom redirect function handler.
@@ -63,7 +63,6 @@ export interface BrowserEventData {
     local_tz_offset: number;
     screen_resolution: string;
     vp_size: string;
-    userAgent: string;
     user_language: string;
     doc_encoding: string;
     doc_path: string;
@@ -73,6 +72,7 @@ export interface BrowserEventData {
     doc_search: string;
     referrer: string;
     page_title: string;
+    url: string;
     utm: UTMParams;
 }
 
@@ -91,31 +91,38 @@ export interface TrackEvent {
 // Payload structure for incoming track events
 export interface TrackPayload extends DotAnalyticsPayload {
     type: EventType.Track;
-    properties: Record<string, unknown> & {
-        title: string;
-        url: string;
-        path: string;
-        hash: string;
-        search: string;
-        width: number;
-        height: number;
-        source: string;
-    };
+    properties: DotCMSAnalyticsProperties;
 }
 
 // Payload structure for incoming pageview events
 export interface PageViewPayload extends DotAnalyticsPayload {
     type: EventType.PageView;
-    properties: {
-        title: string;
-        url: string;
-        path: string;
-        hash: string;
-        search: string;
-        width: number;
-        height: number;
-        source: string;
-    };
+    properties: DotCMSAnalyticsProperties;
+}
+
+/**
+ * Base properties from Analytics.js
+ */
+export interface BaseAnalyticsProperties {
+    title: string;
+    url: string;
+    path: string;
+    hash: string;
+    search: string;
+    width: number;
+    height: number;
+    source: string;
+}
+
+/**
+ * Extended properties specific to DotCMS analytics
+ */
+export interface DotCMSAnalyticsProperties extends BaseAnalyticsProperties {
+    // DotCMS-specific properties that can come from query params or context
+    language_id?: string;
+    persona?: string;
+    // Allow additional dynamic properties
+    [key: string]: unknown;
 }
 
 /**
@@ -123,20 +130,15 @@ export interface PageViewPayload extends DotAnalyticsPayload {
  */
 export interface DotAnalyticsPayload {
     type: string;
-    properties: {
-        title: string;
-        url: string;
-        path: string;
-        hash: string;
-        search: string;
-        width: number;
-        height: number;
-        source: string;
-    };
+    properties: DotCMSAnalyticsProperties;
     event: string;
     options: Record<string, unknown>;
-    userId: string | null;
-    anonymousId: string | null;
+
+    // Properties added by enricher plugin
+    context: AnalyticsContext;
+    page: PageData;
+    device: DeviceData;
+    utm?: UtmData;
 }
 
 /**
@@ -168,4 +170,100 @@ export interface DotAnalyticsParams {
 export interface DotAnalytics {
     pageView: (payload?: Record<string, unknown>) => void;
     track: (eventName: string, payload?: Record<string, unknown>) => void;
+}
+
+/**
+ * Analytics payload structure for page view events
+ */
+export interface AnalyticsContext {
+    site_key: string;
+    session_id: string;
+    user_id: string;
+}
+
+/**
+ * Device and browser information for analytics tracking
+ */
+export interface DeviceData {
+    screen_resolution: string;
+    language: string;
+    viewport_width: string;
+    viewport_height: string;
+}
+
+/**
+ * UTM (Urchin Tracking Module) parameters for campaign tracking
+ */
+export interface UtmData {
+    medium?: string;
+    source?: string;
+    campaign?: string;
+    term?: string;
+    content?: string;
+}
+
+/**
+ * Page data structure for DotCMS analytics
+ */
+export interface PageData {
+    url: string;
+    doc_encoding: string;
+    doc_hash: string;
+    doc_protocol: string;
+    doc_search: string;
+    dot_host: string;
+    dot_path: string;
+    title: string;
+    user_agent?: string;
+    language_id?: string;
+    persona?: string;
+}
+
+/**
+ * Analytics.js hook parameter types
+ */
+export interface AnalyticsHookPayload {
+    type: string;
+    properties: {
+        title: string;
+        url: string;
+        path: string;
+        hash: string;
+        search: string;
+        width: number;
+        height: number;
+        referrer?: string;
+    };
+    options: Record<string, unknown>;
+    userId: string | null;
+    anonymousId: string;
+    meta: {
+        rid: string;
+        ts: number;
+        hasCallback: boolean;
+    };
+}
+
+export interface AnalyticsInstance {
+    plugins: Record<string, unknown>;
+    storage: Record<string, unknown>;
+    events: {
+        core: string[];
+        plugins: string[];
+    };
+}
+
+export interface AnalyticsHookParams {
+    payload: AnalyticsHookPayload;
+    instance: AnalyticsInstance;
+    config: Record<string, unknown>;
+    plugins: Record<
+        string,
+        {
+            enabled: boolean;
+            initialized: boolean;
+            loaded: boolean;
+            config: Record<string, unknown>;
+        }
+    >;
 }

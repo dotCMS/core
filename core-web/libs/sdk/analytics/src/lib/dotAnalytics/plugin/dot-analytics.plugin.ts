@@ -24,40 +24,46 @@ export const dotAnalytics = (config: DotContentAnalyticsConfig) => {
          * Initialize the plugin
          */
         initialize: (params: DotAnalyticsParams) => {
-            const { config, payload } = params;
+            const { config } = params;
             if (config.debug) {
                 console.warn('DotAnalytics: Initialized with config', config);
             }
 
             isInitialized = true;
 
-            // If autoPageView is enabled, send a page view event, used in IIFE
-            if (config.autoPageView) {
-                const body = {
-                    ...payload.properties,
-                    key: config.apiKey
-                };
-
-                return sendAnalyticsEventToServer(body, config);
-            }
-
+            // No automatic page view sending - let useRouterTracker handle it
+            // This ensures all page views go through the enrichment process
             return Promise.resolve();
         },
 
         /**
          * Track a page view event
+         * Takes enriched data from properties and creates final structured event
          */
         page: (params: DotAnalyticsParams) => {
             const { config, payload } = params;
+            const { context, page, device, utm } = payload;
 
             if (!isInitialized) {
                 throw new Error('DotAnalytics: Plugin not initialized');
             }
 
+            // Build final structured event
             const body = {
-                ...payload.properties,
-                key: config.apiKey
+                context,
+                events: [
+                    {
+                        event_type: 'pageview',
+                        page,
+                        device,
+                        ...(utm && { utm: utm })
+                    }
+                ]
             };
+
+            if (config.debug) {
+                console.warn('Event to send:', body);
+            }
 
             return sendAnalyticsEventToServer(body, config);
         },
@@ -72,9 +78,10 @@ export const dotAnalytics = (config: DotContentAnalyticsConfig) => {
                 throw new Error('DotAnalytics: Plugin not initialized');
             }
 
+            // For track events, the enricher plugin should handle enrichment too
             const body = {
-                ...payload.properties,
-                key: config.apiKey
+                ...payload,
+                key: config.siteKey
             };
 
             return sendAnalyticsEventToServer(body, config);
