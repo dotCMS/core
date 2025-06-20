@@ -13,10 +13,13 @@
             [ngClass]="{ 'overflow-hidden': freezeScroll }"
             [ngModel]="content" />
     </div>
-    @if (showCharData) {
+
+    <dot-bubble-menu [editor]="editor" />
+
+    <!-- @if (showCharData) {
         <dot-editor-count-bar
             [charLimit]="charLimit"
             [characterCount]="characterCount"
             [readingTime]="readingTime" />
-    }
+    } -->
 }
