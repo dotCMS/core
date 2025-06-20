@@ -1,7 +1,6 @@
 package com.dotcms.jobs.business.api;
 
 import com.dotcms.jobs.business.api.events.JobWatcher;
-import com.dotcms.jobs.business.error.CircuitBreaker;
 import com.dotcms.jobs.business.error.JobProcessorNotFoundException;
 import com.dotcms.jobs.business.error.RetryStrategy;
 import com.dotcms.jobs.business.job.Job;
@@ -296,10 +295,6 @@ public interface JobQueueManagerAPI {
      */
     Optional<JobProcessor> getInstance(final String jobId);
 
-    /**
-     * @return The CircuitBreaker instance
-     */
-    CircuitBreaker getCircuitBreaker();
 
     /**
      * @return The JobQueue instance

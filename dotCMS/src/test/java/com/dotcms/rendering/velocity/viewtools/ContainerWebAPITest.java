@@ -48,7 +48,7 @@ public class ContainerWebAPITest extends UnitTestBase {
     @Before
     public void before(){
         permissionAPI = mock(PermissionAPI.class);
-        containerAPI = mock(ContainerAPI.class);;
+        containerAPI = mock(ContainerAPI.class);
         userAPI = mock(UserAPI.class);
         userWebAPI = mock(UserWebAPI.class);
         containerWebAPI = new ContainerWebAPI(permissionAPI, containerAPI, userAPI, userWebAPI);
