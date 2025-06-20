@@ -1,3 +1,5 @@
+import { TiptapBubbleMenuDirective } from 'ngx-tiptap';
+
 import { CommonModule } from '@angular/common';
 import { APP_INITIALIZER, NgModule } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
@@ -31,11 +33,11 @@ import {
 //Editor
 import { DotBlockEditorComponent } from './components/dot-block-editor/dot-block-editor.component';
 import { DotEditorCountBarComponent } from './components/dot-editor-count-bar/dot-editor-count-bar.component';
+import { BubbleMenuComponent } from './elements/bubble-menu/bubble-menu.component';
 import {
     BubbleFormComponent,
     BubbleLinkFormComponent,
     BubbleMenuButtonComponent,
-    BubbleMenuComponent,
     DragHandlerComponent,
     FloatingButtonComponent,
     FormActionsComponent,
@@ -69,13 +71,14 @@ const initTranslations = (dotMessageService: DotMessageService) => {
         DialogModule,
         InputTextareaModule,
         PaginatorModule,
-        DotSpinnerModule
+        DotSpinnerModule,
+        BubbleMenuComponent,
+        TiptapBubbleMenuDirective
     ],
     declarations: [
         EditorDirective,
         ContentletBlockComponent,
         DragHandlerComponent,
-        BubbleMenuComponent,
         BubbleMenuButtonComponent,
         BubbleLinkFormComponent,
         FormActionsComponent,
