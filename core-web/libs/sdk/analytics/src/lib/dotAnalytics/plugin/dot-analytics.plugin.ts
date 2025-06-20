@@ -1,7 +1,9 @@
 import { sendAnalyticsEventToServer } from '../shared/dot-content-analytics.http';
 import {
     DotAnalyticsParams,
-    DotContentAnalyticsConfig
+    DotContentAnalyticsConfig,
+    PageViewRequestBody,
+    TrackRequestBody
 } from '../shared/dot-content-analytics.model';
 
 /**
@@ -49,7 +51,7 @@ export const dotAnalytics = (config: DotContentAnalyticsConfig) => {
             }
 
             // Build final structured event
-            const body = {
+            const body: PageViewRequestBody = {
                 context,
                 events: [
                     {
@@ -79,7 +81,7 @@ export const dotAnalytics = (config: DotContentAnalyticsConfig) => {
             }
 
             // For track events, the enricher plugin should handle enrichment too
-            const body = {
+            const body: TrackRequestBody = {
                 ...payload,
                 key: config.siteKey
             };
