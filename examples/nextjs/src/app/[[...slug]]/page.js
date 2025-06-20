@@ -3,11 +3,10 @@ import { Page } from "@/views/Page";
 import { getDotCMSPage } from "@/utils/getDotCMSPage";
 
 export async function generateMetadata(props) {
-    const searchParams = await props.searchParams;
     const params = await props.params;
     try {
         const path = params?.slug?.join('/') || '/';
-        const { pageAsset } = await getDotCMSPage(path, searchParams);
+        const { pageAsset } = await getDotCMSPage(path);
         const page = pageAsset.page;
         const title = page?.friendlyName || page?.title;
 
@@ -22,10 +21,9 @@ export async function generateMetadata(props) {
 }
 
 export default async function Home(props) {
-    const searchParams = await props.searchParams;
     const params = await props.params;
     const path = params?.slug?.join('/') || '/';
-    const pageContent = await getDotCMSPage(path, searchParams);
+    const pageContent = await getDotCMSPage(path);
 
     const vanityUrl = pageContent?.pageAsset?.vanityUrl;
     const action = vanityUrl?.action ?? 0;
