@@ -1,14 +1,53 @@
+import { Analytics } from 'analytics';
+
+import { dotAnalytics } from './plugin/dot-analytics.plugin';
+import { dotAnalyticsEnricherPlugin } from './plugin/enricher/dot-analytics.enricher.plugin';
+import { dotAnalyticsIdentityPlugin } from './plugin/identity/dot-analytics.identity.plugin';
 import { DotAnalytics, DotContentAnalyticsConfig } from './shared/dot-content-analytics.model';
-import { createAnalyticsInstance } from './shared/dot-content-analytics.utils';
+import {
+    cleanupActivityTracking,
+    updateSessionActivity
+} from './shared/dot-content-analytics.utils';
 
 /**
- * Creates an analytics instance.
+ * Creates an analytics instance for content analytics tracking.
  *
  * @param {DotContentAnalyticsConfig} config - The configuration object for the analytics instance.
  * @returns {DotAnalytics} - The analytics instance.
  */
-export const initializeContentAnalytics = (config: DotContentAnalyticsConfig): DotAnalytics => {
-    const analytics = createAnalyticsInstance(config);
+export const initializeContentAnalytics = (
+    config: DotContentAnalyticsConfig
+): DotAnalytics | null => {
+    if (!config.siteKey) {
+        console.error('DotContentAnalytics: Missing "siteKey" in configuration');
+
+        return null;
+    }
+
+    if (!config.server) {
+        console.error('DotContentAnalytics: Missing "server" in configuration');
+
+        return null;
+    }
+
+    const analytics = Analytics({
+        app: 'dotAnalytics',
+        debug: config.debug,
+        plugins: [
+            dotAnalyticsIdentityPlugin(config), // Inject identity context (user_id, session_id)
+            dotAnalyticsEnricherPlugin(), // Enrich with page, device, utm data
+            dotAnalytics(config) // Send events to server
+        ]
+    });
+
+    // Store cleanup function globally for use when the page unloads
+    const cleanup = () => cleanupActivityTracking();
+
+    if (typeof window !== 'undefined') {
+        window.addEventListener('beforeunload', cleanup);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (window as any).__dotAnalyticsCleanup = cleanup;
+    }
 
     return {
         /**
@@ -16,6 +55,7 @@ export const initializeContentAnalytics = (config: DotContentAnalyticsConfig): D
          * @param {Record<string, unknown>} payload - The payload to track.
          */
         pageView: (payload: Record<string, unknown> = {}) => {
+            updateSessionActivity(); // Update session activity on page view
             analytics?.page(payload);
         },
 
@@ -25,6 +65,7 @@ export const initializeContentAnalytics = (config: DotContentAnalyticsConfig): D
          * @param {Record<string, unknown>} payload - The payload to track.
          */
         track: (eventName: string, payload: Record<string, unknown> = {}) => {
+            updateSessionActivity(); // Update session activity on custom events
             analytics?.track(eventName, payload);
         }
     };

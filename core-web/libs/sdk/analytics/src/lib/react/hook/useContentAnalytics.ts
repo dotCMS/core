@@ -1,11 +1,11 @@
-import { useContext, useRef } from 'react';
+import { useCallback, useContext, useRef } from 'react';
 
 import { DotAnalytics } from '../../dotAnalytics/shared/dot-content-analytics.model';
 import { isInsideEditor } from '../../dotAnalytics/shared/dot-content-analytics.utils';
 import DotContentAnalyticsContext from '../contexts/DotContentAnalyticsContext';
 
 /**
- * Custom hook that handles analytics page view tracking.
+ * Custom hook that handles analytics tracking for anonymous users.
  *
  * @example
  * ```tsx
@@ -21,7 +21,32 @@ import DotContentAnalyticsContext from '../contexts/DotContentAnalyticsContext';
  *   );
  * }
  * ```
- * @returns {DotContentAnalyticsCustomHook} - The analytics instance used to track page views
+ *
+ * @example
+ * ```tsx
+ * // Session debugging example
+ * function AnalyticsDebugComponent() {
+ *   const { getAnonymousUserId, getSessionInfo, updateSessionActivity } = useContentAnalytics();
+ *
+ *   const handleManualActivity = () => {
+ *     updateSessionActivity();
+ *     console.log('Manual activity updated');
+ *   };
+ *
+ *   // Debug session info
+ *   console.log('Anonymous ID:', getAnonymousUserId());
+ *   console.log('Session info:', getSessionInfo());
+ *
+ *   return (
+ *     <div>
+ *       <button onClick={handleManualActivity}>Update Activity</button>
+ *       <p>User ID: {getAnonymousUserId()}</p>
+ *     </div>
+ *   );
+ * }
+ * ```
+ *
+ * @returns {DotAnalytics} - The analytics instance with tracking capabilities for anonymous users
  */
 export const useContentAnalytics = (): DotAnalytics => {
     const instance = useContext(DotContentAnalyticsContext);
@@ -31,13 +56,8 @@ export const useContentAnalytics = (): DotAnalytics => {
         throw new Error('useContentAnalytics must be used within a DotContentAnalyticsProvider');
     }
 
-    return {
-        /**
-         * Track a custom event.
-         * @param {string} eventName - The name of the event to track.
-         * @param {Record<string, unknown>} payload - The payload to track.
-         */
-        track: (eventName: string, payload: Record<string, unknown> = {}) => {
+    const track = useCallback(
+        (eventName: string, payload: Record<string, unknown> = {}) => {
             if (!isInsideEditor()) {
                 instance?.track(eventName, {
                     ...payload,
@@ -45,12 +65,11 @@ export const useContentAnalytics = (): DotAnalytics => {
                 });
             }
         },
+        [instance]
+    );
 
-        /**
-         * Track a page view.
-         * @param {Record<string, unknown>} payload - The payload to track.
-         */
-        pageView: (payload: Record<string, unknown> = {}) => {
+    const pageView = useCallback(
+        (payload: Record<string, unknown> = {}) => {
             if (!isInsideEditor()) {
                 const currentPath = window.location.pathname;
                 if (currentPath !== lastPathRef.current) {
@@ -58,6 +77,12 @@ export const useContentAnalytics = (): DotAnalytics => {
                     instance.pageView(payload);
                 }
             }
-        }
+        },
+        [instance]
+    );
+
+    return {
+        track,
+        pageView
     };
 };
