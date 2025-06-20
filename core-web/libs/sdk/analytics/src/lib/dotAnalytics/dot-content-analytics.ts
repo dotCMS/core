@@ -1,8 +1,8 @@
 import { Analytics } from 'analytics';
 
-import { dotAnalyticsEnricherPlugin } from './plugin/dot-analytics.enricher.plugin';
-import { dotAnalyticsIdentityPlugin } from './plugin/dot-analytics.identity.plugin';
 import { dotAnalytics } from './plugin/dot-analytics.plugin';
+import { dotAnalyticsEnricherPlugin } from './plugin/enricher/dot-analytics.enricher.plugin';
+import { dotAnalyticsIdentityPlugin } from './plugin/identity/dot-analytics.identity.plugin';
 import { DotAnalytics, DotContentAnalyticsConfig } from './shared/dot-content-analytics.model';
 import {
     cleanupActivityTracking,
@@ -35,7 +35,7 @@ export const initializeContentAnalytics = (
         debug: config.debug,
         plugins: [
             dotAnalyticsIdentityPlugin(config), // Inject identity context (user_id, session_id)
-            dotAnalyticsEnricherPlugin(config), // Enrich with page, device, utm data
+            dotAnalyticsEnricherPlugin(), // Enrich with page, device, utm data
             dotAnalytics(config) // Send events to server
         ]
     });
