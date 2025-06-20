@@ -1,4 +1,4 @@
-import Analytics, { PageData } from 'analytics';
+import { PageData } from 'analytics';
 
 import {
     ACTIVITY_EVENTS,
@@ -10,16 +10,13 @@ import {
     USER_ID_KEY
 } from './dot-content-analytics.constants';
 import {
-    AnalyticsContext,
     BrowserEventData,
     DeviceData,
+    DotAnalyticsContext,
     DotAnalyticsPayload,
     DotContentAnalyticsConfig,
     UtmData
 } from './dot-content-analytics.model';
-
-import { dotAnalyticsEnricherPlugin } from '../plugin/dot-analytics.enricher.plugin';
-import { dotAnalytics } from '../plugin/dot-analytics.plugin';
 
 // Activity tracking state
 let activityListeners: (() => void)[] = [];
@@ -258,7 +255,7 @@ export const cleanupActivityTracking = (): void => {
 /**
  * Gets analytics context
  */
-export const getAnalyticsContext = (config: DotContentAnalyticsConfig): AnalyticsContext => {
+export const getAnalyticsContext = (config: DotContentAnalyticsConfig): DotAnalyticsContext => {
     const sessionId = generateSessionId();
     const userId = getUserId();
 
@@ -360,32 +357,6 @@ export const isInsideEditor = (): boolean => {
     } catch (e) {
         return false;
     }
-};
-
-/**
- * Creates an analytics instance with optional activity tracking
- */
-export const createAnalyticsInstance = (config: DotContentAnalyticsConfig) => {
-    if (!config.siteKey) {
-        console.error('DotContentAnalytics: Missing "siteKey" in configuration');
-
-        return null;
-    }
-
-    if (!config.server) {
-        console.error('DotContentAnalytics: Missing "server" in configuration');
-
-        return null;
-    }
-
-    // Initialize activity tracking
-    initializeActivityTracking(config);
-
-    return Analytics({
-        app: 'dotAnalytics',
-        debug: config.debug,
-        plugins: [dotAnalyticsEnricherPlugin(config), dotAnalytics(config)]
-    });
 };
 
 /**
