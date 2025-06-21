@@ -10,7 +10,6 @@ import com.dotcms.rest.ContentHelper;
 import com.dotcms.rest.CountView;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.MapToContentletPopulator;
-import com.dotcms.rest.ResponseEntityBooleanView;
 import com.dotcms.rest.ResponseEntityContentletView;
 import com.dotcms.rest.ResponseEntityCountView;
 import com.dotcms.rest.ResponseEntityMapView;
@@ -20,10 +19,14 @@ import com.dotcms.rest.SearchView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.v1.content.search.LuceneQueryBuilder;
+import com.dotcms.rest.api.v1.workflow.WorkflowResource;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.uuid.shorty.ShortType;
 import com.dotcms.uuid.shorty.ShortyId;
 import com.dotcms.variant.VariantAPI;
+import com.dotcms.workflow.form.FireActionByNameForm;
+import com.dotcms.workflow.form.FireActionForm;
+import com.dotcms.workflow.form.FireMultipleActionForm;
 import com.dotcms.workflow.helper.WorkflowHelper;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -49,6 +52,7 @@ import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Relationship;
+import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
@@ -59,13 +63,24 @@ import com.google.common.collect.ImmutableList;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
-import org.glassfish.jersey.server.JSONP;
-
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.LongSupplier;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
@@ -80,16 +95,7 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.function.LongSupplier;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
+import org.glassfish.jersey.server.JSONP;
 
 /**
  * Version 1 of the Content resource, to interact and retrieve contentlets
@@ -107,6 +113,14 @@ public class ContentResource {
 
     private final Lazy<Boolean> isDefaultContentToDefaultLanguageEnabled = Lazy.of(
             () -> Config.getBooleanProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", false));
+
+
+
+    private final Lazy<WorkflowResource> workflowResource = Lazy.of(WorkflowResource::new);
+
+
+
+
 
     public ContentResource() {
         this(new WebResource(),
@@ -911,5 +925,483 @@ public class ContentResource {
                 luceneQueryBuilder.getOrderByClause(), pageMode);
         return new ResponseEntityView<>(searchView);
     }
+
+
+
+
+    /**
+     * Fires a workflow with default action, if the contentlet exists could use inode or identifier and optional language.
+     * @param request    {@link HttpServletRequest}
+     * @param inode      {@link String} (Optional) to fire an action over the existing inode.
+     * @param identifier {@link String} (Optional) to fire an action over the existing identifier (in combination of language).
+     * @param language   {@link String} (Optional) to fire an action over the existing language (in combination of identifier).
+     * @param fireActionForm {@link FireActionForm} Fire Action Form
+     * (if an inode is set, this param is not ignored).
+     * @param systemAction {@link com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction} system action to determine the default action
+     * @return Response
+     */
+    @PUT
+    @Path("/_fireAction")
+    @JSONP
+    @NoCache
+    @Consumes({MediaType.APPLICATION_JSON})
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Operation(operationId = "putFireDefaultSystemAction", summary = "Fire system action by name",
+            description = "Fire a [default system action](https://www.dotcms.com/docs/latest/managing-workflows#DefaultActions) " +
+                    "by name on a target contentlet.\n\nReturns a map of the resultant contentlet, " +
+                    "with an additional `AUTO_ASSIGN_WORKFLOW` property, which can be referenced by delegate " +
+                    "services that handle automatically assigning workflow schemes to content with none.",
+            tags = {"Workflow"},
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Fired action successfully",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ResponseEntityView.class)
+                            )
+                    ),
+                    @ApiResponse(responseCode = "400", description = "Bad request"), // invalid param string like `\`
+                    @ApiResponse(responseCode = "404", description = "Content not found"),
+                    @ApiResponse(responseCode = "415", description = "Unsupported Media Type")
+            }
+    )
+
+
+    public final Response fireSystemWorkflowAction(@Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @QueryParam("inode") @Parameter(
+                    description = "Inode of the target content.",
+                    schema = @Schema(type = "string")
+            ) final String inode,
+            @QueryParam("identifier") @Parameter(
+                    description = "Identifier of target content.",
+                    schema = @Schema(type = "string")
+            ) final String identifier,
+            @QueryParam("indexPolicy") @Parameter(
+                    description = "Determines how target content is indexed.\n\n" +
+                            "| Value | Description |\n" +
+                            "|-------|-------------|\n" +
+                            "| `DEFER` | Content will be indexed asynchronously, outside of " +
+                            "the current process. Valid content will finish the " +
+                            "method in process and be returned before the content " +
+                            "becomes visible in the index. This is the default " +
+                            "index policy; it is resource-friendly and well-" +
+                            "suited to batch processing. |\n" +
+                            "| `WAIT_FOR` | The API call will not return from the content check " +
+                            "process until the content has been indexed. Ensures content " +
+                            "is promptly available for searching. |\n" +
+                            "| `FORCE` | Forces Elasticsearch to index the content **immediately**.<br>" +
+                            "**Caution:** Using this value may cause system performance issues; " +
+                            "it is not recommended for general use, though may be useful " +
+                            "for testing purposes. |\n\n",
+                    schema = @Schema(
+                            type = "string",
+                            allowableValues = {"DEFER", "WAIT_FOR", "FORCE"},
+                            defaultValue = ""
+                    )
+            ) final String indexPolicy,
+            @DefaultValue("-1") @QueryParam("language") @Parameter(
+                    description = "Language version of target content.",
+                    schema = @Schema(type = "string")
+            ) final String language,
+            @DefaultValue("DEFAULT") @QueryParam("variantName") @Parameter(
+                    description = "Variant name",
+                    schema = @Schema(type = "string")
+            ) final String variantName,
+            @QueryParam("systemAction") @Parameter(
+                    required = true,
+                    schema = @Schema(
+                            type = "string",
+                            allowableValues = {
+                                    "NEW", "EDIT", "PUBLISH",
+                                    "UNPUBLISH", "ARCHIVE", "UNARCHIVE",
+                                    "DELETE", "DESTROY"
+                            }
+                    ),
+                    description = "Default system action."
+            ) final WorkflowAPI.SystemAction systemAction,
+            @RequestBody(
+                    description = "Optional body consists of a JSON object containing a FireActionByNameForm " +
+                            "object — a form that appears in similar functions, as well, but implemented with " +
+                            "minor differences across methods. As such, some properties are unused.\n\n" +
+                            "The full list of properties that may be used with this form is as follows:\n\n" +
+                            "| Property | Type | Description |\n" +
+                            "|-|-|-|\n" +
+                            "| `actionName` | String | Not used in this method. |\n" +
+                            "| `contentlet` | Object | An alternate way of specifying the target contentlet. " +
+                            "If no identifier or inode is included via parameter, " +
+                            "either one could instead be included in the body as a " +
+                            "property of this object. |\n" +
+                            "| `comments` | String | Comments that will appear in the [workflow tasks]" +
+                            "(https://www.dotcms.com/docs/latest/workflow-tasks) " +
+                            "tool with the execution of this workflow action. |\n" +
+                            "| `individualPermissions` | Object | Allows setting granular permissions associated " +
+                            "with the target. The object properties are the [system names " +
+                            "of permissions](https://www.dotcms.com/docs/latest/user-permissions#Permissions), " +
+                            "such as READ, PUBLISH, EDIT, etc. Their respective values " +
+                            "are a list of user or role identifiers that should be granted " +
+                            "the permission in question. Example: `\"READ\": " +
+                            "[\"9ad24203-ae6a-4e5e-aa10-a8c38fd11f17\",\"MyRole\"]` |\n" +
+                            "| `assign` | String | The identifier of a user or role to next receive the " +
+                            "workflow task assignment. |\n" +
+                            "| `pathToMove` | String | If the workflow action includes the Move actionlet, " +
+                            "this property will specify the target path. This path " +
+                            "must include a host, such as `//default/testfolder`, " +
+                            "`//demo.dotcms.com/application`, etc. |\n" +
+                            "| `query` | String | Not used in this method. |\n" +
+                            "| `whereToSend` | String | For the [push publishing](push-publishing) actionlet; " +
+                            "sets the push-publishing environment to receive the " +
+                            "target content. Must be specified as an environment " +
+                            "identifier. [Learn how to find environment IDs here.]" +
+                            "(https://www.dotcms.com/docs/latest/push-publishing-endpoints#EnvironmentIds) |\n" +
+                            "| `iWantTo` | String | For the push publishing actionlet; " +
+                            "this can be set to one of three values: <ul style=\"line-height:2rem;\"><li>`publish` for " +
+                            "push publish;</li><li>`expire` for remove;</li><li>`publishexpire` " +
+                            "for push remove.</li></ul> These are further configurable with the " +
+                            "properties below that specify publishing and expiration " +
+                            "dates, times, etc. |\n" +
+                            "| `publishDate` | String | For the push publishing actionlet; " +
+                            "specifies a date to push the content. Format: `yyyy-MM-dd`.  |\n" +
+                            "| `publishTime` | String | For the push publishing actionlet; " +
+                            "specifies a time to push the content. Format: `hh-mm`. |\n" +
+                            "| `expireDate` | String | For the push publishing actionlet; " +
+                            "specifies a date to remove the content. Format: `yyyy-MM-dd`.  |\n" +
+                            "| `expireTime` | String | For the push publishing actionlet; " +
+                            "specifies a time to remove the content. Format: `hh-mm`.  |\n" +
+                            "| `neverExpire` | Boolean | For the push publishing actionlet; " +
+                            "a value of `true` invalidates the expiration time/date. |\n" +
+                            "| `filterKey` | String | For the push publishing actionlet; " +
+                            "specifies a [push publishing filter](https://www.dotcms.com/docs/latest" +
+                            "/push-publishing-filters) key, should the workflow action " +
+                            "call for such. To retrieve a full list of push publishing " +
+                            "filters and their keys, use `GET /v1/pushpublish/filters`. |\n" +
+                            "| `timezoneId` | String | For the push publishing actionlet; " +
+                            "specifies the time zone to which the indicated times belong. " +
+                            "Uses the [tz database](https://www.iana.org/time-zones). " +
+                            "For a list of values, see [the database directly]" +
+                            "(https://data.iana.org/time-zones/tz-link.html) or refer to " +
+                            "[the Wikipedia entry listing tz database time zones]" +
+                            "(https://en.wikipedia.org/wiki/List_of_tz_database_time_zones). |\n\n",
+                    content = @Content(
+                            schema = @Schema(implementation = FireActionByNameForm.class)
+                    )
+            ) final FireActionForm fireActionForm) {
+
+
+            return workflowResource.get().fireActionDefaultSinglePart(  request,response,  inode, identifier,indexPolicy,language,variantName,systemAction,fireActionForm    );
+    }
+
+
+
+    /**
+     * Fires workflow for a collection of contentlets (Post)
+     *
+     *
+     * The result of the execution is a streaming of the json, it will return a set of maps
+     *
+     * @param request    {@link HttpServletRequest}
+     * @param response   {@link HttpServletResponse}
+     * @param fireActionForm {@link FireActionForm} Fire Action Form
+     * @param systemAction {@link com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction} system action to determine the default action
+     * @return Response
+     */
+    @POST
+    @Path("/_fireActions")
+    @JSONP
+    @NoCache
+    //@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces("application/octet-stream")
+    @Operation(operationId = "postFireSystemActionByNameMulti", summary = "Fire system action by name over multiple contentlets",
+            description = "Fire a [default system action](https://www.dotcms.com/docs/latest/managing-workflows#DefaultActions) " +
+                    "by name on multiple target contentlets.\n\nReturns a list of resultant contentlet maps, each with an additional  " +
+                    "`AUTO_ASSIGN_WORKFLOW` property, which can be referenced by delegate " +
+                    "services that handle automatically assigning workflow schemes to content with none.",
+            tags = {"Workflow"},
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Fired action successfully",
+                            content = @Content(mediaType = "application/octet-stream",
+                                    schema = @Schema(implementation = ResponseEntityView.class),
+                                    examples = @ExampleObject(value = "{\n" +
+                                            "  \"entity\": {\n" +
+                                            "    \"results\": [\n" +
+                                            "      {\n" +
+                                            "        \"c2701eced2b59f0bbd55b3d9667878ce\": {\n" +
+                                            "          \"AUTO_ASSIGN_WORKFLOW\": false,\n" +
+                                            "          \"archived\": false,\n" +
+                                            "          \"baseType\": \"string\",\n" +
+                                            "          \"body\": \"string\",\n" +
+                                            "          \"body_raw\": \"string\",\n" +
+                                            "          \"contentType\": \"string\",\n" +
+                                            "          \"creationDate\": 1725051866540,\n" +
+                                            "          \"folder\": \"string\",\n" +
+                                            "          \"hasLiveVersion\": false,\n" +
+                                            "          \"hasTitleImage\": false,\n" +
+                                            "          \"host\": \"string\",\n" +
+                                            "          \"hostName\": \"string\",\n" +
+                                            "          \"identifier\": \"c2701eced2b59f0bbd55b3d9667878ce\",\n" +
+                                            "          \"inode\": \"string\",\n" +
+                                            "          \"languageId\": 1,\n" +
+                                            "          \"live\": false,\n" +
+                                            "          \"locked\": false,\n" +
+                                            "          \"modDate\": 1727438483022,\n" +
+                                            "          \"modUser\": \"string\",\n" +
+                                            "          \"modUserName\": \"string\",\n" +
+                                            "          \"owner\": \"string\",\n" +
+                                            "          \"ownerName\": \"string\",\n" +
+                                            "          \"publishDate\": 1727438483051,\n" +
+                                            "          \"publishUser\": \"string\",\n" +
+                                            "          \"publishUserName\": \"string\",\n" +
+                                            "          \"sortOrder\": 0,\n" +
+                                            "          \"stInode\": \"string\",\n" +
+                                            "          \"title\": \"string\",\n" +
+                                            "          \"titleImage\": \"string\",\n" +
+                                            "          \"url\": \"string\",\n" +
+                                            "          \"working\": false\n" +
+                                            "        }\n" +
+                                            "      }\n" +
+                                            "    ],\n" +
+                                            "    \"summary\": {\n" +
+                                            "      \"affected\": 1,\n" +
+                                            "      \"failCount\": 0,\n" +
+                                            "      \"successCount\": 1,\n" +
+                                            "      \"time\": 45\n" +
+                                            "    }\n" +
+                                            "  },\n" +
+                                            "  \"errors\": [],\n" +
+                                            "  \"i18nMessagesMap\": {},\n" +
+                                            "  \"messages\": [],\n" +
+                                            "  \"permissions\": []\n" +
+                                            "}")
+                            )
+                    ),
+                    @ApiResponse(responseCode = "400", description = "Bad request"), // invalid param string like `\`
+                    @ApiResponse(responseCode = "404", description = "Content not found"),
+                    @ApiResponse(responseCode = "415", description = "Unsupported Media Type")
+            }
+    )
+    public final Response fireSystemWorkflowActionForMultipleContentlets(@Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @QueryParam("systemAction") @Parameter(
+                    required = true,
+                    schema = @Schema(
+                            type = "string",
+                            allowableValues = {
+                                    "NEW", "EDIT", "PUBLISH",
+                                    "UNPUBLISH", "ARCHIVE", "UNARCHIVE",
+                                    "DELETE", "DESTROY"
+                            }
+                    ),
+                    description = "Default system action."
+            ) final WorkflowAPI.SystemAction systemAction,
+            @RequestBody(
+                    description = "Optional body consists of a JSON object containing various properties, " +
+                            "some of which are specific to certain actionlets.\n\n" +
+                            "The full list of properties that may be used with this form is as follows:\n\n" +
+                            "| Property | Type | Description |\n" +
+                            "|-|-|-|\n" +
+                            "| `contentlet` | List of Objects | Multiple contentlet objects to serve " +
+                            "as the target of the selected default system action; requires, at minimum, " +
+                            "an identifier in each. |\n" +
+                            "| `comments` | String | Comments that will appear in the [workflow tasks]" +
+                            "(https://www.dotcms.com/docs/latest/workflow-tasks) " +
+                            "tool with the execution of this workflow action. |\n" +
+                            "| `assign` | String | The identifier of a user or role to next receive the " +
+                            "workflow task assignment. |\n" +
+                            "| `whereToSend` | String | For the [push publishing](push-publishing) actionlet; " +
+                            "sets the push-publishing environment to receive the " +
+                            "target content. Must be specified as an environment " +
+                            "identifier. [Learn how to find environment IDs here.]" +
+                            "(https://www.dotcms.com/docs/latest/push-publishing-endpoints#EnvironmentIds) |\n" +
+                            "| `iWantTo` | String | For the push publishing actionlet; " +
+                            "this can be set to one of three values: <ul style=\"line-height:2rem;\"><li>`publish` for " +
+                            "push publish;</li><li>`expire` for remove;</li><li>`publishexpire` " +
+                            "for push remove.</li></ul> These are further configurable with the " +
+                            "properties below that specify publishing and expiration " +
+                            "dates, times, etc. |\n" +
+                            "| `publishDate` | String | For the push publishing actionlet; " +
+                            "specifies a date to push the content. Format: `yyyy-MM-dd`.  |\n" +
+                            "| `publishTime` | String | For the push publishing actionlet; " +
+                            "specifies a time to push the content. Format: `hh-mm`. |\n" +
+                            "| `expireDate` | String | For the push publishing actionlet; " +
+                            "specifies a date to remove the content. Format: `yyyy-MM-dd`.  |\n" +
+                            "| `expireTime` | String | For the push publishing actionlet; " +
+                            "specifies a time to remove the content. Format: `hh-mm`.  |\n" +
+                            "| `neverExpire` | Boolean | For the push publishing actionlet; " +
+                            "a value of `true` invalidates the expiration time/date. |\n" +
+                            "| `filterKey` | String | For the push publishing actionlet; " +
+                            "specifies a [push publishing filter](https://www.dotcms.com/docs/latest" +
+                            "/push-publishing-filters) key, should the workflow action " +
+                            "call for such. To retrieve a full list of push publishing " +
+                            "filters and their keys, use `GET /v1/pushpublish/filters`. |\n" +
+                            "| `timezoneId` | String | For the push publishing actionlet; " +
+                            "specifies the time zone to which the indicated times belong. " +
+                            "Uses the [tz database](https://www.iana.org/time-zones). " +
+                            "For a list of values, see [the database directly]" +
+                            "(https://data.iana.org/time-zones/tz-link.html) or refer to " +
+                            "[the Wikipedia entry listing tz database time zones]" +
+                            "(https://en.wikipedia.org/wiki/List_of_tz_database_time_zones). |\n\n",
+                    content = @Content(
+                            schema = @Schema(implementation = FireMultipleActionForm.class),
+                            examples = @ExampleObject(value = "{\n" +
+                                    "  \"contentlet\": [\n" +
+                                    "    {\n" +
+                                    "      \"identifier\": \"d684c0a9abeeeceea8b9a7e32fc272ae\"\n" +
+                                    "    },\n" +
+                                    "    { \"identifier\": \"c2701eced2b59f0bbd55b3d9667878ce\" }\n" +
+                                    "  ],\n" +
+                                    "  \"comments\": \"test comment\"\n" +
+                                    "}")
+                    )
+            ) final FireMultipleActionForm fireActionForm) throws DotDataException, DotSecurityException {
+
+        return workflowResource.get().fireMultipleActionDefault(request,response,systemAction,fireActionForm);
+    }
+
+
+    /**
+     * Fires a workflow action by action id, if the contentlet exists could use inode or identifier and optional language.
+     * @param request    {@link HttpServletRequest}
+     * @param actionId   {@link String} (Required) action id to fire
+     * @param inode      {@link String} (Optional) to fire an action over the existing inode.
+     * @param identifier {@link String} (Optional) to fire an action over the existing identifier (in combination of language).
+     * @param language   {@link String}   (Optional) to fire an action over the existing language (in combination of identifier).
+     * @param fireActionForm {@link FireActionForm} Fire Action Form
+     * (if an inode is set, this param is not ignored).
+     * @return Response
+     */
+    @PUT
+    @Path("/_fireWorkflow")
+    @JSONP
+    @NoCache
+    @Consumes({MediaType.APPLICATION_JSON})
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Operation(operationId = "putFireActionById", summary = "Fire action by ID",
+            description = "Fires a [workflow action](https://www.dotcms.com/docs/latest/managing-workflows#Actions), " +
+                    "specified by identifier, on a target contentlet.\n\nReturns a map of the resultant contentlet, " +
+                    "with an additional `AUTO_ASSIGN_WORKFLOW` property, which can be referenced by delegate " +
+                    "services that handle automatically assigning workflow schemes to content with none.",
+            tags = {"Workflow"},
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Fired action successfully",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ResponseEntityView.class)
+                            )
+                    ),
+                    @ApiResponse(responseCode = "400", description = "Bad request"), // invalid param string like `\`
+                    @ApiResponse(responseCode = "404", description = "Content not found"),
+                    @ApiResponse(responseCode = "415", description = "Unsupported Media Type")
+            }
+    )
+    public final Response fireActionSinglePart(@Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @QueryParam ("actionId") @Parameter(
+                    required = true,
+                    description = "Identifier of a workflow action.\n\n" +
+                            "Example value: `b9d89c80-3d88-4311-8365-187323c96436` " +
+                            "(Default system workflow \"Publish\" action)",
+                    schema = @Schema(type = "string")
+            ) final String actionId,
+            @QueryParam("inode") @Parameter(
+                    description = "Inode of the target content.",
+                    schema = @Schema(type = "string")
+            ) final String inode,
+            @QueryParam("identifier") @Parameter(
+                    description = "Identifier of target content.",
+                    schema = @Schema(type = "string")
+            ) final String identifier,
+            @QueryParam("indexPolicy") @Parameter(
+                    description = "Determines how target content is indexed.\n\n" +
+                            "| Value | Description |\n" +
+                            "|-------|-------------|\n" +
+                            "| `DEFER` | Content will be indexed asynchronously, outside of " +
+                            "the current process. Valid content will finish the " +
+                            "method in process and be returned before the content " +
+                            "becomes visible in the index. This is the default " +
+                            "index policy; it is resource-friendly and well-" +
+                            "suited to batch processing. |\n" +
+                            "| `WAIT_FOR` | The API call will not return from the content check " +
+                            "process until the content has been indexed. Ensures content " +
+                            "is promptly available for searching. |\n" +
+                            "| `FORCE` | Forces Elasticsearch to index the content **immediately**.<br>" +
+                            "**Caution:** Using this value may cause system performance issues; " +
+                            "it is not recommended for general use, though may be useful " +
+                            "for testing purposes. |\n\n",
+                    schema = @Schema(
+                            type = "string",
+                            allowableValues = {"DEFER", "WAIT_FOR", "FORCE"},
+                            defaultValue = "DEFER"
+                    )
+            ) final String indexPolicy,
+            @DefaultValue("-1") @QueryParam("language") @Parameter(
+                    description = "Language version of target content.",
+                    schema = @Schema(type = "string")
+            ) final String language,
+            @RequestBody(
+                    description = "Optional body consists of a JSON object containing various properties, " +
+                            "some of which are specific to certain actionlets.\n\n" +
+                            "The full list of properties that may be used with this form is as follows:\n\n" +
+                            "| Property | Type | Description |\n" +
+                            "|-|-|-|\n" +
+                            "| `contentlet` | Object | An alternate way of specifying the target contentlet. " +
+                            "If no identifier or inode is included via parameter, " +
+                            "either one could instead be included in the body as a " +
+                            "property of this object. |\n" +
+                            "| `comments` | String | Comments that will appear in the [workflow tasks]" +
+                            "(https://www.dotcms.com/docs/latest/workflow-tasks) " +
+                            "tool with the execution of this workflow action. |\n" +
+                            "| `individualPermissions` | Object | Allows setting granular permissions associated " +
+                            "with the target. The object properties are the [system names " +
+                            "of permissions](https://www.dotcms.com/docs/latest/user-permissions#Permissions), " +
+                            "such as READ, PUBLISH, EDIT, etc. Their respective values " +
+                            "are a list of user or role identifiers that should be granted " +
+                            "the permission in question. Example: `\"READ\": " +
+                            "[\"9ad24203-ae6a-4e5e-aa10-a8c38fd11f17\",\"MyRole\"]` |\n" +
+                            "| `assign` | String | The identifier of a user or role to next receive the " +
+                            "workflow task assignment. |\n" +
+                            "| `pathToMove` | String | If the workflow action includes the Move actionlet, " +
+                            "this property will specify the target path. This path " +
+                            "must include a host, such as `//default/testfolder`, " +
+                            "`//demo.dotcms.com/application`, etc. |\n" +
+                            "| `query` | String | Not used in this method. |\n" +
+                            "| `whereToSend` | String | For the [push publishing](push-publishing) actionlet; " +
+                            "sets the push-publishing environment to receive the " +
+                            "target content. Must be specified as an environment " +
+                            "identifier. [Learn how to find environment IDs here.]" +
+                            "(https://www.dotcms.com/docs/latest/push-publishing-endpoints#EnvironmentIds) |\n" +
+                            "| `iWantTo` | String | For the push publishing actionlet; " +
+                            "this can be set to one of three values: <ul style=\"line-height:2rem;\"><li>`publish` for " +
+                            "push publish;</li><li>`expire` for remove;</li><li>`publishexpire` " +
+                            "for push remove.</li></ul> These are further configurable with the " +
+                            "properties below that specify publishing and expiration " +
+                            "dates, times, etc. |\n" +
+                            "| `publishDate` | String | For the push publishing actionlet; " +
+                            "specifies a date to push the content. Format: `yyyy-MM-dd`.  |\n" +
+                            "| `publishTime` | String | For the push publishing actionlet; " +
+                            "specifies a time to push the content. Format: `hh-mm`. |\n" +
+                            "| `expireDate` | String | For the push publishing actionlet; " +
+                            "specifies a date to remove the content. Format: `yyyy-MM-dd`.  |\n" +
+                            "| `expireTime` | String | For the push publishing actionlet; " +
+                            "specifies a time to remove the content. Format: `hh-mm`.  |\n" +
+                            "| `neverExpire` | Boolean | For the push publishing actionlet; " +
+                            "a value of `true` invalidates the expiration time/date. |\n" +
+                            "| `filterKey` | String | For the push publishing actionlet; " +
+                            "specifies a [push publishing filter](https://www.dotcms.com/docs/latest" +
+                            "/push-publishing-filters) key, should the workflow action " +
+                            "call for such. To retrieve a full list of push publishing " +
+                            "filters and their keys, use `GET /v1/pushpublish/filters`. |\n" +
+                            "| `timezoneId` | String | For the push publishing actionlet; " +
+                            "specifies the time zone to which the indicated times belong. " +
+                            "Uses the [tz database](https://www.iana.org/time-zones). " +
+                            "For a list of values, see [the database directly]" +
+                            "(https://data.iana.org/time-zones/tz-link.html) or refer to " +
+                            "[the Wikipedia entry listing tz database time zones]" +
+                            "(https://en.wikipedia.org/wiki/List_of_tz_database_time_zones). |\n\n",
+                    content = @Content(
+                            schema = @Schema(implementation = FireActionForm.class)
+                    )
+            ) final FireActionForm fireActionForm) throws DotDataException, DotSecurityException {
+
+            return workflowResource.get().fireActionSinglePart(request,response,actionId,inode,identifier,indexPolicy,language,fireActionForm);
+    }
+
 
 }
