@@ -9,10 +9,10 @@ import {
     DotContentTypeService,
     DotEventsService,
     DotGenerateSecurePasswordService,
+    DotIframeService,
     DotLicenseService,
     DotPropertiesService,
     DotRouterService,
-    DotIframeService,
     DotWorkflowEventHandlerService
 } from '@dotcms/data-access';
 import { DotPushPublishDialogService, DotUiColors } from '@dotcms/dotcms-js';
@@ -21,6 +21,9 @@ import { DotLoadingIndicatorService } from '@dotcms/utils';
 import { DotDownloadBundleDialogService } from '@services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
 import { DotNavLogoService } from '@services/dot-nav-logo/dot-nav-logo.service';
 import { DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.service';
+
+// Import our services
+import { DotDrawerService, DotEditContentLayoutComponent, DotEditContentOrchestratorService, EditContentConfig } from '@dotcms/edit-content';
 
 export const COMPARE_CUSTOM_EVENT = 'compare-contentlet';
 
@@ -49,19 +52,23 @@ export class DotCustomEventHandlerService {
         private dotLicenseService: DotLicenseService,
         private router: Router,
         private dotPropertiesService: DotPropertiesService,
-        private dotContentTypeService: DotContentTypeService
+        private dotContentTypeService: DotContentTypeService,
+        // Add our services
+        private dotEditContentOrchestratorService: DotEditContentOrchestratorService,
+        private dotDrawerService: DotDrawerService
     ) {
         this.dotPropertiesService
             .getKeys([FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED])
             .subscribe((response) => {
                 const contentEditorFeatureFlag =
                     response[FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED] === 'true';
-
+                console.log('handlers', this.handlers);
                 if (!this.handlers) {
                     this.handlers = {
                         'edit-page': this.goToEditPage.bind(this),
                         'edit-contentlet': contentEditorFeatureFlag
-                            ? this.editContentlet.bind(this)
+                            // ? this.editContentletSidebarPOC.bind(this)
+                            ? this.editContentletDrawerPOC.bind(this)
                             : this.editContentletLegacy.bind(this),
                         'edit-task': contentEditorFeatureFlag
                             ? this.editTask.bind(this)
@@ -215,5 +222,78 @@ export class DotCustomEventHandlerService {
      */
     private shouldRedirectToOldContentEditor(contentType: DotCMSContentType): boolean {
         return !contentType?.metadata?.[FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED];
+    }
+
+    /**
+     * POC: New method to test sidebar functionality without modifying existing flow
+     */
+    private editContentletSidebarPOC($event: CustomEvent): void {
+        console.log('🔥 POC: Opening content $event', $event);
+
+        const { inode, contentType } = $event.detail.data;
+        console.log('🔥 POC: Opening content editor in modal', inode, contentType);
+
+        // Simple modal configuration for testing
+        const config: EditContentConfig = {
+            inode: inode,
+            contentType,
+            mode: 'edit',
+            onSave: (content) => {
+                console.log('✅ POC: Content saved successfully:', content);
+                // TODO: Add logic to refresh iframe content list
+                this.reloadContentList();
+            },
+            onCancel: () => {
+                console.log('❌ POC: Edit cancelled');
+            }
+        };
+
+        // Open modal with our orchestrator service
+        this.dotEditContentOrchestratorService.openModal(config).subscribe({
+            next: (result) => {
+                console.log('📝 POC: Edit result:', result);
+                if (result.action === 'save') {
+                    console.log('🔄 POC: Refreshing content list...');
+                    this.reloadContentList();
+                }
+            },
+            error: (error) => {
+                console.error('💥 POC: Error opening editor:', error);
+            }
+        });
+    }
+
+    /**
+     * Reload the iframe content list to refresh data after edits
+     */
+    private reloadContentList(): void {
+        // Send a message to the iframe to reload its content
+        this.dotIframeService.run({ name: 'reloadContent' });
+    }
+
+    /**
+     * POC: Test new drawer service functionality
+     */
+    private editContentletDrawerPOC($event: CustomEvent): void {
+        console.log('🎨 POC: Opening contentlet in drawer', $event.detail.data);
+
+        // Simple - only get what we need
+        const { inode, contentType } = $event.detail.data;
+
+        // Use drawer service - SIMPLE!
+        const drawerRef = this.dotDrawerService.create({
+            nzContent: DotEditContentLayoutComponent,
+            nzTitle: `Edit ${contentType}`,
+            nzWidth: '90vw',
+            nzPlacement: 'right',
+            // Only pass what the component needs!
+            nzContentParams: { inode, contentType }
+        });
+
+        drawerRef.afterClose.subscribe((result) => {
+            if (result.type === 'close') {
+                this.reloadContentList();
+            }
+        });
     }
 }
