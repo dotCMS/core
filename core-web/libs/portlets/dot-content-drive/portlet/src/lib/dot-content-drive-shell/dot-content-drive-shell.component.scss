@@ -17,8 +17,8 @@
     justify-content: center;
     align-items: center;
 
-    font-size: 1.5rem;
-    font-weight: bold;
+    font-size: $font-size-xl;
+    font-weight: $font-weight-medium-bold;
 }
 
 .toolbar {
@@ -51,8 +51,8 @@ dot-folder-list-view {
     justify-content: center;
     align-items: center;
 
-    font-size: 1.5rem;
-    font-weight: bold;
+    font-size: $font-size-xl;
+    font-weight: $font-weight-medium-bold;
 }
 
 .detail-view {
