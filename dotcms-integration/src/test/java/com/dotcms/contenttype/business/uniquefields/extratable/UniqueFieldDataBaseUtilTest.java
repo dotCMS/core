@@ -23,6 +23,7 @@ import com.dotmarketing.common.db.DotDatabaseMetaData;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.StringUtils;
@@ -1104,6 +1105,63 @@ public class UniqueFieldDataBaseUtilTest {
         uniqueFieldDataBaseUtil.delete(StringUtils.hashText(uniqueFieldCriteria.criteria()));
 
         assertTrue("The unique field record must have been deleted by now", uniqueFieldDataBaseUtil.get(uniqueFieldCriteria).isEmpty());
+    }
+
+    /**
+     * Method to test: {@link UniqueFieldDataBaseUtil#populateUniqueFieldsTable()}
+     * When:
+     * - Create a {@link ContentType} with a UNIQUE field
+     * - Create a couple of {@link Contentlet} with a value of A
+     * - Drop the unique_fields table, and run the populate method
+     * - Try to create a Contentlet with unique equals to 'a'
+     * Should: throw a DuplicationException
+     *
+     * @throws SQLException
+     * @throws DotDataException
+     */
+    @Test()
+    public void popualteUniqueDtaMustbeCaseInsensitive() throws  DotDataException {
+        final String uniqueValue =  "A";
+
+        final Language language = new LanguageDataGen().nextPersisted();
+
+        final Field uniqueTextField = new FieldDataGen()
+                .type(TextField.class)
+                .unique(true)
+                .next();
+
+        final Host host = new SiteDataGen().nextPersisted();
+
+        final ContentType contentType = new ContentTypeDataGen()
+                .host(host)
+                .fields(list(uniqueTextField))
+                .nextPersisted();
+
+        final Contentlet contentlet_1 = new ContentletDataGen(contentType)
+                .host(host)
+                .languageId(language.getId())
+                .setProperty(uniqueTextField.variable(), uniqueValue)
+                .nextPersistedAndPublish();
+
+        final UniqueFieldDataBaseUtil uniqueFieldDataBaseUtil = new UniqueFieldDataBaseUtil();
+        uniqueFieldDataBaseUtil.dropUniqueFieldsValidationTable();
+        uniqueFieldDataBaseUtil.createUniqueFieldsValidationTable();
+
+        uniqueFieldDataBaseUtil.populateUniqueFieldsTable();
+
+        try {
+            final Contentlet contentlet_2 = new ContentletDataGen(contentType)
+                    .host(host)
+                    .languageId(language.getId())
+                    .setProperty(uniqueTextField.variable(), uniqueValue.toLowerCase())
+                    .nextPersistedAndPublish();
+
+            throw new AssertionError("The unique field record must be present");
+        } catch(RuntimeException e) {
+            if (!(e.getCause() instanceof DotContentletValidationException)) {
+                throw new AssertionError("DotContentletValidationException expected");
+            }
+        }
     }
 
 }

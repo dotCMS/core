@@ -39,6 +39,16 @@ public enum ImportLineValidationCodes {
     INVALID_BINARY_URL,
 
     /**
+     * Invalid URL for file/image field in dotCMS
+     */
+    UNREACHABLE_URL_CONTENT,
+
+    /**
+     * Invalid file path for file/image field in dotCMS
+     */
+    INVALID_FILE_PATH,
+
+    /**
      * Invalid image file type
      */
     INVALID_IMAGE_TYPE,

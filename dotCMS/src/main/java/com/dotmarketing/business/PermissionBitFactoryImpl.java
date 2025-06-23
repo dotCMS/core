@@ -77,6 +77,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
+
+import org.apache.commons.logging.Log;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.client.RequestOptions;
 import java.util.stream.Collectors;
@@ -811,6 +813,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
         List<Permission> bitPermissionsList = permissionCache.getPermissionsFromCache( permissionable.getPermissionId() );
         if (bitPermissionsList == null) {//Already in cache
             bitPermissionsList = loadPermissions( permissionable );
+			Logger.debug(this, "addPermissionsToCache - Adding permissions to cache for permissionable: " + permissionable.getPermissionId() + " with permissions: " + bitPermissionsList);
             permissionCache.addToPermissionCache( permissionable.getPermissionId(), bitPermissionsList );
         }
     }
@@ -1707,6 +1710,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
     if (!permissionList.isEmpty()) {
       return permissionList;
     }
+	Logger.debug(this.getClass(), ()-> "Permissionable:" + permissionable + " has no permissions in the cache or in the permission_reference table, looking for parent permissionable");
 
     /*
      * Step 3. Recursive calls to find our "parent permissionable" 
@@ -1718,6 +1722,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
     final Tuple2<Permissionable,List<Permission>> parentPerms =_loadParentPermissions(permissionable,permissionKey);
     final Permissionable finalNewReference = parentPerms._1;
     permissionList = parentPerms._2;
+	Logger.debug(this.getClass(), "loadPermissions - Permissionable:" + permissionable + " found parent permissionable:" + finalNewReference + " with permissions:" + permissionList);
     permissionCache.addToPermissionCache(permissionKey, permissionList);
     /*
      * Step 4. Upsert into the permission_reference table 
@@ -1770,6 +1775,8 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
           bitPermissionsList = (List<Permission>) Try.of(() -> persistenceService.list())
                           .getOrElseThrow(e -> new DotRuntimeException(e));
           bitPermissionsList.forEach(p -> p.setBitPermission(true));
+
+		  Logger.debug(this.getClass(), "get() - Permissionable:" + permissionKey + " found permissions:" + bitPermissionsList);
           // adding to cache if found
           if (!bitPermissionsList.isEmpty()) {
               permissionCache.addToPermissionCache(permissionKey, bitPermissionsList);
