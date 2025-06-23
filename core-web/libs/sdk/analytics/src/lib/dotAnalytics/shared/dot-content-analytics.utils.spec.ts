@@ -632,13 +632,16 @@ describe('Analytics Utils', () => {
 
     describe('initializeActivityTracking', () => {
         let addEventListenerSpy: jest.SpyInstance;
+        let documentAddEventListenerSpy: jest.SpyInstance;
 
         beforeEach(() => {
             addEventListenerSpy = jest.spyOn(window, 'addEventListener');
+            documentAddEventListenerSpy = jest.spyOn(document, 'addEventListener');
         });
 
         afterEach(() => {
             addEventListenerSpy.mockRestore();
+            documentAddEventListenerSpy.mockRestore();
             cleanupActivityTracking(); // Clean up after each test
         });
 
@@ -647,27 +650,34 @@ describe('Analytics Utils', () => {
 
             initializeActivityTracking(config);
 
+            // Check click listener on window
             expect(addEventListenerSpy).toHaveBeenCalledWith('click', expect.any(Function), {
                 passive: true
             });
-            expect(addEventListenerSpy).toHaveBeenCalledWith('keydown', expect.any(Function), {
-                passive: true
-            });
-            expect(addEventListenerSpy).toHaveBeenCalledWith('focus', expect.any(Function), {
-                passive: true
-            });
+
+            // Check visibilitychange listener on document
+            expect(documentAddEventListenerSpy).toHaveBeenCalledWith(
+                'visibilitychange',
+                expect.any(Function),
+                {
+                    passive: true
+                }
+            );
         });
     });
 
     describe('cleanupActivityTracking', () => {
         let removeEventListenerSpy: jest.SpyInstance;
+        let documentRemoveEventListenerSpy: jest.SpyInstance;
 
         beforeEach(() => {
             removeEventListenerSpy = jest.spyOn(window, 'removeEventListener');
+            documentRemoveEventListenerSpy = jest.spyOn(document, 'removeEventListener');
         });
 
         afterEach(() => {
             removeEventListenerSpy.mockRestore();
+            documentRemoveEventListenerSpy.mockRestore();
         });
 
         it('should remove all activity event listeners', () => {
@@ -679,9 +689,14 @@ describe('Analytics Utils', () => {
             // Then cleanup
             cleanupActivityTracking();
 
+            // Check that click listener is removed from window
             expect(removeEventListenerSpy).toHaveBeenCalledWith('click', expect.any(Function));
-            expect(removeEventListenerSpy).toHaveBeenCalledWith('keydown', expect.any(Function));
-            expect(removeEventListenerSpy).toHaveBeenCalledWith('focus', expect.any(Function));
+
+            // Check that visibilitychange listener is removed from document
+            expect(documentRemoveEventListenerSpy).toHaveBeenCalledWith(
+                'visibilitychange',
+                expect.any(Function)
+            );
         });
     });
 

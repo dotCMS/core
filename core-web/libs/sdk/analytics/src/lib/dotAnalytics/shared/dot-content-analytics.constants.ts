@@ -29,5 +29,7 @@ export const USER_ID_KEY = 'dot_analytics_user_id';
 /**
  * Activity tracking configuration
  * Events used to detect user activity for session management
+ * - click: Detects real user interaction with minimal performance impact
+ * - visibilitychange: Handled separately to detect tab changes
  */
-export const ACTIVITY_EVENTS = ['click', 'keydown', 'focus'];
+export const ACTIVITY_EVENTS = ['click'];

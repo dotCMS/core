@@ -261,12 +261,29 @@ export const initializeActivityTracking = (config: DotContentAnalyticsConfig): v
 
     const throttledHandler = createThrottledActivityHandler(config);
 
-    // Set up event listeners using constants
+    // Set up event listeners for basic activity events
     ACTIVITY_EVENTS.forEach((eventType: string) => {
         const cleanup = () => window.removeEventListener(eventType, throttledHandler);
         activityListeners.push(cleanup);
         window.addEventListener(eventType, throttledHandler, { passive: true });
     });
+
+    // Handle visibilitychange separately for tab switching
+    const handleVisibilityChange = () => {
+        if (!document.hidden) {
+            // User returned to the tab - reactivate session
+            updateActivityTime();
+            if (config.debug) {
+                console.warn('DotAnalytics: User returned to tab, session reactivated');
+            }
+        }
+        // Don't do anything when tab becomes hidden - only when it becomes visible
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange, { passive: true });
+    activityListeners.push(() =>
+        document.removeEventListener('visibilitychange', handleVisibilityChange)
+    );
 
     updateActivityTime();
 };
