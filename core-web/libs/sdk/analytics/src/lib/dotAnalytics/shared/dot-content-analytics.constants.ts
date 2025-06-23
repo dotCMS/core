@@ -4,10 +4,10 @@ export const ANALYTICS_WINDOWS_KEY = 'dotAnalytics';
 // Analytics source type
 export const ANALYTICS_SOURCE_TYPE = ANALYTICS_WINDOWS_KEY;
 
-// Analytics endpoint
+// Analytics endpoint for sending events to server
 export const ANALYTICS_ENDPOINT = '/api/v1/analytics/content/event';
 
-// Expected UTM keys
+// Expected UTM parameter keys for campaign tracking
 export const EXPECTED_UTM_KEYS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_id'];
 
 /**
@@ -28,5 +28,6 @@ export const USER_ID_KEY = 'dot_analytics_user_id';
 
 /**
  * Activity tracking configuration
+ * Events used to detect user activity for session management
  */
 export const ACTIVITY_EVENTS = ['click', 'keydown', 'focus'];

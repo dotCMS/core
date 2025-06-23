@@ -39,6 +39,7 @@ export interface DotAnalyticsEvent {
     page: PageData;
     device: DeviceData;
     utm?: UtmData;
+    local_time: string;
 }
 
 /**
@@ -97,6 +98,7 @@ export interface DotAnalyticsPayload {
     page: PageData;
     device: DeviceData;
     utm?: UtmData;
+    local_time: string;
 }
 
 /**
@@ -136,6 +138,7 @@ export interface DotAnalyticsContext {
     site_key: string;
     session_id: string;
     user_id: string;
+    local_tz: string;
 }
 
 /**

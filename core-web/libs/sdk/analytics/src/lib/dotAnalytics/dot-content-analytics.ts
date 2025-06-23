@@ -34,7 +34,7 @@ export const initializeContentAnalytics = (
         app: 'dotAnalytics',
         debug: config.debug,
         plugins: [
-            dotAnalyticsIdentityPlugin(config), // Inject identity context (user_id, session_id)
+            dotAnalyticsIdentityPlugin(config), // Inject identity context (user_id, session_id, local_tz)
             dotAnalyticsEnricherPlugin(), // Enrich with page, device, utm data
             dotAnalytics(config) // Send events to server
         ]
@@ -55,7 +55,7 @@ export const initializeContentAnalytics = (
          * @param {Record<string, unknown>} payload - The payload to track.
          */
         pageView: (payload: Record<string, unknown> = {}) => {
-            updateSessionActivity(); // Update session activity on page view
+            updateSessionActivity();
             analytics?.page(payload);
         },
 
@@ -65,7 +65,7 @@ export const initializeContentAnalytics = (
          * @param {Record<string, unknown>} payload - The payload to track.
          */
         track: (eventName: string, payload: Record<string, unknown> = {}) => {
-            updateSessionActivity(); // Update session activity on custom events
+            updateSessionActivity();
             analytics?.track(eventName, payload);
         }
     };

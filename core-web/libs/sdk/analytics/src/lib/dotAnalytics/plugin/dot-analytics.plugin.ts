@@ -44,7 +44,7 @@ export const dotAnalytics = (config: DotContentAnalyticsConfig) => {
          */
         page: (params: DotAnalyticsParams) => {
             const { config, payload } = params;
-            const { context, page, device, utm } = payload;
+            const { context, page, device, utm, local_time } = payload;
 
             if (!isInitialized) {
                 throw new Error('DotAnalytics: Plugin not initialized');
@@ -56,6 +56,7 @@ export const dotAnalytics = (config: DotContentAnalyticsConfig) => {
                 events: [
                     {
                         event_type: 'pageview',
+                        local_time,
                         page,
                         device,
                         ...(utm && { utm: utm })
@@ -72,6 +73,7 @@ export const dotAnalytics = (config: DotContentAnalyticsConfig) => {
 
         /**
          * Track a custom event
+         * Takes enriched data and sends it to the analytics server
          */
         track: (params: DotAnalyticsParams) => {
             const { config, payload } = params;
@@ -80,7 +82,7 @@ export const dotAnalytics = (config: DotContentAnalyticsConfig) => {
                 throw new Error('DotAnalytics: Plugin not initialized');
             }
 
-            // For track events, the enricher plugin should handle enrichment too
+            // For track events, the enricher plugin handles enrichment
             const body: TrackRequestBody = {
                 ...payload,
                 key: config.siteKey

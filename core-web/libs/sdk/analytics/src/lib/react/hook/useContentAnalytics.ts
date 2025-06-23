@@ -12,8 +12,7 @@ import DotContentAnalyticsContext from '../contexts/DotContentAnalyticsContext';
  * function Button({ title, urlTitle }) {
  *   const { track } = useContentAnalytics();
  *
- *   // First parameter: custom event name to identify the action
- *   // Second parameter: object with properties you want to track
+ *   // Track button click with custom properties
  *   return (
  *     <button onClick={() => track('btn-click', { title, urlTitle })}>
  *       See Details →
@@ -30,16 +29,21 @@ import DotContentAnalyticsContext from '../contexts/DotContentAnalyticsContext';
  *
  *   const handleManualActivity = () => {
  *     updateSessionActivity();
- *     console.log('Manual activity updated');
+ *     // Manual activity updated
  *   };
  *
- *   // Debug session info
- *   console.log('Anonymous ID:', getAnonymousUserId());
- *   console.log('Session info:', getSessionInfo());
+ *   // Debug session info in development
+ *   const debugInfo = () => {
+ *     if (process.env.NODE_ENV === 'development') {
+ *       console.log('Anonymous ID:', getAnonymousUserId());
+ *       console.log('Session info:', getSessionInfo());
+ *     }
+ *   };
  *
  *   return (
  *     <div>
  *       <button onClick={handleManualActivity}>Update Activity</button>
+ *       <button onClick={debugInfo}>Debug Session</button>
  *       <p>User ID: {getAnonymousUserId()}</p>
  *     </div>
  *   );

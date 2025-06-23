@@ -22,11 +22,23 @@ import {
 let activityListeners: (() => void)[] = [];
 let lastActivityTime = Date.now();
 let inactivityTimer: NodeJS.Timeout | null = null;
+let isThrottled = false;
+const ACTIVITY_THROTTLE_MS = 1000; // Throttle activity events to max 1 per second
+
+// Performance cache for static browser data that rarely changes
+let staticBrowserData: {
+    user_language: string;
+    doc_encoding: string;
+    screen_resolution: string;
+} | null = null;
+
+// UTM parameters cache to avoid repetitive URL parsing
+let utmCache: { search: string; params: Record<string, string> } | null = null;
 
 /**
  * Generates a cryptographically secure random ID
  */
-const generateSecureId = (prefix: string): string => {
+export const generateSecureId = (prefix: string): string => {
     const timestamp = Date.now();
     const randomPart = Math.random().toString(36).substr(2, 9);
     const extraRandom = Math.random().toString(36).substr(2, 9);
@@ -50,6 +62,26 @@ const safeLocalStorage = {
             localStorage.setItem(key, value);
         } catch {
             console.warn(`DotAnalytics: Could not save ${key} to localStorage`);
+        }
+    }
+};
+
+/**
+ * Safe sessionStorage wrapper with error handling
+ */
+export const safeSessionStorage = {
+    getItem: (key: string): string | null => {
+        try {
+            return sessionStorage.getItem(key);
+        } catch {
+            return null;
+        }
+    },
+    setItem: (key: string, value: string): void => {
+        try {
+            sessionStorage.setItem(key, value);
+        } catch {
+            console.warn(`DotAnalytics: Could not save ${key} to sessionStorage`);
         }
     }
 };
@@ -150,9 +182,15 @@ const hasPassedMidnight = (sessionStartTime: number): boolean => {
 };
 
 /**
- * Enhanced session ID generation
+ * Gets session ID with comprehensive lifecycle management
+ * Returns existing valid session ID or creates a new one if needed
+ *
+ * Session validation criteria:
+ * 1. User is still active (< 30 min inactivity)
+ * 2. Session hasn't passed midnight (UTC)
+ * 3. UTM parameters haven't changed
  */
-export const generateSessionId = (): string => {
+export const getSessionId = (): string => {
     const now = Date.now();
     const currentUTM = extractUTMParameters(window.location);
 
@@ -174,7 +212,7 @@ export const generateSessionId = (): string => {
             }
         }
 
-        // Generate new session
+        // Create new session when validation fails
         const newSessionId = generateSecureId('session');
         sessionStorage.setItem(SESSION_STORAGE_KEY, newSessionId);
         sessionStorage.setItem(SESSION_START_KEY, now.toString());
@@ -221,19 +259,13 @@ export const getSessionInfo = () => {
 export const initializeActivityTracking = (config: DotContentAnalyticsConfig): void => {
     cleanupActivityTracking();
 
-    const handleActivity = () => {
-        updateActivityTime();
-
-        if (config.debug) {
-            console.warn('DotAnalytics: User activity detected');
-        }
-    };
+    const throttledHandler = createThrottledActivityHandler(config);
 
     // Set up event listeners using constants
     ACTIVITY_EVENTS.forEach((eventType: string) => {
-        const cleanup = () => window.removeEventListener(eventType, handleActivity);
+        const cleanup = () => window.removeEventListener(eventType, throttledHandler);
         activityListeners.push(cleanup);
-        window.addEventListener(eventType, handleActivity);
+        window.addEventListener(eventType, throttledHandler, { passive: true });
     });
 
     updateActivityTime();
@@ -253,20 +285,27 @@ export const cleanupActivityTracking = (): void => {
 };
 
 /**
- * Gets analytics context
+ * Gets analytics context with user and session identification
  */
 export const getAnalyticsContext = (config: DotContentAnalyticsConfig): DotAnalyticsContext => {
-    const sessionId = generateSessionId();
+    const sessionId = getSessionId();
     const userId = getUserId();
+    const local_tz = getLocalTimezone();
 
     if (config.debug) {
-        console.warn('DotAnalytics Session Info:', getSessionInfo());
+        console.warn('DotAnalytics Identity Context:', {
+            sessionId,
+            userId,
+
+            local_tz
+        });
     }
 
     return {
         site_key: config.siteKey,
         session_id: sessionId,
-        user_id: userId
+        user_id: userId,
+        local_tz: local_tz
     };
 };
 
@@ -300,34 +339,59 @@ export const getAnalyticsScriptTag = (): HTMLScriptElement => {
 };
 
 /**
- * Retrieves the browser event data.
+ * Gets static browser data that rarely changes (cached for performance)
  */
-export const getBrowserEventData = (location: Location): BrowserEventData => ({
-    utc_time: new Date().toISOString(),
-    local_tz_offset: new Date().getTimezoneOffset(),
-    screen_resolution: `${window.screen.width}x${window.screen.height}`,
-    vp_size: `${window.innerWidth}x${window.innerHeight}`,
+const getStaticBrowserData = () => {
+    if (!staticBrowserData) {
+        staticBrowserData = {
+            user_language: navigator.language,
+            doc_encoding: document.characterSet,
+            screen_resolution: `${window.screen.width}x${window.screen.height}`
+        };
+    }
 
-    user_language: navigator.language,
-    doc_encoding: document.characterSet,
-    doc_path: location.pathname,
-    doc_host: location.hostname,
-    doc_protocol: location.protocol,
-    doc_hash: location.hash,
-    doc_search: location.search,
-    referrer: document.referrer,
-    page_title: document.title,
-    url: window.location.href,
-    utm: extractUTMParameters(window.location)
-});
+    return staticBrowserData;
+};
 
 /**
- * Extracts UTM parameters from a given URL location.
+ * Retrieves the browser event data - optimized but accurate.
+ */
+export const getBrowserEventData = (location: Location): BrowserEventData => {
+    const staticData = getStaticBrowserData();
+
+    // Always get fresh data for dynamic properties
+    return {
+        // Always fresh - critical for analytics accuracy
+        utc_time: new Date().toISOString(),
+        local_tz_offset: new Date().getTimezoneOffset(),
+        vp_size: `${window.innerWidth}x${window.innerHeight}`, // Can change with resize
+        page_title: document.title, // Can change dynamically
+        referrer: document.referrer, // Can change with navigation
+        doc_path: location.pathname,
+        doc_host: location.hostname,
+        doc_protocol: location.protocol,
+        doc_hash: location.hash,
+        doc_search: location.search,
+        url: location.href,
+        utm: extractUTMParameters(location),
+
+        // Cached static data - safe to cache
+        ...staticData
+    };
+};
+
+/**
+ * Extracts UTM parameters from a given URL location with caching.
  */
 export const extractUTMParameters = (location: Location): Record<string, string> => {
+    // Return cached UTM if search hasn't changed
+    if (utmCache && utmCache.search === location.search) {
+        return utmCache.params;
+    }
+
     const urlParams = new URLSearchParams(location.search);
 
-    return EXPECTED_UTM_KEYS.reduce(
+    const params = EXPECTED_UTM_KEYS.reduce(
         (acc, key) => {
             const value = urlParams.get(key);
             if (value !== null) {
@@ -338,6 +402,14 @@ export const extractUTMParameters = (location: Location): Record<string, string>
         },
         {} as Record<string, string>
     );
+
+    // Cache the result
+    utmCache = {
+        search: location.search,
+        params
+    };
+
+    return params;
 };
 
 /**
@@ -356,6 +428,52 @@ export const isInsideEditor = (): boolean => {
         return window.parent !== window;
     } catch (e) {
         return false;
+    }
+};
+
+/**
+ * Gets the local timezone using modern browser API with fallback
+ */
+export const getLocalTimezone = (): string => {
+    try {
+        return Intl.DateTimeFormat().resolvedOptions().timeZone;
+    } catch (error) {
+        // Fallback for very old browsers (< 1% of users)
+        console.warn('DotAnalytics: Intl.DateTimeFormat not supported, using UTC');
+
+        return 'UTC';
+    }
+};
+
+/**
+ * Gets the local time in ISO format (e.g., "2025-06-09T14:30:00")
+ * Uses modern browser APIs with fallback for compatibility
+ */
+export const getLocalTime = (): string => {
+    const now = new Date();
+
+    try {
+        const formatter = new Intl.DateTimeFormat('sv-SE', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: false
+        });
+
+        return formatter.format(now).replace(' ', 'T');
+    } catch (error) {
+        // Fallback: Manual construction for older browsers
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        const seconds = String(now.getSeconds()).padStart(2, '0');
+
+        return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
     }
 };
 
@@ -414,38 +532,6 @@ export const getUtmData = (browserData: BrowserEventData): UtmData => {
 };
 
 /**
- * Enriches payload with page-specific data
- */
-export const enrichWithPageData = (payload: DotAnalyticsPayload) => {
-    const browserData = getBrowserEventData(window.location);
-    const pageData = getPageData(browserData, payload);
-
-    return {
-        ...payload,
-        properties: {
-            ...payload.properties,
-            page: pageData
-        }
-    };
-};
-
-/**
- * Enriches payload with device-specific data
- */
-export const enrichWithDeviceData = (payload: DotAnalyticsPayload) => {
-    const browserData = getBrowserEventData(window.location);
-    const deviceData = getDeviceData(browserData);
-
-    return {
-        ...payload,
-        properties: {
-            ...payload.properties,
-            device: deviceData
-        }
-    };
-};
-
-/**
  * Enriches payload with UTM data
  */
 export const enrichWithUtmData = (payload: DotAnalyticsPayload) => {
@@ -463,4 +549,98 @@ export const enrichWithUtmData = (payload: DotAnalyticsPayload) => {
     }
 
     return payload;
+};
+
+/**
+ * Optimized payload enrichment using existing analytics.js data
+ * Reuses payload.properties data instead of recalculating from DOM when available
+ * Maintains the same output structure as the original function
+ */
+export const enrichPagePayloadOptimized = (
+    payload: DotAnalyticsPayload,
+    location: Location = window.location
+) => {
+    const staticData = getStaticBrowserData();
+    const local_time = getLocalTime();
+    const utm = extractUTMParameters(location);
+
+    const pageData: PageData = {
+        url: (payload.properties.url as string) || location.href,
+        title: (payload.properties.title as string) || document.title,
+        doc_encoding: staticData.doc_encoding,
+        language_id: payload.properties.language_id as string,
+        persona: payload.properties.persona as string,
+        dot_path: (payload.properties.path as string) || location.pathname,
+        dot_host: location.hostname,
+        doc_protocol: location.protocol,
+        doc_hash: (payload.properties.hash as string) || location.hash,
+        doc_search: (payload.properties.search as string) || location.search
+    };
+
+    const deviceData: DeviceData = {
+        screen_resolution: staticData.screen_resolution,
+        language: staticData.user_language,
+        viewport_width: payload.properties.width?.toString() || window.innerWidth.toString(),
+        viewport_height: payload.properties.height?.toString() || window.innerHeight.toString()
+    };
+
+    const utmData: UtmData = {};
+    if (utm.medium) utmData.medium = utm.medium;
+    if (utm.source) utmData.source = utm.source;
+    if (utm.campaign) utmData.campaign = utm.campaign;
+    if (utm.term) utmData.term = utm.term;
+    if (utm.content) utmData.content = utm.content;
+
+    return {
+        ...payload,
+        page: pageData,
+        device: deviceData,
+        local_time: local_time,
+        ...(Object.keys(utmData).length > 0 && { utm: utmData })
+    };
+};
+
+/**
+ * @deprecated Use enrichPagePayloadOptimized instead to avoid data duplication
+ * Legacy function that enriches page payload with all data in one call
+ * This function duplicates data already available in analytics.js payload
+ */
+export const enrichPagePayload = (
+    payload: DotAnalyticsPayload,
+    location: Location = window.location
+) => {
+    const browserData = getBrowserEventData(location);
+    const pageData = getPageData(browserData, payload);
+    const deviceData = getDeviceData(browserData);
+    const utmData = getUtmData(browserData);
+    const local_time = getLocalTime();
+
+    return {
+        ...payload,
+        page: pageData,
+        device: deviceData,
+        local_time: local_time,
+        ...(Object.keys(utmData).length > 0 && { utm: utmData })
+    };
+};
+
+/**
+ * Throttled activity handler to prevent excessive calls
+ */
+const createThrottledActivityHandler = (config: DotContentAnalyticsConfig) => {
+    return () => {
+        if (isThrottled) return;
+
+        isThrottled = true;
+        updateActivityTime();
+
+        if (config.debug) {
+            console.warn('DotAnalytics: User activity detected');
+        }
+
+        // Throttle for 1 second
+        setTimeout(() => {
+            isThrottled = false;
+        }, ACTIVITY_THROTTLE_MS);
+    };
 };
