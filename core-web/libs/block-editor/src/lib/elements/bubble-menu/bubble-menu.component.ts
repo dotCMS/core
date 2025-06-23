@@ -1,4 +1,5 @@
 import { TiptapBubbleMenuDirective } from 'ngx-tiptap';
+import { Node } from 'prosemirror-model';
 
 import { CommonModule } from '@angular/common';
 import {
@@ -6,8 +7,10 @@ import {
     ChangeDetectorRef,
     Component,
     inject,
-    input
+    input,
+    signal
 } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 
 import { DropdownModule } from 'primeng/dropdown';
 
@@ -23,7 +26,7 @@ interface NodeTypeOption {
     selector: 'dot-bubble-menu',
     templateUrl: './bubble-menu.component.html',
     styleUrls: ['./bubble-menu.component.scss'],
-    imports: [CommonModule, TiptapBubbleMenuDirective, DropdownModule],
+    imports: [CommonModule, TiptapBubbleMenuDirective, FormsModule, DropdownModule],
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -31,7 +34,10 @@ export class BubbleMenuComponent {
     protected readonly editor = input.required<Editor>();
     protected readonly cd = inject(ChangeDetectorRef);
 
-    protected readonly onBeforeUpdate = this.detectChanges.bind(this);
+    protected readonly dropdownItem = signal<NodeTypeOption | null>(null);
+    protected readonly placeholder = signal<string>('Paragraph');
+    protected readonly onBeforeUpdateFn = this.onBeforeUpdate.bind(this);
+
     protected readonly nodeTypeOptions: NodeTypeOption[] = [
         {
             name: 'Paragraph',
@@ -70,12 +76,12 @@ export class BubbleMenuComponent {
         },
         {
             name: 'Ordered List',
-            value: 'ordered-list',
+            value: 'orderedList',
             command: () => this.editor().chain().focus().clearNodes().toggleOrderedList?.().run()
         },
         {
             name: 'Bullet List',
-            value: 'bullet-list',
+            value: 'bulletList',
             command: () => this.editor().chain().focus().clearNodes().toggleBulletList?.().run()
         },
         {
@@ -85,7 +91,7 @@ export class BubbleMenuComponent {
         },
         {
             name: 'Code Block',
-            value: 'code-block',
+            value: 'codeBlock',
             command: () => this.editor().chain().focus().clearNodes().toggleCodeBlock?.().run()
         }
     ];
@@ -94,8 +100,44 @@ export class BubbleMenuComponent {
         option.command();
     }
 
+    private onBeforeUpdate() {
+        this.setCurrentSelectedNode();
+        this.detectChanges();
+    }
+
     private detectChanges() {
         this.cd.markForCheck();
         this.cd.detectChanges();
+    }
+
+    private setCurrentSelectedNode() {
+        const currentNodeType = this.getCurrentNodeType();
+        const option = this.nodeTypeOptions.find((option) => option.value === currentNodeType);
+
+        this.dropdownItem.set(option || this.nodeTypeOptions[0]);
+    }
+
+    private getCurrentNodeType(): string {
+        const state = this.editor().view.state;
+        const from = state.selection.from;
+        const pos = state.doc.resolve(from);
+        const currentNode = pos.node(pos.depth);
+        const parentNode = pos.node(pos.depth - 1);
+
+        if (!parentNode) {
+            return 'paragraph';
+        }
+
+        const parentType = parentNode.type.name;
+        const currentNodeType = this.getNodeTypeWithLevel(currentNode);
+
+        return parentType === 'doc' ? currentNodeType : parentType;
+    }
+
+    private getNodeTypeWithLevel(node: Node): string {
+        const hasLevelAttribute = node.attrs.level;
+        const baseNodeType = node.type.name;
+
+        return hasLevelAttribute ? `${baseNodeType}-${node.attrs.level}` : baseNodeType;
     }
 }

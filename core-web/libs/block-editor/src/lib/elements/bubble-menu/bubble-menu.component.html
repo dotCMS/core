@@ -2,14 +2,14 @@
     class="bubble-menu"
     tiptapBubbleMenu
     [editor]="editor()"
-    [tippyOptions]="{ maxWidth: '100%', onBeforeUpdate: onBeforeUpdate }"
+    [tippyOptions]="{ maxWidth: '100%', onBeforeUpdate: onBeforeUpdateFn }"
     [updateDelay]="300">
     <p-dropdown
         styleClass="bubble-menu-dropdown"
+        [(ngModel)]="dropdownItem"
         [options]="nodeTypeOptions"
         (onChange)="changeToBlock($event.value)"
-        optionLabel="name"
-        placeholder="Select a Block" />
+        optionLabel="name" />
     <div class="divider"></div>
     <button
         class="bubble-menu-button bubble-menu-button--char"
