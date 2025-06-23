@@ -378,12 +378,12 @@ public class SAMLHelper {
                 final Map<String, Object> additionalInfo = user.getAdditionalInfo();
                 final Map<String, Object> additionalAttr = attributesBean.getAdditionalAttributes();
                 final Map<String, Object> finalAdditionalInfo = new HashMap<>();
-                finalAdditionalInfo.putAll(additionalInfo); // assumes override
+                finalAdditionalInfo.putAll(additionalAttr); // assumes override the idp info
                 if (samlConfigurationService // by default it overrides
                         .getConfigAsBoolean(identityProviderConfiguration, SamlName.DOTCMS_MERGE_ADDITIONAL_ATTRIBUTES, ()->false)) {
                     Logger.debug(this, ()-> "Merging additional attributes for user with email '" + attributesBean.getEmail() + "'");
                     // merge
-                    finalAdditionalInfo.putAll(additionalAttr);
+                    finalAdditionalInfo.putAll(additionalInfo);
                     Logger.debug(this, ()-> "Merged additional attributes for user with email '"
                             + attributesBean.getEmail() + "', attributes: " + finalAdditionalInfo);
                 }
