@@ -446,13 +446,39 @@ export const getLocalTimezone = (): string => {
 };
 
 /**
- * Gets the local time in ISO format (e.g., "2025-06-09T14:30:00")
+ * Gets the timezone offset in ISO 8601 format (e.g., "-05:00", "+02:00", "Z")
+ * @returns The timezone offset string
+ */
+const getTimezoneOffset = (): string => {
+    const now = new Date();
+    const offsetMinutes = now.getTimezoneOffset();
+
+    // If offset is 0, return "Z" for UTC
+    if (offsetMinutes === 0) {
+        return 'Z';
+    }
+
+    // Convert minutes to hours and minutes
+    const offsetHours = Math.floor(Math.abs(offsetMinutes) / 60);
+    const offsetMins = Math.abs(offsetMinutes) % 60;
+
+    // Determine sign (getTimezoneOffset returns positive for west of UTC)
+    const sign = offsetMinutes > 0 ? '-' : '+';
+
+    // Format as ±HH:MM
+    return `${sign}${String(offsetHours).padStart(2, '0')}:${String(offsetMins).padStart(2, '0')}`;
+};
+
+/**
+ * Gets the local time in ISO 8601 format with timezone offset
+ * Examples: "2025-06-09T14:30:00-05:00", "2025-06-09T14:30:00+02:00", "2025-06-09T14:30:00Z"
  * Uses modern browser APIs with fallback for compatibility
  */
 export const getLocalTime = (): string => {
     const now = new Date();
 
     try {
+        // Use Intl.DateTimeFormat for consistent formatting
         const formatter = new Intl.DateTimeFormat('sv-SE', {
             year: 'numeric',
             month: '2-digit',
@@ -463,7 +489,10 @@ export const getLocalTime = (): string => {
             hour12: false
         });
 
-        return formatter.format(now).replace(' ', 'T');
+        const localDateTime = formatter.format(now).replace(' ', 'T');
+        const timezoneOffset = getTimezoneOffset();
+
+        return `${localDateTime}${timezoneOffset}`;
     } catch (error) {
         // Fallback: Manual construction for older browsers
         const year = now.getFullYear();
@@ -472,8 +501,9 @@ export const getLocalTime = (): string => {
         const hours = String(now.getHours()).padStart(2, '0');
         const minutes = String(now.getMinutes()).padStart(2, '0');
         const seconds = String(now.getSeconds()).padStart(2, '0');
+        const timezoneOffset = getTimezoneOffset();
 
-        return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+        return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}${timezoneOffset}`;
     }
 };
 

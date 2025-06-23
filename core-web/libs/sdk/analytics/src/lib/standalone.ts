@@ -5,12 +5,19 @@ import { getDataAnalyticsAttributes } from './dotAnalytics/shared/dot-content-an
 
 declare global {
     interface Window {
-        [ANALYTICS_WINDOWS_KEY]: DotAnalytics;
+        [ANALYTICS_WINDOWS_KEY]: DotAnalytics | null;
     }
 }
 
 (() => {
     const dataAttributes = getDataAnalyticsAttributes(window.location);
     const analytics = initializeContentAnalytics(dataAttributes);
-    window[ANALYTICS_WINDOWS_KEY] = analytics;
+
+    // Only assign to window if analytics was successfully initialized
+    if (analytics) {
+        window[ANALYTICS_WINDOWS_KEY] = analytics;
+    } else {
+        console.warn('DotAnalytics: Failed to initialize analytics instance');
+        window[ANALYTICS_WINDOWS_KEY] = null;
+    }
 })();

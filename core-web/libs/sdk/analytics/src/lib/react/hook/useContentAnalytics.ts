@@ -51,19 +51,22 @@ import DotContentAnalyticsContext from '../contexts/DotContentAnalyticsContext';
  * ```
  *
  * @returns {DotAnalytics} - The analytics instance with tracking capabilities for anonymous users
+ * @throws {Error} - Throws error if used outside of DotContentAnalyticsProvider or if analytics failed to initialize
  */
 export const useContentAnalytics = (): DotAnalytics => {
     const instance = useContext(DotContentAnalyticsContext);
     const lastPathRef = useRef<string | null>(null);
 
     if (!instance) {
-        throw new Error('useContentAnalytics must be used within a DotContentAnalyticsProvider');
+        throw new Error(
+            'useContentAnalytics must be used within a DotContentAnalyticsProvider and analytics must be successfully initialized'
+        );
     }
 
     const track = useCallback(
         (eventName: string, payload: Record<string, unknown> = {}) => {
             if (!isInsideEditor()) {
-                instance?.track(eventName, {
+                instance.track(eventName, {
                     ...payload,
                     timestamp: new Date().toISOString()
                 });

@@ -28,9 +28,12 @@ export const DotContentAnalyticsProvider = ({
     children,
     config
 }: DotContentAnalyticsProviderProps): ReactElement => {
-    const analytics: DotAnalytics = useMemo(() => initializeContentAnalytics(config), [config]);
+    const analytics: DotAnalytics | null = useMemo(
+        () => initializeContentAnalytics(config),
+        [config]
+    );
 
-    if (config.autoPageView !== false) {
+    if (config.autoPageView !== false && analytics) {
         useRouterTracker(analytics);
     }
 
