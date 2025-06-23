@@ -12,6 +12,7 @@ package com.dotcms.enterprise.publishing.remote.handler;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.enterprise.publishing.remote.bundler.FolderBundler;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publisher.pusher.wrapper.FolderWrapper;
 import com.dotcms.publisher.receiver.handler.IHandler;
@@ -41,6 +42,7 @@ import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.thoughtworks.xstream.XStream;
 import io.vavr.control.Try;
+import org.apache.commons.beanutils.BeanUtils;
 
 import java.io.File;
 import java.io.InputStream;
@@ -50,7 +52,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import org.apache.commons.beanutils.BeanUtils;
 
 /**
  * This handler class is part of the Push Publishing mechanism that deals with Folder-related information inside a
@@ -63,10 +64,11 @@ import org.apache.commons.beanutils.BeanUtils;
  * @since Mar 7, 2013
  */
 public class FolderHandler implements IHandler {
-	private FolderAPI fAPI = APILocator.getFolderAPI();
-	private IdentifierAPI iAPI = APILocator.getIdentifierAPI();
-	private UserAPI uAPI = APILocator.getUserAPI();
-	private PublisherConfig config;
+
+	private final FolderAPI fAPI = APILocator.getFolderAPI();
+	private final IdentifierAPI iAPI = APILocator.getIdentifierAPI();
+	private final UserAPI uAPI = APILocator.getUserAPI();
+	private final PublisherConfig config;
 
 	public FolderHandler(PublisherConfig config) {
 		this.config = config;
@@ -111,13 +113,12 @@ public class FolderHandler implements IHandler {
 				Logger.debug(getClass(), "SYSTEM FOLDER CANNOT BE DELETED");
 			} else {
                 final String errorMsg = String.format("Folder '%s' [%s] could not be deleted: %s", (null == folder ?
-                        "(null)" : folder.getPath()), (null == folder ? "(null)" : folder.getInode()), e.getMessage());
+                        "(null)" : folder.getPath()), (null == folder ? "(null)" : folder.getInode()), ExceptionUtil.getErrorMessage(e));
                 Logger.error(this.getClass(), errorMsg, e);
                 throw new DotPublishingException(errorMsg, e);
 			}
 		}
 	}
-
 
 	private void handleFolders(Collection<File> folders) throws DotPublishingException, DotDataException{
 	    if(LicenseUtil.getLevel() < LicenseLevel.PROFESSIONAL.level) {
@@ -130,6 +131,7 @@ public class FolderHandler implements IHandler {
 		Identifier folderId=null;
 		Host host = null;
         File workingOn = null;
+		Folder folder = new Folder();
 		try{
 	        XStream xstream = XStreamHandler.newXStreamInstance();
 	        //Handle folders
@@ -142,7 +144,8 @@ public class FolderHandler implements IHandler {
                      folderWrapper = (FolderWrapper) xstream.fromXML(input);
                 }
 
-	        	final Folder folder = folderWrapper.getFolder();
+
+	      final Folder folder = folderWrapper.getFolder();
 				if (folder.isSystemFolder() || FolderAPI.OLD_SYSTEM_FOLDER_ID.equalsIgnoreCase( folder.getIdentifier()) ) {
 					continue;
 				}
@@ -159,9 +162,9 @@ public class FolderHandler implements IHandler {
 
 	        	//Check Host if exists otherwise create
 	        	Host localHost = APILocator.getHostAPI().find(host.getIdentifier(), systemUser, false);
-				if(UtilMethods.isEmpty(()->localHost.getIdentifier())){
-					Logger.warn(FolderHandler.class, "Unable to publish folder:" + folderName + ". Unable to find referenced host id:" + folder.getHostId());
-					Logger.warn(FolderHandler.class, "Make sure the host exists with the id:" + folder.getHostId() + " before pushing the folder or run the integrity checker before pushing.");
+				if(UtilMethods.isEmpty(localHost::getIdentifier)){
+					Logger.warn(FolderHandler.class, "Unable to publish folder: " + folderName + ". Unable to find referenced Site: " + folder.getHostId());
+					Logger.warn(FolderHandler.class, "Make sure the Site exists with the id: " + folder.getHostId() + " before pushing the folder or run the integrity checker before pushing.");
 					continue;
 
 				}
@@ -304,7 +307,7 @@ public class FolderHandler implements IHandler {
 	        }
     	} catch (final Exception e) {
             final String errorMsg = String.format("An error occurred when processing Folder in '%s': %s", workingOn,
-                    e.getMessage());
+                    ExceptionUtil.getErrorMessage(e));
             Logger.error(this.getClass(), errorMsg);
 			Logger.error(this, "-- Local Folder: " + (UtilMethods.isSet(temp) ? temp : "- object is null -"));
 			if(UtilMethods.isSet(temp) && UtilMethods.isSet(folderName)) {

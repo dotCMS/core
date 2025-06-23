@@ -5,6 +5,7 @@
     "jsxImportSource": "react",
     "module": "es2020",
     "baseUrl": "./",
+    "plugins": [ { "name": "@astrojs/ts-plugin" } ],
     "paths": {
       "@/components/*": ["./src/components/*"],
       "@/components/common/*": ["./src/components/common/*"],
@@ -16,6 +17,15 @@
       "@/pages/*": ["./src/pages/*"],
       "@/styles/*": ["./src/styles/*"],
       "@/types/*": ["./src/types/*"]
-    }
-  }
+    },
+    "types": ["astro/client"],
+    "skipLibCheck": true,
+    "allowJs": true,
+    "resolveJsonModule": true,
+    "moduleResolution": "node",
+    "isolatedModules": true,
+    "noEmit": true
+  },
+  "include": [".astro/types.d.ts", "**/*"],
+  "exclude": ["node_modules", "dist"]
 }
