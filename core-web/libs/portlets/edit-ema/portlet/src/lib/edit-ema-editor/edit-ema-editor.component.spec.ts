@@ -644,6 +644,18 @@ describe('EditEmaEditorComponent', () => {
 
                 it('should open a dialog and save after backend emit', (done) => {
                     spectator.detectChanges();
+
+                    const graphQlSpy = jest.spyOn(store, 'graphql');
+
+                    graphQlSpy.mockReturnValue({
+                        query: `query {
+                            pageAsset {
+                                identifier
+                            }
+                        }`,
+                        variables: {}
+                    });
+
                     const dialog = spectator.debugElement.query(
                         By.css('[data-testId="ema-dialog"]')
                     );
@@ -696,6 +708,17 @@ describe('EditEmaEditorComponent', () => {
                     );
 
                     spectator.detectComponentChanges();
+
+                    const graphQlSpy = jest.spyOn(store, 'graphql');
+
+                    graphQlSpy.mockReturnValue({
+                        query: `query {
+                            pageAsset {
+                                identifier
+                            }
+                        }`,
+                        variables: {}
+                    });
 
                     const dialog = spectator.debugElement.query(
                         By.css("[data-testId='ema-dialog']")

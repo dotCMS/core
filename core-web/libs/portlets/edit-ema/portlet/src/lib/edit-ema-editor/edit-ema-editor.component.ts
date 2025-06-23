@@ -734,7 +734,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
                 const graphql = this.uveStore.graphql();
 
-                if (!actionPayload || graphql) {
+                if (!actionPayload && graphql) {
                     this.uveStore.reloadCurrentPage();
 
                     return;
