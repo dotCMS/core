@@ -5,6 +5,6 @@ import { Component } from '@angular/core';
     standalone: true,
     imports: [],
     templateUrl: './dot-folder-list-view.component.html',
-    styleUrl: './dot-folder-list-view.component.css'
+    styleUrl: './dot-folder-list-view.component.scss'
 })
 export class DotFolderListViewComponent {}
