@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -145,7 +146,7 @@ public class ContentTypesPaginator implements PaginatorOrdered<Map<String, Objec
         Map<String, Long> entriesByContentTypes = null;
 
         try {
-            entriesByContentTypes = extraParams.containsKey(ENTRIES_BY_CONTENT_TYPES)?
+            entriesByContentTypes = Objects.nonNull(extraParams) && extraParams.containsKey(ENTRIES_BY_CONTENT_TYPES)?
                     (Map<String, Long>)extraParams.get(ENTRIES_BY_CONTENT_TYPES):
                     APILocator.getContentTypeAPI(user, true).getEntriesByContentTypes();
         } catch (final DotStateException | DotDataException e) {
