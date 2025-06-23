@@ -1,4 +1,9 @@
-<div class="bubble-menu">
+<div
+    class="bubble-menu"
+    tiptapBubbleMenu
+    [editor]="editor()"
+    [tippyOptions]="{ maxWidth: '100%', onBeforeUpdate: onBeforeUpdate }"
+    [updateDelay]="300">
     <p-dropdown
         styleClass="bubble-menu-dropdown"
         [options]="nodeTypeOptions"

@@ -1,7 +1,13 @@
 import { TiptapBubbleMenuDirective } from 'ngx-tiptap';
 
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    ChangeDetectorRef,
+    Component,
+    inject,
+    input
+} from '@angular/core';
 
 import { DropdownModule } from 'primeng/dropdown';
 
@@ -23,6 +29,9 @@ interface NodeTypeOption {
 })
 export class BubbleMenuComponent {
     protected readonly editor = input.required<Editor>();
+    protected readonly cd = inject(ChangeDetectorRef);
+
+    protected readonly onBeforeUpdate = this.detectChanges.bind(this);
     protected readonly nodeTypeOptions: NodeTypeOption[] = [
         {
             name: 'Paragraph',
@@ -81,7 +90,12 @@ export class BubbleMenuComponent {
         }
     ];
 
-    changeToBlock(option: NodeTypeOption) {
+    protected changeToBlock(option: NodeTypeOption) {
         option.command();
+    }
+
+    private detectChanges() {
+        this.cd.markForCheck();
+        this.cd.detectChanges();
     }
 }
