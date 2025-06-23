@@ -1,9 +1,11 @@
-<div
-    class="bubble-menu"
-    tiptapBubbleMenu
-    [editor]="editor()"
-    [tippyOptions]="{ maxWidth: '100%' }"
-    [updateDelay]="350">
+<div class="bubble-menu">
+    <p-dropdown
+        styleClass="bubble-menu-dropdown"
+        [options]="nodeTypeOptions"
+        (onChange)="changeToBlock($event.value)"
+        optionLabel="name"
+        placeholder="Select a Block" />
+    <div class="divider"></div>
     <button
         class="bubble-menu-button bubble-menu-button--char"
         (click)="editor().chain().focus().toggleBold().run()"

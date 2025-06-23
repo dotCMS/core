@@ -76,3 +76,37 @@
         }
     }
 }
+
+::ng-deep .bubble-menu-dropdown {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    border-radius: $border-radius-xs;
+    transition: background-color 0.2s;
+    height: 2rem;
+    padding: 0;
+
+    &.p-dropdown.p-dropdown-open {
+        border-color: transparent;
+        outline: none;
+    }
+
+    &.p-dropdown:not(.p-disabled).p-focus {
+        border-color: transparent;
+        outline: none;
+    }
+
+    .p-dropdown-label {
+        padding: 0.3rem 0.1rem 0.3rem 0.4rem;
+    }
+
+    .p-dropdown-trigger {
+        background: transparent;
+        color: black;
+        width: 1.75rem;
+    }
+
+    &:not(.p-disabled):hover {
+        background-color: $color-palette-gray-100;
+    }
+}
