@@ -113,7 +113,6 @@ export class BubbleMenuComponent {
     private setCurrentSelectedNode() {
         const currentNodeType = this.getCurrentNodeType();
         const option = this.nodeTypeOptions.find((option) => option.value === currentNodeType);
-
         this.dropdownItem.set(option || this.nodeTypeOptions[0]);
     }
 
@@ -123,13 +122,18 @@ export class BubbleMenuComponent {
         const pos = state.doc.resolve(from);
         const currentNode = pos.node(pos.depth);
         const parentNode = pos.node(pos.depth - 1);
+        const parentType = parentNode?.type?.name;
+        const currentNodeType = currentNode.type.name;
 
-        if (!parentNode) {
-            return 'paragraph';
+        if (parentType === 'listItem') {
+            const listType = pos.node(pos.depth - 2);
+
+            return listType.type.name;
         }
 
-        const parentType = parentNode.type.name;
-        const currentNodeType = this.getNodeTypeWithLevel(currentNode);
+        if (currentNodeType === 'heading') {
+            return this.getNodeTypeWithLevel(currentNode);
+        }
 
         return parentType === 'doc' ? currentNodeType : parentType;
     }
