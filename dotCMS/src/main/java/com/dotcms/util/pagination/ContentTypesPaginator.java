@@ -114,7 +114,7 @@ public class ContentTypesPaginator implements PaginatorOrdered<Map<String, Objec
                     this.workflowAPI.findSystemActionsMapByContentType(contentTypes, user),
                     extraParams);
 
-            result.addAll(extraParams.containsKey(COMPARATOR)?
+            result.addAll(Objects.nonNull(extraParams) && extraParams.containsKey(COMPARATOR)?
                     contentTypesTransform.stream().sorted((Comparator<Map<String, Object>>) extraParams.get(COMPARATOR)).collect(Collectors.toList())
                     :contentTypesTransform);
             return result;
