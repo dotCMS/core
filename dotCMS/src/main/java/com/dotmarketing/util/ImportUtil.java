@@ -2371,45 +2371,29 @@ public class ImportUtil {
      * @throws ImportLineException if the URL is invalid
      */
     private static Object validateBinaryField(final Field field, final String value) {
+        if (UtilMethods.isNotSet(value)) {
+            // If the value is not set return as REQUIRED_FIELD_MISSING is handled by contentlet checkin
+            return value;
+        }
+        //Here we need to throw an exception if the value is not set and the value is required
+        final boolean validURL = UtilMethods.isValidStrictURL(value);
+        if(!validURL) {
+            // If the value is not a valid URL, we throw an exception
+            throw ImportLineException.builder()
+                    .message("The provided value is not a syntactically valid URL")
+                    .code(ImportLineValidationCodes.INVALID_BINARY_URL.name())
+                    .field(field.getVelocityVarName())
+                    .invalidValue(value)
+                    .build();
+        }
         if (UtilMethods.isSet(value) && !tempFileAPI.validUrl(value)) {
             throw ImportLineException.builder()
-                    .message("URL is malformed or Response is not 200")
-                    .code(ImportLineValidationCodes.INVALID_BINARY_URL.name())
+                    .message("URL is syntactically valid but returned a non-success HTTP response")
+                    .code(ImportLineValidationCodes.UNREACHABLE_URL_CONTENT.name())
                     .field(field.getVelocityVarName())
                     .invalidValue(value)
                     .build();
         }
-        return value;
-    }
-
-    /**
-     * Processes an image field by validating the URL.
-     * This method checks if the URL is valid and if the content is an image type.
-     * @param value the value to process
-     * @return the processed value if the URL is valid
-     */
-    private static Object processImageField(final Field field, final String value) {
-        //Validate if we're looking at an internal file path or a URL
-        //webAssetHelper.getAssetInfo()
-
-        if (UtilMethods.isSet(value) && !tempFileAPI.validUrl(value)) {
-            throw ImportLineException.builder()
-                    .message("URL is malformed or Response is not 200")
-                    .code(ImportLineValidationCodes.INVALID_BINARY_URL.name())
-                    .field(field.getVelocityVarName())
-                    .invalidValue(value)
-                    .build();
-        }
-
-        if (!UtilMethods.isImage(value)) {
-            throw ImportLineException.builder()
-                    .message(String.format(" %s is not a supported image type", value))
-                    .code(ImportLineValidationCodes.INVALID_BINARY_URL.name())
-                    .field(field.getVelocityVarName())
-                    .invalidValue(value)
-                    .build();
-        }
-
         return value;
     }
 
@@ -2427,9 +2411,13 @@ public class ImportUtil {
     private static Object validateFileField(final Field field, final String value,
             final String currentHostId, final User user
     ) throws DotDataException, DotSecurityException {
+        if(UtilMethods.isNotSet(value)) {
+            // If the value is not set return as REQUIRED_FIELD_MISSING is handled by contentlet checkin
+           return value;
+        }
         //Here we need to determine if the value is a valid internal file path or an external URL
-        final boolean isUrl = UtilMethods.isValidStrictURL(value);
-        if (!isUrl) {
+        final boolean dotCMSPath = UtilMethods.isValidDotCMSPath(value);
+        if (dotCMSPath) {
             final Optional<String> internal = matchWithInternalIdentifier(value, currentHostId, user);
             if (internal.isPresent()) {
                 // We found a matching object
@@ -2437,18 +2425,28 @@ public class ImportUtil {
             } else {
                //Throw validation error as failed to match the given path with an internal object
                 throw ImportLineException.builder()
-                        .message("Invalid internal file path")
+                        .message("Unable to match the given path with a file stored in dotCMS")
                         .code(ImportLineValidationCodes.INVALID_FILE_PATH.name())
                         .field(field.getVelocityVarName())
                         .invalidValue(value)
                         .build();
             }
         } else {
+            final boolean validURL = UtilMethods.isValidStrictURL(value);
+            if(!validURL) {
+                // If the value is not a valid URL, we throw an exception
+                throw ImportLineException.builder()
+                        .message("The provided value is not a syntactically valid URL nor a valid dotCMS path")
+                        .code(ImportLineValidationCodes.INVALID_BINARY_URL.name())
+                        .field(field.getVelocityVarName())
+                        .invalidValue(value)
+                        .build();
+            }
             // If it's a URL, we need to validate if we can access it
             if (!tempFileAPI.validUrl(value)) {
                 throw ImportLineException.builder()
-                        .message("URL is malformed or Response is not 200")
-                        .code(ImportLineValidationCodes.INVALID_BINARY_URL.name())
+                        .message("URL is syntactically valid but returned a non-success HTTP response")
+                        .code(ImportLineValidationCodes.UNREACHABLE_URL_CONTENT.name())
                         .field(field.getVelocityVarName())
                         .invalidValue(value)
                         .build();
@@ -3602,6 +3600,8 @@ public class ImportUtil {
     private static void fetchAndSetBinaryField(final Contentlet cont, final Field field,
             final Object value, final HttpServletRequest request, final boolean preview)
             throws IOException, DotSecurityException {
+        // At this point if we got this far with an empty value it's because it was determined that the field is not required
+        // so no need to re-check
         if (preview) {
             File dummyFile = File.createTempFile("dummy", ".txt",
                     new File(ConfigUtils.getAssetTempPath()));
@@ -3624,6 +3624,9 @@ public class ImportUtil {
      */
     private static void fetchAndSetFileField(final Contentlet cont, final Field field,
             final Object value, final HttpServletRequest request, final String siteId, final User user, final boolean preview) {
+        // At this point if we got this far with an empty value it's because it was determined that the field is not required So No need to re-check
+        // But we check if its set and not empty, so we don't try to process empty values.
+        // Otherwise, we might end-up throwing an exception for a non-required field
         if (value != null && UtilMethods.isSet(value.toString())) {
             final String uriOrIdentifier = value.toString();
             // First we need to determine if we're looking at an internal Path or an external URL

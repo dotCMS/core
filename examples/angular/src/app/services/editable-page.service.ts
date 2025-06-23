@@ -25,13 +25,21 @@ export class EditablePageService<T extends DotCMSExtendedPageResponse> {
         status: 'idle'
     });
 
+
     /**
-     * Initialize page loading for the current route
-     * Call this method from a component's ngOnInit
-     * @param route Optional override for the current route
-     * @returns Observable that completes when initial page load is done
+     * Initializes the page by loading and managing page content based on the current route.
+     * This method:
+     * 1. Sets initial loading state
+     * 2. Listens for route changes
+     * 3. Fetches page content for the current URL
+     * 4. Handles vanity URLs and redirects
+     * 5. Manages UVE (Universal Visual Editor) integration
+     * 6. Updates page state based on responses
+     *
+     * @param {DotCMSPageRequestParams} extraParams - Additional parameters to include in the page request
+     * @returns {Signal<PageState<T>>} A signal containing the current page state
      */
-    initializePage(extraParams?: DotCMSPageRequestParams): Signal<PageState<T>> {
+    initializePage(extraParams: DotCMSPageRequestParams = {}): Signal<PageState<T>> {
         this.#setLoading();
 
         // Wait for the router to navigate to the page
@@ -52,17 +60,8 @@ export class EditablePageService<T extends DotCMSExtendedPageResponse> {
                     // If the path is empty, use the root path
                     const url = path || '/';
 
-                    // Get the query params from the current route, avoid passing mode to let the UVE handle it
-                    const { mode, ...queryParams } = this.#activatedRoute.snapshot.queryParams;
-
-                    // Combine the query params with the extra params
-                    const fullParams = {
-                        ...queryParams,
-                        ...extraParams
-                    };
-
                     // Fetch the page asset
-                    return this.#pageService.getPageAsset<T>(url, fullParams);
+                    return this.#pageService.getPageAsset<T>(url, extraParams);
                 })
             )
             .subscribe((response) => {

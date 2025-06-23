@@ -264,8 +264,17 @@ The `page.get()` method accepts an optional second argument of type [`DotCMSPage
 | `languageId` | string \| number | Language version of the page                     |
 | `mode`       | string           | Rendering mode: `LIVE`, `PREVIEW_MODE`, etc.     |
 | `personaId`  | string           | Personalize content based on persona ID          |
-| `graphql`    | object           | Extend the response with additional content/data |
-| `fireRules`  | boolean          | Whether to trigger page rules                    |
+| `graphql`    | DotCMSGraphQLParams          | GraphQL options for extending the response       |
+| `fireRules`  | boolean         | Whether to trigger page rules                    |
+
+The `graphql` option allows you to customize the page and content data returned. It accepts:
+
+| Property    | Type     | Description                                           |
+| ----------- | -------- | ----------------------------------------------------- |
+| `page`      | string   | GraphQL partial query that will be automatically wrapped with the page context. (you don't need to include the `page(url:"/")` wrapper in your query)    |
+| `content`   | object   | Named queries to fetch additional content             |
+| `fragments` | string[] | GraphQL fragments that can be reused across queries   |
+| `variables` | object   | Variables to pass into the GraphQL queries            |
 
 > 💡 See [`DotCMSPageRequestParams`](https://github.com/dotCMS/core/blob/6e003eb697554ea9636a1fec59bc0fa020b84390/core-web/libs/sdk/types/src/lib/client/public.ts#L5-L54) for a full list of supported options.
 
