@@ -734,17 +734,22 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
                 const graphql = this.uveStore.graphql();
 
-                if (!actionPayload && graphql) {
-                    this.uveStore.reloadCurrentPage();
-
-                    return;
-                } else if (clientAction === CLIENT_ACTIONS.EDIT_CONTENTLET) {
+                if (clientAction === CLIENT_ACTIONS.EDIT_CONTENTLET) {
                     this.contentWindow?.postMessage(
                         {
                             name: __DOTCMS_UVE_EVENT__.UVE_RELOAD_PAGE
                         },
                         this.host
                     );
+                    if (graphql) {
+                        return;
+                    }
+                }
+
+                if (!actionPayload) {
+                    this.uveStore.reloadCurrentPage();
+
+                    return;
                 }
 
                 const { pageContainers, didInsert } = insertContentletInContainer({
