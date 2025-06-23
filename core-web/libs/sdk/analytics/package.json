@@ -20,11 +20,6 @@
     },
     "homepage": "https://github.com/dotCMS/core/tree/main/core-web/libs/sdk/analytics/README.md",
     "dependencies": {
-        "@analytics/activity-utils": "^0.1.16",
-        "@analytics/listener-utils": "^0.4.0",
-        "@analytics/localstorage-utils": "^0.1.10",
-        "@analytics/session-storage-utils": "^0.0.7",
-        "@analytics/storage-utils": "^0.4.2",
         "analytics": "^0.8.14"
     },
     "peerDependencies": {
