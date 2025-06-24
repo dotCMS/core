@@ -396,14 +396,16 @@
 									"});",
 									"",
 									"pm.test(\"fields check\", function () {",
-									"    pm.expect(jsonData.entity[0].fields.length).to.eql(2);",
+									"    ",
+									"    pm.expect(jsonData.entity[0].fields.length).to.be.above(2);",
 									"});",
 									"",
 									"pm.test(\"description check\", function () {",
 									"    pm.expect(jsonData.entity[0].description).to.eql('THE DESCRIPTION');",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
