@@ -353,7 +353,7 @@ export const getDataAnalyticsAttributes = (location: Location): DotContentAnalyt
  * Retrieves the analytics script tag from the document.
  */
 export const getAnalyticsScriptTag = (): HTMLScriptElement => {
-    const scripts = document.querySelector('script[data-analytics-key]');
+    const scripts = document.querySelector('script[data-analytics-site-key]');
 
     if (!scripts) {
         throw new Error('Dot Analytics: Script not found');
