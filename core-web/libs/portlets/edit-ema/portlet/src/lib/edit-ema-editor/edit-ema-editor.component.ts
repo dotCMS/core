@@ -732,7 +732,11 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     return;
                 }
 
-                const graphql = this.uveStore.graphql();
+                if (!actionPayload) {
+                    this.uveStore.reloadCurrentPage();
+
+                    return;
+                }
 
                 if (clientAction === CLIENT_ACTIONS.EDIT_CONTENTLET) {
                     this.contentWindow?.postMessage(
@@ -741,15 +745,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                         },
                         this.host
                     );
-                    if (graphql) {
-                        return;
-                    }
-                }
-
-                if (!actionPayload) {
-                    this.uveStore.reloadCurrentPage();
-
-                    return;
                 }
 
                 const { pageContainers, didInsert } = insertContentletInContainer({
