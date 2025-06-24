@@ -1,3 +1,5 @@
+@use "variables" as *;
+
 :host {
     display: grid;
     grid-template-columns: min-content 1fr min-content;
@@ -15,8 +17,8 @@
     justify-content: center;
     align-items: center;
 
-    font-size: 1.5rem;
-    font-weight: 600;
+    font-size: $font-size-xl;
+    font-weight: $font-weight-medium-bold;
 }
 
 .toolbar {
@@ -36,13 +38,21 @@
     width: 16.5rem;
 }
 
-.list-view {
+dot-folder-list-view {
     background-color: lightgreen;
 
     grid-column: 2 / 3;
     grid-row-start: 2;
 
     width: 100%;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+
+    font-size: $font-size-xl;
+    font-weight: $font-weight-medium-bold;
 }
 
 .detail-view {
