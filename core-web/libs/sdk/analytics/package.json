@@ -1,6 +1,6 @@
 {
     "name": "@dotcms/analytics",
-    "version": "0.0.1-alpha.55",
+    "version": "0.0.1-alpha.54",
     "description": "Official JavaScript library for Content Analytics with DotCMS.",
     "repository": {
         "type": "git",

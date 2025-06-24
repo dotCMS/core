@@ -29,10 +29,6 @@ export const dotAnalyticsIdentityPlugin = (config: DotContentAnalyticsConfig) =>
         initialize: () => {
             initializeActivityTracking(config);
 
-            if (config.debug) {
-                console.warn('DotAnalytics: Identity plugin initialized');
-            }
-
             return Promise.resolve();
         },
 
@@ -69,7 +65,12 @@ export const dotAnalyticsIdentityPlugin = (config: DotContentAnalyticsConfig) =>
         loaded: () => {
             // Set up cleanup on page unload
             if (typeof window !== 'undefined') {
+                // beforeunload for traditional browsers and desktop
                 window.addEventListener('beforeunload', cleanupActivityTracking);
+
+                // pagehide for mobile/tablet scenarios and modern browsers
+                // Handles cases where page goes to bfcache or gets suspended
+                window.addEventListener('pagehide', cleanupActivityTracking);
             }
 
             return true;

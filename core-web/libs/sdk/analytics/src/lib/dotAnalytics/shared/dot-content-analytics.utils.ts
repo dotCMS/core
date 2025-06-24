@@ -27,9 +27,9 @@ const ACTIVITY_THROTTLE_MS = 1000; // Throttle activity events to max 1 per seco
 
 // Performance cache for static browser data that rarely changes
 let staticBrowserData: {
-    user_language: string;
-    doc_encoding: string;
-    screen_resolution: string;
+    user_language: string | null;
+    doc_encoding: string | null;
+    screen_resolution: string | null;
 } | null = null;
 
 // UTM parameters cache to avoid repetitive URL parsing
@@ -192,6 +192,12 @@ const hasPassedMidnight = (sessionStartTime: number): boolean => {
  */
 export const getSessionId = (): string => {
     const now = Date.now();
+
+    // Early return if window is not available (SSR/build time)
+    if (typeof window === 'undefined') {
+        return generateSecureId('session_fallback');
+    }
+
     const currentUTM = extractUTMParameters(window.location);
 
     try {
@@ -259,6 +265,11 @@ export const getSessionInfo = () => {
 export const initializeActivityTracking = (config: DotContentAnalyticsConfig): void => {
     cleanupActivityTracking();
 
+    // Early return if window is not available (SSR/build time)
+    if (typeof window === 'undefined') {
+        return;
+    }
+
     const throttledHandler = createThrottledActivityHandler(config);
 
     // Set up event listeners for basic activity events
@@ -307,22 +318,18 @@ export const cleanupActivityTracking = (): void => {
 export const getAnalyticsContext = (config: DotContentAnalyticsConfig): DotAnalyticsContext => {
     const sessionId = getSessionId();
     const userId = getUserId();
-    const local_tz = getLocalTimezone();
 
     if (config.debug) {
         console.warn('DotAnalytics Identity Context:', {
             sessionId,
-            userId,
-
-            local_tz
+            userId
         });
     }
 
     return {
         site_key: config.siteKey,
         session_id: sessionId,
-        user_id: userId,
-        local_tz: local_tz
+        user_id: userId
     };
 };
 
@@ -360,11 +367,20 @@ export const getAnalyticsScriptTag = (): HTMLScriptElement => {
  */
 const getStaticBrowserData = () => {
     if (!staticBrowserData) {
-        staticBrowserData = {
-            user_language: navigator.language,
-            doc_encoding: document.characterSet,
-            screen_resolution: `${window.screen.width}x${window.screen.height}`
-        };
+        // Return null values when window is not available (SSR/build time)
+        if (typeof window === 'undefined') {
+            staticBrowserData = {
+                user_language: null,
+                doc_encoding: null,
+                screen_resolution: null
+            };
+        } else {
+            staticBrowserData = {
+                user_language: navigator.language,
+                doc_encoding: document.characterSet,
+                screen_resolution: `${window.screen.width}x${window.screen.height}`
+            };
+        }
     }
 
     return staticBrowserData;
@@ -375,6 +391,25 @@ const getStaticBrowserData = () => {
  */
 export const getBrowserEventData = (location: Location): BrowserEventData => {
     const staticData = getStaticBrowserData();
+
+    // Return null values when window is not available (SSR/build time)
+    if (typeof window === 'undefined') {
+        return {
+            utc_time: new Date().toISOString(),
+            local_tz_offset: new Date().getTimezoneOffset(),
+            vp_size: null,
+            page_title: null,
+            referrer: null,
+            doc_path: location?.pathname || null,
+            doc_host: location?.hostname || null,
+            doc_protocol: location?.protocol || null,
+            doc_hash: location?.hash || '',
+            doc_search: location?.search || '',
+            url: location?.href || null,
+            utm: {},
+            ...staticData
+        };
+    }
 
     // Always get fresh data for dynamic properties
     return {
@@ -445,20 +480,6 @@ export const isInsideEditor = (): boolean => {
         return window.parent !== window;
     } catch (e) {
         return false;
-    }
-};
-
-/**
- * Gets the local timezone using modern browser API with fallback
- */
-export const getLocalTimezone = (): string => {
-    try {
-        return Intl.DateTimeFormat().resolvedOptions().timeZone;
-    } catch (error) {
-        // Fallback for very old browsers (< 1% of users)
-        console.warn('DotAnalytics: Intl.DateTimeFormat not supported, using UTC');
-
-        return 'UTC';
     }
 };
 
@@ -535,9 +556,9 @@ export const getPageData = (
     const { language_id, persona } = payload.properties;
 
     return {
-        url: browserData.url,
-        doc_encoding: browserData.doc_encoding,
-        title: browserData.page_title,
+        url: browserData.url || '',
+        doc_encoding: browserData.doc_encoding || '',
+        title: browserData.page_title || '',
         language_id,
         persona,
         dot_path: browserData.doc_path,
@@ -552,7 +573,7 @@ export const getPageData = (
  * Gets device data from browser event data
  */
 export const getDeviceData = (browserData: BrowserEventData): DeviceData => {
-    const [viewportWidth, viewportHeight] = browserData.vp_size.split('x');
+    const [viewportWidth, viewportHeight] = (browserData.vp_size ?? '0x0').split('x');
 
     return {
         screen_resolution: browserData.screen_resolution,
@@ -605,7 +626,7 @@ export const enrichWithUtmData = (payload: DotAnalyticsPayload) => {
  */
 export const enrichPagePayloadOptimized = (
     payload: DotAnalyticsPayload,
-    location: Location = window.location
+    location: Location = typeof window !== 'undefined' ? window.location : ({} as Location)
 ) => {
     const staticData = getStaticBrowserData();
     const local_time = getLocalTime();

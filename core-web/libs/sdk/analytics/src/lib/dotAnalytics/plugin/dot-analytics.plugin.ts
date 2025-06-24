@@ -25,12 +25,7 @@ export const dotAnalytics = (config: DotContentAnalyticsConfig) => {
         /**
          * Initialize the plugin
          */
-        initialize: (params: DotAnalyticsParams) => {
-            const { config } = params;
-            if (config.debug) {
-                console.warn('DotAnalytics: Initialized with config', config);
-            }
-
+        initialize: () => {
             isInitialized = true;
 
             // No automatic page view sending - let useRouterTracker handle it

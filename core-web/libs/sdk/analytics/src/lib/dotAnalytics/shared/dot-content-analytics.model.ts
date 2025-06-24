@@ -67,18 +67,18 @@ export interface TrackRequestBody extends Record<string, unknown> {
 export interface BrowserEventData {
     utc_time: string;
     local_tz_offset: number;
-    screen_resolution: string;
-    vp_size: string;
-    user_language: string;
-    doc_encoding: string;
-    doc_path: string;
-    doc_host: string;
-    doc_protocol: string;
+    screen_resolution: string | null;
+    vp_size: string | null;
+    user_language: string | null;
+    doc_encoding: string | null;
+    doc_path: string | null;
+    doc_host: string | null;
+    doc_protocol: string | null;
     doc_hash: string;
     doc_search: string;
-    referrer: string;
-    page_title: string;
-    url: string;
+    referrer: string | null;
+    page_title: string | null;
+    url: string | null;
     utm: Record<string, string>;
 }
 
@@ -138,7 +138,6 @@ export interface DotAnalyticsContext {
     site_key: string;
     session_id: string;
     user_id: string;
-    local_tz: string;
 }
 
 /**
@@ -146,10 +145,10 @@ export interface DotAnalyticsContext {
  * Contains technical details about the user's device and browser environment.
  */
 export interface DeviceData {
-    screen_resolution: string;
-    language: string;
-    viewport_width: string;
-    viewport_height: string;
+    screen_resolution: string | null;
+    language: string | null;
+    viewport_width: string | null;
+    viewport_height: string | null;
 }
 
 /**
@@ -170,14 +169,14 @@ export interface UtmData {
  * within the DotCMS environment.
  */
 export interface PageData {
-    url: string;
-    doc_encoding: string;
+    url: string | null;
+    doc_encoding: string | null;
     doc_hash: string;
-    doc_protocol: string;
+    doc_protocol: string | null;
     doc_search: string;
-    dot_host: string;
-    dot_path: string;
-    title: string;
+    dot_host: string | null;
+    dot_path: string | null;
+    title: string | null;
     user_agent?: string;
     language_id?: string;
     persona?: string;
