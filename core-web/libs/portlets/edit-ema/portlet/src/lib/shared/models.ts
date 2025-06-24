@@ -212,6 +212,12 @@ export interface EditEmaDialogState {
     status: DialogStatus;
     url: string;
     type: DialogType;
+    /**
+     * Represent the action payload of the dialog, with the edited contentlet or the new contentlet
+     * that is being created, both inside PageAsset.
+     *
+     * Can be null when the dialog is opened outside of PageAsset, like from the Content API.
+     */
     actionPayload?: ActionPayload;
     form: DialogForm;
     clientAction: CLIENT_ACTIONS;
