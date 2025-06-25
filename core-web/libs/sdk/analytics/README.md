@@ -374,7 +374,6 @@ The following features are planned for future releases:
     - Vue.js integration
 
 3. **Advanced Features**
-    - A/B testing integration
     - Real-time analytics dashboard
     - Custom event validation
 
