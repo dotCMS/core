@@ -3,7 +3,7 @@ import { Analytics } from 'analytics';
 import { dotAnalytics } from './plugin/dot-analytics.plugin';
 import { dotAnalyticsEnricherPlugin } from './plugin/enricher/dot-analytics.enricher.plugin';
 import { dotAnalyticsIdentityPlugin } from './plugin/identity/dot-analytics.identity.plugin';
-import { DotAnalytics, DotContentAnalyticsConfig } from './shared/dot-content-analytics.model';
+import { DotCMSAnalytics, DotCMSAnalyticsConfig } from './shared/dot-content-analytics.model';
 import {
     cleanupActivityTracking,
     updateSessionActivity
@@ -12,12 +12,12 @@ import {
 /**
  * Creates an analytics instance for content analytics tracking.
  *
- * @param {DotContentAnalyticsConfig} config - The configuration object for the analytics instance.
- * @returns {DotAnalytics} - The analytics instance.
+ * @param {DotCMSAnalyticsConfig} config - The configuration object for the analytics instance.
+ * @returns {DotCMSAnalytics} - The analytics instance.
  */
 export const initializeContentAnalytics = (
-    config: DotContentAnalyticsConfig
-): DotAnalytics | null => {
+    config: DotCMSAnalyticsConfig
+): DotCMSAnalytics | null => {
     if (!config.siteKey) {
         console.error('DotContentAnalytics: Missing "siteKey" in configuration');
 

@@ -1,11 +1,11 @@
 import { initializeContentAnalytics } from './dotAnalytics/dot-content-analytics';
 import { ANALYTICS_WINDOWS_KEY } from './dotAnalytics/shared/dot-content-analytics.constants';
-import { DotAnalytics } from './dotAnalytics/shared/dot-content-analytics.model';
+import { DotCMSAnalytics } from './dotAnalytics/shared/dot-content-analytics.model';
 import { getDataAnalyticsAttributes } from './dotAnalytics/shared/dot-content-analytics.utils';
 
 declare global {
     interface Window {
-        [ANALYTICS_WINDOWS_KEY]: DotAnalytics | null;
+        [ANALYTICS_WINDOWS_KEY]: DotCMSAnalytics | null;
     }
 }
 

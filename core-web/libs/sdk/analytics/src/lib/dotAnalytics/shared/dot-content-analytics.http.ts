@@ -1,5 +1,9 @@
 import { ANALYTICS_ENDPOINT } from './dot-content-analytics.constants';
-import { DotContentAnalyticsConfig } from './dot-content-analytics.model';
+import {
+    DotCMSAnalyticsConfig,
+    DotCMSPageViewRequestBody,
+    DotCMSTrackRequestBody
+} from './dot-content-analytics.model';
 
 /**
  * Send an analytics event to the server
@@ -8,8 +12,8 @@ import { DotContentAnalyticsConfig } from './dot-content-analytics.model';
  * @returns A promise that resolves to the response from the server
  */
 export const sendAnalyticsEventToServer = async (
-    payload: Record<string, unknown>,
-    options: DotContentAnalyticsConfig
+    payload: DotCMSPageViewRequestBody | DotCMSTrackRequestBody,
+    options: DotCMSAnalyticsConfig
 ): Promise<void> => {
     try {
         const response = await fetch(`${options.server}${ANALYTICS_ENDPOINT}`, {

@@ -1,16 +1,16 @@
 import { useEffect, useRef } from 'react';
 
-import { DotAnalytics } from '../../dotAnalytics/shared/dot-content-analytics.model';
+import { DotCMSAnalytics } from '../../dotAnalytics/shared/dot-content-analytics.model';
 import { isInsideEditor } from '../../dotAnalytics/shared/dot-content-analytics.utils';
 
 /**
  * Internal custom hook that handles analytics page view tracking.
  *
- * @param {DotContentAnalytics | null} instance - The analytics instance used to track page views
+ * @param {DotCMSAnalytics | null} instance - The analytics instance used to track page views
  * @returns {void}
  *
  */
-export function useRouterTracker(analytics: DotAnalytics | null) {
+export function useRouterTracker(analytics: DotCMSAnalytics | null) {
     const lastPathRef = useRef<string | null>(null);
 
     useEffect(() => {

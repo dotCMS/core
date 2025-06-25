@@ -6,7 +6,7 @@ import { initializeContentAnalytics } from './dot-content-analytics';
 import { dotAnalytics } from './plugin/dot-analytics.plugin';
 import { dotAnalyticsEnricherPlugin } from './plugin/enricher/dot-analytics.enricher.plugin';
 import { dotAnalyticsIdentityPlugin } from './plugin/identity/dot-analytics.identity.plugin';
-import { DotContentAnalyticsConfig } from './shared/dot-content-analytics.model';
+import { DotCMSAnalyticsConfig } from './shared/dot-content-analytics.model';
 import { updateSessionActivity } from './shared/dot-content-analytics.utils';
 
 // Mock dependencies
@@ -29,7 +29,7 @@ const mockUpdateSessionActivity = updateSessionActivity as jest.MockedFunction<
 >;
 
 describe('initializeContentAnalytics', () => {
-    const mockConfig: DotContentAnalyticsConfig = {
+    const mockConfig: DotCMSAnalyticsConfig = {
         debug: false,
         server: 'https://test.com',
         siteKey: 'test-site-key',

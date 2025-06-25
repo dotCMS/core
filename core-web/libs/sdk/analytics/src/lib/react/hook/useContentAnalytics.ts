@@ -1,6 +1,6 @@
 import { useCallback, useContext, useRef } from 'react';
 
-import { DotAnalytics } from '../../dotAnalytics/shared/dot-content-analytics.model';
+import { DotCMSAnalytics } from '../../dotAnalytics/shared/dot-content-analytics.model';
 import { isInsideEditor } from '../../dotAnalytics/shared/dot-content-analytics.utils';
 import DotContentAnalyticsContext from '../contexts/DotContentAnalyticsContext';
 
@@ -50,10 +50,10 @@ import DotContentAnalyticsContext from '../contexts/DotContentAnalyticsContext';
  * }
  * ```
  *
- * @returns {DotAnalytics} - The analytics instance with tracking capabilities for anonymous users
+ * @returns {DotCMSAnalytics} - The analytics instance with tracking capabilities for anonymous users
  * @throws {Error} - Throws error if used outside of DotContentAnalyticsProvider or if analytics failed to initialize
  */
-export const useContentAnalytics = (): DotAnalytics => {
+export const useContentAnalytics = (): DotCMSAnalytics => {
     const instance = useContext(DotContentAnalyticsContext);
     const lastPathRef = useRef<string | null>(null);
 

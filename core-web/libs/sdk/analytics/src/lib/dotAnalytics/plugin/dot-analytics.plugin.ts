@@ -1,9 +1,9 @@
 import { sendAnalyticsEventToServer } from '../shared/dot-content-analytics.http';
 import {
-    DotAnalyticsParams,
-    DotContentAnalyticsConfig,
-    PageViewRequestBody,
-    TrackRequestBody
+    DotCMSAnalyticsConfig,
+    DotCMSAnalyticsParams,
+    DotCMSPageViewRequestBody,
+    DotCMSTrackRequestBody
 } from '../shared/dot-content-analytics.model';
 
 /**
@@ -11,11 +11,11 @@ import {
  * This plugin handles sending analytics data to the DotCMS server, managing initialization,
  * and processing both automatic and manual tracking events.
  *
- * @param {DotAnalyticsConfig} config - Configuration object containing API key, server URL,
+ * @param {DotCMSAnalyticsConfig} config - Configuration object containing API key, server URL,
  *                                     debug mode and auto page view settings
  * @returns {Object} Plugin object with methods for initialization and event tracking
  */
-export const dotAnalytics = (config: DotContentAnalyticsConfig) => {
+export const dotAnalytics = (config: DotCMSAnalyticsConfig) => {
     let isInitialized = false;
 
     return {
@@ -37,7 +37,7 @@ export const dotAnalytics = (config: DotContentAnalyticsConfig) => {
          * Track a page view event
          * Takes enriched data from properties and creates final structured event
          */
-        page: (params: DotAnalyticsParams) => {
+        page: (params: DotCMSAnalyticsParams) => {
             const { config, payload } = params;
             const { context, page, device, utm, local_time } = payload;
 
@@ -46,7 +46,7 @@ export const dotAnalytics = (config: DotContentAnalyticsConfig) => {
             }
 
             // Build final structured event
-            const body: PageViewRequestBody = {
+            const body: DotCMSPageViewRequestBody = {
                 context,
                 events: [
                     {
@@ -70,17 +70,16 @@ export const dotAnalytics = (config: DotContentAnalyticsConfig) => {
          * Track a custom event
          * Takes enriched data and sends it to the analytics server
          */
-        track: (params: DotAnalyticsParams) => {
+        track: (params: DotCMSAnalyticsParams) => {
             const { config, payload } = params;
 
             if (!isInitialized) {
                 throw new Error('DotAnalytics: Plugin not initialized');
             }
 
-            // For track events, the enricher plugin handles enrichment
-            const body: TrackRequestBody = {
-                ...payload,
-                key: config.siteKey
+            // For track events, use the enriched payload directly
+            const body: DotCMSTrackRequestBody = {
+                context: payload.context
             };
 
             return sendAnalyticsEventToServer(body, config);

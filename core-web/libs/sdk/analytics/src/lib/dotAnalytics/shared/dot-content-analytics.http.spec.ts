@@ -3,7 +3,11 @@ import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 
 import { ANALYTICS_ENDPOINT } from './dot-content-analytics.constants';
 import { sendAnalyticsEventToServer } from './dot-content-analytics.http';
-import { DotContentAnalyticsConfig } from './dot-content-analytics.model';
+import {
+    DotCMSAnalyticsConfig,
+    DotCMSPageViewRequestBody,
+    DotCMSTrackRequestBody
+} from './dot-content-analytics.model';
 
 // Mock fetch globally
 const mockFetch = jest.fn() as jest.MockedFunction<typeof fetch>;
@@ -15,8 +19,8 @@ const mockConsoleError = jest.spyOn(console, 'error').mockImplementation(() => {
 });
 
 describe('DotAnalytics HTTP Utils', () => {
-    let mockConfig: DotContentAnalyticsConfig;
-    let mockPayload: Record<string, unknown>;
+    let mockConfig: DotCMSAnalyticsConfig;
+    let mockPayload: DotCMSPageViewRequestBody | DotCMSTrackRequestBody;
 
     beforeEach(() => {
         // Reset all mocks
@@ -33,12 +37,33 @@ describe('DotAnalytics HTTP Utils', () => {
         };
 
         mockPayload = {
-            event: 'page_view',
-            properties: {
-                url: 'https://example.com/page',
-                title: 'Test Page'
+            context: {
+                site_key: 'test-site-key',
+                session_id: 'test-session-id',
+                user_id: 'test-user-id'
             },
-            timestamp: Date.now()
+            events: [
+                {
+                    event_type: 'pageview',
+                    local_time: Date.now().toString(),
+                    page: {
+                        url: 'https://example.com/page',
+                        doc_encoding: 'UTF-8',
+                        doc_hash: 'test-hash',
+                        doc_protocol: 'https',
+                        doc_search: 'test-search',
+                        dot_host: 'example.com',
+                        dot_path: '/page',
+                        title: 'Test Page'
+                    },
+                    device: {
+                        screen_resolution: '1920x1080',
+                        language: 'en-US',
+                        viewport_width: '1920',
+                        viewport_height: '1080'
+                    }
+                }
+            ]
         };
     });
 

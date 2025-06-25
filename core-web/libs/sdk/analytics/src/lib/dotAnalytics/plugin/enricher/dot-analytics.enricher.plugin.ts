@@ -1,5 +1,5 @@
 import { ANALYTICS_SOURCE_TYPE } from '../../shared/dot-content-analytics.constants';
-import { DotAnalyticsPayload } from '../../shared/dot-content-analytics.model';
+import { DotCMSAnalyticsPayload } from '../../shared/dot-content-analytics.model';
 import { enrichPagePayloadOptimized, getLocalTime } from '../../shared/dot-content-analytics.utils';
 
 /**
@@ -18,7 +18,7 @@ export const dotAnalyticsEnricherPlugin = () => {
          * PAGE VIEW ENRICHMENT - Runs after identity context injection
          * Uses optimized enrichment that leverages analytics.js payload data
          */
-        'page:dot-analytics': ({ payload }: { payload: DotAnalyticsPayload }) => {
+        'page:dot-analytics': ({ payload }: { payload: DotCMSAnalyticsPayload }) => {
             return enrichPagePayloadOptimized(payload);
         },
 
@@ -26,7 +26,7 @@ export const dotAnalyticsEnricherPlugin = () => {
          * TRACK EVENT ENRICHMENT - Runs after identity context injection
          * Creates structured track events with pre-injected context
          */
-        'track:dot-analytics': ({ payload }: { payload: DotAnalyticsPayload }) => {
+        'track:dot-analytics': ({ payload }: { payload: DotCMSAnalyticsPayload }) => {
             const local_time = getLocalTime();
 
             const enrichedPayload = {
@@ -43,7 +43,7 @@ export const dotAnalyticsEnricherPlugin = () => {
                 ]
             };
 
-            return { payload: enrichedPayload };
+            return enrichedPayload;
         }
     };
 };
