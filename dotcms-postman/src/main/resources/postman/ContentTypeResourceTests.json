@@ -34,32 +34,19 @@
 									"    pm.expect(jsonData.entity[0].sortOrder).to.eql(3);",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "password",
-									"value": "admin",
+									"key": "token",
+									"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhcGliY2ExY2JjYy0xMjkyLTQxMGMtYWFkNy1lMjBlYmJmZTBlOTgiLCJ4bW9kIjoxNzUwNzg5MjA3MDAwLCJuYmYiOjE3NTA3ODkyMDcsImlzcyI6Imxlbm5veC1kZXYtMSIsImxhYmVsIjoiVGVzdEFQSSIsImV4cCI6MTg0NTQzOTIwMCwiaWF0IjoxNzUwNzg5MjA3LCJqdGkiOiJhY2JhNzM3Ny04N2EyLTQ4MzAtOTQwNi03ZTAwYTVkMTM4ZTAifQ.PcjweALvL8xBUYKVyuzIl3dxVoy-Bf0TudWdtnnLTyo",
 									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "saveHelperData",
-									"type": "any"
-								},
-								{
-									"key": "showPassword",
-									"value": false,
-									"type": "boolean"
 								}
 							]
 						},
@@ -110,32 +97,19 @@
 									"    pm.expect(jsonData.entity.sortOrder).to.eql(3);",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "password",
-									"value": "admin",
+									"key": "token",
+									"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhcGliY2ExY2JjYy0xMjkyLTQxMGMtYWFkNy1lMjBlYmJmZTBlOTgiLCJ4bW9kIjoxNzUwNzg5MjA3MDAwLCJuYmYiOjE3NTA3ODkyMDcsImlzcyI6Imxlbm5veC1kZXYtMSIsImxhYmVsIjoiVGVzdEFQSSIsImV4cCI6MTg0NTQzOTIwMCwiaWF0IjoxNzUwNzg5MjA3LCJqdGkiOiJhY2JhNzM3Ny04N2EyLTQ4MzAtOTQwNi03ZTAwYTVkMTM4ZTAifQ.PcjweALvL8xBUYKVyuzIl3dxVoy-Bf0TudWdtnnLTyo",
 									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "saveHelperData",
-									"type": "any"
-								},
-								{
-									"key": "showPassword",
-									"value": false,
-									"type": "boolean"
 								}
 							]
 						},
@@ -179,32 +153,19 @@
 									"    pm.expect(jsonData.entity.sortOrder).to.eql(2);",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "password",
-									"value": "admin",
+									"key": "token",
+									"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhcGliY2ExY2JjYy0xMjkyLTQxMGMtYWFkNy1lMjBlYmJmZTBlOTgiLCJ4bW9kIjoxNzUwNzg5MjA3MDAwLCJuYmYiOjE3NTA3ODkyMDcsImlzcyI6Imxlbm5veC1kZXYtMSIsImxhYmVsIjoiVGVzdEFQSSIsImV4cCI6MTg0NTQzOTIwMCwiaWF0IjoxNzUwNzg5MjA3LCJqdGkiOiJhY2JhNzM3Ny04N2EyLTQ4MzAtOTQwNi03ZTAwYTVkMTM4ZTAifQ.PcjweALvL8xBUYKVyuzIl3dxVoy-Bf0TudWdtnnLTyo",
 									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "saveHelperData",
-									"type": "any"
-								},
-								{
-									"key": "showPassword",
-									"value": false,
-									"type": "boolean"
 								}
 							]
 						},
@@ -257,32 +218,19 @@
 									"    pm.expect(jsonData.entity.sortOrder).to.eql(2);",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "password",
-									"value": "admin",
+									"key": "token",
+									"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhcGliY2ExY2JjYy0xMjkyLTQxMGMtYWFkNy1lMjBlYmJmZTBlOTgiLCJ4bW9kIjoxNzUwNzg5MjA3MDAwLCJuYmYiOjE3NTA3ODkyMDcsImlzcyI6Imxlbm5veC1kZXYtMSIsImxhYmVsIjoiVGVzdEFQSSIsImV4cCI6MTg0NTQzOTIwMCwiaWF0IjoxNzUwNzg5MjA3LCJqdGkiOiJhY2JhNzM3Ny04N2EyLTQ4MzAtOTQwNi03ZTAwYTVkMTM4ZTAifQ.PcjweALvL8xBUYKVyuzIl3dxVoy-Bf0TudWdtnnLTyo",
 									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "saveHelperData",
-									"type": "any"
-								},
-								{
-									"key": "showPassword",
-									"value": false,
-									"type": "boolean"
 								}
 							]
 						},
@@ -325,32 +273,19 @@
 									"    pm.response.to.have.status(200);",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "password",
-									"value": "admin",
+									"key": "token",
+									"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhcGliY2ExY2JjYy0xMjkyLTQxMGMtYWFkNy1lMjBlYmJmZTBlOTgiLCJ4bW9kIjoxNzUwNzg5MjA3MDAwLCJuYmYiOjE3NTA3ODkyMDcsImlzcyI6Imxlbm5veC1kZXYtMSIsImxhYmVsIjoiVGVzdEFQSSIsImV4cCI6MTg0NTQzOTIwMCwiaWF0IjoxNzUwNzg5MjA3LCJqdGkiOiJhY2JhNzM3Ny04N2EyLTQ4MzAtOTQwNi03ZTAwYTVkMTM4ZTAifQ.PcjweALvL8xBUYKVyuzIl3dxVoy-Bf0TudWdtnnLTyo",
 									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "saveHelperData",
-									"type": "any"
-								},
-								{
-									"key": "showPassword",
-									"value": false,
-									"type": "boolean"
 								}
 							]
 						},
