@@ -13,7 +13,6 @@ import {
     getDataAnalyticsAttributes,
     getDeviceData,
     getLocalTime,
-    getLocalTimezone,
     getPageData,
     getSessionId,
     getUserId,
@@ -49,83 +48,91 @@ describe('Analytics Utils', () => {
     describe('getAnalyticsScriptTag', () => {
         it('should return analytics script tag when present', () => {
             const script = document.createElement('script');
-            script.setAttribute('data-analytics-key', 'test-key');
+            script.setAttribute('data-server', 'https://analytics.dotcms.com');
+            script.setAttribute('data-site-key', 'test-key');
             document.body.appendChild(script);
 
             const result = getAnalyticsScriptTag();
             expect(result).toBeTruthy();
-            expect(result.getAttribute('data-analytics-key')).toBe('test-key');
+            expect(result.getAttribute('data-site-key')).toBe('test-key');
         });
 
         it('should throw error when analytics script tag is not found', () => {
-            expect(() => getAnalyticsScriptTag()).toThrow('Dot Analytics: Script not found');
+            expect(() => getAnalyticsScriptTag()).toThrow(
+                'DotAnalytics: Analytics script tag not found'
+            );
         });
     });
 
     describe('getDataAnalyticsAttributes', () => {
         beforeEach(() => {
             const script = document.createElement('script');
-            script.setAttribute('data-analytics-key', 'test-key');
+            script.setAttribute('data-server', 'https://analytics.dotcms.com');
+            script.setAttribute('data-site-key', 'test-key');
             document.body.appendChild(script);
         });
 
         it('should return default values when attributes are not set', () => {
-            const result = getDataAnalyticsAttributes(mockLocation);
+            const result = getDataAnalyticsAttributes();
 
             expect(result).toEqual({
-                server: mockLocation.origin,
-                debug: false,
-                autoPageView: false,
-                siteKey: ''
-            });
-        });
-
-        it('should enable debug when debug attribute exists', () => {
-            const script = document.querySelector('script[data-analytics-key]');
-            script?.setAttribute('data-analytics-debug', '');
-
-            const result = getDataAnalyticsAttributes(mockLocation);
-
-            expect(result).toEqual({
-                server: mockLocation.origin,
-                debug: true,
-                autoPageView: false,
-                siteKey: ''
-            });
-        });
-
-        it('should enable autoPageView when auto-page-view attribute exists', () => {
-            const script = document.querySelector('script[data-analytics-key]');
-            script?.setAttribute('data-analytics-auto-page-view', '');
-
-            const result = getDataAnalyticsAttributes(mockLocation);
-
-            expect(result).toEqual({
-                server: mockLocation.origin,
+                server: 'https://analytics.dotcms.com',
                 debug: false,
                 autoPageView: true,
-                siteKey: ''
+                siteKey: 'test-key',
+                redirectFn: expect.any(Function)
+            });
+        });
+
+        it('should enable debug when debug attribute is true', () => {
+            const script = document.querySelector('script[data-server][data-site-key]');
+            script?.setAttribute('data-debug', 'true');
+
+            const result = getDataAnalyticsAttributes();
+
+            expect(result).toEqual({
+                server: 'https://analytics.dotcms.com',
+                debug: true,
+                autoPageView: true,
+                siteKey: 'test-key',
+                redirectFn: expect.any(Function)
+            });
+        });
+
+        it('should disable autoPageView when auto-page-view attribute is false', () => {
+            const script = document.querySelector('script[data-server][data-site-key]');
+            script?.setAttribute('data-auto-page-view', 'false');
+
+            const result = getDataAnalyticsAttributes();
+
+            expect(result).toEqual({
+                server: 'https://analytics.dotcms.com',
+                debug: false,
+                autoPageView: false,
+                siteKey: 'test-key',
+                redirectFn: expect.any(Function)
             });
         });
 
         it('should handle all attributes together', () => {
-            const script = document.querySelector('script[data-analytics-key]');
-            script?.setAttribute('data-analytics-debug', '');
-            script?.setAttribute('data-analytics-auto-page-view', '');
-            script?.setAttribute('data-analytics-site-key', 'test-site-key');
+            const script = document.querySelector('script[data-server][data-site-key]');
+            script?.setAttribute('data-debug', 'true');
+            script?.setAttribute('data-auto-page-view', 'false');
+            script?.setAttribute('data-site-key', 'custom-site-key');
 
-            const result = getDataAnalyticsAttributes(mockLocation);
+            const result = getDataAnalyticsAttributes();
 
             expect(result).toEqual({
-                server: mockLocation.origin,
+                server: 'https://analytics.dotcms.com',
                 debug: true,
-                autoPageView: true,
-                siteKey: 'test-site-key'
+                autoPageView: false,
+                siteKey: 'custom-site-key',
+                redirectFn: expect.any(Function)
             });
         });
     });
 
-    describe('createAnalyticsPageViewData', () => {
+    describe('getBrowserEventData', () => {
         beforeEach(() => {
             mockLocation = {
                 href: 'https://example.com/page',
@@ -172,7 +179,10 @@ describe('Analytics Utils', () => {
                     vp_size: '1024x768',
                     user_language: 'es-ES',
                     doc_encoding: 'UTF-8',
-                    referrer: 'https://referrer.com'
+                    referrer: 'https://referrer.com',
+                    utc_time: expect.any(String),
+                    url: 'https://example.com/page',
+                    utm: expect.any(Object)
                 })
             );
         });
@@ -196,9 +206,9 @@ describe('Analytics Utils', () => {
             );
             const result = extractUTMParameters(location);
             expect(result).toEqual({
-                source: 'google',
-                medium: 'cpc',
-                campaign: 'spring_sale'
+                utm_source: 'google',
+                utm_medium: 'cpc',
+                utm_campaign: 'spring_sale'
             });
         });
 
@@ -206,7 +216,7 @@ describe('Analytics Utils', () => {
             const location = mockLocation('?utm_source=google&non_utm_param=value');
             const result = extractUTMParameters(location);
             expect(result).toEqual({
-                source: 'google'
+                utm_source: 'google'
             });
         });
 
@@ -214,21 +224,22 @@ describe('Analytics Utils', () => {
             const location = mockLocation('?utm_source=google&utm_campaign=spring_sale');
             const result = extractUTMParameters(location);
             expect(result).toEqual({
-                source: 'google',
-                campaign: 'spring_sale'
+                utm_source: 'google',
+                utm_campaign: 'spring_sale'
             });
         });
 
         it('should handle all expected UTM parameters', () => {
             const location = mockLocation(
-                '?utm_source=google&utm_medium=cpc&utm_campaign=spring_sale&utm_id=12345'
+                '?utm_source=google&utm_medium=cpc&utm_campaign=spring_sale&utm_term=test&utm_content=ad1'
             );
             const result = extractUTMParameters(location);
             expect(result).toEqual({
-                source: 'google',
-                medium: 'cpc',
-                campaign: 'spring_sale',
-                id: '12345'
+                utm_source: 'google',
+                utm_medium: 'cpc',
+                utm_campaign: 'spring_sale',
+                utm_term: 'test',
+                utm_content: 'ad1'
             });
         });
     });
@@ -271,23 +282,29 @@ describe('Analytics Utils', () => {
             expect(isInsideEditor()).toBe(false);
         });
 
-        it('should return false when window.parent is undefined', () => {
-            (window as any).parent = undefined;
+        it('should return false when not in iframe and no editor params', () => {
+            Object.defineProperty(window, 'self', { value: window });
+            Object.defineProperty(window, 'top', { value: window });
+            Object.defineProperty(window, 'location', {
+                value: { href: 'https://example.com' },
+                writable: true
+            });
             expect(isInsideEditor()).toBe(false);
         });
 
-        it('should return false when window.parent equals window', () => {
-            window.parent = window;
-            expect(isInsideEditor()).toBe(false);
+        it('should return true when in iframe', () => {
+            const mockTop = { ...window, someUniqueProperty: true };
+            Object.defineProperty(window, 'self', { value: window });
+            Object.defineProperty(window, 'top', { value: mockTop });
+            expect(isInsideEditor()).toBe(true);
         });
 
-        it('should return true when window.parent differs from window', () => {
-            // Create a new window-like object that's definitely different from window
-            const mockParent = { ...window, someUniqueProperty: true };
-            Object.defineProperty(window, 'parent', {
-                value: mockParent,
-                writable: true,
-                configurable: true
+        it('should return true when has editor params', () => {
+            Object.defineProperty(window, 'self', { value: window });
+            Object.defineProperty(window, 'top', { value: window });
+            Object.defineProperty(window, 'location', {
+                value: { href: 'https://example.com?mode=EDIT_MODE' },
+                writable: true
             });
             expect(isInsideEditor()).toBe(true);
         });
@@ -385,72 +402,34 @@ describe('Analytics Utils', () => {
             const result = getSessionId();
 
             expect(result).toMatch(/^session_\d+_[a-z0-9]+$/);
-            expect(mockSessionStorage.setItem).toHaveBeenCalledTimes(3); // session, start, utm
+            expect(mockSessionStorage.setItem).toHaveBeenCalledTimes(1);
         });
 
         it('should return existing valid session ID', () => {
-            const existingSessionId = 'session_12345_abc';
-            const sessionStartTime = Date.now().toString();
-
-            mockSessionStorage.getItem
-                .mockReturnValueOnce(existingSessionId) // session ID
-                .mockReturnValueOnce(sessionStartTime) // session start
-                .mockReturnValueOnce('{"source":"test"}'); // UTM data
+            const sessionData = {
+                sessionId: 'session_12345_abc',
+                startTime: Date.now() - 1000, // 1 second ago
+                lastActivity: Date.now() - 1000
+            };
+            mockSessionStorage.getItem.mockReturnValue(JSON.stringify(sessionData));
 
             const result = getSessionId();
 
-            expect(result).toBe(existingSessionId);
+            expect(result).toBe('session_12345_abc');
         });
 
-        it('should create new session when UTM parameters change', () => {
-            const existingSessionId = 'session_12345_abc';
-            const sessionStartTime = Date.now().toString();
-
-            mockSessionStorage.getItem
-                .mockReturnValueOnce(existingSessionId)
-                .mockReturnValueOnce(sessionStartTime)
-                .mockReturnValueOnce('{"source":"different"}'); // Different UTM
+        it('should create new session when session is expired', () => {
+            const sessionData = {
+                sessionId: 'session_12345_abc',
+                startTime: Date.now() - 31 * 60 * 1000, // 31 minutes ago
+                lastActivity: Date.now() - 31 * 60 * 1000 // 31 minutes ago
+            };
+            mockSessionStorage.getItem.mockReturnValue(JSON.stringify(sessionData));
 
             const result = getSessionId();
 
             expect(result).toMatch(/^session_\d+_[a-z0-9]+$/);
-            expect(result).not.toBe(existingSessionId);
-        });
-    });
-
-    describe('getLocalTimezone', () => {
-        it('should return timezone using Intl.DateTimeFormat', () => {
-            const mockIntl = {
-                DateTimeFormat: jest.fn(() => ({
-                    resolvedOptions: () => ({ timeZone: 'America/New_York' })
-                }))
-            };
-
-            Object.defineProperty(global, 'Intl', {
-                value: mockIntl,
-                writable: true
-            });
-
-            const result = getLocalTimezone();
-
-            expect(result).toBe('America/New_York');
-        });
-
-        it('should fallback to UTC when Intl is not available', () => {
-            const originalIntl = global.Intl;
-            delete (global as any).Intl;
-
-            const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
-
-            const result = getLocalTimezone();
-
-            expect(result).toBe('UTC');
-            expect(consoleSpy).toHaveBeenCalledWith(
-                'DotAnalytics: Intl.DateTimeFormat not supported, using UTC'
-            );
-
-            global.Intl = originalIntl;
-            consoleSpy.mockRestore();
+            expect(result).not.toBe('session_12345_abc');
         });
     });
 
@@ -460,9 +439,9 @@ describe('Analytics Utils', () => {
 
             const result = getLocalTime();
 
-            // Should match ISO 8601 format with timezone offset
-            // Examples: "2024-01-01T12:30:45Z", "2024-01-01T07:30:45-05:00", "2024-01-01T13:30:45+01:00"
-            expect(result).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(Z|[+-]\d{2}:\d{2})$/);
+            // Should match ISO 8601 format with timezone offset including milliseconds
+            // Examples: "2024-01-01T12:30:45.000Z", "2024-01-01T07:30:45.000-05:00", "2024-01-01T13:30:45.000+01:00"
+            expect(result).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}[+-]\d{2}:\d{2}$/);
         });
 
         it('should handle formatter fallback for older browsers', () => {
@@ -473,13 +452,13 @@ describe('Analytics Utils', () => {
 
             const result = getLocalTime();
 
-            // When Intl is not available, it still should include timezone offset
-            expect(result).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(Z|[+-]\d{2}:\d{2})$/);
+            // When Intl is not available, it still should include timezone offset with milliseconds
+            expect(result).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}[+-]\d{2}:\d{2}$/);
 
             global.Intl = originalIntl;
         });
 
-        it('should return Z suffix for UTC timezone', () => {
+        it('should return correct offset for UTC timezone', () => {
             // Mock getTimezoneOffset to return 0 (UTC)
             const originalGetTimezoneOffset = Date.prototype.getTimezoneOffset;
             Date.prototype.getTimezoneOffset = jest.fn(() => 0);
@@ -488,7 +467,7 @@ describe('Analytics Utils', () => {
 
             const result = getLocalTime();
 
-            expect(result).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/);
+            expect(result).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}\+00:00$/);
 
             // Restore original method
             Date.prototype.getTimezoneOffset = originalGetTimezoneOffset;
@@ -503,7 +482,7 @@ describe('Analytics Utils', () => {
 
             const result = getLocalTime();
 
-            expect(result).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}-05:00$/);
+            expect(result).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}-05:00$/);
 
             // Restore original method
             Date.prototype.getTimezoneOffset = originalGetTimezoneOffset;
@@ -518,7 +497,7 @@ describe('Analytics Utils', () => {
 
             const result = getLocalTime();
 
-            expect(result).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\+02:00$/);
+            expect(result).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}\+02:00$/);
 
             // Restore original method
             Date.prototype.getTimezoneOffset = originalGetTimezoneOffset;
@@ -536,13 +515,15 @@ describe('Analytics Utils', () => {
                 doc_protocol: 'https:',
                 doc_hash: '#section',
                 doc_search: '?param=1',
-                utm: {}
+                utm: {},
+                referrer: 'https://referrer.com'
             } as any;
 
             const payload = {
                 properties: {
-                    language_id: 'en-US',
-                    persona: 'default'
+                    width: 1024,
+                    height: 768,
+                    title: 'Test Page'
                 }
             } as any;
 
@@ -550,15 +531,13 @@ describe('Analytics Utils', () => {
 
             expect(result).toEqual({
                 url: 'https://example.com/page',
-                doc_encoding: 'UTF-8',
+                path: '/page',
+                hash: '#section',
+                search: '?param=1',
                 title: 'Test Page',
-                language_id: 'en-US',
-                persona: 'default',
-                dot_path: '/page',
-                dot_host: 'example.com',
-                doc_protocol: 'https:',
-                doc_hash: '#section',
-                doc_search: '?param=1'
+                width: '1024',
+                height: '768',
+                referrer: 'https://referrer.com'
             });
         });
     });
@@ -586,11 +565,11 @@ describe('Analytics Utils', () => {
         it('should extract UTM data from browser event data', () => {
             const browserData = {
                 utm: {
-                    source: 'google',
-                    medium: 'cpc',
-                    campaign: 'spring_sale',
-                    term: 'shoes',
-                    content: 'ad1'
+                    utm_source: 'google',
+                    utm_medium: 'cpc',
+                    utm_campaign: 'spring_sale',
+                    utm_term: 'shoes',
+                    utm_content: 'ad1'
                 }
             } as any;
 
@@ -616,8 +595,8 @@ describe('Analytics Utils', () => {
         it('should handle partial UTM data', () => {
             const browserData = {
                 utm: {
-                    source: 'facebook',
-                    campaign: 'summer'
+                    utm_source: 'facebook',
+                    utm_campaign: 'summer'
                 }
             } as any;
 
@@ -658,10 +637,7 @@ describe('Analytics Utils', () => {
             // Check visibilitychange listener on document
             expect(documentAddEventListenerSpy).toHaveBeenCalledWith(
                 'visibilitychange',
-                expect.any(Function),
-                {
-                    passive: true
-                }
+                expect.any(Function)
             );
         });
     });
@@ -731,10 +707,13 @@ describe('Analytics Utils', () => {
 
         it('should return analytics context with session and user IDs', () => {
             mockLocalStorage.getItem.mockReturnValue('user_12345');
-            mockSessionStorage.getItem
-                .mockReturnValueOnce('session_67890')
-                .mockReturnValueOnce(Date.now().toString())
-                .mockReturnValueOnce('{}');
+
+            const sessionData = {
+                sessionId: 'session_67890',
+                startTime: Date.now() - 1000,
+                lastActivity: Date.now() - 1000
+            };
+            mockSessionStorage.getItem.mockReturnValue(JSON.stringify(sessionData));
 
             const config = { siteKey: 'test-site', debug: false } as any;
 
@@ -743,8 +722,7 @@ describe('Analytics Utils', () => {
             expect(result).toEqual({
                 site_key: 'test-site',
                 session_id: 'session_67890',
-                user_id: 'user_12345',
-                local_tz: expect.any(String)
+                user_id: 'user_12345'
             });
         });
     });
@@ -765,7 +743,11 @@ describe('Analytics Utils', () => {
 
             Object.defineProperty(window, 'innerWidth', { value: 1024 });
             Object.defineProperty(window, 'innerHeight', { value: 768 });
+            Object.defineProperty(window.screen, 'width', { value: 1920 });
+            Object.defineProperty(window.screen, 'height', { value: 1080 });
+            Object.defineProperty(navigator, 'language', { value: 'es-ES' });
             Object.defineProperty(document, 'title', { value: 'Test Page' });
+            Object.defineProperty(document, 'referrer', { value: 'https://referrer.com' });
         });
 
         it('should enrich payload with page, device, and UTM data', () => {
@@ -775,7 +757,12 @@ describe('Analytics Utils', () => {
                     language_id: 'en-US',
                     persona: 'default',
                     url: 'https://example.com/page',
-                    title: 'Test Page'
+                    title: 'Test Page',
+                    width: 1024,
+                    height: 768,
+                    utm: {
+                        source: 'google'
+                    }
                 }
             } as any;
 
@@ -788,15 +775,17 @@ describe('Analytics Utils', () => {
                     page: expect.objectContaining({
                         url: 'https://example.com/page',
                         title: 'Test Page',
-                        language_id: 'en-US',
-                        persona: 'default'
+                        width: '1024',
+                        height: '768'
                     }),
                     device: expect.objectContaining({
                         viewport_width: '1024',
-                        viewport_height: '768'
+                        viewport_height: '768',
+                        language: 'es-ES',
+                        screen_resolution: '1920x1080'
                     }),
                     local_time: expect.stringMatching(
-                        /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(Z|[+-]\d{2}:\d{2})$/
+                        /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}[+-]\d{2}:\d{2}$/
                     ),
                     utm: expect.objectContaining({
                         source: 'google'

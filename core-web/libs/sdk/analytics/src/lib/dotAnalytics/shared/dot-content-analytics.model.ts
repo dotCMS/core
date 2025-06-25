@@ -218,6 +218,8 @@ export interface DotCMSUtmData {
     term?: string;
     /** The campaign content or ad variation */
     content?: string;
+    /** The campaign ID for tracking specific campaigns */
+    id?: string;
 }
 
 /**

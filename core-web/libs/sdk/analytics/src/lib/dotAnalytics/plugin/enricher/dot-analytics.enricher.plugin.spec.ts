@@ -92,20 +92,18 @@ describe('dotAnalyticsEnricherPlugin', () => {
             // Assert
             expect(mockGetLocalTime).toHaveBeenCalledTimes(1);
             expect(result).toEqual({
-                payload: {
-                    events: [
-                        {
-                            event_type: 'track',
-                            custom_event: 'button_click',
-                            local_time: '2024-01-01T10:00:00.000Z',
-                            properties: {
-                                button_id: 'submit-btn',
-                                page: '/contact',
-                                src: ANALYTICS_SOURCE_TYPE
-                            }
+                events: [
+                    {
+                        event_type: 'track',
+                        custom_event: 'button_click',
+                        local_time: '2024-01-01T10:00:00.000Z',
+                        properties: {
+                            button_id: 'submit-btn',
+                            page: '/contact',
+                            src: ANALYTICS_SOURCE_TYPE
                         }
-                    ]
-                }
+                    }
+                ]
             });
         });
 
@@ -124,7 +122,7 @@ describe('dotAnalyticsEnricherPlugin', () => {
             const result = plugin['track:dot-analytics']({ payload: mockPayload });
 
             // Assert
-            expect(result.payload.events[0].properties).toEqual({
+            expect(result.events[0].properties).toEqual({
                 form_name: 'contact_form',
                 validation_errors: 0,
                 session_id: 'session_123',
@@ -143,7 +141,7 @@ describe('dotAnalyticsEnricherPlugin', () => {
             const result = plugin['track:dot-analytics']({ payload: mockPayload });
 
             // Assert
-            expect(result.payload.events[0].properties).toEqual({
+            expect(result.events[0].properties).toEqual({
                 src: ANALYTICS_SOURCE_TYPE
             });
         });
@@ -159,7 +157,7 @@ describe('dotAnalyticsEnricherPlugin', () => {
             const result = plugin['track:dot-analytics']({ payload: mockPayload });
 
             // Assert
-            expect(result.payload.events[0].properties).toEqual({
+            expect(result.events[0].properties).toEqual({
                 src: ANALYTICS_SOURCE_TYPE
             });
         });
@@ -177,8 +175,8 @@ describe('dotAnalyticsEnricherPlugin', () => {
             const result2 = plugin['track:dot-analytics']({ payload: mockPayload });
 
             // Assert
-            expect(result1.payload.events[0].local_time).toBe(time1);
-            expect(result2.payload.events[0].local_time).toBe(time2);
+            expect(result1.events[0].local_time).toBe(time1);
+            expect(result2.events[0].local_time).toBe(time2);
             expect(mockGetLocalTime).toHaveBeenCalledTimes(2);
         });
     });
@@ -201,7 +199,7 @@ describe('dotAnalyticsEnricherPlugin', () => {
             const result = plugin['track:dot-analytics']({ payload: realWorldPayload });
 
             // Assert
-            expect(result.payload.events[0]).toMatchObject({
+            expect(result.events[0]).toMatchObject({
                 event_type: 'track',
                 custom_event: 'content_interaction',
                 properties: expect.objectContaining({
@@ -270,8 +268,8 @@ describe('dotAnalyticsEnricherPlugin', () => {
 
             // Assert
             expect(result1).not.toBe(result2);
-            expect(result1.payload).not.toBe(result2.payload);
-            expect(result1.payload.events[0]).not.toBe(result2.payload.events[0]);
+            expect(result1.events).not.toBe(result2.events);
+            expect(result1.events[0]).not.toBe(result2.events[0]);
         });
     });
 
@@ -297,8 +295,8 @@ describe('dotAnalyticsEnricherPlugin', () => {
                 const result = plugin['track:dot-analytics']({ payload });
 
                 // Assert
-                expect(result.payload.events[0].custom_event).toBe(eventType);
-                expect(result.payload.events[0].event_type).toBe('track');
+                expect(result.events[0].custom_event).toBe(eventType);
+                expect(result.events[0].event_type).toBe('track');
             });
         });
     });

@@ -8,7 +8,14 @@ export const ANALYTICS_SOURCE_TYPE = ANALYTICS_WINDOWS_KEY;
 export const ANALYTICS_ENDPOINT = '/api/v1/analytics/content/event';
 
 // Expected UTM parameter keys for campaign tracking
-export const EXPECTED_UTM_KEYS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_id'];
+export const EXPECTED_UTM_KEYS = [
+    'utm_source',
+    'utm_medium',
+    'utm_campaign',
+    'utm_term',
+    'utm_content',
+    'utm_id'
+];
 
 /**
  * Session configuration constants

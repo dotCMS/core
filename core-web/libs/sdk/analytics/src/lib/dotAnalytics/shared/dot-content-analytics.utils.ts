@@ -425,11 +425,13 @@ export const getUtmData = (browserData: DotCMSBrowserEventData): DotCMSUtmData =
             return result;
         }
 
-        if (utm.medium) result.medium = utm.medium;
-        if (utm.source) result.source = utm.source;
-        if (utm.campaign) result.campaign = utm.campaign;
-        if (utm.term) result.term = utm.term;
-        if (utm.content) result.content = utm.content;
+        // Transform from prefixed UTM parameters to non-prefixed format
+        if (utm.utm_medium) result.medium = utm.utm_medium;
+        if (utm.utm_source) result.source = utm.utm_source;
+        if (utm.utm_campaign) result.campaign = utm.utm_campaign;
+        if (utm.utm_term) result.term = utm.utm_term;
+        if (utm.utm_content) result.content = utm.utm_content;
+        if (utm.utm_id) result.id = utm.utm_id;
 
         return result;
     } catch (error) {
