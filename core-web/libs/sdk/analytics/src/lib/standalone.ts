@@ -10,7 +10,7 @@ declare global {
 }
 
 (() => {
-    const dataAttributes = getDataAnalyticsAttributes(window.location);
+    const dataAttributes = getDataAnalyticsAttributes();
     const analytics = initializeContentAnalytics(dataAttributes);
 
     // Only assign to window if analytics was successfully initialized
