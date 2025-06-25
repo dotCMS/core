@@ -210,8 +210,9 @@ export const getDataAnalyticsAttributes = (): DotCMSAnalyticsConfig => {
         autoPageView: script.getAttribute('data-auto-page-view') !== 'false',
         siteKey: script.getAttribute('data-site-key') || '',
         redirectFn: script.getAttribute('data-redirect-fn')
-            ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              (window as any)[script.getAttribute('data-redirect-fn')!]
+            ? ((window as unknown as Record<string, unknown>)[
+                  script.getAttribute('data-redirect-fn')!
+              ] as (href: string) => void)
             : defaultRedirectFn
     };
 };

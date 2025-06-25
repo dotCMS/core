@@ -1,3 +1,10 @@
+// Extend Window interface to include our custom properties
+declare global {
+    interface Window {
+        __dotAnalyticsCleanup?: () => void;
+    }
+}
+
 /**
  * Configuration interface for DotCMS Analytics SDK.
  * Contains all necessary settings for initializing and configuring the analytics client.

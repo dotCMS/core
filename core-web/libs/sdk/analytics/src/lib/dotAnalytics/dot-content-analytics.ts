@@ -45,8 +45,7 @@ export const initializeContentAnalytics = (
 
     if (typeof window !== 'undefined') {
         window.addEventListener('beforeunload', cleanup);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (window as any).__dotAnalyticsCleanup = cleanup;
+        window.__dotAnalyticsCleanup = cleanup;
     }
 
     return {

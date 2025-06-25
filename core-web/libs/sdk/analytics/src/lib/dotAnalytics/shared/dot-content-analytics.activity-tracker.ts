@@ -12,8 +12,9 @@ import { DotCMSAnalyticsConfig } from './dot-content-analytics.model';
 class DotCMSActivityTracker {
     private activityListeners: (() => void)[] = [];
     private lastActivityTime = Date.now();
-    private inactivityTimer: NodeJS.Timeout | null = null;
+    private inactivityTimer: ReturnType<typeof setTimeout> | null = null;
     private isThrottled = false;
+    private config: DotCMSAnalyticsConfig | null = null;
     private readonly ACTIVITY_THROTTLE_MS = 1000; // Throttle activity events to max 1 per second
 
     /**
@@ -29,7 +30,13 @@ class DotCMSActivityTracker {
 
         this.inactivityTimer = setTimeout(
             () => {
-                // User became inactive - timer fired
+                // User became inactive - handle session timeout
+                if (this.config?.debug) {
+                    console.warn('DotCMS Analytics: User became inactive after timeout');
+                }
+
+                // Timer has fired, set to null to indicate no active timer
+                this.inactivityTimer = null;
             },
             DEFAULT_SESSION_TIMEOUT_MINUTES * 60 * 1000
         );
@@ -70,6 +77,7 @@ class DotCMSActivityTracker {
      */
     public initialize(config: DotCMSAnalyticsConfig): void {
         this.cleanup();
+        this.config = config;
 
         // Early return if window is not available (SSR/build time)
         if (typeof window === 'undefined') {
@@ -120,6 +128,8 @@ class DotCMSActivityTracker {
             clearTimeout(this.inactivityTimer);
             this.inactivityTimer = null;
         }
+
+        this.config = null;
     }
 
     /**
