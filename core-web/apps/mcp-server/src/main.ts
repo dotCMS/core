@@ -47,12 +47,9 @@ server.registerTool("listContentTypes",
 server.registerTool("createContentType",
   {
     title: "Create Content Type",
-    description: "Creates one or more content types in dotCMS. Can accept either a single content type object or an array of content types.",
+    description: "Creates a content type in dotCMS.",
     inputSchema: z.object({
-      contentType: z.union([
-        ContentTypeCreateParamsSchema,
-        z.array(ContentTypeCreateParamsSchema)
-      ])
+      contentType: ContentTypeCreateParamsSchema
     }).shape
   },
   async (params) => {
