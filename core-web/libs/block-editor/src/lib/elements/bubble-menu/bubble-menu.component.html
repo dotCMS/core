@@ -1,6 +1,7 @@
 <div
     class="bubble-menu"
     tiptapBubbleMenu
+    (mousedown)="preventLostEditorSelection($event)"
     [editor]="editor()"
     [tippyOptions]="{
         maxWidth: '100%',
@@ -13,8 +14,20 @@
         styleClass="bubble-menu-dropdown"
         [(ngModel)]="dropdownItem"
         [options]="nodeTypeOptions"
-        (onChange)="changeToBlock($event.value)"
-        optionLabel="name" />
+        (onChange)="runConvertToCommand($event.value)"
+        optionLabel="name"
+        scrollHeight="300px"
+        appendTo="body"
+        panelStyleClass="bubble-menu-dropdown-panel">
+        <ng-template let-item pTemplate="item">
+            <div class="dropdown-item-content">
+                <div class="dropdown-item-icon">
+                    <img [src]="sanitizeHtml(item.icon)" />
+                </div>
+                <span class="dropdown-item-label">{{ item.name }}</span>
+            </div>
+        </ng-template>
+    </p-dropdown>
     <div class="divider"></div>
     <button
         class="bubble-menu-button bubble-menu-button--char"
