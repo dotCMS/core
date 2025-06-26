@@ -1,6 +1,6 @@
 /* eslint-disable */
 export default {
-    displayName: 'portlets-dot-analytics-search',
+    displayName: 'portlets-dot-analytics',
     preset: '../../../../jest.preset.js',
     setupFilesAfterEnv: ['<rootDir>/src/test-setup.ts'],
     globals: {},

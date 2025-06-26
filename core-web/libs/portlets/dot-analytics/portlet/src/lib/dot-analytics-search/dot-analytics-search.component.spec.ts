@@ -22,7 +22,7 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotAnalyticsSearchComponent } from './dot-analytics-search.component';
 
-import { DotAnalyticsSearchStore } from '../store/dot-analytics-search.store';
+import { DotAnalyticsSearchStore } from '../../store/dot-analytics-search.store';
 
 describe('DotAnalyticsSearchComponent', () => {
     let spectator: Spectator<DotAnalyticsSearchComponent>;
