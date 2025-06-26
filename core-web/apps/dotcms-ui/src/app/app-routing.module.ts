@@ -73,7 +73,7 @@ const PORTLETS_ANGULAR: Route[] = [
     },
     {
         path: 'analytics-search',
-        redirectTo: 'analytics/search'
+        redirectTo: 'analytics/search',
     },
     {
         path: 'analytics',
