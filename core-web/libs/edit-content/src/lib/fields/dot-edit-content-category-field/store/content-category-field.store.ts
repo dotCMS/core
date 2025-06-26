@@ -1,7 +1,7 @@
 import { tapResponse } from '@ngrx/operators';
 import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { pipe } from 'rxjs';
+import { EMPTY, pipe } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { computed, inject } from '@angular/core';
@@ -323,7 +323,7 @@ export const CategoryFieldStore = signalStore(
                                 state: ComponentStatus.LOADED
                             });
 
-                            return [];
+                            return EMPTY;
                         }
 
                         return categoryService.getSelectedHierarchy(inodes).pipe(
