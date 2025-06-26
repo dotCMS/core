@@ -1,0 +1,1212 @@
+{
+    "openapi": "3.0.1",
+    "info": { "title": "dotCMS REST API", "version": "3" },
+    "servers": [{ "url": "/", "description": "dotCMS Server", "variables": {} }],
+    "tags": [
+      {
+        "name": "Accessibility Checker",
+        "description": "Endpoints that perform operations related to validating accessibility in content."
+      },
+      {
+        "name": "Content Analytics",
+        "description": "This REST Endpoint exposes information related to how dotCMS content is accessed and interacted with by users."
+      },
+      {
+        "name": "API Token",
+        "description": "Endpoints that handle operations related to API tokens",
+        "externalDocs": {
+          "description": "Additional API token information",
+          "url": "https://www.dotcms.com/docs/latest/rest-api-authentication#APIToken"
+        }
+      },
+      {
+        "name": "Authentication",
+        "description": "Endpoints that perform operations related to user authentication",
+        "externalDocs": {
+          "description": "Additional Authentication API information",
+          "url": "https://www.dotcms.com/docs/latest/rest-api-authentication"
+        }
+      },
+      {
+        "name": "Content Type",
+        "description": "Endpoints that perform operations related to content types.",
+        "externalDocs": {
+          "description": "Additional Content Type API information",
+          "url": "https://www.dotcms.com/docs/latest/content-type-api"
+        }
+      },
+      {
+        "name": "Health",
+        "description": "Health management and monitoring endpoints for administrative dashboards"
+      },
+      {
+        "name": "Page",
+        "description": "Endpoints that operate on pages",
+        "externalDocs": {
+          "description": "Additional Page API information",
+          "url": "https://www.dotcms.com/docs/latest/page-rest-api-layout-as-a-service-laas"
+        }
+      },
+      {
+        "name": "Workflow",
+        "description": "Endpoints that perform operations related to workflows.",
+        "externalDocs": {
+          "description": "Additional Workflow API information",
+          "url": "https://www.dotcms.com/docs/latest/workflow-rest-api"
+        }
+      },
+      { "name": "Content Type Field" },
+      { "name": "Content Delivery" },
+      { "name": "Bundle" },
+      { "name": "Navigation" },
+      { "name": "Experiment" },
+      { "name": "Content Report" }
+    ],
+    "paths": {
+      "/api/v1/contenttype/{baseVariableName}/_copy": {
+        "post": {
+          "tags": ["Content Type"],
+          "summary": "Copies a content type",
+          "description": "Creates a new content type by copying an existing one.\n\nReturns resulting content type.",
+          "operationId": "postContentTypeCopy",
+          "parameters": [
+            {
+              "name": "baseVariableName",
+              "in": "path",
+              "description": "The variable name of the content type to copy.\n\nExample value: `htmlpageasset` (Default page content type)",
+              "required": true,
+              "schema": { "type": "string" }
+            }
+          ],
+          "requestBody": {
+            "description": "Requires POST body consisting of a JSON object with the following properties:\n\n| Property |  Type  | Description |\n|----------|--------|-------------|\n| `name`   | String | **Required.** Name of new content type |\n| `variable` | String | System variable of new content type |\n| `folder`   | String | Folder in which new content type will live |\n| `host`   | String | Site or host to which the new content type will belong |\n| `icon`   | String | System icon to represent content type |\n\nValues not specified default to values of the original content type.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CopyContentTypeForm" },
+                "example": {
+                  "name": "Copied Content Type Name",
+                  "variable": "copiedContentTypeVar",
+                  "folder": "SYSTEM_FOLDER",
+                  "host": "8a7d5e23-da1e-420a-b4f0-471e7da8ea2d",
+                  "icon": "event_note"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "description": "Content type copied successfully",
+              "content": {
+                "application/json": {
+                  "example": {
+                    "errors": [
+                      {
+                        "errorCode": "string",
+                        "message": "string",
+                        "fieldName": "string"
+                      }
+                    ],
+                    "entity": {
+                      "baseType": "string",
+                      "clazz": "string",
+                      "defaultType": true,
+                      "description": "string",
+                      "fields": [],
+                      "fixed": true,
+                      "folder": "string",
+                      "folderPath": "string",
+                      "host": "string",
+                      "iDate": 0,
+                      "icon": "string",
+                      "id": "string",
+                      "layout": [],
+                      "metadata": {},
+                      "modDate": 0,
+                      "multilingualable": true,
+                      "name": "string1",
+                      "siteName": "string",
+                      "sortOrder": 0,
+                      "system": true,
+                      "systemActionMappings": {},
+                      "variable": "string",
+                      "versionable": true,
+                      "workflows": []
+                    },
+                    "messages": [{ "message": "string" }],
+                    "i18nMessagesMap": {
+                      "additionalProp1": "string",
+                      "additionalProp2": "string",
+                      "additionalProp3": "string"
+                    },
+                    "permissions": ["string"],
+                    "pagination": {
+                      "currentPage": 0,
+                      "perPage": 0,
+                      "totalEntries": 0
+                    }
+                  }
+                }
+              }
+            },
+            "400": { "description": "Bad Request" },
+            "403": { "description": "Forbidden" },
+            "415": { "description": "Unsupported Media Type" },
+            "500": { "description": "Internal Server Error" }
+          }
+        }
+      },
+      "/api/v1/contenttype": {
+        "get": {
+          "tags": ["Content Type"],
+          "summary": "Retrieves a list of content types",
+          "description": "Returns a list of content type objects based on the filtering criteria.",
+          "operationId": "getContentType",
+          "parameters": [
+            {
+              "name": "filter",
+              "in": "query",
+              "description": "String to filter/search for specific content types; leave blank to return all.",
+              "schema": { "type": "string" }
+            },
+            {
+              "name": "page",
+              "in": "query",
+              "description": "Page number in response pagination.\n\nDefault: `1`",
+              "schema": { "type": "integer", "format": "int64" }
+            },
+            {
+              "name": "per_page",
+              "in": "query",
+              "description": "Number of results per page for pagination.\n\nDefault: `10`",
+              "schema": { "type": "integer", "format": "int64" }
+            },
+            {
+              "name": "orderby",
+              "in": "query",
+              "description": "Column(s) to sort the results. Multiple columns can be combined in a comma-separated list. Column names can also be set within a SQL string function, such as `upper()`.\n\nSome possible values:\n\n`name`, `velocity_var_name`, `mod_date`, `sort_order`\n\n`description`, `structuretype`, `category`, `inode`",
+              "schema": { "type": "string", "default": "upper(name)" }
+            },
+            {
+              "name": "direction",
+              "in": "query",
+              "description": "Sort direction: choose between ascending or descending.",
+              "schema": {
+                "type": "string",
+                "default": "ASC",
+                "enum": ["ASC", "DESC"]
+              }
+            },
+            {
+              "name": "type",
+              "in": "query",
+              "description": "Variable name of [base content type](https://www.dotcms.com/docs/latest/base-content-types).",
+              "schema": {
+                "type": "string",
+                "enum": [
+                  "ANY",
+                  "CONTENT",
+                  "WIDGET",
+                  "FORM",
+                  "FILEASSET",
+                  "HTMLPAGE",
+                  "PERSONA",
+                  "VANITY_URL",
+                  "KEY_VALUE",
+                  "DOTASSET"
+                ]
+              }
+            },
+            {
+              "name": "host",
+              "in": "query",
+              "description": "Filter by site identifier.",
+              "schema": { "type": "string" }
+            },
+            {
+              "name": "sites",
+              "in": "query",
+              "description": "Multi-site filter: Takes comma-separated list of site identifiers or keys.",
+              "schema": { "type": "string" }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Content types retrieved successfully",
+              "content": {
+                "application/json": {
+                  "example": {
+                    "entity": [
+                      {
+                        "baseType": "string",
+                        "clazz": "string",
+                        "defaultType": true,
+                        "description": "string",
+                        "fixed": true,
+                        "folder": "string",
+                        "folderPath": "string",
+                        "host": "string",
+                        "iDate": 0,
+                        "icon": "string",
+                        "id": "string",
+                        "layout": [],
+                        "metadata": {},
+                        "modDate": 0,
+                        "multilingualable": true,
+                        "nEntries": 0,
+                        "name": "string",
+                        "siteName": "string",
+                        "sortOrder": 0,
+                        "system": true,
+                        "variable": "string",
+                        "versionable": true,
+                        "workflows": []
+                      }
+                    ],
+                    "errors": [],
+                    "i18nMessagesMap": {},
+                    "messages": [],
+                    "pagination": {
+                      "currentPage": 0,
+                      "perPage": 0,
+                      "totalEntries": 0
+                    },
+                    "permissions": []
+                  }
+                }
+              }
+            },
+            "403": { "description": "Forbidden" },
+            "500": { "description": "Internal Server Error" }
+          }
+        },
+        "post": {
+          "tags": ["Content Type"],
+          "summary": "Creates one or more content types",
+          "description": "Creates one or more content types specified in the JSON payload.\n\n Returns a list entity containing the created content type objects.",
+          "operationId": "postContentTypeCreate",
+          "requestBody": {
+            "description": "Payload may consist of a single content type JSON object, or a list containing multiple content type objects.\n\nObjects require `clazz` and `name` properties at minimum.\n\nMay optionally include the following special properties:\n\n| Property | Value | Description |\n|-|-|-|\n| `systemActionMappings` | JSON Object | Maps [Default Workflow Actions](https://www.dotcms.com/docs/latest/managing-workflows#DefaultActions) (as keys) to workflow action identifiers (as values) for this content type.|\n| `workflow` | List of Strings | A list of identifiers of workflow schemes to be associated with the content type.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ContentTypeForm" },
+                "example": [
+                  {
+                    "clazz": "com.dotcms.contenttype.model.type.ImmutableSimpleContentType",
+                    "defaultType": false,
+                    "name": "The Content Type 1",
+                    "description": "THE DESCRIPTION",
+                    "host": "48190c8c-42c4-46af-8d1a-0cd5db894797",
+                    "owner": "dotcms.org.1",
+                    "variable": "TheContentType1",
+                    "fixed": false,
+                    "system": false,
+                    "folder": "SYSTEM_FOLDER",
+                    "systemActionMappings": {
+                      "NEW": "ceca71a0-deee-4999-bd47-b01baa1bcfc8",
+                      "PUBLISH": "ceca71a0-deee-4999-bd47-b01baa1bcfc8"
+                    },
+                    "workflow": ["d61a59e1-a49c-46f2-a929-db2b4bfa88b2"]
+                  },
+                  {
+                    "clazz": "com.dotcms.contenttype.model.type.ImmutableSimpleContentType",
+                    "defaultType": false,
+                    "name": "The Content Type 2",
+                    "description": "THE DESCRIPTION",
+                    "host": "48190c8c-42c4-46af-8d1a-0cd5db894797",
+                    "owner": "dotcms.org.1",
+                    "variable": "TheContentType2",
+                    "fixed": false,
+                    "system": false,
+                    "folder": "SYSTEM_FOLDER",
+                    "workflow": ["d61a59e1-a49c-46f2-a929-db2b4bfa88b2"]
+                  }
+                ]
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "description": "Content type(s) created successfully",
+              "content": {
+                "application/json": {
+                  "example": {
+                    "entity": [
+                      {
+                        "baseType": "string",
+                        "clazz": "string",
+                        "defaultType": true,
+                        "description": "string",
+                        "fields": [],
+                        "fixed": true,
+                        "folder": "string",
+                        "folderPath": "string",
+                        "host": "string",
+                        "iDate": 0,
+                        "icon": "string",
+                        "id": "string",
+                        "layout": [],
+                        "metadata": {},
+                        "modDate": 0,
+                        "multilingualable": true,
+                        "name": "string",
+                        "owner": "string",
+                        "siteName": "string",
+                        "sortOrder": 0,
+                        "system": true,
+                        "systemActionMappings": {},
+                        "variable": "string",
+                        "versionable": true,
+                        "workflows": []
+                      }
+                    ],
+                    "errors": [],
+                    "i18nMessagesMap": {},
+                    "messages": [],
+                    "pagination": null,
+                    "permissions": []
+                  }
+                }
+              }
+            },
+            "400": { "description": "Bad Request" },
+            "403": { "description": "Forbidden" },
+            "415": { "description": "Unsupported Media Type" },
+            "500": { "description": "Internal Server Error" }
+          }
+        }
+      },
+      "/api/v1/contenttype/id/{idOrVar}": {
+        "get": {
+          "tags": ["Content Type"],
+          "summary": "Retrieves a single content type",
+          "description": "Returns one content type based on the provided ID or Velocity variable name.",
+          "operationId": "getContentTypeIdVar",
+          "parameters": [
+            {
+              "name": "idOrVar",
+              "in": "path",
+              "description": "The ID or Velocity variable name of the content type to retrieve.\n\nExample: `htmlpageasset` (Default page content type)",
+              "required": true,
+              "schema": { "type": "string" }
+            },
+            {
+              "name": "languageId",
+              "in": "query",
+              "description": "The language ID for localization.",
+              "schema": { "type": "integer", "format": "int64" }
+            },
+            {
+              "name": "live",
+              "in": "query",
+              "description": "Determines whether live versions of language variables are used in the returned object.",
+              "schema": { "type": "boolean" }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Content type retrieved successfully",
+              "content": {
+                "application/json": {
+                  "example": {
+                    "entity": [
+                      {
+                        "baseType": "string",
+                        "clazz": "string",
+                        "defaultType": true,
+                        "description": "string",
+                        "fields": [],
+                        "fixed": false,
+                        "folder": "string",
+                        "folderPath": "string",
+                        "host": "string",
+                        "iDate": 0,
+                        "icon": "string",
+                        "id": "string",
+                        "layout": [],
+                        "metadata": {},
+                        "modDate": 0,
+                        "multilingualable": true,
+                        "name": "string",
+                        "siteName": "string",
+                        "sortOrder": 0,
+                        "system": true,
+                        "variable": "string",
+                        "systemActionMappings": {},
+                        "versionable": true,
+                        "workflows": []
+                      }
+                    ],
+                    "errors": [],
+                    "i18nMessagesMap": {},
+                    "messages": [],
+                    "pagination": {
+                      "currentPage": 0,
+                      "perPage": 0,
+                      "totalEntries": 0
+                    },
+                    "permissions": []
+                  }
+                }
+              }
+            },
+            "403": { "description": "Forbidden" },
+            "404": { "description": "Not Found" },
+            "500": { "description": "Internal Server Error" }
+          }
+        },
+        "put": {
+          "tags": ["Content Type"],
+          "summary": "Updates a content type",
+          "description": "Updates the content type based on the given ID or Velocity variable name.\n\nReturns a copy of the updated content type object.\n\n> **Caution:** When updating a content type, any editable fields omitted from the request body will be removed from the content type. To update selected properties without deleting others,submit the full JSON entity with the desired items edited.",
+          "operationId": "putContentTypeUpdate",
+          "parameters": [
+            {
+              "name": "idOrVar",
+              "in": "path",
+              "description": "The ID or Velocity variable name of the content type to update.\n\nExample value: `htmlpageasset` (Default page content type)",
+              "required": true,
+              "schema": { "type": "string" }
+            }
+          ],
+          "requestBody": {
+            "description": "The minimum required properties for a successful update are `clazz`, `id`, and `name`.\n\nMay also optionally include the following special properties:\n\n| Property | Value | Description |\n|-|-|-|\n| `systemActionMappings` | JSON Object | Maps [Default Workflow Actions](https://www.dotcms.com/docs/latest/managing-workflows#DefaultActions) (as keys) to workflow action identifiers (as values) for this content type.|\n| `workflow` | List of Strings | A list of identifiers of workflow schemes to be associated with the content type.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ContentTypeForm" },
+                "example": {
+                  "clazz": "com.dotcms.contenttype.model.type.ImmutableSimpleContentType",
+                  "defaultType": false,
+                  "id": "39fecdb0-46cc-40a9-a056-f2e1a80ea78c",
+                  "name": "The Content Type 2",
+                  "description": "THE DESCRIPTION 2",
+                  "host": "48190c8c-42c4-46af-8d1a-0cd5db894797",
+                  "owner": "dotcms.org.1",
+                  "variable": "TheContentType1",
+                  "fixed": false,
+                  "system": false,
+                  "folder": "SYSTEM_FOLDER",
+                  "workflow": ["d61a59e1-a49c-46f2-a929-db2b4bfa88b2"]
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "description": "Content type updated successfully",
+              "content": {
+                "application/json": {
+                  "example": {
+                    "entity": {
+                      "baseType": "string",
+                      "clazz": "string",
+                      "defaultType": true,
+                      "fields": [],
+                      "fixed": true,
+                      "folder": "string",
+                      "folderPath": "string",
+                      "host": "string",
+                      "iDate": 0,
+                      "icon": "string",
+                      "id": "string",
+                      "layout": [],
+                      "metadata": {},
+                      "modDate": 0,
+                      "multilingualable": true,
+                      "name": "string",
+                      "siteName": "string",
+                      "sortOrder": 0,
+                      "system": true,
+                      "systemActionMappings": {},
+                      "variable": "string",
+                      "versionable": true,
+                      "workflows": []
+                    },
+                    "errors": [],
+                    "i18nMessagesMap": {},
+                    "messages": [],
+                    "pagination": null,
+                    "permissions": []
+                  }
+                }
+              }
+            },
+            "400": { "description": "Bad Request" },
+            "403": { "description": "Forbidden" },
+            "404": { "description": "Not Found" },
+            "415": { "description": "Unsupported Media Type" },
+            "500": { "description": "Internal Server Error" }
+          }
+        },
+        "delete": {
+          "tags": ["Content Type"],
+          "summary": "Deletes a content type",
+          "description": "Deletes the content type based on the provided ID or Velocity variable name.\n\nReturns JSON string containing the identifier of the deleted content type.",
+          "operationId": "deleteContentType",
+          "parameters": [
+            {
+              "name": "idOrVar",
+              "in": "path",
+              "description": "The ID or Velocity variable name of the content type to delete.",
+              "required": true,
+              "schema": { "type": "string" }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Content type deleted successfully",
+              "content": {
+                "application/json": {
+                  "example": {
+                    "entity": "{\"deleted\":\"string\"}",
+                    "errors": [],
+                    "i18nMessagesMap": {},
+                    "messages": [],
+                    "pagination": null,
+                    "permissions": []
+                  }
+                }
+              }
+            },
+            "403": { "description": "Forbidden" },
+            "404": { "description": "Content type not found" },
+            "500": { "description": "Internal Server Error" }
+          }
+        }
+      },
+      "/api/v1/contenttype/_filter": {
+        "post": {
+          "tags": ["Content Type"],
+          "summary": "Filters content types",
+          "description": "Returns the list of content type objects that match the specified filter, with optional pagination criteria.",
+          "operationId": "postContentTypeFilter",
+          "requestBody": {
+            "description": "Requires POST body consisting of a JSON object with the following properties:\n\n| Property |  Type  | Description |\n|----------|--------|-------------|\n| `filter`   | JSON Object | Contains two properties: <table><tr><td>`query`</td><td>A simple query returning full or partial matches.</td></tr><tr><td>`types`</td><td>A comma-separated list of specific content type variables.</td></tr></table> |\n| `page` | Integer | Which page of results to show. Defaults to `1`. |\n| `perPage`   | Integer | Number of results to display per page. Defaults to `10`. |\n| `orderBy`   | String | Sorting parameter: `name` (default), `velocity_var_name`, `mod_date`, or `sort_order`. |\n| `direction`   | String | `ASC` (default) or `DESC` for ascending or descending. |",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FilteredContentTypesForm"
+                },
+                "example": {
+                  "filter": { "query": "", "types": "Blog,Activity" },
+                  "page": 1,
+                  "perPage": 10,
+                  "orderBy": "name",
+                  "direction": "ASC"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "description": "Content types filtered successfully",
+              "content": {
+                "application/json": {
+                  "example": {
+                    "entity": [
+                      {
+                        "baseType": "string",
+                        "clazz": "string",
+                        "defaultType": true,
+                        "description": "string",
+                        "fixed": false,
+                        "folder": "string",
+                        "folderPath": "string",
+                        "host": "string",
+                        "iDate": 0,
+                        "icon": "string",
+                        "id": "string",
+                        "layout": [],
+                        "metadata": {},
+                        "modDate": 0,
+                        "multilingualable": true,
+                        "nEntries": 0,
+                        "name": "string",
+                        "siteName": "string",
+                        "sortOrder": 0,
+                        "system": true,
+                        "variable": "string",
+                        "versionable": true,
+                        "workflows": []
+                      }
+                    ],
+                    "errors": [],
+                    "i18nMessagesMap": {},
+                    "messages": [],
+                    "pagination": {
+                      "currentPage": 0,
+                      "perPage": 0,
+                      "totalEntries": 0
+                    },
+                    "permissions": []
+                  }
+                }
+              }
+            },
+            "400": { "description": "Bad Request" },
+            "403": { "description": "Forbidden" },
+            "415": { "description": "Unsupported Media Type" },
+            "500": { "description": "Internal Server Error" }
+          }
+        }
+      },
+      "/api/v1/contenttype/basetypes": {
+        "get": {
+          "tags": ["Content Type"],
+          "summary": "Retrieves base content types",
+          "description": "Returns a list of base content types.",
+          "operationId": "getContentTypeBaseTypes",
+          "responses": {
+            "200": {
+              "description": "Base content types retrieved successfully",
+              "content": {
+                "application/json": {
+                  "example": {
+                    "entity": [
+                      { "label": "string", "name": "string", "types": null }
+                    ],
+                    "errors": [],
+                    "i18nMessagesMap": {},
+                    "messages": [],
+                    "pagination": null,
+                    "permissions": []
+                  }
+                }
+              }
+            },
+            "500": { "description": "Internal Server Error" }
+          }
+        }
+      },
+      "/api/v1/contenttype/{typeId}/fields": {
+        "get": {
+          "operationId": "getContentTypeFields",
+          "parameters": [
+            {
+              "name": "typeId",
+              "in": "path",
+              "required": true,
+              "schema": { "type": "string" }
+            }
+          ],
+          "responses": {
+            "default": {
+              "description": "default response",
+              "content": { "application/json": {}, "application/javascript": {} }
+            }
+          },
+          "deprecated": true
+        },
+        "put": {
+          "operationId": "updateFields",
+          "parameters": [
+            {
+              "name": "typeId",
+              "in": "path",
+              "required": true,
+              "schema": { "type": "string" }
+            }
+          ],
+          "requestBody": {
+            "content": { "application/json": { "schema": { "type": "string" } } }
+          },
+          "responses": {
+            "default": {
+              "description": "default response",
+              "content": { "application/json": {}, "application/javascript": {} }
+            }
+          },
+          "deprecated": true
+        },
+        "post": {
+          "operationId": "createContentTypeField",
+          "parameters": [
+            {
+              "name": "typeId",
+              "in": "path",
+              "required": true,
+              "schema": { "type": "string" }
+            }
+          ],
+          "requestBody": {
+            "content": { "application/json": { "schema": { "type": "string" } } }
+          },
+          "responses": {
+            "default": {
+              "description": "default response",
+              "content": { "application/json": {}, "application/javascript": {} }
+            }
+          },
+          "deprecated": true
+        },
+        "delete": {
+          "operationId": "deleteFields",
+          "parameters": [
+            {
+              "name": "typeId",
+              "in": "path",
+              "required": true,
+              "schema": { "type": "string" }
+            }
+          ],
+          "requestBody": {
+            "content": {
+              "*/*": {
+                "schema": { "type": "array", "items": { "type": "string" } }
+              }
+            }
+          },
+          "responses": {
+            "default": {
+              "description": "default response",
+              "content": { "application/json": {}, "application/javascript": {} }
+            }
+          },
+          "deprecated": true
+        }
+      },
+      "/api/v1/contenttype/{typeId}/fields/id/{fieldId}": {
+        "get": {
+          "operationId": "getContentTypeFieldById",
+          "parameters": [
+            {
+              "name": "typeId",
+              "in": "path",
+              "required": true,
+              "schema": { "type": "string" }
+            },
+            {
+              "name": "fieldId",
+              "in": "path",
+              "required": true,
+              "schema": { "type": "string" }
+            }
+          ],
+          "responses": {
+            "default": {
+              "description": "default response",
+              "content": { "application/json": {}, "application/javascript": {} }
+            }
+          },
+          "deprecated": true
+        },
+        "put": {
+          "operationId": "updateContentTypeFieldById",
+          "parameters": [
+            {
+              "name": "typeId",
+              "in": "path",
+              "required": true,
+              "schema": { "type": "string" }
+            },
+            {
+              "name": "fieldId",
+              "in": "path",
+              "required": true,
+              "schema": { "type": "string" }
+            }
+          ],
+          "requestBody": {
+            "content": { "application/json": { "schema": { "type": "string" } } }
+          },
+          "responses": {
+            "default": {
+              "description": "default response",
+              "content": { "application/json": {}, "application/javascript": {} }
+            }
+          },
+          "deprecated": true
+        },
+        "delete": {
+          "operationId": "deleteContentTypeFieldById",
+          "parameters": [
+            {
+              "name": "typeId",
+              "in": "path",
+              "required": true,
+              "schema": { "type": "string" }
+            },
+            {
+              "name": "fieldId",
+              "in": "path",
+              "required": true,
+              "schema": { "type": "string" }
+            }
+          ],
+          "responses": {
+            "default": {
+              "description": "default response",
+              "content": { "application/json": {}, "application/javascript": {} }
+            }
+          },
+          "deprecated": true
+        }
+      },
+      "/api/v1/contenttype/{typeId}/fields/var/{fieldVar}": {
+        "get": {
+          "operationId": "getContentTypeFieldByVar",
+          "parameters": [
+            {
+              "name": "typeId",
+              "in": "path",
+              "required": true,
+              "schema": { "type": "string" }
+            },
+            {
+              "name": "fieldVar",
+              "in": "path",
+              "required": true,
+              "schema": { "type": "string" }
+            }
+          ],
+          "responses": {
+            "default": {
+              "description": "default response",
+              "content": { "application/json": {}, "application/javascript": {} }
+            }
+          },
+          "deprecated": true
+        },
+        "put": {
+          "operationId": "updateContentTypeFieldByVar",
+          "parameters": [
+            {
+              "name": "typeId",
+              "in": "path",
+              "required": true,
+              "schema": { "type": "string" }
+            },
+            {
+              "name": "fieldVar",
+              "in": "path",
+              "required": true,
+              "schema": { "type": "string" }
+            }
+          ],
+          "requestBody": {
+            "content": { "application/json": { "schema": { "type": "string" } } }
+          },
+          "responses": {
+            "default": {
+              "description": "default response",
+              "content": { "application/json": {}, "application/javascript": {} }
+            }
+          },
+          "deprecated": true
+        },
+        "delete": {
+          "operationId": "deleteContentTypeFieldByVar",
+          "parameters": [
+            {
+              "name": "typeId",
+              "in": "path",
+              "required": true,
+              "schema": { "type": "string" }
+            },
+            {
+              "name": "fieldVar",
+              "in": "path",
+              "required": true,
+              "schema": { "type": "string" }
+            }
+          ],
+          "responses": {
+            "default": {
+              "description": "default response",
+              "content": { "application/json": {}, "application/javascript": {} }
+            }
+          },
+          "deprecated": true
+        }
+      },
+      "/api/v1/contenttype/{typeId}/fields/id/{fieldId}/variables": {
+        "get": {
+          "operationId": "getFieldVariablesByFieldId",
+          "parameters": [
+            {
+              "name": "typeId",
+              "in": "path",
+              "required": true,
+              "schema": { "type": "string" }
+            },
+            {
+              "name": "fieldId",
+              "in": "path",
+              "required": true,
+              "schema": { "type": "string" }
+            }
+          ],
+          "responses": {
+            "default": {
+              "description": "default response",
+              "content": { "application/json": {}, "application/javascript": {} }
+            }
+          }
+        },
+        "post": {
+          "operationId": "createFieldVariableByFieldId",
+          "parameters": [
+            {
+              "name": "typeId",
+              "in": "path",
+              "required": true,
+              "schema": { "type": "string" }
+            },
+            {
+              "name": "fieldId",
+              "in": "path",
+              "required": true,
+              "schema": { "type": "string" }
+            }
+          ],
+          "requestBody": {
+            "content": { "application/json": { "schema": { "type": "string" } } }
+          },
+          "responses": {
+            "default": {
+              "description": "default response",
+              "content": { "application/json": {}, "application/javascript": {} }
+            }
+          }
+        }
+      },
+      "/api/v1/contenttype/{typeId}/fields/var/{fieldVar}/variables": {
+        "get": {
+          "operationId": "getFieldVariablesByFieldVar",
+          "parameters": [
+            {
+              "name": "typeId",
+              "in": "path",
+              "required": true,
+              "schema": { "type": "string" }
+            },
+            {
+              "name": "fieldVar",
+              "in": "path",
+              "required": true,
+              "schema": { "type": "string" }
+            }
+          ],
+          "responses": {
+            "default": {
+              "description": "default response",
+              "content": { "application/json": {}, "application/javascript": {} }
+            }
+          }
+        },
+        "post": {
+          "operationId": "createFieldVariableByFieldVar",
+          "parameters": [
+            {
+              "name": "typeId",
+              "in": "path",
+              "required": true,
+              "schema": { "type": "string" }
+            },
+            {
+              "name": "fieldVar",
+              "in": "path",
+              "required": true,
+              "schema": { "type": "string" }
+            }
+          ],
+          "requestBody": {
+            "content": { "application/json": { "schema": { "type": "string" } } }
+          },
+          "responses": {
+            "default": {
+              "description": "default response",
+              "content": { "application/json": {}, "application/javascript": {} }
+            }
+          }
+        }
+      },
+      "/api/v1/contenttype/{typeId}/fields/id/{fieldId}/variables/id/{fieldVarId}": {
+        "get": {
+          "operationId": "getFieldVariableByFieldId",
+          "parameters": [
+            {
+              "name": "typeId",
+              "in": "path",
+              "required": true,
+              "schema": { "type": "string" }
+            },
+            {
+              "name": "fieldId",
+              "in": "path",
+              "required": true,
+              "schema": { "type": "string" }
+            },
+            {
+              "name": "fieldVarId",
+              "in": "path",
+              "required": true,
+              "schema": { "type": "string" }
+            }
+          ],
+          "responses": {
+            "default": {
+              "description": "default response",
+              "content": { "application/json": {}, "application/javascript": {} }
+            }
+          }
+        },
+        "put": {
+          "operationId": "updateFieldVariableByFieldId",
+          "parameters": [
+            {
+              "name": "typeId",
+              "in": "path",
+              "required": true,
+              "schema": { "type": "string" }
+            },
+            {
+              "name": "fieldId",
+              "in": "path",
+              "required": true,
+              "schema": { "type": "string" }
+            },
+            {
+              "name": "fieldVarId",
+              "in": "path",
+              "required": true,
+              "schema": { "type": "string" }
+            }
+          ],
+          "requestBody": {
+            "content": { "application/json": { "schema": { "type": "string" } } }
+          },
+          "responses": {
+            "default": {
+              "description": "default response",
+              "content": { "application/json": {}, "application/javascript": {} }
+            }
+          }
+        },
+        "delete": {
+          "operationId": "deleteFieldVariableByFieldId",
+          "parameters": [
+            {
+              "name": "typeId",
+              "in": "path",
+              "required": true,
+              "schema": { "type": "string" }
+            },
+            {
+              "name": "fieldId",
+              "in": "path",
+              "required": true,
+              "schema": { "type": "string" }
+            },
+            {
+              "name": "fieldVarId",
+              "in": "path",
+              "required": true,
+              "schema": { "type": "string" }
+            }
+          ],
+          "responses": {
+            "default": {
+              "description": "default response",
+              "content": { "application/json": {}, "application/javascript": {} }
+            }
+          }
+        }
+      },
+      "/api/v1/contenttype/{typeId}/fields/var/{fieldVar}/variables/id/{fieldVarId}": {
+        "get": {
+          "operationId": "getFieldVariableByFieldVar",
+          "parameters": [
+            {
+              "name": "typeId",
+              "in": "path",
+              "required": true,
+              "schema": { "type": "string" }
+            },
+            {
+              "name": "fieldVar",
+              "in": "path",
+              "required": true,
+              "schema": { "type": "string" }
+            },
+            {
+              "name": "fieldVarId",
+              "in": "path",
+              "required": true,
+              "schema": { "type": "string" }
+            }
+          ],
+          "responses": {
+            "default": {
+              "description": "default response",
+              "content": { "application/json": {}, "application/javascript": {} }
+            }
+          }
+        },
+        "put": {
+          "operationId": "updateFieldVariableByFieldVar",
+          "parameters": [
+            {
+              "name": "typeId",
+              "in": "path",
+              "required": true,
+              "schema": { "type": "string" }
+            },
+            {
+              "name": "fieldVar",
+              "in": "path",
+              "required": true,
+              "schema": { "type": "string" }
+            },
+            {
+              "name": "fieldVarId",
+              "in": "path",
+              "required": true,
+              "schema": { "type": "string" }
+            }
+          ],
+          "requestBody": {
+            "content": { "application/json": { "schema": { "type": "string" } } }
+          },
+          "responses": {
+            "default": {
+              "description": "default response",
+              "content": { "application/json": {}, "application/javascript": {} }
+            }
+          }
+        },
+        "delete": {
+          "operationId": "deleteFieldVariableByFieldVar",
+          "parameters": [
+            {
+              "name": "typeId",
+              "in": "path",
+              "required": true,
+              "schema": { "type": "string" }
+            },
+            {
+              "name": "fieldVar",
+              "in": "path",
+              "required": true,
+              "schema": { "type": "string" }
+            },
+            {
+              "name": "fieldVarId",
+              "in": "path",
+              "required": true,
+              "schema": { "type": "string" }
+            }
+          ],
+          "responses": {
+            "default": {
+              "description": "default response",
+              "content": { "application/json": {}, "application/javascript": {} }
+            }
+          }
+        }
+      }
+    },
+  }
