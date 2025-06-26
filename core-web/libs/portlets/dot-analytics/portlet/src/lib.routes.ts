@@ -3,8 +3,7 @@ import { Route } from '@angular/router';
 export const DotAnalyticsRoutes: Route[] = [
     {
         path: 'search',
-        loadComponent: () =>
-            import('./lib/dot-analytics-search/dot-analytics-search.component')
+        loadComponent: () => import('./lib/dot-analytics-search/dot-analytics-search.component')
     },
     {
         path: 'dashboard',

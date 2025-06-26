@@ -11,7 +11,7 @@ import {
     mergeMap,
     pluck,
     publishLast,
-    refCount,
+    refCount
 } from 'rxjs/operators';
 
 import { DotCMSResponse } from '@dotcms/dotcms-js';

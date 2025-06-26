@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { DotAnalyticsDashboardComponent } from './dot-analytics-dashboard.component';
+import DotAnalyticsDashboardComponent from './dot-analytics-dashboard.component';
 
 describe('DotAnalyticsDashboardComponent', () => {
     let component: DotAnalyticsDashboardComponent;

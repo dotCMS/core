@@ -40,7 +40,6 @@ export class MenuGuardService implements CanActivate {
      * @returns boolean
      */
     private canAccessPortlet(url: string): Observable<boolean> {
-
         const id = this.dotRouterService.getPortletId(url);
         const checkJSPPortlet = this.dotRouterService.isJSPPortletURL(url);
 
