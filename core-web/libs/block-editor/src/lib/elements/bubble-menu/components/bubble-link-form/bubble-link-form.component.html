@@ -2,6 +2,7 @@
     <p-autoComplete
         field="name"
         placeholder="Paste link or search for pages"
+        autofocus="true"
         [(ngModel)]="inputValue"
         [suggestions]="items()"
         (onSelect)="addLink(inputValue())"

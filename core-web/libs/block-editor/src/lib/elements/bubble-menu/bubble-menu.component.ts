@@ -42,18 +42,14 @@ interface NodeTypeOption {
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class BubbleMenuComponent {
+    @ViewChild('editorModal') editorModal: EditorModalDirective;
+
     protected readonly editor = input.required<Editor>();
     protected readonly cd = inject(ChangeDetectorRef);
 
     protected readonly dropdownItem = signal<NodeTypeOption | null>(null);
     protected readonly placeholder = signal<string>('Paragraph');
     protected readonly onBeforeUpdateFn = this.onBeforeUpdate.bind(this);
-
-    @ViewChild('editorModal') editorModal: EditorModalDirective;
-
-    toggleLinkModal() {
-        this.editorModal?.toggle();
-    }
 
     protected readonly nodeTypeOptions: NodeTypeOption[] = [
         {
@@ -160,5 +156,9 @@ export class BubbleMenuComponent {
         const baseNodeType = node.type.name;
 
         return hasLevelAttribute ? `${baseNodeType}-${node.attrs.level}` : baseNodeType;
+    }
+
+    protected toggleLinkModal() {
+        this.editorModal?.toggle();
     }
 }

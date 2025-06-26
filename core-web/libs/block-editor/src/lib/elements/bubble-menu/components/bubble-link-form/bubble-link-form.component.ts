@@ -31,6 +31,7 @@ import { EditorModalDirective } from './editor-modal.directive';
     imports: [FormsModule, ListboxModule, AutoCompleteModule, ButtonModule]
 })
 export class BubbleLinkFormComponent {
+    private editorModal = inject<EditorModalDirective>(EditorModalDirective);
     protected readonly editor = input.required<Editor>();
     protected readonly items = signal<{ name: string; value: string }[]>([]);
     protected readonly inputValue = signal<string>('');
@@ -39,8 +40,15 @@ export class BubbleLinkFormComponent {
 
     protected addLink(input: string | { name: string; value: string }) {
         const link = typeof input === 'string' ? input.trim() : input.value.trim();
-        this.inputValue.set('');
-        this.editor().chain().focus().setLink({ href: link }).run();
+        this.editor().chain().focus().setLink({ href: link, target: '_blank' }).run();
+        this.editorModal.hide();
+    }
+
+    protected onEnter(event: KeyboardEvent) {
+        if (typeof this.inputValue() === 'string' && this.inputValue().trim()) {
+            this.addLink(this.inputValue());
+            event.preventDefault();
+        }
     }
 
     protected search({ query }: { query: string }) {
@@ -56,17 +64,10 @@ export class BubbleLinkFormComponent {
         });
     }
 
-    protected onEnter(event: KeyboardEvent) {
-        if (typeof this.inputValue() === 'string' && this.inputValue().trim()) {
-            this.addLink(this.inputValue());
-            event.preventDefault();
-        }
-    }
-
     private getContentletsByLink(query: string): Observable<DotCMSContentlet[]> {
         return this.httpClient
             .post('/api/content/_search', {
-                query: `+languageId:1 +deleted:false +working:true +(urlmap:*${query}* OR title:*${query}* OR (contentType:(dotAsset OR htmlpageasset OR fileAsset) AND +path:*${query}*))`,
+                query: `+languageId:1 +deleted:false +working:true  +(urlmap:* OR basetype:5)  +deleted:false +(title:${query}* OR path:*${query}* OR urlmap:*${query}*)`,
                 sort: 'modDate desc',
                 offset: 0,
                 limit: 5

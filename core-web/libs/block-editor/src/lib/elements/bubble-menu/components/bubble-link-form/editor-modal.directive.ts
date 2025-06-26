@@ -11,11 +11,10 @@ import { BubbleMenuPluginProps } from '@tiptap/extension-bubble-menu';
     exportAs: 'dotEditorModal'
 })
 export class EditorModalDirective implements OnInit, OnDestroy {
-    private elRef = inject<ElementRef<HTMLElement>>(ElementRef);
-
     readonly editor = input.required<Editor>();
     readonly tippyOptions = input<BubbleMenuPluginProps['tippyOptions']>({});
 
+    private elRef = inject<ElementRef<HTMLElement>>(ElementRef);
     private tippy: Instance;
 
     ngOnInit(): void {
@@ -34,8 +33,10 @@ export class EditorModalDirective implements OnInit, OnDestroy {
             placement: 'bottom',
             hideOnClick: 'toggle',
             getReferenceClientRect: this.getReferenceClientRect.bind(this),
-            ...this.tippyOptions
+            ...this.tippyOptions()
         });
+
+        this.editor().on('focus', this.hide.bind(this));
     }
 
     ngOnDestroy(): void {

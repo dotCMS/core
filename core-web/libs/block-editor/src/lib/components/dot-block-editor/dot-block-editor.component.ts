@@ -48,7 +48,6 @@ import {
     AIImagePromptExtension,
     AssetUploader,
     BubbleAssetFormExtension,
-    BubbleLinkFormExtension,
     DEFAULT_LANG_ID,
     DotComands,
     DotConfigExtension,
@@ -446,7 +445,6 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
                 shouldShowAIExtensions: isAIPluginInstalled
             }),
             DragHandler(this.viewContainerRef),
-            BubbleLinkFormExtension(this.viewContainerRef, this.languageId),
             /* FIX THIS BEFORE THE MERGE */
             // BubbleFormExtension(this.viewContainerRef),
             DotFloatingButton(this.#injector, this.viewContainerRef),

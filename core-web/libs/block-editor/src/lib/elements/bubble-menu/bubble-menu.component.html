@@ -103,7 +103,10 @@
         <span class="material-icons">format_indent_decrease</span>
     </button>
     <div class="divider"></div>
-    <button class="bubble-menu-button bubble-menu-button--icon" (click)="toggleLinkModal()">
+    <button
+        class="bubble-menu-button bubble-menu-button--icon"
+        [class.is-active]="editor().isActive('link')"
+        (click)="toggleLinkModal()">
         <span class="material-icons">link</span>
     </button>
     <button
