@@ -103,7 +103,7 @@
         <span class="material-icons">format_indent_decrease</span>
     </button>
     <div class="divider"></div>
-    <button class="bubble-menu-button bubble-menu-button--icon">
+    <button class="bubble-menu-button bubble-menu-button--icon" (click)="openLinkModal()">
         <span class="material-icons">link</span>
     </button>
     <button
@@ -111,10 +111,11 @@
         (click)="editor().chain().focus().unsetAllMarks().run()">
         <span class="material-icons">format_clear</span>
     </button>
-    <div class="divider"></div>
     <button
         class="bubble-menu-button bubble-menu-button--icon"
         (click)="editor().chain().deleteSelection().blur().run()">
         <span class="material-icons">delete_outline</span>
     </button>
 </div>
+
+<dot-bubble-link-form dotEditorModal [editor]="editor()" #editorModal="dotEditorModal" />

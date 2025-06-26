@@ -1,0 +1,25 @@
+<div class="bubble-link-form">
+    <p-autoComplete
+        field="name"
+        placeholder="Paste link or search for pages"
+        [(ngModel)]="inputValue"
+        [suggestions]="items()"
+        (onSelect)="addLink(inputValue())"
+        (completeMethod)="search($event)"
+        (keydown.enter)="onEnter($event)"
+        [minLength]="1">
+        <ng-template let-item pTemplate="item">
+            <div class="autocomplete-item">
+                @if (item.hasTitleImage) {
+                    <img [src]="'/dA/' + item.inode" alt="icon" class="autocomplete-item__img" />
+                } @else {
+                    <span class="autocomplete-item__icon pi pi-file"></span>
+                }
+                <div class="autocomplete-item__content">
+                    <div class="autocomplete-item__title">{{ item.name }}</div>
+                    <div class="autocomplete-item__url">{{ item.value }}</div>
+                </div>
+            </div>
+        </ng-template>
+    </p-autoComplete>
+</div>

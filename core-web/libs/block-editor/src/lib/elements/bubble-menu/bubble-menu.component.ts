@@ -8,13 +8,17 @@ import {
     Component,
     inject,
     input,
-    signal
+    signal,
+    ViewChild
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { DropdownModule } from 'primeng/dropdown';
 
 import { Editor } from '@tiptap/core';
+
+import { BubbleLinkFormComponent } from './components/bubble-link-form/bubble-link-form.component';
+import { EditorModalDirective } from './components/bubble-link-form/editor-modal.directive';
 
 interface NodeTypeOption {
     name: string;
@@ -26,7 +30,14 @@ interface NodeTypeOption {
     selector: 'dot-bubble-menu',
     templateUrl: './bubble-menu.component.html',
     styleUrls: ['./bubble-menu.component.scss'],
-    imports: [CommonModule, TiptapBubbleMenuDirective, FormsModule, DropdownModule],
+    imports: [
+        CommonModule,
+        TiptapBubbleMenuDirective,
+        FormsModule,
+        DropdownModule,
+        BubbleLinkFormComponent,
+        EditorModalDirective
+    ],
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -37,6 +48,13 @@ export class BubbleMenuComponent {
     protected readonly dropdownItem = signal<NodeTypeOption | null>(null);
     protected readonly placeholder = signal<string>('Paragraph');
     protected readonly onBeforeUpdateFn = this.onBeforeUpdate.bind(this);
+
+    @ViewChild('editorModal') editorModal: EditorModalDirective;
+
+    // Now you can call this.editorModal.show() when needed
+    openLinkModal() {
+        this.editorModal?.show();
+    }
 
     protected readonly nodeTypeOptions: NodeTypeOption[] = [
         {
