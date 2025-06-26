@@ -336,12 +336,7 @@ public class ContentAnalyticsResource {
             if (user.isAnonymousUser()) {
                 throw new DotSecurityException("Anonymous user is not allowed to fire an event");
             }
-        } else {
-
-            if (user.isAnonymousUser() && isNotValidKey(userEventPayload, WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request))) {
-                throw new DotSecurityException("The user is not allowed to fire an event");
-            }
-        }
+        } 
 
         Logger.debug(this,  ()->"Creating an user custom event with the payload: " + userEventPayload);
 
