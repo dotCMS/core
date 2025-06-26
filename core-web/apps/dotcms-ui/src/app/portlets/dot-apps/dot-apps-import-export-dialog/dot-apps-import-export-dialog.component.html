@@ -50,6 +50,11 @@
                     <!-- Validation Field -->
                 }
             }
+
+            <!-- Error Message Display -->
+            @if (errorMessage) {
+                <span>{{ errorMessage }}</span>
+            }
         </form>
     </dot-dialog>
 }
