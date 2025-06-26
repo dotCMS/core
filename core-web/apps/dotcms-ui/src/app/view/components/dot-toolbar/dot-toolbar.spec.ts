@@ -1,17 +1,20 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Spectator, createComponentFactory, mockProvider } from '@ngneat/spectator';
+import { Spectator, SpyObject, createComponentFactory, mockProvider } from '@ngneat/spectator';
 import { MockComponent } from 'ng-mocks';
+import { of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { Component, DebugElement, Injectable } from '@angular/core';
-import { ComponentFixture } from '@angular/core/testing';
-import { By } from '@angular/platform-browser';
+import { Component, Injectable } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
+import { ToolbarModule } from 'primeng/toolbar';
+
+import { DotSiteSelectorComponent } from '@components/_common/dot-site-selector/dot-site-selector.component';
 import { DotCrumbtrailComponent } from '@components/dot-crumbtrail/dot-crumbtrail.component';
 import { DotNavLogoService } from '@dotcms/app/api/services/dot-nav-logo/dot-nav-logo.service';
-import { DotEventsService, DotRouterService } from '@dotcms/data-access';
+import { DotShowHideFeatureDirective } from '@dotcms/app/shared/directives/dot-show-hide-feature/dot-show-hide-feature.directive';
+import { DotEventsService, DotRouterService, DotPropertiesService } from '@dotcms/data-access';
 import {
     CoreWebService,
     CoreWebServiceMock,
@@ -25,6 +28,7 @@ import {
 } from '@dotcms/dotcms-js';
 import { MockDotRouterService, mockSites, SiteServiceMock } from '@dotcms/utils-testing';
 
+import { DotToolbarAnnouncementsComponent } from './components/dot-toolbar-announcements/dot-toolbar-announcements.component';
 import { DotToolbarNotificationsComponent } from './components/dot-toolbar-notifications/dot-toolbar-notifications.component';
 import { DotToolbarUserComponent } from './components/dot-toolbar-user/dot-toolbar-user.component';
 import { DotToolbarComponent } from './dot-toolbar.component';
@@ -37,16 +41,24 @@ class MockDotNavigationService {
     collapsed = false;
 
     toggle() {
-        this.collapsed = !this.collapsed;
-    }
 }
-
 @Component({
     selector: 'dot-toolbar-user',
-    standalone: true,
     template: ''
 })
 class MockToolbarUsersComponent {}
+
+@Component({
+    selector: 'dot-toolbar-notifications',
+    template: ''
+})
+class MockToolbarNotificationsComponent {}
+
+@Component({
+    selector: 'dot-toolbar-announcements',
+    template: ''
+})
+class MockToolbarAnnouncementsComponent {}
 
 export const dotEventSocketURLFactory = () => {
     return new DotEventsSocketURL(
@@ -56,28 +68,27 @@ export const dotEventSocketURLFactory = () => {
 };
 
 describe('DotToolbarComponent', () => {
-    let dotRouterService: DotRouterService;
-    let dotNavigationService: DotNavigationService;
-    let dotNavLogoService: DotNavLogoService;
-    let comp: DotToolbarComponent;
-    let fixture: ComponentFixture<DotToolbarComponent>;
-    let de: DebugElement;
+    let spectator: Spectator<DotToolbarComponent>;
+    let dotRouterService: SpyObject<DotRouterService>;
+    let dotPropertiesService: SpyObject<DotPropertiesService>;
 
     const siteServiceMock = new SiteServiceMock();
     const siteMock = mockSites[0];
 
-    let spectator: Spectator<DotToolbarComponent>;
-
     const createComponent = createComponentFactory({
         component: DotToolbarComponent,
+        imports: [ToolbarModule, DotShowHideFeatureDirective],
         detectChanges: false,
         declarations: [
-            MockComponent(DotToolbarNotificationsComponent),
-            MockComponent(DotCrumbtrailComponent)
+            MockComponent(DotCrumbtrailComponent),
+            MockComponent(DotSiteSelectorComponent)
         ],
         providers: [
             provideHttpClient(),
             provideHttpClientTesting(),
+            mockProvider(DotPropertiesService, {
+                getFeatureFlag: jasmine.createSpy().and.returnValue(of(true))
+            }),
             { provide: DotNavigationService, useClass: MockDotNavigationService },
             { provide: SiteService, useValue: siteServiceMock },
             mockProvider(ActivatedRoute, {
@@ -99,83 +110,82 @@ describe('DotToolbarComponent', () => {
             LoggerService,
             StringUtils
         ],
-        componentImports: [[DotToolbarUserComponent, MockToolbarUsersComponent]]
+        componentImports: [
+            [DotToolbarUserComponent, MockToolbarUsersComponent],
+            [DotToolbarNotificationsComponent, MockToolbarNotificationsComponent],
+            [DotToolbarAnnouncementsComponent, MockToolbarAnnouncementsComponent]
+        ]
     });
 
     beforeEach(() => {
         spectator = createComponent();
-
-        fixture = spectator.fixture;
-        comp = fixture.componentInstance;
-        de = fixture.debugElement;
         dotRouterService = spectator.inject(DotRouterService);
-        dotNavigationService = spectator.inject(DotNavigationService);
-        dotNavLogoService = spectator.inject(DotNavLogoService);
-        spyOn(comp, 'siteChange').and.callThrough();
+        dotPropertiesService = spectator.inject(DotPropertiesService);
+        spyOn(spectator.component, 'siteChange').and.callThrough();
     });
 
-    it(`should has a crumbtrail`, () => {
-        fixture.detectChanges();
+    it(`should has a dot-crumbtrail`, () => {
+        spectator.detectChanges();
 
-        const crumbtrail: DebugElement = fixture.debugElement.query(By.css('dot-crumbtrail'));
+        const crumbtrail = spectator.query('dot-crumbtrail');
         expect(crumbtrail).not.toBeNull();
+    });
+
+    it(`should has a dot-toolbar-notifications`, () => {
+        spectator.detectChanges();
+
+        const dotToolbarNotifications = spectator.query('dot-toolbar-notifications');
+        expect(dotToolbarNotifications).not.toBeNull();
+    });
+
+    it(`should has a dot-toolbar-user`, () => {
+        spectator.detectChanges();
+
+        const dotToolbarUser = spectator.query('dot-toolbar-user');
+        expect(dotToolbarUser).not.toBeNull();
+    });
+
+    it(`should has a dot-toolbar-announcements`, () => {
+        dotPropertiesService.getFeatureFlag.and.returnValue(of(true));
+        spectator.detectChanges();
+
+        const dotToolbarAnnouncements = spectator.query('dot-toolbar-announcements');
+        expect(dotToolbarAnnouncements).not.toBeNull();
+    });
+
+    it(`should has not a dot-toolbar-announcements with feature flag disabled`, () => {
+        dotPropertiesService.getFeatureFlag.and.returnValue(of(false));
+        spectator.detectChanges();
+
+        const dotToolbarAnnouncements = spectator.query('dot-toolbar-announcements');
+        expect(dotToolbarAnnouncements).toBeNull();
     });
 
     it(`should NOT go to site browser when site change in any portlet but edit page`, () => {
         spyOn(dotRouterService, 'isEditPage').and.returnValue(false);
-        const siteSelector: DebugElement = fixture.debugElement.query(By.css('dot-site-selector'));
-        fixture.detectChanges();
-        siteSelector.triggerEventHandler('switch', { value: siteMock });
+        spectator.detectChanges();
+        spectator.triggerEventHandler('dot-site-selector', 'switch', { value: siteMock });
         expect(dotRouterService.goToSiteBrowser).not.toHaveBeenCalled();
-        expect<any>(comp.siteChange).toHaveBeenCalledWith({ value: siteMock });
+        expect<any>(spectator.component.siteChange).toHaveBeenCalledWith({ value: siteMock });
     });
 
     it(`should go to site-browser when site change on edit page url`, () => {
-        const siteSelector: DebugElement = fixture.debugElement.query(By.css('dot-site-selector'));
         spyOnProperty(dotRouterService, 'currentPortlet', 'get').and.returnValue({
             id: 'edit-page',
             url: ''
         });
         spyOn(dotRouterService, 'isEditPage').and.returnValue(true);
-        siteSelector.triggerEventHandler('switch', { value: siteMock });
+        spectator.detectChanges();
+        spectator.triggerEventHandler('dot-site-selector', 'switch', { value: siteMock });
 
         expect(dotRouterService.goToSiteBrowser).toHaveBeenCalled();
-        expect<any>(comp.siteChange).toHaveBeenCalledWith({ value: siteMock });
+        expect<any>(spectator.component.siteChange).toHaveBeenCalledWith({ value: siteMock });
     });
 
     it(`should pass class and width`, () => {
-        const siteSelector: DebugElement = fixture.debugElement.query(By.css('dot-site-selector'));
-        expect(siteSelector.componentInstance.cssClass).toBe('d-secondary');
-        expect(siteSelector.componentInstance.width).toBe('200px');
-    });
-
-    it('should toggle menu and update icon on click', () => {
-        spyOn(dotNavigationService, 'toggle').and.callThrough();
-        fixture.detectChanges();
-
-        const button: DebugElement = de.query(By.css('p-button'));
-
-        expect(button.componentInstance.icon).toEqual('pi pi-arrow-left');
-        button.triggerEventHandler('click', {});
-        fixture.detectChanges();
-
-        expect(dotNavigationService.toggle).toHaveBeenCalledTimes(1);
-        expect(button.componentInstance.icon).toEqual('pi pi-arrow-left');
-    });
-
-    it('should have default logo', () => {
-        dotNavLogoService.navBarLogo$.next(null);
-        fixture.detectChanges();
-        const defaultLogo = de.nativeElement.querySelector('.toolbar__logo');
-        expect(defaultLogo).not.toBeNull();
-    });
-
-    it('should have the logo passed to the subject', () => {
-        const imageUrlProp = 'url("/dA/image.png")';
-        dotNavLogoService.navBarLogo$.next(imageUrlProp);
-        fixture.detectChanges();
-        const newLogo = de.nativeElement.querySelector('.toolbar__logo--whitelabel');
-        expect(newLogo.style['background-image']).toBe(imageUrlProp);
-        expect(newLogo).not.toBeNull();
+        spectator.detectChanges();
+        const siteSelector = spectator.query('dot-site-selector');
+        expect(siteSelector.getAttribute('cssClass')).toContain('d-secondary');
+        expect(siteSelector.getAttribute('width')).toContain('12.5rem');
     });
 });

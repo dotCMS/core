@@ -45,6 +45,7 @@ public class PermissionCacheImpl extends PermissionCache {
 	protected List<Permission> addToPermissionCache(final String key, List<Permission> permissions) {
 	    if(permissions!=null && permissions.isEmpty()) {
 	        Logger.warn(this.getClass(), ()->" !!! Putting an empty list of permissions in the cache for asset:" + key +". Every asset should have at least 1 permission (or inherited permission) associated with it");
+			Thread.dumpStack();
 	    }
 
         // Add the key to the cache

@@ -18,7 +18,9 @@ import { DotCMSStore } from '../../../../../../store/dotcms.store';
     template: `
         @if ($isDevMode()) {
             <div [ngStyle]="emptyContainerStyle" data-testid="empty-container">
-                <span data-testid="empty-container-message">This container is empty.</span>
+                <span data-testid="empty-container-message" data-dot-object="empty-content">
+                    This container is empty.
+                </span>
             </div>
         }
     `

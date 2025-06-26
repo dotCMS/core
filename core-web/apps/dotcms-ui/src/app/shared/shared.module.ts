@@ -2,7 +2,6 @@ import { CommonModule } from '@angular/common';
 import { ModuleWithProviders, NgModule } from '@angular/core';
 
 // Common Modules
-
 import { MainNavigationModule } from '@components/dot-navigation/dot-navigation.module';
 import { DotNavigationService } from '@components/dot-navigation/services/dot-navigation.service';
 import { DotEventsService } from '@dotcms/data-access';
@@ -31,11 +30,11 @@ const dotEventSocketURLFactory = () => {
 @NgModule({
     declarations: [],
     imports: [CommonModule, MainNavigationModule],
-    exports: [CommonModule, MainNavigationModule]
+    exports: [
+    ]
 })
 export class SharedModule {
     static forRoot(): ModuleWithProviders<SharedModule> {
-        return {
             ngModule: SharedModule,
             providers: [
                 ApiRoot,

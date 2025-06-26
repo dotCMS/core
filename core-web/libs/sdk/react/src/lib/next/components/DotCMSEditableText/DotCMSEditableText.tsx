@@ -1,7 +1,7 @@
 import { Editor } from '@tinymce/tinymce-react';
 import { useEffect, useRef, useState } from 'react';
 
-import { DotCMSUVEAction, UVE_MODE } from '@dotcms/types';
+import { DotCMSBasicContentlet, DotCMSUVEAction, UVE_MODE } from '@dotcms/types';
 import { __DOTCMS_UVE_EVENT__ } from '@dotcms/types/internal';
 import { sendMessageToUVE, getUVEState } from '@dotcms/uve';
 import { __TINYMCE_PATH_ON_DOTCMS__ } from '@dotcms/uve/internal';
@@ -35,12 +35,12 @@ import { DotCMSEditableTextProps, TINYMCE_CONFIG } from './utils';
  * ```
  * @returns {JSX.Element} A component to edit content inline
  */
-export function DotCMSEditableText({
+export function DotCMSEditableText<T extends DotCMSBasicContentlet>({
     mode = 'plain',
     format = 'text',
     contentlet,
-    fieldName = ''
-}: Readonly<DotCMSEditableTextProps>): JSX.Element {
+    fieldName
+}: Readonly<DotCMSEditableTextProps<T>>): JSX.Element {
     const editorRef = useRef<Editor['editor'] | null>(null);
     const [scriptSrc, setScriptSrc] = useState('');
     const [initEditor, setInitEditor] = useState(false);
@@ -80,6 +80,8 @@ export function DotCMSEditableText({
 
         const createURL = new URL(__TINYMCE_PATH_ON_DOTCMS__, state.dotCMSHost);
         setScriptSrc(createURL.toString());
+
+        const content = (contentlet?.[fieldName] as string) || '';
 
         editorRef.current?.setContent(content, { format });
     }, [format, fieldName, contentlet, content]);
@@ -165,15 +167,21 @@ export function DotCMSEditableText({
     }
 
     return (
-        <Editor
-            tinymceScriptSrc={scriptSrc}
-            inline={true}
-            onInit={(_, editor) => (editorRef.current = editor)}
-            init={TINYMCE_CONFIG[mode]}
-            initialValue={content}
-            onMouseDown={onMouseDown}
-            onFocusOut={onFocusOut}
-        />
+        <div
+            style={{
+                outline: '2px solid #006ce7',
+                borderRadius: '4px'
+            }}>
+            <Editor
+                tinymceScriptSrc={scriptSrc}
+                inline={true}
+                onInit={(_, editor) => (editorRef.current = editor)}
+                init={TINYMCE_CONFIG[mode]}
+                initialValue={content as string}
+                onMouseDown={onMouseDown}
+                onFocusOut={onFocusOut}
+            />
+        </div>
     );
 }
 

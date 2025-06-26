@@ -39,7 +39,7 @@ export class DotCrumbtrailService {
                         return event.url;
                     }
                 }),
-                switchMap(this.getCrumbtrail.bind(this))
+                switchMap((url: string) => this.getCrumbtrail(url))
             )
             .subscribe((crumbTrail: DotCrumb[]) => this.crumbTrail.next(crumbTrail));
 
@@ -53,7 +53,20 @@ export class DotCrumbtrailService {
     }
 
     private splitURL(url: string): string[] {
-        return url.split('/').filter((section: string) => section !== '' && section !== 'c');
+        // Remove query parameters first
+        const cleanUrl = this.removeQueryParams(url);
+
+        return cleanUrl.split('/').filter((section: string) => section !== '' && section !== 'c');
+    }
+
+    /**
+     * Remove query parameters from URL
+     * @param url - URL string that may contain query parameters
+     * @returns Clean URL without query parameters
+     */
+    private removeQueryParams(url: string): string {
+        // Handle relative URLs by splitting on '?' and taking the first part
+        return url.split('?')[0];
     }
 
     private getMenuLabel(portletId: string): Observable<DotCrumb[]> {
@@ -88,8 +101,8 @@ export class DotCrumbtrailService {
     }
 
     private getCrumbtrailSection(sectionKey: string): string {
-        const data: Data = this.getData();
-        let currentData: Data = data;
+        const data = this.getData();
+        let currentData = data;
         let section = '';
 
         if (Object.keys(data).length) {
