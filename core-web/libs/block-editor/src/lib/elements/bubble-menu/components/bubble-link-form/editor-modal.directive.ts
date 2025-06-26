@@ -33,30 +33,7 @@ export class EditorModalDirective implements OnInit, OnDestroy {
             trigger: 'manual',
             placement: 'bottom',
             hideOnClick: 'toggle',
-            getReferenceClientRect: () => {
-                const { state, view } = this.editor();
-                const { from, to } = state.selection;
-
-                if (isNodeSelection(state.selection)) {
-                    let node = view.nodeDOM(from) as HTMLElement;
-
-                    if (node) {
-                        const nodeViewWrapper = node.dataset.nodeViewWrapper
-                            ? node
-                            : node.querySelector('[data-node-view-wrapper]');
-
-                        if (nodeViewWrapper) {
-                            node = nodeViewWrapper.firstChild as HTMLElement;
-                        }
-
-                        if (node) {
-                            return node.getBoundingClientRect();
-                        }
-                    }
-                }
-
-                return posToDOMRect(view, from, to);
-            },
+            getReferenceClientRect: this.getReferenceClientRect.bind(this),
             ...this.tippyOptions
         });
     }
@@ -71,5 +48,34 @@ export class EditorModalDirective implements OnInit, OnDestroy {
 
     hide() {
         this.tippy.hide();
+    }
+
+    toggle() {
+        this.tippy.state.isVisible ? this.hide() : this.show();
+    }
+
+    private getReferenceClientRect() {
+        const { state, view } = this.editor();
+        const { from, to } = state.selection;
+
+        if (isNodeSelection(state.selection)) {
+            let node = view.nodeDOM(from) as HTMLElement;
+
+            if (node) {
+                const nodeViewWrapper = node.dataset.nodeViewWrapper
+                    ? node
+                    : node.querySelector('[data-node-view-wrapper]');
+
+                if (nodeViewWrapper) {
+                    node = nodeViewWrapper.firstChild as HTMLElement;
+                }
+
+                if (node) {
+                    return node.getBoundingClientRect();
+                }
+            }
+        }
+
+        return posToDOMRect(view, from, to);
     }
 }

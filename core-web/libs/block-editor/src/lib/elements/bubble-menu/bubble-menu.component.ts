@@ -51,9 +51,8 @@ export class BubbleMenuComponent {
 
     @ViewChild('editorModal') editorModal: EditorModalDirective;
 
-    // Now you can call this.editorModal.show() when needed
-    openLinkModal() {
-        this.editorModal?.show();
+    toggleLinkModal() {
+        this.editorModal?.toggle();
     }
 
     protected readonly nodeTypeOptions: NodeTypeOption[] = [

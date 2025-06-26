@@ -103,7 +103,7 @@
         <span class="material-icons">format_indent_decrease</span>
     </button>
     <div class="divider"></div>
-    <button class="bubble-menu-button bubble-menu-button--icon" (click)="openLinkModal()">
+    <button class="bubble-menu-button bubble-menu-button--icon" (click)="toggleLinkModal()">
         <span class="material-icons">link</span>
     </button>
     <button
@@ -118,4 +118,4 @@
     </button>
 </div>
 
-<dot-bubble-link-form dotEditorModal [editor]="editor()" #editorModal="dotEditorModal" />
+<dot-bubble-link-form [editor]="editor()" #editorModal="dotEditorModal" />

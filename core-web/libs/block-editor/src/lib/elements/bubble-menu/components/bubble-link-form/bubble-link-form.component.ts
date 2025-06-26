@@ -2,7 +2,7 @@
 import { Observable } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
-import { Component, EventEmitter, inject, Output, signal } from '@angular/core';
+import { Component, inject, input, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { AutoCompleteModule } from 'primeng/autocomplete';
@@ -11,35 +11,39 @@ import { ListboxModule } from 'primeng/listbox';
 
 import { pluck } from 'rxjs/operators';
 
+import { Editor } from '@tiptap/core';
+
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
+
+import { EditorModalDirective } from './editor-modal.directive';
 
 @Component({
     selector: 'dot-bubble-link-form',
     templateUrl: './bubble-link-form.component.html',
     styleUrls: ['./bubble-link-form.component.scss'],
     standalone: true,
+    hostDirectives: [
+        {
+            directive: EditorModalDirective,
+            inputs: ['editor']
+        }
+    ],
     imports: [FormsModule, ListboxModule, AutoCompleteModule, ButtonModule]
 })
 export class BubbleLinkFormComponent {
-    @Output() add = new EventEmitter<string | { name: string; value: string }>();
-    protected readonly link = '';
-    protected readonly value: any;
-    protected items = signal<{ name: string; value: string }[]>([]);
-    protected inputValue = signal<string>('');
+    protected readonly editor = input.required<Editor>();
+    protected readonly items = signal<{ name: string; value: string }[]>([]);
+    protected readonly inputValue = signal<string>('');
 
-    private httpClient = inject(HttpClient);
+    private readonly httpClient = inject(HttpClient);
 
-    addLink(value: any) {
-        if (typeof value === 'string' && value.trim()) {
-            this.add.emit(value.trim());
-            this.inputValue.set('');
-        } else if (value && value.name) {
-            this.add.emit(value);
-            this.inputValue.set('');
-        }
+    protected addLink(input: string | { name: string; value: string }) {
+        const link = typeof input === 'string' ? input.trim() : input.value.trim();
+        this.inputValue.set('');
+        this.editor().chain().focus().setLink({ href: link }).run();
     }
 
-    search({ query }: { query: string }) {
+    protected search({ query }: { query: string }) {
         this.getContentletsByLink(query).subscribe((contentlets) => {
             this.items.set(
                 contentlets.map((contentlet) => ({
@@ -52,7 +56,7 @@ export class BubbleLinkFormComponent {
         });
     }
 
-    onEnter(event: KeyboardEvent) {
+    protected onEnter(event: KeyboardEvent) {
         if (typeof this.inputValue() === 'string' && this.inputValue().trim()) {
             this.addLink(this.inputValue());
             event.preventDefault();
