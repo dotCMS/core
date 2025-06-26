@@ -1,5 +1,20 @@
 import { z } from 'zod';
 
+// Enum for actual content type baseType property (no 'ANY')
+export const ContentTypeBaseTypeEnum = z.enum([
+    'CONTENT',
+    'WIDGET',
+    'FORM',
+    'FILEASSET',
+    'HTMLPAGE',
+    'PERSONA',
+    'VANITY_URL',
+    'KEY_VALUE',
+    'DOTASSET'
+]);
+
+export type ContentTypeBaseType = z.infer<typeof ContentTypeBaseTypeEnum>;
+
 export const ContentTypeFieldSchema = z.object({
     id: z.string(),
     name: z.string(),
@@ -157,17 +172,7 @@ export const LayoutSchema = z.object({
 });
 
 export const ContentTypeSchema = z.object({
-    baseType: z.enum([
-        'CONTENT',
-        'WIDGET',
-        'FORM',
-        'FILEASSET',
-        'HTMLPAGE',
-        'PERSONA',
-        'VANITY_URL',
-        'KEY_VALUE',
-        'DOTASSET'
-    ]),
+    baseType: ContentTypeBaseTypeEnum,
     clazz: z.string(),
     defaultType: z.boolean(),
     description: z.string().optional(),
