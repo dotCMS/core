@@ -100,7 +100,7 @@ const DividerSchema = z.object({
     fixed: z.boolean(),
     forceIncludeInApi: z.boolean(),
     iDate: z.number(),
-    id: z.string(),
+    id: z.string().optional(),
     indexed: z.boolean(),
     listed: z.boolean(),
     modDate: z.number(),
@@ -110,7 +110,7 @@ const DividerSchema = z.object({
     searchable: z.boolean(),
     sortOrder: z.number(),
     unique: z.boolean(),
-    variable: z.string()
+    variable: z.string().optional()
 });
 
 const ColumnDividerSchema = z.object({
@@ -124,7 +124,7 @@ const ColumnDividerSchema = z.object({
     fixed: z.boolean(),
     forceIncludeInApi: z.boolean(),
     iDate: z.number(),
-    id: z.string(),
+    id: z.string().optional(),
     indexed: z.boolean(),
     listed: z.boolean(),
     modDate: z.number(),
@@ -134,7 +134,7 @@ const ColumnDividerSchema = z.object({
     searchable: z.boolean(),
     sortOrder: z.number(),
     unique: z.boolean(),
-    variable: z.string()
+    variable: z.string().optional()
 });
 
 const LayoutFieldSchema = z.object({
