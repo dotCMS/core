@@ -44,6 +44,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vavr.control.Try;
 import org.apache.commons.lang.StringUtils;
 import org.glassfish.jersey.server.JSONP;
@@ -85,6 +86,7 @@ import static com.dotcms.rest.api.v1.site.SiteHelper.toView;
  * @author jsanca
  */
 @Path("/v1/site")
+@Tag(name = "Sites", description = "Endpoints for managing sites (hosts) and their configuration")
 public class SiteResource implements Serializable {
 
     private static final long serialVersionUID = 1L;

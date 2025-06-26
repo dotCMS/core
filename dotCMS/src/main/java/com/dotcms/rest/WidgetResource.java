@@ -10,6 +10,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
 import com.liferay.portal.model.User;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.util.List;
@@ -25,6 +26,7 @@ import javax.ws.rs.core.Response;
 import org.apache.velocity.exception.ParseErrorException;
 import org.apache.velocity.exception.ResourceNotFoundException;
 
+@Tag(name = "Widgets")
 @Path("/widget")
 public class WidgetResource {
 

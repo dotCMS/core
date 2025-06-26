@@ -68,6 +68,7 @@ import static java.util.Collections.EMPTY_MAP;
  * @author jsanca
  */
 @Path("/v1/authentication")
+@Tag(name = "Authentication", description = "User authentication and session management")
 public class CreateJsonWebTokenResource implements Serializable {
 
     private final static int JSON_WEB_TOKEN_MAX_ALLOWED_EXPIRATION_DAYS_DEFAULT_VALUE = 30;

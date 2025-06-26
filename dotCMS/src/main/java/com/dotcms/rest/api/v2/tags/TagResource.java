@@ -60,6 +60,7 @@ import static com.dotmarketing.util.UUIDUtil.isUUID;
  * @author jsanca
  */
 @Path("/v2/tags")
+@io.swagger.v3.oas.annotations.tags.Tag(name = "Tags", description = "Content tagging and labeling")
 public class TagResource {
 
     public static final String NO_TAGS_WERE_FOUND_BY_THE_INODE_S = "No tags with Inode %s were found.";

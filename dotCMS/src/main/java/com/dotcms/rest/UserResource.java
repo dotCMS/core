@@ -17,6 +17,7 @@ import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -28,6 +29,7 @@ import javax.servlet.http.HttpServletResponse;
  *             {@link com.dotcms.rest.api.v1.user.UserResource} end-point.
  */
 @Deprecated
+@Tag(name = "Users")
 @Path("/user")
 public class UserResource {
 

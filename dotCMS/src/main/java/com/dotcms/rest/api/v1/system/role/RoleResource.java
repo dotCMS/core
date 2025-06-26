@@ -38,6 +38,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vavr.control.Try;
 import org.apache.commons.beanutils.BeanUtils;
 
@@ -77,6 +78,7 @@ import static com.dotcms.util.CollectionsUtils.list;
  *
  */
 @Path("/v1/roles")
+@Tag(name = "Roles", description = "User role and permission management")
 @SuppressWarnings("serial")
 public class RoleResource implements Serializable {
 

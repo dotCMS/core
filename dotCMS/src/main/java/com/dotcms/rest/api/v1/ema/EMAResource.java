@@ -19,6 +19,7 @@ import com.dotmarketing.util.json.JSONObject;
 import com.fasterxml.jackson.jaxrs.json.annotation.JSONP;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -35,6 +36,7 @@ import java.util.Optional;
  * Resource API that deals with secrets and their usage on third-party apps integrations.
  * @author jsanca
  */
+@Tag(name = "Apps")
 @Path("/v1/ema")
 public class EMAResource {
 

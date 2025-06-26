@@ -13,7 +13,9 @@ import javax.ws.rs.core.Response.ResponseBuilder;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
+@Tag(name = "Administration")
 @Path("/restexample")
 public class RestExamplePortlet extends BaseRestPortlet {
 

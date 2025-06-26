@@ -60,6 +60,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 
 /**
@@ -67,6 +68,7 @@ import io.vavr.control.Try;
  *
  */
 @Path("/v1/esindex")
+@Tag(name = "Search Index", description = "Elasticsearch index management and operations")
 public class ESIndexResource {
 
     private enum IndexAction{

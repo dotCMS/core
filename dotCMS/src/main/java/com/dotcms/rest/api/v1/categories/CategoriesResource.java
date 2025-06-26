@@ -46,6 +46,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vavr.control.Try;
 import java.io.BufferedReader;
 import java.io.File;
@@ -87,6 +88,7 @@ import org.glassfish.jersey.server.JSONP;
  * the front-end can perform on the Categories.
  */
 @Path("/v1/categories")
+@Tag(name = "Categories", description = "Content categorization and taxonomy")
 public class CategoriesResource {
 
     private final WebResource webResource;

@@ -17,6 +17,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vavr.Lazy;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import org.glassfish.jersey.server.JSONP;
@@ -44,6 +45,7 @@ import java.util.stream.Collectors;
  * @author Erick Gonzalez
  * @since Mar 6th, 2020
  */
+@Tag(name = "Publishing")
 @Path("/v1/pushpublish/filters")
 public class PushPublishFilterResource {
 

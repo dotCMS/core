@@ -21,6 +21,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.glassfish.jersey.server.JSONP;
 
 import javax.servlet.http.HttpServletRequest;
@@ -48,6 +49,7 @@ import java.util.List;
  * - metadata renders the XML metadata.
  * @author jsanca
  */
+@Tag(name = "SAML Authentication")
 @Path("/v1/dotsaml")
 public class DotSamlResource implements Serializable {
 

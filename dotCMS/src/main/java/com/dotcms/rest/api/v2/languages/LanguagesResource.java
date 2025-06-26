@@ -35,6 +35,7 @@ import com.liferay.portal.model.User;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.commons.beanutils.BeanUtils;
 import org.glassfish.jersey.server.JSONP;
 
@@ -75,6 +76,7 @@ import static com.dotmarketing.util.WebKeys.LANGUAGE_SEARCHED;
  * Language endpoint for the v2 API
  */
 @Path("/v2/languages")
+@Tag(name = "Internationalization")
 public class LanguagesResource {
 
     private final LanguageAPI languageAPI;

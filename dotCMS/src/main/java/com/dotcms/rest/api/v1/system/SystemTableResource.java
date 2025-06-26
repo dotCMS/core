@@ -14,6 +14,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.glassfish.jersey.server.JSONP;
 
 import javax.servlet.http.HttpServletRequest;
@@ -43,6 +44,7 @@ import static com.dotcms.util.DotPreconditions.checkNotNull;
  *
  * @author jsanca
  */
+@Tag(name = "System Configuration")
 @Path("/v1/system-table")
 public class SystemTableResource implements Serializable {
 

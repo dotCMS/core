@@ -56,6 +56,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vavr.control.Try;
 import org.glassfish.jersey.server.JSONP;
 
@@ -101,6 +102,7 @@ import static com.dotmarketing.business.UserHelper.validateMaximumLength;
  *
  */
 @Path("/v1/users")
+@Tag(name = "Users", description = "Endpoints for managing user accounts, authentication, and user-related operations")
 public class UserResource implements Serializable {
 
 	public static final String USER_ID = "userID";
