@@ -15,7 +15,7 @@ import {
 @Injectable()
 export class DotCrumbtrailService {
     private URL_EXCLUDES = ['/content-types-angular/create/content'];
-    private crumbTrail = new BehaviorSubject([]);
+    private crumbTrail = new BehaviorSubject<DotCrumb[]>([]);
 
     private portletsTitlePathFinder = {
         'content-types-angular': 'contentType.name',
