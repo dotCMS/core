@@ -6,7 +6,6 @@
             tooltipPosition="top"
             [removable]="true"
             [styleClass]="$disabled() ? 'p-chip-sm p-chip-disabled' : 'p-chip-sm'"
-            [class.p-chip-disabled]="$disabled()"
             (onRemove)="onRemove(category.key)">
             <ng-template pTemplate="removeicon">
                 <i class="pi pi-times"></i>

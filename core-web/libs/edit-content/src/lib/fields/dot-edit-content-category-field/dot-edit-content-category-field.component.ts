@@ -131,8 +131,6 @@ export class DotEditContentCategoryFieldComponent implements OnInit, ControlValu
         this.onTouched();
     }
 
-    // ControlValueAccessor implementation
-
     /**
      * Sets the value in the component when the form control value changes.
      * This method is called by Angular's forms system.
