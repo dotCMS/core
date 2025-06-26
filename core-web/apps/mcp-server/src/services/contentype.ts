@@ -98,7 +98,7 @@ export const ContentTypeCreateParamsSchema = z.object({
     fixed: z.boolean().optional(),
     system: z.boolean().optional(),
     folder: z.string().optional(),
-    systemActionMappings: z.record(z.string()).optional(),
+    systemActionMappings: z.record(z.any()).optional(),
     workflow: z.array(z.string()).optional(),
     fields: z.array(ContentTypeFieldSchema).min(1)
 });
