@@ -7,6 +7,21 @@ const server = new McpServer({
   version: '1.0.0',
 });
 
+const DOTCMS_URL = process.env.DOTCMS_URL;
+const AUTH_TOKEN = process.env.AUTH_TOKEN;
+
+const urlSchema = z.string().url();
+const tokenSchema = z.string().min(1, 'AUTH_TOKEN cannot be empty');
+
+try {
+  urlSchema.parse(DOTCMS_URL);
+  tokenSchema.parse(AUTH_TOKEN);
+} catch (e) {
+  // eslint-disable-next-line no-console
+  console.error('Invalid environment variables:', e);
+  process.exit(1);
+}
+
 server.registerTool("hello",
   {
     title: "Hello Tool",
@@ -14,7 +29,10 @@ server.registerTool("hello",
     inputSchema: { name: z.string() }
   },
   async ({ name }) => ({
-    content: [{ type: "text", text: `Hello ${name}` }]
+    content: [{
+      type: "text",
+      text: `Hello ${name}\nDOTCMS_URL: ${DOTCMS_URL}\nAUTH_TOKEN: ${AUTH_TOKEN}`
+    }]
   })
 );
 
