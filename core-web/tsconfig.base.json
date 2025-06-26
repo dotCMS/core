@@ -40,6 +40,12 @@
             "@dotcms/edit-content-bridge": ["libs/edit-content-bridge/src/index.ts"],
             "@dotcms/edit-content/*": ["libs/edit-content/src/lib/*"],
             "@dotcms/experiments": ["libs/sdk/experiments/src/index.ts"],
+            "@dotcms/portlets/content-drive/portlet": [
+                "libs/portlets/dot-content-drive/portlet/src/index.ts"
+            ],
+            "@dotcms/portlets/content-drive/ui": [
+                "libs/portlets/dot-content-drive/ui/src/index.ts"
+            ],
             "@dotcms/portlets/dot-analytics-search/portlet": [
                 "libs/portlets/dot-analytics-search/portlet/src/index.ts"
             ],

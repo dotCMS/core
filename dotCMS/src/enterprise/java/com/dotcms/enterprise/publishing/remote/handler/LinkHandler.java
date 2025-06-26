@@ -13,6 +13,7 @@ import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.enterprise.publishing.remote.bundler.LinkBundler;
 import com.dotcms.enterprise.publishing.remote.handler.HandlerUtil.HandlerType;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publisher.pusher.wrapper.LinkWrapper;
 import com.dotcms.publisher.receiver.handler.IHandler;
@@ -57,9 +58,10 @@ import java.util.List;
  * @since Mar 7, 2013
  */
 public class LinkHandler implements IHandler {
-	private UserAPI uAPI = APILocator.getUserAPI();
-	private List<String> infoToRemove = new ArrayList<>();
-	private PublisherConfig config;
+
+	private final UserAPI uAPI = APILocator.getUserAPI();
+	private final List<String> infoToRemove = new ArrayList<>();
+	private final PublisherConfig config;
 
 	public LinkHandler(PublisherConfig config) {
 		this.config = config;
@@ -80,15 +82,15 @@ public class LinkHandler implements IHandler {
 		handleLinks(templates);
 	}
 
-	private void deleteLink(Link link) throws DotPublishingException, DotDataException{
+	private void deleteLink(Link link) {
 		try {
 			Link l = APILocator.getMenuLinkAPI().find(link.getInode(), APILocator.getUserAPI().getSystemUser(), false);
 			if(l!=null && InodeUtils.isSet(l.getInode())){
 				APILocator.getMenuLinkAPI().delete(link, APILocator.getUserAPI().getSystemUser(), false);
 			}
 		} catch (final Exception e) {
-            Logger.error(this, String.format("An error occurred when deleting Link '%s' [%s]: %s", (null == link ? "" +
-                    "(null)" : link.getTitle()), (null == link ? "(null)" : link.getIdentifier()), e.getMessage()), e);
+            Logger.error(this, String.format("An error occurred when deleting Link '%s' [%s]: %s",
+					(null == link ? "(null)" : link.getTitle()), (null == link ? "(null)" : link.getIdentifier()), ExceptionUtil.getErrorMessage(e)), e);
         }
 	}
 
@@ -179,14 +181,15 @@ public class LinkHandler implements IHandler {
 	            }
 	        } catch (final Exception e) {
                 throw new DotPublishingException(String.format("An error occurred when removing Version Info with ID " +
-                        "'%s' from cache: %s", identToRemove, e.getMessage()), e);
+                        "'%s' from cache: %s", identToRemove, ExceptionUtil.getErrorMessage(e)), e);
             }
     	} catch (final Exception e) {
-            final String errorMsg = String.format("An error occurred when processing Link in '%s' with ID '%s': %s",
+            final String errorMsg = String.format("An error occurred when processing Link in '%s' with title '%s' [%s]: %s",
                     workingOn, (null == linkToPublish ? "(empty)" : linkToPublish.getTitle()), (null == linkToPublish
-                            ? "(empty)" : linkToPublish.getIdentifier()), e.getMessage());
+                            ? "(empty)" : linkToPublish.getIdentifier()), ExceptionUtil.getErrorMessage(e));
             Logger.error(this.getClass(), errorMsg, e);
             throw new DotPublishingException(errorMsg, e);
     	}
     }
+
 }

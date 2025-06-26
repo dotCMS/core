@@ -1,6 +1,8 @@
 package com.dotcms.content.elasticsearch.business;
 
+import com.dotcms.business.ExternalTransaction;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.content.business.json.ContentletJsonAPI;
 import com.dotcms.content.business.json.ContentletJsonHelper;
 import com.dotcms.content.elasticsearch.ESQueryCache;
@@ -42,7 +44,6 @@ import com.dotmarketing.common.db.Params;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
-import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.db.commands.DatabaseCommand.QueryReplacements;
 import com.dotmarketing.db.commands.UpsertCommand;
 import com.dotmarketing.db.commands.UpsertCommandFactory;
@@ -126,6 +127,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.MAX_LIMIT;
@@ -235,7 +239,11 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
     private static final int MAX_FIELDS_ALLOWED = 25;
     private static final Lazy<Integer> OLD_CONTENT_BATCH_SIZE = Lazy.of(
-            () -> Config.getIntProperty("OLD_CONTENT_BATCH_SIZE", 8192));
+            () -> Config.getIntProperty("OLD_CONTENT_BATCH_SIZE", 100));
+    private static final Lazy<Long> OLD_CONTENT_JOB_PAUSE_MS = Lazy.of(
+            () -> Config.getLongProperty("OLD_CONTENT_JOB_PAUSE_MS", 200));
+    private static final Lazy<Integer> OLD_CONTENT_BATCHES_BEFORE_PAUSE = Lazy.of(
+            () -> Config.getIntProperty("OLD_CONTENT_BATCHES_BEFORE_PAUSE", 10));
 
     private final ContentletCache contentletCache;
 	private final LanguageAPI languageAPI;
@@ -716,9 +724,15 @@ public class ESContentFactoryImpl extends ContentletFactory {
         final int before = Integer.parseInt(result.get(0).get("count"));
 
         final int batchSize = OLD_CONTENT_BATCH_SIZE.get();
+        int batchExecutionCount = 0;
         int oldInodesCount;
         do {
             oldInodesCount = deleteContentBatch(date, batchSize);
+            // Pause if needed to avoid overloading the system
+            if (oldInodesCount > 0) {
+                batchExecutionCount++;
+                pauseDeleteContentIfNeeded(batchExecutionCount);
+            }
         } while (oldInodesCount == batchSize);
 
         dc = new DotConnect();
@@ -740,7 +754,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
      * @return The number of Contentlets deleted by this operation.
      * @throws DotDataException An error occurred when interacting with the data source.
      */
-    @WrapInTransaction(externalize = true)
+    @ExternalTransaction
     private int deleteContentBatch(final Date date, final int batchSize) throws DotDataException {
         final String query = "SELECT c.inode FROM contentlet c"
                 + " WHERE c.identifier <> 'SYSTEM_HOST' AND c.mod_date < ?"
@@ -759,6 +773,38 @@ public class ESContentFactoryImpl extends ContentletFactory {
             deleteContentData(inodeList);
         }
         return resultCount;
+    }
+
+    /**
+     * Pauses the deletion of old content if the number of batches executed so far is a multiple of
+     * {@code OLD_CONTENT_BATCHES_BEFORE_PAUSE} to avoid overloading the system.
+     *
+     * @param batchExecutionCount The number of batches executed so far.
+     */
+    private void pauseDeleteContentIfNeeded(final int batchExecutionCount) {
+        final int batchesBeforePause = OLD_CONTENT_BATCHES_BEFORE_PAUSE.get();
+        
+        // Skip the pause logic if batchesBeforePause is zero or negative
+        if (batchesBeforePause <= 0) {
+            return;
+        }
+        
+        if (batchExecutionCount % batchesBeforePause == 0) {
+            try {
+                // Schedule a no-op task to pause the deletion process
+                DotConcurrentFactory.getScheduledThreadPoolExecutor()
+                    .schedule(() -> {},
+                        OLD_CONTENT_JOB_PAUSE_MS.get(), TimeUnit.MILLISECONDS)
+                    .get(); // Wait for the pause to complete
+            } catch (RejectedExecutionException e) {
+                Logger.warn(this, "Delete content job pause task was rejected", e);
+            } catch (ExecutionException e) {
+                Logger.warn(this, "Error executing task to pause delete content job", e);
+            } catch (InterruptedException e) {
+                Logger.warn(this, "Thread interrupted in delete content job pause task", e);
+                Thread.currentThread().interrupt();
+            }
+        }
     }
 
     /**
@@ -1267,13 +1313,15 @@ public class ESContentFactoryImpl extends ContentletFactory {
                 + "INNER JOIN identifier i ON i.id = c.identifier\n"
                 + "INNER JOIN contentlet_version_info cvi ON cvi.identifier = c.identifier\n"
                 + "INNER JOIN inode ci ON ci.inode = c.inode\n"
-                +" WHERE (? AT TIME ZONE 'UTC') >= (i.syspublish_date AT TIME ZONE 'UTC')"
-                +" AND ((? AT TIME ZONE 'UTC') <= (i.sysexpire_date AT TIME ZONE 'UTC') OR i.sysexpire_date IS NULL)"
+                + " WHERE ((? AT TIME ZONE 'UTC') >= (i.syspublish_date AT TIME ZONE 'UTC') OR i.syspublish_date IS NULL)"
+                + " AND ((? AT TIME ZONE 'UTC') <= (i.sysexpire_date AT TIME ZONE 'UTC') OR i.sysexpire_date IS NULL)"
                 + "   AND cvi.working_inode = c.inode \n"
                 + "   AND cvi.lang  = ?\n"
                 + "   AND cvi.deleted = false\n"
                 + "   AND c.identifier = ?\n"
                 + "   AND cvi.variant_id = ?\n"
+                // at least one of the dates must be set
+                + "   AND (i.syspublish_date IS NOT NULL OR i.sysexpire_date IS NOT NULL)\n"
                 + ";";
 
         final DotConnect dotConnect = new DotConnect().setSQL(query)
