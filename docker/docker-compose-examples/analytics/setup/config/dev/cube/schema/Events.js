@@ -228,11 +228,5 @@ cube('request', {
       type: 'countDistinct',
       title: 'Total Requests'
     }
-  },
-  joins: {
-    HttpResponses: {
-      sql: `${CUBE}.request_id = ${HttpResponses.requestId}`,
-      relationship: `one_to_one`
-    }
   }
 });

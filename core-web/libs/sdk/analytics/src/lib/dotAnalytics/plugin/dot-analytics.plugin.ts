@@ -1,7 +1,9 @@
 import { sendAnalyticsEventToServer } from '../shared/dot-content-analytics.http';
 import {
-    DotAnalyticsParams,
-    DotContentAnalyticsConfig
+    DotCMSAnalyticsConfig,
+    DotCMSAnalyticsParams,
+    DotCMSPageViewRequestBody,
+    DotCMSTrackRequestBody
 } from '../shared/dot-content-analytics.model';
 
 /**
@@ -9,11 +11,11 @@ import {
  * This plugin handles sending analytics data to the DotCMS server, managing initialization,
  * and processing both automatic and manual tracking events.
  *
- * @param {DotAnalyticsConfig} config - Configuration object containing API key, server URL,
+ * @param {DotCMSAnalyticsConfig} config - Configuration object containing API key, server URL,
  *                                     debug mode and auto page view settings
  * @returns {Object} Plugin object with methods for initialization and event tracking
  */
-export const dotAnalytics = (config: DotContentAnalyticsConfig) => {
+export const dotAnalytics = (config: DotCMSAnalyticsConfig) => {
     let isInitialized = false;
 
     return {
@@ -23,58 +25,61 @@ export const dotAnalytics = (config: DotContentAnalyticsConfig) => {
         /**
          * Initialize the plugin
          */
-        initialize: (params: DotAnalyticsParams) => {
-            const { config, payload } = params;
-            if (config.debug) {
-                console.warn('DotAnalytics: Initialized with config', config);
-            }
-
+        initialize: () => {
             isInitialized = true;
 
-            // If autoPageView is enabled, send a page view event, used in IIFE
-            if (config.autoPageView) {
-                const body = {
-                    ...payload.properties,
-                    key: config.apiKey
-                };
-
-                return sendAnalyticsEventToServer(body, config);
-            }
-
+            // No automatic page view sending - let useRouterTracker handle it
+            // This ensures all page views go through the enrichment process
             return Promise.resolve();
         },
 
         /**
          * Track a page view event
+         * Takes enriched data from properties and creates final structured event
          */
-        page: (params: DotAnalyticsParams) => {
+        page: (params: DotCMSAnalyticsParams) => {
             const { config, payload } = params;
+            const { context, page, device, utm, local_time } = payload;
 
             if (!isInitialized) {
                 throw new Error('DotAnalytics: Plugin not initialized');
             }
 
-            const body = {
-                ...payload.properties,
-                key: config.apiKey
+            // Build final structured event
+            const body: DotCMSPageViewRequestBody = {
+                context,
+                events: [
+                    {
+                        event_type: 'pageview',
+                        local_time,
+                        page,
+                        device,
+                        ...(utm && { utm: utm })
+                    }
+                ]
             };
+
+            if (config.debug) {
+                console.warn('Event to send:', body);
+            }
 
             return sendAnalyticsEventToServer(body, config);
         },
 
         /**
          * Track a custom event
+         * Takes enriched data and sends it to the analytics server
          */
-        track: (params: DotAnalyticsParams) => {
+        track: (params: DotCMSAnalyticsParams) => {
             const { config, payload } = params;
 
             if (!isInitialized) {
                 throw new Error('DotAnalytics: Plugin not initialized');
             }
 
-            const body = {
-                ...payload.properties,
-                key: config.apiKey
+            // For track events, use the enriched payload directly
+            const body: DotCMSTrackRequestBody = {
+                context: payload.context
             };
 
             return sendAnalyticsEventToServer(body, config);
