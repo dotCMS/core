@@ -8,6 +8,7 @@ import {
     forwardRef,
     inject,
     input,
+    model,
     signal,
     viewChild
 } from '@angular/core';
@@ -80,7 +81,7 @@ export class DotEditContentTagFieldComponent implements ControlValueAccessor {
     /**
      * Signal that holds the current value (array of tags)
      */
-    $value = signal<string[]>([]);
+    $values = model<string[]>([]);
 
     /**
      * Signal that holds the disabled state
@@ -159,12 +160,12 @@ export class DotEditContentTagFieldComponent implements ControlValueAccessor {
         const value = input.value.trim();
 
         if (value) {
-            const currentValues = this.$value();
+            const currentValues = this.$values();
             const isDuplicate = currentValues.includes(value);
 
             if (!isDuplicate) {
                 const newValue = [...currentValues, value];
-                this.$value.set(newValue);
+                this.$values.set(newValue);
                 this.onChange(newValue.join(','));
                 input.value = '';
             }
@@ -179,7 +180,7 @@ export class DotEditContentTagFieldComponent implements ControlValueAccessor {
             return;
         }
 
-        this.$value.set(tags);
+        this.$values.set(tags);
         this.onChange(tags.join(','));
         this.onTouched();
     }
@@ -194,7 +195,7 @@ export class DotEditContentTagFieldComponent implements ControlValueAccessor {
 
         // Get the current value from the AutoComplete component
         const autocompleteValue = this.autocomplete()?.value || [];
-        this.$value.set(autocompleteValue);
+        this.$values.set(autocompleteValue);
         this.onChange(autocompleteValue.join(','));
     }
 
@@ -217,7 +218,7 @@ export class DotEditContentTagFieldComponent implements ControlValueAccessor {
             tagsArray = value;
         }
 
-        this.$value.set(tagsArray);
+        this.$values.set(tagsArray);
     }
 
     /**
