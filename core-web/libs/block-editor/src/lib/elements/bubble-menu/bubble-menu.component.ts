@@ -13,16 +13,16 @@ import {
     ViewChild
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { DomSanitizer } from '@angular/platform-browser';
 
 import { DropdownModule } from 'primeng/dropdown';
 
 import { Editor } from '@tiptap/core';
 
 import { BubbleLinkFormComponent } from './components/bubble-link-form/bubble-link-form.component';
-import { EditorModalDirective } from './components/bubble-link-form/editor-modal.directive';
 
-import { codeIcon, headerIcons, olIcon, pIcon, quoteIcon, ulIcon } from '../utils/icons';
-import { DomSanitizer } from '@angular/platform-browser';
+import { EditorModalDirective } from '../../directive/editor-modal.directive';
+import { codeIcon, headerIcons, olIcon, pIcon, quoteIcon, ulIcon } from '../../utils/icons';
 
 interface NodeTypeOption {
     name: string;
