@@ -151,6 +151,7 @@
         @defer (on immediate) {
             <ng-container [ngTemplateOutlet]="labelTemplate" />
             <dot-edit-content-category-field
+                [formControlName]="field.variable"
                 [attr.data-testId]="'field-' + field.variable"
                 [contentlet]="contentlet"
                 [field]="field" />
