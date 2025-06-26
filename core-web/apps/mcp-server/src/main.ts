@@ -2,6 +2,8 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
 
+import { ContentTypeService, ContentTypeListParamsSchema } from './services/contentype';
+
 const server = new McpServer({
   name: 'DotCMS',
   version: '1.0.0',
@@ -22,18 +24,24 @@ try {
   process.exit(1);
 }
 
-server.registerTool("hello",
+const contentTypeService = new ContentTypeService();
+
+server.registerTool("listContentTypes",
   {
-    title: "Hello Tool",
-    description: "Say hello to someone",
-    inputSchema: { name: z.string() }
+    title: "List Content Types",
+    description: "Fetches a list of content types from dotCMS.",
+    inputSchema: ContentTypeListParamsSchema.shape
   },
-  async ({ name }) => ({
-    content: [{
-      type: "text",
-      text: `Hello ${name}\nDOTCMS_URL: ${DOTCMS_URL}\nAUTH_TOKEN: ${AUTH_TOKEN}`
-    }]
-  })
+  async (params) => {
+    const contentTypes = await contentTypeService.list(params);
+
+    return {
+      content: [{
+        type: "text",
+        text: JSON.stringify(contentTypes, null, 2)
+      }]
+    };
+  }
 );
 
 const transport = new StdioServerTransport();

@@ -85,7 +85,8 @@ const FieldClazzEnum = z.enum([
     'com.dotcms.contenttype.model.field.ImmutableTextField',
     'com.dotcms.contenttype.model.field.ImmutableTextAreaField',
     'com.dotcms.contenttype.model.field.ImmutableTimeField',
-    'com.dotcms.contenttype.model.field.ImmutableWysiwygField'
+    'com.dotcms.contenttype.model.field.ImmutableWysiwygField',
+    'com.dotcms.contenttype.model.field.ImmutableLineDividerField'
 ]);
 
 const DividerSchema = z.object({

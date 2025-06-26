@@ -9,7 +9,7 @@ const ContentTypeBaseTypeQueryEnum = z.union([
     ContentTypeBaseTypeEnum
 ]);
 
-const ContentTypeListParamsSchema = z.object({
+export const ContentTypeListParamsSchema = z.object({
     filter: z.string().optional(),
     page: z.number().int().positive().optional(),
     per_page: z.number().int().positive().optional(),
