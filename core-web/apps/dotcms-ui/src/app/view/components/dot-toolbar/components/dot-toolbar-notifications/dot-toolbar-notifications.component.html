@@ -23,26 +23,6 @@
                     [text]="true"
                     styleClass="p-button-sm p-button-primary" />
             }
-<<<<<<< HEAD
-            <div class="toolbar-notifications__content" id="dot-toolbar-notifications-content">
-                <dot-notifications-list
-                    (dismissNotification)="onDismissNotification($event)"
-                    [notifications]="notifications"
-                    id="dot-notifications-list" />
-            </div>
-            <div class="toolbar-notifications__footer" id="dot-toolbar-notifications-footer">
-                @if (existsMoreToLoad) {
-                    <button
-                        (click)="loadMore()"
-                        class="p-button-outlined"
-                        id="dot-toolbar-notifications-button-load-more"
-                        ripple
-                        pButton
-                        label="{{ 'notifications_load_more' | dm }}"></button>
-                }
-            </div>
-=======
->>>>>>> main
         </div>
         @if (!data.length) {
             <div class="dot-notifications__empty">

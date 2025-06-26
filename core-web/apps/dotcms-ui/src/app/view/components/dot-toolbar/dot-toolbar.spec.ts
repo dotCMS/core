@@ -41,7 +41,10 @@ class MockDotNavigationService {
     collapsed = false;
 
     toggle() {
+        this.collapsed = !this.collapsed;
+    }
 }
+
 @Component({
     selector: 'dot-toolbar-user',
     template: ''

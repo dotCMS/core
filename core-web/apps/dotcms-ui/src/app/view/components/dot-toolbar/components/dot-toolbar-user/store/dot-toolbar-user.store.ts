@@ -34,22 +34,12 @@ const INITIAL_STATE: DotToolbarUserState = {
 
 @Injectable()
 export class DotToolbarUserStore extends ComponentStore<DotToolbarUserState> {
-<<<<<<< HEAD
-    private loginService = inject(LoginService);
-    private dotMessageService = inject(DotMessageService);
-    private dotNavigationService = inject(DotNavigationService);
-    private loggerService = inject(LoggerService);
-    private location = inject<Location>(LOCATION_TOKEN);
-
-    private readonly FINAL_LOGOUT_URL = `${LOGOUT_URL}?r=${new Date().getTime()}`;
-=======
     readonly #loginService = inject(LoginService);
     readonly #dotMessageService = inject(DotMessageService);
     readonly #dotNavigationService = inject(DotNavigationService);
     readonly #loggerService = inject(LoggerService);
     readonly #location = inject<Location>(LOCATION_TOKEN);
     readonly #FINAL_LOGOUT_URL = `${LOGOUT_URL}?r=${new Date().getTime()}`;
->>>>>>> main
 
     readonly vm$: Observable<DotToolbarUserState> = this.select((state) => state).pipe(
         filter((vm) => !!vm.userData.email)

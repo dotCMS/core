@@ -9,55 +9,16 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
-<<<<<<< HEAD
-import { ButtonModule } from 'primeng/button';
-
-import { DotDropdownComponent } from '@components/_common/dot-dropdown-component/dot-dropdown.component';
-import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
-import { AnnouncementsStore } from '@components/dot-toolbar/components/dot-toolbar-announcements/store/dot-announcements.store';
-=======
->>>>>>> main
 import { NotificationsService } from '@dotcms/app/api/services/notifications-service';
-import { DotShowHideFeatureDirective } from '@dotcms/app/shared/directives/dot-show-hide-feature/dot-show-hide-feature.directive';
 import { DotcmsEventsService, LoginService } from '@dotcms/dotcms-js';
-<<<<<<< HEAD
-import { FeaturedFlags } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
-import { INotification } from '@models/notifications';
-
-import { DotNotificationsListComponent } from './components/dot-notifications/dot-notifications.component';
-
-import { DotToolbarAnnouncementsComponent } from '../dot-toolbar-announcements/dot-toolbar-announcements.component';
-=======
 import { INotification } from '@models/notifications';
 
 import { DotToolbarBtnOverlayComponent } from '../dot-toolbar-overlay/dot-toolbar-btn-overlay.component';
->>>>>>> main
 
 @Component({
     selector: 'dot-toolbar-notifications',
     styleUrls: ['./dot-toolbar-notifications.component.scss'],
     templateUrl: 'dot-toolbar-notifications.component.html',
-<<<<<<< HEAD
-    standalone: true,
-    imports: [
-        DotShowHideFeatureDirective,
-        ButtonModule,
-        DotToolbarAnnouncementsComponent,
-        DotDropdownComponent,
-        DotNotificationsListComponent,
-        DotMessagePipe
-    ],
-    providers: [AnnouncementsStore]
-})
-export class DotToolbarNotificationsComponent implements OnInit {
-    iframeOverlayService = inject(IframeOverlayService);
-    private dotcmsEventsService = inject(DotcmsEventsService);
-    private loginService = inject(LoginService);
-    private notificationService = inject(NotificationsService);
-
-    readonly #announcementsStore = inject(AnnouncementsStore);
-=======
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotToolbarNotificationsComponent implements OnInit {
@@ -65,24 +26,9 @@ export class DotToolbarNotificationsComponent implements OnInit {
     readonly #destroyRef = inject(DestroyRef);
     readonly #dotcmsEventsService = inject(DotcmsEventsService);
     readonly #loginService = inject(LoginService);
->>>>>>> main
 
     readonly $overlayPanel = viewChild.required<DotToolbarBtnOverlayComponent>('overlayPanel');
 
-<<<<<<< HEAD
-    @ViewChild('toolbarAnnouncements') toolbarAnnouncements: DotToolbarAnnouncementsComponent;
-    existsMoreToLoad = false;
-    notifications: INotification[] = [];
-    notificationsUnreadCount = 0;
-    featureFlagAnnouncements = FeaturedFlags.FEATURE_FLAG_ANNOUNCEMENTS;
-    annocumentsMarkedAsRead = false;
-    activeAnnouncements = false;
-
-    private isNotificationsMarkedAsRead = false;
-    private showNotifications = false;
-
-    showUnreadAnnouncement = this.#announcementsStore.showUnreadAnnouncement;
-=======
     $notifications = signal<{
         data: INotification[];
         unreadCount: number;
@@ -92,7 +38,6 @@ export class DotToolbarNotificationsComponent implements OnInit {
         unreadCount: 0,
         hasMore: false
     });
->>>>>>> main
 
     ngOnInit(): void {
         this.#getNotifications();

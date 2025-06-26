@@ -1,25 +1,6 @@
-<<<<<<< HEAD
-import { CommonModule } from '@angular/common';
-import {
-    Component,
-    EventEmitter,
-    Input,
-    OnChanges,
-    OnInit,
-    Output,
-    Signal,
-    inject,
-    signal,
-    viewChild
-} from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-
-import { OverlayPanel, OverlayPanelModule } from 'primeng/overlaypanel';
-=======
 import { DatePipe, LowerCasePipe } from '@angular/common';
 import { Component, OnInit, inject, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
->>>>>>> main
 
 import {
     TypesIcons,
@@ -36,11 +17,7 @@ import { DotToolbarBtnOverlayComponent } from '../dot-toolbar-overlay/dot-toolba
     templateUrl: './dot-toolbar-announcements.component.html',
     styleUrls: ['./dot-toolbar-announcements.component.scss'],
     standalone: true,
-<<<<<<< HEAD
-    imports: [CommonModule, DotMessagePipe, OverlayPanelModule],
-=======
     imports: [DotMessagePipe, LowerCasePipe, DatePipe, DotToolbarBtnOverlayComponent],
->>>>>>> main
     providers: [AnnouncementsStore]
 })
 export class DotToolbarAnnouncementsComponent implements OnInit {
@@ -49,11 +26,6 @@ export class DotToolbarAnnouncementsComponent implements OnInit {
 
     /** Service for site-related operations */
     siteService = inject(SiteService);
-<<<<<<< HEAD
-    $toolbarAnnouncements = viewChild.required<OverlayPanel>('toolbarAnnouncements');
-    @Output() hideMenu = new EventEmitter();
-=======
->>>>>>> main
 
     /** Signal indicating whether to show unread announcement indicator */
     $showUnreadAnnouncement = this.announcementsStore.showUnreadAnnouncement;
@@ -122,14 +94,8 @@ export class DotToolbarAnnouncementsComponent implements OnInit {
      * Hides the overlay panel component.
      * Used to close the announcements dropdown when user clicks outside or completes an action.
      */
-<<<<<<< HEAD
-    toggleDialog(event): void {
-        this.showMask.update((value) => !value);
-        this.$toolbarAnnouncements().toggle(event);
-=======
     hideOverlayPanel(): void {
         this.$overlayPanel().hide();
->>>>>>> main
     }
 
     /**

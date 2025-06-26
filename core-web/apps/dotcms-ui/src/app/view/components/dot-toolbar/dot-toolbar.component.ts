@@ -5,26 +5,12 @@ import { DotRouterService } from '@dotcms/data-access';
 import { DotcmsEventsService, Site, SiteService } from '@dotcms/dotcms-js';
 import { FeaturedFlags } from '@dotcms/dotcms-models';
 
-import { DotToolbarNotificationsComponent } from './components/dot-toolbar-notifications/dot-toolbar-notifications.component';
-import { DotToolbarUserComponent } from './components/dot-toolbar-user/dot-toolbar-user.component';
-
 import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
 
 @Component({
     selector: 'dot-toolbar',
     styleUrls: ['./dot-toolbar.component.scss'],
-    templateUrl: './dot-toolbar.component.html',
-    standalone: true,
-    imports: [
-        ToolbarModule,
-        ButtonModule,
-        NgStyle,
-        DotCrumbtrailComponent,
-        DotSiteSelectorModule,
-        DotToolbarNotificationsComponent,
-        DotToolbarUserComponent,
-        AsyncPipe
-    ]
+    templateUrl: './dot-toolbar.component.html'
 })
 export class DotToolbarComponent implements OnInit {
     readonly #dotRouterService = inject(DotRouterService);

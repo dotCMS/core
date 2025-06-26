@@ -31,10 +31,14 @@ const dotEventSocketURLFactory = () => {
     declarations: [],
     imports: [CommonModule, MainNavigationModule],
     exports: [
+        CommonModule,
+        // Common Modules
+        MainNavigationModule
     ]
 })
 export class SharedModule {
     static forRoot(): ModuleWithProviders<SharedModule> {
+        return {
             ngModule: SharedModule,
             providers: [
                 ApiRoot,
