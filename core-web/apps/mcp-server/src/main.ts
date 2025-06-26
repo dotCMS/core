@@ -2,7 +2,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
 
-import { ContentTypeService, ContentTypeListParamsSchema } from './services/contentype';
+import { ContentTypeService, ContentTypeListParamsSchema, ContentTypeCreateParamsSchema } from './services/contentype';
 
 const server = new McpServer({
   name: 'DotCMS',
@@ -34,6 +34,29 @@ server.registerTool("listContentTypes",
   },
   async (params) => {
     const contentTypes = await contentTypeService.list(params);
+
+    return {
+      content: [{
+        type: "text",
+        text: JSON.stringify(contentTypes, null, 2)
+      }]
+    };
+  }
+);
+
+server.registerTool("createContentType",
+  {
+    title: "Create Content Type",
+    description: "Creates one or more content types in dotCMS. Can accept either a single content type object or an array of content types.",
+    inputSchema: z.object({
+      contentType: z.union([
+        ContentTypeCreateParamsSchema,
+        z.array(ContentTypeCreateParamsSchema)
+      ])
+    }).shape
+  },
+  async (params) => {
+    const contentTypes = await contentTypeService.create(params.contentType);
 
     return {
       content: [{

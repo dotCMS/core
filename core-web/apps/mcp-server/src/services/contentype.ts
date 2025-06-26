@@ -22,8 +22,74 @@ export const ContentTypeListParamsSchema = z.object({
 
 type ContentTypeListParams = z.infer<typeof ContentTypeListParamsSchema>;
 
-export const ContentTypeCreateParamsSchema = z.object({
+const FieldTypeEnum = z.enum([
+    'Story-Block',
+    'Block Editor',
+    'Category',
+    'Checkbox',
+    'Constant-Field',
+    'Custom-Field',
+    'Date',
+    'Date-and-Time',
+    'File',
+    'Hidden-Field',
+    'Image',
+    'JSON-Field',
+    'Key-Value',
+    'Multi-Select',
+    'Radio',
+    'Relationship',
+    'Select',
+    'Host-Folder',
+    'Tag',
+    'Text',
+    'Textarea',
+    'Time',
+    'WYSIWYG',
+    'Binary'
+]);
+
+const ContentTypeFieldSchema = z.object({
     clazz: z.string(),
+    contentTypeId: z.string().optional(),
+    dataType: z.string().optional(),
+    fieldType: FieldTypeEnum,
+    fieldTypeLabel: z.string().optional(),
+    fieldVariables: z.array(z.any()).optional(),
+    fixed: z.boolean().optional(),
+    forceIncludeInApi: z.boolean().optional(),
+    iDate: z.number().optional(),
+    id: z.string().nullable().optional(),
+    indexed: z.boolean().optional(),
+    listed: z.boolean().optional(),
+    modDate: z.number().optional(),
+    name: z.string(),
+    readOnly: z.boolean().optional(),
+    required: z.boolean().optional(),
+    searchable: z.boolean().optional(),
+    sortOrder: z.number().optional(),
+    unique: z.boolean().optional(),
+    variable: z.string().optional(),
+    values: z.string().optional(),
+    hint: z.string().optional(),
+    categories: z.object({
+        categoryName: z.string(),
+        description: z.string().nullable(),
+        inode: z.string(),
+        key: z.string(),
+        keywords: z.string(),
+        sortOrder: z.number()
+    }).optional(),
+    relationships: z.object({
+        cardinality: z.number(),
+        isParentField: z.boolean(),
+        velocityVar: z.string()
+    }).optional(),
+    skipRelationshipCreation: z.boolean().optional()
+});
+
+export const ContentTypeCreateParamsSchema = z.object({
+    clazz: z.literal('com.dotcms.contenttype.model.type.ImmutableSimpleContentType'),
     name: z.string(),
     description: z.string().optional(),
     host: z.string().optional(),
@@ -34,8 +100,7 @@ export const ContentTypeCreateParamsSchema = z.object({
     folder: z.string().optional(),
     systemActionMappings: z.record(z.string()).optional(),
     workflow: z.array(z.string()).optional(),
-    // TODO: Add fields schema
-    fields: z.array(z.any()).optional()
+    fields: z.array(ContentTypeFieldSchema).min(1)
 });
 
 type ContentTypeCreateParams = z.infer<typeof ContentTypeCreateParamsSchema>;
