@@ -3,8 +3,8 @@ package com.dotcms.rendering.velocity.viewtools;
 import com.dotcms.UnitTestBase;
 import com.dotmarketing.util.Config;
 import com.liferay.portal.util.WebKeys;
-import org.junit.After;
-import org.junit.Before;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -24,23 +24,23 @@ public class VelocityRequestWrapperTest extends UnitTestBase {
     @Mock
     private HttpServletRequest mockRequest;
 
-    private boolean originalConfigValue;
+    private static boolean originalConfigValue;
 
     /**
-     * Sets up the test environment by configuring the VELOCITY_PREVENT_SETTING_USER_ID property to true.
+     * Sets up the config property before class loading to ensure SET_VALUE_BLACKLIST is initialized correctly.
      */
-    @Before
-    public void setUp() {
-        // Store original config value to restore after test
+    @BeforeClass
+    public static void setUpClass() {
+        // Store original config value to restore after all tests
         originalConfigValue = Config.getBooleanProperty("VELOCITY_PREVENT_SETTING_USER_ID", true);
         Config.setProperty("VELOCITY_PREVENT_SETTING_USER_ID", true);
     }
 
     /**
-     * Tears down the test environment by restoring the original config value.
+     * Restores the original config value after all tests complete.
      */
-    @After
-    public void tearDown() {
+    @AfterClass
+    public static void tearDownClass() {
         // Restore original config value
         Config.setProperty("VELOCITY_PREVENT_SETTING_USER_ID", originalConfigValue);
     }
