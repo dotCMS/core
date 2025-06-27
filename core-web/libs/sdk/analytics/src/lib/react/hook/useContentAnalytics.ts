@@ -57,7 +57,6 @@ import DotContentAnalyticsContext from '../contexts/DotContentAnalyticsContext';
 export const useContentAnalytics = (): DotCMSAnalytics => {
     const instance = useContext(DotContentAnalyticsContext);
     const lastPathRef = useRef<string | null>(null);
-    const uveState = getUVEState();
 
     if (!instance) {
         throw new Error(
@@ -67,6 +66,7 @@ export const useContentAnalytics = (): DotCMSAnalytics => {
 
     const track = useCallback(
         (eventName: string, payload: Record<string, unknown> = {}) => {
+            const uveState = getUVEState();
             if (!uveState) {
                 instance.track(eventName, {
                     ...payload,
@@ -74,10 +74,11 @@ export const useContentAnalytics = (): DotCMSAnalytics => {
                 });
             }
         },
-        [instance, uveState]
+        [instance]
     );
 
     const pageView = useCallback(() => {
+        const uveState = getUVEState();
         if (!uveState) {
             const currentPath = window.location.pathname;
             if (currentPath !== lastPathRef.current) {
@@ -85,7 +86,7 @@ export const useContentAnalytics = (): DotCMSAnalytics => {
                 instance.pageView();
             }
         }
-    }, [instance, uveState]);
+    }, [instance]);
 
     return {
         track,
