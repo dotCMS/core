@@ -13,13 +13,14 @@ import { DotCMSAnalytics } from '../../dotAnalytics/shared/dot-content-analytics
  */
 export function useRouterTracker(analytics: DotCMSAnalytics | null) {
     const lastPathRef = useRef<string | null>(null);
-    const uveState = getUVEState();
 
     useEffect(() => {
         if (!analytics) return;
 
         function handleRouteChange() {
             const currentPath = window.location.pathname;
+            const uveState = getUVEState();
+
             if (currentPath !== lastPathRef.current && !uveState && analytics) {
                 lastPathRef.current = currentPath;
                 analytics.pageView();

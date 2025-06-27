@@ -1,22 +1,18 @@
 import { ANALYTICS_ENDPOINT } from './dot-content-analytics.constants';
-import {
-    DotCMSAnalyticsConfig,
-    DotCMSPageViewRequestBody,
-    DotCMSTrackRequestBody
-} from './dot-content-analytics.model';
+import { DotCMSAnalyticsConfig, DotCMSAnalyticsRequestBody } from './dot-content-analytics.model';
 
 /**
  * Send an analytics event to the server
- * @param data - The event data
- * @param options - The options for the event
- * @returns A promise that resolves to the response from the server
+ * @param payload - The event payload data
+ * @param config - The analytics configuration
+ * @returns A promise that resolves when the request is complete
  */
 export const sendAnalyticsEventToServer = async (
-    payload: DotCMSPageViewRequestBody | DotCMSTrackRequestBody,
-    options: DotCMSAnalyticsConfig
+    payload: DotCMSAnalyticsRequestBody,
+    config: DotCMSAnalyticsConfig
 ): Promise<void> => {
     try {
-        const response = await fetch(`${options.server}${ANALYTICS_ENDPOINT}`, {
+        const response = await fetch(`${config.server}${ANALYTICS_ENDPOINT}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)

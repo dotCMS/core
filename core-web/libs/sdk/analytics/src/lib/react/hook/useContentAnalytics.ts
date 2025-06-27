@@ -74,7 +74,7 @@ export const useContentAnalytics = (): DotCMSAnalytics => {
                 });
             }
         },
-        [instance]
+        [instance, uveState]
     );
 
     const pageView = useCallback(() => {
@@ -85,7 +85,7 @@ export const useContentAnalytics = (): DotCMSAnalytics => {
                 instance.pageView();
             }
         }
-    }, [instance]);
+    }, [instance, uveState]);
 
     return {
         track,

@@ -1,3 +1,5 @@
+import { EVENT_TYPES } from './dot-content-analytics.constants';
+
 // Extend Window interface to include our custom properties
 declare global {
     interface Window {
@@ -39,43 +41,53 @@ export interface DotCMSAnalyticsConfig {
 }
 
 /**
+ * Supported event types in DotCMS Analytics.
+ * Only two event types are supported: pageview and track.
+ */
+export type DotCMSEventType = (typeof EVENT_TYPES)[keyof typeof EVENT_TYPES];
+
+/**
+ * Base structure for all analytics events.
+ * All events share this common structure.
+ */
+export interface DotCMSEventBase {
+    /** The type of event being tracked */
+    event_type: DotCMSEventType;
+    /** Local timestamp when the event occurred */
+    local_time: string;
+}
+
+/**
  * Pageview-specific analytics event structure.
  * Contains data specific to page view tracking.
  */
-export interface DotCMSPageViewEvent {
-    /** The type of event being tracked */
+export interface DotCMSPageViewEvent extends DotCMSEventBase {
     event_type: 'pageview';
-    /** Pageview-specific event data */
-    data: DotCMSEventData;
-    /** Local timestamp when the event occurred */
-    local_time: string;
+    /** Pageview-specific event data with structured format */
+    data: {
+        /** Page data associated with the event */
+        page: DotCMSPageData;
+        /** Device and browser information */
+        device: DotCMSDeviceData;
+        /** UTM parameters for campaign tracking (optional) */
+        utm?: DotCMSUtmData;
+    };
 }
 
 /**
  * Track-specific analytics event structure.
  * Contains data specific to custom event tracking.
  */
-export interface DotCMSTrackEvent {
-    /** The type of event being tracked */
+export interface DotCMSTrackEvent extends DotCMSEventBase {
     event_type: 'track';
     /** Track-specific event data with flexible structure */
     data: Record<string, unknown>;
-    /** Local timestamp when the event occurred */
-    local_time: string;
 }
 
 /**
- * Event data structure containing page, device, and UTM information.
- * This represents the actual event data that will be sent to the analytics server.
+ * Union type for all possible analytics events.
  */
-export interface DotCMSEventData {
-    /** Page data associated with the event */
-    page: DotCMSPageData;
-    /** Device and browser information */
-    device: DotCMSDeviceData;
-    /** UTM parameters for campaign tracking */
-    utm?: DotCMSUtmData;
-}
+export type DotCMSEvent = DotCMSPageViewEvent | DotCMSTrackEvent;
 
 /**
  * Analytics request body for page view events in DotCMS.
@@ -97,6 +109,22 @@ export interface DotCMSTrackRequestBody {
     context: DotCMSAnalyticsContext;
     /** Array of track analytics events to be tracked */
     events: DotCMSTrackEvent[];
+}
+
+/**
+ * Union type for all possible request bodies.
+ */
+export type DotCMSAnalyticsRequestBody = DotCMSPageViewRequestBody | DotCMSTrackRequestBody;
+
+/**
+ * Enriched payload structure returned by the enricher plugin.
+ * Contains pre-structured events and context for direct use in analytics requests.
+ */
+export interface DotCMSEnrichedPayload {
+    /** Analytics context shared across events */
+    context: DotCMSAnalyticsContext;
+    /** Array of pre-structured analytics events */
+    events: DotCMSEvent[];
 }
 
 /**
@@ -141,24 +169,24 @@ export interface DotCMSBrowserEventData {
  * The payload structure for DotCMS analytics events.
  * This interface represents the complete data structure that flows through
  * the analytics pipeline, including original event data and enriched context.
+ *
+ * This is the internal payload used by Analytics.js and our plugins.
  */
 export interface DotCMSAnalyticsPayload {
-    /** The type of analytics event */
-    type: string;
-    /** Additional properties associated with the event */
-    properties: Record<string, unknown>;
     /** The event name or identifier */
     event: string;
+    /** Additional properties associated with the event */
+    properties: Record<string, unknown>;
     /** Configuration options for the event */
     options: Record<string, unknown>;
 
-    // Properties added by enricher plugin
+    // Properties added by plugins during processing
     /** Analytics context shared across events */
-    context: DotCMSAnalyticsContext;
+    context?: DotCMSAnalyticsContext;
     /** Page data for the current page */
-    page: DotCMSPageData;
+    page?: DotCMSPageData;
     /** Device and browser information */
-    device: DotCMSDeviceData;
+    device?: DotCMSDeviceData;
     /** UTM parameters for campaign tracking */
     utm?: DotCMSUtmData;
     /** Local timestamp when the event occurred */
