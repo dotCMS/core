@@ -146,7 +146,7 @@
 </ng-template>
 
 <ng-template #bubbleImageMenu>
-    <button class="bubble-menu-button" (click)="editorModal2.toggle()">Image Properties</button>
+    <button class="bubble-menu-button" (click)="imageModal.toggle()">Image Properties</button>
     <div class="divider"></div>
     <button
         class="bubble-menu-button bubble-menu-button--icon"
@@ -187,7 +187,4 @@
 </ng-template>
 
 <dot-bubble-link-form [editor]="editor()" #editorModal="dotEditorModal" />
-<dot-image-modal
-    [editor]="editor()"
-    #editorModal2="dotEditorModal"
-    [appendTo]="getBubbleMenuElement()" />
+<dot-image-modal #imageModal [editor]="editor()" [appendTo]="getBubbleMenuElement()" />

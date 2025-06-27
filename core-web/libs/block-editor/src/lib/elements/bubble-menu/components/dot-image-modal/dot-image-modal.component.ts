@@ -1,8 +1,10 @@
-import { Component, input } from '@angular/core';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Component, inject, input, ViewChild } from '@angular/core';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
+
+import { Editor } from '@tiptap/core';
 
 import { EditorModalDirective } from '../../../../directive/editor-modal.directive';
 
@@ -11,37 +13,56 @@ import { EditorModalDirective } from '../../../../directive/editor-modal.directi
     templateUrl: './dot-image-modal.component.html',
     styleUrls: ['./dot-image-modal.component.scss'],
     standalone: true,
-    hostDirectives: [
-        {
-            directive: EditorModalDirective,
-            inputs: ['editor', 'appendTo']
-        }
-    ],
-    imports: [InputTextModule, ReactiveFormsModule, ButtonModule]
+    imports: [EditorModalDirective, InputTextModule, ReactiveFormsModule, ButtonModule]
 })
 export class DotImageModalComponent {
+    readonly editor = input.required<Editor>();
     readonly appendTo = input<HTMLElement>();
+    @ViewChild('imageModal', { read: EditorModalDirective }) editorModal: EditorModalDirective;
 
-    form: FormGroup;
+    private readonly fb = inject(FormBuilder);
 
-    constructor(private fb: FormBuilder) {
-        this.form = this.fb.group({
-            path: ['', Validators.required],
-            alt: [''],
-            caption: ['']
-        });
-    }
+    form = this.fb.group({
+        path: ['', Validators.required],
+        alt: [''],
+        title: ['']
+    });
+
+    onShowFn = this.onShow.bind(this);
 
     onApply() {
-        if (this.form.valid) {
-            // TODO: handle apply logic
-            // e.g., emit event or call service
+        if (!this.form.valid) {
+            return;
         }
+
+        this.editor()
+            .chain()
+            .focus()
+            .updateAttributes('dotImage', {
+                src: this.form.value.path,
+                alt: this.form.value.alt,
+                title: this.form.value.title
+            })
+            .run();
+
+        this.editorModal?.hide();
     }
 
     onCancel() {
-        // TODO: handle cancel logic
-        // e.g., close modal or reset form
-        this.form.reset();
+        this.editorModal?.hide();
+    }
+
+    toggle() {
+        this.editorModal?.toggle();
+    }
+
+    onShow() {
+        const { alt, src, title, data } = this.editor().getAttributes('dotImage');
+        const { title: dotTitle = '', asset } = data || {};
+        this.form.patchValue({
+            path: src || asset,
+            alt: alt || dotTitle,
+            title: title || dotTitle
+        });
     }
 }
