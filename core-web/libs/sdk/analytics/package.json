@@ -23,7 +23,8 @@
         "analytics": "^0.8.14"
     },
     "peerDependencies": {
-        "react": "19.1.0"
+        "react": "19.1.0",
+        "@dotcms/uve": "*"
     },
     "devDependencies": {
         "@testing-library/jest-dom": "^6.1.6",
