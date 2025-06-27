@@ -46,21 +46,23 @@ describe('DotAnalytics HTTP Utils', () => {
                 {
                     event_type: 'pageview',
                     local_time: Date.now().toString(),
-                    page: {
-                        url: 'https://example.com/page',
-                        doc_encoding: 'UTF-8',
-                        doc_hash: 'test-hash',
-                        doc_protocol: 'https',
-                        doc_search: 'test-search',
-                        dot_host: 'example.com',
-                        dot_path: '/page',
-                        title: 'Test Page'
-                    },
-                    device: {
-                        screen_resolution: '1920x1080',
-                        language: 'en-US',
-                        viewport_width: '1920',
-                        viewport_height: '1080'
+                    data: {
+                        page: {
+                            url: 'https://example.com/page',
+                            doc_encoding: 'UTF-8',
+                            doc_hash: 'test-hash',
+                            doc_protocol: 'https',
+                            doc_search: 'test-search',
+                            doc_host: 'example.com',
+                            doc_path: '/page',
+                            title: 'Test Page'
+                        },
+                        device: {
+                            screen_resolution: '1920x1080',
+                            language: 'en-US',
+                            viewport_width: '1920',
+                            viewport_height: '1080'
+                        }
                     }
                 }
             ]
@@ -162,7 +164,10 @@ describe('DotAnalytics HTTP Utils', () => {
             const mockResponse = {
                 ok: false,
                 status: 400,
-                statusText: 'Bad Request'
+                statusText: 'Bad Request',
+                json: jest.fn().mockImplementation(() => {
+                    throw new Error('response.json is not a function');
+                })
             } as Response;
 
             mockFetch.mockResolvedValue(mockResponse);
@@ -171,7 +176,8 @@ describe('DotAnalytics HTTP Utils', () => {
 
             expect(mockConsoleError).toHaveBeenCalledTimes(1);
             expect(mockConsoleError).toHaveBeenCalledWith(
-                'DotAnalytics: Server responded with status 400'
+                'DotAnalytics: Error parsing error response:',
+                expect.any(Error)
             );
         });
 
@@ -185,7 +191,10 @@ describe('DotAnalytics HTTP Utils', () => {
                 const mockResponse = {
                     ok: false,
                     status,
-                    statusText: `HTTP ${status}`
+                    statusText: `HTTP ${status}`,
+                    json: jest.fn().mockImplementation(() => {
+                        throw new Error('response.json is not a function');
+                    })
                 } as Response;
 
                 mockFetch.mockResolvedValue(mockResponse);
@@ -193,7 +202,8 @@ describe('DotAnalytics HTTP Utils', () => {
                 await sendAnalyticsEventToServer(mockPayload, mockConfig);
 
                 expect(mockConsoleError).toHaveBeenCalledWith(
-                    `DotAnalytics: Server responded with status ${status}`
+                    'DotAnalytics: Error parsing error response:',
+                    expect.any(Error)
                 );
             }
         });

@@ -435,69 +435,56 @@ describe('Analytics Utils', () => {
 
     describe('getLocalTime', () => {
         it('should return local time in ISO 8601 format with timezone offset', () => {
-            jest.setSystemTime(new Date('2024-01-01T12:30:45Z'));
-
             const result = getLocalTime();
 
-            // Should match ISO 8601 format with timezone offset including milliseconds
-            // Examples: "2024-01-01T12:30:45.000Z", "2024-01-01T07:30:45.000-05:00", "2024-01-01T13:30:45.000+01:00"
-            expect(result).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}[+-]\d{2}:\d{2}$/);
+            // Should match ISO 8601 format with timezone offset without milliseconds
+            // Examples: "2024-01-01T12:30:45Z", "2024-01-01T07:30:45-05:00", "2024-01-01T13:30:45+01:00"
+            expect(result).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{2}:\d{2}$/);
         });
 
         it('should handle formatter fallback for older browsers', () => {
             const originalIntl = global.Intl;
-            delete (global as any).Intl;
-
-            jest.setSystemTime(new Date('2024-01-01T12:30:45Z'));
+            global.Intl = undefined as any;
 
             const result = getLocalTime();
 
-            // When Intl is not available, it still should include timezone offset with milliseconds
-            expect(result).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}[+-]\d{2}:\d{2}$/);
+            // When Intl is not available, it still should include timezone offset without milliseconds
+            expect(result).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{2}:\d{2}$/);
 
             global.Intl = originalIntl;
         });
 
         it('should return correct offset for UTC timezone', () => {
-            // Mock getTimezoneOffset to return 0 (UTC)
             const originalGetTimezoneOffset = Date.prototype.getTimezoneOffset;
-            Date.prototype.getTimezoneOffset = jest.fn(() => 0);
-
-            jest.setSystemTime(new Date('2024-01-01T12:30:45Z'));
+            Date.prototype.getTimezoneOffset = jest.fn().mockReturnValue(0);
 
             const result = getLocalTime();
 
-            expect(result).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}\+00:00$/);
+            expect(result).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\+00:00$/);
 
             // Restore original method
             Date.prototype.getTimezoneOffset = originalGetTimezoneOffset;
         });
 
         it('should return correct offset for different timezones', () => {
-            // Mock getTimezoneOffset to return 300 minutes (UTC-5, like EST)
             const originalGetTimezoneOffset = Date.prototype.getTimezoneOffset;
-            Date.prototype.getTimezoneOffset = jest.fn(() => 300);
-
-            jest.setSystemTime(new Date('2024-01-01T12:30:45Z'));
+            Date.prototype.getTimezoneOffset = jest.fn().mockReturnValue(300); // UTC-5
 
             const result = getLocalTime();
 
-            expect(result).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}-05:00$/);
+            expect(result).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}-05:00$/);
 
             // Restore original method
             Date.prototype.getTimezoneOffset = originalGetTimezoneOffset;
         });
 
         it('should return correct offset for positive timezone', () => {
-            // Mock getTimezoneOffset to return -120 minutes (UTC+2, like CEST)
             const originalGetTimezoneOffset = Date.prototype.getTimezoneOffset;
-            Date.prototype.getTimezoneOffset = jest.fn(() => -120);
-
-            jest.setSystemTime(new Date('2024-01-01T12:30:45Z'));
+            Date.prototype.getTimezoneOffset = jest.fn().mockReturnValue(-120); // UTC+2
 
             const result = getLocalTime();
 
-            expect(result).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}\+02:00$/);
+            expect(result).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\+02:00$/);
 
             // Restore original method
             Date.prototype.getTimezoneOffset = originalGetTimezoneOffset;
@@ -752,7 +739,7 @@ describe('Analytics Utils', () => {
 
         it('should enrich payload with page, device, and UTM data', () => {
             const payload = {
-                event: 'page_view',
+                event: 'pageview',
                 properties: {
                     language_id: 'en-US',
                     persona: 'default',
@@ -768,30 +755,34 @@ describe('Analytics Utils', () => {
 
             const result = enrichPagePayloadOptimized(payload);
 
-            expect(result).toEqual(
-                expect.objectContaining({
-                    event: 'page_view',
-                    properties: payload.properties,
-                    page: expect.objectContaining({
-                        url: 'https://example.com/page',
-                        title: 'Test Page',
-                        width: '1024',
-                        height: '768'
-                    }),
-                    device: expect.objectContaining({
-                        viewport_width: '1024',
-                        viewport_height: '768',
-                        language: 'es-ES',
-                        screen_resolution: '1920x1080'
-                    }),
-                    local_time: expect.stringMatching(
-                        /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}[+-]\d{2}:\d{2}$/
-                    ),
-                    utm: expect.objectContaining({
-                        source: 'google'
-                    })
-                })
-            );
+            expect(result).toEqual({
+                event: 'pageview',
+                properties: payload.properties,
+                page: {
+                    url: 'https://example.com/page',
+                    doc_encoding: 'UTF-8',
+                    doc_hash: '#section',
+                    doc_protocol: 'https:',
+                    doc_search: '?utm_source=google',
+                    doc_host: 'example.com',
+                    doc_path: '/page',
+                    title: 'Test Page',
+                    language_id: undefined,
+                    persona: undefined
+                },
+                device: {
+                    screen_resolution: '1920x1080',
+                    language: 'es-ES',
+                    viewport_width: '1024',
+                    viewport_height: '768'
+                },
+                local_time: expect.stringMatching(
+                    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{2}:\d{2}$/
+                ),
+                utm: {
+                    source: 'google'
+                }
+            });
         });
 
         it('should not include UTM data when no UTM parameters exist', () => {
@@ -804,7 +795,7 @@ describe('Analytics Utils', () => {
             });
 
             const payload = {
-                event: 'page_view',
+                event: 'pageview',
                 properties: {
                     language_id: 'en-US',
                     persona: 'default'

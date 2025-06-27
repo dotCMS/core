@@ -51,7 +51,7 @@ describe('dotAnalyticsEnricherPlugin', () => {
     describe('Page View Enrichment', () => {
         it('should call enrichPagePayloadOptimized with the provided payload', () => {
             // Arrange
-            const mockPayload = { event: 'page_view', properties: { page: '/test' } } as any;
+            const mockPayload = { event: 'pageview', properties: { page: '/test' } } as any;
 
             // Act
             plugin['page:dot-analytics']({ payload: mockPayload });
@@ -63,7 +63,7 @@ describe('dotAnalyticsEnricherPlugin', () => {
 
         it('should return the result from enrichPagePayloadOptimized', () => {
             // Arrange
-            const mockPayload = { event: 'page_view' } as any;
+            const mockPayload = { event: 'pageview' } as any;
             const expectedResult = { enriched: true };
             mockEnrichPagePayloadOptimized.mockReturnValue(expectedResult as any);
 
@@ -95,12 +95,14 @@ describe('dotAnalyticsEnricherPlugin', () => {
                 events: [
                     {
                         event_type: 'track',
-                        custom_event: 'button_click',
                         local_time: '2024-01-01T10:00:00.000Z',
-                        properties: {
-                            button_id: 'submit-btn',
-                            page: '/contact',
-                            src: ANALYTICS_SOURCE_TYPE
+                        data: {
+                            custom_event: 'button_click',
+                            properties: {
+                                button_id: 'submit-btn',
+                                page: '/contact',
+                                src: ANALYTICS_SOURCE_TYPE
+                            }
                         }
                     }
                 ]
@@ -122,7 +124,7 @@ describe('dotAnalyticsEnricherPlugin', () => {
             const result = plugin['track:dot-analytics']({ payload: mockPayload });
 
             // Assert
-            expect(result.events[0].properties).toEqual({
+            expect(result.events[0].data.properties).toEqual({
                 form_name: 'contact_form',
                 validation_errors: 0,
                 session_id: 'session_123',
@@ -133,7 +135,7 @@ describe('dotAnalyticsEnricherPlugin', () => {
         it('should handle empty properties', () => {
             // Arrange
             const mockPayload = {
-                event: 'page_scroll',
+                event: 'pageview',
                 properties: {}
             } as any;
 
@@ -141,7 +143,7 @@ describe('dotAnalyticsEnricherPlugin', () => {
             const result = plugin['track:dot-analytics']({ payload: mockPayload });
 
             // Assert
-            expect(result.events[0].properties).toEqual({
+            expect(result.events[0].data.properties).toEqual({
                 src: ANALYTICS_SOURCE_TYPE
             });
         });
@@ -157,7 +159,7 @@ describe('dotAnalyticsEnricherPlugin', () => {
             const result = plugin['track:dot-analytics']({ payload: mockPayload });
 
             // Assert
-            expect(result.events[0].properties).toEqual({
+            expect(result.events[0].data.properties).toEqual({
                 src: ANALYTICS_SOURCE_TYPE
             });
         });
@@ -201,15 +203,17 @@ describe('dotAnalyticsEnricherPlugin', () => {
             // Assert
             expect(result.events[0]).toMatchObject({
                 event_type: 'track',
-                custom_event: 'content_interaction',
-                properties: expect.objectContaining({
-                    contentId: 'article-123',
-                    contentType: 'blog-post',
-                    category: 'technology',
-                    utm_source: 'newsletter',
-                    utm_medium: 'email',
-                    src: ANALYTICS_SOURCE_TYPE
-                })
+                data: {
+                    custom_event: 'content_interaction',
+                    properties: expect.objectContaining({
+                        contentId: 'article-123',
+                        contentType: 'blog-post',
+                        category: 'technology',
+                        utm_source: 'newsletter',
+                        utm_medium: 'email',
+                        src: ANALYTICS_SOURCE_TYPE
+                    })
+                }
             });
         });
     });
@@ -230,7 +234,7 @@ describe('dotAnalyticsEnricherPlugin', () => {
 
         it('should propagate enrichPagePayloadOptimized errors', () => {
             // Arrange
-            const mockPayload = { event: 'page_view', properties: {} } as any;
+            const mockPayload = { event: 'pageview', properties: {} } as any;
             mockEnrichPagePayloadOptimized.mockImplementation(() => {
                 throw new Error('Enrichment failed');
             });
@@ -295,7 +299,7 @@ describe('dotAnalyticsEnricherPlugin', () => {
                 const result = plugin['track:dot-analytics']({ payload });
 
                 // Assert
-                expect(result.events[0].custom_event).toBe(eventType);
+                expect(result.events[0].data.custom_event).toBe(eventType);
                 expect(result.events[0].event_type).toBe('track');
             });
         });
