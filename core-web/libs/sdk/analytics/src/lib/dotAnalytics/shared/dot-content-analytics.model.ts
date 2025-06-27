@@ -171,9 +171,8 @@ export interface DotCMSAnalyticsParams {
 export interface DotCMSAnalytics {
     /**
      * Track a page view event.
-     * @param payload - Optional additional data to include with the page view
      */
-    pageView: (payload?: Record<string, unknown>) => void;
+    pageView: () => void;
 
     /**
      * Track a custom event.

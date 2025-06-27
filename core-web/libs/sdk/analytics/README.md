@@ -1,405 +1,226 @@
-# @dotcms/analytics
+# dotCMS Content Analytics SDK (@dotcms/analytics)
 
-`@dotcms/analytics` is the official dotCMS JavaScript library for Content Analytics that helps track events and analytics in your webapps. Available for both browser and React applications.
+Lightweight JavaScript SDK for tracking content-aware events in dotCMS. Works in vanilla JS and React apps. Angular & Vue support coming soon.
 
-## Features
+## 🚀 Quick Start
 
--   **Simple Browser Integration**: Easy to implement via script tags using IIFE implementation
--   **React Support**: Built-in React components and hooks for seamless integration
--   **Event Tracking**: Simple API to track custom events with additional properties
--   **Automatic PageView**: Option to automatically track page views with route change detection
--   **Session Management**: Automatic session tracking with 30-minute timeout
--   **Identity Tracking**: Anonymous user identification across sessions
--   **UTM Campaign Tracking**: Automatic extraction and tracking of campaign parameters
--   **Device & Environment Data**: Automatic collection of screen resolution, language, viewport data
--   **Editor Detection**: Automatic detection and exclusion of analytics when inside dotCMS editor
--   **Debug Mode**: Optional debug logging for development and troubleshooting
+### Vanilla JavaScript
 
-## Installation
+**CDN (Script Tag - Auto Page View)**
+
+```html
+<script
+    src="ca.min.js"
+    data-analytics-server="https://demo.dotcms.com"
+    data-analytics-key="SITE_KEY"
+    data-analytics-auto-page-view></script>
+```
+
+**npm (ES Module)**
 
 ```bash
 npm install @dotcms/analytics
 ```
 
-Or include the script in your HTML page:
-
-```html
-<script src="ca.min.js"></script>
-```
-
-## Configuration
-
-The analytics library accepts the following configuration options:
-
-| Option         | Type       | Required | Default | Description                                                 |
-| -------------- | ---------- | -------- | ------- | ----------------------------------------------------------- |
-| `siteKey`      | `string`   | ✅       | -       | Site key obtained from your dotCMS Analytics app            |
-| `server`       | `string`   | ✅       | -       | URL of your dotCMS server (e.g., 'https://demo.dotcms.com') |
-| `debug`        | `boolean`  | ❌       | `false` | Enable debug logging for development                        |
-| `autoPageView` | `boolean`  | ❌       | `true`  | Automatically track page views on route changes             |
-| `redirectFn`   | `function` | ❌       | -       | Custom redirect function for handling URL redirections      |
-
-### Automatic Data Collection
-
-The SDK automatically collects and enriches events with:
-
--   **Session Management**: Tracks user sessions with 30-minute timeout
--   **User Identity**: Generates and persists anonymous user IDs
--   **UTM Parameters**: Extracts campaign tracking parameters from URLs
--   **Device Information**: Screen resolution, viewport size, language
--   **Page Context**: URL, title, referrer, protocol, search parameters
--   **Timestamps**: Local and UTC timestamps with timezone information
-
-### Session Behavior
-
--   **Session Reset**: Sessions automatically reset at midnight UTC
--   **UTM Change Detection**: New session starts when UTM campaign parameters change
--   **Tab Visibility**: Sessions reactivate when users return to the tab after being inactive
-
-### Storage Keys (for debugging)
-
-The SDK stores data in browser storage using these keys:
-
--   `dot_analytics_session_id` - Current session identifier
--   `dot_analytics_user_id` - Anonymous user identifier
--   `dot_analytics_session_start` - Session start timestamp
--   `dot_analytics_session_utm` - Cached UTM parameters
-
-## React Integration
-
-### Provider Setup
-
-First, import the provider:
-
-```tsx
-import { DotContentAnalyticsProvider } from '@dotcms/analytics/react';
-```
-
-Wrap your application with the `DotContentAnalyticsProvider`:
-
-```tsx
-// Example configuration
-const analyticsConfig = {
-    siteKey: 'your-site-key-from-dotcms-analytics-app',
-    server: 'https://your-dotcms-instance.com',
-    debug: false, // Enable debug logging
-    autoPageView: true // Enable automatic page view tracking
-};
-
-function App() {
-    return (
-        <DotContentAnalyticsProvider config={analyticsConfig}>
-            <YourApp />
-        </DotContentAnalyticsProvider>
-    );
-}
-```
-
-### Tracking Custom Events
-
-Use the `useContentAnalytics` hook to track custom events:
-
-```tsx
-import { useContentAnalytics } from '@dotcms/analytics/react';
-
-function Activity({ title, urlTitle }) {
-    const { track } = useContentAnalytics();
-
-    // First parameter: custom event name to identify the action
-    // Second parameter: object with properties you want to track
-
-    return <button onClick={() => track('btn-click', { title, urlTitle })}>See Details →</button>;
-}
-```
-
-### Manual Page View Tracking
-
-To manually track page views, first disable automatic tracking in your config:
-
-```tsx
-const analyticsConfig = {
-    siteKey: 'your-site-key-from-dotcms-analytics-app',
-    server: 'https://your-dotcms-instance.com',
-    autoPageView: false // Disable automatic tracking
-};
-```
-
-Then use the `useContentAnalytics` hook in your layout component:
-
-```tsx
-import { useContentAnalytics } from '@dotcms/analytics/react';
-
-function Layout({ children }) {
-    const { pageView } = useContentAnalytics();
-
-    useEffect(() => {
-        pageView({
-            // Add any custom properties you want to track
-            myCustomValue: '2'
-        });
-    }, []);
-
-    return <div>{children}</div>;
-}
-```
-
-## Browser Integration (Standalone)
-
-For non-React applications, you can use the standalone IIFE version.
-
-### Configuration via Data Attributes
-
-The script can be configured using data attributes:
-
--   **data-analytics-server**: URL of the server where events will be sent. If not provided, the current domain will be used
--   **data-analytics-debug**: Enables debug logging
--   **data-analytics-auto-page-view**: Recommended for IIFE implementation. Enables automatic page view tracking
--   **data-analytics-key**: **(Required)** Site key for authentication
-
-```html
-<!-- Basic configuration with automatic page view tracking -->
-<script
-    src="ca.min.js"
-    data-analytics-server="https://your-dotcms-instance.com"
-    data-analytics-key="your-site-key"
-    data-analytics-auto-page-view
-    data-analytics-debug></script>
-
-<!-- Manual tracking only - events must be sent manually -->
-<script
-    src="ca.min.js"
-    data-analytics-server="https://your-dotcms-instance.com"
-    data-analytics-key="your-site-key"
-    data-analytics-debug></script>
-```
-
-### Direct JavaScript Usage
-
-After including the script, the analytics instance is available globally:
-
-```javascript
-// Check if analytics is available
-if (window.dotAnalytics) {
-    // Track custom events
-    window.dotAnalytics.track('button-click', {
-        buttonText: 'Learn More',
-        section: 'hero'
-    });
-
-    // Manually trigger page view
-    window.dotAnalytics.pageView({
-        customProperty: 'value'
-    });
-} else {
-    console.warn('dotAnalytics not initialized');
-}
-```
-
-### Manual Initialization
-
-You can also initialize analytics manually:
-
 ```javascript
 import { initializeContentAnalytics } from '@dotcms/analytics';
 
 const analytics = initializeContentAnalytics({
-    siteKey: 'your-site-key',
-    server: 'https://your-dotcms-instance.com',
+    siteKey: 'SITE_KEY',
+    server: 'https://demo.dotcms.com'
+});
+
+analytics.track('page-loaded');
+```
+
+### React
+
+```bash
+npm install @dotcms/analytics
+```
+
+```tsx
+import { DotContentAnalyticsProvider } from '@dotcms/analytics/react';
+
+const config = {
+    siteKey: 'SITE_KEY',
+    server: 'https://demo.dotcms.com',
+    autoPageView: true // Optional, default is true
+};
+
+<DotContentAnalyticsProvider config={config}>
+    <App />
+</DotContentAnalyticsProvider>;
+```
+
+## 📘 Core Concepts
+
+### Events
+
+Track any user action as an event using `track('event-name', { payload })`.
+
+### Page Views
+
+Tracked automatically (or manually) on route changes.
+
+### Sessions
+
+-   30-minute timeout
+-   Resets at midnight UTC
+-   New session if UTM campaign changes
+
+### Identity
+
+-   Anonymous user ID persisted across sessions
+-   Stored in `dot_analytics_user_id`
+
+## ⚙️ Configuration Options
+
+| Option         | Type       | Required | Default | Description                            |
+| -------------- | ---------- | -------- | ------- | -------------------------------------- |
+| `siteKey`      | `string`   | ✅       | -       | Site key from dotCMS Analytics app     |
+| `server`       | `string`   | ✅       | -       | Your dotCMS server URL                 |
+| `debug`        | `boolean`  | ❌       | `false` | Enable verbose logging                 |
+| `autoPageView` | `boolean`  | ❌       | `true`  | Auto track page views on route changes |
+| `redirectFn`   | `function` | ❌       | -       | Custom handler for redirects           |
+
+## 🛠️ Usage Examples
+
+### Vanilla JavaScript
+
+**Manual Page View & Events**
+
+```javascript
+// After init with the <script> tag the dotAnalytics is added to the window.
+window.dotAnalytics.track('cta-click', { button: 'Buy Now' });
+window.dotAnalytics.pageView();
+```
+
+**Advanced: Manual Init with Custom Properties**
+
+```javascript
+const analytics = initializeContentAnalytics({
+    siteKey: 'abc123',
+    server: 'https://your-dotcms.com',
     debug: true,
     autoPageView: false
 });
 
-if (analytics) {
-    // Track events
-    analytics.track('custom-event', { key: 'value' });
-    analytics.pageView();
-}
+analytics.track('custom-event', {
+    category: 'Marketing',
+    value: 'Banner Clicked'
+});
+
+analytics.pageView();
 ```
 
-## Usage Examples
+### React
 
-### Basic Event Tracking
+**Track Events**
 
 ```tsx
-import { useContentAnalytics } from '@dotcms/analytics/react';
+const { track } = useContentAnalytics();
+track('cta-click', { label: 'Download PDF' });
+```
 
-function MyComponent() {
-    const { track } = useContentAnalytics();
+**Manual Page View**
 
-    // Track any custom event
-    const handleButtonClick = () => {
-        track('button-click', {
-            buttonText: 'Download PDF',
-            section: 'hero'
-        });
-    };
+```tsx
+const { pageView } = useContentAnalytics();
+useEffect(() => {
+    pageView();
+}, []);
+```
 
-    const handleFormSubmit = () => {
-        track('form-submit', {
-            formType: 'contact',
-            hasEmail: true
-        });
-    };
+**Advanced: Manual Tracking with Router**
 
-    return (
-        <div>
-            <button onClick={handleButtonClick}>Download PDF</button>
-            <button onClick={handleFormSubmit}>Submit Form</button>
-        </div>
-    );
-}
+```tsx
+import { useLocation } from 'react-router-dom';
+const { pageView } = useContentAnalytics();
+const location = useLocation();
+
+useEffect(() => {
+    pageView();
+}, [location]);
 ```
 
 ## API Reference
 
-### React Hook Methods
-
-The `useContentAnalytics` hook returns an object with the following methods:
-
 ```typescript
 interface DotCMSAnalytics {
-    // Track a custom event
     track: (eventName: string, payload?: Record<string, unknown>) => void;
-
-    // Track a page view
-    pageView: (payload?: Record<string, unknown>) => void;
+    pageView: () => void;
 }
 ```
 
-### Event Data Structure
+**Enriched AnalyticsEvent includes:**
 
-Events are automatically enriched with the following data structure:
+-   `context`: siteKey, sessionId, userId
+-   `page`: URL, title, referrer, path
+-   `device`: screen size, language, viewport
+-   `utm`: source, medium, campaign, term, etc.
 
-```typescript
-interface AnalyticsEvent {
-    // Basic event information
-    event_type: 'pageview' | 'track';
-    local_time: string; // ISO timestamp
+## Under the Hood
 
-    // Automatically collected context
-    context: {
-        site_key: string;
-        session_id: string;
-        user_id: string;
-    };
+### Storage Keys
 
-    // Page information
-    page: {
-        url: string;
-        title: string;
-        doc_protocol: string;
-        doc_host: string;
-        doc_path: string;
-        doc_search: string;
-        doc_hash: string;
-        referrer?: string;
-    };
+-   `dot_analytics_user_id`
+-   `dot_analytics_session_id`
+-   `dot_analytics_session_utm`
+-   `dot_analytics_session_start`
 
-    // Device information
-    device: {
-        screen_resolution: string;
-        language: string;
-        viewport_width: string;
-        viewport_height: string;
-    };
+### Editor Detection
 
-    // UTM campaign parameters (if present)
-    utm?: {
-        source?: string;
-        medium?: string;
-        campaign?: string;
-        term?: string;
-        content?: string;
-        id?: string;
-    };
-}
-```
+Analytics are disabled when inside the dotCMS editor.
 
-## Troubleshooting
+## Debugging & Troubleshooting
 
-### Common Issues
+**Not seeing events?**
 
-**Analytics not tracking events:**
-
--   Verify that `siteKey` and `server` are correctly configured
--   Check browser console for error messages
--   Ensure you're not inside the dotCMS editor (analytics is automatically disabled)
--   Verify the analytics endpoint is accessible: `{server}/api/v1/analytics/content/event`
-
-**React hook errors:**
-
--   Ensure `useContentAnalytics` is used within `DotContentAnalyticsProvider`
--   Check that the provider's config is valid and initialization succeeded
-
-**Page views not tracking:**
-
--   Verify `autoPageView` is enabled in configuration
--   For manual tracking, ensure you're calling `pageView()` on route changes
--   Check that the current path is different from the last tracked path
-
-### Debug Mode
-
-Enable debug logging to troubleshoot issues:
-
-```typescript
-// React
-const config = {
-    siteKey: 'your-key',
-    server: 'https://your-server.com',
-    debug: true // Enable debug logging
-};
-
-// Browser
-<script
-    src="ca.min.js"
-    data-analytics-debug
-    data-analytics-key="your-key"
-    data-analytics-server="https://your-server.com">
-</script>
-```
+-   Ensure `siteKey` & `server` are correct
+-   Enable debug mode
+-   Check network requests to: `https://your-server/api/v1/analytics/content/event`
+-   Avoid using inside dotCMS editor (auto-disabled)
 
 ## Roadmap
 
-The following features are planned for future releases:
+-   Scroll depth & file download tracking
+-   Form interaction analytics
+-   Angular & Vue support
+-   Realtime dashboard
 
-1. **Enhanced Tracking**
+## dotCMS Support
 
-    - Scroll depth tracking
-    - Form interaction analytics
-    - File download tracking
+We offer multiple channels to get help with the dotCMS React SDK:
 
-2. **Framework Support**
+-   **GitHub Issues**: For bug reports and feature requests, please [open an issue](https://github.com/dotCMS/core/issues/new/choose) in the GitHub repository.
+-   **Community Forum**: Join our [community discussions](https://community.dotcms.com/) to ask questions and share solutions.
+-   **Stack Overflow**: Use the tag `dotcms-react` when posting questions.
+-   **Enterprise Support**: Enterprise customers can access premium support through the [dotCMS Support Portal](https://helpdesk.dotcms.com/support/).
 
-    - Angular integration for event tracking
-    - Vue.js integration
+When reporting issues, please include:
 
-3. **Advanced Features**
-    - Real-time analytics dashboard
-    - Custom event validation
+-   SDK version you're using
+-   React version
+-   Minimal reproduction steps
+-   Expected vs. actual behavior
 
-## Contributing
+## How To Contribute
 
-GitHub pull requests are the preferred method to contribute code to dotCMS. Before any pull requests can be accepted, an automated tool will ask you to agree to the [dotCMS Contributor's Agreement](https://gist.github.com/wezell/85ef45298c48494b90d92755b583acb3).
+GitHub pull requests are the preferred method to contribute code to dotCMS. We welcome contributions to the DotCMS UVE SDK! If you'd like to contribute, please follow these steps:
 
-## Licensing
+1. Fork the repository [dotCMS/core](https://github.com/dotCMS/core)
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-dotCMS comes in multiple editions and as such is dual licensed. The dotCMS Community Edition is licensed under the GPL 3.0 and is freely available for download, customization and deployment for use within organizations of all stripes. dotCMS Enterprise Editions (EE) adds a number of enterprise features and is available via a supported, indemnified commercial license from dotCMS. For the differences between the editions, see [the feature page](http://dotcms.com/cms-platform/features).
+Please ensure your code follows the existing style and includes appropriate tests.
 
-## Support
+## Licensing Information
 
-If you need help or have any questions, please [open an issue](https://github.com/dotCMS/core/issues/new/choose) in the GitHub repository.
+dotCMS comes in multiple editions and as such is dual-licensed. The dotCMS Community Edition is licensed under the GPL 3.0 and is freely available for download, customization, and deployment for use within organizations of all stripes. dotCMS Enterprise Editions (EE) adds several enterprise features and is available via a supported, indemnified commercial license from dotCMS. For the differences between the editions, see [the feature page](http://www.dotcms.com/cms-platform/features).
 
-## Documentation
+This SDK is part of dotCMS's dual-licensed platform (GPL 3.0 for Community, commercial license for Enterprise).
 
-Always refer to the official [DotCMS documentation](https://www.dotcms.com/docs/latest/) for comprehensive guides and API references.
-
-## Getting Help
-
-| Source          | Location                                                            |
-| --------------- | ------------------------------------------------------------------- |
-| Installation    | [Installation](https://dotcms.com/docs/latest/installation)         |
-| Documentation   | [Documentation](https://dotcms.com/docs/latest/table-of-contents)   |
-| Videos          | [Helpful Videos](http://dotcms.com/videos/)                         |
-| Forums/Listserv | [via Google Groups](https://groups.google.com/forum/#!forum/dotCMS) |
-| Twitter         | @dotCMS                                                             |
-| Main Site       | [dotCMS.com](https://dotcms.com/)                                   |
+[Learn more ](https://www.dotcms.com)at [dotcms.com](https://www.dotcms.com).
