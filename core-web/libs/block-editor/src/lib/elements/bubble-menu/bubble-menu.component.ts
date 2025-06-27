@@ -22,7 +22,7 @@ import { Editor } from '@tiptap/core';
 import { BubbleLinkFormComponent } from './components/bubble-link-form/bubble-link-form.component';
 
 import { EditorModalDirective } from '../../directive/editor-modal.directive';
-import { codeIcon, headerIcons, olIcon, pIcon, quoteIcon, ulIcon } from '../../utils/icons';
+import { codeIcon, headerIcons, olIcon, pIcon, quoteIcon, ulIcon } from '../../utils/icons'
 
 interface NodeTypeOption {
     name: string;
@@ -30,6 +30,15 @@ interface NodeTypeOption {
     icon?: string;
     command: () => boolean;
 }
+
+const BUBBLE_MENU_HIDDEN_NODES = {
+    tableCell: true,
+    table: true,
+    youtube: true,
+    dotVideo: true,
+    aiContent: true,
+    loader: true,
+};
 
 @Component({
     selector: 'dot-bubble-menu',
@@ -40,8 +49,8 @@ interface NodeTypeOption {
         TiptapBubbleMenuDirective,
         FormsModule,
         DropdownModule,
-        BubbleLinkFormComponent,
-        EditorModalDirective
+        EditorModalDirective,
+        BubbleLinkFormComponent
     ],
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -56,6 +65,8 @@ export class BubbleMenuComponent {
     protected readonly dropdownItem = signal<NodeTypeOption | null>(null);
     protected readonly placeholder = signal<string>('Paragraph');
     protected readonly onBeforeUpdateFn = this.onBeforeUpdate.bind(this);
+    protected readonly showShould = signal<boolean>(true);
+    protected readonly showImageMenu = signal<boolean>(false);
 
     protected readonly nodeTypeOptions: NodeTypeOption[] = [
         {
@@ -143,6 +154,8 @@ export class BubbleMenuComponent {
     }
 
     private onBeforeUpdate() {
+        this.checkIfShowBubbleMenu();
+        this.checkIfShowImageMenu();
         this.setCurrentSelectedNode();
         this.detectChanges();
     }
@@ -162,6 +175,24 @@ export class BubbleMenuComponent {
         const state = this.editor().view.state;
         const from = state.selection.from;
         const pos = state.doc.resolve(from);
+
+        // First, try to get the node at the current position
+        const nodeAtPos = state.doc.nodeAt(from);
+        if (nodeAtPos) {
+            const nodeType = nodeAtPos.type.name;
+
+            // If it's a heading, return with level
+            if (nodeType === 'heading') {
+                return this.getNodeTypeWithLevel(nodeAtPos);
+            }
+
+            // If it's a block-level node, return it directly
+            if (nodeType !== 'text' && nodeType !== 'doc') {
+                return nodeType;
+            }
+        }
+
+        // Fallback to the original logic for text nodes
         const currentNode = pos.node(pos.depth);
         const parentNode = pos.node(pos.depth - 1);
         const parentType = parentNode?.type?.name;
@@ -178,6 +209,16 @@ export class BubbleMenuComponent {
         }
 
         return parentType === 'doc' ? currentNodeType : parentType;
+    }
+
+    private checkIfShowBubbleMenu() {
+        const currentNodeType = this.getCurrentNodeType();
+        this.showShould.set(!BUBBLE_MENU_HIDDEN_NODES[currentNodeType]);
+    }
+
+    private checkIfShowImageMenu() {
+        const currentNodeType = this.getCurrentNodeType();
+        this.showImageMenu.set(currentNodeType === 'dotImage');
     }
 
     private getNodeTypeWithLevel(node: Node): string {
