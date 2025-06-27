@@ -105,6 +105,14 @@ public enum ValidAnalyticsEventPayloadTransformer {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Copies primitive values from the root payload to the event JSON object.
+     * Only copies values that are not JSONObject or JSONArray instances.
+     *
+     * @param jsonEVent The event JSON object to which root values will be added
+     * @param rootPayload The root payload containing values to be copied
+     * @return The modified event JSON object with added root values
+     */
     private static JSONObject setRootValues(final JSONObject jsonEVent, final JSONObject rootPayload) {
         for (Object key : rootPayload.keySet()) {
             Object value = rootPayload.get(key);
