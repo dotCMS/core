@@ -80,6 +80,7 @@
         @defer (on immediate) {
             <ng-container [ngTemplateOutlet]="labelTemplate" />
             <dot-edit-content-tag-field
+                [formControlName]="field.variable"
                 [field]="field"
                 [attr.data-testId]="'field-' + field.variable" />
         }
