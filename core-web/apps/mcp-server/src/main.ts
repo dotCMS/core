@@ -31,13 +31,14 @@ try {
 const contentTypeService = new ContentTypeService();
 
 server.registerTool(
-    'listContentTypes',
+    'content_type_list',
     {
         title: 'List Content Types',
-        description: 'Fetches a list of content types from dotCMS. Content types are used to define the structure of content in dotCMS, you can think of them as schemas for content. Can share content types by name.',
+        description:
+            'Fetches a list of content types from dotCMS. Content types are used to define the structure of content in dotCMS, you can think of them as schemas for content. Can share content types by name.',
         annotations: {
             title: 'List Content Types',
-            readOnlyHint: true,
+            readOnlyHint: true
         },
         inputSchema: ContentTypeListParamsSchema.shape
     },
@@ -56,10 +57,11 @@ server.registerTool(
 );
 
 server.registerTool(
-    'createContentType',
+    'content_type_create',
     {
         title: 'Create Content Type',
-        description: 'Creates a content type in dotCMS. Content types are used to define the structure of content in dotCMS, you can think of them as schemas for content.',
+        description:
+            'Creates a content type in dotCMS. Content types are used to define the structure of content in dotCMS, you can think of them as schemas for content.',
         annotations: {
             title: 'Create Content Type',
             readOnlyHint: false,
