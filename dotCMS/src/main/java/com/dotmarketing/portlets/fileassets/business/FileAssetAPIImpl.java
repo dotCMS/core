@@ -784,12 +784,12 @@ public class FileAssetAPIImpl implements FileAssetAPI {
      * @param contentlet
      */
     public void cleanThumbnailsFromContentlet(Contentlet contentlet) {
-        if (contentlet.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET) {
-            this.cleanThumbnailsFromFileAsset(APILocator.getFileAssetAPI().fromContentlet(
-                    contentlet));
-            return;
-        }
-
+		if (contentlet.isFileAsset() &&
+				Try.of(() -> APILocator.getIdentifierAPI().find(contentlet.getFolder()).getId()!=null).getOrElse(false)) {
+			this.cleanThumbnailsFromFileAsset(APILocator.getFileAssetAPI().fromContentlet(
+					contentlet));
+			return;
+		}
         Logger.warn(this, "Contentlet parameter is NOT a fileasset.");
     }
 

@@ -144,14 +144,16 @@ public class FolderHandler implements IHandler {
                      folderWrapper = (FolderWrapper) xstream.fromXML(input);
                 }
 
-	        	folder = folderWrapper.getFolder();
-				if (folder.isSystemFolder()) {
+
+	      final Folder folder = folderWrapper.getFolder();
+				if (folder.isSystemFolder() || FolderAPI.OLD_SYSTEM_FOLDER_ID.equalsIgnoreCase( folder.getIdentifier()) ) {
 					continue;
 				}
 
 	        	folderName = Try.of(folder::getPath).getOrNull();
 	        	folderId = folderWrapper.getFolderId();
 	        	host = folderWrapper.getHost();
+
 
 
 	        	if(folder.getOwner() == null){
@@ -283,7 +285,15 @@ public class FolderHandler implements IHandler {
                         }
                     }
 
-                	BeanUtils.copyProperties(temp, folder);
+					temp.setOwner(folder.getOwner());
+					temp.setModDate(folder.getModDate());
+					temp.setDefaultFileType( folder.getDefaultFileType());
+					temp.setName(folder.getName());
+					temp.setSortOrder(folder.getSortOrder());
+					temp.setIDate(folder.getIDate());
+					temp.setFilesMasks(folder.getFilesMasks());
+					temp.setTitle(folder.getTitle());
+
 
                 	fAPI.save(temp, systemUser, false);
                 	
