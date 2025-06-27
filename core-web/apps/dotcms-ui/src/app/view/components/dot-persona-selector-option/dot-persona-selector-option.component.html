@@ -1,10 +1,9 @@
-<p-avatar
-    *ngIf="persona.personalized"
-    [text]="persona.name"
-    [image]="persona.photo"
-    pBadge
-    dotAvatar />
-<p-avatar *ngIf="!persona.personalized" [text]="persona.name" [image]="persona.photo" dotAvatar />
+@if (persona.personalized) {
+    <p-avatar [text]="persona.name" [image]="persona.photo" pBadge dotAvatar />
+}
+@if (!persona.personalized) {
+    <p-avatar [text]="persona.name" [image]="persona.photo" dotAvatar />
+}
 
 <!-- Inline CSS code added to allow ellipsis on 2nd line, if this is moved to the SCCS file the pre-compiler cries -->
 <span
@@ -17,11 +16,12 @@
     {{ persona.name }}
 </span>
 
-<button
-    *ngIf="canDespersonalize && persona.personalized"
-    (click)="deletePersonalized($event)"
-    class="p-button-outlined p-button-sm"
-    icon="pi pi-times"
-    iconPos="right"
-    label="{{ 'modes.persona.personalized' | dm }}"
-    pButton></button>
+@if (canDespersonalize && persona.personalized) {
+    <button
+        (click)="deletePersonalized($event)"
+        class="p-button-outlined p-button-sm"
+        icon="pi pi-times"
+        iconPos="right"
+        label="{{ 'modes.persona.personalized' | dm }}"
+        pButton></button>
+}
