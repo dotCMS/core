@@ -37,7 +37,7 @@ import static com.dotcms.jitsu.ValidAnalyticsEventPayloadAttributes.*;
 
 public class ContentAnalyticsUtil {
 
-    private static final AnalyticsValidatorUtil analyticsValidatorUtil = new AnalyticsValidatorUtil();
+    private static final AnalyticsValidatorUtil analyticsValidatorUtil = AnalyticsValidatorUtil.INSTANCE;
 
     private static final EventLogSubmitter SUBMITTER  = new EventLogSubmitter();
     private static final UserCustomDefinedRequestMatcher USER_CUSTOM_DEFINED_REQUEST_MATCHER =  new UserCustomDefinedRequestMatcher();
@@ -97,8 +97,8 @@ public class ContentAnalyticsUtil {
 
     private static void includeAutomaticallyFields(final Map<String, Serializable> userEventPayload,
                                                    final HttpServletRequest request) {
-        final String requestId = request.getAttribute("requestId").toString();
 
+        final String requestId = request.getAttribute("requestId").toString();
         userEventPayload.put("request_id", requestId);
 
         final String referer = request.getHeader("Referer");
@@ -114,6 +114,9 @@ public class ContentAnalyticsUtil {
         if (!userEventPayload.containsKey(URL_ATTRIBUTE_NAME)) {
             userEventPayload.put(URL_ATTRIBUTE_NAME, "");
         }
+
+        userEventPayload.put("isExperimentPage", false);
+        userEventPayload.put("isTargetPage", false);
     }
 
 
