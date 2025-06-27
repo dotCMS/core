@@ -3,9 +3,11 @@ import { Node } from 'prosemirror-model';
 
 import { CommonModule } from '@angular/common';
 import {
+    AfterViewInit,
     ChangeDetectionStrategy,
     ChangeDetectorRef,
     Component,
+    ElementRef,
     inject,
     input,
     SecurityContext,
@@ -16,13 +18,15 @@ import { FormsModule } from '@angular/forms';
 import { DomSanitizer } from '@angular/platform-browser';
 
 import { DropdownModule } from 'primeng/dropdown';
+import { OverlayPanelModule } from 'primeng/overlaypanel';
 
 import { Editor } from '@tiptap/core';
 
 import { BubbleLinkFormComponent } from './components/bubble-link-form/bubble-link-form.component';
+import { DotImageModalComponent } from './components/dot-image-modal/dot-image-modal.component';
 
 import { EditorModalDirective } from '../../directive/editor-modal.directive';
-import { codeIcon, headerIcons, olIcon, pIcon, quoteIcon, ulIcon } from '../../utils/icons'
+import { codeIcon, headerIcons, olIcon, pIcon, quoteIcon, ulIcon } from '../../utils/icons';
 
 interface NodeTypeOption {
     name: string;
@@ -37,7 +41,7 @@ const BUBBLE_MENU_HIDDEN_NODES = {
     youtube: true,
     dotVideo: true,
     aiContent: true,
-    loader: true,
+    loader: true
 };
 
 @Component({
@@ -50,13 +54,16 @@ const BUBBLE_MENU_HIDDEN_NODES = {
         FormsModule,
         DropdownModule,
         EditorModalDirective,
-        BubbleLinkFormComponent
+        BubbleLinkFormComponent,
+        DotImageModalComponent,
+        OverlayPanelModule
     ],
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class BubbleMenuComponent {
+export class BubbleMenuComponent implements AfterViewInit {
     @ViewChild('editorModal') editorModal: EditorModalDirective;
+    @ViewChild('bubbleMenu', { read: ElementRef }) bubbleMenuRef: ElementRef<HTMLElement>;
 
     protected readonly editor = input.required<Editor>();
     protected readonly cd = inject(ChangeDetectorRef);
@@ -67,6 +74,7 @@ export class BubbleMenuComponent {
     protected readonly onBeforeUpdateFn = this.onBeforeUpdate.bind(this);
     protected readonly showShould = signal<boolean>(true);
     protected readonly showImageMenu = signal<boolean>(false);
+    protected readonly bubbleMenuElement = signal<HTMLElement | null>(null);
 
     protected readonly nodeTypeOptions: NodeTypeOption[] = [
         {
@@ -149,6 +157,10 @@ export class BubbleMenuComponent {
         this.editorModal?.toggle();
     }
 
+    protected getBubbleMenuElement(): HTMLElement | null {
+        return this.bubbleMenuElement();
+    }
+
     protected preventLostEditorSelection(event: MouseEvent) {
         event.preventDefault();
     }
@@ -226,5 +238,15 @@ export class BubbleMenuComponent {
         const baseNodeType = node.type.name;
 
         return hasLevelAttribute ? `${baseNodeType}-${node.attrs.level}` : baseNodeType;
+    }
+
+    ngAfterViewInit(): void {
+        this.bubbleMenuElement.set(this.bubbleMenuRef?.nativeElement || null);
+        this.cd.detectChanges();
+    }
+
+    protected updateBubbleMenuElement(): void {
+        this.bubbleMenuElement.set(this.bubbleMenuRef?.nativeElement || null);
+        this.cd.detectChanges();
     }
 }

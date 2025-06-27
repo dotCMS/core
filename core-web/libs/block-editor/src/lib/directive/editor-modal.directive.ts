@@ -12,6 +12,7 @@ import { BubbleMenuPluginProps } from '@tiptap/extension-bubble-menu';
 })
 export class EditorModalDirective implements OnInit, OnDestroy {
     readonly editor = input.required<Editor>();
+    readonly appendTo = input<HTMLElement>();
     readonly tippyOptions = input<BubbleMenuPluginProps['tippyOptions']>({});
 
     private elRef = inject<ElementRef<HTMLElement>>(ElementRef);
@@ -30,13 +31,13 @@ export class EditorModalDirective implements OnInit, OnDestroy {
             content: this.elRef.nativeElement,
             interactive: true,
             trigger: 'manual',
-            placement: 'bottom',
+            placement: 'bottom-start',
             hideOnClick: 'toggle',
             getReferenceClientRect: this.getReferenceClientRect.bind(this),
             ...this.tippyOptions()
         });
 
-        this.editor().on('focus', this.hide.bind(this));
+        editorElement.addEventListener('mousedown', () => this.hide());
     }
 
     ngOnDestroy(): void {
@@ -56,6 +57,12 @@ export class EditorModalDirective implements OnInit, OnDestroy {
     }
 
     private getReferenceClientRect() {
+        const appendToElement = this.appendTo();
+
+        if (appendToElement) {
+            return appendToElement.getBoundingClientRect();
+        }
+
         const { state, view } = this.editor();
         const { from, to } = state.selection;
 
