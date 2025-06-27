@@ -116,7 +116,7 @@ public class DbConnectionFactory {
                                 e);
                         if(Config.getBooleanProperty("SYSTEM_EXIT_ON_STARTUP_FAILURE", true)){
                             e.printStackTrace();
-                            System.exit(1);
+                            com.dotcms.shutdown.SystemExitManager.databaseFailureExit("Database connection initialization failed: " + e.getMessage());
                         }
 
                         throw new DotRuntimeException(e.toString());

@@ -31,6 +31,12 @@ public class FreeServerFromClusterJob implements StatefulJob {
 
     @Override
     public void execute(JobExecutionContext jobExecutionContext) throws JobExecutionException {
+        // Skip execution if shutdown is in progress to prevent component reinitialization
+        if (com.dotcms.shutdown.ShutdownCoordinator.isShutdownStarted()) {
+            Logger.info(this.getClass(), "Shutdown in progress - skipping FreeServerFromClusterJob execution");
+            return;
+        }
+        
         try {
             List<Server> inactiveServers = APILocator.getServerAPI().getInactiveServers();
 
