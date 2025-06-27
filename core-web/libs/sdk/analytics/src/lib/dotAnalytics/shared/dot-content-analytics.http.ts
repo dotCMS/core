@@ -23,7 +23,16 @@ export const sendAnalyticsEventToServer = async (
         });
 
         if (!response.ok) {
-            console.error(`DotAnalytics: Server responded with status ${response.status}`);
+            try {
+                const errorData = await response.json();
+                if (errorData.message) {
+                    console.warn(`DotAnalytics: ${errorData.message}`);
+
+                    return;
+                }
+            } catch (parseError) {
+                console.error('DotAnalytics: Error parsing error response:', parseError);
+            }
         }
     } catch (error) {
         console.error('DotAnalytics: Error sending event:', error);

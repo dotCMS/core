@@ -45,14 +45,23 @@ export interface DotCMSAnalyticsConfig {
 export interface DotCMSAnalyticsEvent {
     /** The type of event being tracked */
     event_type: 'pageview' | 'track';
+    /** Event data containing page, device, and UTM information */
+    data: DotCMSEventData;
+    /** Local timestamp when the event occurred */
+    local_time: string;
+}
+
+/**
+ * Event data structure containing page, device, and UTM information.
+ * This represents the actual event data that will be sent to the analytics server.
+ */
+export interface DotCMSEventData {
     /** Page data associated with the event */
     page: DotCMSPageData;
     /** Device and browser information */
     device: DotCMSDeviceData;
     /** UTM parameters for campaign tracking */
     utm?: DotCMSUtmData;
-    /** Local timestamp when the event occurred */
-    local_time: string;
 }
 
 /**
@@ -238,14 +247,12 @@ export interface DotCMSPageData {
     doc_protocol: string | undefined;
     /** Document search parameters */
     doc_search: string;
-    /** DotCMS host domain */
-    dot_host: string | undefined;
-    /** DotCMS page path */
-    dot_path: string | undefined;
+    /** Document host domain */
+    doc_host: string | undefined;
+    /** Document path */
+    doc_path: string | undefined;
     /** Page title */
     title: string | undefined;
-    /** User agent string */
-    user_agent?: string;
     /** Language identifier */
     language_id?: string;
     /** Persona identifier */

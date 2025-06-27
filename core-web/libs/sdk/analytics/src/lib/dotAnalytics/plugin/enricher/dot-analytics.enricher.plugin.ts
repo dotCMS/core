@@ -33,11 +33,13 @@ export const dotAnalyticsEnricherPlugin = () => {
                 events: [
                     {
                         event_type: 'track',
-                        custom_event: payload.event,
                         local_time: local_time,
-                        properties: {
-                            ...payload.properties,
-                            src: ANALYTICS_SOURCE_TYPE
+                        data: {
+                            custom_event: payload.event,
+                            properties: {
+                                ...payload.properties,
+                                src: ANALYTICS_SOURCE_TYPE
+                            }
                         }
                     }
                 ]

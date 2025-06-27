@@ -45,16 +45,18 @@ export const dotAnalytics = (config: DotCMSAnalyticsConfig) => {
                 throw new Error('DotAnalytics: Plugin not initialized');
             }
 
-            // Build final structured event
+            // Build final structured event with data property
             const body: DotCMSPageViewRequestBody = {
                 context,
                 events: [
                     {
                         event_type: 'pageview',
                         local_time,
-                        page,
-                        device,
-                        ...(utm && { utm: utm })
+                        data: {
+                            page,
+                            device,
+                            ...(utm && { utm: utm })
+                        }
                     }
                 ]
             };
