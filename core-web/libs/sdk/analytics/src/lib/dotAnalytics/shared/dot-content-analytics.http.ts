@@ -19,15 +19,26 @@ export const sendAnalyticsEventToServer = async (
         });
 
         if (!response.ok) {
+            // Always log the HTTP status code
+            const statusText = response.statusText || 'Unknown Error';
+            const baseErrorMessage = `HTTP ${response.status}: ${statusText}`;
+
             try {
                 const errorData = await response.json();
                 if (errorData.message) {
-                    console.warn(`DotAnalytics: ${errorData.message}`);
-
-                    return;
+                    console.warn(`DotAnalytics: ${errorData.message} (${baseErrorMessage})`);
+                } else {
+                    // JSON parsed successfully but no message property
+                    console.warn(
+                        `DotAnalytics: ${baseErrorMessage} - No error message in response`
+                    );
                 }
             } catch (parseError) {
-                console.error('DotAnalytics: Error parsing error response:', parseError);
+                // JSON parsing failed, log the HTTP status with parse error
+                console.warn(
+                    `DotAnalytics: ${baseErrorMessage} - Failed to parse error response:`,
+                    parseError
+                );
             }
         }
     } catch (error) {
