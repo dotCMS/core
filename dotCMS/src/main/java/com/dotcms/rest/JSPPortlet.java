@@ -19,6 +19,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 /**
  * <a href="JSPPortlet.java.html"><b><i>View Source</i></b></a> This is a simple
@@ -29,6 +30,7 @@ import com.liferay.portal.SystemException;
  * can use Jersey Annotations to produce or consume web services
  * 
  */
+@Tag(name = "Portlets")
 @Path("/portlet")
 public class JSPPortlet extends BaseRestPortlet {
 

@@ -23,6 +23,7 @@ import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.DELETE;
@@ -40,6 +41,7 @@ import org.glassfish.jersey.server.JSONP;
  * Resource to provide personalization stuff on dotCMS
  */
 @Path("/v1/personalization")
+@Tag(name = "Personalization")
 public class PersonalizationResource {
 
     private final PersonaAPI    personaAPI;

@@ -14,6 +14,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.model.User;
 import org.apache.commons.lang.StringUtils;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.glassfish.jersey.server.JSONP;
 
 import javax.servlet.http.HttpServletRequest;
@@ -32,6 +33,7 @@ import java.util.Map;
  * It includes methods for generating images based on a given prompt.
  */
 @Path("/v1/ai/image")
+@Tag(name = "AI", description = "AI-powered content generation and analysis endpoints")
 public class ImageResource {
 
     /**

@@ -10,6 +10,7 @@ import com.dotmarketing.business.Layout;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.liferay.portal.model.User;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.glassfish.jersey.server.JSONP;
 
 import javax.servlet.http.HttpServletRequest;
@@ -30,6 +31,7 @@ import java.util.Map;
  * This Resource allows you to manage toolgroups
  */
 @Path("/v1/toolgroups")
+@Tag(name = "Administration")
 @SuppressWarnings("serial")
 public class ToolGroupResource implements Serializable {
 

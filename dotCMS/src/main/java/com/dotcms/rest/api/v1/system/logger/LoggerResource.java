@@ -12,6 +12,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 import org.glassfish.jersey.server.JSONP;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -33,6 +34,7 @@ import java.util.stream.Collectors;
  * @author jsanca
  */
 @Path("/v1/logger")
+@Tag(name = "System Logging", description = "System logging configuration and management")
 public class LoggerResource {
 
     /**

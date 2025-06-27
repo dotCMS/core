@@ -48,9 +48,11 @@ import javax.ws.rs.core.UriInfo;
 import org.apache.velocity.exception.MethodInvocationException;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import org.glassfish.jersey.server.JSONP;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 
 @Path("/vtl")
+@Tag(name = "Templates", description = "Template design and management")
 public class VTLResource {
 
     public static final String IDENTIFIER = "identifier";

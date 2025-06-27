@@ -26,6 +26,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.media.SchemaProperty;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.io.IOException;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
@@ -50,6 +51,7 @@ import org.glassfish.jersey.media.sse.SseFeature;
  * This class provides endpoints for importing content from CSV files and processing them based on the provided parameters.
  */
 @Path("/v1/content/_import")
+@Tag(name = "Content", description = "Endpoints for managing content and contentlets")
 public class ContentImportResource {
 
     private final WebResource webResource;

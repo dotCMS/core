@@ -16,6 +16,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.json.JSONException;
 import com.liferay.portal.model.User;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -40,6 +41,7 @@ import java.util.Map;
  *      null --> Relationships will not be sent in the response
  */
 @Path("/v1/contentrelationships")
+@Tag(name = "Content", description = "Endpoints for managing content and contentlets")
 @Deprecated
 public class ContentRelationshipsResource {
 

@@ -49,8 +49,10 @@ import javax.ws.rs.core.Response;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.glassfish.jersey.server.JSONP;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 @Path("/v1/content/versions")
+@Tag(name = "Content", description = "Endpoints for managing content and contentlets")
 public class ContentVersionResource {
 
     private static final String FIND_BY_ID_ERROR_MESSAGE_KEY = "Unable-to-find-contentlet-by-id";

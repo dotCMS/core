@@ -28,6 +28,7 @@ import org.apache.commons.logging.LogFactory;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.Serializable;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 /**
  * Implements the logout endpoint, 200 if logout is successfully, 500 otherwise
@@ -35,6 +36,7 @@ import java.io.Serializable;
  * @author jsanca
  */
 @Path("/v1/logout")
+@Tag(name = "Authentication", description = "User authentication and session management")
 public class LogoutResource implements Serializable {
 
     private final LoginServiceAPI loginService;

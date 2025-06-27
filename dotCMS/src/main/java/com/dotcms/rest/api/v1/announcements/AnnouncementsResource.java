@@ -17,11 +17,13 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 /**
  * This REST Resource behaves as a proxy to the remote dotCMS instance that provides the announcements
  */
 @Path("/v1/announcements")
+@Tag(name = "Announcements", description = "System announcements and notifications")
 public class AnnouncementsResource {
 
     private final WebResource webResource;
