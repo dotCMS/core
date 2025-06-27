@@ -130,7 +130,7 @@
     <button
         class="bubble-menu-button bubble-menu-button--icon"
         [class.is-active]="editor().isActive('link')"
-        (click)="toggleLinkModal()">
+        (click)="linkModal.toggle()">
         <span class="material-icons">link</span>
     </button>
     <button
@@ -176,7 +176,7 @@
     <button
         class="bubble-menu-button bubble-menu-button--icon"
         [class.is-active]="editor().isActive('link')"
-        (click)="toggleLinkModal()">
+        (click)="linkModal.toggle()">
         <span class="material-icons">link</span>
     </button>
     <button
@@ -186,5 +186,5 @@
     </button>
 </ng-template>
 
-<dot-bubble-link-form [editor]="editor()" #editorModal="dotEditorModal" />
+<dot-bubble-link-form #linkModal [editor]="editor()" />
 <dot-image-modal #imageModal [editor]="editor()" [appendTo]="getBubbleMenuElement()" />

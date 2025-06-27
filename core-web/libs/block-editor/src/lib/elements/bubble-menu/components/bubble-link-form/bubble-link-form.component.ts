@@ -2,7 +2,7 @@
 import { Observable, Subject } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
-import { Component, inject, input, signal, OnDestroy, ViewChild } from '@angular/core';
+import { Component, inject, input, signal, OnDestroy, ViewChild, ElementRef } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { AutoCompleteModule } from 'primeng/autocomplete';
@@ -31,23 +31,20 @@ interface Item {
     templateUrl: './bubble-link-form.component.html',
     styleUrls: ['./bubble-link-form.component.scss'],
     standalone: true,
-    hostDirectives: [
-        {
-            directive: EditorModalDirective,
-            inputs: ['editor']
-        }
-    ],
     imports: [
         FormsModule,
         ListboxModule,
         AutoCompleteModule,
         InputTextModule,
         SkeletonModule,
-        ButtonModule
+        ButtonModule,
+        EditorModalDirective
     ]
 })
 export class BubbleLinkFormComponent implements OnDestroy {
-    private editorModal = inject<EditorModalDirective>(EditorModalDirective);
+    @ViewChild('linkModal', { read: EditorModalDirective }) editorModal: EditorModalDirective;
+    @ViewChild('input', { read: ElementRef }) input?: ElementRef<HTMLInputElement>;
+
     protected readonly editor = input.required<Editor>();
     protected readonly searchTerm = signal<string>('');
     protected readonly loading = signal<boolean>(false);
@@ -60,6 +57,12 @@ export class BubbleLinkFormComponent implements OnDestroy {
 
     @ViewChild('resultListbox') resultListbox?: Listbox;
 
+    readonly tippyOptions = {
+        onShow: this.setInitialLink.bind(this),
+        onShown: this.focusInput.bind(this),
+        onHide: this.unsetHighlight.bind(this)
+    };
+
     constructor() {
         this.searchSubject
             .pipe(debounceTime(1000), distinctUntilChanged(), takeUntil(this.destroy$))
@@ -69,18 +72,22 @@ export class BubbleLinkFormComponent implements OnDestroy {
             });
     }
 
-    onKeyDown(event: KeyboardEvent) {
-        if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
-            this.resultListbox?.onListKeyDown(event);
-        }
-    }
-
     ngOnDestroy(): void {
         this.destroy$.next();
         this.destroy$.complete();
     }
 
-    onSearchInput(value: string) {
+    toggle() {
+        this.editorModal?.toggle();
+    }
+
+    protected onKeyDown(event: KeyboardEvent) {
+        if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+            this.resultListbox?.onListKeyDown(event);
+        }
+    }
+
+    protected onSearchInput(value: string) {
         this.loading.set(true);
         this.searchSubject.next(value);
     }
@@ -122,5 +129,22 @@ export class BubbleLinkFormComponent implements OnDestroy {
                 limit: 5
             })
             .pipe(pluck('entity', 'jsonObjectView', 'contentlets'));
+    }
+
+    private setInitialLink() {
+        const isTextLink = this.editor().isActive('link');
+        const node = this.editor().getAttributes(isTextLink ? 'link' : 'dotImage');
+        const { href: link = '' } = node;
+        this.searchTerm.set(link);
+        this.items.set([]);
+    }
+
+    private focusInput() {
+        this.editor().commands.setHighlight();
+        this.input?.nativeElement.focus();
+    }
+
+    private unsetHighlight() {
+        this.editor().chain().unsetHighlight().focus().run();
     }
 }

@@ -1,5 +1,11 @@
-<div class="bubble-link-form">
+<div
+    class="bubble-link-form"
+    dotEditorModal
+    #linkModal
+    [editor]="editor()"
+    [tippyOptions]="tippyOptions">
     <input
+        #input
         pInputText
         type="text"
         placeholder="Paste link or search for pages"
@@ -24,37 +30,35 @@
                 </div>
             </ng-template>
         </p-listbox>
-    } @else {
-        @if (items().length > 0) {
-            <p-listbox
-                #resultListbox
-                [options]="items()"
-                [(ngModel)]="selectedItem"
-                optionLabel="name"
-                (onChange)="addLink($event)"
-                [style]="{ width: '100%' }"
-                [listStyle]="{ 'max-height': '250px' }">
-                <ng-template let-item pTemplate="item">
-                    <div class="listbox-item">
-                        @if (item.hasTitleImage) {
-                            <img [src]="'/dA/' + item.inode" alt="icon" class="listbox-item__img" />
-                        } @else {
-                            <span class="listbox-item__icon pi pi-file"></span>
-                        }
-                        <div class="listbox-item__content">
-                            <div class="listbox-item__title">{{ item.name }}</div>
-                            <div class="listbox-item__url">{{ item.value }}</div>
-                        </div>
+    } @else if (items().length > 0) {
+        <p-listbox
+            #resultListbox
+            [options]="items()"
+            [(ngModel)]="selectedItem"
+            optionLabel="name"
+            (onChange)="addLink($event)"
+            [style]="{ width: '100%' }"
+            [listStyle]="{ 'max-height': '250px' }">
+            <ng-template let-item pTemplate="item">
+                <div class="listbox-item">
+                    @if (item.hasTitleImage) {
+                        <img [src]="'/dA/' + item.inode" alt="icon" class="listbox-item__img" />
+                    } @else {
+                        <span class="listbox-item__icon pi pi-file"></span>
+                    }
+                    <div class="listbox-item__content">
+                        <div class="listbox-item__title">{{ item.name }}</div>
+                        <div class="listbox-item__url">{{ item.value }}</div>
                     </div>
-                </ng-template>
-            </p-listbox>
-        } @else if (searchTerm()) {
-            <div class="empty-message">
-                <span>
-                    No results for
-                    <b>{{ searchTerm() }}</b>
-                </span>
-            </div>
-        }
+                </div>
+            </ng-template>
+        </p-listbox>
+    } @else if (searchTerm()) {
+        <div class="empty-message">
+            <span>
+                No results for
+                <b>{{ searchTerm() }}</b>
+            </span>
+        </div>
     }
 </div>
