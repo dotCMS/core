@@ -1,26 +1,60 @@
 <div class="bubble-link-form">
-    <p-autoComplete
-        field="name"
+    <input
+        pInputText
+        type="text"
         placeholder="Paste link or search for pages"
-        autofocus="true"
-        [(ngModel)]="inputValue"
-        [suggestions]="items()"
-        (onSelect)="addLink(inputValue())"
-        (completeMethod)="search($event)"
-        (keydown.enter)="onEnter($event)"
-        [minLength]="1">
-        <ng-template let-item pTemplate="item">
-            <div class="autocomplete-item">
-                @if (item.hasTitleImage) {
-                    <img [src]="'/dA/' + item.inode" alt="icon" class="autocomplete-item__img" />
-                } @else {
-                    <span class="autocomplete-item__icon pi pi-file"></span>
-                }
-                <div class="autocomplete-item__content">
-                    <div class="autocomplete-item__title">{{ item.name }}</div>
-                    <div class="autocomplete-item__url">{{ item.value }}</div>
+        [(ngModel)]="searchTerm"
+        (ngModelChange)="onSearchInput($event)"
+        [autofocus]="true"
+        [style]="{ width: '100%' }"
+        (keydown)="onKeyDown($event)" />
+
+    @if (loading()) {
+        <p-listbox
+            [options]="[1, 2, 3]"
+            [style]="{ width: '100%' }"
+            [listStyle]="{ 'max-height': '250px' }">
+            <ng-template let-item pTemplate="item">
+                <div class="listbox-item">
+                    <p-skeleton width="48px" height="48px"></p-skeleton>
+                    <div class="skeleton-lines">
+                        <p-skeleton width="80%" height="14px"></p-skeleton>
+                        <p-skeleton width="40%" height="14px"></p-skeleton>
+                    </div>
                 </div>
+            </ng-template>
+        </p-listbox>
+    } @else {
+        @if (items().length > 0) {
+            <p-listbox
+                #resultListbox
+                [options]="items()"
+                [(ngModel)]="selectedItem"
+                optionLabel="name"
+                (onChange)="addLink($event)"
+                [style]="{ width: '100%' }"
+                [listStyle]="{ 'max-height': '250px' }">
+                <ng-template let-item pTemplate="item">
+                    <div class="listbox-item">
+                        @if (item.hasTitleImage) {
+                            <img [src]="'/dA/' + item.inode" alt="icon" class="listbox-item__img" />
+                        } @else {
+                            <span class="listbox-item__icon pi pi-file"></span>
+                        }
+                        <div class="listbox-item__content">
+                            <div class="listbox-item__title">{{ item.name }}</div>
+                            <div class="listbox-item__url">{{ item.value }}</div>
+                        </div>
+                    </div>
+                </ng-template>
+            </p-listbox>
+        } @else if (searchTerm()) {
+            <div class="empty-message">
+                <span>
+                    No results for
+                    <b>{{ searchTerm() }}</b>
+                </span>
             </div>
-        </ng-template>
-    </p-autoComplete>
+        }
+    }
 </div>
