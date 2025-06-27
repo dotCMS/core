@@ -34,7 +34,11 @@ server.registerTool(
     'listContentTypes',
     {
         title: 'List Content Types',
-        description: 'Fetches a list of content types from dotCMS.',
+        description: 'Fetches a list of content types from dotCMS. Content types are used to define the structure of content in dotCMS, you can think of them as schemas for content. Can share content types by name.',
+        annotations: {
+            title: 'List Content Types',
+            readOnlyHint: true,
+        },
         inputSchema: ContentTypeListParamsSchema.shape
     },
     async (params) => {
@@ -55,7 +59,13 @@ server.registerTool(
     'createContentType',
     {
         title: 'Create Content Type',
-        description: 'Creates a content type in dotCMS.',
+        description: 'Creates a content type in dotCMS. Content types are used to define the structure of content in dotCMS, you can think of them as schemas for content.',
+        annotations: {
+            title: 'Create Content Type',
+            readOnlyHint: false,
+            idempotentHint: false,
+            openWorldHint: true
+        },
         inputSchema: z.object({
             contentType: ContentTypeCreateParamsSchema
         }).shape
