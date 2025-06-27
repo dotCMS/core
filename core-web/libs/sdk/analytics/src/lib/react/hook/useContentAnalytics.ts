@@ -75,18 +75,15 @@ export const useContentAnalytics = (): DotCMSAnalytics => {
         [instance]
     );
 
-    const pageView = useCallback(
-        (payload: Record<string, unknown> = {}) => {
-            if (!isInsideEditor()) {
-                const currentPath = window.location.pathname;
-                if (currentPath !== lastPathRef.current) {
-                    lastPathRef.current = currentPath;
-                    instance.pageView(payload);
-                }
+    const pageView = useCallback(() => {
+        if (!isInsideEditor()) {
+            const currentPath = window.location.pathname;
+            if (currentPath !== lastPathRef.current) {
+                lastPathRef.current = currentPath;
+                instance.pageView();
             }
-        },
-        [instance]
-    );
+        }
+    }, [instance]);
 
     return {
         track,
