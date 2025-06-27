@@ -316,28 +316,6 @@ export const extractUTMParameters = (location: Location): Record<string, string>
 export const defaultRedirectFn = (href: string) => (window.location.href = href);
 
 /**
- * Check if we're inside the DotCMS editor
- */
-export const isInsideEditor = (): boolean => {
-    if (typeof window === 'undefined') {
-        return false; // SSR safe
-    }
-
-    try {
-        // Check if we're in an iframe
-        const inIframe = window.self !== window.top;
-
-        // Check for DotCMS editor indicators
-        const hasEditorParams = window.location.href.includes('mode=EDIT_MODE');
-        const hasVtlServlet = window.location.href.includes('/vtl/');
-
-        return inIframe || hasEditorParams || hasVtlServlet;
-    } catch {
-        return false;
-    }
-};
-
-/**
  * Gets timezone offset in the format +HH:mm or -HH:mm
  */
 const getTimezoneOffset = (): string => {

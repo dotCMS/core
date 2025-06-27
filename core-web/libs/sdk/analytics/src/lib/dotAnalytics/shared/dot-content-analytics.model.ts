@@ -39,14 +39,27 @@ export interface DotCMSAnalyticsConfig {
 }
 
 /**
- * Individual analytics event structure for DotCMS.
- * Represents a single event within an analytics request sent to the DotCMS analytics server.
+ * Pageview-specific analytics event structure.
+ * Contains data specific to page view tracking.
  */
-export interface DotCMSAnalyticsEvent {
+export interface DotCMSPageViewEvent {
     /** The type of event being tracked */
-    event_type: 'pageview' | 'track';
-    /** Event data containing page, device, and UTM information */
+    event_type: 'pageview';
+    /** Pageview-specific event data */
     data: DotCMSEventData;
+    /** Local timestamp when the event occurred */
+    local_time: string;
+}
+
+/**
+ * Track-specific analytics event structure.
+ * Contains data specific to custom event tracking.
+ */
+export interface DotCMSTrackEvent {
+    /** The type of event being tracked */
+    event_type: 'track';
+    /** Track-specific event data with flexible structure */
+    data: Record<string, unknown>;
     /** Local timestamp when the event occurred */
     local_time: string;
 }
@@ -71,11 +84,10 @@ export interface DotCMSEventData {
 export interface DotCMSPageViewRequestBody {
     /** Context information shared across all events */
     context: DotCMSAnalyticsContext;
-    /** Array of analytics events to be tracked */
-    events: DotCMSAnalyticsEvent[];
+    /** Array of pageview analytics events to be tracked */
+    events: DotCMSPageViewEvent[];
 }
 
-// TODO: Add properties to the track request body
 /**
  * Analytics request body for track events in DotCMS.
  * Structure sent to the DotCMS analytics server for custom event tracking.
@@ -83,8 +95,8 @@ export interface DotCMSPageViewRequestBody {
 export interface DotCMSTrackRequestBody {
     /** Context information shared across all events */
     context: DotCMSAnalyticsContext;
-    /** Array of analytics events to be tracked */
-    events?: DotCMSAnalyticsEvent[];
+    /** Array of track analytics events to be tracked */
+    events: DotCMSTrackEvent[];
 }
 
 /**

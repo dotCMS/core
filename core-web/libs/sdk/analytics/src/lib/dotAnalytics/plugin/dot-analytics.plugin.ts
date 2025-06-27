@@ -81,8 +81,19 @@ export const dotAnalytics = (config: DotCMSAnalyticsConfig) => {
 
             // For track events, use the enriched payload directly
             const body: DotCMSTrackRequestBody = {
-                context: payload.context
+                context: payload.context,
+                events: [
+                    {
+                        event_type: 'track',
+                        local_time: payload.local_time,
+                        data: payload.properties
+                    }
+                ]
             };
+
+            if (config.debug) {
+                console.warn('Track event to send:', body);
+            }
 
             return sendAnalyticsEventToServer(body, config);
         },

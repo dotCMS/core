@@ -1,7 +1,8 @@
 import { useCallback, useContext, useRef } from 'react';
 
+import { getUVEState } from '@dotcms/uve';
+
 import { DotCMSAnalytics } from '../../dotAnalytics/shared/dot-content-analytics.model';
-import { isInsideEditor } from '../../dotAnalytics/shared/dot-content-analytics.utils';
 import DotContentAnalyticsContext from '../contexts/DotContentAnalyticsContext';
 
 /**
@@ -56,6 +57,7 @@ import DotContentAnalyticsContext from '../contexts/DotContentAnalyticsContext';
 export const useContentAnalytics = (): DotCMSAnalytics => {
     const instance = useContext(DotContentAnalyticsContext);
     const lastPathRef = useRef<string | null>(null);
+    const uveState = getUVEState();
 
     if (!instance) {
         throw new Error(
@@ -65,7 +67,7 @@ export const useContentAnalytics = (): DotCMSAnalytics => {
 
     const track = useCallback(
         (eventName: string, payload: Record<string, unknown> = {}) => {
-            if (!isInsideEditor()) {
+            if (!uveState) {
                 instance.track(eventName, {
                     ...payload,
                     timestamp: new Date().toISOString()
@@ -76,7 +78,7 @@ export const useContentAnalytics = (): DotCMSAnalytics => {
     );
 
     const pageView = useCallback(() => {
-        if (!isInsideEditor()) {
+        if (!uveState) {
             const currentPath = window.location.pathname;
             if (currentPath !== lastPathRef.current) {
                 lastPathRef.current = currentPath;

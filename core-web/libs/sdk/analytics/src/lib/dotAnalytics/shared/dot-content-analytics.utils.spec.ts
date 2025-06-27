@@ -17,8 +17,7 @@ import {
     getSessionId,
     getUserId,
     getUtmData,
-    initializeActivityTracking,
-    isInsideEditor
+    initializeActivityTracking
 } from './dot-content-analytics.utils';
 
 describe('Analytics Utils', () => {
@@ -261,52 +260,6 @@ describe('Analytics Utils', () => {
             const testUrl = 'https://test.com';
             defaultRedirectFn(testUrl);
             expect(window.location.href).toBe(testUrl);
-        });
-    });
-
-    describe('isInsideEditor', () => {
-        const originalWindow = window;
-
-        beforeEach(() => {
-            // Reset window to original state before each test
-            (global as any).window = { ...originalWindow };
-        });
-
-        afterEach(() => {
-            // Restore window object
-            (global as any).window = originalWindow;
-        });
-
-        it('should return false when window is undefined', () => {
-            (global as any).window = undefined;
-            expect(isInsideEditor()).toBe(false);
-        });
-
-        it('should return false when not in iframe and no editor params', () => {
-            Object.defineProperty(window, 'self', { value: window });
-            Object.defineProperty(window, 'top', { value: window });
-            Object.defineProperty(window, 'location', {
-                value: { href: 'https://example.com' },
-                writable: true
-            });
-            expect(isInsideEditor()).toBe(false);
-        });
-
-        it('should return true when in iframe', () => {
-            const mockTop = { ...window, someUniqueProperty: true };
-            Object.defineProperty(window, 'self', { value: window });
-            Object.defineProperty(window, 'top', { value: mockTop });
-            expect(isInsideEditor()).toBe(true);
-        });
-
-        it('should return true when has editor params', () => {
-            Object.defineProperty(window, 'self', { value: window });
-            Object.defineProperty(window, 'top', { value: window });
-            Object.defineProperty(window, 'location', {
-                value: { href: 'https://example.com?mode=EDIT_MODE' },
-                writable: true
-            });
-            expect(isInsideEditor()).toBe(true);
         });
     });
 
