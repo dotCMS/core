@@ -126,7 +126,7 @@ public class ValidAnalyticsEventPayloadTest  {
 
             assertEquals("abc", payload.get("sessionid"));
             assertEquals(events.get(i).get("event_type"), payload.get("event_type"));
-            assertEquals("2025-06-09T12:30:00Z", payload.get("local_time"));
+            assertEquals("2025-06-09T12:30:00.000000Z", payload.get("utc_time"));
 
             Map<String, Object> dataAttributes = (Map<String, Object>) events.get(i).get("data");
             checkAttributes(payload, dataAttributes, "page", Map.of("title", "page_title", "language", "userlanguage"));
