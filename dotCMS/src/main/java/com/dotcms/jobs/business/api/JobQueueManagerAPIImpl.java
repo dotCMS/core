@@ -12,7 +12,6 @@ import com.dotcms.jobs.business.api.events.JobStartedEvent;
 import com.dotcms.jobs.business.api.events.JobWatcher;
 import com.dotcms.jobs.business.api.events.RealTimeJobMonitor;
 import com.dotcms.jobs.business.detector.AbandonedJobDetector;
-import com.dotcms.jobs.business.error.CircuitBreaker;
 import com.dotcms.jobs.business.error.ErrorDetail;
 import com.dotcms.jobs.business.error.JobCancellationException;
 import com.dotcms.jobs.business.error.JobProcessorNotFoundException;
@@ -38,6 +37,7 @@ import com.dotcms.jobs.business.util.JobUtil;
 import com.dotcms.system.event.local.model.EventSubscriber;
 import com.dotcms.util.AnnotationUtils;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.db.DatabaseConnectionHealthManager;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -108,8 +108,6 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
     private CountDownLatch startLatch;
     private volatile boolean isShuttingDown = false;
     private volatile boolean isClosed = false;
-
-    private final CircuitBreaker circuitBreaker;
     private final JobQueue jobQueue;
     private final AbandonedJobDetector abandonedJobDetector;
     private final Map<String, Class<? extends JobProcessor>> processors;
@@ -147,7 +145,6 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
     @Inject
     public JobQueueManagerAPIImpl(@Named("queueProducer") JobQueue jobQueue,
             JobQueueConfig jobQueueConfig,
-            CircuitBreaker circuitBreaker,
             @DefaultRetryStrategy RetryStrategy defaultRetryStrategy,
             RealTimeJobMonitor realTimeJobMonitor,
             JobProcessorFactory jobProcessorFactory,
@@ -161,7 +158,6 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
         this.processorInstancesByJobId = new ConcurrentHashMap<>();
         this.retryStrategies = new ConcurrentHashMap<>();
         this.defaultRetryStrategy = defaultRetryStrategy;
-        this.circuitBreaker = circuitBreaker;
         this.jobProcessorFactory = jobProcessorFactory;
         this.retryPolicyProcessor = retryPolicyProcessor;
         this.abandonedJobDetector = abandonedJobDetector;
@@ -573,11 +569,6 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
         return Optional.ofNullable(processorInstancesByJobId.get(jobId));
     }
 
-    @Override
-    @VisibleForTesting
-    public CircuitBreaker getCircuitBreaker() {
-        return this.circuitBreaker;
-    }
 
     @Override
     @VisibleForTesting
@@ -664,7 +655,7 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
 
         while (!Thread.currentThread().isInterrupted() && !isShuttingDown) {
 
-            if (isCircuitBreakerOpen()) {
+            if (isDatabaseUnavailable()) {
                 continue;
             }
 
@@ -688,7 +679,7 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
                 break; // Exit the loop immediately on interruption
             } catch (Exception e) {
                 Logger.error(this, "Unexpected error in job processing loop: " + e.getMessage(), e);
-                getCircuitBreaker().recordFailure();
+                // Database operations will record their own failures through DbConnectionFactory
             }
         }
     }
@@ -736,26 +727,24 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
     }
 
     /**
-     * Checks if the circuit breaker is open and handles the waiting period if it is.
+     * Checks if the database is unavailable based on the centralized database circuit breaker.
+     * When the database circuit breaker is open, job processing is paused to avoid overwhelming
+     * the system during database outages.
      *
-     * @return true if the circuit breaker is open, false otherwise.
+     * @return true if the database is unavailable, false otherwise.
      */
-    private boolean isCircuitBreakerOpen() {
-
-        if (!getCircuitBreaker().allowRequest()) {
-
-            Logger.warn(this, "Circuit breaker is open. Pausing job processing for a while.");
-
+    private boolean isDatabaseUnavailable() {
+        boolean unavailable = !DatabaseConnectionHealthManager.getInstance().isOperationAllowed();
+        if (unavailable) {
+            // Use DEBUG level to reduce noise - the database circuit breaker already logs appropriately
+            Logger.debug(this, "Database circuit breaker is open - pausing job processing");
             try {
-                Thread.sleep(5000); // Wait for 5 seconds before checking again
+                Thread.sleep(2000); // Shorter sleep - let the database circuit breaker handle recovery timing
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
-
-            return true;
         }
-
-        return false;
+        return unavailable;
     }
 
     /**
@@ -1086,8 +1075,7 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
             throw new DotDataException("Error re-queueing job", e);
         }
 
-        // Record the failure in the circuit breaker
-        getCircuitBreaker().recordFailure();
+        // Database operations will record their own failures through DbConnectionFactory
     }
 
     /**

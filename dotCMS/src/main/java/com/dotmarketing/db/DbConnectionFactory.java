@@ -27,7 +27,9 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.JNDIUtil;
+import com.dotcms.test.TestUtil;
 import io.vavr.control.Try;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class DbConnectionFactory {
 
@@ -65,8 +67,7 @@ public class DbConnectionFactory {
             getConnection().setAutoCommit(autoCommit);
         } catch (SQLException e) {
             Logger.error(DbConnectionFactory.class,
-                    "---------- DBConnectionFactory: error setting the autocommit " + DATABASE_DEFAULT_DATASOURCE,
-                    e);
+                    "Failed to set autocommit for datasource: " + DATABASE_DEFAULT_DATASOURCE, e);
         }
     } // setAutoCommit.
 
@@ -110,11 +111,21 @@ public class DbConnectionFactory {
                     try {
                         defaultDataSource = DataSourceStrategyProvider.getInstance().get();
                         addDatasourceToJNDIIfNeeded();
+                        
+                        // Initialize database health monitoring
+                        DatabaseConnectionHealthManager.getInstance().initializeMonitoring(defaultDataSource);
+                        
                     } catch (Throwable e) {
-                        Logger.error(DbConnectionFactory.class,
-                                "---------- DBConnectionFactory: error getting dbconnection " + Constants.DATABASE_DEFAULT_DATASOURCE,
-                                e);
-                        if(Config.getBooleanProperty("SYSTEM_EXIT_ON_STARTUP_FAILURE", true)){
+                        // In unit tests, provide a cleaner error message without full stack trace noise
+                        if (TestUtil.isUnitTest()) {
+                            Logger.debug(DbConnectionFactory.class,
+                                    "Database connection not available in unit test environment (expected): " + e.getMessage());
+                        } else {
+                            Logger.error(DbConnectionFactory.class,
+                                    "Failed to initialize database connection for datasource: " + Constants.DATABASE_DEFAULT_DATASOURCE, e);
+                        }
+                        
+                        if(Config.getBooleanProperty("SYSTEM_EXIT_ON_STARTUP_FAILURE", true) && !TestUtil.isUnitTest()){
                             e.printStackTrace();
                             System.exit(1);
                         }
@@ -139,11 +150,11 @@ public class DbConnectionFactory {
                 context.createSubcontext("jdbc");
                 context.bind(DATABASE_DEFAULT_DATASOURCE, defaultDataSource);
                 Logger.info(DbConnectionFactory.class,
-                        "---------- DBConnectionFactory:Datasource added to JNDI context ---------------");
+                        "Datasource successfully bound to JNDI context: " + DATABASE_DEFAULT_DATASOURCE);
             }
         } catch (NamingException e) {
             Logger.error(DbConnectionFactory.class,
-                    "---------- DBConnectionFactory: Error setting datasource in JNDI context ---------------", e);
+                    "Failed to bind datasource to JNDI context: " + DATABASE_DEFAULT_DATASOURCE, e);
             throw new DotRuntimeException(e.toString());
         }
     }
@@ -160,7 +171,7 @@ public class DbConnectionFactory {
 
         } catch (Exception e) {
             Logger.error(DbConnectionFactory.class,
-                "---------- DBConnectionFactory: error getting dbconnection ---------------" + dataSource, e);
+                "Failed to retrieve datasource from JNDI: " + dataSource, e);
             throw new DotRuntimeException(e.toString());
         }
     }
@@ -172,10 +183,10 @@ public class DbConnectionFactory {
      * @return
      */
     public static long connectionsCalledFor() {
-        return connectionsCalledFor;
+        return connectionsCalledFor.get();
     }
     
-    private static long connectionsCalledFor=0;
+    private static final AtomicLong connectionsCalledFor = new AtomicLong(0);
 
     /**
      * This method sets on the current thread a connection
@@ -196,8 +207,7 @@ public class DbConnectionFactory {
                 connectionsList.put(DATABASE_DEFAULT_DATASOURCE, connection);
             }
         } catch (Exception e) {
-            Logger.error(DbConnectionFactory.class, "---------- DBConnectionFactory: error : " + e);
-            Logger.debug(DbConnectionFactory.class, "---------- DBConnectionFactory: error ", e);
+            Logger.error(DbConnectionFactory.class, "Failed to set connection on thread: " + e.getMessage(), e);
             throw new DotRuntimeException(e.getMessage(), e);
         }
     }
@@ -208,9 +218,16 @@ public class DbConnectionFactory {
     public static Connection getConnection() {
 
         try {
+            // Check circuit breaker before attempting connection
+            DatabaseConnectionHealthManager healthManager = DatabaseConnectionHealthManager.getInstance();
+            if (!healthManager.isOperationAllowed()) {
+                throw new SQLException("Database circuit breaker is OPEN - database appears to be down. " +
+                        "Automatic recovery attempts are in progress.");
+            }
+            
             HashMap<String, Connection> connectionsList = (HashMap<String, Connection>) connectionsHolder.get();
             Connection connection = null;
-            connectionsCalledFor++;
+            connectionsCalledFor.incrementAndGet();
             if (connectionsList == null) {
                 connectionsList = new HashMap<>();
                 connectionsHolder.set(connectionsList);
@@ -221,18 +238,44 @@ public class DbConnectionFactory {
             if (connection == null || connection.isClosed()) {
                 DataSource db = getDataSource();
                 connection = db.getConnection();
+                
+                // Validate connection before using
+                if (!connection.isValid(5)) {
+                    connection.close();
+                    throw new SQLException("Connection validation failed");
+                }
+                
                 connectionsList.put(DATABASE_DEFAULT_DATASOURCE, connection);
                 Logger.debug(DbConnectionFactory.class,
                     "Connection opened for thread " + Thread.currentThread().getId() + "-" +
                         DATABASE_DEFAULT_DATASOURCE);
+                
+                // Record successful connection
+                healthManager.recordSuccess();
             }
-
- 
 
             return connection;
         } catch (Exception e) {
-            Logger.error(DbConnectionFactory.class, "---------- DBConnectionFactory: error : " + e);
-            Logger.debug(DbConnectionFactory.class, "---------- DBConnectionFactory: error ", e);
+            // Record failure for circuit breaker (except in unit tests)
+            if (!TestUtil.isUnitTest()) {
+                DatabaseConnectionHealthManager.getInstance().recordFailure(e);
+            }
+            
+            // In unit tests, log connection errors at debug level to reduce noise
+            if (TestUtil.isUnitTest()) {
+                Logger.debug(DbConnectionFactory.class, "Database connection not available in unit test environment: " + e.getMessage());
+            } else {
+                // Check if circuit breaker is open to reduce log noise during known outages
+                DatabaseConnectionHealthManager healthManager = DatabaseConnectionHealthManager.getInstance();
+                if (!healthManager.isOperationAllowed()) {
+                    // Circuit breaker is open - log at debug level to reduce noise
+                    // DatabaseConnectionHealthManager already logs state transitions appropriately
+                    Logger.debug(DbConnectionFactory.class, "Failed to retrieve database connection: " + e.getMessage());
+                } else {
+                    // Circuit breaker is closed or half-open - this is an unexpected failure, log with full details
+                    Logger.error(DbConnectionFactory.class, "Failed to retrieve database connection: " + e.getMessage(), e);
+                }
+            }
             throw new DotRuntimeException(e.getMessage(), e);
         }
     }
@@ -254,7 +297,7 @@ public class DbConnectionFactory {
             try {
                 isCreated = (connection != null && !connection.isClosed());
             } catch (SQLException e) {
-                Logger.error(DbConnectionFactory.class, "---------- DBConnectionFactory: error : " + e);
+                Logger.error(DbConnectionFactory.class, "Failed to check connection status: " + e.getMessage(), e);
             }
         }
 
@@ -279,7 +322,7 @@ public class DbConnectionFactory {
             }
             return (!connection.getAutoCommit());
         } catch (SQLException e) {
-            Logger.error(DbConnectionFactory.class, "---------- DBConnectionFactory: error : " + e);
+            Logger.error(DbConnectionFactory.class, "Failed to check transaction status: " + e.getMessage(), e);
             throw new DotRuntimeException(e.toString());
 
         }
@@ -337,11 +380,69 @@ public class DbConnectionFactory {
     }
     
     /**
+     * Get database connection health status including circuit breaker state and connection pool metrics.
+     * @return DatabaseConnectionHealthManager.HealthStatus with current health information
+     */
+    public static DatabaseConnectionHealthManager.HealthStatus getConnectionHealthStatus() {
+        return DatabaseConnectionHealthManager.getInstance().getHealthStatus();
+    }
+    
+    /**
+     * Check if database operations are currently allowed based on circuit breaker state.
+     * @return true if operations are allowed, false if circuit breaker is open
+     */
+    public static boolean isDatabaseOperationAllowed() {
+        return DatabaseConnectionHealthManager.getInstance().isOperationAllowed();
+    }
+    
+    /**
+     * Manually open the database circuit breaker (for maintenance or emergency situations).
+     * @param reason Reason for opening the circuit breaker
+     */
+    public static void openDatabaseCircuitBreaker(String reason) {
+        DatabaseConnectionHealthManager.getInstance().openCircuit(reason);
+    }
+    
+    /**
+     * Manually close the database circuit breaker (after maintenance or when forced recovery is needed).
+     * @param reason Reason for closing the circuit breaker
+     */
+    public static void closeDatabaseCircuitBreaker(String reason) {
+        DatabaseConnectionHealthManager.getInstance().closeCircuit(reason);
+    }
+    
+    /**
+     * Force an immediate recovery test to check if database is available again.
+     * This bypasses the exponential backoff delay and immediately tests connectivity.
+     * @param reason Reason for forcing the recovery test
+     */
+    public static void forceRecoveryTest(String reason) {
+        DatabaseConnectionHealthManager.getInstance().forceRecoveryTest(reason);
+    }
+    
+    /**
+     * Log current circuit breaker state for debugging purposes.
+     * @param context Context description for the log message
+     */
+    public static void logCircuitBreakerState(String context) {
+        DatabaseConnectionHealthManager.getInstance().logCurrentState(context);
+    }
+    
+    /**
      * Retrieves a connection to the given dataSource
      */
     public static Connection getConnection(String dataSource) {
 
         try {
+            // For non-default datasources, only check circuit breaker if it's the default datasource
+            if (DATABASE_DEFAULT_DATASOURCE.equals(dataSource)) {
+                DatabaseConnectionHealthManager healthManager = DatabaseConnectionHealthManager.getInstance();
+                if (!healthManager.isOperationAllowed()) {
+                    throw new SQLException("Database circuit breaker is OPEN - database appears to be down. " +
+                            "Automatic recovery attempts are in progress.");
+                }
+            }
+            
             HashMap<String, Connection> connectionsList = (HashMap<String, Connection>) connectionsHolder.get();
             Connection connection = null;
 
@@ -358,16 +459,33 @@ public class DbConnectionFactory {
                                 ()-> "Opening connection for thread " + Thread.currentThread().getId() + "-" +
                         dataSource + "\n" + UtilMethods.getDotCMSStackTrace());
                 connection = db.getConnection();
+                
+                // Validate connection for default datasource
+                if (DATABASE_DEFAULT_DATASOURCE.equals(dataSource) && !connection.isValid(5)) {
+                    connection.close();
+                    throw new SQLException("Connection validation failed");
+                }
+                
                 connectionsList.put(dataSource, connection);
                 Logger.debug(DbConnectionFactory.class,
                     "Connection opened for thread " + Thread.currentThread().getId() + "-" +
                         dataSource);
+                
+                // Record success for default datasource
+                if (DATABASE_DEFAULT_DATASOURCE.equals(dataSource)) {
+                    DatabaseConnectionHealthManager.getInstance().recordSuccess();
+                }
             }
 
             return connection;
         } catch (Exception e) {
+            // Record failure for default datasource (except in unit tests)
+            if (DATABASE_DEFAULT_DATASOURCE.equals(dataSource) && !TestUtil.isUnitTest()) {
+                DatabaseConnectionHealthManager.getInstance().recordFailure(e);
+            }
+            
             Logger.error(DbConnectionFactory.class,
-                "---------- DBConnectionFactory: error getting dbconnection conn named", e);
+                "Failed to retrieve connection for datasource: " + dataSource, e);
             throw new DotRuntimeException(e.toString());
         }
 
@@ -398,8 +516,7 @@ public class DbConnectionFactory {
                         cn.close();
                     } catch (Exception e) {
                         Logger.warn(DbConnectionFactory.class,
-                            "---------- DBConnectionFactory: error closing the db dbconnection: " + ds
-                                + " ---------------", e);
+                            "Failed to close database connection for datasource: " + ds, e);
                     }
                 }
             }
@@ -409,7 +526,7 @@ public class DbConnectionFactory {
 
         } catch (Exception e) {
             Logger.error(DbConnectionFactory.class,
-                "---------- DBConnectionFactory: error closing the db dbconnection ---------------", e);
+                "Failed to close all database connections", e);
             throw new DotRuntimeException(e.toString());
         }
 
@@ -443,7 +560,7 @@ public class DbConnectionFactory {
 
         } catch (Exception e) {
             Logger.error(DbConnectionFactory.class,
-                "---------- DBConnectionFactory: error closing the db dbconnection: " + ds + " ---------------", e);
+                "Failed to close database connection for datasource: " + ds, e);
             throw new DotRuntimeException(e.toString());
         }
 
@@ -538,7 +655,7 @@ public class DbConnectionFactory {
             version = meta.getDatabaseMajorVersion();
         } catch (Exception e) {
             Logger.error(DbConnectionFactory.class,
-                "---------- DBConnectionFactory: Error getting DB version " + "---------------", e);
+                "Failed to retrieve database version", e);
             throw new DotRuntimeException(e.toString());
         }
         return version;
@@ -557,7 +674,7 @@ public class DbConnectionFactory {
             return Float.parseFloat(version);
         } catch (SQLException e) {
             Logger.error(DbConnectionFactory.class,
-                    "---------- DBConnectionFactory: Error getting DB Full version " + "---------------", e);
+                    "Failed to retrieve database full version", e);
             throw new DotRuntimeException(e.toString());
         }
     }
