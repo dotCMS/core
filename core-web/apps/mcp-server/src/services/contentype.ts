@@ -2,12 +2,9 @@ import { z } from 'zod';
 
 import { AgnosticClient } from './client';
 
-import { ContentType, ContentTypeBaseTypeEnum, ContentTypeSchema } from '../types/contentype';
+import { ContentType, ContentTypeBaseTypeEnum, ContentTypeField, ContentTypeSchema, Layout } from '../types/contentype';
 
-const ContentTypeBaseTypeQueryEnum = z.union([
-    z.literal('ANY'),
-    ContentTypeBaseTypeEnum
-]);
+const ContentTypeBaseTypeQueryEnum = z.union([z.literal('ANY'), ContentTypeBaseTypeEnum]);
 
 export const ContentTypeListParamsSchema = z.object({
     filter: z.string().optional(),
@@ -72,19 +69,23 @@ const ContentTypeFieldSchema = z.object({
     variable: z.string().optional(),
     values: z.string().optional(),
     hint: z.string().optional(),
-    categories: z.object({
-        categoryName: z.string(),
-        description: z.string().nullable(),
-        inode: z.string(),
-        key: z.string(),
-        keywords: z.string(),
-        sortOrder: z.number()
-    }).optional(),
-    relationships: z.object({
-        cardinality: z.number(),
-        isParentField: z.boolean(),
-        velocityVar: z.string()
-    }).optional(),
+    categories: z
+        .object({
+            categoryName: z.string(),
+            description: z.string().nullable(),
+            inode: z.string(),
+            key: z.string(),
+            keywords: z.string(),
+            sortOrder: z.number()
+        })
+        .optional(),
+    relationships: z
+        .object({
+            cardinality: z.number(),
+            isParentField: z.boolean(),
+            velocityVar: z.string()
+        })
+        .optional(),
     skipRelationshipCreation: z.boolean().optional()
 });
 
@@ -130,15 +131,20 @@ export class ContentTypeService extends AgnosticClient {
         const response = await this.fetch(url, { method: 'GET' });
 
         if (!response.ok) {
-            throw new Error(`Failed to fetch content types: ${response.status} ${response.statusText}`);
+            throw new Error(
+                `Failed to fetch content types: ${response.status} ${response.statusText}`
+            );
         }
 
         const data = await response.json();
         // dotCMS returns { entity: ContentType[] }
         const entity = data.entity;
         const parsed = z.array(ContentTypeSchema).safeParse(entity);
+
         if (!parsed.success) {
-            throw new Error('Invalid content type response: ' + JSON.stringify(parsed.error.format()));
+            throw new Error(
+                'Invalid content type response: ' + JSON.stringify(parsed.error.format())
+            );
         }
 
         return parsed.data;
@@ -149,7 +155,9 @@ export class ContentTypeService extends AgnosticClient {
      * @param params - Content type creation parameters
      * @returns Promise with the created content type(s)
      */
-    async create(params: ContentTypeCreateParams | ContentTypeCreateParams[]): Promise<ContentType[]> {
+    async create(
+        params: ContentTypeCreateParams | ContentTypeCreateParams[]
+    ): Promise<ContentType[]> {
         const isArray = Array.isArray(params);
         const dataToValidate = isArray ? params : [params];
 
@@ -169,7 +177,9 @@ export class ContentTypeService extends AgnosticClient {
         });
 
         if (!response.ok) {
-            throw new Error(`Failed to create content type(s): ${response.status} ${response.statusText}`);
+            throw new Error(
+                `Failed to create content type(s): ${response.status} ${response.statusText}`
+            );
         }
 
         const data = await response.json();
@@ -177,9 +187,58 @@ export class ContentTypeService extends AgnosticClient {
         const entity = data.entity;
         const parsed = z.array(ContentTypeSchema).safeParse(entity);
         if (!parsed.success) {
-            throw new Error('Invalid content type response: ' + JSON.stringify(parsed.error.format()));
+            throw new Error(
+                'Invalid content type response: ' + JSON.stringify(parsed.error.format())
+            );
         }
 
         return parsed.data;
+    }
+
+    async getContentTypesSchema(): Promise<ContentType[]> {
+        const allContentTypes = await this.list({
+            page: 1,
+            // TODO: allow the user to specify the number of content types to fetch
+            per_page: 100,
+            orderby: 'name',
+            direction: 'ASC'
+        });
+
+        const result = allContentTypes.map((contentType) => {
+            return {
+                ...contentType,
+                fields: this.#extractFieldsFromLayout(contentType.layout)
+            }
+        });
+
+        return result;
+    }
+
+
+    #extractFieldsFromLayout(layout: Layout[]): ContentTypeField[] {
+        const allFields = [];
+
+        // Check if layout has a layout property (based on your structure)
+
+        // Iterate through each row in the layout
+        layout.forEach((row) => {
+            // Skip if no columns exist
+            if (!row.columns || !Array.isArray(row.columns)) {
+                return;
+            }
+
+            // Iterate through each column in the row
+            row.columns.forEach((column) => {
+                // Skip if no fields exist in the column
+                if (!column.fields || !Array.isArray(column.fields)) {
+                    return;
+                }
+
+                // Add all fields from this column to our result array
+                allFields.push(...column.fields);
+            });
+        });
+
+        return allFields;
     }
 }

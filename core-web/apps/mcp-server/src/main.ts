@@ -7,6 +7,7 @@ import {
     ContentTypeListParamsSchema,
     ContentTypeCreateParamsSchema
 } from './services/contentype';
+import { ContentType } from './types/contentype';
 
 const server = new McpServer({
     name: 'DotCMS',
@@ -29,6 +30,64 @@ try {
 }
 
 const contentTypeService = new ContentTypeService();
+
+// Cache for content type schemas to avoid repeated API calls
+let contentTypeSchemasCache: ContentType[] | null = null;
+let cacheTimestamp = 0;
+const CACHE_DURATION = 30 * 60 * 1000; // 5 minutes in milliseconds
+
+server.registerTool(
+    'learn_content_type_schemas',
+    {
+        title: 'Learn Content Type Schemas',
+        description:
+            'IMPORTANT: This tool MUST be called FIRST before any other operations to learn all available content type schemas in the dotCMS instance. This provides the LLM with complete knowledge of all content types, their fields, field types, and structure. The response is cached for 5 minutes to avoid repeated API calls. Use this to understand what content types exist and their complete field definitions before creating or working with content.',
+        annotations: {
+            title: 'Learn Content Type Schemas',
+            readOnlyHint: true
+        },
+        inputSchema: z.object({}).shape
+    },
+    async () => {
+        const now = Date.now();
+
+        // Return cached data if it's still valid
+        if (contentTypeSchemasCache && (now - cacheTimestamp) < CACHE_DURATION) {
+            return {
+                content: [
+                    {
+                        type: 'text',
+                        text: `[CACHED RESPONSE] Content Type Schemas (cached for ${Math.round((now - cacheTimestamp) / 1000)}s):\n\n${JSON.stringify(contentTypeSchemasCache, null, 2)}`
+                    }
+                ]
+            };
+        }
+
+        // Fetch fresh data
+        try {
+            contentTypeSchemasCache = await contentTypeService.getContentTypesSchema();
+            cacheTimestamp = now;
+
+            return {
+                content: [
+                    {
+                        type: 'text',
+                        text: `Content Type Schemas (${contentTypeSchemasCache.length} content types found):\n\n${JSON.stringify(contentTypeSchemasCache, null, 2)}`
+                    }
+                ]
+            };
+        } catch (error) {
+            return {
+                content: [
+                    {
+                        type: 'text',
+                        text: `Error fetching content type schemas: ${error instanceof Error ? error.message : String(error)}`
+                    }
+                ]
+            };
+        }
+    }
+);
 
 server.registerTool(
     'content_type_list',
