@@ -12,6 +12,7 @@ import Product from "./Product";
 import StoreProductList from "./StoreProductList";
 import VtlInclude from "./VtlInclude";
 import WebPageContent from "./WebPageContent";
+import YouTube from "./YouTube";
 
 export const pageComponents = {
     Activity: Activity,
@@ -28,4 +29,5 @@ export const pageComponents = {
     StoreProductList: StoreProductList,
     VtlInclude: VtlInclude,
     webPageContent: WebPageContent,
+    YouTube: YouTube,
 };
