@@ -195,7 +195,7 @@ export const ContentTypeSchema = z.object({
     variable: z.string(),
     versionable: z.boolean(),
     workflows: z.array(WorkflowSchema).optional(),
-    systemActionMappings: z.record(z.any()).optional(),
+    systemActionMappings: z.union([z.record(z.any()), z.array(z.any())]).optional(),
     owner: z.string().optional(),
     nEntries: z.number().optional(),
     detailPage: z.string().optional(),

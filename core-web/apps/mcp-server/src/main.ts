@@ -142,7 +142,7 @@ server.registerTool(
             content: [
                 {
                     type: 'text',
-                    text: JSON.stringify(contentTypes, null, 2)
+                    text: formatContentTypesAsText(contentTypes)
                 }
             ]
         };
