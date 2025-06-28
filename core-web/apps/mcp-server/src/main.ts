@@ -53,11 +53,13 @@ server.registerTool(
 
         // Return cached data if it's still valid
         if (contentTypeSchemasCache && (now - cacheTimestamp) < CACHE_DURATION) {
+            const formattedText = formatContentTypesAsText(contentTypeSchemasCache);
+
             return {
                 content: [
                     {
                         type: 'text',
-                        text: `[CACHED RESPONSE] Content Type Schemas (cached for ${Math.round((now - cacheTimestamp) / 1000)}s):\n\n${JSON.stringify(contentTypeSchemasCache, null, 2)}`
+                        text: `[CACHED RESPONSE] Content Type Schemas (cached for ${Math.round((now - cacheTimestamp) / 1000)}s):\n\n${formattedText}`
                     }
                 ]
             };
@@ -67,12 +69,13 @@ server.registerTool(
         try {
             contentTypeSchemasCache = await contentTypeService.getContentTypesSchema();
             cacheTimestamp = now;
+            const formattedText = formatContentTypesAsText(contentTypeSchemasCache);
 
             return {
                 content: [
                     {
                         type: 'text',
-                        text: `Content Type Schemas (${contentTypeSchemasCache.length} content types found):\n\n${JSON.stringify(contentTypeSchemasCache, null, 2)}`
+                        text: `Content Type Schemas (${contentTypeSchemasCache.length} content types found):\n\n${formattedText}`
                     }
                 ]
             };
@@ -103,12 +106,13 @@ server.registerTool(
     },
     async (params) => {
         const contentTypes = await contentTypeService.list(params);
+        const formattedText = formatContentTypesAsText(contentTypes);
 
         return {
             content: [
                 {
                     type: 'text',
-                    text: JSON.stringify(contentTypes, null, 2)
+                    text: formattedText
                 }
             ]
         };
@@ -149,3 +153,52 @@ const transport = new StdioServerTransport();
 (async () => {
     await server.connect(transport);
 })();
+
+
+// Utility function to transform content types to plain text format
+function formatContentTypesAsText(contentTypes: ContentType[]): string {
+    return contentTypes.map(contentType => {
+        const lines = [
+            `Content Type: ${contentType.name}`,
+            `Description: ${contentType.description || 'No description'}`,
+            `Variable: ${contentType.variable}`,
+            `URL Pattern: ${contentType.folderPath || 'No URL pattern'}`,
+            `Icon: ${contentType.icon || 'No icon'}`,
+            `Total Entries: ${contentType.nEntries || 0}`,
+            '',
+            'Fields:'
+        ];
+
+        // Use fields property directly
+        const fields = contentType.fields || [];
+
+        // Sort fields by sort order
+        fields.sort((a, b) => a.sortOrder - b.sortOrder);
+
+        // Format each field
+        fields.forEach(field => {
+            const attributes = [];
+            if (field.required) attributes.push('Required');
+            if (field.system) attributes.push('System');
+            if (field.searchable) attributes.push('Searchable');
+            if (field.listed) attributes.push('Listed');
+            if (field.unique) attributes.push('Unique');
+
+            const attributesText = attributes.length > 0 ? ` [${attributes.join(', ')}]` : '';
+            const optionalText = !field.required ? ' [Optional]' : '';
+
+            lines.push(`- ${field.name} (${field.variable}) - ${field.fieldTypeLabel || field.fieldType || 'Unknown'}${field.required ? attributesText : optionalText + attributesText}`);
+        });
+
+        // Add workflow information
+        if (contentType.workflows && contentType.workflows.length > 0) {
+            lines.push('');
+            lines.push(`Workflow: ${contentType.workflows.map(w => w.name).join(', ')}`);
+        } else {
+            lines.push('');
+            lines.push('Workflow: No workflow assigned');
+        }
+
+        return lines.join('\n');
+    }).join('\n\n' + '='.repeat(80) + '\n\n');
+}
