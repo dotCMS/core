@@ -8,6 +8,7 @@ import {
     ContentTypeCreateParamsSchema
 } from './services/contentype';
 import { ContentType } from './types/contentype';
+import { formatContentTypesAsText } from './utils/contenttypes';
 
 const server = new McpServer({
     name: 'DotCMS',
@@ -37,13 +38,13 @@ let cacheTimestamp = 0;
 const CACHE_DURATION = 30 * 60 * 1000; // 5 minutes in milliseconds
 
 server.registerTool(
-    'learn_content_type_schemas',
+    'content_type_discovery',
     {
-        title: 'Learn Content Type Schemas',
+        title: 'Content Type Discovery',
         description:
             'IMPORTANT: This tool MUST be called FIRST before any other operations to learn all available content type schemas in the dotCMS instance. This provides the LLM with complete knowledge of all content types, their fields, field types, and structure. The response is cached for 5 minutes to avoid repeated API calls. Use this to understand what content types exist and their complete field definitions before creating or working with content.',
         annotations: {
-            title: 'Learn Content Type Schemas',
+            title: 'Content Type Discovery',
             readOnlyHint: true
         },
         inputSchema: z.object({}).shape
@@ -153,52 +154,3 @@ const transport = new StdioServerTransport();
 (async () => {
     await server.connect(transport);
 })();
-
-
-// Utility function to transform content types to plain text format
-function formatContentTypesAsText(contentTypes: ContentType[]): string {
-    return contentTypes.map(contentType => {
-        const lines = [
-            `Content Type: ${contentType.name}`,
-            `Description: ${contentType.description || 'No description'}`,
-            `Variable: ${contentType.variable}`,
-            `URL Pattern: ${contentType.folderPath || 'No URL pattern'}`,
-            `Icon: ${contentType.icon || 'No icon'}`,
-            `Total Entries: ${contentType.nEntries || 0}`,
-            '',
-            'Fields:'
-        ];
-
-        // Use fields property directly
-        const fields = contentType.fields || [];
-
-        // Sort fields by sort order
-        fields.sort((a, b) => a.sortOrder - b.sortOrder);
-
-        // Format each field
-        fields.forEach(field => {
-            const attributes = [];
-            if (field.required) attributes.push('Required');
-            if (field.system) attributes.push('System');
-            if (field.searchable) attributes.push('Searchable');
-            if (field.listed) attributes.push('Listed');
-            if (field.unique) attributes.push('Unique');
-
-            const attributesText = attributes.length > 0 ? ` [${attributes.join(', ')}]` : '';
-            const optionalText = !field.required ? ' [Optional]' : '';
-
-            lines.push(`- ${field.name} (${field.variable}) - ${field.fieldTypeLabel || field.fieldType || 'Unknown'}${field.required ? attributesText : optionalText + attributesText}`);
-        });
-
-        // Add workflow information
-        if (contentType.workflows && contentType.workflows.length > 0) {
-            lines.push('');
-            lines.push(`Workflow: ${contentType.workflows.map(w => w.name).join(', ')}`);
-        } else {
-            lines.push('');
-            lines.push('Workflow: No workflow assigned');
-        }
-
-        return lines.join('\n');
-    }).join('\n\n' + '='.repeat(80) + '\n\n');
-}
