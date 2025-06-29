@@ -18,6 +18,31 @@ const contentTypeService = new ContentTypeService();
 const siteService = new SiteService();
 const logger = new Logger('CONTEXT_TOOL');
 
+function formatSiteInfo(site: Site): string {
+    return `Current Site: ${site.name} (${site.hostname})
+
+IMPORTANT: When creating or updating content, use this current site's identifier (${site.identifier}) for any host or site fields. This ensures content is properly associated with the current site.
+
+TIPS:
+
+1. Url to edit a piece of content after creation:
+https://<dotcms-url>/dotAdmin/#/c/content/<content-inode>/
+
+2. Url to edit a content type after creation:
+https://<dotcms-url>dotAdmin/#/content-types-angular/edit/<content-type-identifier>
+`;
+}
+
+function createResponseText(contentTypes: ContentType[], site: Site, isCached: boolean, cacheAge?: number): string {
+    const formattedText = formatContentTypesAsText(contentTypes);
+    const siteInfo = formatSiteInfo(site);
+    const cacheInfo = isCached
+        ? `[CACHED RESPONSE] (cached for ${cacheAge}s)`
+        : `[FRESH RESPONSE] (cached for ${Math.round((Date.now() - cacheTimestamp) / 1000)}s)`;
+
+    return `${cacheInfo} ${siteInfo}:\n\n${formattedText}`;
+}
+
 export function registerContextTools(server: McpServer) {
     server.registerTool(
         'context_initialization',
@@ -37,21 +62,17 @@ export function registerContextTools(server: McpServer) {
 
             // Return cached data if it's still valid
             if (contentTypeSchemasCache && currentSiteCache && (now - cacheTimestamp) < CACHE_DURATION) {
+                const cacheAge = Math.round((now - cacheTimestamp) / 1000);
                 logger.log('Returning cached context data', {
-                    cacheAge: Math.round((now - cacheTimestamp) / 1000),
+                    cacheAge,
                     contentTypeCount: contentTypeSchemasCache.length
                 });
-
-                const formattedText = formatContentTypesAsText(contentTypeSchemasCache);
-                const siteInfo = `Current Site: ${currentSiteCache.name} (${currentSiteCache.hostname})
-
-IMPORTANT: When creating or updating content, use this current site's identifier (${currentSiteCache.identifier}) for any host or site fields. This ensures content is properly associated with the current site.`;
 
                 return {
                     content: [
                         {
                             type: 'text',
-                            text: `[CACHED RESPONSE] ${siteInfo} (cached for ${Math.round((now - cacheTimestamp) / 1000)}s):\n\n${formattedText}`
+                            text: createResponseText(contentTypeSchemasCache, currentSiteCache, true, cacheAge)
                         }
                     ]
                 };
@@ -75,16 +96,11 @@ IMPORTANT: When creating or updating content, use this current site's identifier
                 currentSiteCache = currentSite;
                 cacheTimestamp = now;
 
-                const formattedText = formatContentTypesAsText(contentTypes);
-                const siteInfo = `Current Site: ${currentSite.name} (${currentSite.hostname})
-
-IMPORTANT: When creating or updating content, use this current site's identifier (${currentSite.identifier}) for any host or site fields. This ensures content is properly associated with the current site.`;
-
                 return {
                     content: [
                         {
                             type: 'text',
-                            text: `[FRESH RESPONSE] ${siteInfo} (cached for ${Math.round((now - cacheTimestamp) / 1000)}s):\n\n${formattedText}`
+                            text: createResponseText(contentTypes, currentSite, false)
                         }
                     ]
                 };
