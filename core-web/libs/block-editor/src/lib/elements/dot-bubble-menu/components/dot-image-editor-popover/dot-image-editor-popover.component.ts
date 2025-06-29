@@ -9,13 +9,13 @@ import { Editor } from '@tiptap/core';
 import { EditorModalDirective } from '../../../../directive/editor-modal.directive';
 
 @Component({
-    selector: 'dot-image-modal',
-    templateUrl: './dot-image-modal.component.html',
-    styleUrls: ['./dot-image-modal.component.scss'],
+    selector: 'dot-image-editor-popover',
+    templateUrl: './dot-image-editor-popover.component.html',
+    styleUrls: ['./dot-image-editor-popover.component.scss'],
     standalone: true,
     imports: [EditorModalDirective, InputTextModule, ReactiveFormsModule, ButtonModule]
 })
-export class DotImageModalComponent {
+export class DotImageEditorPopoverComponent {
     readonly editor = input.required<Editor>();
     readonly appendTo = input<HTMLElement>();
     @ViewChild('imageModal', { read: EditorModalDirective }) editorModal: EditorModalDirective;

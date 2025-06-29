@@ -1,20 +1,20 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { BubbleMenuComponent } from './bubble-menu.component';
+import { DotBubbleMenuComponent } from './dot-bubble-menu.component';
 
-describe('BubbleMenuComponent', () => {
-    let component: BubbleMenuComponent;
-    let fixture: ComponentFixture<BubbleMenuComponent>;
+describe('DotBubbleMenuComponent', () => {
+    let component: DotBubbleMenuComponent;
+    let fixture: ComponentFixture<DotBubbleMenuComponent>;
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [BubbleMenuComponent],
+            declarations: [DotBubbleMenuComponent],
             teardown: { destroyAfterEach: false }
         }).compileComponents();
     });
 
     beforeEach(() => {
-        fixture = TestBed.createComponent(BubbleMenuComponent);
+        fixture = TestBed.createComponent(DotBubbleMenuComponent);
         component = fixture.componentInstance;
         fixture.detectChanges();
     });

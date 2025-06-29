@@ -33,7 +33,7 @@ import {
 //Editor
 import { DotBlockEditorComponent } from './components/dot-block-editor/dot-block-editor.component';
 import { DotEditorCountBarComponent } from './components/dot-editor-count-bar/dot-editor-count-bar.component';
-import { BubbleMenuComponent } from './elements/bubble-menu/bubble-menu.component';
+import { DotBubbleMenuComponent } from './elements/dot-bubble-menu/dot-bubble-menu.component';
 import {
     BubbleFormComponent,
     BubbleLinkFormComponent,
@@ -72,7 +72,7 @@ const initTranslations = (dotMessageService: DotMessageService) => {
         InputTextareaModule,
         PaginatorModule,
         DotSpinnerModule,
-        BubbleMenuComponent,
+        DotBubbleMenuComponent,
         TiptapBubbleMenuDirective
     ],
     declarations: [
@@ -109,8 +109,7 @@ const initTranslations = (dotMessageService: DotMessageService) => {
     ],
     exports: [
         EditorDirective,
-        BubbleMenuComponent,
-        BubbleLinkFormComponent,
+        DotBubbleMenuComponent,
         ReactiveFormsModule,
         SharedModule,
         BubbleFormComponent,

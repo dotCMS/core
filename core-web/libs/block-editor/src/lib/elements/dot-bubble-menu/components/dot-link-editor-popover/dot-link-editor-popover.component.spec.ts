@@ -1,20 +1,20 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { DotImageModalComponent } from './dot-image-modal.component';
+import { DotLinkEditorPopoverComponent } from './dot-link-editor-popover.component';
 
-describe('DotImageModalComponent', () => {
-    let component: DotImageModalComponent;
-    let fixture: ComponentFixture<DotImageModalComponent>;
+describe('DotLinkEditorPopoverComponent', () => {
+    let component: DotLinkEditorPopoverComponent;
+    let fixture: ComponentFixture<DotLinkEditorPopoverComponent>;
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [DotImageModalComponent],
+            declarations: [DotLinkEditorPopoverComponent],
             teardown: { destroyAfterEach: false }
         }).compileComponents();
     });
 
     beforeEach(() => {
-        fixture = TestBed.createComponent(DotImageModalComponent);
+        fixture = TestBed.createComponent(DotLinkEditorPopoverComponent);
         component = fixture.componentInstance;
         fixture.detectChanges();
     });

@@ -22,8 +22,8 @@ import { OverlayPanelModule } from 'primeng/overlaypanel';
 
 import { Editor } from '@tiptap/core';
 
-import { BubbleLinkFormComponent } from './components/bubble-link-form/bubble-link-form.component';
-import { DotImageModalComponent } from './components/dot-image-modal/dot-image-modal.component';
+import { DotImageEditorPopoverComponent } from './components/dot-image-editor-popover/dot-image-editor-popover.component';
+import { DotLinkEditorPopoverComponent } from './components/dot-link-editor-popover/dot-link-editor-popover.component';
 
 import { EditorModalDirective } from '../../directive/editor-modal.directive';
 import { codeIcon, headerIcons, olIcon, pIcon, quoteIcon, ulIcon } from '../../utils/icons';
@@ -46,22 +46,21 @@ const BUBBLE_MENU_HIDDEN_NODES = {
 
 @Component({
     selector: 'dot-bubble-menu',
-    templateUrl: './bubble-menu.component.html',
-    styleUrls: ['./bubble-menu.component.scss'],
+    templateUrl: './dot-bubble-menu.component.html',
+    styleUrls: ['./dot-bubble-menu.component.scss'],
     imports: [
         CommonModule,
         TiptapBubbleMenuDirective,
         FormsModule,
         DropdownModule,
-        EditorModalDirective,
-        BubbleLinkFormComponent,
-        DotImageModalComponent,
+        DotLinkEditorPopoverComponent,
+        DotImageEditorPopoverComponent,
         OverlayPanelModule
     ],
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class BubbleMenuComponent implements AfterViewInit {
+export class DotBubbleMenuComponent implements AfterViewInit {
     @ViewChild('editorModal') editorModal: EditorModalDirective;
     @ViewChild('bubbleMenu', { read: ElementRef }) bubbleMenuRef: ElementRef<HTMLElement>;
 

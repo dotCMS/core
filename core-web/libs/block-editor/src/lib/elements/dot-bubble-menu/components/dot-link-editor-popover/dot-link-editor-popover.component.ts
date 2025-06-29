@@ -27,9 +27,9 @@ interface Item {
 }
 
 @Component({
-    selector: 'dot-bubble-link-form',
-    templateUrl: './bubble-link-form.component.html',
-    styleUrls: ['./bubble-link-form.component.scss'],
+    selector: 'dot-link-editor-popover',
+    templateUrl: './dot-link-editor-popover.component.html',
+    styleUrls: ['./dot-link-editor-popover.component.scss'],
     standalone: true,
     imports: [
         FormsModule,
@@ -41,7 +41,7 @@ interface Item {
         EditorModalDirective
     ]
 })
-export class BubbleLinkFormComponent implements OnDestroy {
+export class DotLinkEditorPopoverComponent implements OnDestroy {
     @ViewChild('linkModal', { read: EditorModalDirective }) editorModal: EditorModalDirective;
     @ViewChild('input', { read: ElementRef }) input?: ElementRef<HTMLInputElement>;
 
