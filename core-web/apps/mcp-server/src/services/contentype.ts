@@ -208,6 +208,7 @@ export class ContentTypeService extends AgnosticClient {
 
         // Validate each content type object
         const validated = z.array(ContentTypeCreateParamsSchema).safeParse(dataToValidate);
+
         if (!validated.success) {
             this.logger.error('Invalid content type creation parameters', validated.error);
             throw new Error('Invalid parameters: ' + JSON.stringify(validated.error.format()));

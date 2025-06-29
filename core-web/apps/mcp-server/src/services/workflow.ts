@@ -50,6 +50,7 @@ export class WorkflowService extends AgnosticClient {
         };
 
         const validated = WorkflowActionRequestSchema.safeParse(workflowRequest);
+
         if (!validated.success) {
             this.logger.error('Invalid workflow request', validated.error);
             throw new Error(
