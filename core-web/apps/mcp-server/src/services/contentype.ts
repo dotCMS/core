@@ -137,9 +137,14 @@ export class ContentTypeService extends AgnosticClient {
         }
 
         const data = await response.json();
-        // dotCMS returns { entity: ContentType[] }
-        const entity = data.entity;
-        const parsed = z.array(ContentTypeSchema).safeParse(entity);
+        const result = data.entity.map((contentType) => {
+            return {
+                ...contentType,
+                fields: this.#extractFieldsFromLayout(contentType.layout)
+            }
+        });
+
+        const parsed = z.array(ContentTypeSchema).safeParse(result);
 
         if (!parsed.success) {
             throw new Error(
@@ -185,6 +190,7 @@ export class ContentTypeService extends AgnosticClient {
         const data = await response.json();
         // dotCMS returns { entity: ContentType[] }
         const entity = data.entity;
+
         const parsed = z.array(ContentTypeSchema).safeParse(entity);
         if (!parsed.success) {
             throw new Error(
