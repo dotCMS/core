@@ -1,5 +1,5 @@
-import { Component, inject, input, ViewChild } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Component, input, ViewChild } from '@angular/core';
+import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
@@ -8,6 +8,11 @@ import { Editor } from '@tiptap/core';
 
 import { EditorModalDirective } from '../../../../directive/editor-modal.directive';
 
+/**
+ * A popover component for editing image properties in the DotCMS block editor.
+ * This component provides a form interface to modify image attributes such as src, alt text, and title.
+ * It integrates with the TipTap editor to update image node attributes.
+ */
 @Component({
     selector: 'dot-image-editor-popover',
     templateUrl: './dot-image-editor-popover.component.html',
@@ -16,22 +21,27 @@ import { EditorModalDirective } from '../../../../directive/editor-modal.directi
     imports: [EditorModalDirective, InputTextModule, ReactiveFormsModule, ButtonModule]
 })
 export class DotImageEditorPopoverComponent {
+    @ViewChild('imagePopover', { read: EditorModalDirective }) imagePopover: EditorModalDirective;
     readonly editor = input.required<Editor>();
     readonly appendTo = input<HTMLElement>();
-    @ViewChild('imageModal', { read: EditorModalDirective }) editorModal: EditorModalDirective;
 
-    private readonly fb = inject(FormBuilder);
-
-    form = this.fb.group({
-        path: ['', Validators.required],
-        alt: [''],
-        title: ['']
+    protected readonly imageForm = new FormGroup({
+        src: new FormControl('', Validators.required),
+        alt: new FormControl(''),
+        title: new FormControl('')
     });
 
-    onShowFn = this.onShow.bind(this);
+    protected readonly tippyOptions = {
+        onShow: this.initializeFormWithImageData.bind(this)
+    };
 
-    onApply() {
-        if (!this.form.valid) {
+    /**
+     * Saves the form values and updates the image attributes in the editor.
+     * Validates the form before applying changes and hides the popover on success.
+     * Updates the 'dotImage' node with the new src, alt, and title attributes.
+     */
+    protected saveImageChanges() {
+        if (!this.imageForm.valid) {
             return;
         }
 
@@ -39,28 +49,41 @@ export class DotImageEditorPopoverComponent {
             .chain()
             .focus()
             .updateAttributes('dotImage', {
-                src: this.form.value.path,
-                alt: this.form.value.alt,
-                title: this.form.value.title
+                src: this.imageForm.value.src,
+                alt: this.imageForm.value.alt,
+                title: this.imageForm.value.title
             })
             .run();
 
-        this.editorModal?.hide();
+        this.imagePopover?.hide();
     }
 
-    onCancel() {
-        this.editorModal?.hide();
+    /**
+     * Cancels the image editing operation and closes the popover.
+     * Does not save any changes made to the form.
+     */
+    protected cancelImageEditing() {
+        this.imagePopover?.hide();
     }
 
-    toggle() {
-        this.editorModal?.toggle();
+    /**
+     * Toggles the visibility of the image editor popover.
+     * Can be used to both show and hide the popover.
+     */
+    protected toggleImagePopover() {
+        this.imagePopover?.toggle();
     }
 
-    onShow() {
+    /**
+     * Initializes the form with current image attributes when the popover is shown.
+     * Extracts image data from the selected dotImage node and populates the form fields.
+     * Handles both direct image attributes and nested data properties.
+     */
+    protected initializeFormWithImageData() {
         const { alt, src, title, data } = this.editor().getAttributes('dotImage');
         const { title: dotTitle = '', asset } = data || {};
-        this.form.patchValue({
-            path: src || asset,
+        this.imageForm.patchValue({
+            src: src || asset,
             alt: alt || dotTitle,
             title: title || dotTitle
         });
