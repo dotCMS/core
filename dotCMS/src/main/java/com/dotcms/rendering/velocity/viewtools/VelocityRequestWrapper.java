@@ -94,8 +94,11 @@ public class VelocityRequestWrapper extends javax.servlet.http.HttpServletReques
     }
 
     @Override
-    public void removeAttribute(String arg0) {
-        // do nothing
+    public void removeAttribute(String key) {
+        if (SET_VALUE_BLACKLIST.contains(key)) {
+            return;
+        }
+        super.removeAttribute(key);
     }
 
     @Override
