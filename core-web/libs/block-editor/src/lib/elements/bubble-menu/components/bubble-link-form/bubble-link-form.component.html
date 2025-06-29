@@ -11,6 +11,7 @@
         placeholder="Paste link or search for pages"
         [(ngModel)]="searchTerm"
         (ngModelChange)="onSearchInput($event)"
+        (keydown.enter)="addLink(searchTerm())"
         [autofocus]="true"
         [style]="{ width: '100%' }"
         (keydown)="onKeyDown($event)" />
@@ -34,9 +35,9 @@
         <p-listbox
             #resultListbox
             [options]="items()"
-            [(ngModel)]="selectedItem"
             optionLabel="name"
-            (onChange)="addLink($event)"
+            [(ngModel)]="selectedItem"
+            (onChange)="addLink(selectedItem()?.value)"
             [style]="{ width: '100%' }"
             [listStyle]="{ 'max-height': '250px' }">
             <ng-template let-item pTemplate="item">
@@ -55,8 +56,9 @@
         </p-listbox>
     } @else if (searchTerm()) {
         <div class="empty-message">
-            <span>
+            <span class="empty-message__text">
                 No results for
+                <br />
                 <b>{{ searchTerm() }}</b>
             </span>
         </div>

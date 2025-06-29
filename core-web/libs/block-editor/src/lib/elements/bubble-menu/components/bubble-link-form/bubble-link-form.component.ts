@@ -92,12 +92,9 @@ export class BubbleLinkFormComponent implements OnDestroy {
         this.searchSubject.next(value);
     }
 
-    protected addLink(event: any) {
-        const item = event.value || event;
-        if (item && item.value) {
-            this.editor().chain().focus().setLink({ href: item.value, target: '_blank' }).run();
-            this.editorModal.hide();
-        }
+    protected addLink(value: string) {
+        this.editor().chain().focus().setLink({ href: value, target: '_blank' }).run();
+        this.editorModal.hide();
     }
 
     private performSearch(query: string) {
