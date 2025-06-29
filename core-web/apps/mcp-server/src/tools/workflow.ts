@@ -3,14 +3,10 @@ import { z } from 'zod';
 
 import { WorkflowService } from '../services/workflow';
 import { ContentCreateParamsSchema } from '../types/workflow';
+import { Logger } from '../utils/logger';
 
 const workflowService = new WorkflowService();
-
-const log = (message: string, data?: unknown) => {
-    const timestamp = new Date().toISOString();
-    const logMessage = `[${timestamp}] ${message}${data ? '\n' + JSON.stringify(data, null, 2) : ''}\n`;
-    process.stderr.write(logMessage);
-};
+const logger = new Logger('WORKFLOW_TOOL');
 
 export function registerWorkflowTools(server: McpServer) {
     server.registerTool(
@@ -32,10 +28,12 @@ export function registerWorkflowTools(server: McpServer) {
         },
         async (params) => {
             try {
+                logger.log('Starting content save tool execution', params);
+
                 const response = await workflowService.saveContent(params.content, params.comments);
                 const entity = response.entity;
 
-                log('SAVED CONTENT SUCCESSFULLY ===============================', entity);
+                logger.log('Content saved successfully', entity);
 
                 return {
                     content: [
@@ -46,7 +44,7 @@ export function registerWorkflowTools(server: McpServer) {
                     ]
                 };
             } catch (error) {
-                log('ERROR SAVING CONTENT ===============================', error);
+                logger.error('Error saving content', error);
 
                 return {
                     isError: true,

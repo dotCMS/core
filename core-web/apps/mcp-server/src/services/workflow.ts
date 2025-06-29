@@ -8,16 +8,14 @@ import {
     WorkflowActionResponseSchema,
     ContentCreateParamsSchema
 } from '../types/workflow';
-
-const log = (message: string, data?: unknown) => {
-    const timestamp = new Date().toISOString();
-    const logMessage = `[${timestamp}] ${message}${data ? '\n' + JSON.stringify(data, null, 2) : ''}\n`;
-    process.stderr.write(logMessage);
-};
+import { Logger } from '../utils/logger';
 
 export class WorkflowService extends AgnosticClient {
+    private logger: Logger;
+
     constructor() {
         super();
+        this.logger = new Logger('WORKFLOW_SERVICE');
     }
 
     /**
@@ -32,13 +30,18 @@ export class WorkflowService extends AgnosticClient {
         params: ContentCreateParams,
         comments?: string
     ): Promise<WorkflowActionResponse> {
+        this.logger.log('Starting content save operation', { params, comments });
+
         const validatedParams = ContentCreateParamsSchema.safeParse(params);
 
         if (!validatedParams.success) {
+            this.logger.error('Invalid content parameters', validatedParams.error);
             throw new Error(
                 'Invalid content parameters: ' + JSON.stringify(validatedParams.error.format())
             );
         }
+
+        this.logger.log('Content parameters validated successfully', validatedParams.data);
 
         const workflowRequest: WorkflowActionRequest = {
             actionName: 'save',
@@ -48,18 +51,17 @@ export class WorkflowService extends AgnosticClient {
 
         const validated = WorkflowActionRequestSchema.safeParse(workflowRequest);
         if (!validated.success) {
+            this.logger.error('Invalid workflow request', validated.error);
             throw new Error(
                 'Invalid workflow request: ' + JSON.stringify(validated.error.format())
             );
         }
 
+        this.logger.log('Workflow request validated successfully', validated.data);
+
         // Use FormData to match curl -F behavior
         const formData = new FormData();
         formData.append('json', JSON.stringify(validated.data));
-
-        // Add dummy file like curl
-        // const dummyFile = new Blob(['dummy content'], { type: 'text/plain' });
-        // formData.append('file', dummyFile, 'dummy.txt');
 
         // Create a proper File object instead of Blob
         const dummyFile = new File(['dummy content'], 'dummy.txt', {
@@ -68,31 +70,59 @@ export class WorkflowService extends AgnosticClient {
         formData.append('file', dummyFile);
 
         const url = `${this.dotcmsUrl}/api/v1/workflow/actions/fire`;
-        const response = await this.fetch(url, {
-            method: 'PUT',
-            body: formData,
-            headers: {
-                Authorization: `Bearer ${this.authToken}`
+        this.logger.log('Making request to dotCMS server', { url, method: 'PUT' });
+
+        try {
+            const response = await this.fetch(url, {
+                method: 'PUT',
+                body: formData,
+                headers: {
+                    Authorization: `Bearer ${this.authToken}`
+                }
+            });
+
+            this.logger.log('Received response from dotCMS server', {
+                status: response.status,
+                statusText: response.statusText,
+                ok: response.ok
+            });
+
+            if (!response.ok) {
+                // Try to get error details from response
+                let errorDetails = '';
+                try {
+                    const errorData = await response.text();
+                    errorDetails = errorData;
+                } catch (e) {
+                    errorDetails = 'Could not read error response';
+                }
+
+                this.logger.error('dotCMS server returned error', {
+                    status: response.status,
+                    statusText: response.statusText,
+                    errorDetails
+                });
+
+                throw new Error(`Failed to save content: ${response.status} ${response.statusText}. Details: ${errorDetails}`);
             }
-        });
 
-        if (!response.ok) {
-            log('WORKFLOW ACTION RESPONSE ERROR 1 ===============================', response);
-            throw new Error(`Failed to save content: ${response.status} ${response.statusText}`);
+            const data = await response.json();
+            this.logger.log('Parsed JSON response from dotCMS server', data);
+
+            const parsed = WorkflowActionResponseSchema.safeParse(data);
+
+            if (!parsed.success) {
+                this.logger.error('Invalid workflow response format', parsed.error);
+                throw new Error('Invalid workflow response: ' + JSON.stringify(parsed.error.format()));
+            }
+
+            this.logger.log('Content saved successfully', parsed.data);
+
+            return parsed.data;
+
+        } catch (error) {
+            this.logger.error('Error during content save operation', error);
+            throw error;
         }
-
-        const data = await response.json();
-
-        const parsed = WorkflowActionResponseSchema.safeParse(data);
-
-        if (!parsed.success) {
-            log('WORKFLOW ACTION RESPONSE ERROR ===============================', parsed.error);
-            throw new Error('Invalid workflow response: ' + JSON.stringify(parsed.error.format()));
-        }
-
-        // Log to stderr to avoid interfering with MCP protocol
-        log('WORKFLOW ACTION RESPONSE SUCCESS ===============================', parsed.data);
-
-        return parsed.data;
     }
 }

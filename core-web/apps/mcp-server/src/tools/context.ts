@@ -6,6 +6,7 @@ import { SiteService } from "../services/site";
 import { ContentType } from "../types/contentype";
 import { Site } from "../types/site";
 import { formatContentTypesAsText } from "../utils/contenttypes";
+import { Logger } from "../utils/logger";
 
 // Cache for content type schemas to avoid repeated API calls
 let contentTypeSchemasCache: ContentType[] | null = null;
@@ -15,6 +16,7 @@ const CACHE_DURATION = 30 * 60 * 1000; // 5 minutes in milliseconds
 
 const contentTypeService = new ContentTypeService();
 const siteService = new SiteService();
+const logger = new Logger('CONTEXT_TOOL');
 
 export function registerContextTools(server: McpServer) {
     server.registerTool(
@@ -30,10 +32,16 @@ export function registerContextTools(server: McpServer) {
             inputSchema: z.object({}).shape
         },
         async () => {
+            logger.log('Starting context initialization tool execution');
             const now = Date.now();
 
             // Return cached data if it's still valid
             if (contentTypeSchemasCache && currentSiteCache && (now - cacheTimestamp) < CACHE_DURATION) {
+                logger.log('Returning cached context data', {
+                    cacheAge: Math.round((now - cacheTimestamp) / 1000),
+                    contentTypeCount: contentTypeSchemasCache.length
+                });
+
                 const formattedText = formatContentTypesAsText(contentTypeSchemasCache);
                 const siteInfo = `Current Site: ${currentSiteCache.name} (${currentSiteCache.hostname})
 
@@ -51,10 +59,17 @@ IMPORTANT: When creating or updating content, use this current site's identifier
 
             // Fetch fresh data
             try {
+                logger.log('Cache miss or expired, fetching fresh context data');
+
                 const [contentTypes, currentSite] = await Promise.all([
                     contentTypeService.getContentTypesSchema(),
                     siteService.getCurrentSite()
                 ]);
+
+                logger.log('Fresh context data fetched successfully', {
+                    contentTypeCount: contentTypes.length,
+                    siteName: currentSite.name
+                });
 
                 contentTypeSchemasCache = contentTypes;
                 currentSiteCache = currentSite;
@@ -74,6 +89,8 @@ IMPORTANT: When creating or updating content, use this current site's identifier
                     ]
                 };
             } catch (error) {
+                logger.error('Error fetching context data', error);
+
                 return {
                     isError: true,
                     content: [

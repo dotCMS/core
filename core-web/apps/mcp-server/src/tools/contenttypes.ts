@@ -7,8 +7,10 @@ import {
     ContentTypeCreateParamsSchema
 } from '../services/contentype';
 import { formatContentTypesAsText } from '../utils/contenttypes';
+import { Logger } from '../utils/logger';
 
 const contentTypeService = new ContentTypeService();
+const logger = new Logger('CONTENT_TYPES_TOOL');
 
 export function registerContentTypeTools(server: McpServer) {
     server.registerTool(
@@ -25,8 +27,12 @@ export function registerContentTypeTools(server: McpServer) {
         },
         async (params) => {
             try {
+                logger.log('Starting content type list tool execution', params);
+
                 const contentTypes = await contentTypeService.list(params);
                 const formattedText = formatContentTypesAsText(contentTypes);
+
+                logger.log('Content types listed successfully', { count: contentTypes.length });
 
                 return {
                     content: [
@@ -37,6 +43,8 @@ export function registerContentTypeTools(server: McpServer) {
                     ]
                 };
             } catch (error) {
+                logger.error('Error listing content types', error);
+
                 return {
                     isError: true,
                     content: [
@@ -68,17 +76,23 @@ export function registerContentTypeTools(server: McpServer) {
         },
         async (params) => {
             try {
+                logger.log('Starting content type creation tool execution', params);
+
                 const contentTypes = await contentTypeService.create(params.contentType);
 
-            return {
-                content: [
-                    {
-                        type: 'text',
-                        text: formatContentTypesAsText(contentTypes)
+                logger.log('Content type created successfully', { count: contentTypes.length });
+
+                return {
+                    content: [
+                        {
+                            type: 'text',
+                            text: formatContentTypesAsText(contentTypes)
                         }
                     ]
                 };
             } catch (error) {
+                logger.error('Error creating content type', error);
+
                 return {
                     isError: true,
                     content: [
