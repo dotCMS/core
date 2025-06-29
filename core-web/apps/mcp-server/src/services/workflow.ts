@@ -122,7 +122,7 @@ export class WorkflowService extends AgnosticClient {
 
         } catch (error) {
             this.logger.error('Error during content save operation', error);
-            throw error;
+            throw new Error('Error during content save operation: ' + error);
         }
     }
 }

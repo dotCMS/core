@@ -58,7 +58,7 @@ export class SiteService extends AgnosticClient {
 
         } catch (error) {
             this.logger.error('Error fetching current site', error);
-            throw error;
+            throw new Error('Error fetching current site: ' + error);
         }
     }
 }

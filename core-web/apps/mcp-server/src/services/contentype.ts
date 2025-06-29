@@ -151,7 +151,8 @@ export class ContentTypeService extends AgnosticClient {
             if (!response.ok) {
                 this.logger.error('dotCMS server returned error', {
                     status: response.status,
-                    statusText: response.statusText
+                    statusText: response.statusText,
+                    body: await response.text()
                 });
                 throw new Error(
                     `Failed to fetch content types: ${response.status} ${response.statusText}`
@@ -185,7 +186,7 @@ export class ContentTypeService extends AgnosticClient {
 
         } catch (error) {
             this.logger.error('Error fetching content types', error);
-            throw error;
+            throw new Error('Error fetching content types: ' + error);
         }
     }
 
@@ -262,7 +263,7 @@ export class ContentTypeService extends AgnosticClient {
 
         } catch (error) {
             this.logger.error('Error creating content types', error);
-            throw error;
+            throw new Error('Error creating content types: ' + error);
         }
     }
 
