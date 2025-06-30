@@ -2,6 +2,7 @@
     <dot-category-field-chips
         data-testId="category-chip-list"
         [categories]="store.selected()"
+        [disabled]="$isDisabled()"
         (remove)="store.removeRootSelected($event)" />
 }
 
@@ -9,7 +10,7 @@
     <button
         type="button"
         (click)="openCategoriesDialog()"
-        [disabled]="store.isDialogOpen()"
+        [disabled]="store.isDialogOpen() || $isDisabled()"
         [label]="'edit.content.category-field.show-categories-dialog' | dm"
         class="p-button-sm p-button-text p-button-secondary"
         data-testId="show-dialog-btn"

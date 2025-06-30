@@ -1,3 +1,5 @@
+import { EVENT_TYPES } from './dot-content-analytics.constants';
+
 // Extend Window interface to include our custom properties
 declare global {
     interface Window {
@@ -39,21 +41,53 @@ export interface DotCMSAnalyticsConfig {
 }
 
 /**
- * Individual analytics event structure for DotCMS.
- * Represents a single event within an analytics request sent to the DotCMS analytics server.
+ * Supported event types in DotCMS Analytics.
+ * Only two event types are supported: pageview and track.
  */
-export interface DotCMSAnalyticsEvent {
+export type DotCMSEventType = (typeof EVENT_TYPES)[keyof typeof EVENT_TYPES];
+
+/**
+ * Base structure for all analytics events.
+ * All events share this common structure.
+ */
+export interface DotCMSEventBase {
     /** The type of event being tracked */
-    event_type: 'pageview' | 'track';
-    /** Page data associated with the event */
-    page: DotCMSPageData;
-    /** Device and browser information */
-    device: DotCMSDeviceData;
-    /** UTM parameters for campaign tracking */
-    utm?: DotCMSUtmData;
+    event_type: DotCMSEventType;
     /** Local timestamp when the event occurred */
     local_time: string;
 }
+
+/**
+ * Pageview-specific analytics event structure.
+ * Contains data specific to page view tracking.
+ */
+export interface DotCMSPageViewEvent extends DotCMSEventBase {
+    event_type: 'pageview';
+    /** Pageview-specific event data with structured format */
+    data: {
+        /** Page data associated with the event */
+        page: DotCMSPageData;
+        /** Device and browser information */
+        device: DotCMSDeviceData;
+        /** UTM parameters for campaign tracking (optional) */
+        utm?: DotCMSUtmData;
+    };
+}
+
+/**
+ * Track-specific analytics event structure.
+ * Contains data specific to custom event tracking.
+ */
+export interface DotCMSTrackEvent extends DotCMSEventBase {
+    event_type: 'track';
+    /** Track-specific event data with flexible structure */
+    data: Record<string, unknown>;
+}
+
+/**
+ * Union type for all possible analytics events.
+ */
+export type DotCMSEvent = DotCMSPageViewEvent | DotCMSTrackEvent;
 
 /**
  * Analytics request body for page view events in DotCMS.
@@ -62,11 +96,10 @@ export interface DotCMSAnalyticsEvent {
 export interface DotCMSPageViewRequestBody {
     /** Context information shared across all events */
     context: DotCMSAnalyticsContext;
-    /** Array of analytics events to be tracked */
-    events: DotCMSAnalyticsEvent[];
+    /** Array of pageview analytics events to be tracked */
+    events: DotCMSPageViewEvent[];
 }
 
-// TODO: Add properties to the track request body
 /**
  * Analytics request body for track events in DotCMS.
  * Structure sent to the DotCMS analytics server for custom event tracking.
@@ -74,8 +107,24 @@ export interface DotCMSPageViewRequestBody {
 export interface DotCMSTrackRequestBody {
     /** Context information shared across all events */
     context: DotCMSAnalyticsContext;
-    /** Array of analytics events to be tracked */
-    events?: DotCMSAnalyticsEvent[];
+    /** Array of track analytics events to be tracked */
+    events: DotCMSTrackEvent[];
+}
+
+/**
+ * Union type for all possible request bodies.
+ */
+export type DotCMSAnalyticsRequestBody = DotCMSPageViewRequestBody | DotCMSTrackRequestBody;
+
+/**
+ * Enriched payload structure returned by the enricher plugin.
+ * Contains pre-structured events and context for direct use in analytics requests.
+ */
+export interface DotCMSEnrichedPayload {
+    /** Analytics context shared across events */
+    context: DotCMSAnalyticsContext;
+    /** Array of pre-structured analytics events */
+    events: DotCMSEvent[];
 }
 
 /**
@@ -120,24 +169,24 @@ export interface DotCMSBrowserEventData {
  * The payload structure for DotCMS analytics events.
  * This interface represents the complete data structure that flows through
  * the analytics pipeline, including original event data and enriched context.
+ *
+ * This is the internal payload used by Analytics.js and our plugins.
  */
 export interface DotCMSAnalyticsPayload {
-    /** The type of analytics event */
-    type: string;
-    /** Additional properties associated with the event */
-    properties: Record<string, unknown>;
     /** The event name or identifier */
     event: string;
+    /** Additional properties associated with the event */
+    properties: Record<string, unknown>;
     /** Configuration options for the event */
     options: Record<string, unknown>;
 
-    // Properties added by enricher plugin
+    // Properties added by plugins during processing
     /** Analytics context shared across events */
-    context: DotCMSAnalyticsContext;
+    context?: DotCMSAnalyticsContext;
     /** Page data for the current page */
-    page: DotCMSPageData;
+    page?: DotCMSPageData;
     /** Device and browser information */
-    device: DotCMSDeviceData;
+    device?: DotCMSDeviceData;
     /** UTM parameters for campaign tracking */
     utm?: DotCMSUtmData;
     /** Local timestamp when the event occurred */
@@ -162,9 +211,8 @@ export interface DotCMSAnalyticsParams {
 export interface DotCMSAnalytics {
     /**
      * Track a page view event.
-     * @param payload - Optional additional data to include with the page view
      */
-    pageView: (payload?: Record<string, unknown>) => void;
+    pageView: () => void;
 
     /**
      * Track a custom event.
@@ -238,14 +286,12 @@ export interface DotCMSPageData {
     doc_protocol: string | undefined;
     /** Document search parameters */
     doc_search: string;
-    /** DotCMS host domain */
-    dot_host: string | undefined;
-    /** DotCMS page path */
-    dot_path: string | undefined;
+    /** Document host domain */
+    doc_host: string | undefined;
+    /** Document path */
+    doc_path: string | undefined;
     /** Page title */
     title: string | undefined;
-    /** User agent string */
-    user_agent?: string;
     /** Language identifier */
     language_id?: string;
     /** Persona identifier */

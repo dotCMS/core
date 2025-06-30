@@ -41,7 +41,7 @@ public class AnalyticsValidatorUtilTest {
 
         final JSONObject jsonObject = new JSONObject(json);
 
-        final List<AnalyticsValidatorUtil.Error> errors = new AnalyticsValidatorUtil().validateGlobalContext(jsonObject);
+        final List<AnalyticsValidatorUtil.Error> errors = AnalyticsValidatorUtil.INSTANCE.validateGlobalContext(jsonObject);
 
         assertEquals(1, errors.size());
 
@@ -75,7 +75,7 @@ public class AnalyticsValidatorUtilTest {
 
         final JSONObject jsonObject = new JSONObject(json);
 
-        final List<AnalyticsValidatorUtil.Error> errors = new AnalyticsValidatorUtil().validateGlobalContext(jsonObject);
+        final List<AnalyticsValidatorUtil.Error> errors = AnalyticsValidatorUtil.INSTANCE.validateGlobalContext(jsonObject);
 
         assertEquals(1, errors.size());
 
@@ -110,7 +110,7 @@ public class AnalyticsValidatorUtilTest {
 
         final JSONObject jsonObject = new JSONObject(json);
 
-        final List<AnalyticsValidatorUtil.Error> errors = new AnalyticsValidatorUtil().validateGlobalContext(jsonObject);
+        final List<AnalyticsValidatorUtil.Error> errors = AnalyticsValidatorUtil.INSTANCE.validateGlobalContext(jsonObject);
 
         assertEquals(1, errors.size());
 
@@ -144,7 +144,7 @@ public class AnalyticsValidatorUtilTest {
 
         final JSONObject jsonObject = new JSONObject(json);
 
-        final List<AnalyticsValidatorUtil.Error> errors = new AnalyticsValidatorUtil().validateGlobalContext(jsonObject);
+        final List<AnalyticsValidatorUtil.Error> errors = AnalyticsValidatorUtil.INSTANCE.validateGlobalContext(jsonObject);
 
         assertEquals(1, errors.size());
 
@@ -179,7 +179,7 @@ public class AnalyticsValidatorUtilTest {
 
         final JSONObject jsonObject = new JSONObject(json);
 
-        final List<AnalyticsValidatorUtil.Error> errors = new AnalyticsValidatorUtil().validateGlobalContext(jsonObject);
+        final List<AnalyticsValidatorUtil.Error> errors = AnalyticsValidatorUtil.INSTANCE.validateGlobalContext(jsonObject);
 
         assertEquals(1, errors.size());
 
@@ -213,7 +213,7 @@ public class AnalyticsValidatorUtilTest {
 
         final JSONObject jsonObject = new JSONObject(json);
 
-        final List<AnalyticsValidatorUtil.Error> errors = new AnalyticsValidatorUtil().validateGlobalContext(jsonObject);
+        final List<AnalyticsValidatorUtil.Error> errors = AnalyticsValidatorUtil.INSTANCE.validateGlobalContext(jsonObject);
 
         assertEquals(1, errors.size());
 
@@ -246,7 +246,7 @@ public class AnalyticsValidatorUtilTest {
 
         final JSONObject jsonObject = new JSONObject(json);
 
-        final List<AnalyticsValidatorUtil.Error> errors = new AnalyticsValidatorUtil().validateGlobalContext(jsonObject);
+        final List<AnalyticsValidatorUtil.Error> errors = AnalyticsValidatorUtil.INSTANCE.validateGlobalContext(jsonObject);
 
         assertEquals(7, errors.size());
         final List<String> errorFields =
@@ -317,7 +317,7 @@ public class AnalyticsValidatorUtilTest {
 
         final JSONObject jsonObject = new JSONObject(json);
 
-        final List<AnalyticsValidatorUtil.Error> errors = new AnalyticsValidatorUtil().validateGlobalContext(jsonObject);
+        final List<AnalyticsValidatorUtil.Error> errors = AnalyticsValidatorUtil.INSTANCE.validateGlobalContext(jsonObject);
 
         assertEquals(4, errors.size());
         final List<String> errorFields =
@@ -375,7 +375,7 @@ public class AnalyticsValidatorUtilTest {
 
         final JSONObject jsonObject = new JSONObject(json);
 
-        final List<AnalyticsValidatorUtil.Error> errors = new AnalyticsValidatorUtil().validateGlobalContext(jsonObject);
+        final List<AnalyticsValidatorUtil.Error> errors = AnalyticsValidatorUtil.INSTANCE.validateGlobalContext(jsonObject);
 
         assertEquals(1, errors.size());
 
@@ -414,7 +414,7 @@ public class AnalyticsValidatorUtilTest {
 
         final JSONObject jsonObject = new JSONObject(json);
 
-        final List<AnalyticsValidatorUtil.Error> errors = new AnalyticsValidatorUtil()
+        final List<AnalyticsValidatorUtil.Error> errors = AnalyticsValidatorUtil.INSTANCE
                 .validateEvents((JSONArray) jsonObject.get("events"));
 
         assertEquals(1, errors.size());
@@ -438,7 +438,7 @@ public class AnalyticsValidatorUtilTest {
      */
     @Test
     public void dataIsRequired() {
-        final int errorsCountExpected = 10;
+        final int errorsCountExpected = 11;
         final String json = "{" +
             "\"context\": {" +
                 "\"site_key\": \"xyz\"," +
@@ -454,7 +454,7 @@ public class AnalyticsValidatorUtilTest {
 
         final JSONObject jsonObject = new JSONObject(json);
 
-        final List<AnalyticsValidatorUtil.Error> errors = new AnalyticsValidatorUtil()
+        final List<AnalyticsValidatorUtil.Error> errors = AnalyticsValidatorUtil.INSTANCE
                 .validateEvents((JSONArray) jsonObject.get("events"));
 
         assertEquals(errorsCountExpected, errors.size());
@@ -475,6 +475,7 @@ public class AnalyticsValidatorUtilTest {
         assertTrue(errorsField.contains("events[0].data.device.language"));
         assertTrue(errorsField.contains("events[0].data.device.viewport_width"));
         assertTrue(errorsField.contains("events[0].data.device.viewport_height"));
+        assertTrue(errorsField.contains("events[0].local_time"));
 
         final List<ValidationErrorCode> errorsCode = errors.stream()
                 .map(AnalyticsValidatorUtil.Error::getCode)
@@ -499,6 +500,7 @@ public class AnalyticsValidatorUtilTest {
         assertTrue(errorsMessages.contains("Required field is missing: data.device.language"));
         assertTrue(errorsMessages.contains("Required field is missing: data.device.viewport_width"));
         assertTrue(errorsMessages.contains("Required field is missing: data.device.viewport_height"));
+        assertTrue(errorsMessages.contains("Required field is missing: local_time"));
     }
 
     /**
@@ -517,6 +519,7 @@ public class AnalyticsValidatorUtilTest {
             "\"events\":[" +
               "{" +
                     "\"event_type\": \"pageview\"," +
+                    "\"local_time\": \"2025-06-09T14:30:00+02:00\"," +
                     "\"data\": {" +
                         "\"page\": {" +
                             "\"url\": \"http://www.google.com\"," +
@@ -536,10 +539,57 @@ public class AnalyticsValidatorUtilTest {
 
         final JSONObject jsonObject = new JSONObject(json);
 
-        final List<AnalyticsValidatorUtil.Error> errors = new AnalyticsValidatorUtil()
+        final List<AnalyticsValidatorUtil.Error> errors = AnalyticsValidatorUtil.INSTANCE
                 .validateEvents((JSONArray) jsonObject.get("events"));
 
         assertTrue(errors.isEmpty());
+
+    }
+
+    /**
+     * Method to test: {@link AnalyticsValidatorUtil#validateEvents(JSONArray)}
+     * When: A pageview with all the required fields are sent, but with a wrong date format syntax
+     * Should: no error should be returned
+     */
+    @Test
+    public void wrongLocalTimeDateFormat() {
+        final String json = "{" +
+            "\"context\": {" +
+                "\"site_key\": \"xyz\"," +
+                "\"session_id\": \"abc\"," +
+                "\"user_id\": \"abc\"" +
+            "}," +
+            "\"events\":[" +
+                "{" +
+                    "\"event_type\": \"pageview\"," +
+                    "\"local_time\": \"2025-06-09T14:30:00\"," +
+                    "\"data\": {" +
+                        "\"page\": {" +
+                            "\"url\": \"http://www.google.com\"," +
+                            "\"title\": \"Google\"," +
+                            "\"doc_encoding\": \"UTF8\"" +
+                        "}," +
+                        "\"device\": {" +
+                            "\"screen_resolution\": \"1200x800\"," +
+                            "\"language\": \"en\"," +
+                            "\"viewport_width\": \"1200\"," +
+                            "\"viewport_height\": \"800\"" +
+                        "}" +
+                    "}" +
+                "}" +
+            "]" +
+        "}";
+
+        final JSONObject jsonObject = new JSONObject(json);
+        final List<AnalyticsValidatorUtil.Error> errors = AnalyticsValidatorUtil.INSTANCE
+                .validateEvents((JSONArray) jsonObject.get("events"));
+
+        assertEquals(1, errors.size());
+        assertEquals("events[0].local_time", errors.get(0).getField());
+        assertEquals("INVALID_DATE_FORMAT", errors.get(0).getCode().toString());
+        assertEquals("Field value is not a valid date in format '2025-06-09T14:30:00+02:00': 2025-06-09T14:30:00",
+                errors.get(0).getMessage());
+
 
     }
 
@@ -559,6 +609,7 @@ public class AnalyticsValidatorUtilTest {
             "\"events\":[" +
                 "{" +
                     "\"event_type\": \"pageview\"," +
+                    "\"local_time\": \"2025-06-09T14:30:00+02:00\"," +
                     "\"data\": {" +
                         "\"page\": {" +
                             "\"url\": \"http://www.google.com\"," +
@@ -582,7 +633,7 @@ public class AnalyticsValidatorUtilTest {
 
         final JSONObject jsonObject = new JSONObject(json);
 
-        final List<AnalyticsValidatorUtil.Error> errors = new AnalyticsValidatorUtil()
+        final List<AnalyticsValidatorUtil.Error> errors = AnalyticsValidatorUtil.INSTANCE
                 .validateEvents((JSONArray) jsonObject.get("events"));
 
         assertEquals(4, errors.size());
