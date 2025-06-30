@@ -84,61 +84,67 @@ export class DotBubbleMenuComponent {
             name: 'Heading 1',
             value: 'heading-1',
             icon: headerIcons[0],
-            command: () => this.editor().chain().focus().clearNodes().setHeading({ level: 1 }).run()
+            command: () =>
+                this.editor().chain().focus().clearNodes().toggleHeading({ level: 1 }).run()
         },
         {
             name: 'Heading 2',
             value: 'heading-2',
             icon: headerIcons[1],
-            command: () => this.editor().chain().focus().clearNodes().setHeading({ level: 2 }).run()
+            command: () =>
+                this.editor().chain().focus().clearNodes().toggleHeading({ level: 2 }).run()
         },
         {
             name: 'Heading 3',
             value: 'heading-3',
             icon: headerIcons[2],
-            command: () => this.editor().chain().focus().clearNodes().setHeading({ level: 3 }).run()
+            command: () =>
+                this.editor().chain().focus().clearNodes().toggleHeading({ level: 3 }).run()
         },
         {
             name: 'Heading 4',
             value: 'heading-4',
             icon: headerIcons[3],
-            command: () => this.editor().chain().focus().clearNodes().setHeading({ level: 4 }).run()
+            command: () =>
+                this.editor().chain().focus().clearNodes().toggleHeading({ level: 4 }).run()
         },
         {
             name: 'Heading 5',
             value: 'heading-5',
             icon: headerIcons[4],
-            command: () => this.editor().chain().focus().clearNodes().setHeading({ level: 5 }).run()
+            command: () =>
+                this.editor().chain().focus().clearNodes().toggleHeading({ level: 5 }).run()
         },
         {
             name: 'Heading 6',
             value: 'heading-6',
             icon: headerIcons[5],
-            command: () => this.editor().chain().focus().clearNodes().setHeading({ level: 6 }).run()
+            command: () =>
+                this.editor().chain().focus().clearNodes().toggleHeading({ level: 6 }).run()
         },
         {
             name: 'Ordered List',
             value: 'orderedList',
             icon: olIcon,
-            command: () => this.editor().chain().focus().clearNodes().toggleOrderedList?.().run()
+            command: () => this.editor().chain().focus().clearNodes().toggleOrderedList().run()
         },
         {
             name: 'Bullet List',
             value: 'bulletList',
             icon: ulIcon,
-            command: () => this.editor().chain().focus().clearNodes().toggleBulletList?.().run()
+            command: () => this.editor().chain().focus().clearNodes().toggleBulletList().run()
         },
         {
             name: 'Blockquote',
             value: 'blockquote',
             icon: quoteIcon,
-            command: () => this.editor().chain().focus().clearNodes().toggleBlockquote?.().run()
+            command: () => this.editor().chain().focus().clearNodes().toggleBlockquote().run()
         },
         {
             name: 'Code Block',
             value: 'codeBlock',
             icon: codeIcon,
-            command: () => this.editor().chain().focus().clearNodes().toggleCodeBlock?.().run()
+            command: () => this.editor().chain().focus().clearNodes().toggleCodeBlock().run()
         }
     ];
 

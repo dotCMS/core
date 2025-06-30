@@ -33,7 +33,8 @@ export class DotImageEditorPopoverComponent {
     });
 
     protected readonly tippyOptions = {
-        onShow: this.initializeFormWithImageData.bind(this)
+        onShow: this.initializeFormWithImageData.bind(this),
+        onShown: this.focusSearchInput.bind(this)
     };
 
     @HostListener('document:keydown.escape', ['$event'])
@@ -95,6 +96,13 @@ export class DotImageEditorPopoverComponent {
             alt: alt || dotTitle,
             title: title || dotTitle
         });
+    }
+
+    /**
+     * Sets focus to the search input field and highlights the current selection in the editor.
+     * Called when the popover is shown to provide immediate user interaction feedback.
+     */
+    private focusSearchInput() {
         this.urlInput?.nativeElement.focus();
     }
 }
