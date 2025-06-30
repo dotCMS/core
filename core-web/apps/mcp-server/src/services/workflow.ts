@@ -11,11 +11,11 @@ import {
 import { Logger } from '../utils/logger';
 
 export class WorkflowService extends AgnosticClient {
-    private logger: Logger;
+    private serviceLogger: Logger;
 
     constructor() {
         super();
-        this.logger = new Logger('WORKFLOW_SERVICE');
+        this.serviceLogger = new Logger('WORKFLOW_SERVICE');
     }
 
     /**
@@ -30,18 +30,18 @@ export class WorkflowService extends AgnosticClient {
         params: ContentCreateParams,
         comments?: string
     ): Promise<WorkflowActionResponse> {
-        this.logger.log('Starting content save operation', { params, comments });
+        this.serviceLogger.log('Starting content save operation', { params, comments });
 
         const validatedParams = ContentCreateParamsSchema.safeParse(params);
 
         if (!validatedParams.success) {
-            this.logger.error('Invalid content parameters', validatedParams.error);
+            this.serviceLogger.error('Invalid content parameters', validatedParams.error);
             throw new Error(
                 'Invalid content parameters: ' + JSON.stringify(validatedParams.error.format())
             );
         }
 
-        this.logger.log('Content parameters validated successfully', validatedParams.data);
+        this.serviceLogger.log('Content parameters validated successfully', validatedParams.data);
 
         const workflowRequest: WorkflowActionRequest = {
             actionName: 'save',
@@ -52,13 +52,13 @@ export class WorkflowService extends AgnosticClient {
         const validated = WorkflowActionRequestSchema.safeParse(workflowRequest);
 
         if (!validated.success) {
-            this.logger.error('Invalid workflow request', validated.error);
+            this.serviceLogger.error('Invalid workflow request', validated.error);
             throw new Error(
                 'Invalid workflow request: ' + JSON.stringify(validated.error.format())
             );
         }
 
-        this.logger.log('Workflow request validated successfully', validated.data);
+        this.serviceLogger.log('Workflow request validated successfully', validated.data);
 
         // Use FormData to match curl -F behavior
         const formData = new FormData();
@@ -70,8 +70,7 @@ export class WorkflowService extends AgnosticClient {
         });
         formData.append('file', dummyFile);
 
-        const url = `${this.dotcmsUrl}/api/v1/workflow/actions/fire`;
-        this.logger.log('Making request to dotCMS server', { url, method: 'PUT' });
+        const url = '/api/v1/workflow/actions/fire';
 
         try {
             const response = await this.fetch(url, {
@@ -82,44 +81,22 @@ export class WorkflowService extends AgnosticClient {
                 }
             });
 
-            this.logger.log('Received response from dotCMS server', {
-                status: response.status,
-                statusText: response.statusText,
-                ok: response.ok
-            });
-
-            if (!response.ok) {
-                // Try to get error details from response
-                let errorDetails = '';
-                try {
-                    const errorData = await response.text();
-                    errorDetails = errorData;
-                } catch (e) {
-                    errorDetails = 'Could not read error response';
-                }
-
-                this.logger.error('dotCMS server returned error', response);
-
-                throw new Error(`Failed to save content: ${response.status} ${response.statusText}. Details: ${errorDetails}`);
-            }
-
             const data = await response.json();
-            this.logger.log('Parsed JSON response from dotCMS server', data);
 
             const parsed = WorkflowActionResponseSchema.safeParse(data);
 
             if (!parsed.success) {
-                this.logger.error('Invalid workflow response format', parsed.error);
+                this.serviceLogger.error('Invalid workflow response format', parsed.error);
                 throw new Error('Invalid workflow response: ' + JSON.stringify(parsed.error.format()));
             }
 
-            this.logger.log('Content saved successfully', parsed.data);
+            this.serviceLogger.log('Content saved successfully', parsed.data);
 
             return parsed.data;
 
         } catch (error) {
-            this.logger.error('Error during content save operation', error);
-            throw new Error('Error during content save operation: ' + error);
+            this.serviceLogger.error('Error during content save operation', error);
+            throw error;
         }
     }
 }

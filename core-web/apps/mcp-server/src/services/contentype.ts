@@ -105,11 +105,11 @@ export const ContentTypeCreateParamsSchema = z.object({
 type ContentTypeCreateParams = z.infer<typeof ContentTypeCreateParamsSchema>;
 
 export class ContentTypeService extends AgnosticClient {
-    private logger: Logger;
+    private serviceLogger: Logger;
 
     constructor() {
         super();
-        this.logger = new Logger('CONTENT_TYPE_SERVICE');
+        this.serviceLogger = new Logger('CONTENT_TYPE_SERVICE');
     }
 
     /**
@@ -118,42 +118,26 @@ export class ContentTypeService extends AgnosticClient {
      * @returns Promise with the API response JSON
      */
     async list(params?: ContentTypeListParams): Promise<ContentType[]> {
-        this.logger.log('Starting content type list operation', { params });
+        this.serviceLogger.log('Starting content type list operation', { params });
 
         const validated = ContentTypeListParamsSchema.safeParse(params || {});
         if (!validated.success) {
-            this.logger.error('Invalid content type list parameters', validated.error);
+            this.serviceLogger.error('Invalid content type list parameters', validated.error);
             throw new Error('Invalid parameters: ' + JSON.stringify(validated.error.format()));
         }
 
-        this.logger.log('Content type list parameters validated successfully', validated.data);
+        this.serviceLogger.log('Content type list parameters validated successfully', validated.data);
 
         const searchParams = new URLSearchParams();
         Object.entries(validated.data).forEach(([key, value]) => {
             if (value !== undefined) searchParams.append(key, String(value));
         });
 
-        const url = `${this.dotcmsUrl}/api/v1/contenttype${searchParams.toString() ? '?' + searchParams.toString() : ''}`;
-        this.logger.log('Making request to dotCMS server', { url, method: 'GET' });
+        const url = `/api/v1/contenttype${searchParams.toString() ? '?' + searchParams.toString() : ''}`;
 
         try {
             const response = await this.fetch(url, { method: 'GET' });
-
-            this.logger.log('Received response from dotCMS server', {
-                status: response.status,
-                statusText: response.statusText,
-                ok: response.ok
-            });
-
-            if (!response.ok) {
-                this.logger.error('dotCMS server returned error', response);
-                throw new Error(
-                    `Failed to fetch content types: ${response.status} ${response.statusText}`
-                );
-            }
-
             const data = await response.json();
-            this.logger.log('Parsed JSON response from dotCMS server', data);
 
             const result = data.entity.map((contentType) => {
                 return {
@@ -162,24 +146,22 @@ export class ContentTypeService extends AgnosticClient {
                 }
             });
 
-            this.logger.log('Extracted fields from layout', { count: result.length });
-
             const parsed = z.array(ContentTypeSchema).safeParse(result);
 
             if (!parsed.success) {
-                this.logger.error('Invalid content type response format', parsed.error);
+                this.serviceLogger.error('Invalid content type response format', parsed.error);
                 throw new Error(
                     'Invalid content type response: ' + JSON.stringify(parsed.error.format())
                 );
             }
 
-            this.logger.log('Content types fetched successfully', { count: parsed.data.length });
+            this.serviceLogger.log('Content types fetched successfully', { count: parsed.data.length });
 
             return parsed.data;
 
         } catch (error) {
-            this.logger.error('Error fetching content types', error);
-            throw new Error('Error fetching content types: ' + error);
+            this.serviceLogger.error('Error fetching content types', error);
+            throw error;
         }
     }
 
@@ -191,7 +173,7 @@ export class ContentTypeService extends AgnosticClient {
     async create(
         params: ContentTypeCreateParams | ContentTypeCreateParams[]
     ): Promise<ContentType[]> {
-        this.logger.log('Starting content type creation operation', {
+        this.serviceLogger.log('Starting content type creation operation', {
             isArray: Array.isArray(params),
             count: Array.isArray(params) ? params.length : 1
         });
@@ -203,11 +185,11 @@ export class ContentTypeService extends AgnosticClient {
         const validated = z.array(ContentTypeCreateParamsSchema).safeParse(dataToValidate);
 
         if (!validated.success) {
-            this.logger.error('Invalid content type creation parameters', validated.error);
+            this.serviceLogger.error('Invalid content type creation parameters', validated.error);
             throw new Error('Invalid parameters: ' + JSON.stringify(validated.error.format()));
         }
 
-        this.logger.log('Content type creation parameters validated successfully', validated.data);
+        this.serviceLogger.log('Content type creation parameters validated successfully', validated.data);
 
         // Auto-generate clazz for fields that don't have it
         const processedData = validated.data.map(contentType => ({
@@ -218,9 +200,7 @@ export class ContentTypeService extends AgnosticClient {
             }))
         }));
 
-        const url = `${this.dotcmsUrl}/api/v1/contenttype`;
-        this.logger.log('Making request to dotCMS server', { url, method: 'POST' });
-
+        const url = '/api/v1/contenttype';
         try {
             const response = await this.fetch(url, {
                 method: 'POST',
@@ -230,45 +210,32 @@ export class ContentTypeService extends AgnosticClient {
                 body: JSON.stringify(isArray ? processedData : processedData[0])
             });
 
-            this.logger.log('Received response from dotCMS server', {
-                status: response.status,
-                statusText: response.statusText,
-                ok: response.ok
-            });
-
-            if (!response.ok) {
-                this.logger.error('dotCMS server returned error', await response.json());
-                throw new Error(
-                    `Failed to create content type(s): ${response.status} ${response.statusText}`
-                );
-            }
-
             const data = await response.json();
-            this.logger.log('Parsed JSON response from dotCMS server', data);
+            this.serviceLogger.log('Parsed JSON response from dotCMS server', data);
 
             // dotCMS returns { entity: ContentType[] }
             const entity = data.entity;
 
             const parsed = z.array(ContentTypeSchema).safeParse(entity);
             if (!parsed.success) {
-                this.logger.error('Invalid content type response format', parsed.error);
+                this.serviceLogger.error('Invalid content type response format', parsed.error);
                 throw new Error(
                     'Invalid content type response: ' + JSON.stringify(parsed.error.format())
                 );
             }
 
-            this.logger.log('Content types created successfully', { count: parsed.data.length });
+            this.serviceLogger.log('Content types created successfully', { count: parsed.data.length });
 
             return parsed.data;
 
         } catch (error) {
-            this.logger.error('Error creating content types', error);
+            this.serviceLogger.error('Error creating content types', error);
             throw new Error('Error creating content types: ' + error);
         }
     }
 
     async getContentTypesSchema(): Promise<ContentType[]> {
-        this.logger.log('Starting content types schema fetch operation');
+        this.serviceLogger.log('Starting content types schema fetch operation');
 
         const allContentTypes = await this.list({
             page: 1,
@@ -278,7 +245,7 @@ export class ContentTypeService extends AgnosticClient {
             direction: 'ASC'
         });
 
-        this.logger.log('Retrieved content types for schema', { count: allContentTypes.length });
+        this.serviceLogger.log('Retrieved content types for schema', { count: allContentTypes.length });
 
         const result = allContentTypes.map((contentType) => {
             return {
@@ -287,7 +254,7 @@ export class ContentTypeService extends AgnosticClient {
             }
         });
 
-        this.logger.log('Content types schema processed successfully', { count: result.length });
+        this.serviceLogger.log('Content types schema processed successfully', { count: result.length });
 
         return result;
     }
