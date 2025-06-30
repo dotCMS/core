@@ -11,8 +11,7 @@ import { takeUntil } from 'rxjs/operators';
 import { Editor, posToDOMRect } from '@tiptap/core';
 import { BubbleMenuView } from '@tiptap/extension-bubble-menu';
 
-import { BASIC_TIPPY_OPTIONS } from '../../../shared';
-import { getNodePosition } from '../../bubble-menu/utils';
+import { BASIC_TIPPY_OPTIONS, getNodePosition } from '../../../shared';
 import { BubbleFormComponent } from '../bubble-form.component';
 import { BUBBLE_FORM_PLUGIN_KEY } from '../bubble-form.extension';
 import { imageFormControls } from '../utils';

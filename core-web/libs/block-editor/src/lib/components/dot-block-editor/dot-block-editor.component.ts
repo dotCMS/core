@@ -49,7 +49,6 @@ import {
     AssetUploader,
     BubbleAssetFormExtension,
     BubbleFormExtension,
-    DEFAULT_LANG_ID,
     DotComands,
     DotConfigExtension,
     DotFloatingButton,
@@ -68,7 +67,8 @@ import {
     formatHTML,
     removeInvalidNodes,
     RestoreDefaultDOMAttrs,
-    SetDocAttrStep
+    SetDocAttrStep,
+    DEFAULT_LANG_ID
 } from '../../shared';
 
 @Component({
