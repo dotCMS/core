@@ -78,7 +78,7 @@ export class DotImageEditorPopoverComponent {
      * Toggles the visibility of the image editor popover.
      * Can be used to both show and hide the popover.
      */
-    protected toggleImagePopover() {
+    protected toggle() {
         this.imagePopover?.toggle();
     }
 

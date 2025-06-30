@@ -3,7 +3,6 @@ import { Node } from 'prosemirror-model';
 
 import { CommonModule } from '@angular/common';
 import {
-    AfterViewInit,
     ChangeDetectionStrategy,
     ChangeDetectorRef,
     Component,
@@ -60,7 +59,7 @@ const BUBBLE_MENU_HIDDEN_NODES = {
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotBubbleMenuComponent implements AfterViewInit {
+export class DotBubbleMenuComponent {
     @ViewChild('editorModal') editorModal: EditorModalDirective;
     @ViewChild('bubbleMenu', { read: ElementRef }) bubbleMenuRef: ElementRef<HTMLElement>;
 
@@ -73,7 +72,6 @@ export class DotBubbleMenuComponent implements AfterViewInit {
     protected readonly onBeforeUpdateFn = this.onBeforeUpdate.bind(this);
     protected readonly showShould = signal<boolean>(true);
     protected readonly showImageMenu = signal<boolean>(false);
-    protected readonly bubbleMenuElement = signal<HTMLElement | null>(null);
 
     protected readonly nodeTypeOptions: NodeTypeOption[] = [
         {
@@ -156,10 +154,6 @@ export class DotBubbleMenuComponent implements AfterViewInit {
         this.editorModal?.toggle();
     }
 
-    protected getBubbleMenuElement(): HTMLElement | null {
-        return this.bubbleMenuElement();
-    }
-
     protected preventLostEditorSelection(event: MouseEvent) {
         event.preventDefault();
     }
@@ -237,15 +231,5 @@ export class DotBubbleMenuComponent implements AfterViewInit {
         const baseNodeType = node.type.name;
 
         return hasLevelAttribute ? `${baseNodeType}-${node.attrs.level}` : baseNodeType;
-    }
-
-    ngAfterViewInit(): void {
-        this.bubbleMenuElement.set(this.bubbleMenuRef?.nativeElement || null);
-        this.cd.detectChanges();
-    }
-
-    protected updateBubbleMenuElement(): void {
-        this.bubbleMenuElement.set(this.bubbleMenuRef?.nativeElement || null);
-        this.cd.detectChanges();
     }
 }
