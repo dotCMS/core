@@ -1,5 +1,7 @@
 package com.dotmarketing.common.reindex;
 
+import static com.dotcms.shutdown.ShutdownCoordinator.isShutdownRelated;
+
 import com.dotcms.api.system.event.Visibility;
 import com.dotcms.business.SystemCache;
 import com.dotcms.concurrent.DotConcurrentFactory;
@@ -247,8 +249,9 @@ public class ReindexThread {
                 }
             } catch (Throwable ex) {
                 // Check if this is a shutdown-related exception
-                if (isShutdownRelated(ex) || ShutdownCoordinator.isRequestDraining()) {
-                    Logger.info(this, "Shutdown-related exception in ReindexThread, stopping operations: " + ex.getMessage());
+                if (isShutdownRelated(ex) || ShutdownCoordinator.isRequestDraining() || 
+                    ex instanceof com.dotcms.shutdown.ShutdownException) {
+                    Logger.debug(this, "ReindexThread stopping due to shutdown: " + ex.getMessage());
                     break;
                 }
                 Logger.error(this, "ReindexThread Exception", ex);
@@ -269,30 +272,7 @@ public class ReindexThread {
         }
     }
     
-    /**
-     * Check if an exception is related to shutdown (database connection closed, etc.)
-     */
-    private boolean isShutdownRelated(Throwable ex) {
-        if (ex == null) return false;
-        
-        String message = ex.getMessage();
-        if (message != null) {
-            message = message.toLowerCase();
-            // Common shutdown-related error messages
-            if (message.contains("connection") && (message.contains("closed") || message.contains("terminated"))) {
-                return true;
-            }
-            if (message.contains("database") && message.contains("shutdown")) {
-                return true;
-            }
-            if (message.contains("terminating connection due to administrator command")) {
-                return true;
-            }
-        }
-        
-        // Check cause recursively
-        return isShutdownRelated(ex.getCause());
-    }
+    
 
     private void sleep() {
         while (state.get() == ThreadState.PAUSED) {

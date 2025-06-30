@@ -1,15 +1,10 @@
 package com.dotcms.shutdown;
 
-import com.dotcms.concurrent.DotConcurrentFactory;
-import com.dotcms.enterprise.LicenseUtil;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.common.reindex.ReindexThread;
-import com.dotmarketing.quartz.QuartzUtils;
+import com.dotcms.cdi.CDIUtils;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 
-import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -17,6 +12,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
@@ -43,12 +39,14 @@ public class ShutdownCoordinator {
     private static final String SHUTDOWN_COMPONENT_TIMEOUT_SECONDS_PROP = "shutdown.component.timeout.seconds";
     private static final String SHUTDOWN_REQUEST_DRAIN_TIMEOUT_SECONDS_PROP = "shutdown.request.drain.timeout.seconds";
     private static final String SHUTDOWN_REQUEST_DRAIN_CHECK_INTERVAL_MS_PROP = "shutdown.request.drain.check.interval.ms";
-    
+    private static final String JMX_BUSY_THREADS_TIMEOUT_SECONDS_PROP = "shutdown.jmx.busy.threads.timeout.seconds";
+
     private static final int DEFAULT_SHUTDOWN_TIMEOUT_SECONDS = 45;
     private static final int DEFAULT_COMPONENT_TIMEOUT_SECONDS = 10;
     private static final int DEFAULT_REQUEST_DRAIN_TIMEOUT_SECONDS = 15;
     private static final int DEFAULT_REQUEST_DRAIN_CHECK_INTERVAL_MS = 250;
-    
+    private static final int DEFAULT_JMX_BUSY_THREADS_TIMEOUT_SECONDS = 1;
+
     private static volatile ShutdownCoordinator instance;
     private static final AtomicInteger activeRequestCount = new AtomicInteger(0);
     private final AtomicBoolean shutdownInProgress = new AtomicBoolean(false);
@@ -57,11 +55,13 @@ public class ShutdownCoordinator {
     
     private final int shutdownTimeoutSeconds;
     private final int componentTimeoutSeconds;
+    private final int jmxBusyThreadsTimeoutSeconds;
     private final boolean debugMode;
     
     private ShutdownCoordinator() {
         this.shutdownTimeoutSeconds = Config.getIntProperty(SHUTDOWN_TIMEOUT_SECONDS_PROP, DEFAULT_SHUTDOWN_TIMEOUT_SECONDS);
         this.componentTimeoutSeconds = Config.getIntProperty(SHUTDOWN_COMPONENT_TIMEOUT_SECONDS_PROP, DEFAULT_COMPONENT_TIMEOUT_SECONDS);
+        this.jmxBusyThreadsTimeoutSeconds = Config.getIntProperty(JMX_BUSY_THREADS_TIMEOUT_SECONDS_PROP, DEFAULT_JMX_BUSY_THREADS_TIMEOUT_SECONDS);
         this.debugMode = Config.getBooleanProperty("shutdown.debug", false);
         
         if (debugMode) {
@@ -85,59 +85,6 @@ public class ShutdownCoordinator {
         return instance;
     }
     
-
-    
-    /**
-     * Safe logging that falls back to System.out when log4j is unavailable
-     */
-    private void safeLog(String level, String message) {
-        safeLog(level, message, null);
-    }
-    
-    /**
-     * Simplified logging - just use log4j since it's available during our shutdown
-     */
-    private void safeLog(String level, String message, Throwable throwable) {
-        switch (level.toUpperCase()) {
-            case "INFO":
-                if (throwable != null) {
-                    Logger.error(this, message, throwable);
-                } else {
-                    Logger.info(this, message);
-                }
-                break;
-            case "WARN":
-                if (throwable != null) {
-                    Logger.warn(this, message, throwable);
-                } else {
-                    Logger.warn(this, message);
-                }
-                break;
-            case "ERROR":
-                if (throwable != null) {
-                    Logger.error(this, message, throwable);
-                } else {
-                    Logger.error(this, message);
-                }
-                break;
-            case "DEBUG":
-                if (throwable != null) {
-                    Logger.debug(this, message, throwable);
-                } else {
-                    Logger.debug(this, message);
-                }
-                break;
-            default:
-                if (throwable != null) {
-                    Logger.info(this, message + ": " + throwable.getMessage());
-                } else {
-                    Logger.info(this, message);
-                }
-        }
-    }
-    
-
-    
     /**
      * Perform a coordinated shutdown of all dotCMS components.
      * This method is idempotent - it can be called multiple times safely.
@@ -146,20 +93,20 @@ public class ShutdownCoordinator {
      */
     public boolean shutdown() {
         if (debugMode) {
-            safeLog("DEBUG", "ShutdownCoordinator.shutdown() called");
+            Logger.debug(this, "ShutdownCoordinator.shutdown() called");
         }
         
         if (!shutdownInProgress.compareAndSet(false, true)) {
-            safeLog("INFO", "Shutdown already in progress, waiting for completion...");
+            Logger.info(this, "Shutdown already in progress, waiting for completion...");
             return waitForShutdownCompletion();
         }
         
         if (shutdownCompleted.get()) {
-            safeLog("INFO", "Shutdown already completed");
+            Logger.info(this, "Shutdown already completed");
             return true;
         }
         
-        safeLog("INFO", "Starting coordinated shutdown with timeout of " + shutdownTimeoutSeconds + " seconds");
+        Logger.info(this, "Starting coordinated shutdown with timeout of " + shutdownTimeoutSeconds + " seconds");
         
         final ExecutorService shutdownExecutor = Executors.newSingleThreadExecutor(r -> {
             Thread t = new Thread(r, "dotcms-shutdown-coordinator");
@@ -174,18 +121,18 @@ public class ShutdownCoordinator {
             
             final boolean success = shutdownFuture.get(shutdownTimeoutSeconds, TimeUnit.SECONDS);
             shutdownCompleted.set(true);
-            safeLog("INFO", "Coordinated shutdown completed successfully");
+            Logger.info(this, "Coordinated shutdown completed successfully");
             return success;
             
         } catch (java.util.concurrent.TimeoutException e) {
-            safeLog("ERROR", "Shutdown timed out after " + shutdownTimeoutSeconds + " seconds, cancelling background task", e);
+            Logger.error(this, "Shutdown timed out after " + shutdownTimeoutSeconds + " seconds, cancelling background task", e);
             if (shutdownFuture != null) {
                 shutdownFuture.cancel(true); // Cancel the background task to prevent memory leak
             }
             shutdownCompleted.set(true);
             return false;
         } catch (Exception e) {
-            safeLog("ERROR", "Shutdown failed: " + e.getMessage(), e);
+            Logger.error(this, "Shutdown failed: " + e.getMessage(), e);
             shutdownCompleted.set(true);
             return false;
         } finally {
@@ -226,49 +173,55 @@ public class ShutdownCoordinator {
      */
     private boolean performShutdown() {
         long shutdownStartTime = System.currentTimeMillis();
-        safeLog("INFO", "Starting coordinated shutdown process");
+        Logger.info(this, "Starting coordinated shutdown process");
         
         // Phase 1: Request draining - wait for active requests to complete
         long phase1Start = System.currentTimeMillis();
-        safeLog("DEBUG", "Phase 1: Starting request draining");
+        Logger.debug(this, "Phase 1: Starting request draining");
         drainActiveRequests();
         long phase1Duration = System.currentTimeMillis() - phase1Start;
-        safeLog("INFO", String.format("Phase 1: Request draining completed (%dms)", phase1Duration));
+        Logger.info(this, String.format("Phase 1: Request draining completed (%dms)", phase1Duration));
         
         // Phase 2: Component shutdown operations
         long phase2Start = System.currentTimeMillis();
-        safeLog("DEBUG", "Phase 2: Starting component shutdown operations");
-        final List<ShutdownOperation> operations = createShutdownOperations();
+        Logger.debug(this, "Phase 2: Starting component shutdown operations");
+        final List<ShutdownTask> tasks = createShutdownTasks();
         boolean allSuccessful = true;
         
-        for (ShutdownOperation operation : operations) {
+        for (ShutdownTask task : tasks) {
             try {
-                safeLog("DEBUG", "Executing shutdown operation: " + operation.getName());
+                Logger.debug(this, "Executing shutdown task: " + task.getName());
                 
-                final CompletableFuture<Void> operationFuture = CompletableFuture.runAsync(operation::execute);
+                final CompletableFuture<Void> taskFuture = CompletableFuture.runAsync(() -> {
+                    try {
+                        task.run();
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                });
                 
                 // Use custom timeout if specified, otherwise use default component timeout
-                int timeoutToUse = operation.getTimeoutSeconds() > 0 ? operation.getTimeoutSeconds() : componentTimeoutSeconds;
-                if (debugMode && operation.getTimeoutSeconds() > 0) {
-                    safeLog("DEBUG", "Using custom timeout of " + timeoutToUse + "s for operation: " + operation.getName());
+                int timeoutToUse = task.getTimeoutSeconds() > 0 ? task.getTimeoutSeconds() : componentTimeoutSeconds;
+                if (debugMode && task.getTimeoutSeconds() > 0) {
+                    Logger.debug(this, "Using custom timeout of " + timeoutToUse + "s for task: " + task.getName());
                 }
                 
-                operationFuture.get(timeoutToUse, TimeUnit.SECONDS);
+                taskFuture.get(timeoutToUse, TimeUnit.SECONDS);
                 
-                safeLog("DEBUG", "Completed shutdown operation: " + operation.getName());
+                Logger.debug(this, "Completed shutdown task: " + task.getName());
                 
             } catch (Exception e) {
-                safeLog("WARN", "Shutdown operation '" + operation.getName() + "' failed or timed out: " + e.getMessage());
+                Logger.warn(this, "Shutdown task '" + task.getName() + "' failed or timed out: " + e.getMessage());
                 allSuccessful = false;
-                // Continue with other operations even if one fails
+                // Continue with other tasks even if one fails
             }
         }
         
         long phase2Duration = System.currentTimeMillis() - phase2Start;
-        safeLog("INFO", String.format("Phase 2: Component shutdown operations completed (%dms)", phase2Duration));
+        Logger.info(this, String.format("Phase 2: Component shutdown operations completed (%dms)", phase2Duration));
         
         long totalDuration = System.currentTimeMillis() - shutdownStartTime;
-        safeLog("INFO", String.format("Coordinated shutdown process completed %s (total: %dms, phase1: %dms, phase2: %dms)", 
+        Logger.info(this, String.format("Coordinated shutdown process completed %s (total: %dms, phase1: %dms, phase2: %dms)", 
             (allSuccessful ? "successfully" : "with warnings"), totalDuration, phase1Duration, phase2Duration));
         
         return allSuccessful;
@@ -285,7 +238,7 @@ public class ShutdownCoordinator {
         requestDrainingInProgress.set(true);
         
         try {
-            safeLog("DEBUG", String.format("Beginning request draining (timeout: %ds, check interval: %dms)", 
+            Logger.debug(this, String.format("Beginning request draining (timeout: %ds, check interval: %dms)", 
                 drainTimeout, checkInterval));
             
             long drainStartTime = System.currentTimeMillis();
@@ -293,7 +246,7 @@ public class ShutdownCoordinator {
             
             // Initial check
             int initialActiveRequests = activeRequestCount.get();
-            safeLog("INFO", String.format("Initial active request count: %d", initialActiveRequests));
+            Logger.info(this, String.format("Initial active request count: %d", initialActiveRequests));
             
             // If no active requests from the start, skip the draining loop
             if (initialActiveRequests == 0) {
@@ -301,14 +254,14 @@ public class ShutdownCoordinator {
                 try {
                     initialBusyThreads = getBusyConnectorThreads();
                 } catch (Exception e) {
-                    safeLog("DEBUG", "Failed to query initial JMX busy threads: " + e.getMessage());
+                    Logger.debug(this, "Failed to query initial JMX busy threads: " + e.getMessage());
                 }
                 
                 if (initialBusyThreads == 0) {
-                    safeLog("INFO", "No active requests or busy threads detected - skipping request draining");
+                    Logger.info(this, "No active requests or busy threads detected - skipping request draining");
                     return;
                 }
-                safeLog("INFO", String.format("No active requests but %d busy threads detected - proceeding with draining", initialBusyThreads));
+                Logger.info(this, String.format("No active requests but %d busy threads detected - proceeding with draining", initialBusyThreads));
             }
         
         while (System.currentTimeMillis() - drainStartTime < drainTimeoutMs) {
@@ -319,26 +272,30 @@ public class ShutdownCoordinator {
             try {
                 busyThreads = getBusyConnectorThreads();
             } catch (Exception e) {
-                safeLog("DEBUG", "Failed to query JMX for busy threads, continuing with activeRequests only: " + e.getMessage());
+                Logger.debug(this, "Failed to query JMX for busy threads, continuing with activeRequests only: " + e.getMessage());
             }
             
             if (activeRequests == 0 && busyThreads == 0) {
                 long drainTime = System.currentTimeMillis() - drainStartTime;
-                safeLog("INFO", String.format("Request draining completed - no active requests (%dms)", drainTime));
+                Logger.info(this, String.format("Request draining completed - no active requests (%dms)", drainTime));
                 return;
             }
             
             // Log progress - first few iterations at INFO, then DEBUG
             long elapsed = System.currentTimeMillis() - drainStartTime;
-            String logLevel = elapsed < 2000 ? "INFO" : "DEBUG";
-            safeLog(logLevel, String.format("Waiting for requests to complete: %d active requests, %d busy threads (elapsed: %dms)", 
-                activeRequests, busyThreads, elapsed));
+            final String message = String.format("Waiting for requests to complete: %d active requests, %d busy threads (elapsed: %dms)",
+                    activeRequests, busyThreads, elapsed);
+            if (elapsed < 2000) {
+                Logger.info(this, message);
+            } else {
+                Logger.debug(this, message);
+            }
             
             try {
                 Thread.sleep(checkInterval);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-                safeLog("WARN", "Request draining interrupted");
+                Logger.warn(this, "Request draining interrupted");
                 return;
             }
         }
@@ -349,16 +306,16 @@ public class ShutdownCoordinator {
         try {
             finalBusyThreads = getBusyConnectorThreads();
         } catch (Exception e) {
-            safeLog("DEBUG", "Failed to query final JMX busy threads: " + e.getMessage());
+            Logger.debug(this, "Failed to query final JMX busy threads: " + e.getMessage());
         }
         
         long drainTime = System.currentTimeMillis() - drainStartTime;
         
         if (finalActiveRequests > 0 || finalBusyThreads > 0) {
-            safeLog("WARN", String.format("Request draining timeout reached after %dms - proceeding with %d active requests, %d busy threads", 
+            Logger.warn(this, String.format("Request draining timeout reached after %dms - proceeding with %d active requests, %d busy threads", 
                 drainTime, finalActiveRequests, finalBusyThreads));
         } else {
-            safeLog("INFO", String.format("Request draining completed at timeout (%dms)", drainTime));
+            Logger.info(this, String.format("Request draining completed at timeout (%dms)", drainTime));
         }
         
         } finally {
@@ -425,13 +382,13 @@ public class ShutdownCoordinator {
                 }
             }, executor);
             
-            // Wait for result with a 1-second timeout
-            return future.get(1, TimeUnit.SECONDS);
+            // Wait for result with a timeout
+            return future.get(jmxBusyThreadsTimeoutSeconds, TimeUnit.SECONDS);
             
         } catch (Exception e) {
             // If JMX fails or times out, return 0 (assume no busy threads)
             if (debugMode) {
-                safeLog("DEBUG", "JMX query for busy threads failed or timed out: " + e.getMessage());
+                Logger.debug(this, "JMX query for busy threads failed or timed out: " + e.getMessage());
             }
             return 0;
         } finally {
@@ -451,170 +408,70 @@ public class ShutdownCoordinator {
     }
     
     /**
-     * Create the list of shutdown operations in the correct order.
+     * Create the list of shutdown tasks in the correct order.
      */
-    private List<ShutdownOperation> createShutdownOperations() {
-        final List<ShutdownOperation> operations = new ArrayList<>();
+    private List<ShutdownTask> createShutdownTasks() {
+        List<ShutdownTask> tasks = CDIUtils.getBeans(ShutdownTask.class);
         
-        // Order is important - shutdown in reverse order of startup dependencies
-        
-        operations.add(new ShutdownOperation("License cleanup", () -> {
-            try {
-                LicenseUtil.freeLicenseOnRepo();
-            } catch (Exception e) {
-                Logger.warn(ShutdownCoordinator.class, "License cleanup failed: " + e.getMessage());
+        // Always log ShutdownTask discovery in case of issues, but limit to warn level if debug is off
+        Logger.info(this, "Found " + tasks.size() + " ShutdownTask implementations for shutdown coordination");
+        for (ShutdownTask task : tasks) {
+            Class<?> taskClass = task.getClass();
+            String className = taskClass.getName();
+            Class<?> actualClass = getActualClass(taskClass);
+            
+            if (actualClass != taskClass) {
+                Logger.debug(this, "CDI proxy detected: " + className + " -> actual class: " + actualClass.getName());
             }
-        }));
-        
-        // Reindex thread should be stopped early to prevent database access during shutdown
-        operations.add(new ShutdownOperation("Reindex thread", () -> {
-            try {
-                ReindexThread.stopThread();
-                // Give extra time for ReindexThread to stop gracefully
-                Thread.sleep(500);
-            } catch (Exception e) {
-                Logger.warn(ShutdownCoordinator.class, "Reindex thread shutdown failed: " + e.getMessage());
-            }
-        }));
-        
-        operations.add(new ShutdownOperation("Server cluster cleanup", () -> {
-            try {
-                String serverId = APILocator.getServerAPI().readServerId();
-                safeLog("DEBUG", "Removing server " + serverId + " from cluster tables");
-                APILocator.getServerAPI().removeServerFromClusterTable(serverId);
-                safeLog("DEBUG", "Server cluster cleanup completed for server " + serverId);
-            } catch (Exception e) {
-                // Check if this is a database connectivity issue (expected in some scenarios)
-                String message = e.getMessage();
-                if (message != null && (message.contains("connection") || message.contains("database") || 
-                    message.contains("SQLException") || message.contains("HikariPool"))) {
-                    safeLog("INFO", "Server cluster cleanup skipped due to database connectivity issue (expected during some shutdowns)");
-                } else {
-                    safeLog("WARN", "Server cluster cleanup failed: " + e.getMessage());
+            
+            ShutdownOrder order = actualClass.getAnnotation(ShutdownOrder.class);
+            if (order != null) {
+                if (debugMode) {
+                    Logger.debug(this, "  " + className + " (order: " + order.value() + ")");
                 }
+            } else {
+                Logger.warn(this, "  " + className + " is missing @ShutdownOrder annotation (actual class: " + actualClass.getName() + ")");
             }
-        }));
+        }
         
-        operations.add(new ShutdownOperation("Job queue shutdown", () -> {
-            try {
-                safeLog("DEBUG", "Closing job queue manager");
-                APILocator.getJobQueueManagerAPI().close();
-                safeLog("DEBUG", "Job queue manager closed successfully");
-            } catch (Exception e) {
-                safeLog("WARN", "Job queue shutdown failed: " + e.getMessage());
-            }
-        }));
-        
-        operations.add(new ShutdownOperation("Quartz schedulers", () -> {
-            try {
-                safeLog("DEBUG", "Shutting down Quartz schedulers");
-                QuartzUtils.stopSchedulers();
-                safeLog("DEBUG", "Quartz schedulers shutdown completed");
-            } catch (Exception e) {
-                safeLog("WARN", "Quartz shutdown failed: " + e.getMessage());
-            }
-        }, 20)); // Give Quartz 20 seconds to shut down (vs default 10s)
-        
-        operations.add(new ShutdownOperation("Cache system", () -> {
-            try {
-                CacheLocator.getCacheAdministrator().shutdown();
-            } catch (Exception e) {
-                Logger.warn(ShutdownCoordinator.class, "Cache shutdown failed: " + e.getMessage());
-            }
-        }));
-        
-        operations.add(new ShutdownOperation("Concurrent framework", () -> {
-            try {
-                DotConcurrentFactory.getInstance().shutdownAndDestroy();
-            } catch (Exception e) {
-                Logger.warn(ShutdownCoordinator.class, "Concurrent framework shutdown failed: " + e.getMessage());
-            }
-        }));
-        
-        // Additional thread pool cleanup - attempt to shutdown common thread pools
-        operations.add(new ShutdownOperation("Thread pool cleanup", () -> {
-            try {
-                safeLog("DEBUG", "Attempting to shutdown remaining thread pools");
-                
-                // Try to shutdown ForkJoinPool common pool
-                try {
-                    java.util.concurrent.ForkJoinPool.commonPool().shutdown();
-                    if (!java.util.concurrent.ForkJoinPool.commonPool().awaitTermination(2, java.util.concurrent.TimeUnit.SECONDS)) {
-                        java.util.concurrent.ForkJoinPool.commonPool().shutdownNow();
+        return tasks.stream()
+                .sorted(Comparator.comparingInt(task -> {
+                    Class<?> taskClass = task.getClass();
+                    Class<?> actualClass = getActualClass(taskClass);
+                    
+                    ShutdownOrder order = actualClass.getAnnotation(ShutdownOrder.class);
+                    if (order == null) {
+                        Logger.warn(this, "ShutdownTask " + taskClass.getName() + " (actual: " + actualClass.getName() + ") is missing @ShutdownOrder annotation, using default order 100");
+                        return 100; // Default order for tasks without annotation
                     }
-                } catch (Exception e) {
-                    safeLog("DEBUG", "ForkJoinPool shutdown attempt failed: " + e.getMessage());
-                }
-                
-                // Try to find and shutdown any remaining ExecutorServices via JMX (with safety checks)
-                try {
-                    javax.management.MBeanServer server = java.lang.management.ManagementFactory.getPlatformMBeanServer();
-                    java.util.Set<javax.management.ObjectName> mbeans = server.queryNames(
-                        new javax.management.ObjectName("java.util.concurrent:type=*"), null);
-                    for (javax.management.ObjectName mbean : mbeans) {
-                        try {
-                            // First check if the MBean supports the Shutdown attribute
-                            javax.management.MBeanInfo mbeanInfo = server.getMBeanInfo(mbean);
-                            boolean hasShutdownAttribute = false;
-                            boolean hasShutdownOperation = false;
-                            
-                            // Check for Shutdown attribute
-                            for (javax.management.MBeanAttributeInfo attr : mbeanInfo.getAttributes()) {
-                                if ("Shutdown".equals(attr.getName()) && attr.isReadable()) {
-                                    hasShutdownAttribute = true;
-                                    break;
-                                }
-                            }
-                            
-                            // Check for shutdown operation
-                            for (javax.management.MBeanOperationInfo op : mbeanInfo.getOperations()) {
-                                if ("shutdown".equals(op.getName()) && op.getSignature().length == 0) {
-                                    hasShutdownOperation = true;
-                                    break;
-                                }
-                            }
-                            
-                            // Only proceed if both attribute and operation exist
-                            if (hasShutdownAttribute && hasShutdownOperation) {
-                                Object result = server.getAttribute(mbean, "Shutdown");
-                                if (result instanceof Boolean && !(Boolean)result) {
-                                    safeLog("DEBUG", "Shutting down ExecutorService MBean: " + mbean);
-                                    server.invoke(mbean, "shutdown", new Object[0], new String[0]);
-                                }
-                            }
-                        } catch (Exception e) {
-                            // Log specific failures for debugging, but continue with other MBeans
-                            safeLog("DEBUG", "Failed to shutdown MBean " + mbean + ": " + e.getMessage());
-                        }
+                    return order.value();
+                }))
+                .collect(Collectors.toList());
+    }
+    
+    /**
+     * Extract the actual implementation class from a CDI proxy.
+     * CDI creates proxy classes that may not have the annotations of the actual implementation.
+     */
+    private Class<?> getActualClass(Class<?> clazz) {
+        String className = clazz.getName();
+        
+        // Handle CDI proxies - get the actual implementation class
+        if (className.contains("$Proxy") || className.contains("$$") || className.contains("_ClientProxy")) {
+            Class<?> actualClass = clazz.getSuperclass();
+            if (actualClass == Object.class) {
+                // It's an interface proxy, try to get the actual class from interfaces
+                Class<?>[] interfaces = clazz.getInterfaces();
+                for (Class<?> iface : interfaces) {
+                    if (iface != ShutdownTask.class && ShutdownTask.class.isAssignableFrom(iface)) {
+                        return iface;
                     }
-                } catch (Exception e) {
-                    safeLog("DEBUG", "JMX thread pool cleanup attempt failed: " + e.getMessage());
                 }
-                
-                safeLog("DEBUG", "Thread pool cleanup completed");
-            } catch (Exception e) {
-                safeLog("WARN", "Thread pool cleanup failed: " + e.getMessage());
             }
-        }));
+            return actualClass;
+        }
         
-        // OSGi Framework shutdown - this should clean up most non-daemon threads
-        operations.add(new ShutdownOperation("OSGi framework", () -> {
-            try {
-                safeLog("DEBUG", "Shutting down OSGi framework");
-                // Use OSGIUtil's stopFramework method which handles proper cleanup
-                org.apache.felix.framework.OSGIUtil osgiUtil = org.apache.felix.framework.OSGIUtil.getInstance();
-                if (osgiUtil.isInitialized()) {
-                    osgiUtil.stopFramework();
-                    safeLog("DEBUG", "OSGi framework shutdown completed");
-                } else {
-                    safeLog("DEBUG", "OSGi framework not initialized, skipping shutdown");
-                }
-            } catch (Exception e) {
-                safeLog("WARN", "OSGi framework shutdown failed: " + e.getMessage());
-            }
-        }, 15)); // Give OSGi 15 seconds to shut down
-        
-        return operations;
+        return clazz;
     }
     
     /**
@@ -664,36 +521,42 @@ public class ShutdownCoordinator {
         ShutdownCoordinator instance = ShutdownCoordinator.instance;
         return instance != null && instance.isRequestDrainingInProgress();
     }
-    
+
     /**
-     * Represents a single shutdown operation with a name and executable task.
+     * Checks if a given exception is likely related to a system shutdown.
+     * This is the centralized method to determine if an error should be suppressed
+     * or handled differently during the shutdown process.
+     *
+     * An exception is considered shutdown-related if:
+     * 1. The system shutdown process has already been initiated.
+     * 2. The exception is an SQLException with a SQLState indicating a connection error (class '08'),
+     *    which often occurs when the database connection pool is shutting down before other components.
+     *
+     * @param throwable The exception to check.
+     * @return true if the exception is likely due to a shutdown, false otherwise.
      */
-    private static class ShutdownOperation {
-        private final String name;
-        private final Runnable task;
-        private final int timeoutSeconds;
-        
-        public ShutdownOperation(String name, Runnable task) {
-            this(name, task, -1); // Use default timeout
+    public static boolean isShutdownRelated(final Throwable throwable) {
+        // If shutdown has started, most exceptions from background tasks are expected.
+        if (isShutdownStarted()) {
+            return true;
         }
-        
-        public ShutdownOperation(String name, Runnable task, int timeoutSeconds) {
-            this.name = name;
-            this.task = task;
-            this.timeoutSeconds = timeoutSeconds;
+
+        // Even if shutdown hasn't "officially" started, certain DB errors
+        // can be early indicators. Check for connection-related SQL exceptions.
+        Throwable cause = throwable;
+        while (cause != null) {
+            if (cause instanceof java.sql.SQLException) {
+                final String sqlState = ((java.sql.SQLException) cause).getSQLState();
+                // SQLState class '08' indicates a connection exception, which is
+                // a common symptom of the database connection pool shutting down.
+                if (sqlState != null && sqlState.startsWith("08")) {
+                    return true;
+                }
+            }
+            cause = cause.getCause();
         }
-        
-        public String getName() {
-            return name;
-        }
-        
-        public void execute() {
-            task.run();
-        }
-        
-        public int getTimeoutSeconds() {
-            return timeoutSeconds;
-        }
+
+        return false;
     }
     
     /**

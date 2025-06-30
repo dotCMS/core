@@ -35,12 +35,14 @@ import com.dotcms.jobs.business.queue.error.JobNotFoundException;
 import com.dotcms.jobs.business.queue.error.JobQueueDataException;
 import com.dotcms.jobs.business.queue.error.JobQueueException;
 import com.dotcms.jobs.business.util.JobUtil;
+import com.dotcms.shutdown.ShutdownCoordinator;
 import com.dotcms.system.event.local.model.EventSubscriber;
 import com.dotcms.util.AnnotationUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.google.common.annotations.VisibleForTesting;
 import java.time.LocalDateTime;
@@ -241,7 +243,8 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
             // Close existing services
             closeExecutorService(executorService);
 
-            isShuttingDown = false;
+            // Keep isShuttingDown true until fully closed to prevent race conditions
+            // isShuttingDown = false; // Remove this to prevent race conditions
             isClosed = true;
             Logger.info(this, "JobQueue has been successfully closed.");
         } else {
@@ -662,7 +665,7 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
 
         int emptyQueueCount = 0;
 
-        while (!Thread.currentThread().isInterrupted() && !isShuttingDown) {
+        while (!Thread.currentThread().isInterrupted() && !isShuttingDown && !ShutdownCoordinator.isShutdownStarted()) {
 
             if (isCircuitBreakerOpen()) {
                 continue;
@@ -694,7 +697,7 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
                 break; // Exit the loop immediately on interruption
             } catch (Exception e) {
                 // Check if this is a database-related error during shutdown
-                if (isShuttingDown && isDatabaseShutdownError(e)) {
+                if (isShuttingDown && ShutdownCoordinator.isShutdownRelated(e)) {
                     Logger.debug(this, "Database connection lost during shutdown (expected), stopping job processing");
                     break;
                 }
@@ -714,52 +717,7 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
             Thread.currentThread().isInterrupted() + ", shuttingDown: " + isShuttingDown + ")");
     }
     
-    /**
-     * Check if the exception is related to database shutdown or connectivity issues
-     * This handles both Docker container shutdowns and production database connectivity issues
-     */
-    private boolean isDatabaseShutdownError(Exception e) {
-        if (e == null) return false;
-        
-        String message = e.getMessage();
-        if (message == null) return false;
-        
-        // PostgreSQL specific errors
-        if (message.contains("terminating connection due to administrator command") ||
-            message.contains("This connection has been closed") ||
-            message.contains("Connection is closed") ||
-            message.contains("Database error while fetching next job") ||
-            message.contains("connection has been closed") ||
-            message.contains("Connection refused") ||
-            message.contains("No route to host") ||
-            message.contains("Connection timed out")) {
-            return true;
-        }
-        
-        // HikariCP connection pool errors during shutdown
-        if (message.contains("HikariPool") && 
-            (message.contains("shutdown") || message.contains("closed") || message.contains("interrupted"))) {
-            return true;
-        }
-        
-        // General database connectivity issues
-        if (message.contains("SQLException") || message.contains("ConnectException")) {
-            return true;
-        }
-        
-        // Thread interruption (normal during shutdown)
-        if (e instanceof InterruptedException) {
-            return true;
-        }
-        
-        // Check the root cause as well
-        Throwable cause = e.getCause();
-        if (cause != null && cause != e) {
-            return isDatabaseShutdownError(new Exception(cause));
-        }
-        
-        return false;
-    }
+    
 
     /**
      * Processes the next job in the queue.
@@ -771,7 +729,7 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
 
         try {
             // Skip database calls during shutdown to avoid blocking threads
-            if (isShuttingDown) {
+            if (isShuttingDown || ShutdownCoordinator.isShutdownStarted()) {
                 Logger.debug(this, "Skipping job processing during shutdown");
                 return false;
             }
@@ -803,16 +761,30 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
     private void closeExecutorService(final ExecutorService executor) {
 
         Logger.info(this, "Shutting down job queue executor service");
-        executor.shutdown();
+        
+        // During coordinated shutdown, be more aggressive to prevent delays
+        if (ShutdownCoordinator.isShutdownStarted()) {
+            Logger.debug(this, "System shutdown detected - using immediate executor termination");
+            var cancelledTasks = executor.shutdownNow();
+            Logger.debug(this, "Cancelled " + cancelledTasks.size() + " pending tasks during immediate shutdown");
+        } else {
+            executor.shutdown();
+        }
 
         try {
             // Use shorter timeout to be more responsive to shutdown coordination
             // Most job processing threads should exit quickly due to shutdown checks
-            int gracefulTimeoutSeconds = 3;
+            int defaultTimeout = ShutdownCoordinator.isShutdownStarted() ? 2 : 3; // Less time during coordinated shutdown since we use shutdownNow
+            int gracefulTimeoutSeconds = Config.getIntProperty("shutdown.jobqueue.executor.timeout.seconds", defaultTimeout);
             
             if (!executor.awaitTermination(gracefulTimeoutSeconds, TimeUnit.SECONDS)) {
-                Logger.warn(this, "Job queue executor did not terminate gracefully within " + 
-                    gracefulTimeoutSeconds + " seconds, forcing shutdown");
+                // During coordinated shutdown, this is expected behavior - use debug level
+                if (ShutdownCoordinator.isShutdownStarted()) {
+                    Logger.debug(this, "Job queue executor graceful shutdown timeout during system shutdown, forcing termination");
+                } else {
+                    Logger.warn(this, "Job queue executor did not terminate gracefully within " + 
+                        gracefulTimeoutSeconds + " seconds, forcing shutdown");
+                }
                 
                 // Interrupt all threads to break out of blocking operations
                 var cancelledTasks = executor.shutdownNow();
