@@ -6,7 +6,9 @@ import {
     WorkflowActionResponse,
     WorkflowActionRequestSchema,
     WorkflowActionResponseSchema,
-    ContentCreateParamsSchema
+    ContentCreateParamsSchema,
+    WorkflowSchemesResponse,
+    WorkflowSchemesResponseSchema
 } from '../types/workflow';
 import { Logger } from '../utils/logger';
 
@@ -96,6 +98,45 @@ export class WorkflowService extends AgnosticClient {
 
         } catch (error) {
             this.serviceLogger.error('Error during content save operation', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Fetches all workflow schemes from the dotCMS instance.
+     *
+     * @returns Promise with the workflow schemes response
+     */
+    async getWorkflowSchemes(): Promise<WorkflowSchemesResponse> {
+        this.serviceLogger.log('Starting workflow schemes fetch operation');
+
+        const url = '/api/v1/workflow/schemes?showArchived=true';
+
+        try {
+            const response = await this.fetch(url, {
+                method: 'GET',
+                headers: {
+                    Authorization: `Bearer ${this.authToken}`
+                }
+            });
+
+            const data = await response.json();
+
+            const parsed = WorkflowSchemesResponseSchema.safeParse(data);
+
+            if (!parsed.success) {
+                this.serviceLogger.error('Invalid workflow schemes response format', parsed.error);
+                throw new Error('Invalid workflow schemes response: ' + JSON.stringify(parsed.error.format()));
+            }
+
+            this.serviceLogger.log('Workflow schemes fetched successfully', {
+                schemeCount: parsed.data.entity.length
+            });
+
+            return parsed.data;
+
+        } catch (error) {
+            this.serviceLogger.error('Error during workflow schemes fetch operation', error);
             throw error;
         }
     }

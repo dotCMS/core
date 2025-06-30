@@ -3,19 +3,23 @@ import { z } from "zod";
 
 import { ContentTypeService } from "../services/contentype";
 import { SiteService } from "../services/site";
+import { WorkflowService } from "../services/workflow";
 import { ContentType } from "../types/contentype";
 import { Site } from "../types/site";
+import { WorkflowScheme } from "../types/workflow";
 import { formatContentTypesAsText } from "../utils/contenttypes";
 import { Logger } from "../utils/logger";
 
 // Cache for content type schemas to avoid repeated API calls
 let contentTypeSchemasCache: ContentType[] | null = null;
 let currentSiteCache: Site | null = null;
+let workflowSchemesCache: WorkflowScheme[] | null = null;
 let cacheTimestamp = 0;
 const CACHE_DURATION = 30 * 60 * 1000; // 5 minutes in milliseconds
 
 const contentTypeService = new ContentTypeService();
 const siteService = new SiteService();
+const workflowService = new WorkflowService();
 const logger = new Logger('CONTEXT_TOOL');
 
 function formatSiteInfo(site: Site): string {
@@ -33,14 +37,39 @@ https://<dotcms-url>dotAdmin/#/content-types-angular/edit/<content-type-identifi
 `;
 }
 
-function createResponseText(contentTypes: ContentType[], site: Site, isCached: boolean, cacheAge?: number): string {
+function createResponseText(contentTypes: ContentType[], site: Site, workflowSchemes: WorkflowScheme[], isCached: boolean, cacheAge?: number): string {
     const formattedText = formatContentTypesAsText(contentTypes);
+    const workflowText = formatWorkflowSchemesAsText(workflowSchemes);
     const siteInfo = formatSiteInfo(site);
     const cacheInfo = isCached
         ? `[CACHED RESPONSE] (cached for ${cacheAge}s)`
         : `[FRESH RESPONSE] (cached for ${Math.round((Date.now() - cacheTimestamp) / 1000)}s)`;
 
-    return `${cacheInfo} ${siteInfo}:\n\n${formattedText}`;
+    return `${cacheInfo} ${siteInfo}:\n\n${formattedText}\n\n${workflowText}`;
+}
+
+function formatWorkflowSchemesAsText(workflowSchemes: WorkflowScheme[]): string {
+    if (workflowSchemes.length === 0) {
+        return 'No workflow schemes found.';
+    }
+
+    const schemesText = workflowSchemes.map(scheme => {
+        const status = scheme.archived ? '[ARCHIVED]' : '[ACTIVE]';
+        const systemFlag = scheme.system ? ' (SYSTEM)' : '';
+        const defaultFlag = scheme.defaultScheme ? ' (DEFAULT)' : '';
+
+        return `${status} ${scheme.name}${systemFlag}${defaultFlag}
+  ID: ${scheme.id}
+  Variable Name: ${scheme.variableName}
+  Description: ${scheme.description || 'No description'}
+  Mandatory: ${scheme.mandatory}
+  Creation Date: ${new Date(scheme.creationDate).toISOString()}
+  Modified Date: ${new Date(scheme.modDate).toISOString()}`;
+    }).join('\n\n');
+
+    return `WORKFLOW SCHEMES (${workflowSchemes.length} total):
+
+${schemesText}`;
 }
 
 export function registerContextTools(server: McpServer) {
@@ -61,18 +90,19 @@ export function registerContextTools(server: McpServer) {
             const now = Date.now();
 
             // Return cached data if it's still valid
-            if (contentTypeSchemasCache && currentSiteCache && (now - cacheTimestamp) < CACHE_DURATION) {
+            if (contentTypeSchemasCache && currentSiteCache && workflowSchemesCache && (now - cacheTimestamp) < CACHE_DURATION) {
                 const cacheAge = Math.round((now - cacheTimestamp) / 1000);
                 logger.log('Returning cached context data', {
                     cacheAge,
-                    contentTypeCount: contentTypeSchemasCache.length
+                    contentTypeCount: contentTypeSchemasCache.length,
+                    workflowSchemeCount: workflowSchemesCache.length
                 });
 
                 return {
                     content: [
                         {
                             type: 'text',
-                            text: createResponseText(contentTypeSchemasCache, currentSiteCache, true, cacheAge)
+                            text: createResponseText(contentTypeSchemasCache, currentSiteCache, workflowSchemesCache, true, cacheAge)
                         }
                     ]
                 };
@@ -82,25 +112,28 @@ export function registerContextTools(server: McpServer) {
             try {
                 logger.log('Cache miss or expired, fetching fresh context data');
 
-                const [contentTypes, currentSite] = await Promise.all([
+                const [contentTypes, currentSite, workflowSchemes] = await Promise.all([
                     contentTypeService.getContentTypesSchema(),
-                    siteService.getCurrentSite()
+                    siteService.getCurrentSite(),
+                    workflowService.getWorkflowSchemes()
                 ]);
 
                 logger.log('Fresh context data fetched successfully', {
                     contentTypeCount: contentTypes.length,
-                    siteName: currentSite.name
+                    siteName: currentSite.name,
+                    workflowSchemeCount: workflowSchemes.entity.length
                 });
 
                 contentTypeSchemasCache = contentTypes;
                 currentSiteCache = currentSite;
+                workflowSchemesCache = workflowSchemes.entity;
                 cacheTimestamp = now;
 
                 return {
                     content: [
                         {
                             type: 'text',
-                            text: createResponseText(contentTypes, currentSite, false)
+                            text: createResponseText(contentTypes, currentSite, workflowSchemes.entity, false)
                         }
                     ]
                 };

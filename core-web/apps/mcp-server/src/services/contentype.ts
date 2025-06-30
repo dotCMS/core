@@ -93,12 +93,10 @@ const ContentTypeFieldSchema = z.object({
 });
 
 export const ContentTypeCreateParamsSchema = z.object({
-    clazz: z.literal('com.dotcms.contenttype.model.type.ImmutableSimpleContentType'),
     name: z.string(),
-    description: z.string().optional(),
-    host: z.string().optional(),
-    owner: z.string().optional(),
-    fixed: z.boolean().optional(),
+    description: z.string(),
+    host: z.string(),
+    workflow: z.array(z.string()),
     fields: z.array(ContentTypeFieldSchema).min(1)
 });
 
@@ -194,6 +192,7 @@ export class ContentTypeService extends AgnosticClient {
         // Auto-generate clazz for fields that don't have it
         const processedData = validated.data.map(contentType => ({
             ...contentType,
+            clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
             fields: contentType.fields.map(field => ({
                 ...field,
                 clazz: field.clazz || getClazzFromFieldType(field.fieldType)

@@ -31,8 +31,37 @@ export const WorkflowActionRequestSchema = z.object({
     contentlet: ContentCreateParamsSchema
 });
 
+// Schema for workflow scheme
+export const WorkflowSchemeSchema = z.object({
+    archived: z.boolean(),
+    creationDate: z.number(),
+    defaultScheme: z.boolean(),
+    description: z.string(),
+    entryActionId: z.string().nullable(),
+    id: z.string(),
+    mandatory: z.boolean(),
+    modDate: z.number(),
+    name: z.string(),
+    system: z.boolean(),
+    variableName: z.string()
+});
+
+// Schema for workflow schemes response
+export const WorkflowSchemesResponseSchema = z.object({
+    entity: z.array(WorkflowSchemeSchema),
+    errors: z.array(z.string()),
+    i18nMessagesMap: z.record(z.string()),
+    messages: z.array(z.string()),
+    pagination: z.any().nullable(),
+    permissions: z.array(z.string())
+});
+
 export type WorkflowActionResponse = z.infer<typeof WorkflowActionResponseSchema>;
 
 export type ContentCreateParams = z.infer<typeof ContentCreateParamsSchema>;
 
 export type WorkflowActionRequest = z.infer<typeof WorkflowActionRequestSchema>;
+
+export type WorkflowScheme = z.infer<typeof WorkflowSchemeSchema>;
+
+export type WorkflowSchemesResponse = z.infer<typeof WorkflowSchemesResponseSchema>;
