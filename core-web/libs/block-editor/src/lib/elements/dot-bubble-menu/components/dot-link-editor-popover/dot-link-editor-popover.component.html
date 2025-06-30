@@ -1,22 +1,22 @@
 <div
     class="bubble-link-form"
     dotEditorModal
-    #linkModal
+    #linkEditorModal
     [editor]="editor()"
-    [tippyOptions]="tippyOptions">
+    [tippyOptions]="tippyModalOptions">
     <input
         #input
         pInputText
         type="text"
         placeholder="Paste link or search for pages"
-        [(ngModel)]="searchTerm"
-        (ngModelChange)="onSearchInput($event)"
-        (keydown.enter)="addLink(searchTerm())"
+        [(ngModel)]="searchQuery"
+        (ngModelChange)="onSearchQueryChange($event)"
+        (keydown.enter)="applyLinkToEditor(searchQuery())"
         [autofocus]="true"
         [style]="{ width: '100%' }"
-        (keydown)="onKeyDown($event)" />
+        (keydown)="handleSearchInputKeyDown($event)" />
 
-    @if (loading()) {
+    @if (isSearching()) {
         <p-listbox
             [options]="[1, 2, 3]"
             [style]="{ width: '100%' }"
@@ -31,13 +31,14 @@
                 </div>
             </ng-template>
         </p-listbox>
-    } @else if (items().length > 0) {
+    }
+
+    @if (showSearchResults()) {
         <p-listbox
             #resultListbox
-            [options]="items()"
-            optionLabel="name"
-            [(ngModel)]="selectedItem"
-            (onChange)="addLink(selectedItem()?.value)"
+            optionLabel="displayName"
+            [options]="searchResults()"
+            (onChange)="saveLink($event.value.url)"
             [style]="{ width: '100%' }"
             [listStyle]="{ 'max-height': '250px' }">
             <ng-template let-item pTemplate="item">
@@ -48,19 +49,67 @@
                         <span class="listbox-item__icon pi pi-file"></span>
                     }
                     <div class="listbox-item__content">
-                        <div class="listbox-item__title">{{ item.name }}</div>
-                        <div class="listbox-item__url">{{ item.value }}</div>
+                        <div class="listbox-item__title">{{ item.displayName }}</div>
+                        <div class="listbox-item__url">{{ item.url }}</div>
                     </div>
                 </div>
             </ng-template>
+
+            <ng-template pTemplate="empty">
+                <div class="empty-message">
+                    <span class="empty-message__text">
+                        No results for
+                        <br />
+                        <b>{{ searchQuery() }}</b>
+                    </span>
+                </div>
+            </ng-template>
         </p-listbox>
-    } @else if (searchTerm()) {
-        <div class="empty-message">
-            <span class="empty-message__text">
-                No results for
-                <br />
-                <b>{{ searchTerm() }}</b>
-            </span>
+    }
+
+    @if (showLinkDetails()) {
+        <div class="current-link-view">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 1rem">
+                <span class="pi pi-globe" style="font-size: 1.5em"></span>
+                <a
+                    [href]="existingLinkUrl()"
+                    [target]="linkTargetAttribute()"
+                    rel="noopener noreferrer"
+                    style="
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                        white-space: nowrap;
+                        max-width: 300px;
+                        display: inline-block;
+                    ">
+                    {{ existingLinkUrl() }}
+                </a>
+            </div>
+            <div style="margin-bottom: 2rem">
+                <input
+                    type="checkbox"
+                    id="openInNewWindow"
+                    [checked]="linkTargetAttribute() === '_blank'"
+                    (change)="toggleTarget($event)"
+                    style="margin-right: 4px" />
+                <label for="openInNewWindow">Open link in new window</label>
+            </div>
+            <div style="display: flex; gap: 12px">
+                <button
+                    pButton
+                    type="button"
+                    style="width: 50%"
+                    class="p-button-outlined"
+                    (click)="copyLink()"
+                    label="Copy Link"></button>
+                <button
+                    pButton
+                    type="button"
+                    style="width: 50%"
+                    class="p-button-outlined"
+                    (click)="removeLink()"
+                    label="Remove Link"></button>
+            </div>
         </div>
     }
 </div>

@@ -2,7 +2,16 @@
 import { Observable, Subject } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
-import { Component, inject, input, signal, OnDestroy, ViewChild, ElementRef } from '@angular/core';
+import {
+    Component,
+    inject,
+    input,
+    signal,
+    OnDestroy,
+    ViewChild,
+    ElementRef,
+    computed
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { AutoCompleteModule } from 'primeng/autocomplete';
@@ -19,9 +28,9 @@ import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
 import { EditorModalDirective } from '../../../../directive/editor-modal.directive';
 
-interface Item {
-    name: string;
-    value: string;
+interface SearchResultItem {
+    displayName: string;
+    url: string;
     hasTitleImage?: boolean;
     inode?: string;
 }
@@ -42,85 +51,133 @@ interface Item {
     ]
 })
 export class DotLinkEditorPopoverComponent implements OnDestroy {
-    @ViewChild('linkModal', { read: EditorModalDirective }) editorModal: EditorModalDirective;
-    @ViewChild('input', { read: ElementRef }) input?: ElementRef<HTMLInputElement>;
+    @ViewChild('linkEditorModal', { read: EditorModalDirective })
+    linkEditorModal: EditorModalDirective;
+    @ViewChild('input', { read: ElementRef }) searchInput?: ElementRef<HTMLInputElement>;
 
     protected readonly editor = input.required<Editor>();
-    protected readonly searchTerm = signal<string>('');
-    protected readonly loading = signal<boolean>(false);
-    protected readonly items = signal<Item[]>([]);
-    protected readonly selectedItem = signal<Item | null>(null);
+    protected readonly searchQuery = signal<string>('');
+    protected readonly isSearching = signal<boolean>(false);
+    protected readonly searchResults = signal<SearchResultItem[]>([]);
+
+    // Current link state for editing existing links
+    protected readonly existingLinkUrl = signal<string | null>(null);
+    protected readonly linkTargetAttribute = signal<string>('_blank');
+
+    protected readonly showLinkDetails = computed(
+        () => this.existingLinkUrl() && this.searchQuery() === this.existingLinkUrl()
+    );
+    protected readonly showSearchResults = computed(
+        () =>
+            this.searchResults() &&
+            this.searchQuery() !== this.existingLinkUrl() &&
+            !this.isSearching()
+    );
 
     private readonly httpClient = inject(HttpClient);
-    private readonly destroy$ = new Subject<void>();
-    private readonly searchSubject = new Subject<string>();
+    private readonly componentDestroy$ = new Subject<void>();
+    private readonly searchQuerySubject = new Subject<string>();
 
-    @ViewChild('resultListbox') resultListbox?: Listbox;
+    @ViewChild('resultListbox') searchResultsListbox?: Listbox;
 
-    readonly tippyOptions = {
-        onShow: this.setInitialLink.bind(this),
-        onShown: this.focusInput.bind(this),
-        onHide: this.unsetHighlight.bind(this)
+    readonly tippyModalOptions = {
+        onShow: this.initializeExistingLinkData.bind(this),
+        onShown: this.focusSearchInput.bind(this),
+        onHide: this.clearEditorHighlight.bind(this)
     };
 
     constructor() {
-        this.searchSubject
-            .pipe(debounceTime(1000), distinctUntilChanged(), takeUntil(this.destroy$))
-            .subscribe((query) => {
-                this.performSearch(query);
-                this.searchTerm.set(query);
+        this.searchQuerySubject
+            .pipe(debounceTime(250), distinctUntilChanged(), takeUntil(this.componentDestroy$))
+            .subscribe((searchTerm) => {
+                this.executeContentSearch(searchTerm);
+                this.searchQuery.set(searchTerm);
             });
     }
 
     ngOnDestroy(): void {
-        this.destroy$.next();
-        this.destroy$.complete();
+        this.componentDestroy$.next();
+        this.componentDestroy$.complete();
     }
 
     toggle() {
-        this.editorModal?.toggle();
+        this.linkEditorModal?.toggle();
     }
 
-    protected onKeyDown(event: KeyboardEvent) {
+    protected handleSearchInputKeyDown(event: KeyboardEvent) {
         if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
-            this.resultListbox?.onListKeyDown(event);
+            this.searchResultsListbox?.onListKeyDown(event);
         }
     }
 
-    protected onSearchInput(value: string) {
-        this.loading.set(true);
-        this.searchSubject.next(value);
+    protected onSearchQueryChange(searchValue: string) {
+        this.isSearching.set(true);
+        this.searchQuerySubject.next(searchValue);
     }
 
-    protected addLink(value: string) {
-        this.editor().chain().focus().setLink({ href: value, target: '_blank' }).run();
-        this.editorModal.hide();
+    protected applyLinkToEditor(linkUrl: string) {
+        this.editor()
+            .chain()
+            .focus()
+            .setLink({ href: linkUrl, target: this.linkTargetAttribute() })
+            .run();
+        this.linkEditorModal.hide();
     }
 
-    private performSearch(query: string) {
-        this.getContentletsByLink(query).subscribe({
-            next: (contentlets) => {
-                this.items.set(
-                    contentlets.map((contentlet) => ({
+    private initializeExistingLinkData() {
+        const isActiveTextLink = this.editor().isActive('link');
+        const linkAttributes = this.editor().getAttributes(isActiveTextLink ? 'link' : 'dotImage');
+        const { href: existingUrl = '', target: existingTarget = '_blank' } = linkAttributes;
+        this.searchQuery.set(existingUrl);
+        this.existingLinkUrl.set(existingUrl);
+        this.linkTargetAttribute.set(existingTarget);
+        this.searchResults.set([]);
+    }
+
+    /* LINK MANAGEMENT ACTIONS */
+    protected copyExistingLinkToClipboard() {
+        navigator.clipboard.writeText(this.existingLinkUrl() || '');
+    }
+
+    protected removeLinkFromEditor() {
+        this.editor().chain().unsetLink().run();
+        this.linkEditorModal.hide();
+    }
+
+    protected updateLinkTargetAttribute(event: Event) {
+        const shouldOpenInNewWindow = (event.target as HTMLInputElement).checked;
+        const newTargetValue = shouldOpenInNewWindow ? '_blank' : '_self';
+        this.editor()
+            .chain()
+            .setLink({ href: this.existingLinkUrl(), target: newTargetValue })
+            .run();
+    }
+
+    /* CONTENT SEARCH FUNCTIONALITY */
+    private executeContentSearch(searchTerm: string) {
+        this.searchForContentletsByQuery(searchTerm).subscribe({
+            next: (foundContentlets) => {
+                this.searchResults.set(
+                    foundContentlets.map((contentlet) => ({
                         hasTitleImage: contentlet.hasTitleImage,
                         inode: contentlet.inode,
-                        name: contentlet.title,
-                        value: contentlet.path || contentlet.urlMap
+                        displayName: contentlet.title,
+                        url: contentlet.path || contentlet.urlMap
                     }))
                 );
-                this.loading.set(false);
+                this.isSearching.set(false);
             },
             error: () => {
-                this.items.set([]);
-                this.loading.set(false);
+                this.searchResults.set([]);
+                this.isSearching.set(false);
             }
         });
     }
 
-    private getContentletsByLink(query: string): Observable<DotCMSContentlet[]> {
+    private searchForContentletsByQuery(searchTerm: string): Observable<DotCMSContentlet[]> {
         return this.httpClient
             .post('/api/content/_search', {
-                query: `+languageId:1 +deleted:false +working:true  +(urlmap:* OR basetype:5)  +deleted:false +(title:${query}* OR path:*${query}* OR urlmap:*${query}*)`,
+                query: `+languageId:1 +deleted:false +working:true  +(urlmap:* OR basetype:5)  +deleted:false +(title:${searchTerm}* OR path:*${searchTerm}* OR urlmap:*${searchTerm}*)`,
                 sort: 'modDate desc',
                 offset: 0,
                 limit: 5
@@ -128,20 +185,13 @@ export class DotLinkEditorPopoverComponent implements OnDestroy {
             .pipe(pluck('entity', 'jsonObjectView', 'contentlets'));
     }
 
-    private setInitialLink() {
-        const isTextLink = this.editor().isActive('link');
-        const node = this.editor().getAttributes(isTextLink ? 'link' : 'dotImage');
-        const { href: link = '' } = node;
-        this.searchTerm.set(link);
-        this.items.set([]);
-    }
-
-    private focusInput() {
+    /* EDITOR INTERACTION HELPERS */
+    private focusSearchInput() {
         this.editor().commands.setHighlight();
-        this.input?.nativeElement.focus();
+        this.searchInput?.nativeElement.focus();
     }
 
-    private unsetHighlight() {
+    private clearEditorHighlight() {
         this.editor().chain().unsetHighlight().focus().run();
     }
 }
