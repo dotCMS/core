@@ -151,10 +151,20 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
                 ? ContentToStringUtil.impl.get().guessWhatFieldsToIndex(contentlet)
                 : tryFields;
 
+        if (fields.isEmpty()) {
+            Logger.warn(this, String.format("No valid fields to embed for Contentlet ID '%s' of type " +
+                            "'%s' with title '%s'", contentlet.getIdentifier(),
+                    contentlet.getContentType().variable(), contentlet.getTitle()));
+            return false;
+        }
+
         final Optional<String> content = ContentToStringUtil.impl.get().parseFields(contentlet, fields);
         if (content.isEmpty() || UtilMethods.isEmpty(content.get())) {
-            Logger.warn(this, String.format("No valid fields to embed for Contentlet ID '%s' of type " +
-                    "'%s' with title '%s'", contentlet.getIdentifier(), contentlet.getContentType().variable(), contentlet.getTitle()));
+            final String message = "Something is wrong with the content, and the Contentlet cannot be embedded:\n" +
+                    (tryFields.isEmpty() ? "Found fields from guessing:" + fields.stream().map(Field::variable) :
+                            "Found fields from configuration:" + tryFields.stream().map(Field::variable));
+
+            Logger.warn(this, message);
             return false;
         }
 
