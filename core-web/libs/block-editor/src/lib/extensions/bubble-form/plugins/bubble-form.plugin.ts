@@ -1,7 +1,7 @@
 import { Node } from 'prosemirror-model';
 import { EditorState, NodeSelection, Plugin, PluginKey, Transaction } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
-import { Observable, Subject } from 'rxjs';
+import { Observable, Subject, Subscription } from 'rxjs';
 import tippy, { Instance, Props } from 'tippy.js';
 
 import { ComponentRef } from '@angular/core';
@@ -55,6 +55,8 @@ export class BubbleFormView extends BubbleMenuView {
 
     private $destroy = new Subject<boolean>();
 
+    private formValuesSubscription: Subscription;
+
     constructor(props: BubbleFormViewProps) {
         const { editor, element, view, tippyOptions = {}, pluginKey, component } = props;
 
@@ -73,9 +75,11 @@ export class BubbleFormView extends BubbleMenuView {
 
         this.component.instance.buildForm(imageFormControls);
 
-        this.component.instance.formValues.pipe(takeUntil(this.$destroy)).subscribe((data) => {
-            this.editor.commands.updateValue(data);
-        });
+        this.formValuesSubscription = this.component.instance.formValues
+            .pipe(takeUntil(this.$destroy))
+            .subscribe((data) => {
+                this.editor.commands.updateValue(data);
+            });
 
         this.component.instance.hide.pipe(takeUntil(this.$destroy)).subscribe(() => {
             this.editor.commands.closeForm();
@@ -172,8 +176,8 @@ export class BubbleFormView extends BubbleMenuView {
         this.tippy?.destroy();
         this.editor.off('focus', this.focusHandler);
         this.$destroy.next(true);
-        this.component.destroy();
-        this.component.instance.formValues.unsubscribe();
+        this.component?.destroy();
+        this.formValuesSubscription?.unsubscribe();
     }
 
     private hanlderScroll(e: Event) {
