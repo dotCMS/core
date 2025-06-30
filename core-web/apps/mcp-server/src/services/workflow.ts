@@ -62,24 +62,15 @@ export class WorkflowService extends AgnosticClient {
 
         this.serviceLogger.log('Workflow request validated successfully', validated.data);
 
-        // Use FormData to match curl -F behavior
-        const formData = new FormData();
-        formData.append('json', JSON.stringify(validated.data));
-
-        // Create a proper File object instead of Blob
-        const dummyFile = new File(['dummy content'], 'dummy.txt', {
-            type: 'text/plain'
-        });
-        formData.append('file', dummyFile);
-
-        const url = '/api/v1/workflow/actions/fire';
+        const url = '/api/v1/workflow/actions/default/fire/NEW';
 
         try {
             const response = await this.fetch(url, {
                 method: 'PUT',
-                body: formData,
+                body: JSON.stringify(validated.data),
                 headers: {
-                    Authorization: `Bearer ${this.authToken}`
+                    Authorization: `Bearer ${this.authToken}`,
+                    'Content-Type': 'application/json'
                 }
             });
 
