@@ -36,12 +36,8 @@ import { DotEditorCountBarComponent } from './components/dot-editor-count-bar/do
 import { DotBubbleMenuComponent } from './elements/dot-bubble-menu/dot-bubble-menu.component';
 import {
     BubbleFormComponent,
-    BubbleLinkFormComponent,
-    BubbleMenuButtonComponent,
     DragHandlerComponent,
     FloatingButtonComponent,
-    FormActionsComponent,
-    SuggestionPageComponent,
     UploadPlaceholderComponent
 } from './extensions';
 import { AssetFormModule } from './extensions/asset-form/asset-form.module';
@@ -79,11 +75,7 @@ const initTranslations = (dotMessageService: DotMessageService) => {
         EditorDirective,
         ContentletBlockComponent,
         DragHandlerComponent,
-        BubbleMenuButtonComponent,
-        BubbleLinkFormComponent,
-        FormActionsComponent,
         BubbleFormComponent,
-        SuggestionPageComponent,
         DotBlockEditorComponent,
         DotEditorCountBarComponent,
         FloatingButtonComponent
