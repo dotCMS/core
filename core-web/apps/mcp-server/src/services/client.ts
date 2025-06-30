@@ -65,6 +65,11 @@ export class AgnosticClient {
         };
         headers['Authorization'] = `Bearer ${this.authToken}`;
 
+        // Add Content-Type: application/json by default if not already set
+        if (!headers['Content-Type'] && !headers['content-type']) {
+            headers['Content-Type'] = 'application/json';
+        }
+
         try {
             const response = await fetch(fullUrl, { ...options, headers });
 

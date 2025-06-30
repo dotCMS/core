@@ -203,9 +203,6 @@ export class ContentTypeService extends AgnosticClient {
         try {
             const response = await this.fetch(url, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
                 body: JSON.stringify(isArray ? processedData : processedData[0])
             });
 

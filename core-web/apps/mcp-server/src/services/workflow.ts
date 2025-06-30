@@ -67,11 +67,7 @@ export class WorkflowService extends AgnosticClient {
         try {
             const response = await this.fetch(url, {
                 method: 'PUT',
-                body: JSON.stringify(validated.data),
-                headers: {
-                    Authorization: `Bearer ${this.authToken}`,
-                    'Content-Type': 'application/json'
-                }
+                body: JSON.stringify(validated.data)
             });
 
             const data = await response.json();
@@ -105,10 +101,7 @@ export class WorkflowService extends AgnosticClient {
 
         try {
             const response = await this.fetch(url, {
-                method: 'GET',
-                headers: {
-                    Authorization: `Bearer ${this.authToken}`
-                }
+                method: 'GET'
             });
 
             const data = await response.json();
