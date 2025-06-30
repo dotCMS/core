@@ -170,7 +170,7 @@
     <div class="divider"></div>
     <button
         class="bubble-menu-button bubble-menu-button--icon"
-        [class.is-active]="editor().isActive('link')"
+        [class.is-active]="imageHasLink()"
         (click)="linkModal.toggle()">
         <span class="material-icons">link</span>
     </button>

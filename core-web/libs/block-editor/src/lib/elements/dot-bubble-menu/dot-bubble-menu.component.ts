@@ -164,6 +164,12 @@ export class DotBubbleMenuComponent {
         event.preventDefault();
     }
 
+    protected imageHasLink() {
+        const image = this.editor().getAttributes('dotImage');
+
+        return !!image?.href;
+    }
+
     private onBeforeUpdate() {
         this.checkIfShowBubbleMenu();
         this.checkIfShowImageMenu();
