@@ -1,4 +1,4 @@
-import { Component, input, ViewChild } from '@angular/core';
+import { Component, ElementRef, HostListener, input, ViewChild } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
@@ -22,6 +22,7 @@ import { EditorModalDirective } from '../../../../directive/editor-modal.directi
 })
 export class DotImageEditorPopoverComponent {
     @ViewChild('imagePopover', { read: EditorModalDirective }) imagePopover: EditorModalDirective;
+    @ViewChild('input', { read: ElementRef }) urlInput?: ElementRef<HTMLInputElement>;
     readonly editor = input.required<Editor>();
     readonly appendTo = input<HTMLElement>();
 
@@ -34,6 +35,13 @@ export class DotImageEditorPopoverComponent {
     protected readonly tippyOptions = {
         onShow: this.initializeFormWithImageData.bind(this)
     };
+
+    @HostListener('document:keydown.escape', ['$event'])
+    protected onEscapeKey(event: KeyboardEvent) {
+        if (event.key === 'Escape') {
+            this.imagePopover?.hide();
+        }
+    }
 
     /**
      * Saves the form values and updates the image attributes in the editor.
@@ -87,5 +95,6 @@ export class DotImageEditorPopoverComponent {
             alt: alt || dotTitle,
             title: title || dotTitle
         });
+        this.urlInput?.nativeElement.focus();
     }
 }

@@ -10,7 +10,8 @@ import {
     OnDestroy,
     ViewChild,
     ElementRef,
-    computed
+    computed,
+    HostListener
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
@@ -51,9 +52,9 @@ interface SearchResultItem {
     ]
 })
 export class DotLinkEditorPopoverComponent implements OnDestroy {
-    @ViewChild('linkEditorModal', { read: EditorModalDirective })
-    linkEditorModal: EditorModalDirective;
+    @ViewChild('popover', { read: EditorModalDirective }) popover: EditorModalDirective;
     @ViewChild('input', { read: ElementRef }) searchInput?: ElementRef<HTMLInputElement>;
+    @ViewChild('resultListbox') searchResultsListbox?: Listbox;
 
     protected readonly editor = input.required<Editor>();
     protected readonly searchQuery = signal<string>('');
@@ -64,27 +65,41 @@ export class DotLinkEditorPopoverComponent implements OnDestroy {
     protected readonly existingLinkUrl = signal<string | null>(null);
     protected readonly linkTargetAttribute = signal<string>('_blank');
 
+    protected readonly isExternalURL = computed(() => {
+        const validURLRegex = /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?$/;
+
+        return validURLRegex.test(this.searchQuery());
+    });
+
     protected readonly showLinkDetails = computed(
         () => this.existingLinkUrl() && this.searchQuery() === this.existingLinkUrl()
     );
-    protected readonly showSearchResults = computed(
-        () =>
-            this.searchResults() &&
-            this.searchQuery() !== this.existingLinkUrl() &&
-            !this.isSearching()
-    );
+
+    protected readonly showSearchResults = computed(() => {
+        const isDifferentLink = this.searchQuery() !== this.existingLinkUrl();
+        const hasResults = this.searchResults().length > 0;
+        const isSearching = this.isSearching();
+        const isExternalLink = this.isExternalURL();
+
+        return (hasResults || isDifferentLink) && !isSearching && !isExternalLink;
+    });
 
     private readonly httpClient = inject(HttpClient);
     private readonly componentDestroy$ = new Subject<void>();
     private readonly searchQuerySubject = new Subject<string>();
-
-    @ViewChild('resultListbox') searchResultsListbox?: Listbox;
 
     readonly tippyModalOptions = {
         onShow: this.initializeExistingLinkData.bind(this),
         onShown: this.focusSearchInput.bind(this),
         onHide: this.clearEditorHighlight.bind(this)
     };
+
+    @HostListener('document:keydown.escape', ['$event'])
+    protected onEscapeKey(event: KeyboardEvent) {
+        if (event.key === 'Escape') {
+            this.popover.hide();
+        }
+    }
 
     constructor() {
         this.searchQuerySubject
@@ -101,7 +116,7 @@ export class DotLinkEditorPopoverComponent implements OnDestroy {
     }
 
     toggle() {
-        this.linkEditorModal?.toggle();
+        this.popover?.toggle();
     }
 
     protected handleSearchInputKeyDown(event: KeyboardEvent) {
@@ -111,6 +126,10 @@ export class DotLinkEditorPopoverComponent implements OnDestroy {
     }
 
     protected onSearchQueryChange(searchValue: string) {
+        if (this.isExternalURL()) {
+            return;
+        }
+
         this.isSearching.set(true);
         this.searchQuerySubject.next(searchValue);
     }
@@ -121,7 +140,7 @@ export class DotLinkEditorPopoverComponent implements OnDestroy {
             .focus()
             .setLink({ href: linkUrl, target: this.linkTargetAttribute() })
             .run();
-        this.linkEditorModal.hide();
+        this.popover.hide();
     }
 
     private initializeExistingLinkData() {
@@ -141,7 +160,7 @@ export class DotLinkEditorPopoverComponent implements OnDestroy {
 
     protected removeLinkFromEditor() {
         this.editor().chain().unsetLink().run();
-        this.linkEditorModal.hide();
+        this.popover.hide();
     }
 
     protected updateLinkTargetAttribute(event: Event) {
