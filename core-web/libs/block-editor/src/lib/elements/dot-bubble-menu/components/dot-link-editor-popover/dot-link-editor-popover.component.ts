@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Observable, Subject } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
@@ -36,6 +35,14 @@ interface SearchResultItem {
     inode?: string;
 }
 
+/**
+ * A popover component for creating and editing links in the DotCMS block editor.
+ * This component provides functionality to:
+ * - Search for internal content to link to
+ * - Create links to external URLs
+ * - Edit existing link properties (URL, target attribute)
+ * - Remove links from selected text or images
+ */
 @Component({
     selector: 'dot-link-editor-popover',
     templateUrl: './dot-link-editor-popover.component.html',
@@ -94,6 +101,10 @@ export class DotLinkEditorPopoverComponent implements OnDestroy {
         onHide: this.clearEditorHighlight.bind(this)
     };
 
+    /**
+     * Handles the Escape key press to close the popover.
+     * This provides a consistent way for users to cancel link editing.
+     */
     @HostListener('document:keydown.escape', ['$event'])
     protected onEscapeKey(event: KeyboardEvent) {
         if (event.key === 'Escape') {
@@ -110,21 +121,41 @@ export class DotLinkEditorPopoverComponent implements OnDestroy {
             });
     }
 
+    /**
+     * Cleanup method called when the component is destroyed.
+     * Ensures all subscriptions are properly closed to prevent memory leaks.
+     */
     ngOnDestroy(): void {
         this.componentDestroy$.next();
         this.componentDestroy$.complete();
     }
 
+    /**
+     * Toggles the visibility of the link editor popover.
+     * Can be called from parent components to show/hide the link editor.
+     */
     toggle() {
         this.popover?.toggle();
     }
 
+    /**
+     * Handles keyboard navigation within the search input field.
+     * Allows users to navigate search results using arrow keys for better accessibility.
+     *
+     * @param event - The keyboard event containing the pressed key
+     */
     protected handleSearchInputKeyDown(event: KeyboardEvent) {
         if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
             this.searchResultsListbox?.onListKeyDown(event);
         }
     }
 
+    /**
+     * Processes changes to the search input and triggers content search.
+     * Skips search execution for external URLs to avoid unnecessary API calls.
+     *
+     * @param searchValue - The current value from the search input field
+     */
     protected onSearchQueryChange(searchValue: string) {
         if (this.isExternalURL()) {
             return;
@@ -134,6 +165,12 @@ export class DotLinkEditorPopoverComponent implements OnDestroy {
         this.searchQuerySubject.next(searchValue);
     }
 
+    /**
+     * Applies the selected link URL to the currently selected text or image in the editor.
+     * Creates a new link with the specified URL and target attribute, then closes the popover.
+     *
+     * @param linkUrl - The URL to be applied as the link href attribute
+     */
     protected applyLinkToEditor(linkUrl: string) {
         this.editor()
             .chain()
@@ -143,6 +180,11 @@ export class DotLinkEditorPopoverComponent implements OnDestroy {
         this.popover.hide();
     }
 
+    /**
+     * Initializes the popover with data from an existing link when editing.
+     * Extracts link attributes from the current selection and populates the form fields.
+     * Handles both text links and image links by checking the appropriate node type.
+     */
     private initializeExistingLinkData() {
         const isActiveTextLink = this.editor().isActive('link');
         const linkAttributes = this.editor().getAttributes(isActiveTextLink ? 'link' : 'dotImage');
@@ -153,16 +195,29 @@ export class DotLinkEditorPopoverComponent implements OnDestroy {
         this.searchResults.set([]);
     }
 
-    /* LINK MANAGEMENT ACTIONS */
+    /**
+     * Copies the current link URL to the system clipboard.
+     * Provides a quick way for users to share or reuse existing link URLs.
+     */
     protected copyExistingLinkToClipboard() {
         navigator.clipboard.writeText(this.existingLinkUrl() || '');
     }
 
+    /**
+     * Removes the link from the currently selected text or image in the editor.
+     * The text content remains but the link formatting is removed, then closes the popover.
+     */
     protected removeLinkFromEditor() {
         this.editor().chain().unsetLink().run();
         this.popover.hide();
     }
 
+    /**
+     * Updates the target attribute of an existing link based on user preference.
+     * Allows users to control whether links open in the same window or a new tab.
+     *
+     * @param event - The change event from the checkbox input
+     */
     protected updateLinkTargetAttribute(event: Event) {
         const shouldOpenInNewWindow = (event.target as HTMLInputElement).checked;
         const newTargetValue = shouldOpenInNewWindow ? '_blank' : '_self';
@@ -172,7 +227,13 @@ export class DotLinkEditorPopoverComponent implements OnDestroy {
             .run();
     }
 
-    /* CONTENT SEARCH FUNCTIONALITY */
+    /**
+     * Executes a search for DotCMS content based on the provided search term.
+     * Transforms the search results into a format suitable for display in the UI.
+     * Handles both successful responses and error cases gracefully.
+     *
+     * @param searchTerm - The search query entered by the user
+     */
     private executeContentSearch(searchTerm: string) {
         this.searchForContentletsByQuery(searchTerm).subscribe({
             next: (foundContentlets) => {
@@ -193,10 +254,20 @@ export class DotLinkEditorPopoverComponent implements OnDestroy {
         });
     }
 
+    /**
+     * Performs an HTTP request to search for DotCMS contentlets matching the search term.
+     * Constructs a Lucene query to find published content with matching titles, paths, or URL maps.
+     * Results are limited to 5 items and sorted by modification date.
+     *
+     * @param searchTerm - The search query to match against content
+     * @returns Observable of DotCMS contentlets matching the search criteria
+     */
     private searchForContentletsByQuery(searchTerm: string): Observable<DotCMSContentlet[]> {
+        const languageId = this.editor().storage.dotConfig.lang;
+
         return this.httpClient
             .post('/api/content/_search', {
-                query: `+languageId:1 +deleted:false +working:true  +(urlmap:* OR basetype:5)  +deleted:false +(title:${searchTerm}* OR path:*${searchTerm}* OR urlmap:*${searchTerm}*)`,
+                query: `+languageId:${languageId} +deleted:false +working:true  +(urlmap:* OR basetype:5)  +deleted:false +(title:${searchTerm}* OR path:*${searchTerm}* OR urlmap:*${searchTerm}*)`,
                 sort: 'modDate desc',
                 offset: 0,
                 limit: 5
@@ -204,12 +275,19 @@ export class DotLinkEditorPopoverComponent implements OnDestroy {
             .pipe(pluck('entity', 'jsonObjectView', 'contentlets'));
     }
 
-    /* EDITOR INTERACTION HELPERS */
+    /**
+     * Sets focus to the search input field and highlights the current selection in the editor.
+     * Called when the popover is shown to provide immediate user interaction feedback.
+     */
     private focusSearchInput() {
         this.editor().commands.setHighlight();
         this.searchInput?.nativeElement.focus();
     }
 
+    /**
+     * Removes the highlight from the editor selection and restores focus to the editor.
+     * Called when the popover is hidden to clean up the editor state.
+     */
     private clearEditorHighlight() {
         this.editor().chain().unsetHighlight().focus().run();
     }
