@@ -68,6 +68,10 @@ export class DotLinkEditorPopoverComponent implements OnDestroy {
     protected readonly isSearching = signal<boolean>(false);
     protected readonly searchResults = signal<SearchResultItem[]>([]);
 
+    protected readonly isImageNode = computed(() => {
+        return this.editor().isActive('dotImage');
+    });
+
     // Current link state for editing existing links
     protected readonly existingLinkUrl = signal<string | null>(null);
     protected readonly linkTargetAttribute = signal<string>('_blank');
@@ -171,12 +175,21 @@ export class DotLinkEditorPopoverComponent implements OnDestroy {
      *
      * @param linkUrl - The URL to be applied as the link href attribute
      */
-    protected applyLinkToEditor(linkUrl: string) {
-        this.editor()
-            .chain()
-            .focus()
-            .setLink({ href: linkUrl, target: this.linkTargetAttribute() })
-            .run();
+    protected addLinkToNode(linkUrl: string) {
+        if (this.isImageNode()) {
+            this.editor()
+                .chain()
+                .focus()
+                .setImageLink({ href: linkUrl, target: this.linkTargetAttribute() })
+                .run();
+        } else {
+            this.editor()
+                .chain()
+                .focus()
+                .setLink({ href: linkUrl, target: this.linkTargetAttribute() })
+                .run();
+        }
+
         this.popover.hide();
     }
 

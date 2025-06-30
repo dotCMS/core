@@ -11,7 +11,7 @@
         placeholder="Paste link or search for pages"
         [(ngModel)]="searchQuery"
         (ngModelChange)="onSearchQueryChange($event)"
-        (keydown.enter)="applyLinkToEditor(searchQuery())"
+        (keydown.enter)="addLinkToNode(searchQuery())"
         [autofocus]="true"
         [style]="{ width: '100%' }"
         (keydown)="handleSearchInputKeyDown($event)" />
@@ -38,7 +38,7 @@
             #resultListbox
             optionLabel="displayName"
             [options]="searchResults()"
-            (onChange)="saveLink($event.value.url)"
+            (onChange)="addLinkToNode($event.value.url)"
             [style]="{ width: '100%' }"
             [listStyle]="{ 'max-height': '250px' }">
             <ng-template let-item pTemplate="item">
