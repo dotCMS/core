@@ -98,11 +98,7 @@ export class WorkflowService extends AgnosticClient {
                     errorDetails = 'Could not read error response';
                 }
 
-                this.logger.error('dotCMS server returned error', {
-                    status: response.status,
-                    statusText: response.statusText,
-                    errorDetails
-                });
+                this.logger.error('dotCMS server returned error', response);
 
                 throw new Error(`Failed to save content: ${response.status} ${response.statusText}. Details: ${errorDetails}`);
             }

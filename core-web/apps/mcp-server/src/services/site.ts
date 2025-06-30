@@ -31,11 +31,7 @@ export class SiteService extends AgnosticClient {
             });
 
             if (!response.ok) {
-                this.logger.error('dotCMS server returned error', {
-                    status: response.status,
-                    statusText: response.statusText,
-                    body: await response.text()
-                });
+                this.logger.error('dotCMS server returned error', response);
                 throw new Error(
                     `Failed to fetch current site: ${response.status} ${response.statusText}`
                 );

@@ -61,3 +61,77 @@ const transport = new StdioServerTransport();
 // }).catch((error) => {
 //     console.error(error);
 // });
+
+
+// const contentTypeService = new ContentTypeService();
+
+// contentTypeService
+//     .create({
+//         name: 'Promo 2',
+//         clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
+//         fields: [
+//             {
+//                 name: 'Host',
+//                 clazz: 'com.dotcms.contenttype.model.field.ImmutableHostFolderField',
+//                 required: true,
+//                 variable: 'contentHost',
+//                 fieldType: 'Host-Folder',
+//                 sortOrder: 1,
+//                 searchable: true
+//             },
+//             {
+//                 name: 'Title',
+//                 clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
+//                 listed: true,
+//                 required: true,
+//                 variable: 'title',
+//                 fieldType: 'Text',
+//                 sortOrder: 2,
+//                 searchable: true
+//             },
+//             {
+//                 clazz: 'com.dotcms.contenttype.model.field.ImmutableTextAreaField',
+//                 required: false,
+//                 name: 'Description',
+//                 fieldType: 'Textarea',
+//                 hint: '',
+//                 searchable: false,
+//                 indexed: false,
+//                 id: null
+//             },
+//             {
+//                 hint: 'Visual asset for the promotion',
+//                 name: 'Image',
+//                 clazz: 'com.dotcms.contenttype.model.field.ImmutableImageField',
+//                 required: false,
+//                 variable: 'image',
+//                 fieldType: 'Image',
+//                 sortOrder: 4
+//             },
+//             {
+//                 hint: "Button text or action phrase (e.g., 'Learn More', 'Get Started')",
+//                 name: 'Call to Action',
+//                 clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
+//                 required: false,
+//                 variable: 'cta',
+//                 fieldType: 'Text',
+//                 sortOrder: 5
+//             },
+//             {
+//                 hint: 'URL where the CTA should redirect',
+//                 name: 'Link',
+//                 clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
+//                 required: false,
+//                 variable: 'link',
+//                 fieldType: 'Text',
+//                 sortOrder: 6
+//             }
+//         ],
+//         description: 'Promotional content for campaigns, announcements, and special offers'
+//     })
+//     .then((response) => {
+//         console.log(response);
+//     })
+//     .catch((error) => {
+//         console.error(error);
+//     });

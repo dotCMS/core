@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 import { AgnosticClient } from './client';
 
-import { ContentType, ContentTypeBaseTypeEnum, ContentTypeField, ContentTypeSchema, Layout } from '../types/contentype';
+import { ContentType, ContentTypeBaseTypeEnum, ContentTypeField, ContentTypeSchema, FieldClazz, Layout } from '../types/contentype';
 import { Logger } from '../utils/logger';
 
 const ContentTypeBaseTypeQueryEnum = z.union([z.literal('ANY'), ContentTypeBaseTypeEnum]);
@@ -47,47 +47,49 @@ const FieldTypeEnum = z.enum([
     'Binary'
 ]);
 
+type FieldType = z.infer<typeof FieldTypeEnum>;
+
+// Mapping function to get clazz from fieldType using the existing enum
+const getClazzFromFieldType = (fieldType: FieldType): FieldClazz => {
+    const fieldTypeToClazzMap: Record<FieldType, FieldClazz> = {
+        'Binary': 'com.dotcms.contenttype.model.field.ImmutableBinaryField',
+        'Story-Block': 'com.dotcms.contenttype.model.field.ImmutableStoryBlockField',
+        'Block Editor': 'com.dotcms.contenttype.model.field.ImmutableStoryBlockField',
+        'Category': 'com.dotcms.contenttype.model.field.ImmutableCategoryField',
+        'Checkbox': 'com.dotcms.contenttype.model.field.ImmutableCheckboxField',
+        'Constant-Field': 'com.dotcms.contenttype.model.field.ImmutableConstantField',
+        'Custom-Field': 'com.dotcms.contenttype.model.field.ImmutableCustomField',
+        'Date': 'com.dotcms.contenttype.model.field.ImmutableDateField',
+        'Date-and-Time': 'com.dotcms.contenttype.model.field.ImmutableDateTimeField',
+        'File': 'com.dotcms.contenttype.model.field.ImmutableFileField',
+        'Hidden-Field': 'com.dotcms.contenttype.model.field.ImmutableHiddenField',
+        'Image': 'com.dotcms.contenttype.model.field.ImmutableImageField',
+        'JSON-Field': 'com.dotcms.contenttype.model.field.ImmutableJSONField',
+        'Key-Value': 'com.dotcms.contenttype.model.field.ImmutableKeyValueField',
+        'Multi-Select': 'com.dotcms.contenttype.model.field.ImmutableMultiSelectField',
+        'Radio': 'com.dotcms.contenttype.model.field.ImmutableRadioField',
+        'Relationship': 'com.dotcms.contenttype.model.field.ImmutableRelationshipField',
+        'Select': 'com.dotcms.contenttype.model.field.ImmutableSelectField',
+        'Host-Folder': 'com.dotcms.contenttype.model.field.ImmutableHostFolderField',
+        'Tag': 'com.dotcms.contenttype.model.field.ImmutableTagField',
+        'Text': 'com.dotcms.contenttype.model.field.ImmutableTextField',
+        'Textarea': 'com.dotcms.contenttype.model.field.ImmutableTextAreaField',
+        'Time': 'com.dotcms.contenttype.model.field.ImmutableTimeField',
+        'WYSIWYG': 'com.dotcms.contenttype.model.field.ImmutableWysiwygField'
+    };
+
+    return fieldTypeToClazzMap[fieldType] || 'com.dotcms.contenttype.model.field.ImmutableTextField';
+};
+
 const ContentTypeFieldSchema = z.object({
-    clazz: z.string(),
-    contentTypeId: z.string().optional(),
-    dataType: z.string().optional(),
-    fieldType: FieldTypeEnum,
-    fieldTypeLabel: z.string().optional(),
-    fieldVariables: z.array(z.any()).optional(),
-    fixed: z.boolean().optional(),
-    forceIncludeInApi: z.boolean().optional(),
-    iDate: z.number().optional(),
-    id: z.string().nullable().optional(),
-    indexed: z.boolean().optional(),
-    listed: z.boolean().optional(),
-    modDate: z.number().optional(),
     name: z.string(),
-    readOnly: z.boolean().optional(),
+    fieldType: FieldTypeEnum,
+    clazz: z.custom<FieldClazz>().optional(), // Optional since it will be auto-generated
     required: z.boolean().optional(),
+    listed: z.boolean().optional(),
     searchable: z.boolean().optional(),
-    sortOrder: z.number().optional(),
-    unique: z.boolean().optional(),
-    variable: z.string().optional(),
-    values: z.string().optional(),
+    indexed: z.boolean().optional(),
     hint: z.string().optional(),
-    categories: z
-        .object({
-            categoryName: z.string(),
-            description: z.string().nullable(),
-            inode: z.string(),
-            key: z.string(),
-            keywords: z.string(),
-            sortOrder: z.number()
-        })
-        .optional(),
-    relationships: z
-        .object({
-            cardinality: z.number(),
-            isParentField: z.boolean(),
-            velocityVar: z.string()
-        })
-        .optional(),
-    skipRelationshipCreation: z.boolean().optional()
 });
 
 export const ContentTypeCreateParamsSchema = z.object({
@@ -96,12 +98,7 @@ export const ContentTypeCreateParamsSchema = z.object({
     description: z.string().optional(),
     host: z.string().optional(),
     owner: z.string().optional(),
-    variable: z.string().optional(),
     fixed: z.boolean().optional(),
-    system: z.boolean().optional(),
-    folder: z.string().optional(),
-    systemActionMappings: z.record(z.any()).optional(),
-    workflow: z.array(z.string()).optional(),
     fields: z.array(ContentTypeFieldSchema).min(1)
 });
 
@@ -149,11 +146,7 @@ export class ContentTypeService extends AgnosticClient {
             });
 
             if (!response.ok) {
-                this.logger.error('dotCMS server returned error', {
-                    status: response.status,
-                    statusText: response.statusText,
-                    body: await response.text()
-                });
+                this.logger.error('dotCMS server returned error', response);
                 throw new Error(
                     `Failed to fetch content types: ${response.status} ${response.statusText}`
                 );
@@ -216,6 +209,15 @@ export class ContentTypeService extends AgnosticClient {
 
         this.logger.log('Content type creation parameters validated successfully', validated.data);
 
+        // Auto-generate clazz for fields that don't have it
+        const processedData = validated.data.map(contentType => ({
+            ...contentType,
+            fields: contentType.fields.map(field => ({
+                ...field,
+                clazz: field.clazz || getClazzFromFieldType(field.fieldType)
+            }))
+        }));
+
         const url = `${this.dotcmsUrl}/api/v1/contenttype`;
         this.logger.log('Making request to dotCMS server', { url, method: 'POST' });
 
@@ -225,7 +227,7 @@ export class ContentTypeService extends AgnosticClient {
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify(isArray ? validated.data : validated.data[0])
+                body: JSON.stringify(isArray ? processedData : processedData[0])
             });
 
             this.logger.log('Received response from dotCMS server', {
@@ -235,10 +237,7 @@ export class ContentTypeService extends AgnosticClient {
             });
 
             if (!response.ok) {
-                this.logger.error('dotCMS server returned error', {
-                    status: response.status,
-                    statusText: response.statusText
-                });
+                this.logger.error('dotCMS server returned error', await response.json());
                 throw new Error(
                     `Failed to create content type(s): ${response.status} ${response.statusText}`
                 );

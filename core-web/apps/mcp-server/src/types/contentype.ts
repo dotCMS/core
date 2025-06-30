@@ -210,3 +210,5 @@ export type Workflow = z.infer<typeof WorkflowSchema>;
 export type Layout = z.infer<typeof LayoutSchema>;
 
 export type ContentType = z.infer<typeof ContentTypeSchema>;
+
+export type FieldClazz = z.infer<typeof FieldClazzEnum>;
