@@ -3,7 +3,7 @@ import { of } from 'rxjs';
 import { Component, effect, inject, OnInit, untracked } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
-import { catchError } from 'rxjs/operators';
+import { catchError, take } from 'rxjs/operators';
 
 import { DotContentSearchService, DotSiteService } from '@dotcms/data-access';
 import { ESContent } from '@dotcms/dotcms-models';
@@ -48,6 +48,7 @@ export class DotContentDriveShellComponent implements OnInit {
                 offset: 0
             })
             .pipe(
+                take(1),
                 catchError(() => {
                     this.#store.setStatus(DotContentDriveStatus.ERROR);
 
@@ -67,6 +68,7 @@ export class DotContentDriveShellComponent implements OnInit {
         this.#siteService
             .getCurrentSite()
             .pipe(
+                take(1),
                 catchError(() => {
                     return of(SYSTEM_HOST);
                 })
