@@ -153,7 +153,7 @@ export const ImageNode = Image.extend({
                 dom = img;
             }
 
-            const align = img.style.textAlign;
+            const align = img.style.textAlign || 'left';
             dom.classList.add(`dot-node-${align}`);
 
             // Override toJSON method to include the contentlet data

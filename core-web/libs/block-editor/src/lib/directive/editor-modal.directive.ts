@@ -40,7 +40,7 @@ export class EditorModalDirective implements OnInit, OnDestroy {
     }
 
     ngOnDestroy(): void {
-        this.tippy.destroy();
+        this.tippy?.destroy();
     }
 
     show() {
