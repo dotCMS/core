@@ -62,6 +62,18 @@ const transport = new StdioServerTransport();
 //     console.error(error);
 // });
 
+// import { WorkflowService } from './services/workflow';
+
+// const workflowService = new WorkflowService();
+
+// workflowService.publishContent({
+//     identifier: 'a85cbad9a421e51f7362cda69d390b29'
+// }).then((response) => {
+//     console.log(response);
+// }).catch((error) => {
+//     console.error(error);
+// });
+
 
 // const contentTypeService = new ContentTypeService();
 

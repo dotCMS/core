@@ -31,6 +31,13 @@ export const WorkflowActionRequestSchema = z.object({
     contentlet: ContentCreateParamsSchema
 });
 
+// Schema for publish content parameters
+export const PublishContentParamsSchema = z.object({
+    identifier: z.string(),
+    variantName: z.string().default('DEFAULT'),
+    comments: z.string().optional()
+});
+
 // Schema for workflow scheme
 export const WorkflowSchemeSchema = z.object({
     archived: z.boolean(),
@@ -61,6 +68,8 @@ export type WorkflowActionResponse = z.infer<typeof WorkflowActionResponseSchema
 export type ContentCreateParams = z.infer<typeof ContentCreateParamsSchema>;
 
 export type WorkflowActionRequest = z.infer<typeof WorkflowActionRequestSchema>;
+
+export type PublishContentParams = z.infer<typeof PublishContentParamsSchema>;
 
 export type WorkflowScheme = z.infer<typeof WorkflowSchemeSchema>;
 

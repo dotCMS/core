@@ -8,7 +8,9 @@ import {
     WorkflowActionResponseSchema,
     ContentCreateParamsSchema,
     WorkflowSchemesResponse,
-    WorkflowSchemesResponseSchema
+    WorkflowSchemesResponseSchema,
+    PublishContentParams,
+    PublishContentParamsSchema
 } from '../types/workflow';
 import { Logger } from '../utils/logger';
 
@@ -85,6 +87,56 @@ export class WorkflowService extends AgnosticClient {
 
         } catch (error) {
             this.serviceLogger.error('Error during content save operation', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Publishes content by firing a workflow action.
+     * This method publishes existing content based on the provided parameters.
+     *
+     * @param params - Publish content parameters
+     * @returns Promise with the workflow action response
+     */
+    async publishContent(params: PublishContentParams): Promise<WorkflowActionResponse> {
+        this.serviceLogger.log('Starting content publish operation', params);
+
+        const validatedParams = PublishContentParamsSchema.safeParse(params);
+
+        if (!validatedParams.success) {
+            this.serviceLogger.error('Invalid publish content parameters', validatedParams.error);
+            throw new Error(
+                'Invalid publish content parameters: ' + JSON.stringify(validatedParams.error.format())
+            );
+        }
+
+        this.serviceLogger.log('Publish content parameters validated successfully', validatedParams.data);
+
+        const url = `/api/v1/workflow/actions/default/fire/PUBLISH?identifier=${validatedParams.data.identifier}&variantName=${validatedParams.data.variantName}`;
+
+        try {
+            const response = await this.fetch(url, {
+                method: 'PUT',
+                body: JSON.stringify({
+                    comments: validatedParams.data.comments || 'Publishing content via API'
+                })
+            });
+
+            const data = await response.json();
+
+            const parsed = WorkflowActionResponseSchema.safeParse(data);
+
+            if (!parsed.success) {
+                this.serviceLogger.error('Invalid workflow response format', parsed.error);
+                throw new Error('Invalid workflow response: ' + JSON.stringify(parsed.error.format()));
+            }
+
+            this.serviceLogger.log('Content published successfully', parsed.data);
+
+            return parsed.data;
+
+        } catch (error) {
+            this.serviceLogger.error('Error during content publish operation', error);
             throw error;
         }
     }
