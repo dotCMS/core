@@ -156,10 +156,6 @@ export class DotBubbleMenuComponent {
         return this.domSanitizer.sanitize(SecurityContext.HTML, html);
     }
 
-    protected toggleLinkModal() {
-        this.editorModal?.toggle();
-    }
-
     protected preventLostEditorSelection(event: MouseEvent) {
         event.preventDefault();
     }

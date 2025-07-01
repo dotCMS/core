@@ -11,7 +11,6 @@ import { EditorModalDirective } from '../../../../directive/editor-modal.directi
 /**
  * A popover component for editing image properties in the DotCMS block editor.
  * This component provides a form interface to modify image attributes such as src, alt text, and title.
- * It integrates with the TipTap editor to update image node attributes.
  */
 @Component({
     selector: 'dot-image-editor-popover',
@@ -21,10 +20,18 @@ import { EditorModalDirective } from '../../../../directive/editor-modal.directi
     imports: [EditorModalDirective, InputTextModule, ReactiveFormsModule, ButtonModule]
 })
 export class DotImageEditorPopoverComponent {
-    @ViewChild('imagePopover', { read: EditorModalDirective }) imagePopover: EditorModalDirective;
+    @ViewChild('popover', { read: EditorModalDirective }) popover: EditorModalDirective;
     @ViewChild('input', { read: ElementRef }) urlInput?: ElementRef<HTMLInputElement>;
+
+    /**
+     * TipTap editor instance passed from parent.
+     */
     readonly editor = input.required<Editor>();
-    readonly appendTo = input<HTMLElement>();
+
+    /**
+     * DOM element to append the popover tooltip to.
+     */
+    readonly popoverContainer = input<HTMLElement>();
 
     protected readonly imageForm = new FormGroup({
         src: new FormControl('', Validators.required),
@@ -40,67 +47,78 @@ export class DotImageEditorPopoverComponent {
     @HostListener('document:keydown.escape', ['$event'])
     protected onEscapeKey(event: KeyboardEvent) {
         if (event.key === 'Escape') {
-            this.imagePopover?.hide();
+            this.cancelImageEditing();
         }
     }
 
     /**
-     * Saves the form values and updates the image attributes in the editor.
-     * Validates the form before applying changes and hides the popover on success.
-     * Updates the 'dotImage' node with the new src, alt, and title attributes.
+     * Toggles the visibility of the image editor popover.
+     */
+    toggle() {
+        this.popover?.toggle();
+    }
+
+    /**
+     * Saves the image changes to the editor.
      */
     protected saveImageChanges() {
         if (!this.imageForm.valid) {
             return;
         }
 
+        const { src, alt, title } = this.imageForm.value;
+
         this.editor()
             .chain()
             .focus()
             .updateAttributes('dotImage', {
-                src: this.imageForm.value.src,
-                alt: this.imageForm.value.alt,
-                title: this.imageForm.value.title
+                src,
+                alt,
+                title
             })
             .run();
 
-        this.imagePopover?.hide();
+        this.popover?.hide();
     }
 
     /**
-     * Cancels the image editing operation and closes the popover.
-     * Does not save any changes made to the form.
+     * Cancels the image editing process and resets the form.
      */
     protected cancelImageEditing() {
-        this.imagePopover?.hide();
+        this.imageForm.reset();
+        this.popover?.hide();
     }
 
     /**
-     * Toggles the visibility of the image editor popover.
-     * Can be used to both show and hide the popover.
-     */
-    protected toggle() {
-        this.imagePopover?.toggle();
-    }
-
-    /**
-     * Initializes the form with current image attributes when the popover is shown.
-     * Extracts image data from the selected dotImage node and populates the form fields.
-     * Handles both direct image attributes and nested data properties.
+     * Initializes the form with the image data from the editor.
      */
     protected initializeFormWithImageData() {
-        const { alt, src, title, data } = this.editor().getAttributes('dotImage');
-        const { title: dotTitle = '', asset } = data || {};
+        const { src, alt, title } = this.getDotImageAttributes();
+
         this.imageForm.patchValue({
-            src: src || asset,
-            alt: alt || dotTitle,
-            title: title || dotTitle
+            src: src || '',
+            alt: alt || '',
+            title: title || ''
         });
     }
 
     /**
-     * Sets focus to the search input field and highlights the current selection in the editor.
-     * Called when the popover is shown to provide immediate user interaction feedback.
+     * Gets the image attributes from the editor.
+     * @returns The image attributes.
+     */
+    private getDotImageAttributes() {
+        const { alt, src, title, data } = this.editor().getAttributes('dotImage');
+        const { title: dotTitle = '', asset = '' } = data || {};
+
+        return {
+            src: src || asset,
+            alt: alt || dotTitle,
+            title: title || dotTitle
+        };
+    }
+
+    /**
+     * Focuses the search input.
      */
     private focusSearchInput() {
         this.urlInput?.nativeElement.focus();

@@ -45,7 +45,10 @@
             font: $dot-editor-size;
 
             .ProseMirror-selectednode {
-                outline: 1px solid $color-palette-primary;
+                &.dot-image,
+                .dot-image {
+                    outline: 1px solid $color-palette-primary;
+                }
             }
 
             a:has(img) {
@@ -55,7 +58,6 @@
 
                 img.dot-image {
                     max-width: 100%;
-                    max-height: 100%;
                     position: relative;
                 }
             }
@@ -71,18 +73,6 @@
                     max-height: 300px;
                     max-width: 50%;
                     padding: $spacing-1;
-
-                    &.dot-image-center {
-                        margin: 0 auto;
-                    }
-
-                    &.dot-image-right {
-                        margin-left: auto;
-                    }
-
-                    &.dot-image-left {
-                        margin-right: auto;
-                    }
                 }
 
                 &:before {
@@ -324,6 +314,18 @@
                 border-radius: $spacing-1;
                 border: 1px solid $color-palette-gray-400;
                 color: $color-palette-primary;
+            }
+
+            .dot-node-center {
+                margin: 0 auto;
+            }
+
+            .dot-node-right {
+                margin-left: auto;
+            }
+
+            .dot-node-left {
+                margin-right: auto;
             }
         }
 

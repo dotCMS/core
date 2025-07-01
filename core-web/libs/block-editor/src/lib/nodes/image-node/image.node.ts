@@ -133,6 +133,7 @@ export const ImageNode = Image.extend({
         return ({ node, HTMLAttributes }) => {
             const hasImageLink = !!HTMLAttributes.href;
             const img = document.createElement('img');
+            img.classList.add(`dot-image`);
             Object.entries(HTMLAttributes).forEach(([key, value]) => {
                 if (typeof value === 'object' && value !== null) {
                     value = JSON.stringify(value);
@@ -140,9 +141,6 @@ export const ImageNode = Image.extend({
 
                 img.setAttribute(key, value);
             });
-
-            const align = img.style.textAlign;
-            img.classList.add(`dot-image`, `dot-image-${align}`);
 
             let dom;
             if (hasImageLink) {
@@ -154,6 +152,9 @@ export const ImageNode = Image.extend({
             } else {
                 dom = img;
             }
+
+            const align = img.style.textAlign;
+            dom.classList.add(`dot-node-${align}`);
 
             // Override toJSON method to include the contentlet data
             node.toJSON = contentletToJSON.bind({ node });

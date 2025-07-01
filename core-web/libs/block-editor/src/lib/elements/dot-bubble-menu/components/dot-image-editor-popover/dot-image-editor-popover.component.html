@@ -1,9 +1,9 @@
 <div
     dotEditorModal
-    #imagePopover
+    #popover
     [tippyOptions]="tippyOptions"
     [editor]="editor()"
-    [appendTo]="appendTo()">
+    [appendTo]="popoverContainer()">
     <form class="form" (ngSubmit)="saveImageChanges()" [formGroup]="imageForm">
         <div class="form-group">
             <label for="src">
@@ -17,7 +17,8 @@
                 type="text"
                 pInputText
                 formControlName="src"
-                autocomplete="off" />
+                autocomplete="off"
+                aria-label="Image URL" />
         </div>
 
         <div class="form-group">
@@ -28,7 +29,8 @@
                 type="text"
                 pInputText
                 formControlName="title"
-                autocomplete="off" />
+                autocomplete="off"
+                aria-label="Image title" />
         </div>
 
         <div class="form-group">
@@ -39,7 +41,8 @@
                 type="text"
                 pInputText
                 formControlName="alt"
-                autocomplete="off" />
+                autocomplete="off"
+                aria-label="Alternative text for the image" />
         </div>
 
         <div class="bubble-menu-actions">
@@ -48,13 +51,15 @@
                 pButton
                 class="bubble-menu-button p-button-outlined"
                 (click)="cancelImageEditing()"
-                label="Cancel"></button>
+                label="Cancel"
+                aria-label="Cancel editing"></button>
             <button
                 type="submit"
                 pButton
                 class="bubble-menu-button bubble-menu-button--primary"
                 label="Apply"
-                [disabled]="!imageForm.valid"></button>
+                [disabled]="!imageForm.valid"
+                aria-label="Apply changes"></button>
         </div>
     </form>
 </div>

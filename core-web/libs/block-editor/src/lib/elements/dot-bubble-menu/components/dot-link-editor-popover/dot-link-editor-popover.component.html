@@ -14,7 +14,7 @@
         (keydown.enter)="addLinkToNode(searchQuery())"
         (keydown)="handleSearchInputKeyDown($event)" />
 
-    @if (isSearching()) {
+    @if (showLoading()) {
         <p-listbox [options]="[1, 2, 3]" [listStyle]="{ height: '250px' }">
             <ng-template let-item pTemplate="item">
                 <div class="listbox-item">
@@ -33,7 +33,7 @@
             #resultListbox
             optionLabel="displayName"
             [options]="searchResults()"
-            (onChange)="addLinkToNode($event.value.url)"
+            (onChange)="selectLink($event.value)"
             [listStyle]="{ height: '250px' }">
             <ng-template let-item pTemplate="item">
                 <div class="listbox-item">
