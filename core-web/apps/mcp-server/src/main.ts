@@ -2,7 +2,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
 
-import { registerContentTypeTools } from './tools/contenttypes';
+import { registerContentTypeTools } from './tools/content-types';
 import { registerContextTools } from './tools/context';
 import { registerWorkflowTools } from './tools/workflow';
 
