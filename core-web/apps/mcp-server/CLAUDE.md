@@ -6,23 +6,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Development Commands
 ```bash
-# Build the MCP server
-nx build mcp-server
-
-# Build in development mode
-nx build mcp-server:development
-
-# Build in production mode  
-nx build mcp-server:production
-
-# Run the server locally
-nx serve mcp-server
+# Build the MCP server for prod
+yarn nx build mcp-server
 
 # Run tests
-nx test mcp-server
+yarn nx test mcp-server
 
 # Run linting
-nx lint mcp-server
+yarn nx lint mcp-server
 ```
 
 ### Environment Setup
@@ -40,15 +31,15 @@ This is a **Model Context Protocol (MCP) server** for dotCMS, built with TypeScr
 
 **Entry Point**: `src/main.ts` - Initializes the MCP server, validates environment variables, and registers all tool modules.
 
-**Service Layer**: 
+**Service Layer**:
 - `AgnosticClient` (`src/services/client.ts`) - Base HTTP client with authentication and error handling
-- `ContentTypeService` (`src/services/contentype.ts`) - Content type CRUD operations  
+- `ContentTypeService` (`src/services/contentype.ts`) - Content type CRUD operations
 - `WorkflowService` (`src/services/workflow.ts`) - Content workflow actions (save, publish, delete, etc.)
 - `SiteService` (`src/services/site.ts`) - Site management operations
 
 **Tool Registration**:
 - `registerContentTypeTools()` - Content type listing and creation tools
-- `registerWorkflowTools()` - Content save and workflow action tools  
+- `registerWorkflowTools()` - Content save and workflow action tools
 - `registerContextTools()` - Context initialization for discovering available schemas
 
 **Type System**: All services use Zod schemas for runtime validation of inputs and outputs, with TypeScript types generated from the schemas.
@@ -81,7 +72,7 @@ This is a **Model Context Protocol (MCP) server** for dotCMS, built with TypeScr
 - `content_type_list` - List/filter existing content types
 - `content_type_create` - Create new content types with fields
 
-### Workflow Tools  
+### Workflow Tools
 - `content_save` - Create/update content using workflow actions
 - `content_action` - Perform publish/unpublish/archive/delete actions on content
 
@@ -101,7 +92,7 @@ This is a **Model Context Protocol (MCP) server** for dotCMS, built with TypeScr
 
 ### Type Definitions
 - Content types: `src/types/contentype.ts`
-- Workflow types: `src/types/workflow.ts`  
+- Workflow types: `src/types/workflow.ts`
 - Site types: `src/types/site.ts`
 
 All types use Zod schemas with TypeScript inference (`z.infer<typeof Schema>`)
