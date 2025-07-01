@@ -1,6 +1,6 @@
 import { of } from 'rxjs';
 
-import { Component, effect, inject, OnInit } from '@angular/core';
+import { Component, effect, inject, OnInit, untracked } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
 import { catchError } from 'rxjs/operators';
@@ -33,6 +33,14 @@ export class DotContentDriveShellComponent implements OnInit {
     readonly $items = this.#store.items;
 
     readonly itemsEffect = effect(() => {
+        const currentSite = untracked(() => this.#store.currentSite());
+
+        // If the current site is the system host, we don't need to search for content
+        // It initializes the store with the system host and the path
+        if (currentSite.identifier === SYSTEM_HOST.identifier) {
+            return;
+        }
+
         this.#contentSearchService
             .get<ESContent>({
                 query: this.#store.$query(),
