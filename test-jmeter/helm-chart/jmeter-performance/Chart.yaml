@@ -10,11 +10,11 @@ keywords:
   - testing
   - dotcms
   - analytics
-home: https://github.com/your-org/jmeter-performance
+home: https://github.com/dotcms/core
 sources:
-  - https://github.com/your-org/jmeter-performance
+  - https://github.com/dotcms/core
 maintainers:
   - name: DotCMS Team
-    email: contact@example.com
+    email: info@dotcms.com
 annotations:
   category: Testing 
