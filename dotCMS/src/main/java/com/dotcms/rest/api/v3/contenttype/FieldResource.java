@@ -18,6 +18,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.glassfish.jersey.server.JSONP;
 
 import javax.servlet.http.HttpServletRequest;
@@ -44,6 +45,7 @@ import java.util.stream.Collectors;
  * @see FieldLayout
  */
 @Path("/v3/contenttype/{typeIdOrVarName}/fields")
+@Tag(name = "Content Type Field", description = "Content type field definitions and configuration")
 public class FieldResource {
 
     private final WebResource webResource;
