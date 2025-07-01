@@ -19,6 +19,10 @@ import com.liferay.portal.model.User;
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.Map;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import static com.dotcms.util.CollectionsUtils.toImmutableList;
@@ -43,6 +47,18 @@ public class FieldTypeResource {
         this.fieldTypeAPI = fieldTypeAPI;
     }
 
+    @Operation(
+        summary = "Get field types",
+        description = "Retrieves all available field types in dotCMS for content type configuration"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Field types retrieved successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @JSONP
     @NoCache

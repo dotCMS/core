@@ -24,6 +24,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vavr.control.Try;
 import org.glassfish.jersey.server.JSONP;
@@ -85,16 +86,36 @@ public class PermissionResource {
      * @return Response
      * @throws DotDataException
      */
+    @Operation(
+        summary = "Get permissions by permission type",
+        description = "Load a map of permission type indexed by permissionable types and permissions"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Permissions retrieved successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid parameters",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @Path("/_bypermissiontype")
     @JSONP
     @NoCache
-    @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public Response getPermissionsByPermissionType(final @Context HttpServletRequest request,
                                                    final @Context HttpServletResponse response,
+                                                   @io.swagger.v3.oas.annotations.Parameter(description = "User ID", required = false)
                                                    final @QueryParam("userid")         String userid,
+                                                   @io.swagger.v3.oas.annotations.Parameter(description = "Permission type (READ, WRITE)", required = false)
                                                    final @QueryParam("permission")     String permissions,
+                                                   @io.swagger.v3.oas.annotations.Parameter(description = "Permissionable types", required = false)
                                                    final @QueryParam("permissiontype") String permissionableTypes)
             throws DotDataException, DotSecurityException {
 

@@ -22,6 +22,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import javax.ws.rs.Consumes;
 import org.apache.commons.lang3.StringUtils;
 import org.glassfish.jersey.server.JSONP;
 
@@ -61,6 +62,7 @@ public class CompletionsResource {
     @POST
     @JSONP
     @Produces({MediaType.APPLICATION_OCTET_STREAM, MediaType.APPLICATION_JSON})
+    @Consumes(MediaType.APPLICATION_JSON)
     @Operation(
         operationId = "summarizeFromContent",
         summary = "Generate AI completions from content",
@@ -103,6 +105,7 @@ public class CompletionsResource {
     @POST
     @JSONP
     @Produces({MediaType.APPLICATION_OCTET_STREAM, MediaType.APPLICATION_JSON})
+    @Consumes(MediaType.APPLICATION_JSON)
     @Operation(
         operationId = "rawPrompt",
         summary = "Generate AI completions from raw prompt",

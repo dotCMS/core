@@ -9,9 +9,15 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.startup.StartupTask;
 import com.dotmarketing.util.Logger;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -40,12 +46,42 @@ public class UpgradeTaskResource {
      * @param upgradeTaskForm
      * @return
      */
+    @Operation(
+        summary = "Run upgrade task",
+        description = "Run an upgrade task. Must be logged in as backend admin user."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Upgrade task ran successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "304", 
+                    description = "Not modified - upgrade task does not need to be executed",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - admin access required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "Upgrade task class not found",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @POST
     @JSONP
     @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response upgrade(@Context final HttpServletRequest  request,
                                   @Context final HttpServletResponse response,
+                                  @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                                      description = "Upgrade task configuration", 
+                                      required = true,
+                                      content = @Content(schema = @Schema(implementation = UpgradeTaskForm.class))
+                                  )
                                   final UpgradeTaskForm upgradeTaskForm) {
 
         Response res = null;

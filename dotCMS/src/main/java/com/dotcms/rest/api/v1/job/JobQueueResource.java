@@ -17,6 +17,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.Map;
 import java.util.Set;
@@ -208,13 +209,37 @@ public class JobQueueResource {
         return new ResponseEntityView<>(job);
     }
 
+    @Operation(
+        summary = "Cancel job",
+        description = "Sends a cancellation request to the specified job. The job may not immediately stop if it's currently running."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Cancellation request sent successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid job ID",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "Job not found",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @POST
     @Path("/{jobId}/cancel")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.WILDCARD)
     public ResponseEntityView<String> cancelJob(
             @Context final HttpServletRequest request, @Context final HttpServletResponse response,
-            @PathParam("jobId") String jobId) throws DotDataException {
+            @Parameter(description = "Unique identifier of the job to cancel", required = true) @PathParam("jobId") String jobId) throws DotDataException {
         new InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
@@ -225,14 +250,35 @@ public class JobQueueResource {
         return new ResponseEntityView<>("Cancellation request successfully sent to job " + jobId);
     }
 
+    @Operation(
+        summary = "Get active jobs by queue",
+        description = "Returns paginated list of currently active/running jobs in the specified queue."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Active jobs retrieved successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid queue name or pagination parameters",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @Path("/{queueName}/active")
     @Produces(MediaType.APPLICATION_JSON)
     public ResponseEntityView<JobPaginatedResult> activeJobs(
             @Context final HttpServletRequest request, @Context final HttpServletResponse response,
-            @PathParam("queueName") String queueName,
-            @QueryParam("page") @DefaultValue("1") int page,
-            @QueryParam("pageSize") @DefaultValue("20") int pageSize) {
+            @Parameter(description = "Name of the job queue to filter by", required = true) @PathParam("queueName") String queueName,
+            @Parameter(description = "Page number for pagination (default: 1)") @QueryParam("page") @DefaultValue("1") int page,
+            @Parameter(description = "Number of jobs per page (default: 20)") @QueryParam("pageSize") @DefaultValue("20") int pageSize) {
         new InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
@@ -243,12 +289,33 @@ public class JobQueueResource {
         return new ResponseEntityView<>(result);
     }
 
+    @Operation(
+        summary = "List all jobs",
+        description = "Returns paginated list of all jobs across all queues regardless of status."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Jobs retrieved successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid pagination parameters",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public ResponseEntityView<JobPaginatedResult> listJobs(
             @Context final HttpServletRequest request, @Context final HttpServletResponse response,
-            @QueryParam("page") @DefaultValue("1") int page,
-            @QueryParam("pageSize") @DefaultValue("20") int pageSize) {
+            @Parameter(description = "Page number for pagination (default: 1)") @QueryParam("page") @DefaultValue("1") int page,
+            @Parameter(description = "Number of jobs per page (default: 20)") @QueryParam("pageSize") @DefaultValue("20") int pageSize) {
         new InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
@@ -259,13 +326,34 @@ public class JobQueueResource {
         return new ResponseEntityView<>(result);
     }
 
+    @Operation(
+        summary = "Get all active jobs",
+        description = "Returns paginated list of currently active/running jobs across all queues."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Active jobs retrieved successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid pagination parameters",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @Path("/active")
     @Produces(MediaType.APPLICATION_JSON)
     public ResponseEntityView<JobPaginatedResult> activeJobs(
             @Context final HttpServletRequest request, @Context final HttpServletResponse response,
-            @QueryParam("page") @DefaultValue("1") int page,
-            @QueryParam("pageSize") @DefaultValue("20") int pageSize) {
+            @Parameter(description = "Page number for pagination (default: 1)") @QueryParam("page") @DefaultValue("1") int page,
+            @Parameter(description = "Number of jobs per page (default: 20)") @QueryParam("pageSize") @DefaultValue("20") int pageSize) {
         new InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
@@ -276,13 +364,34 @@ public class JobQueueResource {
         return new ResponseEntityView<>(result);
     }
 
+    @Operation(
+        summary = "Get completed jobs",
+        description = "Returns paginated list of jobs that have completed successfully."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Completed jobs retrieved successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid pagination parameters",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @Path("/completed")
     @Produces(MediaType.APPLICATION_JSON)
     public ResponseEntityView<JobPaginatedResult> completedJobs(
             @Context final HttpServletRequest request, @Context final HttpServletResponse response,
-            @QueryParam("page") @DefaultValue("1") int page,
-            @QueryParam("pageSize") @DefaultValue("20") int pageSize) {
+            @Parameter(description = "Page number for pagination (default: 1)") @QueryParam("page") @DefaultValue("1") int page,
+            @Parameter(description = "Number of jobs per page (default: 20)") @QueryParam("pageSize") @DefaultValue("20") int pageSize) {
         new InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
@@ -293,13 +402,34 @@ public class JobQueueResource {
         return new ResponseEntityView<>(result);
     }
 
+    @Operation(
+        summary = "Get successful jobs",
+        description = "Returns paginated list of jobs that have completed successfully without errors."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Successful jobs retrieved successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid pagination parameters",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @Path("/successful")
     @Produces(MediaType.APPLICATION_JSON)
     public ResponseEntityView<JobPaginatedResult> successfulJobs(
             @Context final HttpServletRequest request, @Context final HttpServletResponse response,
-            @QueryParam("page") @DefaultValue("1") int page,
-            @QueryParam("pageSize") @DefaultValue("20") int pageSize) {
+            @Parameter(description = "Page number for pagination (default: 1)") @QueryParam("page") @DefaultValue("1") int page,
+            @Parameter(description = "Number of jobs per page (default: 20)") @QueryParam("pageSize") @DefaultValue("20") int pageSize) {
         new InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
@@ -310,13 +440,34 @@ public class JobQueueResource {
         return new ResponseEntityView<>(result);
     }
 
+    @Operation(
+        summary = "Get canceled jobs",
+        description = "Returns paginated list of jobs that have been canceled before completion."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Canceled jobs retrieved successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid pagination parameters",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @Path("/canceled")
     @Produces(MediaType.APPLICATION_JSON)
     public ResponseEntityView<JobPaginatedResult> canceledJobs(
             @Context final HttpServletRequest request, @Context final HttpServletResponse response,
-            @QueryParam("page") @DefaultValue("1") int page,
-            @QueryParam("pageSize") @DefaultValue("20") int pageSize) {
+            @Parameter(description = "Page number for pagination (default: 1)") @QueryParam("page") @DefaultValue("1") int page,
+            @Parameter(description = "Number of jobs per page (default: 20)") @QueryParam("pageSize") @DefaultValue("20") int pageSize) {
         new InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
@@ -327,13 +478,34 @@ public class JobQueueResource {
         return new ResponseEntityView<>(result);
     }
 
+    @Operation(
+        summary = "Get failed jobs",
+        description = "Returns paginated list of jobs that have failed due to errors during execution."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Failed jobs retrieved successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid pagination parameters",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @Path("/failed")
     @Produces(MediaType.APPLICATION_JSON)
     public ResponseEntityView<JobPaginatedResult> failedJobs(
             @Context final HttpServletRequest request, @Context final HttpServletResponse response,
-            @QueryParam("page") @DefaultValue("1") int page,
-            @QueryParam("pageSize") @DefaultValue("20") int pageSize) {
+            @Parameter(description = "Page number for pagination (default: 1)") @QueryParam("page") @DefaultValue("1") int page,
+            @Parameter(description = "Number of jobs per page (default: 20)") @QueryParam("pageSize") @DefaultValue("20") int pageSize) {
         new InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
@@ -344,13 +516,34 @@ public class JobQueueResource {
         return new ResponseEntityView<>(result);
     }
 
+    @Operation(
+        summary = "Get abandoned jobs",
+        description = "Returns paginated list of jobs that have been abandoned (no longer tracked or monitored)."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Abandoned jobs retrieved successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid pagination parameters",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @Path("/abandoned")
     @Produces(MediaType.APPLICATION_JSON)
     public ResponseEntityView<JobPaginatedResult> abandonedJobs(
             @Context final HttpServletRequest request, @Context final HttpServletResponse response,
-            @QueryParam("page") @DefaultValue("1") int page,
-            @QueryParam("pageSize") @DefaultValue("20") int pageSize) {
+            @Parameter(description = "Page number for pagination (default: 1)") @QueryParam("page") @DefaultValue("1") int page,
+            @Parameter(description = "Number of jobs per page (default: 20)") @QueryParam("pageSize") @DefaultValue("20") int pageSize) {
         new InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
@@ -361,13 +554,37 @@ public class JobQueueResource {
         return new ResponseEntityView<>(result);
     }
 
+    @Operation(
+        summary = "Monitor job progress",
+        description = "Establishes a Server-Sent Events (SSE) connection to monitor real-time progress of a specific job. Returns continuous updates until job completion."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "SSE connection established for job monitoring",
+                    content = @Content(mediaType = "text/event-stream")),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid job ID",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "Job not found",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @Path("/{jobId}/monitor")
     @Produces(SseFeature.SERVER_SENT_EVENTS)
     @SuppressWarnings("java:S1854") // jobWatcher assignment is needed for cleanup in catch blocks
     public EventOutput monitorJob(
             @Context final HttpServletRequest request, @Context final HttpServletResponse response,
-            @PathParam("jobId") String jobId) {
+            @Parameter(description = "Unique identifier of the job to monitor", required = true) @PathParam("jobId") String jobId) {
 
         new InitBuilder(webResource)
                 .requiredBackendUser(true)

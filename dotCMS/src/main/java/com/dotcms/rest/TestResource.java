@@ -23,12 +23,19 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 /**
  * @author Jonathan Gamba
  *         Date: 8/22/13
  */
 @Disabled
+@Tag(name = "Testing", description = "Test endpoints for API development and debugging (disabled in production)")
 @Path ("/testResource")
 public class TestResource {
 
@@ -49,10 +56,29 @@ public class TestResource {
      * @return
      * @throws JSONException
      */
+    @Operation(
+        summary = "Test GET operation",
+        description = "Example method that handles a GET operation for testing purposes. Supports JSON, XML, and JSONP response formats. This endpoint is disabled in production."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Test operation completed successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - missing required parameters (param1, param2)",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - user authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error during test operation",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @Path ("/testGet/{params:.*}")
     @Produces (MediaType.APPLICATION_JSON)
-    public Response getDocumentCount (@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam ("params") String params ) throws JSONException {
+    public Response getDocumentCount (@Context HttpServletRequest request, @Context final HttpServletResponse response, 
+        @Parameter(description = "URL parameters including user/password/param1/param2 and optional type/callback", required = true) @PathParam ("params") String params ) throws JSONException {
 
         InitDataObject initData = webResource.init(params, request, response, true, null);
 
@@ -131,17 +157,36 @@ public class TestResource {
      * @throws IOException
      * @throws JSONException
      */
+    @Operation(
+        summary = "Test POST operation",
+        description = "Example method that handles a POST operation for testing purposes. Supports JSON, XML, and JSONP response formats. This endpoint is disabled in production."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Test POST operation completed successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - missing required parameters (param1, param2)",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - user authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error during test operation",
+                    content = @Content(mediaType = "application/json"))
+    })
     @POST
     @Path ("/testPost")
     @Produces (MediaType.APPLICATION_JSON)
     @Consumes (MediaType.APPLICATION_FORM_URLENCODED)
     public Response saveTest ( @Context HttpServletRequest request,
                                @Context final HttpServletResponse response,
-                               @FormParam ("user") String user, @FormParam ("password") String password,
-                               @FormParam ("param1") String param1,
-                               @FormParam ("param2") String param2,
-                               @FormParam ("type") String type,
-                               @FormParam ("callback") String callback ) throws IOException, JSONException {
+                               @Parameter(description = "Username for authentication", required = true) @FormParam ("user") String user, 
+                               @Parameter(description = "Password for authentication", required = true) @FormParam ("password") String password,
+                               @Parameter(description = "First test parameter", required = true) @FormParam ("param1") String param1,
+                               @Parameter(description = "Second test parameter", required = true) @FormParam ("param2") String param2,
+                               @Parameter(description = "Response type (json, xml, jsonp)", required = false) @FormParam ("type") String type,
+                               @Parameter(description = "Callback function name for JSONP", required = false) @FormParam ("callback") String callback ) throws IOException, JSONException {
 
         InitDataObject initData = webResource.init("user/" + user + "/password/" + password, request, response, true, null);
 

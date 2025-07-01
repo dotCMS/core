@@ -60,6 +60,11 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 
@@ -138,6 +143,24 @@ public class ESIndexResource {
     }
     
     
+    @Operation(
+        summary = "Get Elasticsearch cluster statistics",
+        description = "Retrieves comprehensive statistics about the Elasticsearch cluster including cluster name, node information, and performance metrics. Requires CMS Administrator role."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Cluster statistics retrieved successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - CMS Administrator role required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error retrieving cluster statistics",
+                    content = @Content(mediaType = "application/json"))
+    })
     @CloseDBIfOpened
     @GET
     @JSONP
@@ -167,6 +190,24 @@ public class ESIndexResource {
         return Response.ok(new ResponseEntityView(builder.build())).build();
     }
     
+    @Operation(
+        summary = "Download failed reindex records",
+        description = "Retrieves a list of failed reindex records in JSON format. Each record includes identifier, server ID, failure reason, and priority information. Requires CMS Administrator role."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Failed reindex records retrieved successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - CMS Administrator role required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error retrieving failed records",
+                    content = @Content(mediaType = "application/json"))
+    })
     @CloseDBIfOpened
     @GET
     @JSONP
@@ -212,6 +253,24 @@ public class ESIndexResource {
     }
 
     @CloseDBIfOpened
+    @Operation(
+        summary = "Delete failed reindex records",
+        description = "Deletes all failed reindex records from the reindex queue. This clears the list of content items that previously failed to reindex. Requires CMS Administrator role."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Failed reindex records deleted successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - CMS Administrator role required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error deleting failed records",
+                    content = @Content(mediaType = "application/json"))
+    })
     @DELETE
     @JSONP
     @NoCache
@@ -224,6 +283,24 @@ public class ESIndexResource {
         return Response.ok(new ResponseEntityView(true)).build();
     }
 
+    @Operation(
+        summary = "Optimize Elasticsearch indices",
+        description = "Optimizes all Elasticsearch indices to improve search performance by reducing the number of segments and freeing up disk space. This operation can be resource-intensive. Requires CMS Administrator role."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Index optimization completed successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - CMS Administrator role required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error during index optimization",
+                    content = @Content(mediaType = "application/json"))
+    })
     @CloseDBIfOpened
     @POST
     @JSONP
@@ -241,6 +318,24 @@ public class ESIndexResource {
     }
 
     @CloseDBIfOpened
+    @Operation(
+        summary = "Flush Elasticsearch indices cache",
+        description = "Flushes the cache for all dotCMS Elasticsearch indices to ensure data consistency. Returns the number of successful and failed shard operations. Requires CMS Administrator role."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Index cache flushed successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - CMS Administrator role required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error during cache flush",
+                    content = @Content(mediaType = "application/json"))
+    })
     @DELETE
     @JSONP
     @NoCache
@@ -304,6 +399,24 @@ public class ESIndexResource {
     }
 
     @CloseDBIfOpened
+    @Operation(
+        summary = "Get reindexation progress",
+        description = "Retrieves the current progress status of content reindexation process including percentage completed, records processed, and estimated time remaining. Requires CMS Administrator role."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Reindexation progress retrieved successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - CMS Administrator role required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error retrieving reindexation progress",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @JSONP
     @NoCache
@@ -321,13 +434,35 @@ public class ESIndexResource {
     
     
     @CloseDBIfOpened
+    @Operation(
+        summary = "Start content reindexation",
+        description = "Initiates a content reindexation process for all content or a specific content type. Optionally allows configuration of the number of Elasticsearch shards. This is a resource-intensive operation that rebuilds the search index. Requires CMS Administrator role."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Reindexation started successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid content type or shard count",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - CMS Administrator role required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error starting reindexation",
+                    content = @Content(mediaType = "application/json"))
+    })
     @POST
     @JSONP
     @NoCache
     @Path("/reindex")
     @Produces({MediaType.APPLICATION_JSON})
     public Response startReindex(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
-                    @QueryParam("shards") int shards, @DefaultValue(DOTALL) @QueryParam("contentType") String contentType) throws DotDataException, DotSecurityException {
+                    @Parameter(description = "Number of Elasticsearch shards (defaults to configuration value if 0 or negative)", required = false) @QueryParam("shards") int shards, 
+                    @Parameter(description = "Content type to reindex (defaults to 'DOTALL' for all content)", required = false) @DefaultValue(DOTALL) @QueryParam("contentType") String contentType) throws DotDataException, DotSecurityException {
         final InitDataObject init = auth(request, response);
         shards = (shards <= 0) ? Config.getIntProperty("es.index.number_of_shards", 2) : shards;
 
@@ -350,6 +485,24 @@ public class ESIndexResource {
     }
     
     @CloseDBIfOpened
+    @Operation(
+        summary = "Stop content reindexation",
+        description = "Stops the currently running content reindexation process. Optionally performs a switchover to activate the new index after stopping. Requires CMS Administrator role."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Reindexation stopped successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - CMS Administrator role required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error stopping reindexation",
+                    content = @Content(mediaType = "application/json"))
+    })
     @DELETE
     @JSONP
     @NoCache
@@ -357,7 +510,7 @@ public class ESIndexResource {
     @Produces({MediaType.APPLICATION_JSON})
     public Response stopReindexation(@Context final HttpServletRequest request, 
                     @Context final HttpServletResponse response, 
-                    @DefaultValue("true") @QueryParam("switch") boolean switchMe)
+                    @Parameter(description = "Whether to perform switchover to activate new index after stopping (defaults to true)", required = false) @DefaultValue("true") @QueryParam("switch") boolean switchMe)
                     throws DotDataException {
         final InitDataObject init = auth(request, response);
         
@@ -373,13 +526,34 @@ public class ESIndexResource {
     
     
     @CloseDBIfOpened
+    @Operation(
+        summary = "Delete specific Elasticsearch index",
+        description = "Deletes a specific Elasticsearch index by name. This is a destructive operation that permanently removes the index and all its data. Requires CMS Administrator role."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Index deleted successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - CMS Administrator role required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "Index not found",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error deleting index",
+                    content = @Content(mediaType = "application/json"))
+    })
     @DELETE
     @JSONP
     @NoCache
     @Path("/{indexName: .*}")
     @Produces({MediaType.APPLICATION_JSON})
     public Response deleteIndex(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
-                    @PathParam("indexName") final String indexName) throws DotDataException {
+                    @Parameter(description = "Name of the Elasticsearch index to delete", required = true) @PathParam("indexName") final String indexName) throws DotDataException {
         
         final InitDataObject init = auth(request, response);
 
@@ -528,13 +702,38 @@ public class ESIndexResource {
     }
     
     @CloseDBIfOpened
+    @Operation(
+        summary = "Modify Elasticsearch index",
+        description = "Performs various operations on a specific Elasticsearch index including activate, deactivate, clear, open, and close actions. This replaces several deprecated endpoints. Requires CMS Administrator role."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Index operation completed successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid action parameter",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - CMS Administrator role required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "Index not found",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error during index operation",
+                    content = @Content(mediaType = "application/json"))
+    })
     @PUT
     @JSONP
     @NoCache
     @Path("/{indexName: .*}")
     @Produces({MediaType.APPLICATION_JSON})
     public Response modIndex(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
-                    @PathParam("indexName") final String indexName, @QueryParam("action") final String action) throws DotDataException, IOException {
+                    @Parameter(description = "Name of the Elasticsearch index to modify", required = true) @PathParam("indexName") final String indexName, 
+                    @Parameter(description = "Action to perform: ACTIVATE, DEACTIVATE, CLEAR, OPEN, CLOSE", required = true) @QueryParam("action") final String action) throws DotDataException, IOException {
 
         final InitDataObject init = auth(request, response);
         final IndexAction indexAction = IndexAction.fromString(action);
@@ -571,6 +770,24 @@ public class ESIndexResource {
     }
     
     @CloseDBIfOpened
+    @Operation(
+        summary = "Get Elasticsearch index status",
+        description = "Retrieves the status information for all Elasticsearch indices including their state, document count, and health information. Requires CMS Administrator role."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Index status retrieved successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - CMS Administrator role required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error retrieving index status",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @JSONP
     @NoCache

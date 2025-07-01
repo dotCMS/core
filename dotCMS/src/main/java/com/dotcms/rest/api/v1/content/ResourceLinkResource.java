@@ -25,6 +25,11 @@ import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import org.glassfish.jersey.server.JSONP;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import javax.servlet.http.HttpServletRequest;
@@ -80,6 +85,27 @@ public class ResourceLinkResource {
      * @throws DotStateException
      * @throws DotSecurityException
      */
+    @Operation(
+        summary = "Get resource link for specific field",
+        description = "Retrieves a resource link for a specific field of a contentlet identified by inode or identifier"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Resource link retrieved successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - missing inode/identifier parameter",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - download restricted",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "Not found - contentlet or field not found",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @JSONP
     @NoCache
@@ -87,9 +113,13 @@ public class ResourceLinkResource {
     @Produces(MediaType.APPLICATION_JSON + ";charset=UTF-8")
     public Response findResourceLink(@Context final HttpServletRequest  request,
                                      @Context final HttpServletResponse response,
+                                     @Parameter(description = "Field variable name", required = true)
                                      @PathParam("field")             final String field,
+                                     @Parameter(description = "Content inode")
                                      @QueryParam("inode")            final String inode,
+                                     @Parameter(description = "Content identifier")
                                      @QueryParam("identifier")       final String identifier,
+                                     @Parameter(description = "Language ID", example = "1")
                                      @DefaultValue("-1") @QueryParam("language") final String language) throws DotStateException, DotSecurityException, DotDataException {
 
         if (!UtilMethods.isSet(inode) && !UtilMethods.isSet(identifier)) {
@@ -187,14 +217,35 @@ public class ResourceLinkResource {
      * @throws DotStateException
      * @throws DotSecurityException
      */
+    @Operation(
+        summary = "Get all resource links for contentlet",
+        description = "Retrieves resource links for all binary fields of a contentlet identified by inode or identifier"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Resource links retrieved successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - missing inode/identifier parameter",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - download restricted",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @JSONP
     @NoCache
     @Produces(MediaType.APPLICATION_JSON + ";charset=UTF-8")
     public Response findResourceLinks(@Context final HttpServletRequest  request,
                                       @Context final HttpServletResponse response,
+                                      @Parameter(description = "Content inode")
                                       @QueryParam("inode")            final String inode,
+                                      @Parameter(description = "Content identifier")
                                       @QueryParam("identifier")       final String identifier,
+                                      @Parameter(description = "Language ID", example = "1")
                                       @DefaultValue("-1") @QueryParam("language") final String language) throws DotStateException, DotSecurityException, DotDataException {
 
         if (!UtilMethods.isSet(inode) && !UtilMethods.isSet(identifier)) {

@@ -9,10 +9,18 @@ import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.PUT;
@@ -53,6 +61,21 @@ public class RedisResource {
         this.client      = client;
     }
 
+    @Operation(
+        summary = "Redis ping",
+        description = "Tests Redis connectivity by sending a ping command"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Redis ping successful",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - maintenance role required",
+                    content = @Content(mediaType = "application/json"))
+    })
     @NoCache
     @GET
     @Path("/ping")
@@ -70,12 +93,28 @@ public class RedisResource {
         return Response.ok(new ResponseEntityView(this.client.ping())).build();
     }
 
+    @Operation(
+        summary = "Redis echo",
+        description = "Tests Redis functionality by echoing a message back"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Message echoed successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - maintenance role required",
+                    content = @Content(mediaType = "application/json"))
+    })
     @NoCache
     @GET
     @Path("/echo/{message}")
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public Response echo(@Context final HttpServletRequest request,
                       @Context final HttpServletResponse response,
+                      @Parameter(description = "Message to echo", required = true)
                       @PathParam("message") final String message) {
 
         new WebResource.InitBuilder(webResource)
@@ -88,11 +127,33 @@ public class RedisResource {
         return Response.ok(new ResponseEntityView(this.client.echo(message))).build();
     }
 
+    @Operation(
+        summary = "Set Redis key-value",
+        description = "Sets a key-value pair in Redis"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Key-value set successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid data",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - maintenance role required",
+                    content = @Content(mediaType = "application/json"))
+    })
     @NoCache
     @PUT
+    @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public Response set(@Context final HttpServletRequest request,
                       @Context final HttpServletResponse response,
+                      @RequestBody(description = "Key-value data to set", 
+                                 required = true,
+                                 content = @Content(schema = @Schema(implementation = SetForm.class)))
                       final SetForm setForm) {
 
         new WebResource.InitBuilder(webResource)
@@ -106,12 +167,31 @@ public class RedisResource {
                 this.client.set(setForm.getKey(), setForm.getValue()))).build();
     }
 
+    @Operation(
+        summary = "Get Redis value by key",
+        description = "Retrieves a value from Redis by its key"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Value retrieved successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - maintenance role required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "Key not found",
+                    content = @Content(mediaType = "application/json"))
+    })
     @NoCache
     @GET
     @Path("/{key}")
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public Response get(@Context final HttpServletRequest request,
                         @Context final HttpServletResponse response,
+                        @Parameter(description = "Redis key", required = true)
                         @PathParam("key") final String key) {
 
         new WebResource.InitBuilder(webResource)
@@ -124,12 +204,28 @@ public class RedisResource {
         return Response.ok(new ResponseEntityView(this.client.get(key))).build();
     }
 
+    @Operation(
+        summary = "Delete Redis key",
+        description = "Deletes a key and its value from Redis"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Key deleted successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - maintenance role required",
+                    content = @Content(mediaType = "application/json"))
+    })
     @NoCache
     @DELETE
     @Path("/{key}")
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public Response delete(@Context final HttpServletRequest request,
                         @Context final HttpServletResponse response,
+                        @Parameter(description = "Redis key to delete", required = true)
                         @PathParam("key") final String key) {
 
         new WebResource.InitBuilder(webResource)
@@ -143,12 +239,34 @@ public class RedisResource {
     }
 
     /////// HASHES
+    @Operation(
+        summary = "Set Redis hash",
+        description = "Sets hash fields in Redis"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Hash set successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid hash data",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - maintenance role required",
+                    content = @Content(mediaType = "application/json"))
+    })
     @NoCache
     @PUT
     @Path("/hash")
+    @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public Response setHash(@Context final HttpServletRequest request,
                         @Context final HttpServletResponse response,
+                        @RequestBody(description = "Hash data to set", 
+                                   required = true,
+                                   content = @Content(schema = @Schema(implementation = SetHashForm.class)))
                         final SetHashForm setForm) {
 
         new WebResource.InitBuilder(webResource)
@@ -162,12 +280,31 @@ public class RedisResource {
                 this.client.setHash(setForm.getKey(), setForm.getFields()))).build();
     }
 
+    @Operation(
+        summary = "Get Redis hash",
+        description = "Retrieves all fields and values of a hash stored at key"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Hash retrieved successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - maintenance role required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "Hash key not found",
+                    content = @Content(mediaType = "application/json"))
+    })
     @NoCache
     @GET
     @Path("/hash/{key}")
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public Response getHash(@Context final HttpServletRequest request,
                         @Context final HttpServletResponse response,
+                        @Parameter(description = "Redis hash key", required = true)
                         @PathParam("key") final String key) {
 
         new WebResource.InitBuilder(webResource)
@@ -180,12 +317,28 @@ public class RedisResource {
         return Response.ok(new ResponseEntityView(this.client.getHash(key))).build();
     }
 
+    @Operation(
+        summary = "Delete Redis hash",
+        description = "Deletes all fields of a hash stored at key"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Hash deleted successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - maintenance role required",
+                    content = @Content(mediaType = "application/json"))
+    })
     @NoCache
     @DELETE
     @Path("/hash/{key}")
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public Response deleteHash(@Context final HttpServletRequest request,
                            @Context final HttpServletResponse response,
+                           @Parameter(description = "Redis hash key to delete", required = true)
                            @PathParam("key") final String key) {
 
         new WebResource.InitBuilder(webResource)
@@ -204,6 +357,21 @@ public class RedisResource {
     }
 
     /////// INCREMENT
+    @Operation(
+        summary = "Increment Redis key (async)",
+        description = "Asynchronously increments the value of a key by 1"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Key incremented successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - maintenance role required",
+                    content = @Content(mediaType = "application/json"))
+    })
     @NoCache
     @PUT
     @Path("/incr/{key}")
@@ -211,6 +379,7 @@ public class RedisResource {
     public void incrementAsync(@Context final HttpServletRequest request,
                             @Context final HttpServletResponse response,
                             @Suspended final AsyncResponse asyncResponse,
+                            @Parameter(description = "Redis key to increment", required = true)
                             @PathParam("key") final String key) {
 
         new WebResource.InitBuilder(webResource)
@@ -232,12 +401,31 @@ public class RedisResource {
         }, asyncResponse);
     }
 
+    @Operation(
+        summary = "Get Redis increment value",
+        description = "Retrieves the current increment value for a key"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Increment value retrieved successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - maintenance role required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "Key not found",
+                    content = @Content(mediaType = "application/json"))
+    })
     @NoCache
     @GET
     @Path("/incr/{key}")
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public Response getIncrement(@Context final HttpServletRequest request,
                             @Context final HttpServletResponse response,
+                            @Parameter(description = "Redis increment key", required = true)
                             @PathParam("key") final String key) {
 
         new WebResource.InitBuilder(webResource)

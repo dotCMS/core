@@ -16,6 +16,12 @@ import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import org.glassfish.jersey.server.JSONP;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import javax.servlet.http.HttpServletRequest;
@@ -41,7 +47,7 @@ import static com.dotcms.util.CollectionsUtils.toImmutableList;
  * @author nollymar
  */
 @Path("/v1/relationships")
-@Tag(name = "Relationships", description = "Content relationship management")
+@Tag(name = "Relationships", description = "Endpoints for managing content relationships and cardinalities")
 public class RelationshipsResource {
 
     private final WebResource webResource;
@@ -57,6 +63,18 @@ public class RelationshipsResource {
 
     }
 
+    @Operation(
+        summary = "Get relationship cardinalities",
+        description = "Returns all available relationship cardinality types with their labels and IDs"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Cardinalities retrieved successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @JSONP
     @NoCache
@@ -87,23 +105,35 @@ public class RelationshipsResource {
         )).build();
     }
 
-    /**
-     * Returns orphan relationships (those defined in the parent or children but not in both) given a content type.
-     * @param contentTypeId
-     * @param page
-     * @param perPage
-     * @param request
-     * @return
-     * @throws Throwable
-     */
+    @Operation(
+        summary = "Get one-sided relationships",
+        description = "Returns orphan relationships (those defined in the parent or children but not in both) for a given content type"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "One-sided relationships retrieved successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "Content type not found",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response getOneSidedRelationships(
-            @QueryParam("contentTypeId") final String contentTypeId,
-            @QueryParam(PaginationUtil.PAGE) final int page,
-            @QueryParam(PaginationUtil.PER_PAGE) @DefaultValue("0") final int perPage,
+            @Parameter(description = "Content type identifier", required = true) @QueryParam("contentTypeId") final String contentTypeId,
+            @Parameter(description = "Page number for pagination") @QueryParam(PaginationUtil.PAGE) final int page,
+            @Parameter(description = "Number of items per page") @QueryParam(PaginationUtil.PER_PAGE) @DefaultValue("0") final int perPage,
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response) throws Throwable {
         Logger.debug(this,

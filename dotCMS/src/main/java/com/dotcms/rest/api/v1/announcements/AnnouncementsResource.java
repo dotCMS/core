@@ -17,13 +17,18 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 /**
  * This REST Resource behaves as a proxy to the remote dotCMS instance that provides the announcements
  */
 @Path("/v1/announcements")
-@Tag(name = "Announcements", description = "System announcements and notifications")
+@Tag(name = "Announcements", description = "Endpoints for retrieving system announcements and notifications from remote dotCMS instance")
 public class AnnouncementsResource {
 
     private final WebResource webResource;
@@ -48,15 +53,24 @@ public class AnnouncementsResource {
         this.helper = helper;
     }
 
-    /**
-     * Get the announcements
-     * @param request HttpServletRequest
-     * @param response HttpServletResponse
-     * @param langIdOrCode String
-     * @param refreshCache boolean
-     * @param limit int
-     * @return Response
-     */
+    @Operation(
+        summary = "Get system announcements",
+        description = "Retrieves system announcements from the remote dotCMS instance. Acts as a proxy to the announcement service with optional cache refresh and result limiting."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Announcements retrieved successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @Path("/")
     @JSONP
@@ -64,8 +78,8 @@ public class AnnouncementsResource {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final ResponseEntityView<List<Announcement>> announcements(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
-            @QueryParam("refreshCache") final boolean refreshCache,
-            @QueryParam("limit") final int limit
+            @Parameter(description = "Whether to refresh the cache before retrieving announcements (default: false)") @QueryParam("refreshCache") final boolean refreshCache,
+            @Parameter(description = "Maximum number of announcements to return (default: no limit)") @QueryParam("limit") final int limit
     ) {
             final InitDataObject initData =
                     new WebResource.InitBuilder(webResource)

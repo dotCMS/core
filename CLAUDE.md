@@ -228,11 +228,29 @@ public abstract class MyEntity {
 #### REST Endpoints (JAX-RS Pattern)
 ```java
 @Path("/v1/myresource")
+@Tag(name = "Resource Category", description = "Description of this resource group")
 public class MyResource {
     private final WebResource webResource = new WebResource();
     
+    @Operation(
+        summary = "Get resource by ID",
+        description = "Retrieves a specific resource using its identifier"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Resource found successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "Resource not found",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized access",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET @Path("/{id}") @Produces(MediaType.APPLICATION_JSON) @NoCache
-    public Response getById(@Context HttpServletRequest request, @PathParam("id") String id) {
+    public Response getById(@Context HttpServletRequest request,
+                           @Parameter(description = "Resource identifier", required = true)
+                           @PathParam("id") String id) {
         // ALWAYS initialize request context
         InitDataObject initData = webResource.init(request, response, true);
         User user = initData.getUser();
@@ -240,7 +258,114 @@ public class MyResource {
         // Business logic
         return Response.ok(new ResponseEntityView<>(result)).build();
     }
+    
+    @Operation(
+        summary = "Create new resource",
+        description = "Creates a new resource with the provided data"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "201", 
+                    description = "Resource created successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "400", 
+                    description = "Invalid request data",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized access",
+                    content = @Content(mediaType = "application/json"))
+    })
+    @POST @Produces(MediaType.APPLICATION_JSON) @Consumes(MediaType.APPLICATION_JSON) @NoCache
+    public Response create(@Context HttpServletRequest request,
+                          @RequestBody(description = "Resource data to create", 
+                                     required = true,
+                                     content = @Content(schema = @Schema(implementation = MyResourceForm.class)))
+                          MyResourceForm form) {
+        InitDataObject initData = webResource.init(request, response, true);
+        User user = initData.getUser();
+        
+        // Business logic
+        return Response.status(201).entity(new ResponseEntityView<>(result)).build();
+    }
 }
+```
+
+#### REST Endpoint Documentation Standards
+
+**REQUIRED Swagger/OpenAPI Annotations:**
+```java
+// Class level - ALWAYS required
+@Tag(name = "Category", description = "Brief description")
+
+// Method level - ALL methods MUST have these
+@Operation(summary = "Brief action", description = "Detailed explanation")
+@ApiResponses(value = {
+    @ApiResponse(responseCode = "200", description = "Success description",
+                content = @Content(mediaType = "application/json")),
+    @ApiResponse(responseCode = "4xx/5xx", description = "Error description",
+                content = @Content(mediaType = "application/json"))
+})
+
+// Parameters - ALL path/query parameters MUST be documented
+@Parameter(description = "Parameter purpose", required = true/false)
+
+// Request bodies - ALL POST/PUT/PATCH with bodies MUST be documented
+@RequestBody(description = "Body purpose", required = true,
+           content = @Content(schema = @Schema(implementation = FormClass.class)))
+```
+
+**Media Type Annotation Rules:**
+```java
+// @Produces - ALWAYS specify at method level (not class level)
+@Produces(MediaType.APPLICATION_JSON)                    // Single type
+@Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})  // Multiple types
+
+// @Consumes - ONLY on endpoints that accept request bodies
+@GET                                    // NO @Consumes (no body)
+@POST @Consumes(MediaType.APPLICATION_JSON)            // YES @Consumes (has body)
+@PUT @Consumes(MediaType.APPLICATION_JSON)             // YES @Consumes (has body)
+@DELETE                                 // Usually NO @Consumes (no body)
+@DELETE @Consumes(MediaType.APPLICATION_JSON)          // Only if body required
+
+// Special cases - Some GET endpoints accept bodies (non-standard but exists)
+@GET @Consumes(MediaType.APPLICATION_JSON)             // Only if GET accepts body
+```
+
+**Standard Media Types:**
+- Primary: `MediaType.APPLICATION_JSON`
+- Multiple response formats: `{MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN}`
+- Streaming: `{MediaType.APPLICATION_OCTET_STREAM, MediaType.APPLICATION_JSON}`
+- File uploads: `MediaType.MULTIPART_FORM_DATA`
+
+**Response Status Codes:**
+```java
+// Standard success codes
+return Response.ok(entity).build();                    // 200 OK
+return Response.status(201).entity(entity).build();    // 201 Created
+return Response.noContent().build();                   // 204 No Content
+
+// Standard error responses (document in @ApiResponses)
+// 400 Bad Request - Invalid input
+// 401 Unauthorized - Authentication required  
+// 403 Forbidden - Insufficient permissions
+// 404 Not Found - Resource not found
+// 500 Internal Server Error - Server error
+```
+
+**Deprecation Documentation Standards:**
+```java
+// Class level deprecation (legacy resources)
+@Deprecated
+@Tag(name = "Category", description = "Legacy endpoints (deprecated - use v2 instead)")
+
+// Method level deprecation
+@Operation(
+    summary = "Action name (deprecated)",
+    description = "Method description. This endpoint is deprecated - use v2 CategoryResource instead.",
+    deprecated = true
+)
+
+// Standard deprecation response descriptions
+@ApiResponse(responseCode = "200", description = "Success (deprecated endpoint)")
 ```
 
 #### Exception Handling (dotCMS Hierarchy)
@@ -455,9 +580,12 @@ Valid log levels: `TRACE`, `DEBUG`, `INFO`, `WARN`, `ERROR`, `FATAL`, `OFF`
 - ✅ Use `Config.getProperty()` and `Logger.info(this, ...)`
 - ✅ Use `APILocator.getXXXAPI()` for services
 - ✅ Use `@Value.Immutable` for data objects
-- ✅ Use JAX-RS `@Path` for REST endpoints
+- ✅ Use JAX-RS `@Path` for REST endpoints with complete Swagger documentation
 - ✅ Use `data-testid` for Angular testing
 - ✅ Use modern Java 21 syntax (Java 11 compatible)
 - ✅ Follow domain-driven package organization for new features
+- ✅ **REST Documentation**: All endpoints MUST have `@Tag`, `@Operation`, `@ApiResponses`, `@Parameter`/`@RequestBody`
+- ✅ **Media Types**: `@Produces` at method level, `@Consumes` only on endpoints with request bodies
 - ❌ Avoid DWR, Struts, portlets, console logging, direct system properties
 - ❌ Avoid Java 21 runtime features in core modules
+- ❌ Avoid `@Consumes` on GET endpoints unless they accept request bodies (non-standard)

@@ -49,6 +49,11 @@ import javax.ws.rs.core.Response;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.glassfish.jersey.server.JSONP;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 @Path("/v1/content/versions")
@@ -94,6 +99,24 @@ public class ContentVersionResource {
      * @throws DotStateException
      * @throws DotSecurityException
      */
+    @Operation(
+        summary = "Find content versions",
+        description = "Retrieves all versions for content by identifier or inodes, with optional grouping by language"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Content versions retrieved successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - missing identifier/inodes or invalid parameters",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "Not found - content not found",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @JSONP
     @NoCache
@@ -101,8 +124,14 @@ public class ContentVersionResource {
     @Produces(MediaType.APPLICATION_JSON + ";charset=UTF-8")
     public Response findVersions(@Context final HttpServletRequest request,
                                  @Context final HttpServletResponse response,
+                                 @Parameter(description = "Comma-separated list of content inodes")
                                  @QueryParam("inodes") final String inodes,
-            @QueryParam("identifier") final String identifier, @QueryParam("groupByLang")final String groupByLangParam, @QueryParam("limit") final int limit)
+            @Parameter(description = "Content identifier (takes precedence over inodes)")
+            @QueryParam("identifier") final String identifier, 
+            @Parameter(description = "Group results by language (true/1 or false/0)", example = "false")
+            @QueryParam("groupByLang")final String groupByLangParam, 
+            @Parameter(description = "Maximum number of results (min: 20, max: 100)", example = "20")
+            @QueryParam("limit") final int limit)
             throws DotDataException, DotStateException, DotSecurityException {
 
         final boolean groupByLang = "1".equals(groupByLangParam) || BooleanUtils.toBoolean(groupByLangParam);
@@ -269,6 +298,24 @@ public class ContentVersionResource {
      * @return A ServletResponse
      * @throws DotStateException
      */
+    @Operation(
+        summary = "Find content by inode",
+        description = "Retrieves a specific content version by its inode"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Content found successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid inode format",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "Not found - content with inode not found",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @JSONP
     @NoCache
@@ -276,6 +323,7 @@ public class ContentVersionResource {
     @Produces(MediaType.APPLICATION_JSON + ";charset=UTF-8")
     public Response findByInode(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
+            @Parameter(description = "Content inode", required = true)
             @PathParam("inode") final String inode)
             throws DotStateException {
         final boolean respectFrontendRoles = PageMode.get(request).respectAnonPerms;

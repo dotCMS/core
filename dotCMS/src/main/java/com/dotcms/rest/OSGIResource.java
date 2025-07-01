@@ -34,6 +34,13 @@ import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vavr.Tuple2;
 
@@ -44,7 +51,7 @@ import io.vavr.Tuple2;
  *         Date: 28/05/14
  */
 @Deprecated
-@Tag(name = "OSGi Plugins")
+@Tag(name = "OSGi Plugins", description = "Legacy OSGi plugin management endpoints (deprecated - use v1 OSGIResource instead)")
 @Path ("/osgi")
 public class OSGIResource  {
 
@@ -59,10 +66,30 @@ public class OSGIResource  {
      * @return
      * @throws JSONException
      */
+    @Operation(
+        summary = "Get installed OSGi bundles (deprecated)",
+        description = "Returns a list of all bundles installed in the OSGi environment. Supports filtering to exclude system bundles. This endpoint is deprecated - use v1 OSGIResource instead.",
+        deprecated = true
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Installed bundles retrieved successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - backend user authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions to access dynamic-plugins portlet",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @Path ("/getInstalledBundles/{params:.*}")
     @Produces (MediaType.APPLICATION_JSON)
-    public Response getInstalledBundles (@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam ("params") String params ) throws JSONException {
+    public Response getInstalledBundles (@Context HttpServletRequest request, @Context final HttpServletResponse response, 
+        @Parameter(description = "URL parameters including ignoresystembundles=true/false", required = true) @PathParam ("params") String params ) throws JSONException {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
@@ -145,10 +172,30 @@ public class OSGIResource  {
      * @return
      * @throws JSONException
      */
+    @Operation(
+        summary = "Process bundle exports (deprecated)",
+        description = "Processes exports for a specific OSGi bundle. This endpoint is deprecated - use v1 OSGIResource instead.",
+        deprecated = true
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Bundle exports processed successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - backend user authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions to access dynamic-plugins portlet",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error during bundle processing",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @Path ("/_processExports/{bundle:.*}")
     @Produces (MediaType.APPLICATION_JSON)
-    public Response processBundle (@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam ("bundle") String bundle ) throws JSONException {
+    public Response processBundle (@Context HttpServletRequest request, @Context final HttpServletResponse response, 
+        @Parameter(description = "Bundle identifier or name to process exports for", required = true) @PathParam ("bundle") String bundle ) throws JSONException {
 
         new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
@@ -184,6 +231,25 @@ public class OSGIResource  {
      * @return Response
      * @throws JSONException
      */
+    @Operation(
+        summary = "Upload OSGi bundles (deprecated)",
+        description = "Uploads multiple JAR files to the OSGi environment. Files are validated and copied to the Felix upload folder. This endpoint is deprecated - use v1 OSGIResource instead.",
+        deprecated = true
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Bundles uploaded successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - backend user authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - cannot access upload folder or insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error during upload",
+                    content = @Content(mediaType = "application/json"))
+    })
     @POST
     @JSONP
     @NoCache
@@ -191,7 +257,11 @@ public class OSGIResource  {
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     public final Response updateBundles(@Context final HttpServletRequest request,
                                               @Context final HttpServletResponse response,
-                                              final FormDataMultiPart multipart) throws IOException, com.dotmarketing.util.json.JSONException {
+                                              @RequestBody(
+                                                  description = "Multipart form data containing JAR files to upload", 
+                                                  required = true,
+                                                  content = @Content(mediaType = "multipart/form-data")
+                                              ) final FormDataMultiPart multipart) throws IOException, com.dotmarketing.util.json.JSONException {
 
         new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)

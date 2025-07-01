@@ -48,6 +48,7 @@ import org.glassfish.jersey.server.JSONP;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -105,15 +106,34 @@ public class CreateJsonWebTokenResource implements Serializable {
         this.securityLoggerServiceAPI   = securityLoggerServiceAPI;
     }
 
+    @Operation(
+        summary = "Create JSON Web Token (deprecated)",
+        description = "Creates a new JSON Web Token for API authentication. This method is deprecated."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "JWT created successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication failed",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @POST
     @Path("/api-token")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Consumes(MediaType.APPLICATION_JSON)
     @Deprecated
     @Hidden //not shown in API playground
     public final Response getApiToken(@Context final HttpServletRequest request,
                                          @Context final HttpServletResponse response,
+                                         @RequestBody(description = "Token creation form containing user credentials and expiration settings", 
+                                                    required = true,
+                                                    content = @Content(schema = @Schema(implementation = CreateTokenForm.class)))
                                          final CreateTokenForm createTokenForm) {
 
         final String userId = createTokenForm.user;

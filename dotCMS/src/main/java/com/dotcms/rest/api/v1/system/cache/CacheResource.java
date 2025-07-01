@@ -11,6 +11,11 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.MaintenanceUtil;
 import com.dotmarketing.util.PortletID;
 import com.google.common.annotations.VisibleForTesting;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import javax.servlet.http.HttpServletRequest;
@@ -103,12 +108,28 @@ public class CacheResource {
      * @param group {@link String}
      * @return Response
      */
+    @Operation(
+        summary = "Show cache providers for group",
+        description = "Returns the providers associated to a group"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Cache providers retrieved successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - maintenance portlet access required",
+                    content = @Content(mediaType = "application/json"))
+    })
     @NoCache
     @GET
     @Path("/providers/{group: .*}")
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public Response showProviders(@Context final HttpServletRequest request,
                                   @Context final HttpServletResponse response,
+                                  @Parameter(description = "Cache group", required = true)
                                   @PathParam("group") final String group) {
 
         new WebResource.InitBuilder(webResource)
@@ -132,13 +153,30 @@ public class CacheResource {
      *
      * @return Response
      */
+    @Operation(
+        summary = "Show specific cache provider",
+        description = "Returns the provider associated to a group"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Cache provider retrieved successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - maintenance portlet access required",
+                    content = @Content(mediaType = "application/json"))
+    })
     @NoCache
     @GET
     @Path("/provider/{provider: .*}/{group: .*}")
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public Response showProviders(@Context final HttpServletRequest request,
                                   @Context final HttpServletResponse response,
+                                  @Parameter(description = "Cache provider name", required = true)
                                   @PathParam("provider") final String provider,
+                                  @Parameter(description = "Cache group", required = true)
                                   @PathParam("group") final String group) {
 
         new WebResource.InitBuilder(webResource)
@@ -162,13 +200,30 @@ public class CacheResource {
      *  @param group {@link String}
      *  @return Response
      */
+    @Operation(
+        summary = "Get cache keys",
+        description = "Get keys for a provider and group"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Cache keys retrieved successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - maintenance portlet access required",
+                    content = @Content(mediaType = "application/json"))
+    })
     @NoCache
     @GET
     @Path("/provider/{provider: .*}/keys/{group: .*}")
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public Response getKeys(@Context final HttpServletRequest request,
                             @Context final HttpServletResponse response,
+                            @Parameter(description = "Cache provider name", required = true)
                             @PathParam("provider") final String provider,
+                            @Parameter(description = "Cache group", required = true)
                             @PathParam("group") final String group) {
 
         new WebResource.InitBuilder(webResource)
@@ -193,14 +248,32 @@ public class CacheResource {
      *  @param id {@link String}
      *  @return Response
      */
+    @Operation(
+        summary = "Show cache object",
+        description = "Shows a specific object by id in cache provider and group"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Cache object retrieved successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - maintenance portlet access required",
+                    content = @Content(mediaType = "application/json"))
+    })
     @NoCache
     @GET
     @Path("/provider/{provider: .*}/object/{group: .*}/{id: .*}")
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public Response showObject(@Context final HttpServletRequest request,
                                @Context final HttpServletResponse response,
+                               @Parameter(description = "Cache provider name", required = true)
                                @PathParam("provider") final String provider,
+                               @Parameter(description = "Cache group", required = true)
                                @PathParam("group") final String group,
+                               @Parameter(description = "Object ID", required = true)
                                @PathParam("id") final String id) {
 
         new WebResource.InitBuilder(webResource)
@@ -225,13 +298,30 @@ public class CacheResource {
      *  @param group {@link String}
      * @return Response
      */
+    @Operation(
+        summary = "Show all cache objects",
+        description = "Show all objects for a provider and group"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Cache objects retrieved successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - maintenance portlet access required",
+                    content = @Content(mediaType = "application/json"))
+    })
     @NoCache
     @GET
     @Path("/provider/{provider: .*}/objects/{group: .*}")
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public Response showObjects(@Context final HttpServletRequest request,
                                @Context final HttpServletResponse response,
+                               @Parameter(description = "Cache provider name", required = true)
                                @PathParam("provider") final String provider,
+                               @Parameter(description = "Cache group", required = true)
                                @PathParam("group") final String group) {
 
         new WebResource.InitBuilder(webResource)
@@ -263,13 +353,30 @@ public class CacheResource {
      *  @param group {@link String}
      * @return Response
      */
+    @Operation(
+        summary = "Flush cache group",
+        description = "Flush all objects for a provider and group"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Cache group flushed successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - maintenance portlet access required",
+                    content = @Content(mediaType = "application/json"))
+    })
     @NoCache
     @DELETE
     @Path("/provider/{provider: .*}/flush/{group: .*}")
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public Response flushGroup(@Context final HttpServletRequest request,
                                @Context final HttpServletResponse response,
+                               @Parameter(description = "Cache provider name", required = true)
                                @PathParam("provider") final String provider,
+                               @Parameter(description = "Cache group", required = true)
                                @PathParam("group") final String group) {
 
         new WebResource.InitBuilder(webResource)
@@ -294,14 +401,32 @@ public class CacheResource {
      *  @param group {@link String}
      * @return Response
      */
+    @Operation(
+        summary = "Flush cache object",
+        description = "Deletes a specific object for a provider and group"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Cache object flushed successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - maintenance portlet access required",
+                    content = @Content(mediaType = "application/json"))
+    })
     @NoCache
     @DELETE
     @Path("/provider/{provider: .*}/flush/{group: .*}/{id: .*}")
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public Response flushObject(@Context final HttpServletRequest request,
                                 @Context final HttpServletResponse response,
+                                @Parameter(description = "Cache provider name", required = true)
                                 @PathParam("provider") final String provider,
+                                @Parameter(description = "Cache group", required = true)
                                 @PathParam("group") final String group,
+                                @Parameter(description = "Object ID", required = true)
                                 @PathParam("id") final String id) {
 
         new WebResource.InitBuilder(webResource)
@@ -325,12 +450,28 @@ public class CacheResource {
      *  @param provider {@link String}
      * @return Response
      */
+    @Operation(
+        summary = "Flush all cache for provider",
+        description = "Deletes all objects for a provider (will clean all groups and generate a new key)"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "All cache for provider flushed successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - maintenance portlet access required",
+                    content = @Content(mediaType = "application/json"))
+    })
     @NoCache
     @DELETE
     @Path("/provider/{provider: .*}/flush")
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public Response flushAll(@Context final HttpServletRequest request,
                                 @Context final HttpServletResponse response,
+                                @Parameter(description = "Cache provider name", required = true)
                                 @PathParam("provider") final String provider) {
 
         new WebResource.InitBuilder(webResource)

@@ -19,10 +19,12 @@ import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.model.User;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.vavr.control.Try;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.glassfish.jersey.server.JSONP;
@@ -51,7 +53,7 @@ import java.util.Set;
 
 /**
  * Endpoint for managing environments
- @author jsanca
+ * @author jsanca
  */
 @Path("/environment")
 @Tag(name = "Environment")
@@ -121,11 +123,29 @@ public class EnvironmentResource {
 	 * @throws JSONException
 	 *
 	 */
-
+	@Operation(
+		summary = "Load environments for role",
+		description = "Returns a JSON representation of the environments (with servers) that a specific role can push to. Each environment node contains ID and name information."
+	)
+	@ApiResponses(value = {
+		@ApiResponse(responseCode = "200", 
+					description = "Environments loaded successfully",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "401", 
+					description = "Unauthorized - backend user authentication required",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "403", 
+					description = "Forbidden - insufficient permissions or security error",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "500", 
+					description = "Internal server error loading environments",
+					content = @Content(mediaType = "application/json"))
+	})
 	@GET
 	@Path("/loadenvironments/{params:.*}")
 	@Produces("application/json")
-	public Response loadEnvironments(@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam("params") String params)
+	public Response loadEnvironments(@Context HttpServletRequest request, @Context final HttpServletResponse response, 
+		@Parameter(description = "URL parameters including roleid to load environments for", required = true) @PathParam("params") String params)
 			throws DotDataException, JSONException {
 
 		final InitDataObject initData = new WebResource.InitBuilder(webResource)

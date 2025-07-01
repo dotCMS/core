@@ -19,6 +19,12 @@ import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import org.glassfish.jersey.server.JSONP;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import javax.servlet.http.HttpServletRequest;
@@ -39,7 +45,7 @@ import java.util.Map;
  * Provides different methods to access information about Themes in dotCMS.
  */
 @Path("/v1/themes")
-@Tag(name = "Templates", description = "Template design and management")
+@Tag(name = "Themes", description = "Endpoints for managing themes and theme collections")
 public class ThemeResource {
 
     private final PaginationUtil paginationUtil;
@@ -65,28 +71,38 @@ public class ThemeResource {
         this.themeAPI = themeAPI;
     }
 
-    /**
-     * Returns all themes
-     *
-     * @param hostId Optional param, when it is not specified the default host is used
-     * @param page Page number
-     * @param perPage Items to be returned per page
-     * @param direction Sort order (ASC, DESC)
-     * @param searchParam Lucene criteria used to filter as +catchall:*searchParam*
-     * @return a paginated list of templates that the user has READ permissions and comply with the
-     * params provided.
-     */
+    @Operation(
+        summary = "Find themes",
+        description = "Returns a paginated list of themes that the user has read permissions on"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Themes retrieved successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - hostId is required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response findThemes(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
-            @QueryParam("hostId") final String hostId,
-            @QueryParam(PaginationUtil.PAGE) final int page,
-            @QueryParam(PaginationUtil.PER_PAGE) @DefaultValue("-1") final int perPage,
-            @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION) final String direction,
-            @QueryParam("searchParam") final String searchParam) {
+            @Parameter(description = "Host identifier", required = true) @QueryParam("hostId") final String hostId,
+            @Parameter(description = "Page number for pagination") @QueryParam(PaginationUtil.PAGE) final int page,
+            @Parameter(description = "Number of items per page") @QueryParam(PaginationUtil.PER_PAGE) @DefaultValue("-1") final int perPage,
+            @Parameter(description = "Sort direction (ASC, DESC)") @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION) final String direction,
+            @Parameter(description = "Search parameter for filtering themes") @QueryParam("searchParam") final String searchParam) {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requestAndResponse(request, response).rejectWhenNoUser(true).init();
@@ -109,12 +125,27 @@ public class ThemeResource {
                 OrderDirection.valueOf(direction), params);
     }
 
-    /**
-     * Returns a theme given its ID (folder theme inode)
-     *
-     * @param themeId folder inode
-     * @returnTh
-     */
+    @Operation(
+        summary = "Find theme by ID",
+        description = "Returns a specific theme by its folder inode identifier"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Theme retrieved successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "Theme not found",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @Path("/id/{id}")
     @JSONP
@@ -122,7 +153,7 @@ public class ThemeResource {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response findThemeById(@Context final HttpServletRequest request,
             final @Context HttpServletResponse response,
-            @PathParam("id") final String themeId) throws DotDataException, DotSecurityException {
+            @Parameter(description = "Theme folder inode identifier", required = true) @PathParam("id") final String themeId) throws DotDataException, DotSecurityException {
 
         Logger.debug(this, "Getting the theme by identifier: " + themeId);
 

@@ -24,6 +24,12 @@ import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.Portlet;
 import com.liferay.portal.model.User;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import javax.ws.rs.QueryParam;
 import org.glassfish.jersey.server.JSONP;
@@ -57,7 +63,7 @@ import static com.liferay.util.StringPool.BLANK;
  * or content (content types or base types).
  */
 @Path("/v1/portlet")
-@Tag(name = "Portlets")
+@Tag(name = "Portlets", description = "Endpoints for managing custom portlets and portlet configurations")
 public class PortletResource implements Serializable {
 
     private final WebResource webResource;
@@ -79,15 +85,30 @@ public class PortletResource implements Serializable {
         this.portletApi = portletApi;
     }
 
-    /**
-     * Creates a custom dotCMS Portlet for a given Base Type or Content Type.
-     *
-     * @param request  The current instance of the {@link HttpServletRequest}.
-     * @param formData The {@link CustomPortletForm} containing the information for the new
-     *                 Portlet.
-     *
-     * @return A {@link Response} object with the ID of the new portlet.
-     */
+    @Operation(
+        summary = "Create custom portlet",
+        description = "Creates a custom dotCMS Portlet for a given Base Type or Content Type. Requires roles permission."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Custom portlet created successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid portlet data or portlet already exists",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "409", 
+                    description = "Conflict - portlet with this ID already exists",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @POST
     @Path("/custom")
     @JSONP
@@ -95,7 +116,11 @@ public class PortletResource implements Serializable {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response saveNew(@Context final HttpServletRequest request,
-                                  final CustomPortletForm formData) {
+                                  @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                                      description = "Custom portlet form data", 
+                                      required = true,
+                                      content = @Content(schema = @Schema(implementation = CustomPortletForm.class))
+                                  ) final CustomPortletForm formData) {
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
@@ -135,20 +160,42 @@ public class PortletResource implements Serializable {
         }
     }
 
-    /**
-     * Saves a new working version of an existing Portlet.
-     * The formData must contain the identifier of the Portlet.
-     * @param request
-     * @param formData
-     * @return
-     */
+    @Operation(
+        summary = "Update custom portlet",
+        description = "Saves a new working version of an existing custom portlet. The formData must contain the identifier of the portlet. Requires roles permission."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Custom portlet updated successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid portlet data",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "Portlet not found",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @PUT
     @Path("/custom")
     @JSONP
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response updatePortlet(@Context final HttpServletRequest request, final CustomPortletForm formData) {
+    public final Response updatePortlet(@Context final HttpServletRequest request, 
+                                       @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                                           description = "Custom portlet form data with identifier", 
+                                           required = true,
+                                           content = @Content(schema = @Schema(implementation = CustomPortletForm.class))
+                                       ) final CustomPortletForm formData) {
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
@@ -191,15 +238,30 @@ public class PortletResource implements Serializable {
         return response;
     }
 
-    /**
-     * This endpoint links a layout with a portlet Security is considered so the user must have
-     * roles on the layout otherwise an unauthorized code is returned.
-     * @param request
-     * @param portletId
-     * @param layoutId
-     * @return
-     * @throws DotDataException
-     */
+    @Operation(
+        summary = "Add portlet to layout",
+        description = "Links a layout with a portlet. Security is enforced - the user must have roles on the layout, otherwise an unauthorized response is returned."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Portlet added to layout successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - layout already contains portlet",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - insufficient permissions or restricted portlet",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - user lacks layout permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "Portlet or layout not found",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @PUT
     @Path("/custom/{portletId}/_addtolayout/{layoutId}")
     @JSONP
@@ -207,8 +269,8 @@ public class PortletResource implements Serializable {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response addContentPortletToLayout(@Context final HttpServletRequest request,
-                                                    @PathParam("portletId") final String portletId,
-                                                    @PathParam("layoutId") final String layoutId)
+                                                    @Parameter(description = "Portlet ID to add to layout", required = true) @PathParam("portletId") final String portletId,
+                                                    @Parameter(description = "Layout ID to add portlet to", required = true) @PathParam("layoutId") final String layoutId)
             throws DotDataException {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
@@ -273,19 +335,35 @@ public class PortletResource implements Serializable {
 
     }
 
-    /**
-     *  Custom Portlet delete endpoint
-     * @param request
-     * @param portletId
-     * @return
-     */
+    @Operation(
+        summary = "Delete custom portlet",
+        description = "Deletes a custom portlet by its ID. Requires roles permission."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Custom portlet deleted successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "Portlet not found",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @DELETE
     @Path("/custom/{portletId}")
     @JSONP
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response deleteCustomPortlet(@Context final HttpServletRequest request, @PathParam("portletId") final String portletId) {
+    public final Response deleteCustomPortlet(@Context final HttpServletRequest request, 
+                                             @Parameter(description = "Custom portlet ID to delete", required = true) @PathParam("portletId") final String portletId) {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
@@ -308,12 +386,27 @@ public class PortletResource implements Serializable {
 
     }
 
-    /**
-     * Portlet delete
-     * @param request
-     * @param portletId
-     * @return
-     */
+    @Operation(
+        summary = "Delete personal portlet",
+        description = "Deletes a personal portlet for the current user. Requires roles permission."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Personal portlet deleted successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "Portlet not found",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @DELETE
     @Path("/portletId/{portletId}")
     @JSONP
@@ -321,7 +414,7 @@ public class PortletResource implements Serializable {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response deletePersonalPortlet(@Context final HttpServletRequest request,
-                                                @PathParam("portletId") final String portletId) {
+                                                @Parameter(description = "Personal portlet ID to delete", required = true) @PathParam("portletId") final String portletId) {
         final User user = new WebResource.InitBuilder(webResource).requiredBackendUser(true)
                 .requestAndResponse(request, null).rejectWhenNoUser(true).requiredPortlet("roles").init()
                 .getUser();
@@ -330,13 +423,27 @@ public class PortletResource implements Serializable {
     }
 
 
-    /**
-     * Delete Portlet For Role
-     * @param request
-     * @param portletId
-     * @param roleId
-     * @return
-     */
+    @Operation(
+        summary = "Delete portlet for role",
+        description = "Removes a portlet from a specific role. Automatically removes layouts if they become empty. Requires roles permission and user must be admin or own the role."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Portlet removed from role successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required or insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "Portlet or role not found",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @DELETE
     @Path("/portletId/{portletId}/roleId/{roleId}")
     @JSONP
@@ -344,7 +451,8 @@ public class PortletResource implements Serializable {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response deletePortletForRole(@Context final HttpServletRequest request,
-                                               @PathParam("portletId") final String portletId, @PathParam("roleId") final String roleId) {
+                                               @Parameter(description = "Portlet ID to remove from role", required = true) @PathParam("portletId") final String portletId, 
+                                               @Parameter(description = "Role ID to remove portlet from", required = true) @PathParam("roleId") final String roleId) {
 
         final User user = new WebResource.InitBuilder(webResource).requiredBackendUser(true)
                 .requestAndResponse(request, null).rejectWhenNoUser(true).requiredPortlet("roles").init()
@@ -395,19 +503,34 @@ public class PortletResource implements Serializable {
 
     }
 
-    /**
-     * This endpoint returns a portlet's details given its id
-     * @param request
-     * @param portletId
-     * @return
-     */
+    @Operation(
+        summary = "Get portlet details",
+        description = "Returns detailed information about a specific portlet by its ID. Requires appropriate permissions."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Portlet details retrieved successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "Portlet not found",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @JSONP
     @Path("/{portletId}")
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response findPortlet(@Context final HttpServletRequest request,
-                                      @PathParam("portletId") final String portletId) {
+                                      @Parameter(description = "Portlet ID to retrieve", required = true) @PathParam("portletId") final String portletId) {
 
         final User user = new InitBuilder(webResource)
                 .requiredBackendUser(true)
@@ -428,19 +551,31 @@ public class PortletResource implements Serializable {
 
     }
 
-    /**
-     * portlet access permis2sion check
-     * @param request
-     * @param portletId
-     * @return
-     */
+    @Operation(
+        summary = "Check portlet access",
+        description = "Checks if the current user has access to the specified portlet. Returns a boolean result."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Access check completed successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @JSONP
     @Path("/{portletId}/_doesuserhaveaccess")
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response doesUserHaveAccessToPortlet(@Context final HttpServletRequest request,
-                                                      @PathParam("portletId") final String portletId) {
+                                                      @Parameter(description = "Portlet ID to check access for", required = true) @PathParam("portletId") final String portletId) {
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
@@ -455,18 +590,30 @@ public class PortletResource implements Serializable {
         }
     }
 
-    /**
-     * This endpoint is to get the actionURL to fire the create content modal. The content that
-     * will be created is the one pass in the contentTypeVariable param.
-     *
-     * @param request
-     * @param httpResponse
-     * @param contentTypeVariable - content type variable name
-     * @param languageId - The language to be used for the search. If not set, the user's language Id will be used
-     * @return
-     * @throws DotDataException
-     * @throws DotSecurityException
-     */
+    @Operation(
+        summary = "Get content creation URL",
+        description = "Returns the action URL to fire the create content modal for the specified content type. Handles special cases like calendar events."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Content creation URL retrieved successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid content type variable",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "Content type not found",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @JSONP
     @Path("/_actionurl/{contentTypeVariable}")
@@ -474,8 +621,8 @@ public class PortletResource implements Serializable {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response getCreateContentURL(@Context final HttpServletRequest request,
                                               @Context final HttpServletResponse httpResponse,
-                                              @PathParam("contentTypeVariable") String contentTypeVariable,
-                                              @QueryParam("language_id") String languageId)
+                                              @Parameter(description = "Content type variable name", required = true) @PathParam("contentTypeVariable") String contentTypeVariable,
+                                              @Parameter(description = "Language ID (optional, defaults to user's language)") @QueryParam("language_id") String languageId)
             throws DotDataException, DotSecurityException {
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)

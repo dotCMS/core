@@ -17,6 +17,12 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vavr.Lazy;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
@@ -45,7 +51,7 @@ import java.util.stream.Collectors;
  * @author Erick Gonzalez
  * @since Mar 6th, 2020
  */
-@Tag(name = "Publishing")
+@Tag(name = "Push Publishing", description = "Endpoints for managing push publishing filters and configurations")
 @Path("/v1/pushpublish/filters")
 public class PushPublishFilterResource {
 
@@ -62,21 +68,24 @@ public class PushPublishFilterResource {
         this.webResource = webResource;
     }
 
-    /**
-     * Lists all Push Publishing filter descriptors that the User calling this method has access to, sorted
-     * alphabetically.
-     * <p>Example:</p>
-     * <pre>
-     * GET: {{serverURL}}/api/v1/pushpublish/filters
-     * </pre>
-     *
-     * @param request  The current instance of the {@link HttpServletRequest} object.
-     * @param response The current instance of the {@link HttpServletResponse} object.
-     *
-     * @return The list of Push Publishing Filters.
-     *
-     * @throws DotDataException An error occurred when interacting with the data source.
-     */
+    @Operation(
+        summary = "Get push publishing filters",
+        description = "Lists all Push Publishing filter descriptors that the user has access to, sorted alphabetically"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Filters retrieved successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @JSONP
     @NoCache
@@ -95,23 +104,27 @@ public class PushPublishFilterResource {
         return Response.ok(new ResponseEntityView<>(list)).build();
     }
 
-    /**
-     * Returns a specific Push Publishing filter descriptor by its key (if the User has access to it).
-     * <p>Example:</p>
-     * <pre>
-     * GET: {{serverURL}}/api/v1/pushpublish/filters/ForcePush.yml
-     * </pre>
-     *
-     * @param request   The current instance of the {@link HttpServletRequest} object.
-     * @param response  The current instance of the {@link HttpServletResponse} object.
-     * @param filterKey The Push Publishing Filter key.
-     *
-     * @return The Push Publishing Filter.
-     *
-     * @throws DotDataException     An error occurred when interacting with the data source.
-     * @throws DotSecurityException The {@link User} calling this method does not have the required permission to
-     *                              perform this action.
-     */
+    @Operation(
+        summary = "Get push publishing filter by key",
+        description = "Returns a specific Push Publishing filter descriptor by its key (if the user has access to it)"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Filter retrieved successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions to access this filter",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "Filter not found",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @Path("/{filterKey}")
     @JSONP
@@ -119,7 +132,7 @@ public class PushPublishFilterResource {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response getFilter(@Context final HttpServletRequest request,
                                      @Context final HttpServletResponse response,
-                                     @PathParam("filterKey") final String filterKey) throws DotDataException, DotSecurityException {
+                                     @Parameter(description = "Push Publishing filter key", required = true) @PathParam("filterKey") final String filterKey) throws DotDataException, DotSecurityException {
 
         final InitDataObject initData =
                 new WebResource.InitBuilder(webResource)
@@ -152,47 +165,42 @@ public class PushPublishFilterResource {
         throw new DoesNotExistException(errorMsg);
     }
 
-    /**
-     * Creates a new Push Publishing Filter based on a bean form.
-     * <p>Example:</p>
-     * <pre>
-     * POST: {{serverURL}}/api/v1/pushpublish/filters
-     * </pre>
-     * Body:
-     * <pre>
-     * {
-     *     "key":"NoWorkflow.yml",
-     *     "title":"Push without Wofklows",
-     *     "defaultFilter":"false",
-     *     "roles":"DOTCMS_BACK_END_USER",
-     *     "filters": {
-     *         "excludeQuery": "",
-     *         "excludeClasses": ["Host", "Workflow", "OSGI"],
-     *         "dependencies": true,
-     *         "excludeDependencyQuery": "",
-     *         "excludeDependencyClasses": ["Host", "Workflow"],
-     *         "forcePush": false,
-     *         "relationships": false
-     *     }
-     * }
-     * </pre>
-     *
-     * @param request              The current instance of the {@link HttpServletRequest} object.
-     * @param response             The current instance of the {@link HttpServletResponse} object.
-     * @param filterDescriptorForm An instance of the {@link FilterDescriptorForm} containing all the required
-     *                             information to create a Push Publishing Filter.
-     *
-     * @return The complete list of Push Publishing Filters in the system.
-     *
-     * @throws DotDataException An error occurred when interacting with the data source.
-     */
+    @Operation(
+        summary = "Create push publishing filter from form",
+        description = "Creates a new Push Publishing filter based on form data. Requires CMS Administrator role."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Filter created successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid filter data or filter already exists",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - CMS Administrator role required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "409", 
+                    description = "Conflict - filter with this key already exists",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @POST
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Consumes(MediaType.APPLICATION_JSON)
     public final Response saveFromForm(@Context final HttpServletRequest request,
                                        @Context final HttpServletResponse response,
-                                       final FilterDescriptorForm filterDescriptorForm) throws DotDataException {
+                                       @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                                           description = "Push Publishing filter form data", 
+                                           required = true,
+                                           content = @Content(schema = @Schema(implementation = FilterDescriptorForm.class))
+                                       ) final FilterDescriptorForm filterDescriptorForm) throws DotDataException {
 
         final InitDataObject initData =
                 new WebResource.InitBuilder(webResource)
@@ -217,27 +225,30 @@ public class PushPublishFilterResource {
         return Response.ok(new ResponseEntityView<>(filterNames)).build();
     }
 
-    /**
-     * Creates a new Push Publishing Filter based on a YML file.
-     * <p>Example:</p>
-     * <pre>
-     * POST: {{serverURL}}/api/v1/pushpublish/filters
-     * </pre>
-     * Body:
-     * <pre>
-     * --form 'file=@"resources/TestPPFilter.yml"'
-     * </pre>
-     *
-     * @param request   The current instance of the {@link HttpServletRequest} object.
-     * @param response  The current instance of the {@link HttpServletResponse} object.
-     * @param multipart An instance of the {@link FilterDescriptorForm} containing all the required information to
-     *                  create a Push Publishing Filter.
-     *
-     * @return The complete list of Push Publishing Filters in the system.
-     *
-     * @throws DotDataException An error occurred when interacting with the data source.
-     * @throws IOException      An error occurred when reading the incoming binary file.
-     */
+    @Operation(
+        summary = "Create push publishing filter from YML file",
+        description = "Creates a new Push Publishing filter by uploading a YML configuration file. Requires CMS Administrator role."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Filter created successfully from file",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid file format or filter already exists",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - CMS Administrator role required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "409", 
+                    description = "Conflict - filter with this key already exists",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @POST
     @JSONP
     @NoCache
@@ -245,7 +256,11 @@ public class PushPublishFilterResource {
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     public final Response saveFromFile(@Context final HttpServletRequest request,
                                        @Context final HttpServletResponse response,
-                                       final FormDataMultiPart multipart) throws DotDataException, IOException {
+                                       @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                                           description = "Multipart form data containing YML filter file(s)", 
+                                           required = true,
+                                           content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA)
+                                       ) final FormDataMultiPart multipart) throws DotDataException, IOException {
 
         final InitDataObject initData =
                 new WebResource.InitBuilder(webResource)
@@ -262,47 +277,42 @@ public class PushPublishFilterResource {
         return Response.ok(new ResponseEntityView<>(filterNames)).build();
     }
 
-    /**
-     * Updates a Push Publishing Filter based on a bean form.
-     * <p>Example:</p>
-     * <pre>
-     * PUT: {{serverURL}}/api/v1/pushpublish/filters
-     * </pre>
-     * Body:
-     * <pre>
-     * {
-     *     "key":"NoWorkflow.yml",
-     *     "title":"Push without Wofklows",
-     *     "defaultFilter":"false",
-     *     "roles":"DOTCMS_BACK_END_USER",
-     *     "filters": {
-     *         "excludeQuery": "",
-     *         "excludeClasses": ["Host", "Workflow", "OSGI"],
-     *         "dependencies": true,
-     *         "excludeDependencyQuery": "",
-     *         "excludeDependencyClasses": ["Host", "Workflow"],
-     *         "forcePush": false,
-     *         "relationships": false
-     *     }
-     * }
-     * </pre>
-     *
-     * @param request              The current instance of the {@link HttpServletRequest} object.
-     * @param response             The current instance of the {@link HttpServletResponse} object.
-     * @param filterDescriptorForm An instance of the {@link FilterDescriptorForm} containing all the required
-     *                             information to create a Push Publishing Filter.
-     *
-     * @return The complete list of Push Publishing Filters in the system.
-     *
-     * @throws DotDataException An error occurred when interacting with the data source.
-     */
+    @Operation(
+        summary = "Update push publishing filter from form",
+        description = "Updates an existing Push Publishing filter based on form data. Requires CMS Administrator role."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Filter updated successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid filter data",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - CMS Administrator role required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "Filter not found",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @PUT
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Consumes(MediaType.APPLICATION_JSON)
     public final Response updateFromForm(@Context final HttpServletRequest request,
                                        @Context final HttpServletResponse response,
-                                       final FilterDescriptorForm filterDescriptorForm) throws DotDataException {
+                                       @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                                           description = "Push Publishing filter form data with updates", 
+                                           required = true,
+                                           content = @Content(schema = @Schema(implementation = FilterDescriptorForm.class))
+                                       ) final FilterDescriptorForm filterDescriptorForm) throws DotDataException {
 
         final InitDataObject initData =
                 new WebResource.InitBuilder(webResource)
@@ -326,27 +336,30 @@ public class PushPublishFilterResource {
         return Response.ok(new ResponseEntityView<>(filterNames)).build();
     }
 
-    /**
-     * Updates a Push Publishing Filter based on a YML file.
-     * <p>Example:</p>
-     * <pre>
-     * POST: {{serverURL}}/api/v1/pushpublish/filters
-     * </pre>
-     * Body:
-     * <pre>
-     * --form 'file=@"resources/TestPPFilter.yml"'
-     * </pre>
-     *
-     * @param request   The current instance of the {@link HttpServletRequest} object.
-     * @param response  The current instance of the {@link HttpServletResponse} object.
-     * @param multipart An instance of the {@link FilterDescriptorForm} containing all the required information to
-     *                  create a Push Publishing Filter.
-     *
-     * @return The complete list of Push Publishing Filters in the system.
-     *
-     * @throws DotDataException An error occurred when interacting with the data source.
-     * @throws IOException      An error occurred when reading the incoming binary file.
-     */
+    @Operation(
+        summary = "Update push publishing filter from YML file",
+        description = "Updates an existing Push Publishing filter by uploading a YML configuration file. Requires CMS Administrator role."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Filter updated successfully from file",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid file format",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - CMS Administrator role required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "Filter not found",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @PUT
     @JSONP
     @NoCache
@@ -354,7 +367,11 @@ public class PushPublishFilterResource {
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     public final Response updateFromFile(@Context final HttpServletRequest request,
                                        @Context final HttpServletResponse response,
-                                       final FormDataMultiPart multipart) throws DotDataException, IOException {
+                                       @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                                           description = "Multipart form data containing YML filter file(s) with updates", 
+                                           required = true,
+                                           content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA)
+                                       ) final FormDataMultiPart multipart) throws DotDataException, IOException {
 
         final InitDataObject initData =
                 new WebResource.InitBuilder(webResource)
@@ -371,21 +388,30 @@ public class PushPublishFilterResource {
         return Response.ok(new ResponseEntityView<>(filterNames)).build();
     }
 
-    /**
-     * Deletes a Push Publishing Filter by its filter key.
-     * <p>Example:</p>
-     * <pre>
-     * DELETE: {{serverURL}}/api/v1/pushpublish/filters/NoWorkflow.yml
-     * </pre>
-     *
-     * @param request   The current instance of the {@link HttpServletRequest} object.
-     * @param response  The current instance of the {@link HttpServletResponse} object.
-     * @param filterKey The unique filter key.
-     *
-     * @return The complete list of Push Publishing Filters in the system.
-     *
-     * @throws DotDataException An error occurred when interacting with the data source.
-     */
+    @Operation(
+        summary = "Delete push publishing filter",
+        description = "Deletes a Push Publishing filter by its unique key. Requires CMS Administrator role."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Filter deleted successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - CMS Administrator role required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "Filter not found",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "417", 
+                    description = "Expectation failed - filter cannot be deleted",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @DELETE
     @Path("/{filterKey}")
     @JSONP
@@ -393,7 +419,7 @@ public class PushPublishFilterResource {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response deleteFilter(@Context final HttpServletRequest request,
                                      @Context final HttpServletResponse response,
-                                     @PathParam("filterKey") final String filterKey) throws DotDataException {
+                                     @Parameter(description = "Push Publishing filter key to delete", required = true) @PathParam("filterKey") final String filterKey) throws DotDataException {
 
         final InitDataObject initData =
                 new WebResource.InitBuilder(webResource)

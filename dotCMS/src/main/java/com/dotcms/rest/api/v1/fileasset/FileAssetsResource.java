@@ -26,12 +26,17 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-@Tag(name = "File Assets")
+@Tag(name = "File Assets", description = "Endpoints for managing and accessing file asset resources")
 @Path("/v1/content/fileassets")
 public class FileAssetsResource {
 
@@ -48,16 +53,30 @@ public class FileAssetsResource {
         this(APILocator.getContentletAPI(), new WebResource());
     }
 
-    /**
-     * Given an inode this will build get you a Resource Link
-     * The inode is expected to be File Asset other wise you'll get exception
-     * @param httpServletRequest http request
-     * @param inode file asset inode
-     * @return
-     * @throws DotDataException
-     * @throws DotStateException
-     * @throws DotSecurityException
-     */
+    @Operation(
+        summary = "Get file asset resource link",
+        description = "Builds and returns a resource link for a file asset given its inode. The inode must belong to a file asset or an exception will be thrown. Includes href, text, and MIME type information."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Resource link generated successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - missing or invalid inode parameter",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions or resource link restricted",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "File asset not found",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @JSONP
     @NoCache
@@ -65,7 +84,7 @@ public class FileAssetsResource {
     @Produces(MediaType.APPLICATION_JSON + ";charset=UTF-8")
     public Response findResourceLink(@Context final HttpServletRequest httpServletRequest,
             @Context final HttpServletResponse httpServletResponse,
-            @PathParam("inode") final String inode) throws DotStateException {
+            @Parameter(description = "Inode of the file asset", required = true) @PathParam("inode") final String inode) throws DotStateException {
         try {
             if (!UtilMethods.isSet(inode)) {
                 throw new IllegalArgumentException("Missing required inode param");

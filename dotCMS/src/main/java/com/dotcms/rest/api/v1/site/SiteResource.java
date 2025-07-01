@@ -41,11 +41,14 @@ import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vavr.control.Try;
+import javax.ws.rs.Consumes;
 import org.apache.commons.lang.StringUtils;
 import org.glassfish.jersey.server.JSONP;
 import org.quartz.SchedulerException;
@@ -122,20 +125,24 @@ public class SiteResource implements Serializable {
         this.paginationUtil = paginationUtil;
     }
 
-    /**
-     * Returns the list of Sites that the currently logged-in user has access
-     * to. In the front-end, this list is displayed in the Site Selector
-     * component. Its contents will also be refreshed when performing the "Login
-     * As".
-     * <p>
-     * The site that will be selected in the UI component will be retrieved from
-     * the HTTP session. If such a site does not exist in the list of sites, the
-     * first site in it will be selected.
-     *
-     * @param httpServletRequest
-     *            - The {@link HttpServletRequest} object.
-     * @return The {@link Response} containing the list of Sites.
-     */
+    @Operation(
+        summary = "Get current site",
+        description = "Returns the current site for the logged-in user from the HTTP session"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Current site retrieved successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @Path ("/currentSite")
     @JSONP
@@ -165,12 +172,24 @@ public class SiteResource implements Serializable {
         return response;
     }
 
-    /**
-     * Returns the default site
-     * @param httpServletRequest
-     * @param httpServletResponse
-     * @return
-     */
+    @Operation(
+        summary = "Get default site",
+        description = "Returns the default site in the system"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Default site retrieved successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @Path ("/defaultSite")
     @JSONP
@@ -201,18 +220,24 @@ public class SiteResource implements Serializable {
         return response;
     }
 
-    /**
-     * Return the list of sites paginated
-     * @param httpServletRequest
-     * @param httpServletResponse
-     * @param filterParam
-     * @param showArchived
-     * @param showLive
-     * @param showSystem
-     * @param page
-     * @param perPage
-     * @return
-     */
+    @Operation(
+        summary = "List sites with pagination",
+        description = "Returns a paginated list of sites with optional filtering and status filters"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Sites retrieved successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @JSONP
     @NoCache
@@ -220,12 +245,12 @@ public class SiteResource implements Serializable {
     public final Response sites(
             @Context final HttpServletRequest httpServletRequest,
             @Context final HttpServletResponse httpServletResponse,
-            @QueryParam(PaginationUtil.FILTER)   final String filterParam,
-            @QueryParam(SitePaginator.ARCHIVED_PARAMETER_NAME) final Boolean showArchived,
-            @QueryParam(SitePaginator.LIVE_PARAMETER_NAME) final Boolean showLive,
-            @QueryParam(SitePaginator.SYSTEM_PARAMETER_NAME) final Boolean showSystem,
-            @QueryParam(PaginationUtil.PAGE) final int page,
-            @QueryParam(PaginationUtil.PER_PAGE) final int perPage
+            @Parameter(description = "Filter for site names") @QueryParam(PaginationUtil.FILTER) final String filterParam,
+            @Parameter(description = "Include archived sites") @QueryParam(SitePaginator.ARCHIVED_PARAMETER_NAME) final Boolean showArchived,
+            @Parameter(description = "Include live sites") @QueryParam(SitePaginator.LIVE_PARAMETER_NAME) final Boolean showLive,
+            @Parameter(description = "Include system sites") @QueryParam(SitePaginator.SYSTEM_PARAMETER_NAME) final Boolean showSystem,
+            @Parameter(description = "Page number for pagination") @QueryParam(PaginationUtil.PAGE) final int page,
+            @Parameter(description = "Number of items per page") @QueryParam(PaginationUtil.PER_PAGE) final int perPage
     ) {
 
         Response response = null;
@@ -258,13 +283,27 @@ public class SiteResource implements Serializable {
         return response;
     } // sites.
 
-    /**
-     * Switch to a site
-     * @param httpServletRequest
-     * @param httpServletResponse
-     * @param hostId
-     * @return
-     */
+    @Operation(
+        summary = "Switch to site",
+        description = "Switches the current session to the specified site"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Site switched successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "Site not found",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @PUT
     @Path ("/switch/{id}")
     @JSONP
@@ -273,7 +312,7 @@ public class SiteResource implements Serializable {
     public final Response switchSite(
             @Context final HttpServletRequest httpServletRequest,
             @Context final HttpServletResponse httpServletResponse,
-            @PathParam("id")   final String hostId
+            @Parameter(description = "Site identifier", required = true) @PathParam("id")   final String hostId
     ) {
 
         Response response = null;
@@ -315,12 +354,24 @@ public class SiteResource implements Serializable {
         return response;
     } // sites.
 
-    /**
-     * Swicth to the user's default site
-     *
-     * @param request
-     * @return
-     */
+    @Operation(
+        summary = "Switch to default site",
+        description = "Switches the current session to the user's default site"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Switched to default site successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @PUT
     @Path ("/switch")
     @JSONP
@@ -353,16 +404,24 @@ public class SiteResource implements Serializable {
 
     }
 
-    /**
-     * Retrieve the host thumbnails
-     * @param httpServletRequest
-     * @param httpServletResponse
-     * @return
-     * @throws PortalException
-     * @throws SystemException
-     * @throws DotDataException
-     * @throws DotSecurityException
-     */
+    @Operation(
+        summary = "Get site thumbnails",
+        description = "Retrieves thumbnail information for all sites"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Site thumbnails retrieved successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @Path("/thumbnails")
     @JSONP
@@ -404,19 +463,30 @@ public class SiteResource implements Serializable {
         return thumbInfo;
     }
 
-    /**
-     * Publishes a Site.
-     *
-     * @param httpServletRequest  The current instance of the {@link HttpServletRequest} object.
-     * @param httpServletResponse The current instance of the {@link HttpServletResponse} object.
-     * @param siteId              The identifier of the Site to be published.
-     *
-     * @return The {@link Response} object containing the result of the operation.
-     *
-     * @throws DotDataException     An error occurred when publishing the Site.
-     * @throws DotSecurityException The logged-in User does not have the required permissions to
-     *                              perform this action.
-     */
+    @Operation(
+        summary = "Publish site",
+        description = "Publishes a site, making it available to the public"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Site published successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid site ID",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "Site not found",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @PUT
     @Path("/{siteId}/_publish")
     @JSONP
@@ -424,7 +494,7 @@ public class SiteResource implements Serializable {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public Response publishSite(@Context final HttpServletRequest httpServletRequest,
                                 @Context final HttpServletResponse httpServletResponse,
-                                @PathParam("siteId") final String siteId) throws DotDataException, DotSecurityException {
+                                @Parameter(description = "Site identifier", required = true) @PathParam("siteId") final String siteId) throws DotDataException, DotSecurityException {
 
         final User user = new WebResource.InitBuilder(this.webResource)
                 .requestAndResponse(httpServletRequest, httpServletResponse)
@@ -445,19 +515,30 @@ public class SiteResource implements Serializable {
         return Response.ok(new ResponseEntityView<>(toView(site, user))).build();
     }
 
-    /**
-     * Un-publishes a Site.
-     *
-     * @param httpServletRequest  The current instance of the {@link HttpServletRequest} object.
-     * @param httpServletResponse The current instance of the {@link HttpServletResponse} object.
-     * @param siteId              The identifier of the Site to be un-published.
-     *
-     * @return The {@link Response} object containing the result of the operation.
-     *
-     * @throws DotDataException     An error occurred when un-publishing the Site.
-     * @throws DotSecurityException The logged-in User does not have the required permissions to
-     *                              perform this action.
-     */
+    @Operation(
+        summary = "Unpublish site",
+        description = "Unpublishes a site, removing it from public access"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Site unpublished successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid site ID",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "Site not found",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @PUT
     @Path("/{siteId}/_unpublish")
     @JSONP
@@ -465,7 +546,7 @@ public class SiteResource implements Serializable {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public Response unpublishSite(@Context final HttpServletRequest httpServletRequest,
                                   @Context final HttpServletResponse httpServletResponse,
-                                  @PathParam("siteId") final String siteId) throws DotDataException, DotSecurityException {
+                                  @Parameter(description = "Site identifier", required = true) @PathParam("siteId") final String siteId) throws DotDataException, DotSecurityException {
 
         final User user = new WebResource.InitBuilder(this.webResource)
                 .requestAndResponse(httpServletRequest, httpServletResponse)
@@ -488,19 +569,30 @@ public class SiteResource implements Serializable {
         return Response.ok(new ResponseEntityView<>(toView(site, user))).build();
     }
 
-    /**
-     * Archives a Site.
-     *
-     * @param httpServletRequest  The current instance of the {@link HttpServletRequest} object.
-     * @param httpServletResponse The current instance of the {@link HttpServletResponse} object.
-     * @param siteId              The identifier of the Site to be archived.
-     *
-     * @return The {@link Response} object containing the result of the operation.
-     *
-     * @throws DotDataException     An error occurred when archiving the Site.
-     * @throws DotSecurityException The logged-in User does not have the required permissions to
-     *                              perform this action.
-     */
+    @Operation(
+        summary = "Archive site",
+        description = "Archives a site, making it inactive but preserving its data"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Site archived successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid site ID or default site cannot be archived",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "Site not found",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @PUT
     @Path("/{siteId}/_archive")
     @JSONP
@@ -508,7 +600,7 @@ public class SiteResource implements Serializable {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public Response archiveSite(@Context final HttpServletRequest httpServletRequest,
                                 @Context final HttpServletResponse httpServletResponse,
-                                @PathParam("siteId")  final String siteId) throws DotDataException, DotSecurityException{
+                                @Parameter(description = "Site identifier", required = true) @PathParam("siteId")  final String siteId) throws DotDataException, DotSecurityException{
 
         final User user = new WebResource.InitBuilder(this.webResource)
                 .requestAndResponse(httpServletRequest, httpServletResponse)
@@ -547,19 +639,30 @@ public class SiteResource implements Serializable {
         return Response.ok(new ResponseEntityView<>(toView(site, user))).build();
     }
 
-    /**
-     * Un-archives a Site.
-     *
-     * @param httpServletRequest  The current instance of the {@link HttpServletRequest} object.
-     * @param httpServletResponse The current instance of the {@link HttpServletResponse} object.
-     * @param siteId              The identifier of the Site to be un-archived.
-     *
-     * @return The {@link Response} object containing the result of the operation.
-     *
-     * @throws DotDataException     An error occurred when un-archiving the Site.
-     * @throws DotSecurityException The logged-in User does not have the required permissions to
-     *                              perform this action.
-     */
+    @Operation(
+        summary = "Unarchive site",
+        description = "Unarchives a site, making it active again"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Site unarchived successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid site ID",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "Site not found",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @PUT
     @Path("/{siteId}/_unarchive")
     @JSONP
@@ -567,7 +670,7 @@ public class SiteResource implements Serializable {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public Response unarchiveSite(@Context final HttpServletRequest httpServletRequest,
                                   @Context final HttpServletResponse httpServletResponse,
-                                  @PathParam("siteId")  final String siteId) throws DotDataException, DotSecurityException {
+                                  @Parameter(description = "Site identifier", required = true) @PathParam("siteId")  final String siteId) throws DotDataException, DotSecurityException {
 
         final User user = new WebResource.InitBuilder(this.webResource)
                 .requestAndResponse(httpServletRequest, httpServletResponse)
@@ -590,18 +693,30 @@ public class SiteResource implements Serializable {
         return Response.ok(new ResponseEntityView<>(toView(site))).build();
     }
 
-    /**
-     * Deletes a Site. It's worth noting that the Default Site cannot be deleted, so you need to
-     * mark another Site as "default" before doing this.
-     *
-     * @param httpServletRequest  The current instance of the {@link HttpServletRequest} object.
-     * @param httpServletResponse The current instance of the {@link HttpServletResponse} object.
-     * @param siteId              The identifier of the Site to be deleted.
-     *
-     * @throws DotDataException     An error occurred when deleting the Site.
-     * @throws DotSecurityException The logged-in User does not have the required permissions to
-     *                              perform this action.
-     */
+    @Operation(
+        summary = "Delete site",
+        description = "Deletes a site. The default site cannot be deleted - mark another site as default first"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Site deleted successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid site ID or default site cannot be deleted",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "Site not found",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @DELETE
     @Path("/{siteId}")
     @JSONP
@@ -610,7 +725,7 @@ public class SiteResource implements Serializable {
     public void deleteSite(@Context final HttpServletRequest httpServletRequest,
                                 @Context final HttpServletResponse httpServletResponse,
                                 @Suspended final AsyncResponse asyncResponse,
-                                @PathParam("siteId")  final String siteId) throws DotDataException, DotSecurityException {
+                                @Parameter(description = "Site identifier", required = true) @PathParam("siteId")  final String siteId) throws DotDataException, DotSecurityException {
 
         final User user = new WebResource.InitBuilder(this.webResource)
                 .requestAndResponse(httpServletRequest, httpServletResponse)
@@ -648,19 +763,30 @@ public class SiteResource implements Serializable {
     }
 
 
-    /**
-     * Marks a Site as "default".
-     *
-     * @param httpServletRequest  The current instance of the {@link HttpServletRequest} object.
-     * @param httpServletResponse The current instance of the {@link HttpServletResponse} object.
-     * @param siteId              The identifier of the Site to be marked as "default"..
-     *
-     * @return The {@link Response} object containing the result of the operation.
-     *
-     * @throws DotDataException     An error occurred when marking the Site as "default".
-     * @throws DotSecurityException The logged-in User does not have the required permissions to
-     *                              perform this action.
-     */
+    @Operation(
+        summary = "Make site default",
+        description = "Marks a site as the default site for the system"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Site marked as default successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid site ID",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "Site not found",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @PUT
     @Path("/{siteId}/_makedefault")
     @JSONP
@@ -668,7 +794,7 @@ public class SiteResource implements Serializable {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public Response makeDefault(@Context final HttpServletRequest httpServletRequest,
                            @Context final HttpServletResponse httpServletResponse,
-                           @PathParam("siteId")  final String siteId) throws DotDataException, DotSecurityException {
+                           @Parameter(description = "Site identifier", required = true) @PathParam("siteId")  final String siteId) throws DotDataException, DotSecurityException {
 
         final User user = new WebResource.InitBuilder(this.webResource)
                 .requestAndResponse(httpServletRequest, httpServletResponse)
@@ -692,15 +818,24 @@ public class SiteResource implements Serializable {
                 this.siteHelper.makeDefault(site, user, respectFrontendRoles))).build();
     }
 
-    /**
-     * Returns the site setup progress when the site assets are being copied in the background.
-     *
-     * @param httpServletRequest  The current instance of the {@link HttpServletRequest} object.
-     * @param httpServletResponse The current instance of the {@link HttpServletResponse} object.
-     * @param siteId              The identifier of the Site that the setup process belongs to.
-     *
-     * @return The {@link Response} object containing the result of the operation.
-     */
+    @Operation(
+        summary = "Get site setup progress",
+        description = "Returns the site setup progress when site assets are being copied in the background"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Site setup progress retrieved successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @Path("/{siteId}/setup_progress")
     @JSONP
@@ -708,7 +843,7 @@ public class SiteResource implements Serializable {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public Response getSiteSetupProgress(@Context final HttpServletRequest httpServletRequest,
                                 @Context final HttpServletResponse httpServletResponse,
-                                @PathParam("siteId")  final String siteId){
+                                @Parameter(description = "Site identifier", required = true) @PathParam("siteId")  final String siteId){
 
         new WebResource.InitBuilder(this.webResource)
                 .requestAndResponse(httpServletRequest, httpServletResponse)
@@ -723,19 +858,27 @@ public class SiteResource implements Serializable {
                 QuartzUtils.getTaskProgress("setup-host-" + siteId, "setup-host-group"))).build();
     }
 
-    /**
-     * Retrieves a Site by its Identifier.
-     *
-     * @param httpServletRequest  The current instance of the {@link HttpServletRequest} object.
-     * @param httpServletResponse The current instance of the {@link HttpServletResponse} object.
-     * @param siteId              The identifier of the Site to be retrieved.
-     *
-     * @return The {@link Response} object containing the Site.
-     *
-     * @throws DotDataException     An error occurred when retrieving the Site.
-     * @throws DotSecurityException The logged-in User does not have the required permissions to
-     *                              perform this action.
-     */
+    @Operation(
+        summary = "Get site by ID",
+        description = "Retrieves a site by its identifier"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Site retrieved successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "Site not found",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @Path("/{siteId}")
     @JSONP
@@ -743,7 +886,7 @@ public class SiteResource implements Serializable {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public Response findHostByIdentifier(@Context final HttpServletRequest httpServletRequest,
                                          @Context final HttpServletResponse httpServletResponse,
-                                         @PathParam("siteId")  final String siteId) throws DotDataException, DotSecurityException {
+                                         @Parameter(description = "Site identifier", required = true) @PathParam("siteId")  final String siteId) throws DotDataException, DotSecurityException {
 
         final User user = new WebResource.InitBuilder(this.webResource)
                 .requestAndResponse(httpServletRequest, httpServletResponse)
@@ -764,28 +907,43 @@ public class SiteResource implements Serializable {
         return Response.ok(new ResponseEntityView<>(toView(site,user))).build();
     }
 
-    /**
-     * Finds a site by its name. The site name is sent via POST in order to avoid escaped url
-     * issues.
-     *
-     * @param httpServletRequest   The current instance of the {@link HttpServletRequest} object.
-     * @param httpServletResponse  The current instance of the {@link HttpServletResponse} object.
-     * @param searchSiteByNameForm The form containing the site name to be searched.
-     *
-     * @return The {@link Response} object containing the Site.
-     *
-     * @throws DotDataException     An error occurred when retrieving the Site.
-     * @throws DotSecurityException The logged-in User does not have the required permissions to
-     *                              perform this action.
-     */
+    @Operation(
+        summary = "Find site by name",
+        description = "Finds a site by its name. Uses POST to avoid URL escaping issues"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Site found successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - site name is required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "Site not found",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @POST
     @Path("/_byname")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Consumes(MediaType.APPLICATION_JSON)
     public Response findHostByName(@Context final HttpServletRequest httpServletRequest,
                                  @Context final HttpServletResponse httpServletResponse,
-                                 final SearchSiteByNameForm searchSiteByNameForm) throws DotDataException, DotSecurityException {
+                                 @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                                     description = "Site name search form", 
+                                     required = true,
+                                     content = @Content(schema = @Schema(implementation = SearchSiteByNameForm.class))
+                                 ) final SearchSiteByNameForm searchSiteByNameForm) throws DotDataException, DotSecurityException {
 
         final User user = new WebResource.InitBuilder(this.webResource)
                 .requestAndResponse(httpServletRequest, httpServletResponse)
@@ -812,27 +970,42 @@ public class SiteResource implements Serializable {
         return Response.ok(new ResponseEntityView<>(toView(site,user))).build();
     }
 
-    /**
-     * Creates a new site
-     * @param httpServletRequest
-     * @param httpServletResponse
-     * @param newSiteForm
-     * @return
-     * @throws DotDataException
-     * @throws DotSecurityException
-     * @throws PortalException
-     * @throws SystemException
-     * @throws ParseException
-     * @throws SchedulerException
-     * @throws ClassNotFoundException
-     */
+    @Operation(
+        summary = "Create new site",
+        description = "Creates a new site with the specified configuration"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Site created successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid site data or site name required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "409", 
+                    description = "Conflict - site already exists",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @POST
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Consumes(MediaType.APPLICATION_JSON)
     public Response createNewSite(@Context final HttpServletRequest httpServletRequest,
                                   @Context final HttpServletResponse httpServletResponse,
-                                  final SiteForm newSiteForm)
+                                  @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                                      description = "Site configuration data", 
+                                      required = true,
+                                      content = @Content(schema = @Schema(implementation = SiteForm.class))
+                                  ) final SiteForm newSiteForm)
             throws DotDataException, DotSecurityException, AlreadyExistException, LanguageException {
 
         final User user = new WebResource.InitBuilder(this.webResource)
@@ -1130,29 +1303,43 @@ public class SiteResource implements Serializable {
 
         return Response.ok(new ResponseSiteVariablesEntityView(resultList)).build();
     }
-    /**
-     * Updates an existing Site in dotCMS. In order to do this, the User calling this method must
-     * have access to the {@code Sites} portlet.
-     *
-     * @param httpServletRequest  The current instance of the {@link HttpServletRequest}.
-     * @param httpServletResponse The current instance of the {@link HttpServletResponse}.
-     * @param newSiteForm         The {@link SiteForm} containing the information of the updated
-     *                            Site.
-     *
-     * @return The {@link Response} containing the updated Site.
-     *
-     * @throws DotDataException      An error occurred when persisting the Site's information.
-     * @throws DotSecurityException  The user calling this method does not have the required
-     *                               permissions to create a Site.
-     */
+    @Operation(
+        summary = "Update site",
+        description = "Updates an existing site with new configuration data. Requires access to Sites portlet"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Site updated successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid site data, missing ID, or site name required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "Site not found",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @PUT
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Consumes(MediaType.APPLICATION_JSON)
     public Response updateSite(@Context final HttpServletRequest httpServletRequest,
                                   @Context final HttpServletResponse httpServletResponse,
-                                  @QueryParam("id") final String  siteIdentifier,
-                                  final SiteForm newSiteForm)
+                                  @Parameter(description = "Site identifier", required = true) @QueryParam("id") final String  siteIdentifier,
+                                  @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                                      description = "Updated site configuration data", 
+                                      required = true,
+                                      content = @Content(schema = @Schema(implementation = SiteForm.class))
+                                  ) final SiteForm newSiteForm)
             throws DotDataException, DotSecurityException, LanguageException {
 
         final User user = new WebResource.InitBuilder(this.webResource)
@@ -1204,30 +1391,46 @@ public class SiteResource implements Serializable {
         )).build();
     }
 
-    /**
-     * Copy a site
-     * - Creates a new site,
-     * - Copies the assets based on the copy options
-     * @param httpServletRequest
-     * @param httpServletResponse
-     * @param copySiteForm
-     * @return
-     * @throws DotDataException
-     * @throws DotSecurityException
-     * @throws PortalException
-     * @throws SystemException
-     * @throws ParseException
-     * @throws SchedulerException
-     * @throws ClassNotFoundException
-     */
+    @Operation(
+        summary = "Copy site",
+        description = "Creates a new site by copying an existing site with specified copy options"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Site copied successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid copy configuration",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions or license required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "Source site not found",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "409", 
+                    description = "Conflict - new site already exists",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @PUT
     @Path("/_copy")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Consumes(MediaType.APPLICATION_JSON)
     public Response copySite(@Context final HttpServletRequest httpServletRequest,
                                   @Context final HttpServletResponse httpServletResponse,
-                                  final CopySiteForm copySiteForm)
+                                  @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                                      description = "Site copy configuration", 
+                                      required = true,
+                                      content = @Content(schema = @Schema(implementation = CopySiteForm.class))
+                                  ) final CopySiteForm copySiteForm)
             throws DotDataException, DotSecurityException, PortalException, SystemException, ParseException, SchedulerException, ClassNotFoundException, AlreadyExistException {
 
         final User user = new WebResource.InitBuilder(this.webResource)

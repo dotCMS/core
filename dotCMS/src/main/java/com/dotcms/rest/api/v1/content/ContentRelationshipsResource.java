@@ -4,6 +4,7 @@ import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -16,6 +17,11 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.json.JSONException;
 import com.liferay.portal.model.User;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import javax.servlet.http.HttpServletRequest;
@@ -87,11 +93,28 @@ public class ContentRelationshipsResource {
      * @param params   A Map of parameters that will define the search criteria.
      * @return The list of associated contents.
      */
+    @Operation(
+        summary = "Get content with relationships (deprecated)",
+        description = "Retrieves content with relationships based on query parameters, identifier, or inode. This endpoint is deprecated - use /v1/content with depth parameter instead."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Content with relationships retrieved successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @NoCache
     @GET
     @Path("/{params: .*}")
+    @Produces(MediaType.APPLICATION_JSON)
     public Response getContent(@Context final HttpServletRequest request,
                                @Context final HttpServletResponse response,
+                               @Parameter(description = "Query parameters, identifier, or inode for content lookup", required = true)
                                @PathParam("params") final String params) {
         final InitDataObject initData = this.webResource.init(params, request, response, false, null);
         final Map<String, String> paramsMap = initData.getParamsMap();

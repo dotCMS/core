@@ -17,8 +17,10 @@ import com.dotmarketing.util.SecurityLogger;
 import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vavr.Tuple2;
@@ -576,9 +578,9 @@ public class OSGIResource {
                                     schema = @Schema(implementation = ResponseEntityStringView.class))),
                     @ApiResponse(responseCode = "403", description = "Can not access the upload folder or invalid OSGI Upload request"),
             })
-    public final Response uploadBundles(@Context final HttpServletRequest request,
-                                              @Context final HttpServletResponse response,
-                                              final FormDataMultiPart multipart) throws IOException {
+    public final Response uploadBundles(@Parameter(hidden = true) @Context final HttpServletRequest request,
+                                              @Parameter(hidden = true) @Context final HttpServletResponse response,
+                                              @RequestBody(description = "Multipart form data containing OSGI bundle files", required = true) final FormDataMultiPart multipart) throws IOException {
 
         checkUserPermissions(request, response, PortletID.DYNAMIC_PLUGINS.toString());
 

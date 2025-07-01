@@ -48,11 +48,17 @@ import javax.ws.rs.core.UriInfo;
 import org.apache.velocity.exception.MethodInvocationException;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import org.glassfish.jersey.server.JSONP;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 
 @Path("/vtl")
-@Tag(name = "Templates", description = "Template design and management")
+@Tag(name = "VTL", description = "Velocity Template Language (VTL) processing endpoints for dynamic content rendering")
 public class VTLResource {
 
     public static final String IDENTIFIER = "identifier";
@@ -72,42 +78,100 @@ public class VTLResource {
         this.multiPartUtils = multiPartUtils;
     }
 
-    /**
-     * Returns the output of a convention based "get.vtl" file, located under the given {folder} after being evaluated
-     * using the velocity engine.
-     *
-     * "get.vtl" code determines whether the response is a JSON object or anything else (XML, text-plain).
-     */
+    @Operation(
+        summary = "Process GET request with VTL template",
+        description = "Returns the output of a convention based 'get.vtl' file, located under the given folder after being evaluated using the velocity engine. The VTL code determines whether the response is JSON, XML, or plain text."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "VTL template processed successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid template or parameters",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication may be required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "VTL template not found",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error during template processing",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @Path("/{folder}/{pathParam:.*}")
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
     @Consumes({MediaType.APPLICATION_JSON})
     public Response get(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
-                        @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
-                        @PathParam("pathParam") final String pathParam, final Map<String, Object> bodyMap) {
+                        @Context UriInfo uriInfo, @Parameter(description = "VTL template folder name", required = true) @PathParam("folder") final String folderName,
+                        @Parameter(description = "Additional path parameters") @PathParam("pathParam") final String pathParam, 
+                        @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                            description = "Request body parameters for template processing", 
+                            content = @Content(schema = @Schema(type = "object"))
+                        ) final Map<String, Object> bodyMap) {
 
         return processRequest(request, response, uriInfo, folderName, pathParam, HTTPMethod.GET, bodyMap);
     }
 
+    @Operation(
+        summary = "Process GET request with VTL template (folder only)",
+        description = "Returns the output of a convention based 'get.vtl' file, located under the given folder after being evaluated using the velocity engine."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "VTL template processed successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid template or parameters",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication may be required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "VTL template not found",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error during template processing",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @Path("/{folder}")
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
     @Consumes({MediaType.APPLICATION_JSON})
     public Response get(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
-                        @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
-                        final Map<String, Object> bodyMap) {
+                        @Context UriInfo uriInfo, @Parameter(description = "VTL template folder name", required = true) @PathParam("folder") final String folderName,
+                        @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                            description = "Request body parameters for template processing", 
+                            content = @Content(schema = @Schema(type = "object"))
+                        ) final Map<String, Object> bodyMap) {
 
         return processRequest(request, response, uriInfo, folderName, null, HTTPMethod.GET, bodyMap);
     }
 
-    /**
-     * Returns the output of a convention based "post.vtl" file, located under the given {folder} after being evaluated
-     * using the velocity engine.
-     *
-     * "post.vtl" code determines whether the response is a JSON object or anything else (XML, text-plain).
-     */
+    @Operation(
+        summary = "Process POST request with VTL template",
+        description = "Returns the output of a convention based 'post.vtl' file, located under the given folder after being evaluated using the velocity engine. The VTL code determines whether the response is JSON, XML, or plain text."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "VTL template processed successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid template or parameters",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication may be required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "VTL template not found",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error during template processing",
+                    content = @Content(mediaType = "application/json"))
+    })
     @POST
     @Path("/{folder}/{pathParam: .*}")
     @JSONP
@@ -115,13 +179,37 @@ public class VTLResource {
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
     @Consumes({MediaType.APPLICATION_JSON})
     public final Response post(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
-                               @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
-                               @PathParam("pathParam") final String pathParam,
-                                   final Map<String, Object> bodyMap) {
+                               @Context UriInfo uriInfo, @Parameter(description = "VTL template folder name", required = true) @PathParam("folder") final String folderName,
+                               @Parameter(description = "Additional path parameters") @PathParam("pathParam") final String pathParam,
+                               @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                                   description = "Request body parameters for template processing", 
+                                   content = @Content(schema = @Schema(type = "object"))
+                               ) final Map<String, Object> bodyMap) {
 
         return processRequest(request, response, uriInfo, folderName, pathParam, HTTPMethod.POST, bodyMap);
     }
 
+    @Operation(
+        summary = "Process POST request with VTL template (folder only)",
+        description = "Returns the output of a convention based 'post.vtl' file, located under the given folder after being evaluated using the velocity engine."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "VTL template processed successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid template or parameters",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication may be required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "VTL template not found",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error during template processing",
+                    content = @Content(mediaType = "application/json"))
+    })
     @POST
     @Path("/{folder}")
     @JSONP
@@ -129,18 +217,36 @@ public class VTLResource {
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
     @Consumes({MediaType.APPLICATION_JSON})
     public final Response post(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
-                               @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
-                               final Map<String, Object> bodyMap) {
+                               @Context UriInfo uriInfo, @Parameter(description = "VTL template folder name", required = true) @PathParam("folder") final String folderName,
+                               @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                                   description = "Request body parameters for template processing", 
+                                   content = @Content(schema = @Schema(type = "object"))
+                               ) final Map<String, Object> bodyMap) {
 
         return processRequest(request, response, uriInfo, folderName, null, HTTPMethod.POST, bodyMap);
     }
 
-    /**
-     * Returns the output of a convention based "put.vtl" file, located under the given {folder} after being evaluated
-     * using the velocity engine.
-     *
-     * "put.vtl" code determines whether the response is a JSON object or anything else (XML, text-plain).
-     */
+    @Operation(
+        summary = "Process PUT request with VTL template",
+        description = "Returns the output of a convention based 'put.vtl' file, located under the given folder after being evaluated using the velocity engine. The VTL code determines whether the response is JSON, XML, or plain text."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "VTL template processed successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid template or parameters",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication may be required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "VTL template not found",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error during template processing",
+                    content = @Content(mediaType = "application/json"))
+    })
     @PUT
     @Path("/{folder}/{pathParam: .*}")
     @JSONP
@@ -148,13 +254,37 @@ public class VTLResource {
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
     @Consumes({MediaType.APPLICATION_JSON})
     public final Response put(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
-                               @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
-                               @PathParam("pathParam") final String pathParam,
-                               final Map<String, Object> bodyMap) {
+                               @Context UriInfo uriInfo, @Parameter(description = "VTL template folder name", required = true) @PathParam("folder") final String folderName,
+                               @Parameter(description = "Additional path parameters") @PathParam("pathParam") final String pathParam,
+                               @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                                   description = "Request body parameters for template processing", 
+                                   content = @Content(schema = @Schema(type = "object"))
+                               ) final Map<String, Object> bodyMap) {
 
         return processRequest(request, response, uriInfo, folderName, pathParam, HTTPMethod.PUT, bodyMap);
     }
 
+    @Operation(
+        summary = "Process PUT request with VTL template (folder only)",
+        description = "Returns the output of a convention based 'put.vtl' file, located under the given folder after being evaluated using the velocity engine."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "VTL template processed successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid template or parameters",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication may be required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "VTL template not found",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error during template processing",
+                    content = @Content(mediaType = "application/json"))
+    })
     @PUT
     @Path("/{folder}")
     @JSONP
@@ -162,18 +292,36 @@ public class VTLResource {
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
     @Consumes({MediaType.APPLICATION_JSON})
     public final Response put(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
-                              @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
-                              final Map<String, Object> bodyMap) {
+                              @Context UriInfo uriInfo, @Parameter(description = "VTL template folder name", required = true) @PathParam("folder") final String folderName,
+                              @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                                  description = "Request body parameters for template processing", 
+                                  content = @Content(schema = @Schema(type = "object"))
+                              ) final Map<String, Object> bodyMap) {
 
         return processRequest(request, response, uriInfo, folderName, null, HTTPMethod.PUT, bodyMap);
     }
 
-    /**
-     * Returns the output of a convention based "patch.vtl" file, located under the given {folder} after being evaluated
-     * using the velocity engine.
-     *
-     * "patch.vtl" code determines whether the response is a JSON object or anything else (XML, text-plain).
-     */
+    @Operation(
+        summary = "Process PATCH request with VTL template",
+        description = "Returns the output of a convention based 'patch.vtl' file, located under the given folder after being evaluated using the velocity engine. The VTL code determines whether the response is JSON, XML, or plain text."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "VTL template processed successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid template or parameters",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication may be required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "VTL template not found",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error during template processing",
+                    content = @Content(mediaType = "application/json"))
+    })
     @PATCH
     @Path("/{folder}/{pathParam: .*}")
     @JSONP
@@ -181,13 +329,37 @@ public class VTLResource {
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
     @Consumes({MediaType.APPLICATION_JSON})
     public final Response patch(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
-                              @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
-                              @PathParam("pathParam") final String pathParam,
-                              final Map<String, Object> bodyMap) {
+                              @Context UriInfo uriInfo, @Parameter(description = "VTL template folder name", required = true) @PathParam("folder") final String folderName,
+                              @Parameter(description = "Additional path parameters") @PathParam("pathParam") final String pathParam,
+                              @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                                  description = "Request body parameters for template processing", 
+                                  content = @Content(schema = @Schema(type = "object"))
+                              ) final Map<String, Object> bodyMap) {
 
         return processRequest(request, response, uriInfo, folderName, pathParam, HTTPMethod.PATCH, bodyMap);
     }
 
+    @Operation(
+        summary = "Process PATCH request with VTL template (folder only)",
+        description = "Returns the output of a convention based 'patch.vtl' file, located under the given folder after being evaluated using the velocity engine."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "VTL template processed successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid template or parameters",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication may be required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "VTL template not found",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error during template processing",
+                    content = @Content(mediaType = "application/json"))
+    })
     @PATCH
     @Path("/{folder}")
     @JSONP
@@ -195,18 +367,36 @@ public class VTLResource {
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
     @Consumes({MediaType.APPLICATION_JSON})
     public final Response patch(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
-                                @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
-                                final Map<String, Object> bodyMap) {
+                                @Context UriInfo uriInfo, @Parameter(description = "VTL template folder name", required = true) @PathParam("folder") final String folderName,
+                                @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                                    description = "Request body parameters for template processing", 
+                                    content = @Content(schema = @Schema(type = "object"))
+                                ) final Map<String, Object> bodyMap) {
 
         return processRequest(request, response, uriInfo, folderName, null, HTTPMethod.PATCH, bodyMap);
     }
 
-    /**
-     * Returns the output of a convention based "delete.vtl" file, located under the given {folder} after being evaluated
-     * using the velocity engine.
-     *
-     * "delete.vtl" code determines whether the response is a JSON object or anything else (XML, text-plain).
-     */
+    @Operation(
+        summary = "Process DELETE request with VTL template",
+        description = "Returns the output of a convention based 'delete.vtl' file, located under the given folder after being evaluated using the velocity engine. The VTL code determines whether the response is JSON, XML, or plain text."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "VTL template processed successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid template or parameters",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication may be required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "VTL template not found",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error during template processing",
+                    content = @Content(mediaType = "application/json"))
+    })
     @DELETE
     @Path("/{folder}/{pathParam: .*}")
     @JSONP
@@ -214,13 +404,37 @@ public class VTLResource {
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
     @Consumes({MediaType.APPLICATION_JSON})
     public final Response delete(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
-                               @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
-                               @PathParam("pathParam") final String pathParam,
-                               final Map<String, Object> requestJSONMap) {
+                               @Context UriInfo uriInfo, @Parameter(description = "VTL template folder name", required = true) @PathParam("folder") final String folderName,
+                               @Parameter(description = "Additional path parameters") @PathParam("pathParam") final String pathParam,
+                               @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                                   description = "Request body parameters for template processing", 
+                                   content = @Content(schema = @Schema(type = "object"))
+                               ) final Map<String, Object> requestJSONMap) {
 
         return processRequest(request, response, uriInfo, folderName, pathParam, HTTPMethod.DELETE, requestJSONMap);
     }
 
+    @Operation(
+        summary = "Process DELETE request with VTL template (folder only)",
+        description = "Returns the output of a convention based 'delete.vtl' file, located under the given folder after being evaluated using the velocity engine."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "VTL template processed successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid template or parameters",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication may be required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "VTL template not found",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error during template processing",
+                    content = @Content(mediaType = "application/json"))
+    })
     @DELETE
     @Path("/{folder}")
     @JSONP
@@ -228,15 +442,36 @@ public class VTLResource {
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
     @Consumes({MediaType.APPLICATION_JSON})
     public final Response delete(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
-                                 @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
-                                 final Map<String, Object> requestJSONMap) {
+                                 @Context UriInfo uriInfo, @Parameter(description = "VTL template folder name", required = true) @PathParam("folder") final String folderName,
+                                 @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                                     description = "Request body parameters for template processing", 
+                                     content = @Content(schema = @Schema(type = "object"))
+                                 ) final Map<String, Object> requestJSONMap) {
 
         return processRequest(request, response, uriInfo, folderName, null, HTTPMethod.DELETE, requestJSONMap);
     }
 
-    /**
-     * Same as {@link #post} but supporting a multipart request
-     */
+    @Operation(
+        summary = "Process POST multipart request with VTL template",
+        description = "Same as regular POST but supporting multipart request for file uploads along with VTL template processing"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "VTL template processed successfully with multipart data",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid template, parameters, or multipart data",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication may be required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "VTL template not found",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error during template processing",
+                    content = @Content(mediaType = "application/json"))
+    })
     @POST
     @Path("/{folder}/{pathParam: .*}")
     @JSONP
@@ -244,14 +479,38 @@ public class VTLResource {
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     public final Response postMultipart(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
-                                        FormDataMultiPart multipart,
-                                        @PathParam("pathParam") final String pathParam,
-                                        @Context UriInfo uriInfo, @PathParam("folder") final String folderName) {
+                                        @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                                            description = "Multipart form data for file uploads and parameters", 
+                                            content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA)
+                                        ) FormDataMultiPart multipart,
+                                        @Parameter(description = "Additional path parameters") @PathParam("pathParam") final String pathParam,
+                                        @Context UriInfo uriInfo, @Parameter(description = "VTL template folder name", required = true) @PathParam("folder") final String folderName) {
 
         return processMultiPartRequest(request, response, uriInfo, folderName, pathParam, HTTPMethod.POST, multipart);
 
     }
 
+    @Operation(
+        summary = "Process VTL template via POST with multipart form data",
+        description = "Returns the output of a convention based 'post.vtl' file, located under the given folder after being evaluated using the velocity engine. Supports multipart form data for file uploads and complex data submission."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "VTL template processed successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid template, folder, or multipart data",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication may be required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "VTL template not found in the specified folder",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error during template processing",
+                    content = @Content(mediaType = "application/json"))
+    })
     @POST
     @Path("/{folder}")
     @JSONP
@@ -259,8 +518,11 @@ public class VTLResource {
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     public final Response postMultipart(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
+                                        @Parameter(description = "Multipart form data containing files and form fields for VTL template processing")
                                         FormDataMultiPart multipart,
-                                        @Context UriInfo uriInfo, @PathParam("folder") final String folderName) {
+                                        @Context UriInfo uriInfo, 
+                                        @Parameter(description = "VTL template folder name", required = true) 
+                                        @PathParam("folder") final String folderName) {
 
         return processMultiPartRequest(request, response, uriInfo, folderName, null, HTTPMethod.POST, multipart);
 
@@ -269,6 +531,27 @@ public class VTLResource {
     /**
      * Same as {@link #put} but supporting a multipart request
      */
+    @Operation(
+        summary = "Process VTL template via PUT with multipart form data and path parameters",
+        description = "Returns the output of a convention based 'put.vtl' file, located under the given folder after being evaluated using the velocity engine. Supports multipart form data for file uploads and complex data submission with additional path parameters."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "VTL template processed successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid template, folder, path parameters, or multipart data",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication may be required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "VTL template not found in the specified folder",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error during template processing",
+                    content = @Content(mediaType = "application/json"))
+    })
     @PUT
     @Path("/{folder}/{pathParam: .*}")
     @JSONP
@@ -276,14 +559,39 @@ public class VTLResource {
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     public final Response putMultipart(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
+                                        @Parameter(description = "Multipart form data containing files and form fields for VTL template processing")
                                         FormDataMultiPart multipart,
+                                        @Parameter(description = "Additional path parameters for VTL template processing", required = true)
                                         @PathParam("pathParam") final String pathParam,
-                                        @Context UriInfo uriInfo, @PathParam("folder") final String folderName) {
+                                        @Context UriInfo uriInfo, 
+                                        @Parameter(description = "VTL template folder name", required = true)
+                                        @PathParam("folder") final String folderName) {
 
         return processMultiPartRequest(request, response, uriInfo, folderName, pathParam, HTTPMethod.PUT, multipart);
 
     }
 
+    @Operation(
+        summary = "Process VTL template via PUT with multipart form data",
+        description = "Returns the output of a convention based 'put.vtl' file, located under the given folder after being evaluated using the velocity engine. Supports multipart form data for file uploads and complex data submission."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "VTL template processed successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid template, folder, or multipart data",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication may be required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "VTL template not found in the specified folder",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error during template processing",
+                    content = @Content(mediaType = "application/json"))
+    })
     @PUT
     @Path("/{folder}")
     @JSONP
@@ -291,8 +599,11 @@ public class VTLResource {
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     public final Response putMultipart(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
+                                       @Parameter(description = "Multipart form data containing files and form fields for VTL template processing")
                                        final FormDataMultiPart multipart,
-                                       @Context final UriInfo uriInfo, @PathParam("folder") final String folderName) {
+                                       @Context final UriInfo uriInfo, 
+                                       @Parameter(description = "VTL template folder name", required = true)
+                                       @PathParam("folder") final String folderName) {
 
         return processMultiPartRequest(request, response, uriInfo, folderName, null, HTTPMethod.PUT, multipart);
     }
@@ -300,6 +611,27 @@ public class VTLResource {
     /**
      * Same as {@link #patch} but supporting a multipart request
      */
+    @Operation(
+        summary = "Process VTL template via PATCH with multipart form data and path parameters",
+        description = "Returns the output of a convention based 'patch.vtl' file, located under the given folder after being evaluated using the velocity engine. Supports multipart form data for file uploads and complex data submission with additional path parameters."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "VTL template processed successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid template, folder, path parameters, or multipart data",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication may be required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "VTL template not found in the specified folder",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error during template processing",
+                    content = @Content(mediaType = "application/json"))
+    })
     @PATCH
     @Path("/{folder}/{pathParam: .*}")
     @JSONP
@@ -307,14 +639,39 @@ public class VTLResource {
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     public final Response patchMultipart(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
+                                        @Parameter(description = "Multipart form data containing files and form fields for VTL template processing")
                                         FormDataMultiPart multipart,
+                                        @Parameter(description = "Additional path parameters for VTL template processing", required = true)
                                         @PathParam("pathParam") final String pathParam,
-                                        @Context UriInfo uriInfo, @PathParam("folder") final String folderName) {
+                                        @Context UriInfo uriInfo, 
+                                        @Parameter(description = "VTL template folder name", required = true)
+                                        @PathParam("folder") final String folderName) {
 
         return processMultiPartRequest(request, response, uriInfo, folderName, pathParam, HTTPMethod.PATCH, multipart);
 
     }
 
+    @Operation(
+        summary = "Process VTL template via PATCH with multipart form data",
+        description = "Returns the output of a convention based 'patch.vtl' file, located under the given folder after being evaluated using the velocity engine. Supports multipart form data for file uploads and complex data submission."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "VTL template processed successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid template, folder, or multipart data",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication may be required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "VTL template not found in the specified folder",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error during template processing",
+                    content = @Content(mediaType = "application/json"))
+    })
     @PATCH
     @Path("/{folder}")
     @JSONP
@@ -322,30 +679,68 @@ public class VTLResource {
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     public final Response patchMultipart(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
+                                         @Parameter(description = "Multipart form data containing files and form fields for VTL template processing")
                                          final FormDataMultiPart multipart,
-                                         @Context final UriInfo uriInfo, @PathParam("folder") final String folderName) {
+                                         @Context final UriInfo uriInfo, 
+                                         @Parameter(description = "VTL template folder name", required = true)
+                                         @PathParam("folder") final String folderName) {
 
         return processMultiPartRequest(request, response, uriInfo, folderName, null, HTTPMethod.PATCH, multipart);
     }
 
-    /**
-     * Same as {@link #get} but supporting sending the velocity to be rendered embedded (properly escaped) in the JSON
-     * in a "velocity" property
-     */
+    @Operation(
+        summary = "Process dynamic GET request with embedded VTL",
+        description = "Same as regular GET but supporting sending the velocity to be rendered embedded (properly escaped) in the JSON in a 'velocity' property"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Dynamic VTL template processed successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid embedded velocity template",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication may be required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error during template processing",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @Path("/dynamic/{pathParam:.*}")
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
     @Consumes({MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN})
     public Response dynamicGet(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
-                               @Context UriInfo uriInfo, @PathParam("pathParam") final String pathParam,
-                               final String bodyMapString) {
+                               @Context UriInfo uriInfo, @Parameter(description = "Additional path parameters") @PathParam("pathParam") final String pathParam,
+                               @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                                   description = "JSON string or plain text containing embedded velocity template", 
+                                   content = @Content(schema = @Schema(type = "string"))
+                               ) final String bodyMapString) {
 
         final Map<String, Object> bodyMap = parseBodyMap(bodyMapString);
 
         return processRequest(request, response, uriInfo, null, pathParam, HTTPMethod.GET, bodyMap);
     }
 
+    @Operation(
+        summary = "Process dynamic VTL template",
+        description = "Executes a dynamically provided Velocity template sent in the request body. The template code is embedded in the request and processed on-demand without requiring a file on the server."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Dynamic VTL template processed successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid template syntax or parameters",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication may be required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error during template processing",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @Path("/dynamic")
     @NoCache
@@ -362,20 +757,61 @@ public class VTLResource {
      * Same as {@link #post} but supporting sending the velocity to be rendered embedded (properly escaped) in the JSON
      * in a "velocity" property
      */
+    @Operation(
+        summary = "Process dynamic VTL template via POST with path parameters",
+        description = "Executes a dynamically provided Velocity template sent in the request body via POST method. The template code is embedded in the request and processed on-demand without requiring a file on the server."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Dynamic VTL template processed successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid template syntax or parameters",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication may be required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error during template processing",
+                    content = @Content(mediaType = "application/json"))
+    })
     @POST
     @Path("/dynamic/{pathParam:.*}")
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
     @Consumes({MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN})
     public Response dynamicPost(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
-                                @Context UriInfo uriInfo, @PathParam("pathParam") final String pathParam,
-                                final String bodyMapString) {
+                                @Context UriInfo uriInfo, 
+                                @Parameter(description = "Additional path parameters for VTL template processing") 
+                                @PathParam("pathParam") final String pathParam,
+                                @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                                    description = "JSON string or plain text containing embedded velocity template",
+                                    content = @Content(schema = @Schema(type = "string"))
+                                ) final String bodyMapString) {
 
         final Map<String, Object> bodyMap = parseBodyMap(bodyMapString);
 
         return processRequest(request, response, uriInfo, null, pathParam, HTTPMethod.POST, bodyMap);
     }
 
+    @Operation(
+        summary = "Process dynamic VTL template via POST",
+        description = "Executes a dynamically provided Velocity template sent in the request body via POST method. The template code is embedded in the request and processed on-demand without requiring a file on the server."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Dynamic VTL template processed successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid template syntax or parameters",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication may be required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error during template processing",
+                    content = @Content(mediaType = "application/json"))
+    })
     @POST
     @Path("/dynamic")
     @NoCache
@@ -383,7 +819,10 @@ public class VTLResource {
     @Consumes({MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN})
     public Response dynamicPost(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
                                 @Context UriInfo uriInfo,
-                                final String bodyMapString) {
+                                @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                                    description = "JSON string or plain text containing embedded velocity template",
+                                    content = @Content(schema = @Schema(type = "string"))
+                                ) final String bodyMapString) {
 
         return dynamicPost(request, response, uriInfo, null, bodyMapString);
     }
@@ -392,20 +831,61 @@ public class VTLResource {
      * Same as {@link #put} but supporting sending the velocity to be rendered embedded (properly escaped) in the JSON
      * in a "velocity" property
      */
+    @Operation(
+        summary = "Process dynamic VTL template via PUT with path parameters",
+        description = "Executes a dynamically provided Velocity template sent in the request body via PUT method. The template code is embedded in the request and processed on-demand without requiring a file on the server."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Dynamic VTL template processed successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid template syntax or parameters",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication may be required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error during template processing",
+                    content = @Content(mediaType = "application/json"))
+    })
     @PUT
     @Path("/dynamic/{pathParam:.*}")
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
     @Consumes({MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN})
     public Response dynamicPut(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
-                               @Context UriInfo uriInfo, @PathParam("pathParam") final String pathParam,
-                               final String bodyMapString) {
+                               @Context UriInfo uriInfo, 
+                               @Parameter(description = "Additional path parameters for VTL template processing") 
+                               @PathParam("pathParam") final String pathParam,
+                               @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                                   description = "JSON string or plain text containing embedded velocity template",
+                                   content = @Content(schema = @Schema(type = "string"))
+                               ) final String bodyMapString) {
 
         final Map<String, Object> bodyMap = parseBodyMap(bodyMapString);
 
         return processRequest(request, response, uriInfo, null, pathParam, HTTPMethod.PUT, bodyMap);
     }
 
+    @Operation(
+        summary = "Process dynamic VTL template via PUT",
+        description = "Executes a dynamically provided Velocity template sent in the request body via PUT method. The template code is embedded in the request and processed on-demand without requiring a file on the server."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Dynamic VTL template processed successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid template syntax or parameters",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication may be required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error during template processing",
+                    content = @Content(mediaType = "application/json"))
+    })
     @PUT
     @Path("/dynamic")
     @NoCache
@@ -413,7 +893,10 @@ public class VTLResource {
     @Consumes({MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN})
     public Response dynamicPut(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
                                @Context final UriInfo uriInfo,
-                               final String bodyMapString) {
+                               @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                                   description = "JSON string or plain text containing embedded velocity template",
+                                   content = @Content(schema = @Schema(type = "string"))
+                               ) final String bodyMapString) {
 
         return dynamicPut(request, response, uriInfo, null, bodyMapString);
     }
@@ -422,14 +905,37 @@ public class VTLResource {
      * Same as {@link #patch} but supporting sending the velocity to be rendered embedded (properly escaped) in the JSON
      * in a "velocity" property
      */
+    @Operation(
+        summary = "Process dynamic VTL template via PATCH with path parameters",
+        description = "Executes a dynamically provided Velocity template sent in the request body via PATCH method. The template code is embedded in the request and processed on-demand without requiring a file on the server."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Dynamic VTL template processed successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid template syntax or parameters",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication may be required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error during template processing",
+                    content = @Content(mediaType = "application/json"))
+    })
     @PATCH
     @Path("/dynamic/{pathParam:.*}")
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
     @Consumes({MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN})
     public Response dynamicPatch(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
-                                 @Context UriInfo uriInfo, @PathParam("pathParam") final String pathParam,
-                                 final String bodyMapString) {
+                                 @Context UriInfo uriInfo, 
+                                 @Parameter(description = "Additional path parameters for VTL template processing") 
+                                 @PathParam("pathParam") final String pathParam,
+                                 @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                                     description = "JSON string or plain text containing embedded velocity template",
+                                     content = @Content(schema = @Schema(type = "string"))
+                                 ) final String bodyMapString) {
 
         final Map<String, Object> bodyMap = parseBodyMap(bodyMapString);
 
@@ -441,14 +947,37 @@ public class VTLResource {
      * Same as {@link #delete} but supporting sending the velocity to be rendered embedded (properly escaped) in the JSON
      * in a "velocity" property
      */
+    @Operation(
+        summary = "Process dynamic VTL template via DELETE with path parameters",
+        description = "Executes a dynamically provided Velocity template sent in the request body via DELETE method. The template code is embedded in the request and processed on-demand without requiring a file on the server."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Dynamic VTL template processed successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid template syntax or parameters",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication may be required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error during template processing",
+                    content = @Content(mediaType = "application/json"))
+    })
     @DELETE
     @Path("/dynamic/{pathParam:.*}")
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
     @Consumes({MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN})
     public Response dynamicDelete(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
-                                  final @Context UriInfo uriInfo, @PathParam("pathParam") final String pathParam,
-                                  final String bodyMapString) {
+                                  final @Context UriInfo uriInfo, 
+                                  @Parameter(description = "Additional path parameters for VTL template processing") 
+                                  @PathParam("pathParam") final String pathParam,
+                                  @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                                      description = "JSON string or plain text containing embedded velocity template",
+                                      content = @Content(schema = @Schema(type = "string"))
+                                  ) final String bodyMapString) {
 
         final Map<String, Object> bodyMap = parseBodyMap(bodyMapString);
 

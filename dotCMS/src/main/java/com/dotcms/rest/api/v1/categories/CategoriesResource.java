@@ -43,6 +43,7 @@ import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.swagger.v3.oas.annotations.ExternalDocumentation;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -154,18 +155,25 @@ public class CategoriesResource {
      * @param showChildrenCount
      * @return Response
      */
+    @Operation(
+        summary = "Get categories with pagination",
+        description = "Retrieves a paginated list of categories with optional filtering, sorting, and children count information. Supports hierarchical category navigation and management."
+    )
+    @ApiResponse(responseCode = "200", description = "Categories retrieved successfully")
+    @ApiResponse(responseCode = "401", description = "Unauthorized - user authentication required")
+    @ApiResponse(responseCode = "500", description = "Internal server error retrieving categories")
     @GET
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response getCategories(@Context final HttpServletRequest httpRequest,
             @Context final HttpServletResponse httpResponse,
-            @QueryParam(PaginationUtil.FILTER) final String filter,
-            @QueryParam(PaginationUtil.PAGE) final int page,
-            @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
-            @DefaultValue("category_name") @QueryParam(PaginationUtil.ORDER_BY) final String orderBy,
-            @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION) final String direction,
-            @QueryParam("showChildrenCount") final boolean showChildrenCount) {
+            @Parameter(description = "Filter text to search categories") @QueryParam(PaginationUtil.FILTER) final String filter,
+            @Parameter(description = "Page number for pagination") @QueryParam(PaginationUtil.PAGE) final int page,
+            @Parameter(description = "Number of items per page") @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
+            @Parameter(description = "Field to order results by") @DefaultValue("category_name") @QueryParam(PaginationUtil.ORDER_BY) final String orderBy,
+            @Parameter(description = "Sort direction (ASC or DESC)") @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION) final String direction,
+            @Parameter(description = "Whether to include children count for each category") @QueryParam("showChildrenCount") final boolean showChildrenCount) {
 
         final InitDataObject initData = webResource.init(null, httpRequest, httpResponse, true,
                 null);
@@ -239,6 +247,14 @@ public class CategoriesResource {
      * @param inode
      * @return Response
      */
+    @Operation(
+        summary = "Get category children",
+        description = "Retrieves child categories of a specified parent category with pagination and filtering options. Can include all nested levels and parent hierarchy information."
+    )
+    @ApiResponse(responseCode = "200", description = "Child categories retrieved successfully")
+    @ApiResponse(responseCode = "401", description = "Unauthorized - user authentication required")
+    @ApiResponse(responseCode = "404", description = "Parent category not found")
+    @ApiResponse(responseCode = "500", description = "Internal server error retrieving child categories")
     @GET
     @Path(("/children"))
     @JSONP
@@ -246,15 +262,15 @@ public class CategoriesResource {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response getChildren(@Context final HttpServletRequest httpRequest,
             @Context final HttpServletResponse httpResponse,
-            @QueryParam(PaginationUtil.FILTER) final String filter,
-            @QueryParam(PaginationUtil.PAGE) final int page,
-            @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
-            @DefaultValue("category_name") @QueryParam(PaginationUtil.ORDER_BY) final String orderBy,
-            @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION) final String direction,
-            @QueryParam("inode") final String inode,
-            @QueryParam("showChildrenCount") final boolean showChildrenCount,
-            @QueryParam("allLevels") final boolean allLevels,
-            @QueryParam("parentList") final boolean parentList) {
+            @Parameter(description = "Filter text to search child categories") @QueryParam(PaginationUtil.FILTER) final String filter,
+            @Parameter(description = "Page number for pagination") @QueryParam(PaginationUtil.PAGE) final int page,
+            @Parameter(description = "Number of items per page") @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
+            @Parameter(description = "Field to order results by") @DefaultValue("category_name") @QueryParam(PaginationUtil.ORDER_BY) final String orderBy,
+            @Parameter(description = "Sort direction (ASC or DESC)") @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION) final String direction,
+            @Parameter(description = "Parent category inode to get children for") @QueryParam("inode") final String inode,
+            @Parameter(description = "Whether to include children count for each category") @QueryParam("showChildrenCount") final boolean showChildrenCount,
+            @Parameter(description = "Whether to include all nested levels") @QueryParam("allLevels") final boolean allLevels,
+            @Parameter(description = "Whether to include parent list hierarchy") @QueryParam("parentList") final boolean parentList) {
 
         final InitDataObject initData = webResource.init(null, httpRequest, httpResponse, true,
                 null);
@@ -345,18 +361,23 @@ public class CategoriesResource {
      * @throws DotDataException
      * @throws DotSecurityException
      */
+    @Operation(
+        summary = "Get category hierarchy for multiple categories",
+        description = "Retrieves the parent hierarchy for a set of categories specified by their keys. Returns parent lists for each category, starting from the top-level parent down to the direct parent. Categories that don't exist are ignored."
+    )
+    @ApiResponse(responseCode = "200", description = "Category hierarchies retrieved successfully")
+    @ApiResponse(responseCode = "400", description = "Bad request - invalid category keys form")
+    @ApiResponse(responseCode = "401", description = "Unauthorized - user authentication required")
+    @ApiResponse(responseCode = "500", description = "Internal server error retrieving hierarchies")
     @POST
     @Path(("/hierarchy"))
     @JSONP
     @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON})
-    @Operation(operationId = "getSchemes", summary = "Get the List of Parents from  set of categories",
-            description = "Response with the list of parents for a specific set of categories. If any of the categories" +
-                    "does not exists then it is just ignored"
-    )
     public final HierarchyShortCategoriesResponseView getHierarchy(@Context final HttpServletRequest httpRequest,
                                        @Context final HttpServletResponse httpResponse,
-                                       final CategoryKeysForm form) throws DotDataException {
+                                       @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Category keys form containing array of category keys", required = true) final CategoryKeysForm form) throws DotDataException {
 
         Logger.debug(this, () -> "Getting the List of Parents for the follow categories: " +
                 String.join(",", form.getKeys()));
@@ -374,6 +395,14 @@ public class CategoriesResource {
      * @return CategoryView
      */
 
+    @Operation(
+        summary = "Get category by ID or key",
+        description = "Retrieves a specific category by its unique identifier (inode) or key. Can optionally include child count information."
+    )
+    @ApiResponse(responseCode = "200", description = "Category retrieved successfully")
+    @ApiResponse(responseCode = "401", description = "Unauthorized - user authentication required")
+    @ApiResponse(responseCode = "404", description = "Category not found")
+    @ApiResponse(responseCode = "500", description = "Internal server error retrieving category")
     @GET
     @JSONP
     @Path("/{idOrKey}")
@@ -381,8 +410,8 @@ public class CategoriesResource {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response getCategoryByIdOrKey(@Context final HttpServletRequest httpRequest,
             @Context final HttpServletResponse httpResponse,
-            @PathParam("idOrKey") final String idOrKey,
-            @QueryParam("showChildrenCount") final boolean showChildrenCount)
+            @Parameter(description = "Category ID (inode) or key", required = true) @PathParam("idOrKey") final String idOrKey,
+            @Parameter(description = "Whether to include children count") @QueryParam("showChildrenCount") final boolean showChildrenCount)
             throws DotSecurityException, DotDataException {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
@@ -424,13 +453,23 @@ public class CategoriesResource {
      * @throws DotDataException
      * @throws DotSecurityException
      */
+    @Operation(
+        summary = "Create new category",
+        description = "Creates a new category with the specified properties. The category name is required, and optionally can be associated with a specific site."
+    )
+    @ApiResponse(responseCode = "200", description = "Category created successfully")
+    @ApiResponse(responseCode = "400", description = "Bad request - missing category name or invalid form data")
+    @ApiResponse(responseCode = "401", description = "Unauthorized - user authentication required")
+    @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions to create categories")
+    @ApiResponse(responseCode = "500", description = "Internal server error creating category")
     @POST
     @JSONP
     @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response saveNew(@Context final HttpServletRequest httpRequest,
             @Context final HttpServletResponse httpResponse,
-            final CategoryForm categoryForm)
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Category form with name and properties", required = true) final CategoryForm categoryForm)
             throws DotDataException, DotSecurityException {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
@@ -466,13 +505,24 @@ public class CategoriesResource {
      * @throws DotDataException
      * @throws DotSecurityException
      */
+    @Operation(
+        summary = "Update existing category",
+        description = "Updates an existing category identified by its inode. All category properties can be modified including name, description, and hierarchy placement."
+    )
+    @ApiResponse(responseCode = "200", description = "Category updated successfully")
+    @ApiResponse(responseCode = "400", description = "Bad request - missing inode or invalid form data")
+    @ApiResponse(responseCode = "401", description = "Unauthorized - user authentication required")
+    @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions to update categories")
+    @ApiResponse(responseCode = "404", description = "Category not found")
+    @ApiResponse(responseCode = "500", description = "Internal server error updating category")
     @PUT
     @JSONP
     @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response save(@Context final HttpServletRequest httpRequest,
             @Context final HttpServletResponse httpResponse,
-            final CategoryForm categoryForm) throws DotDataException, DotSecurityException {
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Category form with updated properties including inode", required = true) final CategoryForm categoryForm) throws DotDataException, DotSecurityException {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requestAndResponse(httpRequest, httpResponse).rejectWhenNoUser(true).init();
@@ -516,14 +566,25 @@ public class CategoriesResource {
      * @throws DotDataException
      * @throws DotSecurityException
      */
+    @Operation(
+        summary = "Update category sort order",
+        description = "Updates the sort order of categories. The request must contain category inode and sortOrder pairs. Can update multiple categories at once within a parent category."
+    )
+    @ApiResponse(responseCode = "200", description = "Category sort order updated successfully")
+    @ApiResponse(responseCode = "400", description = "Bad request - missing category data or invalid sort order")
+    @ApiResponse(responseCode = "401", description = "Unauthorized - user authentication required")
+    @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions to update categories")
+    @ApiResponse(responseCode = "404", description = "Parent category not found")
+    @ApiResponse(responseCode = "500", description = "Internal server error updating sort order")
     @PUT
     @Path("/_sort")
     @JSONP
     @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response save(@Context final HttpServletRequest httpRequest,
             @Context final HttpServletResponse httpResponse,
-            final CategoryEditForm categoryEditForm
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Category edit form with category data and sort order information", required = true) final CategoryEditForm categoryEditForm
     ) throws DotDataException, DotSecurityException {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
@@ -571,13 +632,23 @@ public class CategoriesResource {
      * @throws DotDataException
      * @throws DotSecurityException
      */
+    @Operation(
+        summary = "Delete categories",
+        description = "Deletes multiple categories by their inodes. Deletes both parent categories and their children. User needs Edit permissions on categories to delete them successfully."
+    )
+    @ApiResponse(responseCode = "200", description = "Categories deleted successfully (may include partial failures)")
+    @ApiResponse(responseCode = "400", description = "Bad request - missing category inodes")
+    @ApiResponse(responseCode = "401", description = "Unauthorized - user authentication required")
+    @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions to delete categories")
+    @ApiResponse(responseCode = "500", description = "Internal server error deleting categories")
     @DELETE
     @JSONP
     @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response delete(@Context final HttpServletRequest httpRequest,
             @Context final HttpServletResponse httpResponse,
-            final List<String> categoriesToDelete) {
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "List of category inodes to delete", required = true) final List<String> categoriesToDelete) {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requestAndResponse(httpRequest, httpResponse).rejectWhenNoUser(true).init();
@@ -706,6 +777,15 @@ public class CategoriesResource {
      * @param httpRequest
      * @return
      */
+    @Operation(
+        summary = "Export categories to CSV",
+        description = "Exports categories to a CSV file format. Can filter by category name pattern and specify a context category inode. Returns a downloadable CSV file."
+    )
+    @ApiResponse(responseCode = "200", description = "Categories exported successfully as CSV file")
+    @ApiResponse(responseCode = "401", description = "Unauthorized - user authentication required")
+    @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions to export categories")
+    @ApiResponse(responseCode = "404", description = "Context category not found")
+    @ApiResponse(responseCode = "500", description = "Internal server error exporting categories")
     @GET
     @Path("/_export")
     @JSONP
@@ -713,8 +793,8 @@ public class CategoriesResource {
     @Produces({"text/csv"})
     public final void export(@Context final HttpServletRequest httpRequest,
             @Context final HttpServletResponse httpResponse,
-            @QueryParam("contextInode") final String contextInode,
-            @QueryParam(PaginationUtil.FILTER) final String filter)
+            @Parameter(description = "Context category inode to export from") @QueryParam("contextInode") final String contextInode,
+            @Parameter(description = "Filter pattern to match category names") @QueryParam(PaginationUtil.FILTER) final String filter)
             throws DotDataException, DotSecurityException, IOException {
 
         final InitDataObject initData = webResource.init(null, httpRequest, httpResponse, true,
@@ -789,6 +869,15 @@ public class CategoriesResource {
      * @throws DotDataException
      * @throws DotSecurityException
      */
+    @Operation(
+        summary = "Import categories from CSV file",
+        description = "Imports categories from an uploaded CSV file. Supports 'replace' mode to replace existing categories or 'append' mode to add to existing categories. Can specify a context category and filter options."
+    )
+    @ApiResponse(responseCode = "200", description = "Categories imported successfully")
+    @ApiResponse(responseCode = "400", description = "Bad request - invalid file format or missing required parameters")
+    @ApiResponse(responseCode = "401", description = "Unauthorized - user authentication required")
+    @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions to import categories")
+    @ApiResponse(responseCode = "500", description = "Internal server error importing categories")
     @POST
     @Path("/_import")
     @JSONP
@@ -797,12 +886,12 @@ public class CategoriesResource {
     @Consumes({MediaType.MULTIPART_FORM_DATA})
     public Response importCategories(@Context final HttpServletRequest httpRequest,
             @Context final HttpServletResponse httpResponse,
-            @FormDataParam("file") final File uploadedFile,
+            @Parameter(description = "CSV file containing categories to import") @FormDataParam("file") final File uploadedFile,
             FormDataMultiPart multiPart,
             @FormDataParam("file") FormDataContentDisposition fileDetail,
-            @FormDataParam("filter") String filter,
-            @FormDataParam("exportType") String exportType,
-            @FormDataParam("contextInode") String contextInode) throws IOException {
+            @Parameter(description = "Filter pattern for categories") @FormDataParam("filter") String filter,
+            @Parameter(description = "Import type: 'replace' or 'append'") @FormDataParam("exportType") String exportType,
+            @Parameter(description = "Context category inode to import into") @FormDataParam("contextInode") String contextInode) throws IOException {
 
         return processImport(httpRequest, httpResponse, uploadedFile, multiPart, fileDetail, filter,
                 exportType, contextInode);
