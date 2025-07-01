@@ -387,7 +387,7 @@ The table below outlines the builder pattern's methods:
 
 The following example displays all of the builder class's methods, generating a complex Lucene query:
 
-```ts
+```js
 let queryBuilder = new QueryBuilder();
 const myQuery = queryBuilder
             .field('contentType')
@@ -410,7 +410,7 @@ const myQuery = queryBuilder
 The above `myQuery` variable will have the following value:
 > +contentType:Blog OR Activity -conhost:my-super-cool-site +languageId:2 AND +deleted:false +summary:Snowboard NOT "Swiss Alps"
 
-Additional examples below.
+For additional examples, see the [specification page](src/lib/client/content/builders/query/query.spec.ts), or the examples below.
 
 #### Search and Paginate Product Results by Title and Price
 
