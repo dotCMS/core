@@ -12,15 +12,10 @@
         [(ngModel)]="searchQuery"
         (ngModelChange)="onSearchQueryChange($event)"
         (keydown.enter)="addLinkToNode(searchQuery())"
-        [autofocus]="true"
-        [style]="{ width: '100%' }"
         (keydown)="handleSearchInputKeyDown($event)" />
 
     @if (isSearching()) {
-        <p-listbox
-            [options]="[1, 2, 3]"
-            [style]="{ width: '100%' }"
-            [listStyle]="{ 'max-height': '250px' }">
+        <p-listbox [options]="[1, 2, 3]" [listStyle]="{ height: '250px' }">
             <ng-template let-item pTemplate="item">
                 <div class="listbox-item">
                     <p-skeleton width="48px" height="48px"></p-skeleton>
@@ -39,8 +34,7 @@
             optionLabel="displayName"
             [options]="searchResults()"
             (onChange)="addLinkToNode($event.value.url)"
-            [style]="{ width: '100%' }"
-            [listStyle]="{ 'max-height': '250px' }">
+            [listStyle]="{ height: '250px' }">
             <ng-template let-item pTemplate="item">
                 <div class="listbox-item">
                     @if (item.hasTitleImage) {
@@ -69,44 +63,36 @@
 
     @if (showLinkDetails()) {
         <div class="current-link-view">
-            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 1rem">
-                <span class="pi pi-globe" style="font-size: 1.5em"></span>
+            <div class="current-link-view__header">
+                <span class="pi pi-globe current-link-view__icon"></span>
                 <a
                     [href]="existingLinkUrl()"
                     [target]="linkTargetAttribute()"
                     rel="noopener noreferrer"
-                    style="
-                        overflow: hidden;
-                        text-overflow: ellipsis;
-                        white-space: nowrap;
-                        max-width: 300px;
-                        display: inline-block;
-                    ">
+                    class="current-link-view__link">
                     {{ existingLinkUrl() }}
                 </a>
             </div>
-            <div style="margin-bottom: 2rem">
+            <div class="current-link-view__checkbox-container">
                 <input
                     type="checkbox"
                     id="openInNewWindow"
                     [checked]="linkTargetAttribute() === '_blank'"
                     (change)="toggleTarget($event)"
-                    style="margin-right: 4px" />
+                    class="current-link-view__checkbox" />
                 <label for="openInNewWindow">Open link in new window</label>
             </div>
-            <div style="display: flex; gap: 12px">
+            <div class="current-link-view__actions">
                 <button
                     pButton
                     type="button"
-                    style="width: 50%"
-                    class="p-button-outlined"
+                    class="p-button-outlined current-link-view__action-button"
                     (click)="copyExistingLinkToClipboard()"
                     label="Copy Link"></button>
                 <button
                     pButton
                     type="button"
-                    style="width: 50%"
-                    class="p-button-outlined"
+                    class="p-button-outlined current-link-view__action-button"
                     (click)="removeLinkFromEditor()"
                     label="Remove Link"></button>
             </div>

@@ -35,6 +35,44 @@
     }
 }
 
+.current-link-view {
+    &__header {
+        display: flex;
+        align-items: center;
+        gap: $spacing-1;
+        margin-bottom: $spacing-3;
+    }
+
+    &__icon {
+        font-size: 1.5em;
+    }
+
+    &__link {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        max-width: 18.75rem;
+        display: inline-block;
+    }
+
+    &__checkbox-container {
+        margin-bottom: $spacing-4;
+    }
+
+    &__checkbox {
+        margin-right: $spacing-0;
+    }
+
+    &__actions {
+        display: flex;
+        gap: $spacing-2;
+    }
+
+    &__action-button {
+        width: 50%;
+    }
+}
+
 .listbox-item {
     display: flex;
     align-items: center;
@@ -45,8 +83,8 @@
 }
 
 .listbox-item__img {
-    width: 48px;
-    height: 48px;
+    width: 3rem;
+    height: 3rem;
     object-fit: cover;
     border-radius: $border-radius-sm;
     background: $color-palette-gray-200;
@@ -55,7 +93,7 @@
 .listbox-item__icon {
     font-size: $font-size-xxxl;
     color: $color-palette-gray-500;
-    width: 48px;
+    width: 3rem;
     text-align: center;
     border-radius: $border-radius-sm;
     border: 1px solid $color-palette-gray-300;
