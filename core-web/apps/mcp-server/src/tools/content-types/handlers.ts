@@ -1,11 +1,12 @@
 import { z } from 'zod';
 
+import { formatContentTypesAsText } from './formatters';
+
 import {
     ContentTypeService,
     ContentTypeListParamsSchema,
     ContentTypeCreateParamsSchema
 } from '../../services/contentype';
-import { formatContentTypesAsText } from '../../utils/contenttypes';
 import { Logger } from '../../utils/logger';
 import { executeWithErrorHandling, createSuccessResponse } from '../../utils/response';
 

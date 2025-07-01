@@ -1,6 +1,9 @@
-import { ContentType } from "../types/contentype";
+import { ContentType } from "../../types/contentype";
 
-// Utility function to transform content types to plain text format
+/**
+ * Utility function to transform content types to plain text format
+ * This is the primary formatter for content type data used across content-type tools
+ */
 export function formatContentTypesAsText(contentTypes: ContentType[]): string {
     return contentTypes.map(contentType => {
         const lines = [

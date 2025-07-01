@@ -3,7 +3,7 @@ import { getCacheAge } from "./cache";
 import { ContentType } from "../../types/contentype";
 import { Site } from "../../types/site";
 import { WorkflowScheme } from "../../types/workflow";
-import { formatContentTypesAsText } from "../../utils/contenttypes";
+import { formatContentTypesAsText } from "../content-types/formatters";
 
 
 /**
