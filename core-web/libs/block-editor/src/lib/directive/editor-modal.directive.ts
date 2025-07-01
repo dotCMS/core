@@ -17,6 +17,8 @@ export class EditorModalDirective implements OnInit, OnDestroy {
     private elRef = inject<ElementRef<HTMLElement>>(ElementRef);
     private tippy: Instance;
 
+    private editorElement: HTMLElement;
+
     ngOnInit(): void {
         const { element: editorElement } = this.editor().options;
         const editorIsAttached = !!editorElement.parentElement;
@@ -25,6 +27,7 @@ export class EditorModalDirective implements OnInit, OnDestroy {
             return;
         }
 
+        this.editorElement = editorElement as HTMLElement;
         this.tippy = tippy(editorElement, {
             duration: 0,
             content: this.elRef.nativeElement,
@@ -41,6 +44,7 @@ export class EditorModalDirective implements OnInit, OnDestroy {
 
     ngOnDestroy(): void {
         this.tippy?.destroy();
+        this.editorElement.removeEventListener('mousedown', () => this.hide());
     }
 
     show() {

@@ -77,7 +77,7 @@ export class DotBubbleMenuComponent {
             name: 'Paragraph',
             value: 'paragraph',
             icon: pIcon,
-            command: () => this.editor().chain().focus().clearNodes().run()
+            command: () => this.editor().chain().focus().clearNodes().focus().run()
         },
         {
             name: 'Heading 1',
