@@ -3,10 +3,10 @@
 .bubble-link-form {
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
+    gap: $spacing-4;
     width: 20rem;
-    padding: 12px;
-    background: white;
+    padding: $spacing-2;
+    background: $white;
     border-radius: $border-radius-lg;
     box-shadow: $shadow-m;
 
@@ -18,13 +18,13 @@
         .p-listbox-items {
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: $spacing-1;
         }
 
         .p-listbox-item {
             width: 100%;
             height: 100%;
-            padding: 8px;
+            padding: $spacing-1;
 
             &.p-highlight,
             &.p-focus,
@@ -38,8 +38,8 @@
 .listbox-item {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 4px 0;
+    gap: $spacing-2;
+    padding: $spacing-0 0;
     height: 100%;
     width: 100%;
 }
@@ -48,17 +48,17 @@
     width: 48px;
     height: 48px;
     object-fit: cover;
-    border-radius: 4px;
-    background: #f3f3f3;
+    border-radius: $border-radius-sm;
+    background: $color-palette-gray-200;
 }
 
 .listbox-item__icon {
-    font-size: 2rem;
-    color: #888;
+    font-size: $font-size-xxxl;
+    color: $color-palette-gray-500;
     width: 48px;
     text-align: center;
-    border-radius: 4px;
-    border: 1px solid #e0e0e0;
+    border-radius: $border-radius-sm;
+    border: 1px solid $color-palette-gray-300;
 }
 
 .listbox-item__content {
@@ -68,32 +68,31 @@
 }
 
 .listbox-item__title {
-    font-weight: 500;
-    color: #222;
+    font-weight: $font-weight-semi-bold;
+    color: $black;
 }
 
 .listbox-item__url {
-    font-size: 0.85em;
-    color: #6c757d;
+    font-size: $font-size-sm;
+    color: $color-palette-gray-600;
     word-break: break-all;
 }
 
 .skeleton-item {
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: $spacing-3;
 }
 .skeleton-lines {
     flex: 1;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: $spacing-1;
 }
 
 .empty-message {
     text-align: center;
-    color: #444;
-    padding: 32px 0;
-    font-size: 1.1em;
+    padding: $spacing-6 0;
+    font-size: $font-size-lmd;
     word-break: break-word;
 }
