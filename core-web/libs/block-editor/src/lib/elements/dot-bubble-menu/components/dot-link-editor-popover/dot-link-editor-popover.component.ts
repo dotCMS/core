@@ -214,6 +214,7 @@ export class DotLinkEditorPopoverComponent implements OnDestroy {
      */
     protected copyExistingLinkToClipboard() {
         navigator.clipboard.writeText(this.existingLinkUrl() || '');
+        this.popover.hide();
     }
 
     /**
