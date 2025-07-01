@@ -1,5 +1,4 @@
 import { TiptapBubbleMenuDirective } from 'ngx-tiptap';
-import { Node } from 'prosemirror-model';
 
 import { CommonModule } from '@angular/common';
 import {
@@ -26,6 +25,7 @@ import { DotLinkEditorPopoverComponent } from './components/dot-link-editor-popo
 
 import { EditorModalDirective } from '../../directive/editor-modal.directive';
 import { codeIcon, headerIcons, olIcon, pIcon, quoteIcon, ulIcon } from '../../utils/icons';
+import { getCurrentNodeType } from '../../utils/prosemirror';
 
 interface NodeTypeOption {
     name: string;
@@ -185,65 +185,18 @@ export class DotBubbleMenuComponent {
     }
 
     private setCurrentSelectedNode() {
-        const currentNodeType = this.getCurrentNodeType();
+        const currentNodeType = getCurrentNodeType(this.editor());
         const option = this.nodeTypeOptions.find((option) => option.value === currentNodeType);
         this.dropdownItem.set(option || this.nodeTypeOptions[0]);
     }
 
-    private getCurrentNodeType(): string {
-        const state = this.editor().view.state;
-        const from = state.selection.from;
-        const pos = state.doc.resolve(from);
-
-        // First, try to get the node at the current position
-        const nodeAtPos = state.doc.nodeAt(from);
-        if (nodeAtPos) {
-            const nodeType = nodeAtPos.type.name;
-
-            // If it's a heading, return with level
-            if (nodeType === 'heading') {
-                return this.getNodeTypeWithLevel(nodeAtPos);
-            }
-
-            // If it's a block-level node, return it directly
-            if (nodeType !== 'text' && nodeType !== 'doc') {
-                return nodeType;
-            }
-        }
-
-        // Fallback to the original logic for text nodes
-        const currentNode = pos.node(pos.depth);
-        const parentNode = pos.node(pos.depth - 1);
-        const parentType = parentNode?.type?.name;
-        const currentNodeType = currentNode.type.name;
-
-        if (parentType === 'listItem') {
-            const listType = pos.node(pos.depth - 2);
-
-            return listType.type.name;
-        }
-
-        if (currentNodeType === 'heading') {
-            return this.getNodeTypeWithLevel(currentNode);
-        }
-
-        return parentType === 'doc' ? currentNodeType : parentType;
-    }
-
     private checkIfShowBubbleMenu() {
-        const currentNodeType = this.getCurrentNodeType();
+        const currentNodeType = getCurrentNodeType(this.editor());
         this.showShould.set(!BUBBLE_MENU_HIDDEN_NODES[currentNodeType]);
     }
 
     private checkIfShowImageMenu() {
-        const currentNodeType = this.getCurrentNodeType();
+        const currentNodeType = getCurrentNodeType(this.editor());
         this.showImageMenu.set(currentNodeType === 'dotImage');
-    }
-
-    private getNodeTypeWithLevel(node: Node): string {
-        const hasLevelAttribute = node.attrs.level;
-        const baseNodeType = node.type.name;
-
-        return hasLevelAttribute ? `${baseNodeType}-${node.attrs.level}` : baseNodeType;
     }
 }

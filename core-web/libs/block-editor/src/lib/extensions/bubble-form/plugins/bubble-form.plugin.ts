@@ -173,10 +173,6 @@ export class BubbleFormView extends BubbleMenuView {
 
     override destroy() {
         this.tippy?.destroy();
-        this.editor.off('focus', this.focusHandler);
-        this.$destroy.next(true);
-        this.component?.destroy();
-        this.formValuesSubscription?.unsubscribe();
     }
 
     private hanlderScroll(e: Event) {
