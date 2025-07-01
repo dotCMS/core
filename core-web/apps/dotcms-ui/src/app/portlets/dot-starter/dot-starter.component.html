@@ -2,12 +2,9 @@
     <div class="grid dot-starter-top-content">
         <div class="col-12 dot-starter-header">
             <div>
-                <h2 class="dot-starter-title" data-testId="dot-starter-title">
-                    {{ 'starter.title' | dm }}
-                </h2>
                 <p
                     [innerHTML]="'starter.description' | dm: [user.username]"
-                    class="dot-starter-description"></p>
+                    class="dot-starter-description mt-5"></p>
             </div>
             <p-checkbox
                 (onChange)="handleVisibility($event.checked)"
