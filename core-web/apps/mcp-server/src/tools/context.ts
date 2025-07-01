@@ -9,6 +9,7 @@ import { Site } from "../types/site";
 import { WorkflowScheme } from "../types/workflow";
 import { formatContentTypesAsText } from "../utils/contenttypes";
 import { Logger } from "../utils/logger";
+import { executeWithErrorHandling, createSuccessResponse } from "../utils/response";
 
 // Cache for content type schemas to avoid repeated API calls
 let contentTypeSchemasCache: ContentType[] | null = null;
@@ -86,70 +87,51 @@ export function registerContextTools(server: McpServer) {
             inputSchema: z.object({}).shape
         },
         async () => {
-            logger.log('Starting context initialization tool execution');
-            const now = Date.now();
+            return executeWithErrorHandling(
+                async () => {
+                    logger.log('Starting context initialization tool execution');
+                    const now = Date.now();
 
-            // Return cached data if it's still valid
-            if (contentTypeSchemasCache && currentSiteCache && workflowSchemesCache && (now - cacheTimestamp) < CACHE_DURATION) {
-                const cacheAge = Math.round((now - cacheTimestamp) / 1000);
-                logger.log('Returning cached context data', {
-                    cacheAge,
-                    contentTypeCount: contentTypeSchemasCache.length,
-                    workflowSchemeCount: workflowSchemesCache.length
-                });
+                    // Return cached data if it's still valid
+                    if (contentTypeSchemasCache && currentSiteCache && workflowSchemesCache && (now - cacheTimestamp) < CACHE_DURATION) {
+                        const cacheAge = Math.round((now - cacheTimestamp) / 1000);
+                        logger.log('Returning cached context data', {
+                            cacheAge,
+                            contentTypeCount: contentTypeSchemasCache.length,
+                            workflowSchemeCount: workflowSchemesCache.length
+                        });
 
-                return {
-                    content: [
-                        {
-                            type: 'text',
-                            text: createResponseText(contentTypeSchemasCache, currentSiteCache, workflowSchemesCache, true, cacheAge)
-                        }
-                    ]
-                };
-            }
+                        const responseText = createResponseText(contentTypeSchemasCache, currentSiteCache, workflowSchemesCache, true, cacheAge);
 
-            // Fetch fresh data
-            try {
-                logger.log('Cache miss or expired, fetching fresh context data');
+                        return createSuccessResponse(responseText);
+                    }
 
-                const [contentTypes, currentSite, workflowSchemes] = await Promise.all([
-                    contentTypeService.getContentTypesSchema(),
-                    siteService.getCurrentSite(),
-                    workflowService.getWorkflowSchemes()
-                ]);
+                    // Fetch fresh data
+                    logger.log('Cache miss or expired, fetching fresh context data');
 
-                logger.log('Fresh context data fetched successfully', {
-                    contentTypeCount: contentTypes.length,
-                    siteName: currentSite.name,
-                    workflowSchemeCount: workflowSchemes.entity.length
-                });
+                    const [contentTypes, currentSite, workflowSchemes] = await Promise.all([
+                        contentTypeService.getContentTypesSchema(),
+                        siteService.getCurrentSite(),
+                        workflowService.getWorkflowSchemes()
+                    ]);
 
-                contentTypeSchemasCache = contentTypes;
-                currentSiteCache = currentSite;
-                workflowSchemesCache = workflowSchemes.entity;
-                cacheTimestamp = now;
+                    logger.log('Fresh context data fetched successfully', {
+                        contentTypeCount: contentTypes.length,
+                        siteName: currentSite.name,
+                        workflowSchemeCount: workflowSchemes.entity.length
+                    });
 
-                return {
-                    content: [
-                        {
-                            type: 'text',
-                            text: createResponseText(contentTypes, currentSite, workflowSchemes.entity, false)
-                        }
-                    ]
-                };
-            } catch (error) {
-                logger.error('Error fetching context data', error);
+                    contentTypeSchemasCache = contentTypes;
+                    currentSiteCache = currentSite;
+                    workflowSchemesCache = workflowSchemes.entity;
+                    cacheTimestamp = now;
 
-                return {
-                    isError: true,
-                    content: [
-                        {
-                            type: 'text',
-                            text: `Error fetching context data: ${error instanceof Error ? error.message : String(error)}`
-                        }
-                    ]
-                };
-            }
+                    const responseText = createResponseText(contentTypes, currentSite, workflowSchemes.entity, false);
+
+                    return createSuccessResponse(responseText);
+                },
+                'Error fetching context data'
+            );
         }
     );
 }

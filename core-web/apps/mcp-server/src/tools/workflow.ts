@@ -4,9 +4,19 @@ import { z } from 'zod';
 import { WorkflowService } from '../services/workflow';
 import { ContentCreateParamsSchema, ContentActionParamsSchema } from '../types/workflow';
 import { Logger } from '../utils/logger';
+import { executeWithErrorHandling, createEntitySuccessResponse } from '../utils/response';
 
 const workflowService = new WorkflowService();
 const logger = new Logger('WORKFLOW_TOOL');
+
+// Action messages mapping for different workflow actions
+const ACTION_MESSAGES = {
+    'PUBLISH': 'Content published successfully!',
+    'UNPUBLISH': 'Content unpublished successfully!',
+    'ARCHIVE': 'Content archived successfully!',
+    'UNARCHIVE': 'Content unarchived successfully!',
+    'DELETE': 'Content deleted successfully!'
+} as const;
 
 export function registerWorkflowTools(server: McpServer) {
     server.registerTool(
@@ -27,35 +37,19 @@ export function registerWorkflowTools(server: McpServer) {
             }).shape
         },
         async (params) => {
-            try {
-                logger.log('Starting content save tool execution', params);
+            return executeWithErrorHandling(
+                async () => {
+                    logger.log('Starting content save tool execution', params);
 
-                const response = await workflowService.saveContent(params.content, params.comments);
-                const entity = response.entity;
+                    const response = await workflowService.saveContent(params.content, params.comments);
+                    const entity = response.entity;
 
-                logger.log('Content saved successfully', entity);
+                    logger.log('Content saved successfully', entity);
 
-                return {
-                    content: [
-                        {
-                            type: 'text',
-                            text: `Content saved successfully!\n\nIdentifier: ${entity.identifier}\nInode: ${entity.inode}\nContent Type: ${entity.contentType}\nLanguage ID: ${entity.languageId}`
-                        }
-                    ]
-                };
-            } catch (error) {
-                logger.error('Error saving content', error);
-
-                return {
-                    isError: true,
-                    content: [
-                        {
-                            type: 'text',
-                            text: `Error saving content: ${JSON.stringify(error, null, 2)}`
-                        }
-                    ]
-                };
-            }
+                    return createEntitySuccessResponse('Content saved successfully!', entity);
+                },
+                'Error saving content'
+            );
         }
     );
 
@@ -74,43 +68,21 @@ export function registerWorkflowTools(server: McpServer) {
             inputSchema: ContentActionParamsSchema.shape
         },
         async (params) => {
-            try {
-                logger.log('Starting content action tool execution', params);
+            return executeWithErrorHandling(
+                async () => {
+                    logger.log('Starting content action tool execution', params);
 
-                const response = await workflowService.performContentAction(params);
-                const entity = response.entity;
+                    const response = await workflowService.performContentAction(params);
+                    const entity = response.entity;
 
-                logger.log('Content action performed successfully', entity);
+                    logger.log('Content action performed successfully', entity);
 
-                const actionMessages = {
-                    'PUBLISH': 'Content published successfully!',
-                    'UNPUBLISH': 'Content unpublished successfully!',
-                    'ARCHIVE': 'Content archived successfully!',
-                    'UNARCHIVE': 'Content unarchived successfully!',
-                    'DELETE': 'Content deleted successfully!'
-                };
+                    const actionMessage = ACTION_MESSAGES[params.action];
 
-                return {
-                    content: [
-                        {
-                            type: 'text',
-                            text: `${actionMessages[params.action]}\n\nIdentifier: ${entity.identifier}\nInode: ${entity.inode}\nContent Type: ${entity.contentType}\nLanguage ID: ${entity.languageId}`
-                        }
-                    ]
-                };
-            } catch (error) {
-                logger.error('Error performing content action', error);
-
-                return {
-                    isError: true,
-                    content: [
-                        {
-                            type: 'text',
-                            text: `Error performing content action: ${JSON.stringify(error, null, 2)}`
-                        }
-                    ]
-                };
-            }
+                    return createEntitySuccessResponse(actionMessage, entity);
+                },
+                'Error performing content action'
+            );
         }
     );
 }

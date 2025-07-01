@@ -8,6 +8,7 @@ import {
 } from '../services/contentype';
 import { formatContentTypesAsText } from '../utils/contenttypes';
 import { Logger } from '../utils/logger';
+import { executeWithErrorHandling, createSuccessResponse } from '../utils/response';
 
 const contentTypeService = new ContentTypeService();
 const logger = new Logger('CONTENT_TYPES_TOOL');
@@ -26,35 +27,19 @@ export function registerContentTypeTools(server: McpServer) {
             inputSchema: ContentTypeListParamsSchema.shape
         },
         async (params) => {
-            try {
-                logger.log('Starting content type list tool execution', params);
+            return executeWithErrorHandling(
+                async () => {
+                    logger.log('Starting content type list tool execution', params);
 
-                const contentTypes = await contentTypeService.list(params);
-                const formattedText = formatContentTypesAsText(contentTypes);
+                    const contentTypes = await contentTypeService.list(params);
+                    const formattedText = formatContentTypesAsText(contentTypes);
 
-                logger.log('Content types listed successfully', { count: contentTypes.length });
+                    logger.log('Content types listed successfully', { count: contentTypes.length });
 
-                return {
-                    content: [
-                        {
-                            type: 'text',
-                            text: formattedText
-                        }
-                    ]
-                };
-            } catch (error) {
-                logger.error('Error listing content types', error);
-
-                return {
-                    isError: true,
-                    content: [
-                        {
-                            type: 'text',
-                            text: `Error fetching content type schemas: ${error instanceof Error ? error.message : String(error)}`
-                        }
-                    ]
-                };
-            }
+                    return createSuccessResponse(formattedText);
+                },
+                'Error fetching content type schemas'
+            );
         }
     );
 
@@ -75,34 +60,18 @@ export function registerContentTypeTools(server: McpServer) {
             }).shape
         },
         async (params) => {
-            try {
-                logger.log('Starting content type creation tool execution', params);
+            return executeWithErrorHandling(
+                async () => {
+                    logger.log('Starting content type creation tool execution', params);
 
-                const contentTypes = await contentTypeService.create(params.contentType);
+                    const contentTypes = await contentTypeService.create(params.contentType);
 
-                logger.log('Content type created successfully', { count: contentTypes.length });
+                    logger.log('Content type created successfully', { count: contentTypes.length });
 
-                return {
-                    content: [
-                        {
-                            type: 'text',
-                            text: formatContentTypesAsText(contentTypes)
-                        }
-                    ]
-                };
-            } catch (error) {
-                logger.error('Error creating content type', error);
-
-                return {
-                    isError: true,
-                    content: [
-                        {
-                            type: 'text',
-                            text: `Error creating content type: ${error instanceof Error ? error.message : String(error)}`
-                        }
-                    ]
-                };
-            }
+                    return createSuccessResponse(formatContentTypesAsText(contentTypes));
+                },
+                'Error creating content type'
+            );
         }
     );
 }
