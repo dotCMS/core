@@ -1,4 +1,6 @@
-import { Component } from '@angular/core';
+import { Component, input } from '@angular/core';
+
+import { DotContentDriveItem } from '@dotcms/dotcms-models';
 
 @Component({
     selector: 'dot-folder-list-view',
@@ -7,4 +9,6 @@ import { Component } from '@angular/core';
     templateUrl: './dot-folder-list-view.component.html',
     styleUrl: './dot-folder-list-view.component.scss'
 })
-export class DotFolderListViewComponent {}
+export class DotFolderListViewComponent {
+    items = input<DotContentDriveItem[]>([]);
+}

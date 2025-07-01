@@ -1,1 +1,3 @@
-<p>dot-folder-list-view works</p>
+@for (item of items(); track item.identifier) {
+    <div>{{ item.identifier }}</div>
+}
