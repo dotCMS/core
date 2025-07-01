@@ -9,13 +9,14 @@
         pInputText
         type="text"
         placeholder="Paste link or search for pages"
+        class="search-input"
         [(ngModel)]="searchQuery"
         (ngModelChange)="onSearchQueryChange($event)"
         (keydown.enter)="addLinkToNode(searchQuery())"
         (keydown)="handleSearchInputKeyDown($event)" />
 
     @if (showLoading()) {
-        <p-listbox [options]="[1, 2, 3]" [listStyle]="{ height: '250px' }">
+        <p-listbox [options]="[1, 2, 3]" [listStyle]="{ height: '15.625rem' }">
             <ng-template let-item pTemplate="item">
                 <div class="listbox-item">
                     <p-skeleton width="48px" height="48px"></p-skeleton>
@@ -34,7 +35,7 @@
             optionLabel="displayName"
             [options]="searchResults()"
             (onChange)="selectLink($event.value)"
-            [listStyle]="{ height: '250px' }">
+            [listStyle]="{ height: '15.625rem' }">
             <ng-template let-item pTemplate="item">
                 <div class="listbox-item">
                     @if (item.hasTitleImage) {

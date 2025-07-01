@@ -118,10 +118,7 @@ export class DotLinkEditorPopoverComponent implements OnDestroy {
     constructor() {
         this.searchInputSubject
             .pipe(debounceTime(250), distinctUntilChanged(), takeUntil(this.componentDestroy$))
-            .subscribe((searchTerm) => {
-                this.executeContentSearch(searchTerm);
-                this.searchQuery.set(searchTerm);
-            });
+            .subscribe((searchTerm) => this.executeContentSearch(searchTerm));
     }
 
     /**

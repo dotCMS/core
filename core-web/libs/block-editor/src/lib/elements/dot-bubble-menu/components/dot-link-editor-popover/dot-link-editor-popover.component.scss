@@ -4,7 +4,7 @@
     display: flex;
     flex-direction: column;
     gap: $spacing-4;
-    width: 20rem;
+    width: 18rem;
     padding: $spacing-2;
     background: $white;
     border-radius: $border-radius-lg;
@@ -32,6 +32,10 @@
                 background-color: $color-palette-gray-300;
             }
         }
+    }
+
+    .search-input {
+        height: 2rem;
     }
 }
 
