@@ -82,6 +82,7 @@
         "@tiptap/extension-highlight": "^2.14.0",
         "@tiptap/extension-image": "^2.14.0",
         "@tiptap/extension-link": "^2.14.0",
+        "@tiptap/extension-placeholder": "^2.23.0",
         "@tiptap/extension-subscript": "^2.14.0",
         "@tiptap/extension-superscript": "^2.14.0",
         "@tiptap/extension-table": "^2.14.0",
