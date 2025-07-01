@@ -1,5 +1,4 @@
 import { ComponentStore } from '@ngrx/component-store';
-import { forkJoin } from 'rxjs';
 
 import { Injectable } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
@@ -78,17 +77,11 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
 
                     this.paginatorService.setExtraParams('host', identifier);
 
-                    return forkJoin([
-                        this.route.data.pipe(pluck('dotContainerListResolverData'), take(1)),
-                        this.paginatorService.get()
-                    ]);
+                    return this.route.data.pipe(pluck('dotContainerListResolverData'), take(1));
                 })
             )
             .subscribe(
-                ([[isEnterprise, hasEnvironments], containers]: [
-                    [boolean, boolean],
-                    DotContainer[]
-                ]) => {
+                ([isEnterprise, hasEnvironments]: [boolean, boolean]) => {
                     this.setState({
                         containerBulkActions: this.getContainerBulkActions(
                             hasEnvironments,
@@ -107,9 +100,9 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
                             message: null,
                             failsInfo: []
                         } as DotNotifyMessages,
-                        containers,
-                        maxPageLinks: this.paginatorService.maxLinksPage,
-                        totalRecords: this.paginatorService.totalRecords
+                        containers: [],
+                        maxPageLinks: 5,
+                        totalRecords: 0
                     });
                 }
             );
