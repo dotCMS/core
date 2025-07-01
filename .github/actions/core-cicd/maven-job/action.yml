@@ -322,3 +322,4 @@ runs:
         path: |
           **/target/jacoco-report/*.exec
           **/target/*-reports/*.xml
+          **/target/rest-annotation-report.json

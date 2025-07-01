@@ -2,7 +2,6 @@ package com.dotcms.rest.api.v1.accessibility;
 
 import com.dotcms.enterprise.achecker.ACheckerResponse;
 import com.dotcms.enterprise.achecker.model.GuideLineBean;
-import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotmarketing.business.APILocator;
@@ -10,6 +9,7 @@ import com.google.common.annotations.VisibleForTesting;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.glassfish.jersey.server.JSONP;
@@ -39,8 +39,7 @@ import static com.dotcms.util.DotPreconditions.checkNotEmpty;
  * @since Sep 3rd, 2024
  */
 @Path("/v1/achecker")
-@Tag(name = "Accessibility Checker",
-        description = "Endpoints that perform operations related to validating accessibility in content.")
+@Tag(name = "Accessibility Checker")
 public class ACheckerResource {
 
     private final WebResource webResource;
@@ -66,7 +65,7 @@ public class ACheckerResource {
     @Path("/guidelines")
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces({MediaType.APPLICATION_JSON})
     @Operation(
             operationId = "getAccessibilityGuidelines",
             summary = "Retrieves Accessibility Guidelines",
@@ -74,7 +73,8 @@ public class ACheckerResource {
             tags = {"Accessibility Checker"},
             responses = {
                     @ApiResponse(responseCode = "200", description = "Guideline list retrieved successfully",
-                            content = @Content(mediaType = "application/json")),
+                            content = @Content(mediaType = "application/json",
+                                              schema = @Schema(implementation = ResponseEntityAccessibilityGuidelinesView.class))),
                     @ApiResponse(responseCode = "500", description = "Internal Server Error")
             }
     )
@@ -88,7 +88,7 @@ public class ACheckerResource {
                 .requireLicense(true)
                 .init();
         final List<GuideLineBean> guidelines = APILocator.getACheckerAPI().getAccessibilityGuidelineList();
-        return Response.ok(new ResponseEntityView<>(guidelines)).build();
+        return Response.ok(new ResponseEntityAccessibilityGuidelinesView(guidelines)).build();
     }
 
     /**
@@ -114,8 +114,8 @@ public class ACheckerResource {
     @Path("/_validate")
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    @Consumes({MediaType.APPLICATION_JSON})
+    @Produces({MediaType.APPLICATION_JSON})
+    @Consumes(MediaType.APPLICATION_JSON)
     @Operation(
             operationId = "postValidateContent",
             summary = "Validates content",
@@ -124,6 +124,7 @@ public class ACheckerResource {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Content validated successfully",
                             content = @Content(mediaType = "application/json",
+                                              schema = @Schema(implementation = ResponseACheckerEntityView.class),
                                     examples = {
                                             @ExampleObject(
                                                     value = "{\n" +
@@ -223,7 +224,11 @@ public class ACheckerResource {
     )
     public final Response validate(@Context final HttpServletRequest request,
                                    @Context final HttpServletResponse response,
-                                   @NotNull final AccessibilityForm accessibilityForm) throws Exception {
+                                   @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                                       description = "Accessibility validation form containing content and guidelines", 
+                                       required = true,
+                                       content = @Content(schema = @Schema(implementation = AccessibilityForm.class))
+                                   ) @NotNull final AccessibilityForm accessibilityForm) throws Exception {
         new WebResource.InitBuilder(this.webResource)
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)

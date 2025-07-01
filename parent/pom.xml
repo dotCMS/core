@@ -687,6 +687,8 @@
                         <release>${maven.compiler.release}</release>
                         <compilerArgs>
                             <arg>-Xlint:unchecked</arg>
+                            <arg>-Xmaxerrs</arg>
+                            <arg>1000000</arg>
                         </compilerArgs>
                         <showDeprecation>true</showDeprecation>
                         <showWarnings>true</showWarnings>

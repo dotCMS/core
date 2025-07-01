@@ -10,6 +10,11 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
 import com.liferay.portal.model.User;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.io.IOException;
 import java.io.StringWriter;
@@ -32,10 +37,32 @@ public class WidgetResource {
 
     private final WebResource webResource = new WebResource();
 
+    @Operation(
+        summary = "Render widget",
+        description = "Renders a custom widget by processing its Velocity templates. Supports widget lookup by ID or inode with language and live/working version options. Executes widget pre-execute code and main widget code."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Widget rendered successfully",
+                    content = @Content(mediaType = "text/plain")),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - missing required ID or inode parameter",
+                    content = @Content(mediaType = "text/plain")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication may be required for working version",
+                    content = @Content(mediaType = "text/plain")),
+        @ApiResponse(responseCode = "404", 
+                    description = "Widget not found",
+                    content = @Content(mediaType = "text/plain")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error during widget processing",
+                    content = @Content(mediaType = "text/plain"))
+    })
     @GET
 	@Path("/{params:.*}")
 	@Produces("text/plain; charset=UTF-8")
-	public Response getWidget(@Context HttpServletRequest request, @Context HttpServletResponse response, @PathParam("params") String params) throws ResourceNotFoundException, ParseErrorException, Exception {
+	public Response getWidget(@Context HttpServletRequest request, @Context HttpServletResponse response, 
+		@Parameter(description = "URL parameters including id, inode, language, and live options", required = true) @PathParam("params") String params) throws ResourceNotFoundException, ParseErrorException, Exception {
 
 
         InitDataObject initData = webResource.init(params, request, response, false, null);

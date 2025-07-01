@@ -51,7 +51,7 @@ import org.glassfish.jersey.media.sse.SseFeature;
  * This class provides endpoints for importing content from CSV files and processing them based on the provided parameters.
  */
 @Path("/v1/content/_import")
-@Tag(name = "Content", description = "Endpoints for managing content and contentlets")
+@Tag(name = "Content")
 public class ContentImportResource {
 
     private final WebResource webResource;
