@@ -110,44 +110,14 @@ export function createErrorResponse(
  * Creates standardized try-catch wrapper for error handling
  * Use this in your tool implementations instead of raw try-catch
  */
-export async function executeWithErrorHandling<T>(
-  operation: () => Promise<T>,
+export async function executeWithErrorHandling(
+  operation: () => Promise<McpResponse>,
   errorPrefix: string,
 ): Promise<McpResponse> {
   try {
-    const result = await operation();
-
-    return result as McpResponse;
+    return await operation();
   } catch (error: unknown) {
     return createErrorResponse(errorPrefix, error);
   }
 }
 
-/**
- * Creates formatted entity response for workflow operations
- */
-export function createEntitySuccessResponse(
-  actionMessage: string,
-  entity: {
-    identifier?: string;
-    inode?: string;
-    contentType?: string;
-    languageId?: string | number;
-  },
-): McpSuccessResponse {
-  const text = `${actionMessage}
-
-Identifier: ${entity.identifier}
-Inode: ${entity.inode}
-Content Type: ${entity.contentType}
-Language ID: ${entity.languageId}`;
-
-  return {
-    content: [
-      {
-        type: 'text',
-        text,
-      },
-    ],
-  };
-}

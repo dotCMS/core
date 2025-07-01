@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { WorkflowService } from '../services/workflow';
 import { ContentCreateParamsSchema, ContentActionParamsSchema } from '../types/workflow';
 import { Logger } from '../utils/logger';
-import { executeWithErrorHandling, createEntitySuccessResponse } from '../utils/response';
+import { executeWithErrorHandling, McpSuccessResponse } from '../utils/response';
 
 const workflowService = new WorkflowService();
 const logger = new Logger('WORKFLOW_TOOL');
@@ -17,6 +17,35 @@ const ACTION_MESSAGES = {
     'UNARCHIVE': 'Content unarchived successfully!',
     'DELETE': 'Content deleted successfully!'
 } as const;
+
+/**
+ * Creates formatted entity response for workflow operations
+ */
+function createEntitySuccessResponse(
+    actionMessage: string,
+    entity: {
+        identifier?: string;
+        inode?: string;
+        contentType?: string;
+        languageId?: string | number;
+    },
+): McpSuccessResponse {
+    const text = `${actionMessage}
+
+Identifier: ${entity.identifier}
+Inode: ${entity.inode}
+Content Type: ${entity.contentType}
+Language ID: ${entity.languageId}`;
+
+    return {
+        content: [
+            {
+                type: 'text',
+                text,
+            },
+        ],
+    };
+}
 
 export function registerWorkflowTools(server: McpServer) {
     server.registerTool(
