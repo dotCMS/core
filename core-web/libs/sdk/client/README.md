@@ -410,7 +410,7 @@ const myQuery = queryBuilder
 The above `myQuery` variable will have the following value:
 > +contentType:Blog OR Activity -conhost:my-super-cool-site +languageId:2 AND +deleted:false +summary:Snowboard NOT "Swiss Alps"
 
-For additional examples, see the class's [specification page](src/lib/query-builder/sdk-query-builder.spec.ts), or the examples below.
+Additional examples below.
 
 #### Search and Paginate Product Results by Title and Price
 
