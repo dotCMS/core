@@ -59,9 +59,9 @@ interface SearchResultItem {
     ]
 })
 export class DotLinkEditorPopoverComponent implements OnDestroy {
-    @ViewChild('popover', { read: EditorModalDirective }) popover: EditorModalDirective;
-    @ViewChild('input', { read: ElementRef }) searchInput?: ElementRef<HTMLInputElement>;
-    @ViewChild('resultListbox') searchResultsListbox?: Listbox;
+    @ViewChild('popover', { read: EditorModalDirective }) private popover: EditorModalDirective;
+    @ViewChild('input', { read: ElementRef }) private searchInput?: ElementRef<HTMLInputElement>;
+    @ViewChild('resultListbox') private searchResultsListbox?: Listbox;
 
     protected readonly editor = input.required<Editor>();
     private readonly httpClient = inject(HttpClient);
@@ -130,9 +130,25 @@ export class DotLinkEditorPopoverComponent implements OnDestroy {
         this.componentDestroy$.complete();
     }
 
-    /** Toggles the visibility of the link editor popover. */
+    /**
+     * Toggles the visibility of the image editor popover.
+     */
     toggle() {
         this.popover?.toggle();
+    }
+
+    /**
+     * Shows the image editor popover.
+     */
+    show() {
+        this.popover?.show();
+    }
+
+    /**
+     * Hides the image editor popover.
+     */
+    hide() {
+        this.popover?.hide();
     }
 
     /**

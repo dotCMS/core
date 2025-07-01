@@ -3,6 +3,7 @@
     #bubbleMenu
     tiptapBubbleMenu
     (mousedown)="preventLostEditorSelection($event)"
+    (click)="closePopups()"
     [editor]="editor()"
     [tippyOptions]="tippyOptions"
     [updateDelay]="250">
@@ -125,7 +126,7 @@
     <button
         class="bubble-menu-button bubble-menu-button--icon"
         [class.is-active]="editor().isActive('link')"
-        (click)="linkModal.toggle()">
+        (click)="toggleLinkModal($event)">
         <span class="material-icons">link</span>
     </button>
     <button
@@ -141,7 +142,7 @@
 </ng-template>
 
 <ng-template #bubbleImageMenu>
-    <button class="bubble-menu-button" (click)="imageModal.toggle()">Image Properties</button>
+    <button class="bubble-menu-button" (click)="toggleImageModal($event)">Image Properties</button>
     <div class="divider"></div>
     <button
         class="bubble-menu-button bubble-menu-button--icon"
@@ -166,7 +167,7 @@
     <button
         class="bubble-menu-button bubble-menu-button--icon"
         [class.is-active]="imageHasLink()"
-        (click)="linkModal.toggle()">
+        (click)="toggleLinkModal($event)">
         <span class="material-icons">link</span>
     </button>
     <button

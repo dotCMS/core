@@ -20,8 +20,10 @@ import { EditorModalDirective } from '../../../../directive/editor-modal.directi
     imports: [EditorModalDirective, InputTextModule, ReactiveFormsModule, ButtonModule]
 })
 export class DotImageEditorPopoverComponent {
-    @ViewChild('popover', { read: EditorModalDirective }) popover: EditorModalDirective;
-    @ViewChild('input', { read: ElementRef }) urlInput?: ElementRef<HTMLInputElement>;
+    @ViewChild('popover', { read: EditorModalDirective })
+    private readonly popover: EditorModalDirective;
+    @ViewChild('input', { read: ElementRef })
+    private readonly urlInput?: ElementRef<HTMLInputElement>;
 
     /**
      * TipTap editor instance passed from parent.
@@ -51,6 +53,20 @@ export class DotImageEditorPopoverComponent {
      */
     toggle() {
         this.popover?.toggle();
+    }
+
+    /**
+     * Shows the image editor popover.
+     */
+    show() {
+        this.popover?.show();
+    }
+
+    /**
+     * Hides the image editor popover.
+     */
+    hide() {
+        this.popover?.hide();
     }
 
     /**

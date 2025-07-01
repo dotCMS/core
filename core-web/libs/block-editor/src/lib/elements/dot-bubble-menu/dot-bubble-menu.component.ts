@@ -62,6 +62,8 @@ const BUBBLE_MENU_HIDDEN_NODES = {
 export class DotBubbleMenuComponent {
     @ViewChild('editorModal') editorModal: EditorModalDirective;
     @ViewChild('bubbleMenu', { read: ElementRef }) bubbleMenuRef: ElementRef<HTMLElement>;
+    @ViewChild('linkModal') linkModal: DotLinkEditorPopoverComponent;
+    @ViewChild('imageModal') imageModal: DotImageEditorPopoverComponent;
 
     protected readonly editor = input.required<Editor>();
     protected readonly cd = inject(ChangeDetectorRef);
@@ -164,6 +166,32 @@ export class DotBubbleMenuComponent {
 
     protected preventLostEditorSelection(event: MouseEvent) {
         event.preventDefault();
+    }
+
+    /**
+     * Toggles the link editor popover and prevents event bubbling
+     */
+    protected toggleLinkModal(event: MouseEvent) {
+        event.stopPropagation();
+        this.linkModal?.toggle();
+        this.imageModal?.hide();
+    }
+
+    /**
+     * Toggles the image editor popover and prevents event bubbling
+     */
+    protected toggleImageModal(event: MouseEvent) {
+        event.stopPropagation();
+        this.imageModal?.toggle();
+        this.linkModal?.hide();
+    }
+
+    /**
+     * Closes any open popover components (link and image editors)
+     */
+    protected closePopups() {
+        this.linkModal?.hide();
+        this.imageModal?.hide();
     }
 
     protected imageHasLink() {
