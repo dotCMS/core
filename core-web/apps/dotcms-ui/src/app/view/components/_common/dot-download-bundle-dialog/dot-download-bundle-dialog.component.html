@@ -3,28 +3,33 @@
     [(visible)]="showDialog"
     [header]="'download.bundle.header' | dm"
     [actions]="dialogActions">
-    <form
-        *ngIf="showDialog"
-        (ngSubmit)="handleSubmit()"
-        (keyup.enter)="handleSubmit()"
-        [formGroup]="form"
-        class="p-fluid">
-        <div class="field">
-            <label dotFieldRequired for="download-btn">{{ 'download.bundle.i.want' | dm }}</label>
-            <p-selectButton
-                [options]="downloadOptions"
-                class="p-button-tabbed"
-                id="download-btn"
-                formControlName="downloadOptionSelected"></p-selectButton>
-        </div>
-        <div class="field">
-            <label for="filterKey">{{ 'download.bundle.filter' | dm }}</label>
-            <p-dropdown
-                [options]="filterOptions"
-                id="filterKey"
-                formControlName="filterKey"
-                appendTo="body"></p-dropdown>
-        </div>
-    </form>
-    <span *ngIf="errorMessage" class="download-bundle__error">{{ errorMessage }}</span>
+    @if (showDialog) {
+        <form
+            (ngSubmit)="handleSubmit()"
+            (keyup.enter)="handleSubmit()"
+            [formGroup]="form"
+            class="p-fluid">
+            <div class="field">
+                <label dotFieldRequired for="download-btn">
+                    {{ 'download.bundle.i.want' | dm }}
+                </label>
+                <p-selectButton
+                    [options]="downloadOptions"
+                    class="p-button-tabbed"
+                    id="download-btn"
+                    formControlName="downloadOptionSelected"></p-selectButton>
+            </div>
+            <div class="field">
+                <label for="filterKey">{{ 'download.bundle.filter' | dm }}</label>
+                <p-dropdown
+                    [options]="filterOptions"
+                    id="filterKey"
+                    formControlName="filterKey"
+                    appendTo="body"></p-dropdown>
+            </div>
+        </form>
+    }
+    @if (errorMessage) {
+        <span class="download-bundle__error">{{ errorMessage }}</span>
+    }
 </dot-dialog>

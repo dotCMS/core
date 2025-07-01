@@ -1,5 +1,5 @@
 {
-    "name": "portlet",
+    "name": "content-drive-portlet",
     "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
     "sourceRoot": "libs/portlets/dot-content-drive/portlet/src",
     "prefix": "lib",

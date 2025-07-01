@@ -10,13 +10,14 @@
         [label]="site.id"></dot-copy-link>
 </div>
 
-<ng-container *ngIf="site.configured; else noConfigurations">
+@if (site.configured) {
     <div class="dot-apps-configuration-list__host-configured">
-        <i
-            *ngIf="site.secretsWithWarnings"
-            class="pi pi-exclamation-triangle host-configured__warning-icon"
-            pTooltip="{{ site.secretsWithWarnings + ' ' + ('apps.invalid.secrets' | dm) }}"
-            data-testId="warning"></i>
+        @if (site.secretsWithWarnings) {
+            <i
+                class="pi pi-exclamation-triangle host-configured__warning-icon"
+                pTooltip="{{ site.secretsWithWarnings + ' ' + ('apps.invalid.secrets' | dm) }}"
+                data-testId="warning"></i>
+        }
 
         <p-button
             (click)="exportConfiguration($event, site)"
@@ -34,12 +35,10 @@
             icon="pi pi-trash"
             data-testId="delete"></p-button>
     </div>
-</ng-container>
-
-<ng-template #noConfigurations>
+} @else {
     <p-button
         (click)="editConfigurationSite($event, site)"
         styleClass="p-button-text p-button-rounded p-button-sm"
         icon="pi pi-plus"
         data-testId="add"></p-button>
-</ng-template>
+}

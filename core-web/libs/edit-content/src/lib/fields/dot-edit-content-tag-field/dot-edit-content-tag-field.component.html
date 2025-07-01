@@ -7,12 +7,15 @@
     [id]="'tag-id-' + variable"
     [inputId]="variable"
     [suggestions]="$suggestions()"
+    [(ngModel)]="$values"
+    [ngModelOptions]="{ standalone: true }"
     [multiple]="true"
     [forceSelection]="false"
     [unique]="AUTO_COMPLETE_UNIQUE"
     [minLength]="AUTO_COMPLETE_MIN_LENGTH"
     [delay]="AUTO_COMPLETE_DELAY"
-    [formControlName]="variable"
+    [disabled]="$disabled()"
+    (ngModelChange)="onTagsChange($event)"
     (completeMethod)="onSearch($event)"
     (keydown.enter)="onEnterKey($event)">
     <ng-template pTemplate="removetokenicon">

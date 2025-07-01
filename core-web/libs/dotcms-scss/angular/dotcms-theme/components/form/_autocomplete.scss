@@ -64,6 +64,38 @@ p-autocomplete.p-inputwrapper-focus {
         }
     }
 
+    // Disabled state styles
+    &.p-disabled,
+    &:disabled {
+        @extend #form-field-disabled;
+        cursor: not-allowed;
+
+        .p-autocomplete-input.p-component,
+        .p-autocomplete-input.p-component:disabled {
+            color: $color-palette-gray-500;
+            cursor: not-allowed;
+            background: transparent;
+        }
+
+        .p-autocomplete-dropdown.p-button.p-element {
+            background-color: $color-palette-gray-200;
+            color: $color-palette-gray-500;
+            cursor: not-allowed;
+
+            &:hover,
+            &:focus,
+            &:active {
+                background-color: $color-palette-gray-200;
+                color: $color-palette-gray-500;
+            }
+        }
+
+        .p-autocomplete-loader,
+        .p-autocomplete-clear-icon {
+            color: $color-palette-gray-500;
+        }
+    }
+
     &.p-autocomplete-multiple {
         .p-autocomplete-multiple-container {
             display: flex;
@@ -104,6 +136,29 @@ p-autocomplete.p-inputwrapper-focus {
                     padding: 0;
                     margin: 0;
                     height: 1.5rem;
+                }
+            }
+        }
+
+        // Disabled state for multiple autocomplete
+        &.p-disabled,
+        &:disabled {
+            .p-autocomplete-multiple-container {
+                background: $color-palette-gray-100;
+                cursor: not-allowed;
+
+                .p-autocomplete-token {
+                    background: $color-palette-gray-200;
+                    color: $color-palette-gray-500;
+
+                    .p-autocomplete-token-icon {
+                        color: $color-palette-gray-500;
+                    }
+                }
+
+                .p-autocomplete-input-token input {
+                    color: $color-palette-gray-500;
+                    cursor: not-allowed;
                 }
             }
         }

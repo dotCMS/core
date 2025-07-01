@@ -30,25 +30,28 @@
 
     <div class="field">
         <label for="persona-image">{{ 'modes.persona.upload.file' | dm }}</label>
-        <p-fileUpload
-            *ngIf="!tempUploadedFile"
-            (onUpload)="onFileUpload($event)"
-            (onBeforeUpload)="isValid.emit(false)"
-            [chooseLabel]="'dot.common.choose' | dm"
-            id="persona-image"
-            url="/api/v1/temp"
-            accept="image/*,.webp"
-            auto="true"
-            mode="basic"></p-fileUpload>
-        <div *ngIf="tempUploadedFile" class="form__file-detail">
-            <img [src]="tempUploadedFile.thumbnailUrl" />
-            <span>{{ tempUploadedFile.fileName }}</span>
-            <button
-                (click)="removeImage()"
-                [label]="'dot.common.remove' | dm"
-                class="p-button-outlined p-button-sm"
-                pButton></button>
-        </div>
+        @if (!tempUploadedFile) {
+            <p-fileUpload
+                (onUpload)="onFileUpload($event)"
+                (onBeforeUpload)="isValid.emit(false)"
+                [chooseLabel]="'dot.common.choose' | dm"
+                id="persona-image"
+                url="/api/v1/temp"
+                accept="image/*,.webp"
+                auto="true"
+                mode="basic"></p-fileUpload>
+        }
+        @if (tempUploadedFile) {
+            <div class="form__file-detail">
+                <img [src]="tempUploadedFile.thumbnailUrl" />
+                <span>{{ tempUploadedFile.fileName }}</span>
+                <button
+                    (click)="removeImage()"
+                    [label]="'dot.common.remove' | dm"
+                    class="p-button-outlined p-button-sm"
+                    pButton></button>
+            </div>
+        }
     </div>
     <div class="field">
         <label for="persona-other-tags">{{ 'modes.persona.other.tags' | dm }}</label>

@@ -1,9 +1,15 @@
 package com.dotcms.jitsu;
 
 
+import com.dotcms.analytics.metrics.EventType;
+import com.dotcms.jitsu.validators.AnalyticsValidatorUtil;
+import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONObject;
 
 import java.io.Serializable;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -17,6 +23,8 @@ import static com.dotcms.jitsu.ValidAnalyticsEventPayloadAttributes.*;
  */
 public enum ValidAnalyticsEventPayloadTransformer {
     INSTANCE;
+
+    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'");
 
     /**
      * Apply any necessary transformations to the analytics events payload.
@@ -88,11 +96,33 @@ public enum ValidAnalyticsEventPayloadTransformer {
 
         return events.stream()
                 .map(JSONObject::new)
+                .map(ValidAnalyticsEventPayloadTransformer::transformDate)
+                .map(jsonObject -> ValidAnalyticsEventPayloadTransformer.setRootValues(jsonObject, payload))
                 .map(jsonObject -> putContent(jsonObject, newRootContext, sessionId))
                 .map(this::putEventAttributes)
                 .map(ValidAnalyticsEventPayloadTransformer::removeData)
                 .map(EventsPayload.EventPayload::new)
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Copies primitive values from the root payload to the event JSON object.
+     * Only copies values that are not JSONObject or JSONArray instances.
+     *
+     * @param jsonEVent The event JSON object to which root values will be added
+     * @param rootPayload The root payload containing values to be copied
+     * @return The modified event JSON object with added root values
+     */
+    private static JSONObject setRootValues(final JSONObject jsonEVent, final JSONObject rootPayload) {
+        for (Object key : rootPayload.keySet()) {
+            Object value = rootPayload.get(key);
+
+            if (!(value instanceof JSONObject) && !(value instanceof JSONArray)) {
+                jsonEVent.put(key, value);
+            }
+        }
+
+        return jsonEVent;
     }
 
     /**
@@ -105,6 +135,91 @@ public enum ValidAnalyticsEventPayloadTransformer {
     private static JSONObject removeData(final JSONObject payload) {
         payload.remove(DATA_ATTRIBUTE_NAME);
         return payload;
+    }
+
+    private static JSONObject transformDate(final JSONObject payload) {
+        final String eventType = payload.get(EVENT_TYPE_ATTRIBUTE_NAME).toString();
+        final List<String> dateFields = AnalyticsValidatorUtil.INSTANCE.getDateField(EventType.get(eventType));
+
+        for (String dateField : dateFields) {
+            final Object dateValue = getValueFromPath(payload, dateField);
+
+            if (dateValue != null && dateValue instanceof String) {
+                final String utcDate = transformToUTC((String) dateValue);
+                updateValueInPath(payload, dateField, utcDate);
+            }
+        }
+
+        return payload;
+    }
+
+    /**
+     * Gets a value from a JSON object using a dot-notation path.
+     *
+     * @param jsonObject The JSON object to get the value from
+     * @param path The path to the value, using dot notation (e.g., "data.local_time")
+     * @return The value at the path, or null if the path doesn't exist
+     */
+    private static Object getValueFromPath(final JSONObject jsonObject, final String path) {
+        String[] parts = path.split("\\.");
+        JSONObject current = jsonObject;
+
+        // Navigate through the path
+        for (int i = 0; i < parts.length - 1; i++) {
+            if (!current.has(parts[i])) {
+                return null;
+            }
+            Object value = current.opt(parts[i]);
+            if (!(value instanceof JSONObject)) {
+                return null;
+            }
+            current = (JSONObject) value;
+        }
+
+        // Get the final value
+        String lastPart = parts[parts.length - 1];
+        if (!current.has(lastPart)) {
+            return null;
+        }
+        return current.opt(lastPart);
+    }
+
+    /**
+     * Updates a value in a JSON object using a dot-notation path.
+     *
+     * @param jsonObject The JSON object to update
+     * @param path The path to the value, using dot notation (e.g., "data.local_time")
+     * @param newValue The new value to set
+     */
+    private static void updateValueInPath(final JSONObject jsonObject, final String path, final Object newValue) {
+        String[] parts = path.split("\\.");
+        JSONObject current = jsonObject;
+
+        // Navigate through the path
+        for (int i = 0; i < parts.length - 1; i++) {
+            if (!current.has(parts[i])) {
+                // Create missing objects along the path
+                current.put(parts[i], new JSONObject());
+            }
+            Object value = current.opt(parts[i]);
+            if (!(value instanceof JSONObject)) {
+                // Replace non-object values with objects
+                current.put(parts[i], new JSONObject());
+                value = current.opt(parts[i]);
+            }
+            current = (JSONObject) value;
+        }
+
+        // Set the final value
+        String lastPart = parts[parts.length - 1];
+        current.put(lastPart, newValue);
+    }
+
+    private static String transformToUTC(final String dateValue) {
+        OffsetDateTime dateTimeWithOffset = OffsetDateTime.parse(dateValue);
+        OffsetDateTime utcDateTime = dateTimeWithOffset.withOffsetSameInstant(ZoneOffset.UTC);
+
+        return  utcDateTime.format(DATE_FORMATTER);
     }
 
     /**
@@ -124,12 +239,15 @@ public enum ValidAnalyticsEventPayloadTransformer {
         final Map<String, Object> deviceAttributes = (Map<String, Object> ) dataAttributes.get(DEVICE_ATTRIBUTE_NAME);
 
         moveToRoot(jsonObject, pageAttributes,
-                Map.of("title", "page_title", "language", "userlanguage"));
+                Map.of("title", "page_title", "language_id", "userlanguage"));
         moveToRoot(jsonObject, deviceAttributes, Map.of("language", "user_language"));
-
 
         final Map<String, Object> utmAttributes = (Map<String, Object> ) dataAttributes.get(UTM_ATTRIBUTE_NAME);
         jsonObject.put(UTM_ATTRIBUTE_NAME, utmAttributes);
+
+        final String localTimeAttributes = (String) jsonObject.get(LOCAL_TIME_ATTRIBUTE_NAME);
+        jsonObject.put("utc_time", localTimeAttributes);
+        jsonObject.remove(LOCAL_TIME_ATTRIBUTE_NAME);
 
         return jsonObject;
     }

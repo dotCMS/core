@@ -6,6 +6,10 @@ package com.dotcms.saml;
  */
 public enum SamlName {
 
+	/**
+	 * Tell the system to merge the additional attributes from the IDP or override (default behavior)
+	 */
+	DOTCMS_MERGE_ADDITIONAL_ATTRIBUTES("merge.additional.attributes"),
 
 	/**
 	 * To set enable or disable an idp configuration

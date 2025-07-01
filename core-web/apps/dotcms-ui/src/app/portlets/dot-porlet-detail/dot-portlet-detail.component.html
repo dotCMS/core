@@ -1,2 +1,6 @@
-<dot-workflow-task *ngIf="isWorkflow"></dot-workflow-task>
-<dot-contentlets *ngIf="isContent"></dot-contentlets>
+@if (isWorkflow) {
+    <dot-workflow-task></dot-workflow-task>
+}
+@if (isContent) {
+    <dot-contentlets></dot-contentlets>
+}

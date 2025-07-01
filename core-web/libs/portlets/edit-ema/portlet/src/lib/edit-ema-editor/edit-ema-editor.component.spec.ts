@@ -644,6 +644,7 @@ describe('EditEmaEditorComponent', () => {
 
                 it('should open a dialog and save after backend emit', (done) => {
                     spectator.detectChanges();
+
                     const dialog = spectator.debugElement.query(
                         By.css('[data-testId="ema-dialog"]')
                     );

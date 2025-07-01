@@ -1,11 +1,10 @@
-<ng-template [ngIf]="canAccessPortlet" [ngIfElse]="notLicense">
+@if (canAccessPortlet) {
     <dot-iframe
         (custom)="onCustomEvent($event)"
         [isLoading]="isLoading"
         [src]="url | async"
         #iframe></dot-iframe>
-</ng-template>
-<ng-template #notLicense>
+} @else {
     <dot-not-license />
-</ng-template>
+}
 <router-outlet></router-outlet>

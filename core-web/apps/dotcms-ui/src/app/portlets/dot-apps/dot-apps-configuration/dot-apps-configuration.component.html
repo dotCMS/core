@@ -1,5 +1,7 @@
 <div class="dot-apps-configuration__container">
-    <dot-apps-configuration-header *ngIf="apps" [app]="apps"></dot-apps-configuration-header>
+    @if (apps) {
+        <dot-apps-configuration-header [app]="apps"></dot-apps-configuration-header>
+    }
     <div class="dot-apps-configuration__body">
         <div>
             <div class="dot-apps-configuration__action_header">

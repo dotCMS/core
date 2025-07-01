@@ -1,4 +1,6 @@
-<p-menu *ngIf="isHaveOptions()" [model]="model" #menu appendTo="body" popup="popup"></p-menu>
+@if (isHaveOptions()) {
+    <p-menu [model]="model" #menu appendTo="body" popup="popup"></p-menu>
+}
 
 <p-button
     (click)="buttonOnClick($event)"
@@ -7,6 +9,8 @@
     data-testid="dot-action-button"
     styleClass="p-button-rounded"></p-button>
 
-<p *ngIf="label" [class.action-button__label--disabled]="disabled" class="action-button__label">
-    {{ label }}
-</p>
+@if (label) {
+    <p [class.action-button__label--disabled]="disabled" class="action-button__label">
+        {{ label }}
+    </p>
+}

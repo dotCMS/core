@@ -1,7 +1,7 @@
 import { tapResponse } from '@ngrx/operators';
 import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { pipe } from 'rxjs';
+import { EMPTY, pipe } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { computed, inject } from '@angular/core';
@@ -21,16 +21,16 @@ import { CategoriesService } from '../services/categories.service';
 import {
     addSelected,
     checkIfClickedIsLastItem,
+    checkIfClickedIsLoaded,
     clearCategoriesAfterIndex,
     clearParentPathAfterIndex,
+    getMenuItemsFromKeyParentPath,
     getSelectedFromContentlet,
     removeEmptyArrays,
     removeItemByKey,
     transformCategories,
     transformToSelectedObject,
-    updateChecked,
-    getMenuItemsFromKeyParentPath,
-    checkIfClickedIsLoaded
+    updateChecked
 } from '../utils/category-field.utils';
 
 export type CategoryFieldState = {
@@ -306,6 +306,47 @@ export const CategoryFieldStore = signalStore(
 
                 patchState(store, { selected });
             },
+
+            /**
+             * Sets the selected categories from an array of inodes.
+             * This method is used by ControlValueAccessor to initialize the component.
+             *
+             * @param {string[]} inodes - Array of category inodes to set as selected
+             */
+            setSelectedFromInodes: rxMethod<string[]>(
+                pipe(
+                    tap(() => patchState(store, { state: ComponentStatus.LOADING })),
+                    switchMap((inodes) => {
+                        if (!inodes || inodes.length === 0) {
+                            patchState(store, {
+                                selected: [],
+                                state: ComponentStatus.LOADED
+                            });
+
+                            return EMPTY;
+                        }
+
+                        return categoryService.getSelectedHierarchy(inodes).pipe(
+                            tapResponse({
+                                next: (categoryWithParentPath) => {
+                                    const selected =
+                                        transformToSelectedObject(categoryWithParentPath);
+                                    patchState(store, {
+                                        selected,
+                                        state: ComponentStatus.LOADED
+                                    });
+                                },
+                                error: (error: HttpErrorResponse) => {
+                                    patchState(store, {
+                                        state: ComponentStatus.ERROR
+                                    });
+                                    dotHttpErrorManagerService.handle(error);
+                                }
+                            })
+                        );
+                    })
+                )
+            ),
 
             /**
              * Resets the store to its initial state.

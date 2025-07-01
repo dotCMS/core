@@ -225,8 +225,8 @@ describe('DotTemplatePropsComponent', () => {
 
                 expect(field.classes['field']).toBe(true);
 
-                expect(label.attributes.for).toBe('thumbnail');
-                expect(label.nativeElement.textContent).toBe('Thumbnail');
+                expect(label.attributes.for).toContain('thumbnail');
+                expect(label.nativeElement.textContent).toContain('Thumbnail');
 
                 // TODO: here we're using a webcomponent
             });

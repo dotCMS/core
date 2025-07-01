@@ -8,6 +8,8 @@ import com.dotcms.ai.domain.AIResponseData;
 import com.dotcms.ai.domain.Model;
 import com.dotcms.ai.exception.DotAIAllModelsExhaustedException;
 import com.dotcms.ai.validator.AIAppValidator;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
@@ -193,6 +195,10 @@ public class AIModelFallbackStrategy implements AIClientStrategy {
             if (responseData.isSuccess()) {
                 return responseData;
             }
+        } catch (DotRuntimeException e) {
+            Logger.error(AIModelFallbackStrategy.class,
+                    "Something went wrong while trying to process the request with the AI service." + e.getMessage());
+            throw e;
         } finally {
             if (!isStream) {
                 IOUtils.closeQuietly(responseData.getOutput());
