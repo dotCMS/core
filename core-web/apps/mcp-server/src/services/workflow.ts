@@ -9,8 +9,8 @@ import {
     ContentCreateParamsSchema,
     WorkflowSchemesResponse,
     WorkflowSchemesResponseSchema,
-    PublishContentParams,
-    PublishContentParamsSchema
+    ContentActionParams,
+    ContentActionParamsSchema
 } from '../types/workflow';
 import { Logger } from '../utils/logger';
 
@@ -92,33 +92,43 @@ export class WorkflowService extends AgnosticClient {
     }
 
     /**
-     * Publishes content by firing a workflow action.
-     * This method publishes existing content based on the provided parameters.
+     * Performs content actions (publish/unpublish) by firing a workflow action.
+     * This method publishes or unpublishes existing content based on the provided parameters.
      *
-     * @param params - Publish content parameters
+     * @param params - Content action parameters including the action type
      * @returns Promise with the workflow action response
      */
-    async publishContent(params: PublishContentParams): Promise<WorkflowActionResponse> {
-        this.serviceLogger.log('Starting content publish operation', params);
+    async performContentAction(params: ContentActionParams): Promise<WorkflowActionResponse> {
+        this.serviceLogger.log('Starting content action operation', params);
 
-        const validatedParams = PublishContentParamsSchema.safeParse(params);
+        const validatedParams = ContentActionParamsSchema.safeParse(params);
 
         if (!validatedParams.success) {
-            this.serviceLogger.error('Invalid publish content parameters', validatedParams.error);
+            this.serviceLogger.error('Invalid content action parameters', validatedParams.error);
             throw new Error(
-                'Invalid publish content parameters: ' + JSON.stringify(validatedParams.error.format())
+                'Invalid content action parameters: ' + JSON.stringify(validatedParams.error.format())
             );
         }
 
-        this.serviceLogger.log('Publish content parameters validated successfully', validatedParams.data);
+        this.serviceLogger.log('Content action parameters validated successfully', validatedParams.data);
 
-        const url = `/api/v1/workflow/actions/default/fire/PUBLISH?identifier=${validatedParams.data.identifier}&variantName=${validatedParams.data.variantName}`;
+        const actionType = validatedParams.data.action;
+        const defaultComments = {
+            'PUBLISH': 'Publishing content via API',
+            'UNPUBLISH': 'Unpublishing content via API',
+            'ARCHIVE': 'Archiving content via API',
+            'UNARCHIVE': 'Unarchiving content via API',
+            'DELETE': 'Deleting content via API'
+        };
+        const defaultComment = defaultComments[actionType];
+
+        const url = `/api/v1/workflow/actions/default/fire/${actionType}?identifier=${validatedParams.data.identifier}&variantName=${validatedParams.data.variantName}`;
 
         try {
             const response = await this.fetch(url, {
                 method: 'PUT',
                 body: JSON.stringify({
-                    comments: validatedParams.data.comments || 'Publishing content via API'
+                    comments: validatedParams.data.comments || defaultComment
                 })
             });
 
@@ -131,12 +141,26 @@ export class WorkflowService extends AgnosticClient {
                 throw new Error('Invalid workflow response: ' + JSON.stringify(parsed.error.format()));
             }
 
-            this.serviceLogger.log('Content published successfully', parsed.data);
+            const successMessages = {
+                'PUBLISH': 'Content published successfully',
+                'UNPUBLISH': 'Content unpublished successfully',
+                'ARCHIVE': 'Content archived successfully',
+                'UNARCHIVE': 'Content unarchived successfully',
+                'DELETE': 'Content deleted successfully'
+            };
+            this.serviceLogger.log(successMessages[actionType], parsed.data);
 
             return parsed.data;
 
         } catch (error) {
-            this.serviceLogger.error('Error during content publish operation', error);
+            const errorMessages = {
+                'PUBLISH': 'Error during content publish operation',
+                'UNPUBLISH': 'Error during content unpublish operation',
+                'ARCHIVE': 'Error during content archive operation',
+                'UNARCHIVE': 'Error during content unarchive operation',
+                'DELETE': 'Error during content delete operation'
+            };
+            this.serviceLogger.error(errorMessages[actionType], error);
             throw error;
         }
     }

@@ -31,11 +31,12 @@ export const WorkflowActionRequestSchema = z.object({
     contentlet: ContentCreateParamsSchema
 });
 
-// Schema for publish content parameters
-export const PublishContentParamsSchema = z.object({
+// Schema for content action parameters (publish/unpublish/archive/unarchive/delete)
+export const ContentActionParamsSchema = z.object({
     identifier: z.string(),
     variantName: z.string().default('DEFAULT'),
-    comments: z.string().optional()
+    comments: z.string().optional(),
+    action: z.enum(['PUBLISH', 'UNPUBLISH', 'ARCHIVE', 'UNARCHIVE', 'DELETE'])
 });
 
 // Schema for workflow scheme
@@ -69,7 +70,7 @@ export type ContentCreateParams = z.infer<typeof ContentCreateParamsSchema>;
 
 export type WorkflowActionRequest = z.infer<typeof WorkflowActionRequestSchema>;
 
-export type PublishContentParams = z.infer<typeof PublishContentParamsSchema>;
+export type ContentActionParams = z.infer<typeof ContentActionParamsSchema>;
 
 export type WorkflowScheme = z.infer<typeof WorkflowSchemeSchema>;
 

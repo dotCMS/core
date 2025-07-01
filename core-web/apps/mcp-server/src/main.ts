@@ -66,7 +66,8 @@ const transport = new StdioServerTransport();
 
 // const workflowService = new WorkflowService();
 
-// workflowService.publishContent({
+// workflowService.performContentAction({
+//     action: 'DELETE',
 //     identifier: 'a85cbad9a421e51f7362cda69d390b29'
 // }).then((response) => {
 //     console.log(response);
