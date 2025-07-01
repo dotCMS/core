@@ -1,9 +1,4 @@
-<div
-    dotEditorModal
-    #popover
-    [tippyOptions]="tippyOptions"
-    [editor]="editor()"
-    [appendTo]="popoverContainer()">
+<div dotEditorModal #popover [tippyOptions]="tippyOptions" [editor]="editor()">
     <form class="form" (ngSubmit)="saveImageChanges()" [formGroup]="imageForm">
         <div class="form-group">
             <label for="src">

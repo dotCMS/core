@@ -12,7 +12,6 @@ import { BubbleMenuPluginProps } from '@tiptap/extension-bubble-menu';
 })
 export class EditorModalDirective implements OnInit, OnDestroy {
     readonly editor = input.required<Editor>();
-    readonly appendTo = input<HTMLElement>();
     readonly tippyOptions = input<BubbleMenuPluginProps['tippyOptions']>({});
 
     private elRef = inject<ElementRef<HTMLElement>>(ElementRef);
@@ -57,33 +56,39 @@ export class EditorModalDirective implements OnInit, OnDestroy {
     }
 
     private getReferenceClientRect() {
-        const appendToElement = this.appendTo();
-
-        if (appendToElement) {
-            return appendToElement.getBoundingClientRect();
-        }
-
         const { state, view } = this.editor();
         const { from, to } = state.selection;
 
+        // Handle node selections (like images, tables, etc.)
         if (isNodeSelection(state.selection)) {
-            let node = view.nodeDOM(from) as HTMLElement;
-
+            const node = this.getNodeElement(view, from);
             if (node) {
-                const nodeViewWrapper = node.dataset.nodeViewWrapper
-                    ? node
-                    : node.querySelector('[data-node-view-wrapper]');
+                // If the node has a bubble menu, return its bounding client rect
+                const bubbleMenu = document.querySelector('[tiptapbubblemenu]');
 
-                if (nodeViewWrapper) {
-                    node = nodeViewWrapper.firstChild as HTMLElement;
+                if (bubbleMenu) {
+                    return bubbleMenu.getBoundingClientRect();
                 }
 
-                if (node) {
-                    return node.getBoundingClientRect();
-                }
+                // Otherwise, return the node's bounding client rect
+                return node.getBoundingClientRect();
             }
         }
 
+        // Handle text selections
         return posToDOMRect(view, from, to);
+    }
+
+    private getNodeElement(view: Editor['view'], pos: number): HTMLElement | null {
+        const node = view.nodeDOM(pos) as HTMLElement;
+
+        if (!node) return null;
+
+        // Look for node view wrapper and get its first child
+        const nodeViewWrapper = node.dataset.nodeViewWrapper
+            ? node
+            : node.querySelector('[data-node-view-wrapper]');
+
+        return (nodeViewWrapper?.firstChild as HTMLElement) || node;
     }
 }

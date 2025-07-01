@@ -69,7 +69,6 @@ export class DotBubbleMenuComponent {
 
     protected readonly dropdownItem = signal<NodeTypeOption | null>(null);
     protected readonly placeholder = signal<string>('Paragraph');
-    protected readonly onBeforeUpdateFn = this.onBeforeUpdate.bind(this);
     protected readonly showShould = signal<boolean>(true);
     protected readonly showImageMenu = signal<boolean>(false);
 
@@ -147,6 +146,13 @@ export class DotBubbleMenuComponent {
             command: () => this.editor().chain().focus().clearNodes().toggleCodeBlock().run()
         }
     ];
+
+    protected readonly tippyOptions = {
+        maxWidth: '100%',
+        onBeforeUpdate: this.onBeforeUpdate.bind(this),
+        placement: 'top-start',
+        trigger: 'manual'
+    };
 
     protected runConvertToCommand(option: NodeTypeOption) {
         option.command();

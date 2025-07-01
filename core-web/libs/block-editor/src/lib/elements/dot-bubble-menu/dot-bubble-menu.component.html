@@ -4,12 +4,7 @@
     tiptapBubbleMenu
     (mousedown)="preventLostEditorSelection($event)"
     [editor]="editor()"
-    [tippyOptions]="{
-        maxWidth: '100%',
-        onBeforeUpdate: onBeforeUpdateFn,
-        placement: 'top-start',
-        trigger: 'manual'
-    }"
+    [tippyOptions]="tippyOptions"
     [updateDelay]="250">
     @if (showShould()) {
         @if (showImageMenu()) {
@@ -182,4 +177,4 @@
 </ng-template>
 
 <dot-link-editor-popover #linkModal [editor]="editor()" />
-<dot-image-editor-popover #imageModal [editor]="editor()" [popoverContainer]="bubbleMenu" />
+<dot-image-editor-popover #imageModal [editor]="editor()" />

@@ -28,11 +28,6 @@ export class DotImageEditorPopoverComponent {
      */
     readonly editor = input.required<Editor>();
 
-    /**
-     * DOM element to append the popover tooltip to.
-     */
-    readonly popoverContainer = input<HTMLElement>();
-
     protected readonly imageForm = new FormGroup({
         src: new FormControl('', Validators.required),
         alt: new FormControl(''),

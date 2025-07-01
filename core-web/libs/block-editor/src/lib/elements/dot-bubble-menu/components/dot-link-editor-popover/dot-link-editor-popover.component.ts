@@ -80,9 +80,9 @@ export class DotLinkEditorPopoverComponent implements OnDestroy {
     );
     protected readonly showSearchResults = computed(
         () =>
+            this.searchQuery() &&
             !this.isSearching() &&
             !this.showLinkDetails() &&
-            this.searchQuery() &&
             !this.isFullURL()
     );
 
