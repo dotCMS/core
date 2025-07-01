@@ -54,12 +54,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 /**
  * Implements a rest endpoints the allows to run javascript code (js).
  * @author jsanca
  */
 @Path("/js")
+@Tag(name = "JavaScript", description = "JavaScript execution and server-side scripting")
 public class JsResource {
 
     public static final String IDENTIFIER = "identifier";

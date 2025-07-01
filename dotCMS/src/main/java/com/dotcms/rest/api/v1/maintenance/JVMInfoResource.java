@@ -9,6 +9,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.util.ReleaseInfo;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vavr.control.Try;
 import org.glassfish.jersey.server.JSONP;
 
@@ -31,6 +32,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.regex.Pattern;
 
+@Tag(name = "Administration")
 @Path("/v1/jvm")
 @SuppressWarnings("serial")
 public class JVMInfoResource implements Serializable {

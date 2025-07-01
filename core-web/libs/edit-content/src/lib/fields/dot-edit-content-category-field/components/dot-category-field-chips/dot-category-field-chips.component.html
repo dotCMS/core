@@ -2,11 +2,11 @@
     @for (category of $categoriesToShow(); track category.key) {
         <p-chip
             [pTooltip]="category.path || category.value"
-            [removable]="true"
             [label]="category.value"
             tooltipPosition="top"
-            styleClass="p-chip-sm"
-            (onRemove)="remove.emit(category.key)">
+            [removable]="true"
+            [styleClass]="$disabled() ? 'p-chip-sm p-chip-disabled' : 'p-chip-sm'"
+            (onRemove)="onRemove(category.key)">
             <ng-template pTemplate="removeicon">
                 <i class="pi pi-times"></i>
             </ng-template>
@@ -16,6 +16,7 @@
         <button
             (click)="toogleShowAll()"
             [label]="$btnLabel()"
+            [disabled]="$disabled()"
             class="p-button-sm p-button-text p-button-secondary"
             data-testId="show-btn"
             pButton></button>

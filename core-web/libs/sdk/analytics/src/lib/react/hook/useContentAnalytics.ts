@@ -1,19 +1,19 @@
-import { useContext, useRef } from 'react';
+import { useCallback, useContext, useRef } from 'react';
 
-import { DotAnalytics } from '../../dotAnalytics/shared/dot-content-analytics.model';
-import { isInsideEditor } from '../../dotAnalytics/shared/dot-content-analytics.utils';
+import { getUVEState } from '@dotcms/uve';
+
+import { DotCMSAnalytics } from '../../dotAnalytics/shared/dot-content-analytics.model';
 import DotContentAnalyticsContext from '../contexts/DotContentAnalyticsContext';
 
 /**
- * Custom hook that handles analytics page view tracking.
+ * Custom hook that handles analytics tracking for anonymous users.
  *
  * @example
  * ```tsx
  * function Button({ title, urlTitle }) {
  *   const { track } = useContentAnalytics();
  *
- *   // First parameter: custom event name to identify the action
- *   // Second parameter: object with properties you want to track
+ *   // Track button click with custom properties
  *   return (
  *     <button onClick={() => track('btn-click', { title, urlTitle })}>
  *       See Details →
@@ -21,43 +21,75 @@ import DotContentAnalyticsContext from '../contexts/DotContentAnalyticsContext';
  *   );
  * }
  * ```
- * @returns {DotContentAnalyticsCustomHook} - The analytics instance used to track page views
+ *
+ * @example
+ * ```tsx
+ * // Session debugging example
+ * function AnalyticsDebugComponent() {
+ *   const { getAnonymousUserId, getSessionInfo, updateSessionActivity } = useContentAnalytics();
+ *
+ *   const handleManualActivity = () => {
+ *     updateSessionActivity();
+ *     // Manual activity updated
+ *   };
+ *
+ *   // Debug session info in development
+ *   const debugInfo = () => {
+ *     if (process.env.NODE_ENV === 'development') {
+ *       console.log('Anonymous ID:', getAnonymousUserId());
+ *       console.log('Session info:', getSessionInfo());
+ *     }
+ *   };
+ *
+ *   return (
+ *     <div>
+ *       <button onClick={handleManualActivity}>Update Activity</button>
+ *       <button onClick={debugInfo}>Debug Session</button>
+ *       <p>User ID: {getAnonymousUserId()}</p>
+ *     </div>
+ *   );
+ * }
+ * ```
+ *
+ * @returns {DotCMSAnalytics} - The analytics instance with tracking capabilities for anonymous users
+ * @throws {Error} - Throws error if used outside of DotContentAnalyticsProvider or if analytics failed to initialize
  */
-export const useContentAnalytics = (): DotAnalytics => {
+export const useContentAnalytics = (): DotCMSAnalytics => {
     const instance = useContext(DotContentAnalyticsContext);
     const lastPathRef = useRef<string | null>(null);
 
     if (!instance) {
-        throw new Error('useContentAnalytics must be used within a DotContentAnalyticsProvider');
+        throw new Error(
+            'useContentAnalytics must be used within a DotContentAnalyticsProvider and analytics must be successfully initialized'
+        );
     }
 
-    return {
-        /**
-         * Track a custom event.
-         * @param {string} eventName - The name of the event to track.
-         * @param {Record<string, unknown>} payload - The payload to track.
-         */
-        track: (eventName: string, payload: Record<string, unknown> = {}) => {
-            if (!isInsideEditor()) {
-                instance?.track(eventName, {
+    const track = useCallback(
+        (eventName: string, payload: Record<string, unknown> = {}) => {
+            const uveState = getUVEState();
+            if (!uveState) {
+                instance.track(eventName, {
                     ...payload,
                     timestamp: new Date().toISOString()
                 });
             }
         },
+        [instance]
+    );
 
-        /**
-         * Track a page view.
-         * @param {Record<string, unknown>} payload - The payload to track.
-         */
-        pageView: (payload: Record<string, unknown> = {}) => {
-            if (!isInsideEditor()) {
-                const currentPath = window.location.pathname;
-                if (currentPath !== lastPathRef.current) {
-                    lastPathRef.current = currentPath;
-                    instance.pageView(payload);
-                }
+    const pageView = useCallback(() => {
+        const uveState = getUVEState();
+        if (!uveState) {
+            const currentPath = window.location.pathname;
+            if (currentPath !== lastPathRef.current) {
+                lastPathRef.current = currentPath;
+                instance.pageView();
             }
         }
+    }, [instance]);
+
+    return {
+        track,
+        pageView
     };
 };
