@@ -1,20 +1,20 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { BubbleLinkFormComponent } from './bubble-link-form.component';
+import { DotLinkEditorPopoverComponent } from './dot-link-editor-popover.component';
 
-describe('BubbleLinkFormComponent', () => {
-    let component: BubbleLinkFormComponent;
-    let fixture: ComponentFixture<BubbleLinkFormComponent>;
+describe('DotLinkEditorPopoverComponent', () => {
+    let component: DotLinkEditorPopoverComponent;
+    let fixture: ComponentFixture<DotLinkEditorPopoverComponent>;
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [BubbleLinkFormComponent],
+            declarations: [DotLinkEditorPopoverComponent],
             teardown: { destroyAfterEach: false }
         }).compileComponents();
     });
 
     beforeEach(() => {
-        fixture = TestBed.createComponent(BubbleLinkFormComponent);
+        fixture = TestBed.createComponent(DotLinkEditorPopoverComponent);
         component = fixture.componentInstance;
         fixture.detectChanges();
     });

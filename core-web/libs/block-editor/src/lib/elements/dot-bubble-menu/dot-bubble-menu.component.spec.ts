@@ -1,20 +1,20 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { BubbleMenuButtonComponent } from './bubble-menu-button.component';
+import { DotBubbleMenuComponent } from './dot-bubble-menu.component';
 
-describe('BubbleMenuButtonComponent', () => {
-    let component: BubbleMenuButtonComponent;
-    let fixture: ComponentFixture<BubbleMenuButtonComponent>;
+describe('DotBubbleMenuComponent', () => {
+    let component: DotBubbleMenuComponent;
+    let fixture: ComponentFixture<DotBubbleMenuComponent>;
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [BubbleMenuButtonComponent],
+            declarations: [DotBubbleMenuComponent],
             teardown: { destroyAfterEach: false }
         }).compileComponents();
     });
 
     beforeEach(() => {
-        fixture = TestBed.createComponent(BubbleMenuButtonComponent);
+        fixture = TestBed.createComponent(DotBubbleMenuComponent);
         component = fixture.componentInstance;
         fixture.detectChanges();
     });
