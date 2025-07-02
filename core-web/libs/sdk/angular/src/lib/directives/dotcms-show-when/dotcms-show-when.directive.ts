@@ -16,7 +16,7 @@ import { getUVEState } from '@dotcms/uve';
  */
 @Directive({
     selector: '[dotCMSShowWhen]',
-    standalone: true,
+    standalone: true
 })
 export class DotCMSShowWhenDirective {
     #when: UVE_MODE = UVE_MODE.EDIT;
