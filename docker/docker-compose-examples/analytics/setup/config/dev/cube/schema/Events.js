@@ -16,7 +16,10 @@ cube(`Events`, {
     COUNT(CASE WHEN event_type = 'pageview' THEN 1 ELSE 0 END) AS pageviews,
     SUM(CASE WHEN (E.isexperimentpage = true AND C.maxDate = E.utc_time AND event_type = 'pageview') THEN 1 ELSE 0 END) as experimentPageLastVisited
     FROM events E JOIN CountsAndLastURL C ON C.lookbackwindow = E.lookbackwindow
-    WHERE event_type = 'pageview'
+    WHERE ${FILTER_PARAMS.request.customerId.filter('customer_id')}
+        AND ${FILTER_PARAMS.request.cluster_id ? FILTER_PARAMS.request.cluster_id.filter('cluster_id') : '(cluster_id IS NULL OR cluster_id = \'\')'}
+        AND ${FILTER_PARAMS.request.experiment.filter('experiment')}
+        AND event_type = 'pageview'
     GROUP BY experiment, runningid, lookbackwindow, variant, day
     having isSession = 1
     order by day

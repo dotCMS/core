@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.configMaps.config.name | default "jmeter-config" }}
+  namespace: {{ .Values.namespace.name }}
+  labels:
+    {{- include "jmeter-performance.labels" . | nindent 4 }}
+  annotations:
+    description: "DotCMS configuration for JMeter performance testing"
+data:
+  # DotCMS API Configuration - persisted across upgrades
+  dotcms-host: {{ .Values.endpoints.dotcms.host | quote }}
+  dotcms-port: {{ .Values.endpoints.dotcms.port | toString | quote }}
+  dotcms-scheme: {{ .Values.endpoints.dotcms.scheme | quote }}
+  dotcms-path: {{ .Values.endpoints.dotcms.path | quote }}
+  
+  # Analytics Configuration
+  analytics-host: {{ .Values.endpoints.analytics.host | quote }}
+  analytics-port: {{ .Values.endpoints.analytics.port | toString | quote }}
+  analytics-scheme: {{ .Values.endpoints.analytics.scheme | quote }}
+  analytics-path: {{ .Values.endpoints.analytics.path | quote }}
+  
+  # Environment Configuration
+  environment-name: {{ .Values.environment.name | quote }}
+  environment-cluster: {{ .Values.environment.cluster | quote }}
+  environment-customer: {{ .Values.environment.customer | quote }}
+  environment-dochost: {{ .Values.environment.docHost | quote }}
