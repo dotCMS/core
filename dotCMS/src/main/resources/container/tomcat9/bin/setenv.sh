@@ -139,6 +139,14 @@ else
   export CATALINA_OPTS="$CATALINA_OPTS -DLog4jContextSelector=org.apache.logging.log4j.core.async.BasicAsyncLoggerContextSelector"
 fi
 
+# Disable log4j automatic shutdown hook to allow dotCMS to control shutdown order
+if echo "$CATALINA_OPTS" | grep -q '\-Dlog4j2\.shutdownHookEnabled'; then
+  echo "Log4j shutdown hook setting already configured"
+else
+  echo "Disabling log4j automatic shutdown hook - dotCMS will control logging shutdown"
+  export CATALINA_OPTS="$CATALINA_OPTS -Dlog4j2.shutdownHookEnabled=false"
+fi
+
 ADDITIONAL_CLASSPATH="$CATALINA_HOME/log4j2/lib/*"
 
 # Set CLASSPATH with additional path if necessary

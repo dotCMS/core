@@ -49,7 +49,7 @@ public class FinalStartupServlet extends HttpServlet {
         
         if (Config.getBooleanProperty("shutdown-on-startup", false)) {
             Logger.info(this, "shutdown-on-startup is true, shutting down the server");
-            System.exit(0);
+            com.dotcms.shutdown.SystemExitManager.shutdownOnStartupExit("shutdown-on-startup property is enabled");
         }
     }
 
