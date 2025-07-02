@@ -2,20 +2,12 @@
 
 .edit-content-dialog {
     height: 100%;
-    display: flex;
-    flex-direction: column;
     min-height: 60vh;
 }
 
 // Loading state
 .edit-content-dialog__loading {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
     padding: $spacing-6;
-    text-align: center;
-    flex: 1;
 
     i {
         font-size: $font-size-xxl;
@@ -31,13 +23,7 @@
 
 // Error state
 .edit-content-dialog__error {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
     padding: $spacing-6;
-    text-align: center;
-    flex: 1;
 
     i {
         font-size: $font-size-xxl;

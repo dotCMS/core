@@ -153,7 +153,7 @@ describe('EditContentLayoutComponent', () => {
             // Create a fresh component to test route mode initialization
             const routeSpectator = createComponent({ detectChanges: false });
             const routeStore = routeSpectator.inject(DotEditContentStore, true);
-            const initializeFromRouteSpy = jest.spyOn(routeStore, 'initializeFromRoute');
+            const initializeFromRouteSpy = jest.spyOn(routeStore, 'initializeAsPortlet');
 
             // Component is created without any inputs (route mode)
             routeSpectator.detectChanges();
@@ -179,7 +179,7 @@ describe('EditContentLayoutComponent', () => {
             const dialogSpectator = createComponent({ detectChanges: false });
             const dialogStore = dialogSpectator.inject(DotEditContentStore, true);
             const initializeDialogModeSpy = jest.spyOn(dialogStore, 'initializeDialogMode');
-            const initializeFromRouteSpy = jest.spyOn(dialogStore, 'initializeFromRoute');
+            const initializeFromRouteSpy = jest.spyOn(dialogStore, 'initializeAsPortlet');
 
             dialogSpectator.setInput('contentTypeId', 'blog-post');
 
@@ -199,7 +199,7 @@ describe('EditContentLayoutComponent', () => {
             dialogEditContentService.getContentById.mockReturnValue(of(MOCK_CONTENTLET_1_TAB));
 
             const initializeDialogModeSpy = jest.spyOn(dialogStore, 'initializeDialogMode');
-            const initializeFromRouteSpy = jest.spyOn(dialogStore, 'initializeFromRoute');
+            const initializeFromRouteSpy = jest.spyOn(dialogStore, 'initializeAsPortlet');
 
             dialogSpectator.setInput('contentletInode', 'abc123');
 

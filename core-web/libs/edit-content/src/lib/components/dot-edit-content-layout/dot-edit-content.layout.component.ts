@@ -145,7 +145,7 @@ export class DotEditContentLayoutComponent {
                     });
                 } else {
                     // Route mode: Initialize from route parameters
-                    this.$store.initializeFromRoute();
+                    this.$store.initializeAsPortlet();
                 }
             },
             { allowSignalWrites: true }

@@ -1,4 +1,4 @@
-<div class="edit-content-dialog" data-testid="edit-content-dialog">
+<div class="edit-content-dialog flex flex-column" data-testid="edit-content-dialog">
     @if (state() === ComponentStatus.LOADED) {
         <dot-edit-content-form-layout
             #editContentLayout
@@ -7,7 +7,9 @@
             (contentSaved)="onContentSaved($event)"
             data-testid="edit-content-layout" />
     } @else if (state() === ComponentStatus.ERROR) {
-        <div class="edit-content-dialog__error" data-testid="error-state">
+        <div
+            class="edit-content-dialog__error flex flex-column align-items-center justify-content-center text-center flex-1"
+            data-testid="error-state">
             <i class="pi pi-exclamation-triangle edit-content-dialog__error-icon"></i>
             <h3 class="edit-content-dialog__error-title">
                 {{ 'edit.content.dialog.error.title' | dm }}
@@ -20,7 +22,9 @@
             </p>
         </div>
     } @else {
-        <div class="edit-content-dialog__loading" data-testid="loading-state">
+        <div
+            class="edit-content-dialog__loading flex flex-column align-items-center justify-content-center text-center flex-1"
+            data-testid="loading-state">
             <div class="edit-content-dialog__loading-spinner">
                 <i class="pi pi-spin pi-spinner"></i>
             </div>

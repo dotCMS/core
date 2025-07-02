@@ -232,7 +232,7 @@ export const DotEditContentStore = signalStore(
              * This method should be called by route-based components after the store is created.
              * It will only initialize if dialog mode is not enabled.
              */
-            initializeFromRoute(): void {
+            initializeAsPortlet(): void {
                 // Skip route-based initialization if in dialog mode
                 if (store.isDialogMode()) {
                     return;

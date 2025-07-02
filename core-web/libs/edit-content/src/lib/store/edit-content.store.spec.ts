@@ -96,7 +96,7 @@ describe('DotEditContentStore', () => {
         expect(store.initializeNewContent).toBeDefined();
         expect(store.initializeExistingContent).toBeDefined();
         expect(store.initializeDialogMode).toBeDefined();
-        expect(store.initializeFromRoute).toBeDefined();
+        expect(store.initializeAsPortlet).toBeDefined();
     });
 
     describe('initializeDialogMode', () => {
@@ -177,7 +177,7 @@ describe('DotEditContentStore', () => {
         });
     });
 
-    describe('initializeFromRoute', () => {
+    describe('initializeAsPortlet', () => {
         it('should skip initialization when in dialog mode', () => {
             // Arrange
             store.enableDialogMode();
@@ -189,7 +189,7 @@ describe('DotEditContentStore', () => {
             }
 
             // Act
-            store.initializeFromRoute();
+            store.initializeAsPortlet();
 
             // Assert - services should not be called when in dialog mode
             expect(spectator.inject(DotContentTypeService).getContentType).not.toHaveBeenCalled();
@@ -224,7 +224,7 @@ describe('DotEditContentStore', () => {
                 .getWorkflowStatus.mockReturnValue(of({} as DotCMSWorkflowStatus));
 
             // Act
-            store.initializeFromRoute();
+            store.initializeAsPortlet();
 
             // Assert - verify the correct service is called with correct parameters
             expect(spectator.inject(DotEditContentService).getContentById).toHaveBeenCalledWith({
@@ -251,7 +251,7 @@ describe('DotEditContentStore', () => {
             spectator.inject(DotWorkflowsActionsService).getDefaultActions.mockReturnValue(of([]));
 
             // Act
-            store.initializeFromRoute();
+            store.initializeAsPortlet();
 
             // Assert - verify the correct service is called
             expect(spectator.inject(DotContentTypeService).getContentType).toHaveBeenCalledWith(
