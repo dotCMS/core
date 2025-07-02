@@ -23,6 +23,7 @@ import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.rules.model.Condition;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.liferay.portal.model.User;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -36,6 +37,7 @@ import static com.dotcms.util.DotPreconditions.checkNotEmpty;
 import static com.dotcms.util.DotPreconditions.checkNotNull;
 
 @Path("/v1/sites/{siteId}/ruleengine")
+@Tag(name = "Rules Engine")
 public class ConditionValueResource {
 
     private final RulesAPI rulesAPI;

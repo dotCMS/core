@@ -9,13 +9,7 @@ import { contentletToJSON } from '../../shared';
 declare module '@tiptap/core' {
     interface Commands<ReturnType> {
         ImageBlock: {
-            /**
-             * Set Image Link mark
-             */
             setImageLink: (attributes: { href: string; target?: string }) => ReturnType;
-            /**
-             * Unset Image Link mark
-             */
             unsetImageLink: () => ReturnType;
             insertImage: (attrs: DotCMSContentlet | string, position?: number) => ReturnType;
         };
@@ -28,6 +22,7 @@ export const ImageNode = Image.extend({
     addOptions() {
         return {
             inline: false,
+            selectable: true,
             allowBase64: true,
             HTMLAttributes: {}
         };
@@ -137,12 +132,8 @@ export const ImageNode = Image.extend({
     addNodeView() {
         return ({ node, HTMLAttributes }) => {
             const hasImageLink = !!HTMLAttributes.href;
-
-            const dom = document.createElement('div');
-            dom.classList.add('image-container');
-            dom.setAttribute('style', HTMLAttributes.style);
-
             const img = document.createElement('img');
+            img.classList.add(`dot-image`);
             Object.entries(HTMLAttributes).forEach(([key, value]) => {
                 if (typeof value === 'object' && value !== null) {
                     value = JSON.stringify(value);
@@ -151,12 +142,19 @@ export const ImageNode = Image.extend({
                 img.setAttribute(key, value);
             });
 
-            const a = document.createElement('a');
-            a.setAttribute('href', HTMLAttributes.href);
-            a.setAttribute('target', HTMLAttributes.target);
-            a.appendChild(img);
+            let dom;
+            if (hasImageLink) {
+                const a = document.createElement('a');
+                a.setAttribute('href', HTMLAttributes.href);
+                a.setAttribute('target', HTMLAttributes.target);
+                a.appendChild(img);
+                dom = a;
+            } else {
+                dom = img;
+            }
 
-            dom.appendChild(hasImageLink ? a : img);
+            const align = img.style.textAlign || 'left';
+            dom.classList.add(`dot-node-${align}`);
 
             // Override toJSON method to include the contentlet data
             node.toJSON = contentletToJSON.bind({ node });

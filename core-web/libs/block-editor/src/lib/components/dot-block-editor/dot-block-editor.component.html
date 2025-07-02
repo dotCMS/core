@@ -13,6 +13,9 @@
             [ngClass]="{ 'overflow-hidden': freezeScroll }"
             [ngModel]="content" />
     </div>
+
+    <dot-bubble-menu [editor]="editor" />
+
     @if (showCharData) {
         <dot-editor-count-bar
             [charLimit]="charLimit"
