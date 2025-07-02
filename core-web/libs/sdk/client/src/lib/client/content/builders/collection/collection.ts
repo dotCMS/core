@@ -12,7 +12,7 @@ import { sanitizeQueryForContentType } from '../../shared/utils';
 import { Equals } from '../query/lucene-syntax';
 import { QueryBuilder } from '../query/query';
 
-type ClientOptions = Omit<RequestInit, 'body' | 'method'>;
+export type ClientOptions = Omit<RequestInit, 'body' | 'method'>;
 
 /**
  * Creates a Builder to filter and fetch content from the content API for a specific content type.
