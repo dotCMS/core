@@ -13,6 +13,9 @@ describe('DotContentDriveStore', () => {
 
     beforeEach(() => {
         spectator = createService();
-        store = spectator.service;
+    });
+
+    it('should be created', () => {
+        expect(spectator.service).toBeTruthy();
     });
 });
