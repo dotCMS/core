@@ -14,7 +14,6 @@ import com.dotcms.http.CircuitBreakerUrl;
 import com.dotcms.jitsu.EventLogRunnable;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.PATCH;
-import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.NotFoundException;
@@ -56,7 +55,6 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 
-import org.apache.commons.lang3.StringUtils;
 import org.glassfish.jersey.server.JSONP;
 
 /**
@@ -92,7 +90,8 @@ public class ExperimentsResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Experiment created successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntitySingleExperimentView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Invalid experiment data or missing required fields",
                     content = @Content(mediaType = "application/json")),
@@ -168,7 +167,8 @@ public class ExperimentsResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Experiment updated successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntitySingleExperimentView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Invalid experiment data or update parameters",
                     content = @Content(mediaType = "application/json")),
@@ -227,7 +227,8 @@ public class ExperimentsResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Experiment archived successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityExperimentView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Invalid experiment ID or experiment cannot be archived",
                     content = @Content(mediaType = "application/json")),
@@ -270,7 +271,8 @@ public class ExperimentsResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Experiment deleted successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityExperimentOperationView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Experiment cannot be deleted (not in DRAFT status)",
                     content = @Content(mediaType = "application/json")),
@@ -292,14 +294,14 @@ public class ExperimentsResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public ResponseEntityView<String> delete(@Context final HttpServletRequest request,
+    public ResponseEntityExperimentOperationView delete(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             @Parameter(description = "Unique identifier of the experiment to delete", required = true)
             @PathParam("experimentId") final String experimentId) throws DotDataException, DotSecurityException {
         final InitDataObject initData = getInitData(request, response);
         final User user = initData.getUser();
         experimentsAPI.delete(experimentId, user);
-        return new ResponseEntityView<>("Experiment deleted");
+        return new ResponseEntityExperimentOperationView("Experiment deleted");
     }
 
     /**
@@ -312,7 +314,8 @@ public class ExperimentsResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Experiment retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntitySingleExperimentView.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - backend user authentication required",
                     content = @Content(mediaType = "application/json")),
@@ -353,7 +356,8 @@ public class ExperimentsResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Experiments list retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityExperimentView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Invalid filter parameters",
                     content = @Content(mediaType = "application/json")),
@@ -410,7 +414,8 @@ public class ExperimentsResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Primary goal deleted successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntitySingleExperimentView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Invalid experiment ID or goal cannot be deleted",
                     content = @Content(mediaType = "application/json")),
@@ -473,7 +478,8 @@ public class ExperimentsResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Experiment started successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntitySingleExperimentView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Experiment cannot be started (missing requirements or invalid scheduling)",
                     content = @Content(mediaType = "application/json")),
@@ -516,7 +522,8 @@ public class ExperimentsResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Experiment ended successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntitySingleExperimentView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Experiment cannot be ended (not in RUNNING status)",
                     content = @Content(mediaType = "application/json")),
@@ -560,7 +567,8 @@ public class ExperimentsResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Experiment cancelled successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntitySingleExperimentView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Experiment cannot be cancelled (not in SCHEDULED or RUNNING status)",
                     content = @Content(mediaType = "application/json")),
@@ -603,7 +611,8 @@ public class ExperimentsResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Variant added successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntitySingleExperimentView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Invalid variant data or experiment cannot accept new variants",
                     content = @Content(mediaType = "application/json")),
@@ -656,7 +665,8 @@ public class ExperimentsResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Variant deleted successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntitySingleExperimentView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Variant cannot be deleted or does not exist",
                     content = @Content(mediaType = "application/json")),
@@ -704,7 +714,8 @@ public class ExperimentsResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Variant updated successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntitySingleExperimentView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Invalid variant data or update parameters",
                     content = @Content(mediaType = "application/json")),
@@ -762,7 +773,8 @@ public class ExperimentsResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Variant promoted successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntitySingleExperimentView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Variant cannot be promoted or invalid promotion data",
                     content = @Content(mediaType = "application/json")),
@@ -820,7 +832,8 @@ public class ExperimentsResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Targeting condition deleted successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntitySingleExperimentView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Invalid targeting condition ID or condition cannot be deleted",
                     content = @Content(mediaType = "application/json")),
@@ -897,7 +910,8 @@ public class ExperimentsResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "User inclusion status determined successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityExperimentSelectedView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Invalid request parameters or exclusion list",
                     content = @Content(mediaType = "application/json")),
@@ -935,7 +949,8 @@ public class ExperimentsResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Experiment results retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityExperimentResults.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - backend user authentication required",
                     content = @Content(mediaType = "application/json")),
@@ -982,7 +997,8 @@ public class ExperimentsResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Health check completed - see response body for status",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityExperimentHealthView.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - backend user authentication required",
                     content = @Content(mediaType = "application/json")),
@@ -997,7 +1013,7 @@ public class ExperimentsResource {
     @NoCache
     @Path("/health")
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public ResponseEntityView healthcheck(@Context final HttpServletRequest request,
+    public ResponseEntityExperimentHealthView healthcheck(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response)
             throws DotDataException, DotSecurityException, SystemException, PortalException {
 
@@ -1007,18 +1023,18 @@ public class ExperimentsResource {
                 .getOrNull();
 
         if(analyticsApp==null) {
-            return new ResponseEntityView<>(Map.of(HEALTH_KEY, Health.NOT_CONFIGURED));
+            return new ResponseEntityExperimentHealthView(Map.of(HEALTH_KEY, Health.NOT_CONFIGURED));
         }
 
         try {
             final EventLogRunnable eventLogRunnable = new EventLogRunnable(host);
             Optional<CircuitBreakerUrl.Response<String>> responseOptional  = eventLogRunnable.sendTestEvent();
 
-            return new ResponseEntityView<>(Map.of(HEALTH_KEY, responseOptional.isPresent()
+            return new ResponseEntityExperimentHealthView(Map.of(HEALTH_KEY, responseOptional.isPresent()
                     && UtilMethods.isSet(responseOptional.get().getResponse())
                     ? Health.OK:Health.CONFIGURATION_ERROR));
         } catch (IllegalStateException e) {
-            return new ResponseEntityView<>(Map.of(HEALTH_KEY, Health.CONFIGURATION_ERROR));
+            return new ResponseEntityExperimentHealthView(Map.of(HEALTH_KEY, Health.CONFIGURATION_ERROR));
         }
     }
 

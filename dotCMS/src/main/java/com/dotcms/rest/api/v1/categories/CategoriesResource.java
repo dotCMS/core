@@ -4,6 +4,7 @@ import com.dotcms.business.WrapInTransaction;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.ResponseEntityBulkResultView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
@@ -159,7 +160,9 @@ public class CategoriesResource {
         summary = "Get categories with pagination",
         description = "Retrieves a paginated list of categories with optional filtering, sorting, and children count information. Supports hierarchical category navigation and management."
     )
-    @ApiResponse(responseCode = "200", description = "Categories retrieved successfully")
+    @ApiResponse(responseCode = "200", description = "Categories retrieved successfully",
+                content = @Content(mediaType = "application/json",
+                                  schema = @Schema(implementation = ResponseEntityCategoryView.class)))
     @ApiResponse(responseCode = "401", description = "Unauthorized - user authentication required")
     @ApiResponse(responseCode = "500", description = "Internal server error retrieving categories")
     @GET
@@ -251,7 +254,9 @@ public class CategoriesResource {
         summary = "Get category children",
         description = "Retrieves child categories of a specified parent category with pagination and filtering options. Can include all nested levels and parent hierarchy information."
     )
-    @ApiResponse(responseCode = "200", description = "Child categories retrieved successfully")
+    @ApiResponse(responseCode = "200", description = "Child categories retrieved successfully",
+                content = @Content(mediaType = "application/json",
+                                  schema = @Schema(implementation = ResponseEntityCategoryView.class)))
     @ApiResponse(responseCode = "401", description = "Unauthorized - user authentication required")
     @ApiResponse(responseCode = "404", description = "Parent category not found")
     @ApiResponse(responseCode = "500", description = "Internal server error retrieving child categories")
@@ -365,7 +370,9 @@ public class CategoriesResource {
         summary = "Get category hierarchy for multiple categories",
         description = "Retrieves the parent hierarchy for a set of categories specified by their keys. Returns parent lists for each category, starting from the top-level parent down to the direct parent. Categories that don't exist are ignored."
     )
-    @ApiResponse(responseCode = "200", description = "Category hierarchies retrieved successfully")
+    @ApiResponse(responseCode = "200", description = "Category hierarchies retrieved successfully",
+                content = @Content(mediaType = "application/json",
+                                  schema = @Schema(implementation = HierarchyShortCategoriesResponseView.class)))
     @ApiResponse(responseCode = "400", description = "Bad request - invalid category keys form")
     @ApiResponse(responseCode = "401", description = "Unauthorized - user authentication required")
     @ApiResponse(responseCode = "500", description = "Internal server error retrieving hierarchies")
@@ -399,7 +406,9 @@ public class CategoriesResource {
         summary = "Get category by ID or key",
         description = "Retrieves a specific category by its unique identifier (inode) or key. Can optionally include child count information."
     )
-    @ApiResponse(responseCode = "200", description = "Category retrieved successfully")
+    @ApiResponse(responseCode = "200", description = "Category retrieved successfully",
+                content = @Content(mediaType = "application/json",
+                                  schema = @Schema(implementation = ResponseEntityCategoryView.class)))
     @ApiResponse(responseCode = "401", description = "Unauthorized - user authentication required")
     @ApiResponse(responseCode = "404", description = "Category not found")
     @ApiResponse(responseCode = "500", description = "Internal server error retrieving category")
@@ -439,8 +448,8 @@ public class CategoriesResource {
                     "Category with idOrKey: " + idOrKey + " does not exist");
         }
 
-        return showChildrenCount ? Response.ok(new ResponseEntityView<CategoryWithChildCountView>(this.categoryHelper.toCategoryWithChildCountView(category, user))).build() :
-                Response.ok(new ResponseEntityView<CategoryView>(this.categoryHelper.toCategoryView(category, user))).build();
+        return showChildrenCount ? Response.ok(new ResponseEntityCategoryWithChildCountView(this.categoryHelper.toCategoryWithChildCountView(category, user))).build() :
+                Response.ok(new ResponseEntityCategoryView(this.categoryHelper.toCategoryView(category, user))).build();
     }
 
     /**
@@ -457,7 +466,9 @@ public class CategoriesResource {
         summary = "Create new category",
         description = "Creates a new category with the specified properties. The category name is required, and optionally can be associated with a specific site."
     )
-    @ApiResponse(responseCode = "200", description = "Category created successfully")
+    @ApiResponse(responseCode = "200", description = "Category created successfully",
+                content = @Content(mediaType = "application/json",
+                                  schema = @Schema(implementation = ResponseEntityCategoryView.class)))
     @ApiResponse(responseCode = "400", description = "Bad request - missing category name or invalid form data")
     @ApiResponse(responseCode = "401", description = "Unauthorized - user authentication required")
     @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions to create categories")
@@ -486,7 +497,7 @@ public class CategoriesResource {
                 "The category name is required");
 
         try {
-           return Response.ok(new ResponseEntityView(this.categoryHelper.toCategoryView(
+           return Response.ok(new ResponseEntityCategoryView(this.categoryHelper.toCategoryView(
                    this.fillAndSave(categoryForm, user, host, pageMode, new Category()), user))).build();
         } catch (InvocationTargetException | IllegalAccessException e) {
             Logger.error(this, e.getMessage(), e);
@@ -509,7 +520,9 @@ public class CategoriesResource {
         summary = "Update existing category",
         description = "Updates an existing category identified by its inode. All category properties can be modified including name, description, and hierarchy placement."
     )
-    @ApiResponse(responseCode = "200", description = "Category updated successfully")
+    @ApiResponse(responseCode = "200", description = "Category updated successfully",
+                content = @Content(mediaType = "application/json",
+                                  schema = @Schema(implementation = ResponseEntityCategoryView.class)))
     @ApiResponse(responseCode = "400", description = "Bad request - missing inode or invalid form data")
     @ApiResponse(responseCode = "401", description = "Unauthorized - user authentication required")
     @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions to update categories")
@@ -546,7 +559,7 @@ public class CategoriesResource {
         }
 
         try {
-           return Response.ok(new ResponseEntityView(this.categoryHelper.toCategoryView(
+           return Response.ok(new ResponseEntityCategoryView(this.categoryHelper.toCategoryView(
                     this.fillAndSave(categoryForm, user, host, pageMode, oldCategory,
                             new Category()), user))).build();
         } catch (InvocationTargetException | IllegalAccessException e) {
@@ -570,7 +583,9 @@ public class CategoriesResource {
         summary = "Update category sort order",
         description = "Updates the sort order of categories. The request must contain category inode and sortOrder pairs. Can update multiple categories at once within a parent category."
     )
-    @ApiResponse(responseCode = "200", description = "Category sort order updated successfully")
+    @ApiResponse(responseCode = "200", description = "Category sort order updated successfully",
+                content = @Content(mediaType = "application/json",
+                                  schema = @Schema(implementation = ResponseEntityCategoryView.class)))
     @ApiResponse(responseCode = "400", description = "Bad request - missing category data or invalid sort order")
     @ApiResponse(responseCode = "401", description = "Unauthorized - user authentication required")
     @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions to update categories")
@@ -636,7 +651,9 @@ public class CategoriesResource {
         summary = "Delete categories",
         description = "Deletes multiple categories by their inodes. Deletes both parent categories and their children. User needs Edit permissions on categories to delete them successfully."
     )
-    @ApiResponse(responseCode = "200", description = "Categories deleted successfully (may include partial failures)")
+    @ApiResponse(responseCode = "200", description = "Categories deleted successfully (may include partial failures)",
+                content = @Content(mediaType = "application/json",
+                                  schema = @Schema(implementation = ResponseEntityCategoryView.class)))
     @ApiResponse(responseCode = "400", description = "Bad request - missing category inodes")
     @ApiResponse(responseCode = "401", description = "Unauthorized - user authentication required")
     @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions to delete categories")
@@ -685,7 +702,7 @@ public class CategoriesResource {
             Logger.debug(this, e.getMessage(), e);
         }
 
-        return Response.ok(new ResponseEntityView(
+        return Response.ok(new ResponseEntityBulkResultView(
                         new BulkResultView(Long.valueOf(deletedIds.size()), 0L, failedToDelete)))
                 .build();
     }
@@ -781,7 +798,8 @@ public class CategoriesResource {
         summary = "Export categories to CSV",
         description = "Exports categories to a CSV file format. Can filter by category name pattern and specify a context category inode. Returns a downloadable CSV file."
     )
-    @ApiResponse(responseCode = "200", description = "Categories exported successfully as CSV file")
+    @ApiResponse(responseCode = "200", description = "Categories exported successfully as CSV file",
+                content = @Content(mediaType = "text/csv"))
     @ApiResponse(responseCode = "401", description = "Unauthorized - user authentication required")
     @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions to export categories")
     @ApiResponse(responseCode = "404", description = "Context category not found")
@@ -873,7 +891,9 @@ public class CategoriesResource {
         summary = "Import categories from CSV file",
         description = "Imports categories from an uploaded CSV file. Supports 'replace' mode to replace existing categories or 'append' mode to add to existing categories. Can specify a context category and filter options."
     )
-    @ApiResponse(responseCode = "200", description = "Categories imported successfully")
+    @ApiResponse(responseCode = "200", description = "Categories imported successfully",
+                content = @Content(mediaType = "application/json",
+                                  schema = @Schema(implementation = ResponseEntityCategoryView.class)))
     @ApiResponse(responseCode = "400", description = "Bad request - invalid file format or missing required parameters")
     @ApiResponse(responseCode = "401", description = "Unauthorized - user authentication required")
     @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions to import categories")
@@ -976,7 +996,7 @@ public class CategoriesResource {
             CloseUtils.closeQuietly(stringReader, bufferedReader);
         }
 
-        return Response.ok(new ResponseEntityView(
+        return Response.ok(new ResponseEntityBulkResultView(
                         new BulkResultView(Long.valueOf(UtilMethods.isSet(unableToDeleteCats) ? 1 : 0), 0L,
                                 failedToDelete)))
                 .build();

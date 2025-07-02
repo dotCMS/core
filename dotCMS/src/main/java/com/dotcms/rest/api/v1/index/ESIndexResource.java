@@ -63,6 +63,7 @@ import io.vavr.control.Try;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -150,7 +151,8 @@ public class ESIndexResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Cluster statistics retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityIndexStatsView.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - CMS Administrator role required",
                     content = @Content(mediaType = "application/json")),
@@ -187,7 +189,7 @@ public class ESIndexResource {
                 .put("size", stats.getSize())
                 .put("count", stats.getDocCount());
         }
-        return Response.ok(new ResponseEntityView(builder.build())).build();
+        return Response.ok(new ResponseEntityIndexStatsView(builder.build())).build();
     }
     
     @Operation(
@@ -197,7 +199,8 @@ public class ESIndexResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Failed reindex records retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityIndexFailureListView.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - CMS Administrator role required",
                     content = @Content(mediaType = "application/json")),
@@ -249,7 +252,7 @@ public class ESIndexResource {
             results.add(failure);
         });
 
-        return Response.ok(results).build();
+        return Response.ok(new ResponseEntityIndexFailureListView(results)).build();
     }
 
     @CloseDBIfOpened
@@ -280,7 +283,7 @@ public class ESIndexResource {
                     throws DotDataException {
         final InitDataObject init = auth(request, response);
         APILocator.getReindexQueueAPI().deleteFailedRecords();
-        return Response.ok(new ResponseEntityView(true)).build();
+        return Response.ok(new ResponseEntityIndexOperationView(true)).build();
     }
 
     @Operation(
@@ -290,7 +293,8 @@ public class ESIndexResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Index optimization completed successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityIndexOperationView.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - CMS Administrator role required",
                     content = @Content(mediaType = "application/json")),
@@ -325,7 +329,8 @@ public class ESIndexResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Index cache flushed successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityIndexOperationView.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - CMS Administrator role required",
                     content = @Content(mediaType = "application/json")),
@@ -350,7 +355,7 @@ public class ESIndexResource {
         message=message.replace("{0}", String.valueOf(data.get("successfulShards")));
         message=message.replace("{1}", String.valueOf(data.get("failedShards")));
         sendAdminMessage(message, MessageSeverity.INFO, init.getUser(),5000);
-        return Response.ok(new ResponseEntityView(data)).build();
+        return Response.ok(new ResponseEntityIndexOperationView(data)).build();
 
     }
 
@@ -406,7 +411,8 @@ public class ESIndexResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Reindexation progress retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityIndexOperationView.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - CMS Administrator role required",
                     content = @Content(mediaType = "application/json")),
@@ -427,7 +433,7 @@ public class ESIndexResource {
 
         final InitDataObject init = auth(request, response);
 
-        return Response.ok(new ResponseEntityView(ESReindexationProcessStatus.getProcessIndexationMap())).build();
+        return Response.ok(new ResponseEntityIndexOperationView(ESReindexationProcessStatus.getProcessIndexationMap())).build();
 
     }
     private static final String DOTALL="DOTALL";
@@ -441,7 +447,8 @@ public class ESIndexResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Reindexation started successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityIndexOperationView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid content type or shard count",
                     content = @Content(mediaType = "application/json")),
@@ -492,7 +499,8 @@ public class ESIndexResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Reindexation stopped successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityIndexOperationView.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - CMS Administrator role required",
                     content = @Content(mediaType = "application/json")),
@@ -533,7 +541,8 @@ public class ESIndexResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Index deleted successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityIndexOperationView.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - CMS Administrator role required",
                     content = @Content(mediaType = "application/json")),
@@ -672,7 +681,7 @@ public class ESIndexResource {
 
             //Creating an utility response object
 
-            return Response.ok(new ResponseEntityView<>(APILocator.getContentletIndexAPI().listDotCMSIndices())).build();
+            return Response.ok(new ResponseEntityIndexListView(APILocator.getContentletIndexAPI().listDotCMSIndices())).build();
         } catch (Exception e) {
             Logger.error(this.getClass(),"Exception trying to list indices: " + e.getMessage(), e);
             return ResponseUtil.mapExceptionResponse(e);
@@ -709,7 +718,8 @@ public class ESIndexResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Index operation completed successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityIndexOperationView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid action parameter",
                     content = @Content(mediaType = "application/json")),
@@ -777,7 +787,8 @@ public class ESIndexResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Index status retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityIndexListView.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - CMS Administrator role required",
                     content = @Content(mediaType = "application/json")),
@@ -799,7 +810,7 @@ public class ESIndexResource {
         
         final InitDataObject init = auth(request, response);
 
-        return Response.ok(new ResponseEntityView<>(IndexResourceHelper.getInstance().indexStatsList())).build();
+        return Response.ok(new ResponseEntityIndexStatsListView(IndexResourceHelper.getInstance().indexStatsList())).build();
 
     }
     

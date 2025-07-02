@@ -87,7 +87,8 @@ public class LoginFormResource implements Serializable {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Login form configuration retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityLoginFormView.class))),
         @ApiResponse(responseCode = "403", 
                     description = "Forbidden - security exception",
                     content = @Content(mediaType = "application/json")),

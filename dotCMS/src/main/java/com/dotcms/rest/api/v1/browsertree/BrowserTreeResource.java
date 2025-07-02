@@ -2,7 +2,6 @@ package com.dotcms.rest.api.v1.browsertree;
 
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.InitDataObject;
-import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.v1.browser.BrowserQueryForm;
@@ -18,6 +17,7 @@ import org.glassfish.jersey.server.JSONP;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -73,7 +73,8 @@ public class BrowserTreeResource implements Serializable {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Assets loaded successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityBrowserTreeView.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - authentication required",
                     content = @Content(mediaType = "application/json")),
@@ -115,7 +116,7 @@ public class BrowserTreeResource implements Serializable {
                     })
                     .collect(Collectors.toList());;
 
-            response = Response.ok(new ResponseEntityView
+            response = Response.ok(new ResponseEntityBrowserTreeView
                     (Map.of(   "result",         assetResults
                     ),
                             this.i18NUtil.getMessagesMap(locale, "Invalid-option-selected",
@@ -138,7 +139,8 @@ public class BrowserTreeResource implements Serializable {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Assets loaded successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityBrowserTreeView.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - authentication required",
                     content = @Content(mediaType = "application/json")),
@@ -182,7 +184,7 @@ public class BrowserTreeResource implements Serializable {
                     })
                     .collect(Collectors.toList());
 
-            response = Response.ok(new ResponseEntityView
+            response = Response.ok(new ResponseEntityBrowserTreeView
                     (Map.of(   "result",         assetResults
                     ),
                             this.i18NUtil.getMessagesMap(locale, "Invalid-option-selected",

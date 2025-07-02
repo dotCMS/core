@@ -60,7 +60,8 @@ public class WebAssetResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Asset information retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = WebAssetEntityView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Invalid asset path or request parameters",
                     content = @Content(mediaType = "application/json")),

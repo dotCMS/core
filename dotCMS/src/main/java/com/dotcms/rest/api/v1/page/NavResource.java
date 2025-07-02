@@ -24,6 +24,7 @@ import com.liferay.portal.model.User;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -75,7 +76,8 @@ public class NavResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Navigation retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityNavigationView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Invalid depth or languageId parameters",
                     content = @Content(mediaType = "application/json")),
@@ -150,7 +152,7 @@ public class NavResource {
 
 
 
-            return Response.ok(new ResponseEntityView<>(navMap)).build(); // 200
+            return Response.ok(new ResponseEntityNavigationView(navMap)).build(); // 200
         } catch (Exception e) {
             Logger.error(this.getClass(),
                     "Exception on NavResource exception message: " + e.getMessage(), e);

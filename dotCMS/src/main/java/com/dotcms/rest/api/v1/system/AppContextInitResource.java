@@ -8,6 +8,7 @@ import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -77,7 +78,8 @@ public class AppContextInitResource implements Serializable {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Configuration data retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityAppConfigurationView.class))),
         @ApiResponse(responseCode = "500",
                     description = "Internal server error",
                     content = @Content(mediaType = "application/json"))

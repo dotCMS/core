@@ -351,6 +351,45 @@ return Response.noContent().build();                   // 204 No Content
 // 500 Internal Server Error - Server error
 ```
 
+**ResponseEntity View Classes (Critical Pattern):**
+```java
+// ALWAYS use specific typed ResponseEntity view classes instead of generic ResponseEntityView
+// This provides better type safety and precise Swagger schema documentation
+
+// ✅ PREFERRED: Use existing specific view classes
+@ApiResponse(responseCode = "200", description = "Success",
+            content = @Content(mediaType = "application/json",
+                              schema = @Schema(implementation = ResponseEntityStringView.class)))
+return Response.ok(new ResponseEntityView<>("success message")).build();
+
+@ApiResponse(responseCode = "200", description = "Workflow steps retrieved",
+            content = @Content(mediaType = "application/json",
+                              schema = @Schema(implementation = ResponseEntityWorkflowStepsView.class)))
+return Response.ok(new ResponseEntityView<>(steps)).build();
+
+// ✅ CREATE new specific view classes when needed
+// Example: ResponseEntityTagsView.java
+public class ResponseEntityTagsView extends ResponseEntityView<List<Tag>> {
+    public ResponseEntityTagsView(List<Tag> tags) {
+        super(tags);
+    }
+}
+
+// ✅ Common existing view classes to use:
+// - ResponseEntityStringView (for String responses)
+// - ResponseEntityCountView (for count/number responses)  
+// - ResponseEntityJobView (for job status)
+// - ResponseEntityWorkflowStepsView (for workflow steps)
+// - ResponseEntityWorkflowActionsView (for workflow actions)
+// - ResponseEntityEnvironmentView (for single environment)
+// - ResponseEntityEnvironmentsView (for environment lists)
+
+// ❌ AVOID: Generic ResponseEntityView.class in @Schema
+@ApiResponse(responseCode = "200", description = "Success",
+            content = @Content(mediaType = "application/json",
+                              schema = @Schema(implementation = ResponseEntityView.class)))  // Too generic!
+```
+
 **Deprecation Documentation Standards:**
 ```java
 // Class level deprecation (legacy resources)
@@ -586,6 +625,8 @@ Valid log levels: `TRACE`, `DEBUG`, `INFO`, `WARN`, `ERROR`, `FATAL`, `OFF`
 - ✅ Follow domain-driven package organization for new features
 - ✅ **REST Documentation**: All endpoints MUST have `@Tag`, `@Operation`, `@ApiResponses`, `@Parameter`/`@RequestBody`
 - ✅ **Media Types**: `@Produces` at method level, `@Consumes` only on endpoints with request bodies
+- ✅ **ResponseEntity Views**: Use specific typed view classes (e.g., `ResponseEntityStringView`, `ResponseEntityWorkflowStepsView`) instead of generic `ResponseEntityView`
 - ❌ Avoid DWR, Struts, portlets, console logging, direct system properties
 - ❌ Avoid Java 21 runtime features in core modules
 - ❌ Avoid `@Consumes` on GET endpoints unless they accept request bodies (non-standard)
+- ❌ Avoid generic `ResponseEntityView.class` in `@Schema` - use specific view classes

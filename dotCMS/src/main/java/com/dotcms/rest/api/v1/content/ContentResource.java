@@ -10,7 +10,7 @@ import com.dotcms.rest.ContentHelper;
 import com.dotcms.rest.CountView;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.MapToContentletPopulator;
-import com.dotcms.rest.ResponseEntityBooleanView;
+import com.dotcms.rest.ResponseEntityContentletListView;
 import com.dotcms.rest.ResponseEntityContentletView;
 import com.dotcms.rest.ResponseEntityCountView;
 import com.dotcms.rest.ResponseEntityMapView;
@@ -327,7 +327,7 @@ public class ContentResource {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Contentlet retrieved successfully",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseEntityView.class))),
+                                    schema = @Schema(implementation = ResponseEntityContentletView.class))),
                     @ApiResponse(responseCode = "400", description = "Bad request - Invalid identifier format"),
                     @ApiResponse(responseCode = "401", description = "Unauthorized - User not authenticated"),
                     @ApiResponse(responseCode = "403", description = "Forbidden - User lacks read permissions"),
@@ -387,7 +387,8 @@ public class ContentResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "References count retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityCountView.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - authentication required",
                     content = @Content(mediaType = "application/json")),
@@ -436,7 +437,8 @@ public class ContentResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "References retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityView.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - authentication required",
                     content = @Content(mediaType = "application/json")),
@@ -805,7 +807,7 @@ public class ContentResource {
         @ApiResponse(responseCode = "200", 
                     description = "Related content retrieved successfully",
                     content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ResponseEntityView.class))),
+                            schema = @Schema(implementation = ResponseEntityContentletListView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - contentlet does not have a relationship field",
                     content = @Content(mediaType = "application/json")),

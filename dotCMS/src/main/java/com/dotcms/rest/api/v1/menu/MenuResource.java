@@ -26,6 +26,7 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -78,7 +79,8 @@ public class MenuResource implements Serializable {
 	@ApiResponses(value = {
 		@ApiResponse(responseCode = "200", 
 					description = "Navigation menus retrieved successfully",
-					content = @Content(mediaType = "application/json")),
+					content = @Content(mediaType = "application/json",
+									  schema = @Schema(implementation = ResponseEntityMenuView.class))),
 		@ApiResponse(responseCode = "401", 
 					description = "Unauthorized - authentication required",
 					content = @Content(mediaType = "application/json")),

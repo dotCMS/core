@@ -209,7 +209,7 @@ public class TemplateResource {
             throw new DoesNotExistException("Live Version of the Template with Id: " + templateId + " does not exist");
         }
 
-        return Response.ok(new ResponseEntityView(this.templateHelper.toTemplateView(template, user))).build();
+        return Response.ok(new ResponseEntityTemplateView(this.templateHelper.toTemplateView(template, user))).build();
     }
 
     @Operation(
@@ -255,7 +255,7 @@ public class TemplateResource {
             throw new DoesNotExistException("Working Version of the Template with Id: " + templateId + " does not exist");
         }
 
-        return Response.ok(new ResponseEntityView(this.templateHelper.toTemplateView(template, user))).build();
+        return Response.ok(new ResponseEntityTemplateView(this.templateHelper.toTemplateView(template, user))).build();
     }
 
     @Operation(
@@ -298,7 +298,7 @@ public class TemplateResource {
         final Host host         = this.templateHelper.getHost(templateForm.getSiteId(), ()->this.hostWebAPI.getCurrentHostNoThrow(request));
         final PageMode pageMode = PageMode.get(request);
 
-        return Response.ok(new ResponseEntityView(this.templateHelper.toTemplateView(
+        return Response.ok(new ResponseEntityTemplateView(this.templateHelper.toTemplateView(
                 this.fillAndSaveTemplate(templateForm, user, host, pageMode, new Template()), user))).build();
     }
 
@@ -355,7 +355,7 @@ public class TemplateResource {
         final Template newVersionTemplate = new Template();
         newVersionTemplate.setIdentifier(currentTemplate.getIdentifier());
 
-        return Response.ok(new ResponseEntityView(this.templateHelper.toTemplateView(
+        return Response.ok(new ResponseEntityTemplateView(this.templateHelper.toTemplateView(
                 this.fillAndSaveTemplate(templateForm, user, host, pageMode, newVersionTemplate), user))).build();
     }
 
@@ -412,7 +412,7 @@ public class TemplateResource {
         final Template newVersionTemplate = new Template();
         newVersionTemplate.setIdentifier(currentTemplate.getIdentifier());
 
-        return Response.ok(new ResponseEntityView<>(this.templateHelper.toTemplateView(
+        return Response.ok(new ResponseEntityTemplateView(this.templateHelper.toTemplateView(
                 this.fillAndSaveDraftTemplate(templateForm, user, host, pageMode, newVersionTemplate), user))).build();
     }
 
@@ -565,7 +565,7 @@ public class TemplateResource {
 
         final Template templateSaved = this.saveAndPublishTemplate(templateForm, user, host, pageMode, newVersionTemplate);
 
-        return Response.ok(new ResponseEntityView(this.templateHelper.toTemplateView(templateSaved, user))).build();
+        return Response.ok(new ResponseEntityTemplateView(this.templateHelper.toTemplateView(templateSaved, user))).build();
 
     }
 

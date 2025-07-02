@@ -120,7 +120,8 @@ public class BundleResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Assets retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityBundleAssetListView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Invalid bundle ID or request parameters",
                     content = @Content(mediaType = "application/json")),
@@ -182,7 +183,7 @@ public class BundleResource {
                 }
             }
 
-            return Response.ok(detailedAssets).build();
+            return Response.ok(new ResponseEntityBundleAssetListView(detailedAssets)).build();
         } catch (DotPublisherException e) {
             throw new BadRequestException(e, bundleId, e.getMessage());
         }
@@ -195,7 +196,8 @@ public class BundleResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Unsent bundles retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(type = "object", description = "JSON object containing bundle information and pagination data"))),
         @ApiResponse(responseCode = "400", 
                     description = "Invalid request parameters",
                     content = @Content(mediaType = "application/json")),
@@ -287,7 +289,8 @@ public class BundleResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Bundle updated successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Invalid bundle ID or parameters",
                     content = @Content(mediaType = "application/json")),
@@ -346,7 +349,8 @@ public class BundleResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Push history deleted successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Invalid asset ID",
                     content = @Content(mediaType = "application/json")),
@@ -399,7 +403,8 @@ public class BundleResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Environment push history deleted successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Invalid environment ID",
                     content = @Content(mediaType = "application/json")),
@@ -452,7 +457,8 @@ public class BundleResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Bundle deletion process started successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityBundleStatusView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Invalid request body or bundle identifiers",
                     content = @Content(mediaType = "application/json")),
@@ -644,7 +650,8 @@ public class BundleResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Bundle deletion process started successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityBundleStatusView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Invalid date format or date is in the future",
                     content = @Content(mediaType = "application/json")),
@@ -709,7 +716,8 @@ public class BundleResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Bundle deletion process started successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityBundleStatusView.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized access",
                     content = @Content(mediaType = "application/json")),
@@ -766,7 +774,8 @@ public class BundleResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Failed bundle deletion process started successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityBundleStatusView.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized access",
                     content = @Content(mediaType = "application/json")),
@@ -836,7 +845,8 @@ public class BundleResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Successful bundle deletion process started successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityBundleStatusView.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized access",
                     content = @Content(mediaType = "application/json")),
@@ -1074,7 +1084,8 @@ public class BundleResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Bundle uploaded and processed successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = Map.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Invalid file format or upload error",
                     content = @Content(mediaType = "application/json")),
@@ -1155,7 +1166,8 @@ public class BundleResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Bundle upload started successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = Map.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Invalid file format or upload error",
                     content = @Content(mediaType = "application/json")),

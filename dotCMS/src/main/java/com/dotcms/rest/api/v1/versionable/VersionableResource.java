@@ -80,7 +80,8 @@ public class VersionableResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Version deleted successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityVersionableOperationView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - version is working or live",
                     content = @Content(mediaType = "application/json")),
@@ -124,7 +125,7 @@ public class VersionableResource {
                 this.versionableHelper.getDefaultVersionableDeleteStrategy())
                 .deleteVersionByInode(versionableInode, user, mode.respectAnonPerms);
 
-        return Response.ok(new ResponseEntityView("Version " + versionableInode + " deleted successfully")).build();
+        return Response.ok(new ResponseEntityVersionableOperationView("Version " + versionableInode + " deleted successfully")).build();
     }
 
     @Operation(
@@ -134,7 +135,8 @@ public class VersionableResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Versionable found successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityVersionableView.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - authentication required",
                     content = @Content(mediaType = "application/json")),
@@ -179,7 +181,7 @@ public class VersionableResource {
                                 + " does not exist");
             }
 
-            return Response.ok(new ResponseEntityView<>(
+            return Response.ok(new ResponseEntityVersionableListView(
                     this.versionableHelper.getAssetTypeByVersionableFindAllMap()
                             .getOrDefault(identifier.getAssetType(),
                                     this.versionableHelper.getDefaultVersionableFindAllStrategy())
@@ -191,7 +193,7 @@ public class VersionableResource {
                         this.versionableHelper.getDefaultVersionableFindVersionStrategy())
                 .findVersion(versionableInodeOrIdentifier, user, mode.respectAnonPerms);
 
-        return Response.ok(new ResponseEntityView(versionable)).build();
+        return Response.ok(new ResponseEntityVersionableView(versionable)).build();
     }
 
     @Operation(
@@ -201,7 +203,8 @@ public class VersionableResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Version restored successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityVersionableView.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - authentication required",
                     content = @Content(mediaType = "application/json")),
@@ -264,6 +267,6 @@ public class VersionableResource {
                     this.versionableHelper.getDefaultVersionableRestoreVersionStrategy())
                 .restoreVersion(versionable.getVersionable(), user, false);
 
-        return Response.ok(new ResponseEntityView(newVersionable)).build();
+        return Response.ok(new ResponseEntityVersionableView(newVersionable)).build();
     }
 }

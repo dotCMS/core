@@ -97,7 +97,8 @@ public class LanguagesResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Messages retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityLanguageMessagesView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid language or country parameters",
                     content = @Content(mediaType = "application/json")),

@@ -50,7 +50,8 @@ public class PublishQueueResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Elements removed from publish queue successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityPublishQueueOperationView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid identifiers or form data",
                     content = @Content(mediaType = "application/json")),
@@ -88,7 +89,7 @@ public class PublishQueueResource {
                 deletePPQueueElementsByIdentifierForm.getIdentifiers(),
                 0);
 
-        return Response.ok(new ResponseEntityView(
+        return Response.ok(new ResponseEntityPublishQueueOperationView(
                 "Requested elements were removed from the Push-Publish Queue")).build();
     }
 }

@@ -3,6 +3,7 @@ package com.dotcms.rest.api.v1.relationships;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.ResponseEntityRelationshipPaginationView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
@@ -36,9 +37,9 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-
-import static com.dotcms.util.CollectionsUtils.toImmutableList;
+import java.util.stream.Collectors;
 
 /**
  * This resource provides all the different end-points associated to information and actions that
@@ -70,7 +71,8 @@ public class RelationshipsResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Cardinalities retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityRelationshipCardinalitiesView.class))),
         @ApiResponse(responseCode = "500", 
                     description = "Internal server error",
                     content = @Content(mediaType = "application/json"))
@@ -83,8 +85,7 @@ public class RelationshipsResource {
     public final Response getCardinality() throws Throwable {
         Logger.debug(this, "Getting relationships cardinality");
 
-        return Response.ok(new ResponseEntityView<>(
-                Arrays.stream(WebKeys.Relationship.RELATIONSHIP_CARDINALITY.values())
+        final List<Map<String, Object>> cardinalities = Arrays.stream(WebKeys.Relationship.RELATIONSHIP_CARDINALITY.values())
                       .map(cardinality -> {
                           String label;
 
@@ -95,14 +96,15 @@ public class RelationshipsResource {
                               label = cardinality.name();
                           }
 
-                          return Map.of(
+                          return Map.<String, Object>of(
                                   "name", cardinality.name(),
                                   "id", cardinality.ordinal(),
                                   "label", label
                                  );
                       })
-                      .collect(toImmutableList())
-        )).build();
+                      .collect(Collectors.toList());
+                      
+        return Response.ok(new ResponseEntityRelationshipCardinalitiesView(cardinalities)).build();
     }
 
     @Operation(
@@ -112,7 +114,8 @@ public class RelationshipsResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "One-sided relationships retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityRelationshipPaginationView.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - authentication required",
                     content = @Content(mediaType = "application/json")),

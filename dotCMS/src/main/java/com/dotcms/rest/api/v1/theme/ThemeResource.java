@@ -132,7 +132,8 @@ public class ThemeResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Theme retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityThemeView.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - authentication required",
                     content = @Content(mediaType = "application/json")),

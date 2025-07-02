@@ -24,6 +24,7 @@ import com.liferay.util.StringPool;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -152,7 +153,7 @@ public class FolderResource implements Serializable {
             }
         }
 
-        return Response.ok(new ResponseEntityView<>(deletedFolders)).build(); // 200
+        return Response.ok(new ResponseEntityFolderPathsView(deletedFolders)).build(); // 200
     }
 
     @Operation(
@@ -205,7 +206,7 @@ public class FolderResource implements Serializable {
 
             final List<Map<String, Object>> createdFolders = folderHelper.createFolders(paths, siteName, user);
 
-            return Response.ok(new ResponseEntityView<>(createdFolders)).build(); // 200
+            return Response.ok(new ResponseEntityFolderListView(createdFolders)).build(); // 200
     }
 
     @Operation(
@@ -285,7 +286,7 @@ public class FolderResource implements Serializable {
         try{
             final String uriParam = !uri.startsWith(StringPool.FORWARD_SLASH) ? StringPool.FORWARD_SLASH.concat(uri) : uri;
             final Folder folder = folderHelper.loadFolderByURI(siteName,user,uriParam);
-            response = Response.ok( new ResponseEntityView(folder) ).build();
+            response = Response.ok( new ResponseEntityFolderView(folder) ).build();
         } catch (Exception e) { // this is an unknown error, so we report as a 500.
             Logger.error(this, "Error getting folder for URI", e);
             if (ExceptionUtil.causedBy(e, DotSecurityException.class)) {
@@ -315,7 +316,8 @@ public class FolderResource implements Serializable {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Folder and subfolders loaded successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityFolderWithSubfoldersView.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - backend user authentication required",
                     content = @Content(mediaType = "application/json")),
@@ -348,7 +350,7 @@ public class FolderResource implements Serializable {
                         .init();
         final User user = initData.getUser();
 
-        return Response.ok(new ResponseEntityView(folderHelper.loadFolderAndSubFoldersByPath(siteId,path, user))).build(); // 200
+        return Response.ok(new ResponseEntityFolderWithSubfoldersView(folderHelper.loadFolderAndSubFoldersByPath(siteId,path, user))).build(); // 200
     }
 
     /**
@@ -407,7 +409,8 @@ public class FolderResource implements Serializable {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Subfolders found successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json", 
+                                      schema = @Schema(implementation = ResponseEntityFolderSearchResultView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid search criteria",
                     content = @Content(mediaType = "application/json")),
@@ -467,7 +470,7 @@ public class FolderResource implements Serializable {
 
         folderPath = !folderPath.startsWith(StringPool.FORWARD_SLASH) ? StringPool.FORWARD_SLASH.concat(folderPath) : folderPath;
 
-        return Response.ok(new ResponseEntityView<>(folderHelper.findSubFoldersPathByParentPath(siteId,folderPath, user))).build(); // 200
+        return Response.ok(new ResponseEntityFolderSearchResultView(folderHelper.findSubFoldersPathByParentPath(siteId,folderPath, user))).build(); // 200
     }
 
     /**
@@ -525,7 +528,7 @@ public class FolderResource implements Serializable {
 
         return null == folder || !UtilMethods.isSet(folder.getIdentifier())?
                 Response.status(Response.Status.NOT_FOUND).build():
-                Response.ok(new ResponseEntityView(folder)).build(); // 200
+                Response.ok(new ResponseEntityFolderView(folder)).build(); // 200
     }
 
 }

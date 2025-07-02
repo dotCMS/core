@@ -132,7 +132,8 @@ public class SiteResource implements Serializable {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Current site retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntitySiteView.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - authentication required",
                     content = @Content(mediaType = "application/json")),
@@ -161,7 +162,7 @@ public class SiteResource implements Serializable {
               .init().getUser();
           
             Host currentSite = siteHelper.getCurrentSite(httpServletRequest, user);
-            response = Response.ok( new ResponseEntityView<>(currentSite) ).build();
+            response = Response.ok( new ResponseEntitySiteView(currentSite) ).build();
         } catch (Exception e) {
             if (ExceptionUtil.causedBy(e, DotSecurityException.class)) {
                 throw new ForbiddenException(e);
@@ -179,7 +180,8 @@ public class SiteResource implements Serializable {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Default site retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntitySiteView.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - authentication required",
                     content = @Content(mediaType = "application/json")),
@@ -208,7 +210,7 @@ public class SiteResource implements Serializable {
 
             final Host currentSite = APILocator.getHostAPI().findDefaultHost(user, PageMode.get(httpServletRequest).respectAnonPerms);
             response = Response.ok(
-                        new ResponseEntityView<>(currentSite)
+                        new ResponseEntitySiteView(currentSite)
                     ).build();
         } catch (Exception e) {
             if (ExceptionUtil.causedBy(e, DotSecurityException.class)) {
@@ -227,7 +229,8 @@ public class SiteResource implements Serializable {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Sites retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityView.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - authentication required",
                     content = @Content(mediaType = "application/json")),
@@ -290,7 +293,8 @@ public class SiteResource implements Serializable {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Site switched successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntitySiteSwitchView.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - authentication required",
                     content = @Content(mediaType = "application/json")),
@@ -341,7 +345,7 @@ public class SiteResource implements Serializable {
             resultMap.put("hostSwitched", switchDone);
 
             response = (switchDone) ?
-                    Response.ok(new ResponseEntityView(resultMap)).build(): // 200
+                    Response.ok(new ResponseEntitySiteSwitchView(resultMap)).build(): // 200
                     Response.status(Response.Status.NOT_FOUND).build();
         } catch (Exception e) { // this is an unknown error, so we report as a 500.
             if (ExceptionUtil.causedBy(e, DotSecurityException.class)) {
@@ -361,7 +365,8 @@ public class SiteResource implements Serializable {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Switched to default site successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntitySiteView.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - authentication required",
                     content = @Content(mediaType = "application/json")),
@@ -392,7 +397,7 @@ public class SiteResource implements Serializable {
 
         try {
             final Host host = siteHelper.switchToDefaultHost(request, user);
-            return Response.ok(new ResponseEntityView<>(host)).build();
+            return Response.ok(new ResponseEntitySiteView(host)).build();
 
         } catch (DotSecurityException e) {
             Logger.error(this.getClass(), "Exception on switch site exception message: " + e.getMessage(), e);
@@ -411,7 +416,8 @@ public class SiteResource implements Serializable {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Site thumbnails retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntitySiteThumbnailsView.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - authentication required",
                     content = @Content(mediaType = "application/json")),
@@ -444,7 +450,7 @@ public class SiteResource implements Serializable {
 
         Logger.debug(this, ()-> "Finding all site thumbnails...");
 
-        return Response.ok(new ResponseEntityView<>(hosts.stream().filter(DotLambdas.not(Host::isSystemHost))
+        return Response.ok(new ResponseEntitySiteThumbnailsView(hosts.stream().filter(DotLambdas.not(Host::isSystemHost))
                 .sorted(hostNameComparator).map(host -> this.toSiteMap(user, contentletAPI, host))
                 .collect(Collectors.toList()))).build();
     }
@@ -470,7 +476,8 @@ public class SiteResource implements Serializable {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Site published successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntitySiteView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid site ID",
                     content = @Content(mediaType = "application/json")),
@@ -512,7 +519,7 @@ public class SiteResource implements Serializable {
             throw new IllegalArgumentException(String.format(SITE_DOESNT_EXIST_ERR_MSG, siteId));
         }
         this.siteHelper.publish(site, user, pageMode.respectAnonPerms);
-        return Response.ok(new ResponseEntityView<>(toView(site, user))).build();
+        return Response.ok(new ResponseEntitySiteView(toView(site, user))).build();
     }
 
     @Operation(
@@ -522,7 +529,8 @@ public class SiteResource implements Serializable {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Site unpublished successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntitySiteView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid site ID",
                     content = @Content(mediaType = "application/json")),
@@ -566,7 +574,7 @@ public class SiteResource implements Serializable {
         }
 
         this.siteHelper.unpublish(site, user, pageMode.respectAnonPerms);
-        return Response.ok(new ResponseEntityView<>(toView(site, user))).build();
+        return Response.ok(new ResponseEntitySiteView(toView(site, user))).build();
     }
 
     @Operation(
@@ -576,7 +584,8 @@ public class SiteResource implements Serializable {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Site archived successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntitySiteView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid site ID or default site cannot be archived",
                     content = @Content(mediaType = "application/json")),
@@ -636,7 +645,7 @@ public class SiteResource implements Serializable {
         }
 
         this.siteHelper.archive(site, user, pageMode.respectAnonPerms);
-        return Response.ok(new ResponseEntityView<>(toView(site, user))).build();
+        return Response.ok(new ResponseEntitySiteView(toView(site, user))).build();
     }
 
     @Operation(
@@ -646,7 +655,8 @@ public class SiteResource implements Serializable {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Site unarchived successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntitySiteView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid site ID",
                     content = @Content(mediaType = "application/json")),
@@ -690,7 +700,7 @@ public class SiteResource implements Serializable {
         }
 
         this.siteHelper.unarchive(site, user, pageMode.respectAnonPerms);
-        return Response.ok(new ResponseEntityView<>(toView(site))).build();
+        return Response.ok(new ResponseEntitySiteView(toView(site))).build();
     }
 
     @Operation(
@@ -700,7 +710,8 @@ public class SiteResource implements Serializable {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Site deleted successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntitySiteDeleteView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid site ID or default site cannot be deleted",
                     content = @Content(mediaType = "application/json")),
@@ -755,7 +766,7 @@ public class SiteResource implements Serializable {
         } else {
 
             try {
-                asyncResponse.resume(new ResponseEntityView<>(deleteHostResult.get()));
+                asyncResponse.resume(new ResponseEntitySiteDeleteView(deleteHostResult.get()));
             } catch (final Exception e) {
                 asyncResponse.resume(ResponseUtil.mapExceptionResponse(e));
             }
@@ -770,7 +781,8 @@ public class SiteResource implements Serializable {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Site marked as default successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntitySiteView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid site ID",
                     content = @Content(mediaType = "application/json")),
@@ -814,7 +826,7 @@ public class SiteResource implements Serializable {
             throw new IllegalArgumentException(String.format(SITE_DOESNT_EXIST_ERR_MSG, siteId));
         }
 
-        return Response.ok(new ResponseEntityView<>(
+        return Response.ok(new ResponseEntitySiteView(
                 this.siteHelper.makeDefault(site, user, respectFrontendRoles))).build();
     }
 
@@ -825,7 +837,8 @@ public class SiteResource implements Serializable {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Site setup progress retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntitySiteSetupProgressView.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - authentication required",
                     content = @Content(mediaType = "application/json")),
@@ -854,7 +867,7 @@ public class SiteResource implements Serializable {
 
         Logger.debug(this, ()-> "Getting the site : " + siteId + " as a default");
 
-        return Response.ok(new ResponseEntityView<>(
+        return Response.ok(new ResponseEntitySiteSetupProgressView(
                 QuartzUtils.getTaskProgress("setup-host-" + siteId, "setup-host-group"))).build();
     }
 
@@ -865,7 +878,8 @@ public class SiteResource implements Serializable {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Site retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntitySiteView.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - authentication required",
                     content = @Content(mediaType = "application/json")),
@@ -904,7 +918,7 @@ public class SiteResource implements Serializable {
             throw new NotFoundException(String.format(SITE_DOESNT_EXIST_ERR_MSG, siteId));
         }
 
-        return Response.ok(new ResponseEntityView<>(toView(site,user))).build();
+        return Response.ok(new ResponseEntitySiteView(toView(site,user))).build();
     }
 
     @Operation(
@@ -914,7 +928,8 @@ public class SiteResource implements Serializable {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Site found successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntitySiteView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - site name is required",
                     content = @Content(mediaType = "application/json")),
@@ -967,7 +982,7 @@ public class SiteResource implements Serializable {
             throw new NotFoundException(String.format(SITE_DOESNT_EXIST_ERR_MSG, hostname));
         }
 
-        return Response.ok(new ResponseEntityView<>(toView(site,user))).build();
+        return Response.ok(new ResponseEntitySiteView(toView(site,user))).build();
     }
 
     @Operation(
@@ -977,7 +992,8 @@ public class SiteResource implements Serializable {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Site created successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntitySiteView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid site data or site name required",
                     content = @Content(mediaType = "application/json")),
@@ -1035,7 +1051,7 @@ public class SiteResource implements Serializable {
         newSite.setInode(newSiteForm.getInode());
         copySitePropertiesFromForm(newSiteForm, newSite);
 
-        return Response.ok(new ResponseEntityView<>(
+        return Response.ok(new ResponseEntitySiteView(
                 this.siteHelper.save(
                         newSite, newSiteForm.getVariables(), user, pageMode.respectAnonPerms
                 )
@@ -1237,7 +1253,7 @@ public class SiteResource implements Serializable {
      * Returns the complete list of Site Variables associated to the specified Site ID.
      * @param httpServletRequest
      * @param httpServletResponse
-     * @param newSiteForm
+     * @param siteId
      * @return
      * @throws DotDataException
      * @throws DotSecurityException
@@ -1310,7 +1326,8 @@ public class SiteResource implements Serializable {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Site updated successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntitySiteView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid site data, missing ID, or site name required",
                     content = @Content(mediaType = "application/json")),
@@ -1384,7 +1401,7 @@ public class SiteResource implements Serializable {
 
         copySitePropertiesFromForm(newSiteForm, site);
 
-        return Response.ok(new ResponseEntityView<>(
+        return Response.ok(new ResponseEntitySiteView(
                 this.siteHelper.update(
                         site, newSiteForm.getVariables(), user, pageMode.respectAnonPerms
                 )
@@ -1398,7 +1415,8 @@ public class SiteResource implements Serializable {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Site copied successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntitySiteView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid copy configuration",
                     content = @Content(mediaType = "application/json")),
@@ -1431,7 +1449,7 @@ public class SiteResource implements Serializable {
                                       required = true,
                                       content = @Content(schema = @Schema(implementation = CopySiteForm.class))
                                   ) final CopySiteForm copySiteForm)
-            throws DotDataException, DotSecurityException, PortalException, SystemException, ParseException, SchedulerException, ClassNotFoundException, AlreadyExistException {
+            throws DotDataException, DotSecurityException, PortalException, AlreadyExistException {
 
         final User user = new WebResource.InitBuilder(this.webResource)
                 .requestAndResponse(httpServletRequest, httpServletResponse)
@@ -1464,7 +1482,7 @@ public class SiteResource implements Serializable {
                             copySiteForm.isCopySiteVariables(), copySiteForm.isCopyContentTypes());
 
         HostAssetsJobProxy.fireJob(newSite.getIdentifier(), sourceSite.getIdentifier(), hostCopyOptions, user.getUserId());
-        return Response.ok(new ResponseEntityView<>(newSite)).build();
+        return Response.ok(new ResponseEntitySiteView(newSite)).build();
     }
 
 } // E:O:F:SiteBrowserResource.

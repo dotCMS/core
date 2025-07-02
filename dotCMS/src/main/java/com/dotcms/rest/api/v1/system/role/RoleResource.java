@@ -171,7 +171,7 @@ public class RoleResource implements Serializable {
 			return ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
 		}
 
-		return Response.ok(new ResponseEntityView(Map.of("checkRoles", hasUserRole))).build();
+		return Response.ok(new ResponseEntityRoleOperationView(Map.of("checkRoles", hasUserRole))).build();
 	}
 
 	/**
@@ -224,7 +224,7 @@ public class RoleResource implements Serializable {
 
 			Logger.debug(this, ()-> "Deleting the layouts : " + layoutIds + " to the role: " + roleId);
 
-			return Response.ok(new ResponseEntityView(Map.of("deletedLayouts",
+			return Response.ok(new ResponseEntityRoleOperationView(Map.of("deletedLayouts",
 					this.roleHelper.deleteRoleLayouts(role, layoutIds, layoutAPI,
 							this.roleAPI, APILocator.getSystemEventsAPI())))).build();
 		} else {
@@ -377,7 +377,7 @@ public class RoleResource implements Serializable {
 
 			Logger.debug(this, ()-> "Saving the layouts : " + layoutIds + " to the role: " + roleId);
 
-			return Response.ok(new ResponseEntityView(Map.of("savedLayouts",
+			return Response.ok(new ResponseEntityRoleOperationView(Map.of("savedLayouts",
 					this.roleHelper.saveRoleLayouts(role, layoutIds, layoutAPI,
 							this.roleAPI, APILocator.getSystemEventsAPI())))).build();
 		}
@@ -512,7 +512,7 @@ public class RoleResource implements Serializable {
 			}
 		}
 
-		return Response.ok(new ResponseEntityView<List<Role>>(
+		return Response.ok(new ResponseEntityRoleListView(
 				null != roleNameToFilter? this.filterRoleList(roleNameToFilter, roleList):roleList)).build();
 	}
 
@@ -587,7 +587,7 @@ public class RoleResource implements Serializable {
 			}
 		}
 
-		return Response.ok(new ResponseEntityView(new RoleView(role,childrenRoles))).build();
+		return Response.ok(new ResponseEntityRoleDetailView(new RoleView(role,childrenRoles))).build();
 
 	}
 
@@ -646,7 +646,7 @@ public class RoleResource implements Serializable {
 					.forEach(role -> rootRolesView.add(new RoleView(role, new ArrayList<>())));
 		}
 
-		return Response.ok(new ResponseEntityView<>(rootRolesView)).build();
+		return Response.ok(new ResponseEntityRoleViewListView(rootRolesView)).build();
 	}
 
 	/**

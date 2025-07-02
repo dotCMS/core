@@ -105,7 +105,8 @@ public class ConfigurationResource implements Serializable {
 	@ApiResponses(value = {
 		@ApiResponse(responseCode = "200", 
 					description = "Configuration variables retrieved successfully",
-					content = @Content(mediaType = "application/json")),
+					content = @Content(mediaType = "application/json",
+									  schema = @Schema(implementation = ResponseEntityConfigurationView.class))),
 		@ApiResponse(responseCode = "401", 
 					description = "Unauthorized - authentication required",
 					content = @Content(mediaType = "application/json")),
@@ -186,7 +187,8 @@ public class ConfigurationResource implements Serializable {
 	@ApiResponses(value = {
 		@ApiResponse(responseCode = "200", 
 					description = "Configuration properties retrieved successfully",
-					content = @Content(mediaType = "application/json")),
+					content = @Content(mediaType = "application/json",
+									  schema = @Schema(implementation = ResponseEntityConfigurationView.class))),
 		@ApiResponse(responseCode = "500", 
 					description = "Internal server error",
 					content = @Content(mediaType = "application/json"))
@@ -264,7 +266,8 @@ public class ConfigurationResource implements Serializable {
 	@ApiResponses(value = {
 		@ApiResponse(responseCode = "200", 
 					description = "Validation email sent successfully",
-					content = @Content(mediaType = "application/json")),
+					content = @Content(mediaType = "application/json",
+									  schema = @Schema(implementation = ResponseEntityConfigurationOperationView.class))),
 		@ApiResponse(responseCode = "401", 
 					description = "Unauthorized - authentication required",
 					content = @Content(mediaType = "application/json")),

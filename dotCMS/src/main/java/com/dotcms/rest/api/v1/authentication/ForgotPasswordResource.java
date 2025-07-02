@@ -84,7 +84,8 @@ public class ForgotPasswordResource implements Serializable {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Password reset email sent successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityForgotPasswordView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid email address or user not found (if configured to show)",
                     content = @Content(mediaType = "application/json")),

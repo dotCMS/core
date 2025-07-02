@@ -20,6 +20,7 @@ import javax.ws.rs.core.MediaType;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -60,7 +61,8 @@ public class AnnouncementsResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Announcements retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityAnnouncementListView.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - authentication required",
                     content = @Content(mediaType = "application/json")),
@@ -76,7 +78,7 @@ public class AnnouncementsResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final ResponseEntityView<List<Announcement>> announcements(@Context final HttpServletRequest request,
+    public final ResponseEntityAnnouncementListView announcements(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             @Parameter(description = "Whether to refresh the cache before retrieving announcements (default: false)") @QueryParam("refreshCache") final boolean refreshCache,
             @Parameter(description = "Maximum number of announcements to return (default: no limit)") @QueryParam("limit") final int limit
@@ -90,7 +92,7 @@ public class AnnouncementsResource {
                             .init();
             final User user = initData.getUser();
             final List<Announcement> announcements = helper.getAnnouncements(refreshCache , limit, user);
-            return new ResponseEntityView<>(announcements); // 200
+            return new ResponseEntityAnnouncementListView(announcements); // 200
     }
 
 }

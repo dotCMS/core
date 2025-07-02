@@ -397,7 +397,7 @@ public class PageResource {
                     final EmptyPageView emptyPageView =
                             new EmptyPageView.Builder().vanityUrl(finalCachedVanityUrl).build();
 
-                    return Response.ok(new ResponseEntityView<>(emptyPageView)).build();
+                    return Response.ok(new ResponseEntityEmptyPageView(emptyPageView)).build();
                 } else {
                     final VanityUrlResult vanityUrlResult = cachedVanityUrlOpt.get()
                             .handle(renderParams.uri());
@@ -448,7 +448,7 @@ public class PageResource {
                             PageMode.get(request).respectAnonPerms);
             request.setAttribute(WebKeys.CURRENT_HOST, site);
             request.getSession().setAttribute(WebKeys.CURRENT_HOST, site);
-            return Response.ok(new ResponseEntityView<>(pageRendered)).build();
+            return Response.ok(new ResponseEntityPageView(pageRendered)).build();
 
     }
 
@@ -548,7 +548,7 @@ public class PageResource {
         responses = {
                 @ApiResponse(responseCode = "200", description = "Page template linked to HTML and saved successfully",
                         content = @Content(mediaType = "application/json", 
-                                schema = @Schema(implementation = ResponseEntityView.class)
+                                schema = @Schema(implementation = ResponseEntityPageView.class)
                                 )
                         ),
                 @ApiResponse(responseCode = "400", description = "Bad request or data exception"),
@@ -594,7 +594,7 @@ public class PageResource {
                     response
             );
 
-            return Response.ok(new ResponseEntityView<>(renderedPage)).build();
+            return Response.ok(new ResponseEntityPageView(renderedPage)).build();
         } catch (final DoesNotExistException e) {
             final String errorMsg = String.format("DoesNotExistException on PageResource.saveLayout. Parameters: [ %s ], [ %s ], [ %s ]: ",
                     request, pageId, form);
@@ -630,7 +630,7 @@ public class PageResource {
                 responses = {
                         @ApiResponse(responseCode = "200", description = "Page template saved successfully",
                                 content = @Content(mediaType = "application/json", 
-                                        schema = @Schema(implementation = ResponseEntityView.class)
+                                        schema = @Schema(implementation = ResponseEntityPageOperationView.class)
                                         )
                                 ),
                         @ApiResponse(responseCode = "400", description = "Bad request or data exception"),
@@ -658,7 +658,7 @@ public class PageResource {
         try {
 
             final Template templateSaved = this.pageResourceHelper.saveTemplate(user, form);
-            res = Response.ok(new ResponseEntityView<>(templateSaved)).build();
+            res = Response.ok(new ResponseEntityTemplateView(templateSaved)).build();
 
         } catch (DotSecurityException e) {
             final String errorMsg = String.format("DotSecurityException on PageResource.saveLayout, parameters:  %s, %s: ",
@@ -742,7 +742,7 @@ public class PageResource {
 
             pageResourceHelper.saveContent(pageId, this.reduce(pageContainerForm.getContainerEntries()), language, variantName);
 
-            return Response.ok(new ResponseEntityView<>("ok")).build();
+            return Response.ok(new ResponseEntityPageOperationView("ok")).build();
         } catch(HTMLPageAssetNotFoundException e) {
             final String errorMsg = String.format("HTMLPageAssetNotFoundException on PageResource.addContent, pageId: %s: ",
                     pageId);
@@ -945,7 +945,7 @@ public class PageResource {
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
 
-        return Response.ok(new ResponseEntityView(contentletMaps)).build();
+        return Response.ok(new ResponseEntityContentletMapsView(contentletMaps)).build();
     }
 
     @Operation(
@@ -992,7 +992,7 @@ public class PageResource {
         final PageLivePreviewVersionBean pageLivePreviewVersionBean =
                 this.htmlPageAssetRenderedAPI.getPageRenderedLivePreviewVersion(pageId, user, finalLanguageId, request, response);
 
-        return Response.ok(new ResponseEntityView(pageLivePreviewVersionBean)).build();
+        return Response.ok(new ResponseEntityPageLivePreviewVersionView(pageLivePreviewVersionBean)).build();
     }
 
     @Operation(
@@ -1025,7 +1025,7 @@ public class PageResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public ResponseEntityView<List<MulitreeView>> getContentTree (
+    public ResponseEntityMulitreeView getContentTree (
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             @Parameter(description = "Page identifier", required = true)
@@ -1043,7 +1043,7 @@ public class PageResource {
                         multiTree.getPersonalization(), multiTree.getVariantId())).collect(Collectors.toList()):
                 Collections.emptyList();
 
-        return new ResponseEntityView<>(mulitreeViews);
+        return new ResponseEntityMulitreeView(mulitreeViews);
     } // getPersonalizedPersonasOnPage
 
     @Operation(
@@ -1251,7 +1251,7 @@ public class PageResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/copyContent")
-    public final ResponseEntityView<Map<String, Object>> copyContent(
+    public final ResponseEntityPageCopyView copyContent(
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             @RequestBody(description = "Content copy form with source contentlet information", required = true,
@@ -1273,7 +1273,7 @@ public class PageResource {
         final Contentlet copiedContentlet = this.pageResourceHelper.copyContentlet(copyContentletForm, user, pageMode, language);
         final Map<String, Object> entity = (Map<String, Object>)new DotTransformerBuilder().defaultOptions().content(copiedContentlet).build()
                 .toMaps().stream().findFirst().orElse(Collections.emptyMap());
-        return new ResponseEntityView<>(entity);
+        return new ResponseEntityPageCopyView(entity);
     }
 
     @Operation(
@@ -1308,7 +1308,7 @@ public class PageResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/{pageId}/_deepcopy")
-    public final ResponseEntityView<Map<String, Object>> deepCopyPage(
+    public final ResponseEntityPageCopyView deepCopyPage(
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             @Parameter(description = "Page identifier to deep copy", required = true)
@@ -1330,7 +1330,7 @@ public class PageResource {
 
         final Contentlet copiedContentlet = this.pageResourceHelper.copyPage(page, user, pageMode, language);
 
-        return new ResponseEntityView<>(new DotTransformerBuilder().defaultOptions().content(copiedContentlet).build()
+        return new ResponseEntityPageCopyView(new DotTransformerBuilder().defaultOptions().content(copiedContentlet).build()
                 .toMaps().stream().findFirst().orElse(Collections.emptyMap()));
     } // deepCopyPage.
 
@@ -1406,7 +1406,7 @@ public class PageResource {
      * - type: is optional, by default is READ
      * - path: page path
      *
-     * @param originalRequest The {@link HttpServletRequest} object.
+     * @param request The {@link HttpServletRequest} object.
      * @param response The {@link HttpServletResponse} object.
      * @param type {@link String} type: READ by default @see {@link PermissionLevel}
      * @param path {@link String} page path
@@ -1616,7 +1616,7 @@ public class PageResource {
         Logger.debug(this, () -> String.format("Check the languages that page '%s' is available on", pageId));
         final List<ExistingLanguagesForPageView> languagesForPage =
                 this.pageResourceHelper.getExistingLanguagesForPage(pageId, user);
-        return Response.ok(new ResponseEntityView<>(languagesForPage)).build();
+        return Response.ok(new ResponseEntityLanguagesForPageView(languagesForPage)).build();
     }
 
 } // E:O:F:PageResource

@@ -87,7 +87,8 @@ public class PersonalizationResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Page containers personalized successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityPersonalizationView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid page ID, persona tag, or missing parameters",
                     content = @Content(mediaType = "application/json")),
@@ -158,7 +159,8 @@ public class PersonalizationResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Page personalization deleted successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityPersonalizationOperationView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid parameters, trying to delete default personalization, or persona doesn't exist",
                     content = @Content(mediaType = "application/json")),

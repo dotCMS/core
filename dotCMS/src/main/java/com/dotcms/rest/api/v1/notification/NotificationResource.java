@@ -40,6 +40,7 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -92,7 +93,8 @@ public class NotificationResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Notifications retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityNotificationListView.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - authentication required",
                     content = @Content(mediaType = "application/json")),
@@ -187,7 +189,8 @@ public class NotificationResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Notification count retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityNotificationCountView.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - authentication required",
                     content = @Content(mediaType = "application/json")),
@@ -203,27 +206,25 @@ public class NotificationResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response getNewNotificationsCount ( @Context final HttpServletRequest httpServletRequest,
                                                @Context final HttpServletResponse httpServletResponse,
-                                               @Parameter(description = "URL parameters for filtering (e.g., allUsers/true)") @PathParam ("params") final String params ) throws DotStateException, DotDataException, DotSecurityException, JSONException {
+                                               @Parameter(description = "Filter to include all users' notifications") @QueryParam("allUsers") final Boolean allUsers ) throws DotStateException, DotDataException, DotSecurityException, JSONException {
         
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
-                .params(params)
                 .requestAndResponse(httpServletRequest, httpServletResponse)
                 .rejectWhenNoUser(true).init();
 
 
-        Long newNotificationsCount = 0l;
+        Long newNotificationsCount = 0L;
         User user;
         Response response;
-        final boolean allUsers = initData.getParamsMap().get(ALLUSERS) != null ?
-                Boolean.parseBoolean(initData.getParamsMap().get(ALLUSERS)) : false;
+        final boolean includeAllUsers = allUsers != null && allUsers;
 
         try {
 
             user = initData.getUser();
 
-            if (allUsers) {
+            if (includeAllUsers) {
 
                 newNotificationsCount = notificationAPI.getNotificationsCount();
             } else {
@@ -251,7 +252,8 @@ public class NotificationResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Notifications marked as read successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityNotificationOperationView.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - authentication required",
                     content = @Content(mediaType = "application/json")),
@@ -303,7 +305,8 @@ public class NotificationResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Notification deleted successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityNotificationOperationView.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - authentication required",
                     content = @Content(mediaType = "application/json")),
@@ -361,7 +364,8 @@ public class NotificationResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Notifications deleted successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityNotificationOperationView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid notification IDs",
                     content = @Content(mediaType = "application/json")),

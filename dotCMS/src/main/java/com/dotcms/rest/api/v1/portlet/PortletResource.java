@@ -3,7 +3,6 @@ package com.dotcms.rest.api.v1.portlet;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.InitDataObject;
-import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.WebResource.InitBuilder;
 import com.dotcms.rest.annotation.NoCache;
@@ -50,7 +49,6 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -92,7 +90,8 @@ public class PortletResource implements Serializable {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Custom portlet created successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityPortletView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid portlet data or portlet already exists",
                     content = @Content(mediaType = "application/json")),
@@ -152,7 +151,7 @@ public class PortletResource implements Serializable {
             final Portlet savedPortlet = APILocator.getPortletAPI()
                     .savePortlet(newPortlet.toPortlet(), initData.getUser());
 
-            return Response.ok(new ResponseEntityView<>(Map.of(JSON_RESPONSE_PORTLET_ATTR, savedPortlet.getPortletId()))).build();
+            return Response.ok(new ResponseEntityPortletView(Map.of(JSON_RESPONSE_PORTLET_ATTR, savedPortlet.getPortletId()))).build();
         } catch (final Exception e) {
             Logger.error(this, String.format("An error occurred when saving new Portlet with ID " +
                     "'%s': %s", portletId, ExceptionUtil.getErrorMessage(e)), e);
@@ -167,7 +166,8 @@ public class PortletResource implements Serializable {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Custom portlet updated successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityPortletView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid portlet data",
                     content = @Content(mediaType = "application/json")),
@@ -227,7 +227,7 @@ public class PortletResource implements Serializable {
             final Portlet newPortlet = APILocator.getPortletAPI()
                     .savePortlet(updatedPortlet.toPortlet(), initData.getUser());
 
-            return Response.ok(new ResponseEntityView<>(Map.of(JSON_RESPONSE_PORTLET_ATTR, newPortlet.getPortletId()))).build();
+            return Response.ok(new ResponseEntityPortletView(Map.of(JSON_RESPONSE_PORTLET_ATTR, newPortlet.getPortletId()))).build();
 
         } catch (Exception e) {
             Logger.error(this, String.format("An error occurred when updating Portlet with ID " +
@@ -245,7 +245,8 @@ public class PortletResource implements Serializable {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Portlet added to layout successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityPortletView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - layout already contains portlet",
                     content = @Content(mediaType = "application/json")),
@@ -329,7 +330,7 @@ public class PortletResource implements Serializable {
 
         layoutAPI.setPortletIdsToLayout(layout, portletIds);
 
-        return Response.ok(new ResponseEntityView<>(
+        return Response.ok(new ResponseEntityPortletView(
                         Map.of(JSON_RESPONSE_PORTLET_ATTR, portlet.getPortletId(), "layout", layout.getId())))
                 .build();
 
@@ -342,7 +343,8 @@ public class PortletResource implements Serializable {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Custom portlet deleted successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityPortletView.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - authentication required",
                     content = @Content(mediaType = "application/json")),
@@ -378,7 +380,7 @@ public class PortletResource implements Serializable {
 
             APILocator.getPortletAPI().deletePortlet(portletId);
 
-            return Response.ok(new ResponseEntityView(Map.of("message", portletId + " deleted"))).build();
+            return Response.ok(new ResponseEntityPortletView(Map.of("message", portletId + " deleted"))).build();
 
         } catch (Exception e) {
             return ResponseUtil.mapExceptionResponse(e);
@@ -393,7 +395,8 @@ public class PortletResource implements Serializable {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Personal portlet deleted successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityPortletView.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - authentication required",
                     content = @Content(mediaType = "application/json")),
@@ -430,7 +433,8 @@ public class PortletResource implements Serializable {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Portlet removed from role successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityPortletView.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - authentication required or insufficient permissions",
                     content = @Content(mediaType = "application/json")),
@@ -495,7 +499,7 @@ public class PortletResource implements Serializable {
                 }
             }
 
-            return Response.ok(new ResponseEntityView(Map.of("message", portletId + " deleted"))).build();
+            return Response.ok(new ResponseEntityPortletView(Map.of("message", portletId + " deleted"))).build();
 
         } catch (Exception e) {
             return ResponseUtil.mapExceptionResponse(e);
@@ -510,7 +514,8 @@ public class PortletResource implements Serializable {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Portlet details retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityPortletView.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - authentication required",
                     content = @Content(mediaType = "application/json")),
@@ -546,7 +551,7 @@ public class PortletResource implements Serializable {
                     user.getUserId(),
                     "Unable to find portlet");
         }
-        return Response.ok(new ResponseEntityView(
+        return Response.ok(new ResponseEntityPortletView(
                 Map.of("response", portlet))).build();
 
     }
@@ -558,7 +563,8 @@ public class PortletResource implements Serializable {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Access check completed successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityPortletView.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - authentication required",
                     content = @Content(mediaType = "application/json")),
@@ -583,7 +589,7 @@ public class PortletResource implements Serializable {
                 .rejectWhenNoUser(true)
                 .init();
         try {
-            return Response.ok(new ResponseEntityView(Map.of("response", APILocator.getLayoutAPI()
+            return Response.ok(new ResponseEntityPortletView(Map.of("response", APILocator.getLayoutAPI()
                     .doesUserHaveAccessToPortlet(portletId, initData.getUser())))).build();
         } catch (Exception e) {
             return ResponseUtil.mapExceptionResponse(e);
@@ -597,7 +603,8 @@ public class PortletResource implements Serializable {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Content creation URL retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityPortletUrlView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid content type variable",
                     content = @Content(mediaType = "application/json")),
@@ -637,8 +644,8 @@ public class PortletResource implements Serializable {
                 "/ext/contentlet/edit_contentlet";
 
         return Response.ok(
-                            new ResponseEntityView((
-                                    ContentTypeUtil.getInstance().getActionUrl(request,contentTypeId,user,strutsAction, languageId))))
+                            new ResponseEntityPortletUrlView(
+                                    ContentTypeUtil.getInstance().getActionUrl(request,contentTypeId,user,strutsAction, languageId)))
                     .build();
     }
 }

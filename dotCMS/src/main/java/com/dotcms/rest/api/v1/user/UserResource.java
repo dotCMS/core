@@ -232,6 +232,25 @@ public class UserResource implements Serializable {
 	 *                       <li>Generic error from server.</li>
 	 *                   </ul>
 	 */
+	@Operation(
+	    summary = "Update current user",
+	    description = "Updates information for the currently authenticated user. May require reauthentication if critical fields are changed."
+	)
+	@ApiResponses(value = {
+	    @ApiResponse(responseCode = "200", 
+	                description = "User information updated successfully",
+	                content = @Content(mediaType = "application/json",
+	                                  schema = @Schema(implementation = ResponseEntityUserUpdateView.class))),
+	    @ApiResponse(responseCode = "400", 
+	                description = "Bad request - invalid user data or password requirements",
+	                content = @Content(mediaType = "application/json")),
+	    @ApiResponse(responseCode = "401", 
+	                description = "Unauthorized - authentication required",
+	                content = @Content(mediaType = "application/json")),
+	    @ApiResponse(responseCode = "500", 
+	                description = "Internal server error",
+	                content = @Content(mediaType = "application/json"))
+	})
 	@PUT
 	@JSONP
 	@Path("/current")
@@ -411,7 +430,8 @@ public class UserResource implements Serializable {
 	@ApiResponses(value = {
 	    @ApiResponse(responseCode = "200", 
 	                description = "Login as operation successful",
-	                content = @Content(mediaType = "application/json")),
+	                content = @Content(mediaType = "application/json",
+	                                  schema = @Schema(implementation = ResponseEntityLoginAsView.class))),
 	    @ApiResponse(responseCode = "400", 
 	                description = "Bad request - invalid user credentials",
 	                content = @Content(mediaType = "application/json")),
@@ -584,7 +604,8 @@ public class UserResource implements Serializable {
 	@ApiResponses(value = {
 	    @ApiResponse(responseCode = "200", 
 	                description = "Logout as operation successful",
-	                content = @Content(mediaType = "application/json")),
+	                content = @Content(mediaType = "application/json",
+	                                  schema = @Schema(implementation = ResponseEntityLoginAsView.class))),
 	    @ApiResponse(responseCode = "400", 
 	                description = "Bad request - invalid session state",
 	                content = @Content(mediaType = "application/json")),
@@ -723,7 +744,8 @@ public class UserResource implements Serializable {
 	@ApiResponses(value = {
 	    @ApiResponse(responseCode = "200", 
 	                description = "User created successfully",
-	                content = @Content(mediaType = "application/json")),
+	                content = @Content(mediaType = "application/json",
+	                                  schema = @Schema(implementation = ResponseEntityUserUpdateView.class))),
 	    @ApiResponse(responseCode = "400", 
 	                description = "Bad request - missing required fields or invalid data",
 	                content = @Content(mediaType = "application/json")),
@@ -861,7 +883,7 @@ public class UserResource implements Serializable {
 							responseCode = "200",
 							content = @Content(mediaType = "application/json",
 									schema = @Schema(implementation =
-											ResponseSiteVariablesEntityView.class)),
+											ResponseEntityUserUpdateView.class)),
 							description = "If success returns a map with the user + user id."),
 					@ApiResponse(
 							responseCode = "403",

@@ -119,7 +119,8 @@ public class LanguagesResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Language retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = LanguageView.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - authentication required",
                     content = @Content(mediaType = "application/json")),
@@ -147,7 +148,7 @@ public class LanguagesResource {
             throw new DoesNotExistException("The language id = " + languageId + " does not exists");
         }
 
-        return Response.ok(new ResponseEntityView<>(new LanguageView(language, ()->isDefault(language)))).build();
+        return Response.ok(new ResponseEntityLanguageView(new LanguageView(language, ()->isDefault(language)))).build();
     }
 
     @Operation(
@@ -157,7 +158,8 @@ public class LanguagesResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Languages retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityLanguageListView.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - authentication required",
                     content = @Content(mediaType = "application/json")),
@@ -190,13 +192,13 @@ public class LanguagesResource {
             //We calculate the total number of language variables once as this value is the same for all languages
             final int total = languageVariableAPI.countVariablesByKey();
             return Response.ok(
-                    new ResponseEntityView<>(languages.stream()
+                    new ResponseEntityLanguageListView(languages.stream()
                             .map(language -> withLangVarCounts(language, total))
                             .collect(Collectors.toList())))
                     .build();
         }
         return Response.ok(
-                new ResponseEntityView<>(languages.stream()
+                new ResponseEntityLanguageListView(languages.stream()
                         .map(instanceLanguageView())
                         .collect(Collectors.toList())))
                 .build();
@@ -254,7 +256,8 @@ public class LanguagesResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Language created successfully or already exists",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityLanguageView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid language data",
                     content = @Content(mediaType = "application/json")),
@@ -288,7 +291,7 @@ public class LanguagesResource {
             return Response.ok(new ResponseEntityView<>(language, List.of(new MessageEntity("Language already exists.")))).build(); // 200
         }
         final Language savedOrUpdateLanguage = saveOrUpdateLanguage(null, languageForm);
-        return Response.ok(new ResponseEntityView<>(
+        return Response.ok(new ResponseEntityLanguageView(
                 new LanguageView(savedOrUpdateLanguage,()->isDefault(savedOrUpdateLanguage) )
         )).build(); // 200
     }
@@ -300,7 +303,8 @@ public class LanguagesResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Language created successfully or already exists",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityLanguageView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid language tag",
                     content = @Content(mediaType = "application/json")),
@@ -334,7 +338,7 @@ public class LanguagesResource {
            return Response.ok(new ResponseEntityView<>(language, List.of(new MessageEntity("Language already exists.")))).build(); // 200
         }
         final Language saveOrUpdateLanguage = saveOrUpdateLanguage(null, languageForm);
-        return Response.ok(new ResponseEntityView<>(
+        return Response.ok(new ResponseEntityLanguageView(
                 new LanguageView(saveOrUpdateLanguage,()->isDefault(saveOrUpdateLanguage))
         )).build(); // 200
     }
@@ -383,7 +387,8 @@ public class LanguagesResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Language retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityLanguageView.class))),
         @ApiResponse(responseCode = "404", 
                     description = "Language not found",
                     content = @Content(mediaType = "application/json")),
@@ -408,7 +413,7 @@ public class LanguagesResource {
            return Response.status(Status.NOT_FOUND).build();
         }
 
-        return Response.ok(new ResponseEntityView<>(new LanguageView(language,()->isDefault(language) ))).build();
+        return Response.ok(new ResponseEntityLanguageView(new LanguageView(language,()->isDefault(language) ))).build();
     }
 
     private Locale validateLanguageTag(final String languageTag)throws DoesNotExistException {
@@ -437,7 +442,8 @@ public class LanguagesResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Language updated successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityLanguageView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid language data or ID",
                     content = @Content(mediaType = "application/json")),
@@ -474,7 +480,7 @@ public class LanguagesResource {
         DotPreconditions.isTrue(doesLanguageExist(languageId), DoesNotExistException.class, ()->"Language not found");
         DotPreconditions.notNull(languageForm,"Expected Request body was empty.");
         final Language language = saveOrUpdateLanguage(languageId, languageForm);
-        return Response.ok(new ResponseEntityView<>(
+        return Response.ok(new ResponseEntityLanguageView(
                 new LanguageView(language, ()->isDefault(language))
         )).build(); // 200
     }
@@ -493,7 +499,8 @@ public class LanguagesResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Language deleted successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityLanguageOperationView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid language ID",
                     content = @Content(mediaType = "application/json")),
@@ -524,7 +531,7 @@ public class LanguagesResource {
         DotPreconditions.isTrue(doesLanguageExist(languageId), DoesNotExistException.class, ()->"Language not found");
         final Language language = languageAPI.getLanguage(languageId);
         languageAPI.deleteLanguage(language);
-        return Response.ok(new ResponseEntityView<>(OK)).build(); // 200
+        return Response.ok(new ResponseEntityLanguageOperationView(OK)).build(); // 200
     }
 
     @Operation(
@@ -534,7 +541,8 @@ public class LanguagesResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Messages retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityLanguageMessagesView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid form data",
                     content = @Content(mediaType = "application/json")),
@@ -610,7 +618,8 @@ public class LanguagesResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Language messages retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityLanguageMessagesView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid language code",
                     content = @Content(mediaType = "application/json")),
@@ -679,7 +688,7 @@ public class LanguagesResource {
         }
 
 
-        return Response.ok(new ResponseEntityView<>(result)).build();
+        return Response.ok(new ResponseEntityLanguageMessagesView(result)).build();
     }
 
     /**
@@ -698,7 +707,8 @@ public class LanguagesResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Language variables retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityLanguageVariablePageView.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - authentication required",
                     content = @Content(mediaType = "application/json")),
@@ -730,7 +740,7 @@ public class LanguagesResource {
 
         final LanguageVariablePageView view = new LanguageVariablesHelper()
                 .view(paginationContext, renderNulls);
-        return Response.ok(new ResponseEntityView<>(view)).build();
+        return Response.ok(new ResponseEntityLanguageVariablePageView(view)).build();
     }
 
 
@@ -789,7 +799,8 @@ public class LanguagesResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Default language changed successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityLanguageView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid language ID",
                     content = @Content(mediaType = "application/json")),
@@ -842,7 +853,7 @@ public class LanguagesResource {
         httpServletRequest.getSession().removeAttribute(LANGUAGE_SEARCHED);
         httpServletRequest.getSession().removeAttribute(HTMLPAGE_LANGUAGE);
         httpServletRequest.getSession().removeAttribute(CONTENT_SELECTED_LANGUAGE);
-        return Response.ok(new ResponseEntityView<>(
+        return Response.ok(new ResponseEntityLanguageView(
                 new LanguageView(newDefault, ()->isDefault(newDefault))
         )).build(); // 200
     }
@@ -854,7 +865,8 @@ public class LanguagesResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "ISO languages and countries retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityIsoLanguagesCountriesView.class))),
         @ApiResponse(responseCode = "500", 
                     description = "Internal server error",
                     content = @Content(mediaType = "application/json"))
@@ -878,7 +890,7 @@ public class LanguagesResource {
                 .sorted(Comparator.comparing(o -> o.get("name")))
                 .collect(Collectors.toList());
 
-        return Response.ok(new ResponseEntityView<>(Map.of(
+        return Response.ok(new ResponseEntityIsoLanguagesCountriesView(Map.of(
                  "languages", languages,
                  "countries", countries)
                )
@@ -903,7 +915,8 @@ public class LanguagesResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Default language retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityLanguageObjectView.class))),
         @ApiResponse(responseCode = "500", 
                     description = "Internal server error",
                     content = @Content(mediaType = "application/json"))
@@ -913,10 +926,10 @@ public class LanguagesResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public ResponseEntityView<Language> getDefaultLanguage(@Context final HttpServletRequest request,
+    public ResponseEntityLanguageObjectView getDefaultLanguage(@Context final HttpServletRequest request,
                                        @Context final HttpServletResponse response) throws DotDataException {
         Logger.debug(this, () -> "Retrieving the current default Language");
-        return new ResponseEntityView<>(this.languageAPI.getDefaultLanguage());
+        return new ResponseEntityLanguageObjectView(this.languageAPI.getDefaultLanguage());
     }
 
 }

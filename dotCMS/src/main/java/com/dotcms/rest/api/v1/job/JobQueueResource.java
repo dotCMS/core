@@ -3,7 +3,11 @@ package com.dotcms.rest.api.v1.job;
 import com.dotcms.jobs.business.error.JobValidationException;
 import com.dotcms.jobs.business.job.Job;
 import com.dotcms.jobs.business.job.JobPaginatedResult;
+import com.dotcms.rest.ResponseEntityJobPaginatedResultView;
+import com.dotcms.rest.ResponseEntityJobQueueNamesView;
 import com.dotcms.rest.ResponseEntityJobStatusView;
+import com.dotcms.rest.ResponseEntityJobView;
+import com.dotcms.rest.ResponseEntityStringView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.WebResource.InitBuilder;
@@ -158,7 +162,7 @@ public class JobQueueResource {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Queues retrieved successfully",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseEntityView.class))),
+                                    schema = @Schema(implementation = ResponseEntityJobQueueNamesView.class))),
                     @ApiResponse(responseCode = "401", description = "Unauthorized - User not authenticated"),
                     @ApiResponse(responseCode = "403", description = "Forbidden - User lacks required permissions"),
                     @ApiResponse(responseCode = "500", description = "Internal server error")
@@ -172,7 +176,7 @@ public class JobQueueResource {
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
                 .init();
-        return new ResponseEntityView<>(helper.getQueueNames());
+        return new ResponseEntityJobQueueNamesView(helper.getQueueNames());
     }
 
     @GET
@@ -186,7 +190,7 @@ public class JobQueueResource {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Job status retrieved successfully",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseEntityView.class))),
+                                    schema = @Schema(implementation = ResponseEntityJobView.class))),
                     @ApiResponse(responseCode = "400", description = "Bad request - Invalid job ID"),
                     @ApiResponse(responseCode = "401", description = "Unauthorized - User not authenticated"),
                     @ApiResponse(responseCode = "403", description = "Forbidden - User lacks required permissions"),
@@ -206,7 +210,7 @@ public class JobQueueResource {
                 .init();
 
         Job job = helper.getJob(jobId);
-        return new ResponseEntityView<>(job);
+        return new ResponseEntityJobView(job);
     }
 
     @Operation(
@@ -216,7 +220,8 @@ public class JobQueueResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Cancellation request sent successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityStringView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid job ID",
                     content = @Content(mediaType = "application/json")),
@@ -237,7 +242,7 @@ public class JobQueueResource {
     @Path("/{jobId}/cancel")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.WILDCARD)
-    public ResponseEntityView<String> cancelJob(
+    public ResponseEntityStringView cancelJob(
             @Context final HttpServletRequest request, @Context final HttpServletResponse response,
             @Parameter(description = "Unique identifier of the job to cancel", required = true) @PathParam("jobId") String jobId) throws DotDataException {
         new InitBuilder(webResource)
@@ -247,7 +252,7 @@ public class JobQueueResource {
                 .rejectWhenNoUser(true)
                 .init();
         helper.cancelJob(jobId);
-        return new ResponseEntityView<>("Cancellation request successfully sent to job " + jobId);
+        return new ResponseEntityStringView("Cancellation request successfully sent to job " + jobId);
     }
 
     @Operation(
@@ -257,7 +262,8 @@ public class JobQueueResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Active jobs retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityJobPaginatedResultView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid queue name or pagination parameters",
                     content = @Content(mediaType = "application/json")),
@@ -286,7 +292,7 @@ public class JobQueueResource {
                 .rejectWhenNoUser(true)
                 .init();
         final JobPaginatedResult result = helper.getActiveJobs(queueName, page, pageSize);
-        return new ResponseEntityView<>(result);
+        return new ResponseEntityJobPaginatedResultView(result);
     }
 
     @Operation(
@@ -296,7 +302,8 @@ public class JobQueueResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Jobs retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityJobPaginatedResultView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid pagination parameters",
                     content = @Content(mediaType = "application/json")),
@@ -323,7 +330,7 @@ public class JobQueueResource {
                 .rejectWhenNoUser(true)
                 .init();
         final JobPaginatedResult result = helper.getJobs(page, pageSize);
-        return new ResponseEntityView<>(result);
+        return new ResponseEntityJobPaginatedResultView(result);
     }
 
     @Operation(
@@ -333,7 +340,8 @@ public class JobQueueResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Active jobs retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityJobPaginatedResultView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid pagination parameters",
                     content = @Content(mediaType = "application/json")),
@@ -361,7 +369,7 @@ public class JobQueueResource {
                 .rejectWhenNoUser(true)
                 .init();
         final JobPaginatedResult result = helper.getActiveJobs(page, pageSize);
-        return new ResponseEntityView<>(result);
+        return new ResponseEntityJobPaginatedResultView(result);
     }
 
     @Operation(
@@ -371,7 +379,8 @@ public class JobQueueResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Completed jobs retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityJobPaginatedResultView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid pagination parameters",
                     content = @Content(mediaType = "application/json")),
@@ -399,7 +408,7 @@ public class JobQueueResource {
                 .rejectWhenNoUser(true)
                 .init();
         final JobPaginatedResult result = helper.getCompletedJobs(page, pageSize);
-        return new ResponseEntityView<>(result);
+        return new ResponseEntityJobPaginatedResultView(result);
     }
 
     @Operation(
@@ -409,7 +418,8 @@ public class JobQueueResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Successful jobs retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityJobPaginatedResultView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid pagination parameters",
                     content = @Content(mediaType = "application/json")),
@@ -437,7 +447,7 @@ public class JobQueueResource {
                 .rejectWhenNoUser(true)
                 .init();
         final JobPaginatedResult result = helper.getSuccessfulJobs(page, pageSize);
-        return new ResponseEntityView<>(result);
+        return new ResponseEntityJobPaginatedResultView(result);
     }
 
     @Operation(
@@ -447,7 +457,8 @@ public class JobQueueResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Canceled jobs retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityJobPaginatedResultView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid pagination parameters",
                     content = @Content(mediaType = "application/json")),
@@ -475,7 +486,7 @@ public class JobQueueResource {
                 .rejectWhenNoUser(true)
                 .init();
         final JobPaginatedResult result = helper.getCanceledJobs(page, pageSize);
-        return new ResponseEntityView<>(result);
+        return new ResponseEntityJobPaginatedResultView(result);
     }
 
     @Operation(
@@ -485,7 +496,8 @@ public class JobQueueResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Failed jobs retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityJobPaginatedResultView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid pagination parameters",
                     content = @Content(mediaType = "application/json")),
@@ -513,7 +525,7 @@ public class JobQueueResource {
                 .rejectWhenNoUser(true)
                 .init();
         final JobPaginatedResult result = helper.getFailedJobs(page, pageSize);
-        return new ResponseEntityView<>(result);
+        return new ResponseEntityJobPaginatedResultView(result);
     }
 
     @Operation(
@@ -523,7 +535,8 @@ public class JobQueueResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Abandoned jobs retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityJobPaginatedResultView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid pagination parameters",
                     content = @Content(mediaType = "application/json")),
@@ -551,7 +564,7 @@ public class JobQueueResource {
                 .rejectWhenNoUser(true)
                 .init();
         final JobPaginatedResult result = helper.getAbandonedJobs(page, pageSize);
-        return new ResponseEntityView<>(result);
+        return new ResponseEntityJobPaginatedResultView(result);
     }
 
     @Operation(

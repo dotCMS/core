@@ -29,6 +29,7 @@ import com.liferay.portal.model.User;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -60,7 +61,8 @@ public class FileAssetsResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Resource link generated successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityResourceLinkView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - missing or invalid inode parameter",
                     content = @Content(mediaType = "application/json")),
@@ -96,7 +98,7 @@ public class FileAssetsResource {
             if(link.isDownloadRestricted()){
                throw new DotSecurityException("The Resource link to the contentlet is restricted.");
             }
-            return Response.ok(new ResponseEntityView(ImmutableMap.of("resourceLink",
+            return Response.ok(new ResponseEntityResourceLinkView(ImmutableMap.of("resourceLink",
                     ImmutableMap.of(
                     "href", link.getResourceLinkAsString(),
                     "text", link.getResourceLinkUriAsString(),

@@ -59,7 +59,8 @@ public class LoggerResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Logger retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityLoggerView.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - admin required",
                     content = @Content(mediaType = "application/json")),
@@ -111,7 +112,8 @@ public class LoggerResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Loggers retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityLoggerListView.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - admin required",
                     content = @Content(mediaType = "application/json")),
@@ -155,7 +157,8 @@ public class LoggerResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Logger level changed successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityLoggerListView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid log level",
                     content = @Content(mediaType = "application/json")),

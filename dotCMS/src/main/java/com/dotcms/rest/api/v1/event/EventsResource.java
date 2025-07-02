@@ -143,7 +143,7 @@ public class EventsResource implements Serializable {
 
                 systemEvents = appContext.getAttribute(SystemEventsDelegate.RESULT);
 
-                response = Response.ok(marshalUtils.marshal(new ResponseEntityView<>(systemEvents))).build();
+                response = Response.ok(marshalUtils.marshal(new ResponseEntitySystemEventsView(systemEvents))).build();
             }
         } catch (Exception e) { // this is an unknown error, so we report as a 500.
 
@@ -241,7 +241,7 @@ public class EventsResource implements Serializable {
 
             Logger.debug(this, "Operation time out for a asyn response on Events long polling");
             final Response response = Response.status(Response.Status.SERVICE_UNAVAILABLE).entity(
-                    new ResponseEntityView(Arrays.asList(new ErrorEntity("operation-timeout", message)))).build();
+                    new ResponseEntityEventErrorView(Arrays.asList(new ErrorEntity("operation-timeout", message)))).build();
 
             asyncResponse.resume(response);
         }

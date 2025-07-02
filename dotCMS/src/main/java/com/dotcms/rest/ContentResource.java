@@ -171,7 +171,8 @@ public class ContentResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Search completed successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Invalid search parameters or malformed query",
                     content = @Content(mediaType = "application/json")),
@@ -285,9 +286,9 @@ public class ContentResource {
             @Parameter(description = "Number of results to skip for pagination", required = true)
             @PathParam("offset") int offset,
             @Parameter(description = "Response format type (optional)", required = false)
-            @PathParam("type") String type,
+            @QueryParam("type") String type,
             @Parameter(description = "JSONP callback function name (optional)", required = false)
-            @PathParam("callback") String callback)
+            @QueryParam("callback") String callback)
             throws DotDataException, JSONException {
 
         InitDataObject initData = webResource.init(null, request, response, false, null);
@@ -356,9 +357,9 @@ public class ContentResource {
             @Parameter(description = "Lucene query string to count matching contentlets", required = true)
             @PathParam("query") String query,
             @Parameter(description = "Response format type (optional)", required = false)
-            @PathParam("type") String type,
+            @QueryParam("type") String type,
             @Parameter(description = "JSONP callback function name (optional)", required = false)
-            @PathParam("callback") String callback) throws DotDataException {
+            @QueryParam("callback") String callback) throws DotDataException {
 
         InitDataObject initData = webResource.init(null, request, response, false, null);
 

@@ -111,6 +111,7 @@ public class ApiTokenResource implements Serializable {
             responses = {
                     @ApiResponse(responseCode = "200", description = "User's API tokens successfully retrieved",
                             content = @Content(mediaType = "application/json",
+                                              schema = @Schema(implementation = ResponseEntityApiTokenListView.class),
                                     examples = {
                                             @ExampleObject(
                                                     value = "{\n" +
@@ -190,6 +191,7 @@ public class ApiTokenResource implements Serializable {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Token revoked successfully",
                             content = @Content(mediaType = "application/json",
+                                              schema = @Schema(implementation = ResponseEntityApiTokenView.class),
                                     examples = {
                                             @ExampleObject(
                                                     value = "{\n" +
@@ -276,6 +278,7 @@ public class ApiTokenResource implements Serializable {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Token successfully deleted",
                             content = @Content(mediaType = "application/json",
+                                              schema = @Schema(implementation = ResponseEntityApiTokenView.class),
                                     examples = {
                                             @ExampleObject(
                                                     value = "{\n" +
@@ -370,6 +373,7 @@ public class ApiTokenResource implements Serializable {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Token successfully issued to user",
                             content = @Content(mediaType = "application/json",
+                                              schema = @Schema(implementation = ResponseEntityApiTokenWithJwtView.class),
                                     examples = {
                                             @ExampleObject(
                                                     value = "{\n" +
@@ -540,6 +544,7 @@ public class ApiTokenResource implements Serializable {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Remote token generated successfully",
                             content = @Content(mediaType = "application/json",
+                                              schema = @Schema(implementation = ResponseEntityApiTokenWithJwtView.class),
                                     examples = {
                                             @ExampleObject(
                                                     value = "{\n" +
@@ -713,6 +718,7 @@ public class ApiTokenResource implements Serializable {
             responses = {
                     @ApiResponse(responseCode = "200", description = "JSON web token successfully created",
                             content = @Content(mediaType = "application/json",
+                                              schema = @Schema(implementation = ResponseEntityJwtView.class),
                                     examples = {
                                             @ExampleObject(
                                                     value = "{\n" +
@@ -779,7 +785,7 @@ public class ApiTokenResource implements Serializable {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Tokens revoked successfully",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = RemoteAPITokenForm.class)
+                                              schema = @Schema(implementation = ResponseEntityApiTokenView.class)
                             )
                     ),
                     @ApiResponse(responseCode = "400", description = "Bad request"),
@@ -838,6 +844,7 @@ public class ApiTokenResource implements Serializable {
             responses = {
                     @ApiResponse(responseCode = "200", description = "User tokens successfully revoked",
                             content = @Content(mediaType = "application/json",
+                                              schema = @Schema(implementation = ResponseEntityApiTokenView.class),
                                     examples = {
                                             @ExampleObject(
                                                     value = "{\n" +

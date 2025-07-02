@@ -2,7 +2,6 @@ package com.dotcms.rest.api.v1.system.storage;
 
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityBooleanView;
-import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.storage.StorageType;
@@ -15,6 +14,7 @@ import com.google.common.annotations.VisibleForTesting;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -69,7 +69,8 @@ public class StorageResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Storage API is operational",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityStorageStatusView.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - authentication required",
                     content = @Content(mediaType = "application/json")),
@@ -90,7 +91,7 @@ public class StorageResource {
                 .requiredRoles(Role.CMS_ADMINISTRATOR_ROLE)
                 .requiredPortlet(PortletID.MAINTENANCE.toString().toLowerCase())
                 .rejectWhenNoUser(true).init();
-        return Response.ok(new ResponseEntityView<>("hello")).build();
+        return Response.ok(new ResponseEntityStorageStatusView("hello")).build();
     }
 
     /**
@@ -119,7 +120,8 @@ public class StorageResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Storage replication initiated successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityBooleanView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid storage type parameters",
                     content = @Content(mediaType = "application/json")),

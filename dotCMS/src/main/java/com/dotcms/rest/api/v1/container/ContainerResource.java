@@ -7,7 +7,7 @@ import com.dotcms.rendering.velocity.services.VelocityResourceKey;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.InitDataObject;
-import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.ResponseEntityBulkResultView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.BulkResultView;
@@ -53,7 +53,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.liferay.portal.model.User;
-import com.liferay.util.StringPool;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -182,7 +181,7 @@ public class ContainerResource implements Serializable {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Containers retrieved successfully",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseEntityView.class))),
+                                    schema = @Schema(implementation = ResponseEntityContainerView.class))),
                     @ApiResponse(responseCode = "400", description = "Bad request - Invalid parameters"),
                     @ApiResponse(responseCode = "401", description = "Unauthorized - User not authenticated"),
                     @ApiResponse(responseCode = "403", description = "Forbidden - User lacks required permissions"),
@@ -308,7 +307,7 @@ public class ContainerResource implements Serializable {
 
             final Map<String, String> response = ImmutableMap.<String, String> builder().put(MessageConstants.RENDER, html).build();
 
-            return Response.ok(new ResponseEntityView(response)).build();
+            return Response.ok(new ResponseEntityContainerMapView(response)).build();
         } catch (DotSecurityException e) {
             throw new ForbiddenException(e);
         }
@@ -444,7 +443,7 @@ public class ContainerResource implements Serializable {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Form rendered successfully",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseEntityView.class))),
+                                    schema = @Schema(implementation = ResponseEntityContainerObjectMapView.class))),
                     @ApiResponse(responseCode = "400", description = "Bad request - Invalid container or form ID"),
                     @ApiResponse(responseCode = "401", description = "Unauthorized - User not authenticated"),
                     @ApiResponse(responseCode = "403", description = "Forbidden - User lacks required permissions"),
@@ -475,7 +474,7 @@ public class ContainerResource implements Serializable {
             .put("content", formContent.getMap())
             .build();
 
-        return Response.ok(new ResponseEntityView(response))
+        return Response.ok(new ResponseEntityContainerObjectMapView(response))
                 .build();
 
     }
@@ -623,7 +622,7 @@ public class ContainerResource implements Serializable {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Content removed successfully",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseEntityView.class))),
+                                    schema = @Schema(implementation = ResponseEntityContainerView.class))),
                     @ApiResponse(responseCode = "400", description = "Bad request - Invalid parameters"),
                     @ApiResponse(responseCode = "401", description = "Unauthorized - User not authenticated"),
                     @ApiResponse(responseCode = "403", description = "Forbidden - User lacks required permissions"),
@@ -792,7 +791,7 @@ public class ContainerResource implements Serializable {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Container created successfully",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseEntityView.class))),
+                                    schema = @Schema(implementation = ResponseEntitySingleContainerView.class))),
                     @ApiResponse(responseCode = "400", description = "Bad request - Invalid container data"),
                     @ApiResponse(responseCode = "401", description = "Unauthorized - User not authenticated"),
                     @ApiResponse(responseCode = "403", description = "Forbidden - User lacks create permissions"),
@@ -861,7 +860,7 @@ public class ContainerResource implements Serializable {
                 "Publish Container",
                 getInfoMessage(user, MessageConstants.PUBLISHED + container.getIdentifier()));
 
-        return Response.ok(new ResponseEntityView(new ContainerView(container))).build();
+        return Response.ok(new ResponseEntitySingleContainerView(new ContainerView(container))).build();
     }
 
     /**
@@ -887,7 +886,7 @@ public class ContainerResource implements Serializable {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Container updated successfully",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseEntityView.class))),
+                                    schema = @Schema(implementation = ResponseEntitySingleContainerView.class))),
                     @ApiResponse(responseCode = "400", description = "Bad request - Invalid container data"),
                     @ApiResponse(responseCode = "401", description = "Unauthorized - User not authenticated"),
                     @ApiResponse(responseCode = "403", description = "Forbidden - User lacks edit permissions"),
@@ -950,7 +949,7 @@ public class ContainerResource implements Serializable {
                         MessageConstants.SAVED + newContainerVersion.getTitle()),
                 host.getHostname());
 
-        return Response.ok(new ResponseEntityView(new ContainerView(newContainerVersion))).build();
+        return Response.ok(new ResponseEntitySingleContainerView(new ContainerView(newContainerVersion))).build();
     }
 
     /**
@@ -977,7 +976,7 @@ public class ContainerResource implements Serializable {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Live container retrieved successfully",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseEntityView.class))),
+                                    schema = @Schema(implementation = ResponseEntitySingleContainerView.class))),
                     @ApiResponse(responseCode = "400", description = "Bad request - Invalid container ID"),
                     @ApiResponse(responseCode = "401", description = "Unauthorized - User not authenticated"),
                     @ApiResponse(responseCode = "403", description = "Forbidden - User lacks required permissions"),
@@ -1005,10 +1004,10 @@ public class ContainerResource implements Serializable {
 
         if(includeContentType){
             List<ContainerStructure> structures = this.containerAPI.getContainerStructures(container);
-            return Response.ok(new ResponseEntityView(ContainerResourceHelper.getInstance().toResponseEntityContainerWithContentTypesView(container, structures))).build();
+            return Response.ok(new ResponseEntityContainerWithContentTypesView(ContainerResourceHelper.getInstance().toResponseEntityContainerWithContentTypesView(container, structures))).build();
         }
 
-        return Response.ok(new ResponseEntityView(new ContainerView(container))).build();
+        return Response.ok(new ResponseEntitySingleContainerView(new ContainerView(container))).build();
     }
 
     /**
@@ -1035,7 +1034,7 @@ public class ContainerResource implements Serializable {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Working container retrieved successfully",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseEntityView.class))),
+                                    schema = @Schema(implementation = ResponseEntitySingleContainerView.class))),
                     @ApiResponse(responseCode = "400", description = "Bad request - Invalid container ID"),
                     @ApiResponse(responseCode = "401", description = "Unauthorized - User not authenticated"),
                     @ApiResponse(responseCode = "403", description = "Forbidden - User lacks required permissions"),
@@ -1064,10 +1063,10 @@ public class ContainerResource implements Serializable {
 
         if(includeContentType){
             List<ContainerStructure> structures = this.containerAPI.getContainerStructures(container);
-            return Response.ok(new ResponseEntityView(ContainerResourceHelper.getInstance().toResponseEntityContainerWithContentTypesView(container, structures))).build();
+            return Response.ok(new ResponseEntityContainerWithContentTypesView(ContainerResourceHelper.getInstance().toResponseEntityContainerWithContentTypesView(container, structures))).build();
         }
 
-        return Response.ok(new ResponseEntityView(new ContainerView(container))).build();
+        return Response.ok(new ResponseEntitySingleContainerView(new ContainerView(container))).build();
     }
 
     /**
@@ -1097,7 +1096,7 @@ public class ContainerResource implements Serializable {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Container published successfully",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseEntityView.class))),
+                                    schema = @Schema(implementation = ResponseEntitySingleContainerView.class))),
                     @ApiResponse(responseCode = "400", description = "Bad request - Container ID is required"),
                     @ApiResponse(responseCode = "401", description = "Unauthorized - User not authenticated"),
                     @ApiResponse(responseCode = "403", description = "Forbidden - User lacks publish permissions"),
@@ -1137,7 +1136,7 @@ public class ContainerResource implements Serializable {
             throw new DoesNotExistException(MessageConstants.CONTAINER_ID_WITH + containerId + MessageConstants.DOES_NOT_EXIST);
         }
 
-        return Response.ok(new ResponseEntityView(new ContainerView(
+        return Response.ok(new ResponseEntitySingleContainerView(new ContainerView(
                 this.getContainerLive(containerId, user, host)))).build();
     }
 
@@ -1168,7 +1167,7 @@ public class ContainerResource implements Serializable {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Container unpublished successfully",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseEntityView.class))),
+                                    schema = @Schema(implementation = ResponseEntitySingleContainerView.class))),
                     @ApiResponse(responseCode = "400", description = "Bad request - Container ID is required"),
                     @ApiResponse(responseCode = "401", description = "Unauthorized - User not authenticated"),
                     @ApiResponse(responseCode = "403", description = "Forbidden - User lacks unpublish permissions"),
@@ -1207,8 +1206,8 @@ public class ContainerResource implements Serializable {
             throw new DoesNotExistException(MessageConstants.CONTAINER_ID_WITH + containerId + MessageConstants.DOES_NOT_EXIST);
         }
 
-        return Response.ok(new ResponseEntityView(
-                this.getContainerWorking(containerId, user, host))).build();
+        return Response.ok(new ResponseEntitySingleContainerView(new ContainerView(
+                this.getContainerWorking(containerId, user, host)))).build();
     }
 
     /**
@@ -1282,7 +1281,7 @@ public class ContainerResource implements Serializable {
             throw new DoesNotExistException(MessageConstants.CONTAINER_ID_WITH + containerId + MessageConstants.DOES_NOT_EXIST);
         }
 
-        return Response.ok(new ResponseEntityView(new ContainerView(this.getContainerArchiveWorking(
+        return Response.ok(new ResponseEntitySingleContainerView(new ContainerView(this.getContainerArchiveWorking(
                 containerId, user, host)))).build();
     }
 
@@ -1357,7 +1356,7 @@ public class ContainerResource implements Serializable {
             throw new DoesNotExistException(MessageConstants.CONTAINER_ID_WITH + containerId + MessageConstants.DOES_NOT_EXIST);
         }
 
-        return Response.ok(new ResponseEntityView(new ContainerView(this.getContainerWorking(
+        return Response.ok(new ResponseEntitySingleContainerView(new ContainerView(this.getContainerWorking(
                 containerId, user, host)))).build();
     }
 
@@ -1380,7 +1379,8 @@ public class ContainerResource implements Serializable {
     )
     @ApiResponse(responseCode = "200", 
                 description = "Container deleted successfully",
-                content = @Content(mediaType = "application/json"))
+                content = @Content(mediaType = "application/json",
+                                  schema = @Schema(implementation = ResponseEntityContainerOperationView.class)))
     @ApiResponse(responseCode = "400", 
                 description = "Bad request - container ID is required",
                 content = @Content(mediaType = "application/json"))
@@ -1427,13 +1427,13 @@ public class ContainerResource implements Serializable {
                 ActivityLogger.logInfo(this.getClass(),
                         "Done Delete Container",
                         getInfoMessage(user, MessageConstants.DELETED + container.getIdentifier()));
-                return Response.ok(new ResponseEntityView(true)).build();
+                return Response.ok(new ResponseEntityContainerOperationView(true)).build();
             }
 
             ActivityLogger.logInfo(this.getClass(),
                     "Can not Delete Container",
                     getInfoMessage(user, MessageConstants.CANNOT_DELETE + container.getIdentifier()));
-            return Response.ok(new ResponseEntityView(false)).build();
+            return Response.ok(new ResponseEntityContainerOperationView(false)).build();
         } else {
 
             Logger.error(this, MessageConstants.CONTAINER_ID_WITH + containerId + MessageConstants.DOES_NOT_EXIST);
@@ -1457,7 +1457,8 @@ public class ContainerResource implements Serializable {
     )
     @ApiResponse(responseCode = "200", 
                 description = "Container copied successfully",
-                content = @Content(mediaType = "application/json"))
+                content = @Content(mediaType = "application/json",
+                                  schema = @Schema(implementation = ResponseEntityContainerView.class)))
     @ApiResponse(responseCode = "400", 
                 description = "Bad request - container ID is required",
                 content = @Content(mediaType = "application/json"))
@@ -1533,7 +1534,9 @@ public class ContainerResource implements Serializable {
         description = "Deletes multiple containers in a single operation. Returns a summary of successful deletions and any failures that occurred during the process."
     )
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Bulk deletion completed with results"),
+        @ApiResponse(responseCode = "200", description = "Bulk deletion completed with results",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityBulkResultView.class))),
         @ApiResponse(responseCode = "400", description = "Bad request - invalid container identifiers or empty request body"),
         @ApiResponse(responseCode = "401", description = "Unauthorized - user authentication required"),
         @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions to delete containers"),
@@ -1584,7 +1587,7 @@ public class ContainerResource implements Serializable {
             }
         }
 
-        return Response.ok(new ResponseEntityView(
+        return Response.ok(new ResponseEntityBulkResultView(
                         new BulkResultView(deletedContainersCount,0L,failedToDelete)))
                 .build();
     }
@@ -1608,7 +1611,9 @@ public class ContainerResource implements Serializable {
         description = "Publishes multiple containers in a single operation. Makes the containers available on live environments. Returns a summary of successful publications and any failures."
     )
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Bulk publication completed with results"),
+        @ApiResponse(responseCode = "200", description = "Bulk publication completed with results",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityBulkResultView.class))),
         @ApiResponse(responseCode = "400", description = "Bad request - invalid container identifiers or empty request body"),
         @ApiResponse(responseCode = "401", description = "Unauthorized - user authentication required"),
         @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions to publish containers"),
@@ -1658,7 +1663,7 @@ public class ContainerResource implements Serializable {
             }
         }
 
-        return Response.ok(new ResponseEntityView(
+        return Response.ok(new ResponseEntityBulkResultView(
                         new BulkResultView(publishedContainersCount,0L,failedToPublish)))
                 .build();
     }
@@ -1681,7 +1686,9 @@ public class ContainerResource implements Serializable {
         description = "Unpublishes multiple containers in a single operation. Removes the containers from live environments while keeping them in working state. Returns a summary of successful unpublications and any failures."
     )
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Bulk unpublication completed with results"),
+        @ApiResponse(responseCode = "200", description = "Bulk unpublication completed with results",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityBulkResultView.class))),
         @ApiResponse(responseCode = "400", description = "Bad request - invalid container identifiers or empty request body"),
         @ApiResponse(responseCode = "401", description = "Unauthorized - user authentication required"),
         @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions to unpublish containers"),
@@ -1731,7 +1738,7 @@ public class ContainerResource implements Serializable {
             }
         }
 
-        return Response.ok(new ResponseEntityView(
+        return Response.ok(new ResponseEntityBulkResultView(
                         new BulkResultView(unpublishedContainersCount,0L,failedToUnpublish)))
                 .build();
     }
@@ -1754,7 +1761,9 @@ public class ContainerResource implements Serializable {
         description = "Archives multiple containers in a single operation. Archived containers are removed from active use but preserved for potential restoration. Returns a summary of successful archives and any failures."
     )
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Bulk archiving completed with results"),
+        @ApiResponse(responseCode = "200", description = "Bulk archiving completed with results",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityBulkResultView.class))),
         @ApiResponse(responseCode = "400", description = "Bad request - invalid container identifiers or empty request body"),
         @ApiResponse(responseCode = "401", description = "Unauthorized - user authentication required"),
         @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions to archive containers"),
@@ -1805,7 +1814,7 @@ public class ContainerResource implements Serializable {
             }
         }
 
-        return Response.ok(new ResponseEntityView(
+        return Response.ok(new ResponseEntityBulkResultView(
                         new BulkResultView(archivedContainersCount,0L,failedToArchive)))
                 .build();
     }
@@ -1829,7 +1838,9 @@ public class ContainerResource implements Serializable {
         description = "Unarchives multiple containers in a single operation. Restores archived containers back to active working state for editing and use. Returns a summary of successful unarchives and any failures."
     )
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Bulk unarchiving completed with results"),
+        @ApiResponse(responseCode = "200", description = "Bulk unarchiving completed with results",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityBulkResultView.class))),
         @ApiResponse(responseCode = "400", description = "Bad request - invalid container identifiers or empty request body"),
         @ApiResponse(responseCode = "401", description = "Unauthorized - user authentication required"),
         @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions to unarchive containers"),
@@ -1879,7 +1890,7 @@ public class ContainerResource implements Serializable {
             }
         }
 
-        return Response.ok(new ResponseEntityView(
+        return Response.ok(new ResponseEntityBulkResultView(
                         new BulkResultView(unarchivedContainersCount,0L,failedToUnarchive)))
                 .build();
     }

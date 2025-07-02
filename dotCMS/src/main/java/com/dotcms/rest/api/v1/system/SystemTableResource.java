@@ -77,7 +77,8 @@ public class SystemTableResource implements Serializable {
 	@ApiResponses(value = {
 		@ApiResponse(responseCode = "200", 
 					description = "System table entries retrieved successfully",
-					content = @Content(mediaType = "application/json")),
+					content = @Content(mediaType = "application/json",
+									  schema = @Schema(implementation = ResponseEntitySystemTableView.class))),
 		@ApiResponse(responseCode = "401", 
 					description = "Unauthorized - authentication required",
 					content = @Content(mediaType = "application/json")),
@@ -99,7 +100,7 @@ public class SystemTableResource implements Serializable {
 				.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
 		Logger.debug(this, ()-> "Getting all system table values");
-		return new ResponseEntityView<>(filteredEntries);
+		return new ResponseEntitySystemTableView(filteredEntries);
 	}
 
 	/**
@@ -121,7 +122,8 @@ public class SystemTableResource implements Serializable {
 	@ApiResponses(value = {
 		@ApiResponse(responseCode = "200", 
 					description = "System table value retrieved successfully",
-					content = @Content(mediaType = "application/json")),
+					content = @Content(mediaType = "application/json",
+									  schema = @Schema(implementation = ResponseEntityStringView.class))),
 		@ApiResponse(responseCode = "400", 
 					description = "Bad request - key is blacklisted or invalid",
 					content = @Content(mediaType = "application/json")),
@@ -209,7 +211,8 @@ public class SystemTableResource implements Serializable {
 	@ApiResponses(value = {
 		@ApiResponse(responseCode = "200", 
 					description = "System table value saved successfully",
-					content = @Content(mediaType = "application/json")),
+					content = @Content(mediaType = "application/json",
+									  schema = @Schema(implementation = ResponseEntityStringView.class))),
 		@ApiResponse(responseCode = "400", 
 					description = "Bad request - key is blacklisted or form is invalid",
 					content = @Content(mediaType = "application/json")),
@@ -259,7 +262,8 @@ public class SystemTableResource implements Serializable {
 	@ApiResponses(value = {
 		@ApiResponse(responseCode = "200", 
 					description = "System table value updated successfully",
-					content = @Content(mediaType = "application/json")),
+					content = @Content(mediaType = "application/json",
+									  schema = @Schema(implementation = ResponseEntityStringView.class))),
 		@ApiResponse(responseCode = "400", 
 					description = "Bad request - key is blacklisted or form is invalid",
 					content = @Content(mediaType = "application/json")),
@@ -318,7 +322,8 @@ public class SystemTableResource implements Serializable {
 	@ApiResponses(value = {
 		@ApiResponse(responseCode = "200", 
 					description = "System table key deleted successfully",
-					content = @Content(mediaType = "application/json")),
+					content = @Content(mediaType = "application/json",
+									  schema = @Schema(implementation = ResponseEntityStringView.class))),
 		@ApiResponse(responseCode = "400", 
 					description = "Bad request - key is blacklisted or invalid",
 					content = @Content(mediaType = "application/json")),
@@ -361,7 +366,8 @@ public class SystemTableResource implements Serializable {
 	@ApiResponses(value = {
 		@ApiResponse(responseCode = "200", 
 					description = "System table key deleted successfully",
-					content = @Content(mediaType = "application/json")),
+					content = @Content(mediaType = "application/json",
+									  schema = @Schema(implementation = ResponseEntityStringView.class))),
 		@ApiResponse(responseCode = "400", 
 					description = "Bad request - key is blacklisted or invalid",
 					content = @Content(mediaType = "application/json")),

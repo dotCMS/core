@@ -53,7 +53,8 @@ public class UpgradeTaskResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Upgrade task ran successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityUpgradeTaskView.class))),
         @ApiResponse(responseCode = "304", 
                     description = "Not modified - upgrade task does not need to be executed",
                     content = @Content(mediaType = "application/json")),
@@ -112,7 +113,7 @@ public class UpgradeTaskResource {
                     startupTask.executeUpgrade();
                     HibernateUtil.closeAndCommitTransaction();
                     Logger.info(this, "Ran the upgrade task: " + upgradeTaskClassName);
-                    return Response.ok(new ResponseEntityView(
+                    return Response.ok(new ResponseEntityUpgradeTaskView(
                             "Ran the upgrade task: " + upgradeTaskClassName)).build(); // 200
                 } else {
 

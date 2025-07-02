@@ -113,7 +113,8 @@ public class CreateJsonWebTokenResource implements Serializable {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "JWT created successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityJwtTokenView.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - authentication failed",
                     content = @Content(mediaType = "application/json")),

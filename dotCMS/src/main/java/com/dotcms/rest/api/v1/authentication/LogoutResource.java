@@ -30,6 +30,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.Serializable;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -70,7 +71,8 @@ public class LogoutResource implements Serializable {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "User logged out successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityLogoutView.class))),
         @ApiResponse(responseCode = "403", 
                     description = "Forbidden - security exception during logout",
                     content = @Content(mediaType = "application/json")),

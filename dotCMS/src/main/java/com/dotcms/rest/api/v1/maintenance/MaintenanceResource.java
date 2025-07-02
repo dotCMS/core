@@ -93,7 +93,8 @@ public class MaintenanceResource implements Serializable {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Shutdown initiated successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @io.swagger.v3.oas.annotations.media.Schema(implementation = ResponseEntityMaintenanceOperationView.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - authentication required",
                     content = @Content(mediaType = "application/json")),
@@ -136,7 +137,7 @@ public class MaintenanceResource implements Serializable {
                         TimeUnit.SECONDS
                 );
 
-        return Response.ok(new ResponseEntityView<>("Shutdown")).build();
+        return Response.ok(new ResponseEntityMaintenanceOperationView("Shutdown")).build();
     }
 
     @Operation(
@@ -146,7 +147,8 @@ public class MaintenanceResource implements Serializable {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Cluster shutdown initiated successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @io.swagger.v3.oas.annotations.media.Schema(implementation = ResponseEntityMaintenanceOperationView.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - authentication required",
                     content = @Content(mediaType = "application/json")),
@@ -180,7 +182,7 @@ public class MaintenanceResource implements Serializable {
             return Response.status(Status.FORBIDDEN).build();
         }
         ClusterManagementTopic.getInstance().restartCluster(rollingDelay);
-        return Response.ok(new ResponseEntityView<>("Shutdown")).build();
+        return Response.ok(new ResponseEntityMaintenanceOperationView("Shutdown")).build();
     }
     
     @Operation(

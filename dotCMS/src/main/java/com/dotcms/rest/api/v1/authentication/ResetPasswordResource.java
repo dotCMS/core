@@ -68,7 +68,8 @@ public class ResetPasswordResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Password reset successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityPasswordResetView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid login, token, or password",
                     content = @Content(mediaType = "application/json")),

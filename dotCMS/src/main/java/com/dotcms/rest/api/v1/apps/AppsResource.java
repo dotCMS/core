@@ -77,7 +77,9 @@ public class AppsResource {
         summary = "List available apps",
         description = "Retrieves a list of all third-party applications available for integration with the system. Supports optional filtering to search for specific apps."
     )
-    @ApiResponse(responseCode = "200", description = "Apps retrieved successfully")
+    @ApiResponse(responseCode = "200", description = "Apps retrieved successfully",
+                content = @Content(mediaType = "application/json",
+                                  schema = @Schema(implementation = ResponseEntityAppListView.class)))
     @ApiResponse(responseCode = "401", description = "Unauthorized - backend user authentication required")
     @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions to list apps")
     @ApiResponse(responseCode = "500", description = "Internal server error retrieving apps")
@@ -100,7 +102,7 @@ public class AppsResource {
                             .init();
             final User user = initData.getUser();
             final List<AppView> appViews = helper.getAvailableDescriptorViews(user, filter);
-            return Response.ok(new ResponseEntityView<>(appViews)).build(); // 200
+            return Response.ok(new ResponseEntityAppListView(appViews)).build(); // 200
         } catch (Exception e) {
             //By doing this mapping here. The resource becomes integration test friendly.
             Logger.error(this.getClass(), "Exception on listing all available apps.", e);
@@ -123,7 +125,9 @@ public class AppsResource {
         summary = "Get app by key",
         description = "Retrieves detailed information about a specific app identified by its unique key. Includes configuration settings and site-specific settings with pagination support."
     )
-    @ApiResponse(responseCode = "200", description = "App details retrieved successfully")
+    @ApiResponse(responseCode = "200", description = "App details retrieved successfully",
+                content = @Content(mediaType = "application/json",
+                                  schema = @Schema(implementation = ResponseEntityView.class)))
     @ApiResponse(responseCode = "401", description = "Unauthorized - backend user authentication required")
     @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions to access app")
     @ApiResponse(responseCode = "404", description = "App not found")
@@ -174,7 +178,9 @@ public class AppsResource {
         summary = "Get app detail for specific site",
         description = "Retrieves detailed configuration and settings for a specific app within a particular site. Returns site-specific app configurations and secret values."
     )
-    @ApiResponse(responseCode = "200", description = "App detail retrieved successfully")
+    @ApiResponse(responseCode = "200", description = "App detail retrieved successfully",
+                content = @Content(mediaType = "application/json",
+                                  schema = @Schema(implementation = ResponseEntityAppView.class)))
     @ApiResponse(responseCode = "401", description = "Unauthorized - backend user authentication required")
     @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions to access app details")
     @ApiResponse(responseCode = "404", description = "App or site not found")
@@ -202,7 +208,7 @@ public class AppsResource {
             final Optional<AppView> appSiteDetailedView = helper
                         .getAppSiteDetailedView(key, siteId, user);
             if (appSiteDetailedView.isPresent()) {
-                return Response.ok(new ResponseEntityView<>(appSiteDetailedView.get()))
+                return Response.ok(new ResponseEntityAppView(appSiteDetailedView.get()))
                 .build(); // 200
             }
             throw new DoesNotExistException(String.format(
@@ -231,7 +237,9 @@ public class AppsResource {
         summary = "Create new app",
         description = "Creates a new third-party application integration by uploading the app configuration and metadata. Accepts multipart form data containing the app descriptor and resources."
     )
-    @ApiResponse(responseCode = "200", description = "App created successfully")
+    @ApiResponse(responseCode = "200", description = "App created successfully",
+                content = @Content(mediaType = "application/json",
+                                  schema = @Schema(implementation = ResponseEntityAppListView.class)))
     @ApiResponse(responseCode = "400", description = "Bad request - invalid app configuration or missing required fields")
     @ApiResponse(responseCode = "401", description = "Unauthorized - backend user authentication required")
     @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions to create apps")
@@ -261,7 +269,7 @@ public class AppsResource {
             final User user = initData.getUser();
             final List<AppView> apps = helper
                     .createApp(multipart, user);
-            return Response.ok(new ResponseEntityView<>(apps)).build(); // 200
+            return Response.ok(new ResponseEntityAppListView(apps)).build(); // 200
         } catch (Exception e) {
             //By doing this mapping here. The resource becomes integration test friendly.
             Logger.error(this.getClass(),"Exception saving/creating app.", e);
@@ -283,7 +291,9 @@ public class AppsResource {
         summary = "Create app secrets",
         description = "Creates or updates secret values for a specific app configuration within a site. Secrets are encrypted values used for secure integration with third-party services."
     )
-    @ApiResponse(responseCode = "200", description = "App secrets created successfully")
+    @ApiResponse(responseCode = "200", description = "App secrets created successfully",
+                content = @Content(mediaType = "application/json",
+                                  schema = @Schema(implementation = ResponseEntityAppOperationView.class)))
     @ApiResponse(responseCode = "400", description = "Bad request - invalid secret form data")
     @ApiResponse(responseCode = "401", description = "Unauthorized - backend user authentication required")
     @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions to manage app secrets")
@@ -313,7 +323,7 @@ public class AppsResource {
                             .init();
             final User user = initData.getUser();
             helper.saveSecretForm(key, siteId, secretForm, user);
-            return Response.ok(new ResponseEntityView<>(OK)).build(); // 200
+            return Response.ok(new ResponseEntityAppOperationView(OK)).build(); // 200
         } catch (Exception e) {
             //By doing this mapping here. The resource becomes integration test friendly.
             Logger.error(this.getClass(),
@@ -336,7 +346,9 @@ public class AppsResource {
         summary = "Update individual app secret",
         description = "Updates specific secret values for an app configuration within a site. Allows for partial updates of existing secret configurations without affecting other secrets."
     )
-    @ApiResponse(responseCode = "200", description = "App secret updated successfully")
+    @ApiResponse(responseCode = "200", description = "App secret updated successfully",
+                content = @Content(mediaType = "application/json",
+                                  schema = @Schema(implementation = ResponseEntityAppOperationView.class)))
     @ApiResponse(responseCode = "400", description = "Bad request - invalid secret form data")
     @ApiResponse(responseCode = "401", description = "Unauthorized - backend user authentication required")
     @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions to update app secrets")
@@ -366,7 +378,7 @@ public class AppsResource {
                             .init();
             final User user = initData.getUser();
             helper.saveUpdateSecrets(key, siteId, secretForm, user);
-            return Response.ok(new ResponseEntityView(OK)).build(); // 200
+            return Response.ok(new ResponseEntityAppOperationView(OK)).build(); // 200
         } catch (Exception e) {
             //By doing this mapping here. The resource becomes integration test friendly.
             Logger.error(this.getClass(),
@@ -389,7 +401,9 @@ public class AppsResource {
         summary = "Delete individual app secret",
         description = "Deletes specific secret values from an app configuration. Removes individual secret keys while preserving other app configurations and secrets."
     )
-    @ApiResponse(responseCode = "200", description = "App secret deleted successfully")
+    @ApiResponse(responseCode = "200", description = "App secret deleted successfully",
+                content = @Content(mediaType = "application/json",
+                                  schema = @Schema(implementation = ResponseEntityAppOperationView.class)))
     @ApiResponse(responseCode = "400", description = "Bad request - invalid delete secret form data")
     @ApiResponse(responseCode = "401", description = "Unauthorized - backend user authentication required")
     @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions to delete app secrets")
@@ -417,7 +431,7 @@ public class AppsResource {
                             .init();
             final User user = initData.getUser();
             helper.deleteSecret(secretForm, user);
-            return Response.ok(new ResponseEntityView(OK)).build(); // 200
+            return Response.ok(new ResponseEntityAppOperationView(OK)).build(); // 200
         } catch (Exception e) {
             //By doing this mapping here. The resource becomes integration test friendly.
             Logger.error(this.getClass(),
@@ -443,7 +457,9 @@ public class AppsResource {
         summary = "Delete all app secrets",
         description = "Removes all secret configurations for a specific app and site combination. This clears all stored secrets while preserving the app definition and site configuration structure."
     )
-    @ApiResponse(responseCode = "200", description = "All app secrets deleted successfully")
+    @ApiResponse(responseCode = "200", description = "All app secrets deleted successfully",
+                content = @Content(mediaType = "application/json",
+                                  schema = @Schema(implementation = ResponseEntityAppOperationView.class)))
     @ApiResponse(responseCode = "401", description = "Unauthorized - backend user authentication required")
     @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions to delete app secrets")
     @ApiResponse(responseCode = "404", description = "App or site not found")
@@ -470,7 +486,7 @@ public class AppsResource {
             final User user = initData.getUser();
             //this will remove a specific configuration for the key and site combination. All the secrets at once will be lost.
             helper.deleteAppSecrets(key, siteId, user);
-            return Response.ok(new ResponseEntityView(OK)).build(); // 200
+            return Response.ok(new ResponseEntityAppOperationView(OK)).build(); // 200
         } catch (Exception e) {
             //By doing this mapping here. The resource becomes integration test friendly.
             Logger.error(this.getClass(),
@@ -494,7 +510,9 @@ public class AppsResource {
         summary = "Delete app completely",
         description = "Removes an entire app integration including all configurations, secrets, and optionally the app descriptor. This is a destructive operation that removes all app-related data across all sites."
     )
-    @ApiResponse(responseCode = "200", description = "App deleted successfully")
+    @ApiResponse(responseCode = "200", description = "App deleted successfully",
+                content = @Content(mediaType = "application/json",
+                                  schema = @Schema(implementation = ResponseEntityAppOperationView.class)))
     @ApiResponse(responseCode = "401", description = "Unauthorized - backend user authentication required")
     @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions to delete apps")
     @ApiResponse(responseCode = "404", description = "App not found")
@@ -520,7 +538,7 @@ public class AppsResource {
                             .init();
             final User user = initData.getUser();
             helper.removeApp(serviceKey, user, removeDescriptor);
-            return Response.ok(new ResponseEntityView(OK)).build(); // 200
+            return Response.ok(new ResponseEntityAppOperationView(OK)).build(); // 200
         } catch (Exception e) {
             //By doing this mapping here. The resource becomes integration test friendly.
             Logger.error(this.getClass(),String.format("Exception creating secret for key %s",serviceKey), e);
@@ -587,7 +605,9 @@ public class AppsResource {
         summary = "Import app secrets",
         description = "Imports app secret configurations from an uploaded export file. Allows restoration and migration of app configurations from other environments. Accepts multipart form data with the export file."
     )
-    @ApiResponse(responseCode = "200", description = "Secrets imported successfully")
+    @ApiResponse(responseCode = "200", description = "Secrets imported successfully",
+                content = @Content(mediaType = "application/json",
+                                  schema = @Schema(implementation = ResponseEntityAppOperationView.class)))
     @ApiResponse(responseCode = "400", description = "Bad request - invalid import file or missing form data")
     @ApiResponse(responseCode = "401", description = "Unauthorized - backend user authentication required")
     @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions to import secrets")
@@ -614,7 +634,7 @@ public class AppsResource {
                             .init();
             final User user = initData.getUser();
             helper.importSecrets(form, user);
-            return Response.ok(new ResponseEntityView(OK)).build(); // 200
+            return Response.ok(new ResponseEntityAppOperationView(OK)).build(); // 200
         } catch (Exception e) {
             //By doing this mapping here. The resource becomes integration test friendly.
             Logger.error(this.getClass(),"Exception importing secrets.", e);
