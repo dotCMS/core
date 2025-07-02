@@ -1,5 +1,3 @@
-import { Params } from '@angular/router';
-
 import { CurrentUser } from '@dotcms/dotcms-js';
 import {
     DEFAULT_VARIANT_ID,
@@ -7,13 +5,18 @@ import {
     DotContainerMap,
     DotDevice,
     DotExperiment,
-    DotExperimentStatus,
-    DotPageContainerStructure,
-    VanityUrl
+    DotExperimentStatus
 } from '@dotcms/dotcms-models';
+import {
+    DotCMSPage,
+    DotCMSPageAssetContainers,
+    DotCMSURLContentMap,
+    DotCMSVanityUrl,
+    DotCMSViewAsPersona
+} from '@dotcms/types';
 
 import { EmaDragItem } from '../edit-ema-editor/components/ema-page-dropzone/types';
-import { DotPageAssetKeys, DotPageApiParams } from '../services/dot-page-api.service';
+import { DotPageApiParams } from '../services/dot-page-api.service';
 import {
     BASE_IFRAME_MEASURE_UNIT,
     COMMON_ERRORS,
@@ -26,7 +29,6 @@ import {
     ContainerPayload,
     ContentletDragPayload,
     ContentTypeDragPayload,
-    DotPage,
     DotPageAssetParams,
     DragDatasetItem,
     PageContainer
@@ -68,6 +70,21 @@ export function insertContentletInContainer(action: ActionPayload): {
 
     const { pageContainers, container, personaTag, newContentletId } = action;
 
+    const containerIsOnPageResponse = pageContainers.find((pageContainer) =>
+        areContainersEquals(pageContainer, container)
+    );
+
+    // We had a case where users are using the #parseContainer macro to hard code containers on their themes
+    // This case was not taken into account when we moved to design templates, so the container is not getting indexed on the PageAPI until we add some content
+    // That means, we have to trust the data we got from our SDK when we are adding a contentlet to a container and add the container to the pageContainers array if it's not there
+    // https://github.com/dotCMS/core/issues/31790#issuecomment-2945998795
+    if (!containerIsOnPageResponse) {
+        pageContainers.push({
+            ...container,
+            contentletsId: [...(container.contentletsId ?? [])]
+        });
+    }
+
     const newPageContainers = pageContainers.map((pageContainer) => {
         if (
             areContainersEquals(pageContainer, container) &&
@@ -102,6 +119,21 @@ export function deleteContentletFromContainer(action: ActionPayload): {
     const { pageContainers, container, contentlet, personaTag } = action;
 
     let contentletsId = [];
+
+    const containerIsOnPageResponse = pageContainers.find((pageContainer) =>
+        areContainersEquals(pageContainer, container)
+    );
+
+    // We had a case where users are using the #parseContainer macro to hard code containers on their themes
+    // This case was not taken into account when we moved to design templates, so the container is not getting indexed on the PageAPI until we add some content
+    // That means, we have to trust the data we got from our SDK when we are adding a contentlet to a container and add the container to the pageContainers array if it's not there
+    // https://github.com/dotCMS/core/issues/31790#issuecomment-2945998795
+    if (!containerIsOnPageResponse) {
+        pageContainers.push({
+            ...container,
+            contentletsId: [...(container.contentletsId ?? [])]
+        });
+    }
 
     const newPageContainers = pageContainers.map((currentContainer) => {
         if (areContainersEquals(currentContainer, container)) {
@@ -166,6 +198,21 @@ function insertPositionedContentletInContainer(payload: ActionPayload): {
     const { pageContainers, container, contentlet, personaTag, newContentletId, position } =
         payload;
 
+    const containerIsOnPageResponse = pageContainers.find((pageContainer) =>
+        areContainersEquals(pageContainer, container)
+    );
+
+    // We had a case where users are using the #parseContainer macro to hard code containers on their themes
+    // This case was not taken into account when we moved to design templates, so the container is not getting indexed on the PageAPI until we add some content
+    // That means, we have to trust the data we got from our SDK when we are adding a contentlet to a container and add the container to the pageContainers array if it's not there
+    // https://github.com/dotCMS/core/issues/31790#issuecomment-2945998795
+    if (!containerIsOnPageResponse) {
+        pageContainers.push({
+            ...container,
+            contentletsId: [...(container.contentletsId ?? [])]
+        });
+    }
+
     const newPageContainers = pageContainers.map((pageContainer) => {
         if (
             areContainersEquals(pageContainer, container) &&
@@ -214,10 +261,10 @@ export function sanitizeURL(url?: string): string {
 /**
  * Get the personalization for the contentlet
  *
- * @param {Record<string, string>} persona
+ * @param {DotCMSViewAsPersona} persona
  * @return {*}
  */
-export const getPersonalization = (persona: Record<string, string>) => {
+export const getPersonalization = (persona: DotCMSViewAsPersona) => {
     if (!persona || (!persona.contentType && !persona.keyTag)) {
         return `dot:default`;
     }
@@ -321,11 +368,21 @@ export function getIsDefaultVariant(variant?: string): boolean {
  * Check if the param is a forward or page
  *
  * @export
- * @param {VanityUrl} vanityUrl
+ * @param {DotCMSVanityUrl} vanityUrl
  * @return {*}
  */
-export function isForwardOrPage(vanityUrl?: VanityUrl): boolean {
-    return !vanityUrl || (!vanityUrl.permanentRedirect && !vanityUrl.temporaryRedirect);
+export function isForwardOrPage(vanityUrl?: DotCMSVanityUrl): boolean {
+    if (!vanityUrl) {
+        return true;
+    }
+
+    const pageAPIPropsExist = 'permanentRedirect' in vanityUrl && 'temporaryRedirect' in vanityUrl;
+
+    if (pageAPIPropsExist) {
+        return !vanityUrl?.permanentRedirect && !vanityUrl?.temporaryRedirect;
+    }
+
+    return vanityUrl?.action === 200 || vanityUrl?.response === 200; // GraphQL API returns 200 for forward
 }
 
 /**
@@ -402,7 +459,7 @@ export function createFullURL(params: DotPageApiParams, siteId?: string): string
  * @return {*}  {boolean}
  */
 export function computeCanEditPage(
-    page: DotPage,
+    page: DotCMSPage,
     currentUser: CurrentUser,
     experiment?: DotExperiment
 ): boolean {
@@ -426,7 +483,7 @@ export function computeCanEditPage(
  * @param {CurrentUser} currentUser
  * @return {*}
  */
-export function computePageIsLocked(page: DotPage, currentUser: CurrentUser): boolean {
+export function computePageIsLocked(page: DotCMSPage, currentUser: CurrentUser): boolean {
     return !!page?.locked && page?.lockedBy !== currentUser?.userId;
 }
 
@@ -434,11 +491,11 @@ export function computePageIsLocked(page: DotPage, currentUser: CurrentUser): bo
  * Map the containerStructure to a DotContainerMap
  *
  * @private
- * @param {DotPageContainerStructure} containers
+ * @param {DotCMSPageAssetContainers} containers
  * @return {*}  {DotContainerMap}
  */
 export function mapContainerStructureToDotContainerMap(
-    containers: DotPageContainerStructure
+    containers: DotCMSPageAssetContainers
 ): DotContainerMap {
     return Object.keys(containers).reduce((acc, id) => {
         acc[id] = containers[id].container;
@@ -451,9 +508,9 @@ export function mapContainerStructureToDotContainerMap(
  * Map the containerStructure to an array
  *
  * @private
- * @param {DotPageContainerStructure} containers
+ * @param {DotCMSPageAssetContainers} containers
  */
-export const mapContainerStructureToArrayOfContainers = (containers: DotPageContainerStructure) => {
+export const mapContainerStructureToArrayOfContainers = (containers: DotCMSPageAssetContainers) => {
     return Object.keys(containers).reduce(
         (
             acc: {
@@ -647,25 +704,6 @@ export const checkClientHostAccess = (
 };
 
 /**
- * Retrieve the page params from the router query params
- *
- * @export
- * @param {Params} params
- * @return {*}  {DotPageApiParams}
- */
-export function getAllowedPageParams(params: Params): DotPageAssetParams {
-    const allowedParams: DotPageAssetKeys[] = Object.values(DotPageAssetKeys);
-
-    return Object.keys(params)
-        .filter((key) => key && allowedParams.includes(key as DotPageAssetKeys))
-        .reduce((obj, key) => {
-            obj[key] = params[key];
-
-            return obj;
-        }, {}) as DotPageAssetParams;
-}
-
-/**
  * Determines the target URL for navigation.
  *
  * If `urlContentMap` is present and contains a `URL_MAP_FOR_CONTENT`, it will be used.
@@ -676,7 +714,7 @@ export function getAllowedPageParams(params: Params): DotPageAssetParams {
  */
 export function getTargetUrl(
     url: string | undefined,
-    urlContentMap: DotCMSContentlet
+    urlContentMap: DotCMSURLContentMap
 ): string | undefined {
     // Return URL from content map or fallback to the provided URL
     return urlContentMap?.URL_MAP_FOR_CONTENT || url;

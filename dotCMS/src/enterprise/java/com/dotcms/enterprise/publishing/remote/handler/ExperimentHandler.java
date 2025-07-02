@@ -10,55 +10,27 @@
 package com.dotcms.enterprise.publishing.remote.handler;
 
 import com.dotcms.business.WrapInTransaction;
-import com.dotcms.contenttype.exception.NotFoundInDbException;
-import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.contenttype.model.field.FieldVariable;
-import com.dotcms.contenttype.model.field.RelationshipField;
-import com.dotcms.contenttype.model.field.RelationshipFieldBuilder;
-import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
-import com.dotcms.enterprise.publishing.remote.bundler.ContentTypeBundler;
 import com.dotcms.enterprise.publishing.remote.bundler.ExperimentBundler;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.experiments.business.ExperimentsAPI;
 import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.Scheduling;
-import com.dotcms.publisher.pusher.wrapper.ContentTypeWrapper;
 import com.dotcms.publisher.pusher.wrapper.ExperimentWrapper;
 import com.dotcms.publisher.receiver.handler.IHandler;
 import com.dotcms.publishing.BundlerUtil;
 import com.dotcms.publishing.DotPublishingException;
 import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.publishing.PublisherConfig.Operation;
-import com.dotcms.repackage.com.google.common.collect.ImmutableList;
-import com.dotcms.workflow.helper.SystemActionMappingsHandlerMerger;
-import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.workflows.model.SystemActionWorkflowActionMapping;
-import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.PushPublishLogger;
-import com.dotmarketing.util.PushPublishLogger.PushPublishAction;
-import com.dotmarketing.util.PushPublishLogger.PushPublishHandler;
-import com.dotmarketing.util.UtilMethods;
-import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
+
 import java.io.File;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 /**
  * This handler class is part of the Push Publishing mechanism that deals with Experiments-related information inside a
@@ -160,9 +132,9 @@ public class ExperimentHandler implements IHandler {
 				}
 			}
     	} catch (final Exception e) {
-			final String errorMsg = String.format("An error occurred when processing Experiment in '%s' with Id '%s': %s",
-					workingOn, experiment.name(),
-							experiment.id().orElseThrow(), e.getMessage());
+			final String errorMsg = String.format("An error occurred when processing Experiment in '%s' with Name '%s' [%s]: %s",
+					workingOn, null != experiment ? experiment.name() : "- null -",
+						null != experiment ? experiment.id().orElseThrow() : "- null -", ExceptionUtil.getErrorMessage(e));
 			Logger.error(this.getClass(), errorMsg, e);
 			throw new DotPublishingException(errorMsg, e);
     	}

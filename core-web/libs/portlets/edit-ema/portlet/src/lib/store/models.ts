@@ -5,16 +5,16 @@ import {
     DotLanguage,
     DotPageToolUrlParams
 } from '@dotcms/dotcms-models';
+import { DotCMSPage, DotCMSPageAsset } from '@dotcms/types';
 import { InfoPage } from '@dotcms/ui';
 
-import { DotPageApiResponse } from '../services/dot-page-api.service';
 import { UVE_STATUS } from '../shared/enums';
-import { DotPage, DotPageAssetParams, NavigationBarItem } from '../shared/models';
+import { DotPageAssetParams, NavigationBarItem } from '../shared/models';
 
 export interface UVEState {
     languages: DotLanguage[];
     isEnterprise: boolean;
-    pageAPIResponse?: DotPageApiResponse;
+    pageAPIResponse?: DotCMSPageAsset;
     pageParams?: DotPageAssetParams;
     currentUser?: CurrentUser;
     experiment?: DotExperiment;
@@ -39,7 +39,7 @@ export interface ShellProps {
 }
 
 export interface TranslateProps {
-    page: DotPage;
+    page: DotCMSPage;
     currentLanguage: DotLanguage;
 }
 

@@ -127,7 +127,10 @@ const messagesMock = {
     'editpage.content.add.already.message': 'This content is already added to this container',
     'editpage.not.lincese.error':
         'Inline editing is available only with an enterprise license. Please contact support to upgrade your license.',
-    'dot.common.license.enterprise.only.error': 'Enterprise Only'
+    'dot.common.license.enterprise.only.error': 'Enterprise Only',
+    'message.content.saved': 'Content saved',
+    'message.content.note.already.published':
+        'Note: If you edit auto-published content, changes apply immediately.'
 };
 
 const createRouting = () =>
@@ -641,6 +644,7 @@ describe('EditEmaEditorComponent', () => {
 
                 it('should open a dialog and save after backend emit', (done) => {
                     spectator.detectChanges();
+
                     const dialog = spectator.debugElement.query(
                         By.css('[data-testId="ema-dialog"]')
                     );
@@ -2956,6 +2960,38 @@ describe('EditEmaEditorComponent', () => {
 
                     expect(saveContentletSpy).not.toHaveBeenCalled();
                     expect(setEditorState).toHaveBeenCalledWith(EDITOR_STATE.IDLE);
+                });
+
+                it('should show a helper message when save content when inline editing', () => {
+                    const messageSpy = jest.spyOn(messageService, 'add');
+
+                    window.dispatchEvent(
+                        new MessageEvent('message', {
+                            origin: HOST,
+                            data: {
+                                action: CLIENT_ACTIONS.UPDATE_CONTENTLET_INLINE_EDITING,
+                                payload: {
+                                    dataset: {
+                                        inode: '123',
+                                        fieldName: 'title',
+                                        mode: 'full',
+                                        language: '1'
+                                    },
+                                    content: 'Hello World II',
+                                    element: {},
+                                    eventType: '',
+                                    isNotDirty: false
+                                }
+                            }
+                        })
+                    );
+
+                    expect(messageSpy).toHaveBeenCalledWith({
+                        severity: 'success',
+                        summary: 'Content saved',
+                        detail: 'Note: If you edit auto-published content, changes apply immediately.',
+                        life: 2000
+                    });
                 });
             });
 

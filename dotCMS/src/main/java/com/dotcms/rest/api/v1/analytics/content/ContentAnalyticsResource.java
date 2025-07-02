@@ -6,11 +6,14 @@ import com.dotcms.analytics.content.ReportResponse;
 import com.dotcms.analytics.model.ResultSetItem;
 import com.dotcms.analytics.track.collectors.Collector;
 import com.dotcms.experiments.business.ConfigExperimentUtil;
+import com.dotcms.jitsu.ValidAnalyticsEventPayloadAttributes;
+import com.dotcms.jitsu.validators.AnalyticsValidatorUtil;
 import com.dotcms.rest.AnonymousAccess;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityStringView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.api.v1.analytics.content.util.AnalyticsEventsResult;
 import com.dotcms.rest.api.v1.analytics.content.util.ContentAnalyticsUtil;
 import com.dotcms.util.JsonUtil;
 import com.dotmarketing.beans.Host;
@@ -37,7 +40,9 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import java.io.Serializable;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -312,7 +317,7 @@ public class ContentAnalyticsResource {
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public ResponseEntityStringView fireUserCustomEvent(@Context final HttpServletRequest request,
+    public Response fireUserCustomEvent(@Context final HttpServletRequest request,
                                                 @Context final HttpServletResponse response,
                                                 final Map<String, Serializable> userEventPayload) throws DotSecurityException {
 
@@ -331,18 +336,20 @@ public class ContentAnalyticsResource {
             if (user.isAnonymousUser()) {
                 throw new DotSecurityException("Anonymous user is not allowed to fire an event");
             }
-        } else {
-
-            if (user.isAnonymousUser() && isNotValidKey(userEventPayload, WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request))) {
-                throw new DotSecurityException("The user is not allowed to fire an event");
-            }
-        }
+        } 
 
         Logger.debug(this,  ()->"Creating an user custom event with the payload: " + userEventPayload);
 
-        ContentAnalyticsUtil.registerContentAnalyticsRestEvent(request, response, userEventPayload);
+        final AnalyticsEventsResult analyticsEventsResult =
+                ContentAnalyticsUtil.registerContentAnalyticsRestEvent(request, response, userEventPayload);
 
-        return new ResponseEntityStringView("User event created successfully");
+        return Response.status(getResponseStatus(analyticsEventsResult)).entity(analyticsEventsResult).build();
+    }
+
+    private int getResponseStatus(final AnalyticsEventsResult analyticsEventsResult) {
+        return analyticsEventsResult.getStatus() == AnalyticsEventsResult.ResponseStatus.ERROR ? 400
+                : analyticsEventsResult.getStatus() == AnalyticsEventsResult.ResponseStatus.SUCCESS ? 200
+                : 207;
     }
 
     // Isnt valid if the payload does not contain the key or the key is different from the one in the site

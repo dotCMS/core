@@ -1,9 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+jest.mock('consola');
+
+import * as consola from 'consola';
+
 import {
     DotCMSClientConfig,
     DotCMSPageRequestParams,
     RequestOptions,
-    DotCMSGraphQLPageResponse
+    DotCMSGraphQLPageResponse,
+    DotCMSPageResponse
 } from '@dotcms/types';
 
 import { PageClient } from './page-api';
@@ -105,7 +110,113 @@ describe('PageClient', () => {
                 graphql: {
                     query: expect.any(String),
                     variables: expect.any(Object)
+                },
+                vanityUrl: undefined,
+                runningExperimentId: undefined
+            });
+        });
+
+        it('should print graphql errors ', async () => {
+            const consolaSpy = jest.spyOn(consola, 'error');
+            const pageClient = new PageClient(validConfig, requestOptions);
+            const graphQLOptions = {
+                graphql: {
+                    page: `containers {
+                        containerContentlets {
+                            contentlets {
+                                ... on Banner {
+                                    title
+                                }
+                            }
+                        }
+                    }`,
+                    content: { content: 'query Content { items { title } }' }
                 }
+            };
+
+            mockFetchGraphQL.mockResolvedValue({
+                data: {
+                    page: {
+                        title: 'GraphQL Page'
+                    }
+                },
+                errors: [{ message: 'Some internal server error' }]
+            });
+
+            await pageClient.get('/graphql-page', graphQLOptions);
+
+            expect(consolaSpy).toHaveBeenCalledWith(
+                '[DotCMS GraphQL Error]: ',
+                'Some internal server error'
+            );
+        });
+
+        it('should return an error if the page is not found', async () => {
+            const pageClient = new PageClient(validConfig, requestOptions);
+            const graphQLOptions = {
+                graphql: {
+                    page: `containers {
+                        containerContentlets {
+                            contentlets {
+                                ... on Banner {
+                                    title
+                                }
+                            }
+                        }
+                    }`,
+                    content: { content: 'query Content { items { title } }' }
+                }
+            };
+
+            mockFetchGraphQL.mockResolvedValue({
+                data: {
+                    page: null
+                },
+                errors: [{ message: 'No page data found' }]
+            });
+
+            try {
+                await pageClient.get('/graphql-page', graphQLOptions);
+            } catch (response: unknown) {
+                const responseData = response as DotCMSPageResponse;
+
+                expect(responseData.error?.message).toBe('No page data found');
+            }
+        });
+
+        it('should add leading slash to url if it does not have it', async () => {
+            const pageClient = new PageClient(validConfig, requestOptions);
+            const graphQLOptions = {
+                graphql: {
+                    page: `containers {
+                        containerContentlets {
+                            contentlets {
+                                ... on Banner {
+                                    title
+                                }
+                            }
+                        }
+                    }`,
+                    content: { content: 'query Content { items { title } }' }
+                }
+            };
+
+            // No leading slash
+            const result = await pageClient.get('graphql-page', graphQLOptions as any);
+
+            expect(result).toEqual({
+                pageAsset: graphqlToPageEntity(
+                    mockGraphQLResponse.data as unknown as DotCMSGraphQLPageResponse
+                ),
+                content: { content: mockGraphQLResponse.data.testContent },
+                graphql: {
+                    query: expect.any(String),
+                    variables: expect.objectContaining({
+                        url: '/graphql-page'
+                    })
+                },
+                vanityUrl: undefined,
+                runningExperimentId: undefined
             });
         });
 

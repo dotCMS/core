@@ -25,6 +25,7 @@ import io.vavr.Lazy;
 import io.vavr.control.Try;
 import org.apache.commons.io.IOUtils;
 import org.glassfish.jersey.server.JSONP;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -59,6 +60,7 @@ import java.util.concurrent.TimeUnit;
  * @since Oct 21st, 2020
  */
 @Path("/v1/maintenance")
+@Tag(name = "Maintenance", description = "System maintenance and administration operations")
 @SuppressWarnings("serial")
 public class MaintenanceResource implements Serializable {
 

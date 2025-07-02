@@ -34,9 +34,11 @@ import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 
 @Path("/cluster")
+@Tag(name = "Cluster Management")
 public class ClusterResource {
 
     private final WebResource webResource = new WebResource();

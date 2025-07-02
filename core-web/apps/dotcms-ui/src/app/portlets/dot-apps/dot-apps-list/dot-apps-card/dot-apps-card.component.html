@@ -14,11 +14,14 @@
                         : ('apps.no.configurations' | dm)
                 }}
             </span>
-            <dot-icon
-                *ngIf="app.sitesWithWarnings"
-                name="warning"
-                pTooltip="{{ app.sitesWithWarnings + ' ' + ('apps.invalid.configurations' | dm) }}"
-                size="18"></dot-icon>
+            @if (app.sitesWithWarnings) {
+                <dot-icon
+                    name="warning"
+                    pTooltip="{{
+                        app.sitesWithWarnings + ' ' + ('apps.invalid.configurations' | dm)
+                    }}"
+                    size="18" />
+            }
         </div>
     </p-header>
     <p>

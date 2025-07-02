@@ -25,6 +25,7 @@ import CharacterCount, { CharacterCountStorage } from '@tiptap/extension-charact
 import { Level } from '@tiptap/extension-heading';
 import { Highlight } from '@tiptap/extension-highlight';
 import { Link } from '@tiptap/extension-link';
+import Placeholder from '@tiptap/extension-placeholder';
 import { Subscript } from '@tiptap/extension-subscript';
 import { Superscript } from '@tiptap/extension-superscript';
 import { TableRow } from '@tiptap/extension-table-row';
@@ -49,9 +50,6 @@ import {
     AssetUploader,
     BubbleAssetFormExtension,
     BubbleFormExtension,
-    BubbleLinkFormExtension,
-    DEFAULT_LANG_ID,
-    DotBubbleMenuExtension,
     DotComands,
     DotConfigExtension,
     DotFloatingButton,
@@ -63,14 +61,15 @@ import {
     FreezeScroll,
     IndentExtension
 } from '../../extensions';
-import { DotPlaceholder } from '../../extensions/dot-placeholder/dot-placeholder-plugin';
+import { DotCMSPlusButton } from '../../extensions/dot-plus-button/dot-plus-button.plugin';
 import { AIContentNode, ContentletBlock, ImageNode, LoaderNode, VideoNode } from '../../nodes';
 import {
     DotMarketingConfigService,
     formatHTML,
     removeInvalidNodes,
     RestoreDefaultDOMAttrs,
-    SetDocAttrStep
+    SetDocAttrStep,
+    DEFAULT_LANG_ID
 } from '../../shared';
 
 @Component({
@@ -434,7 +433,6 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
                 contentletIdentifier: this.contentletIdentifier
             }),
             DotComands,
-            DotPlaceholder.configure({ placeholder: 'Type "/" for commands' }),
             Youtube.configure({
                 height: 300,
                 width: 400,
@@ -448,8 +446,6 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
                 shouldShowAIExtensions: isAIPluginInstalled
             }),
             DragHandler(this.viewContainerRef),
-            BubbleLinkFormExtension(this.viewContainerRef, this.languageId),
-            DotBubbleMenuExtension(this.#injector, this.viewContainerRef),
             BubbleFormExtension(this.viewContainerRef),
             DotFloatingButton(this.#injector, this.viewContainerRef),
             DotTableCellExtension(this.viewContainerRef),
@@ -459,7 +455,17 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
             FreezeScroll,
             CharacterCount,
             AssetUploader(this.#injector, this.viewContainerRef),
-            IndentExtension
+            IndentExtension,
+            Placeholder.configure({
+                placeholder: 'Start writing or type / to choose a block',
+                emptyEditorClass: 'is-editor-empty',
+                emptyNodeClass: 'is-empty'
+            }),
+            DotCMSPlusButton.configure({
+                showOnlyWhenEditable: true,
+                showOnlyCurrent: true,
+                includeChildren: false
+            })
         ];
 
         if (isAIPluginInstalled) {

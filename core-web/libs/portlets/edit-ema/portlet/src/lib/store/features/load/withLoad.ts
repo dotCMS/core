@@ -111,7 +111,7 @@ export function withLoad() {
                                 currentUser: loginService.getCurrentUser()
                             }).pipe(
                                 tap(({ pageAsset }) =>
-                                    store.getWorkflowActions(pageAsset.page.inode)
+                                    store.getWorkflowActions(pageAsset?.page?.inode)
                                 ),
                                 catchError((err: HttpErrorResponse) => {
                                     const errorStatus = err.status;
@@ -133,7 +133,7 @@ export function withLoad() {
                                             experimentId ?? DEFAULT_VARIANT_ID
                                         ),
                                         languages: dotLanguagesService.getLanguagesUsedPage(
-                                            pageAsset.page.identifier
+                                            pageAsset?.page?.identifier
                                         )
                                     }).pipe(
                                         catchError((err: HttpErrorResponse) => {

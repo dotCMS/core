@@ -24,6 +24,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vavr.control.Try;
 import org.glassfish.jersey.server.JSONP;
 
@@ -53,6 +54,7 @@ import java.util.stream.Stream;
  * @author jsanca
  */
 @Path("/v1/permissions")
+@Tag(name = "Permissions", description = "Permission management and access control")
 public class PermissionResource {
 
     private final WebResource      webResource;
