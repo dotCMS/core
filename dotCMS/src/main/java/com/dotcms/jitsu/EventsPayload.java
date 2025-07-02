@@ -44,6 +44,13 @@ public abstract class EventsPayload {
         public Object get(String key) {
             return jsonObject.get(key);
         }
+        public Object remove(String key) {
+            return jsonObject.remove(key);
+        }
+
+        public boolean contains(String key) {
+            return jsonObject.containsKey(key);
+        }
     }
 
 }
