@@ -1,4 +1,3 @@
-import { graphqlToPageEntity } from 'libs/sdk/client/src/lib/utils';
 import { EMPTY, Observable } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
@@ -11,7 +10,7 @@ import { DotCMSGraphQLPageResponse, DotCMSPageAsset, UVE_MODE } from '@dotcms/ty
 
 import { PERSONA_KEY } from '../shared/consts';
 import { DotPageAssetParams, SavePagePayload } from '../shared/models';
-import { getFullPageURL } from '../utils';
+import { getFullPageURL, graphqlToPageEntity } from '../utils';
 
 export interface DotPageApiParams {
     url: string;
