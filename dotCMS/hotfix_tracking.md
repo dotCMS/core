@@ -50,3 +50,4 @@ This maintenance release includes the following code fixes:
 44. https://github.com/dotCMS/core/issues/31894 : Contentlets with Relationships breaks block editor #31894
 45. https://github.com/dotCMS/core/issues/32414 : Old Edit Content: Template Selector is losing current template reference #32414
 46. https://github.com/dotCMS/core/issues/32522 : [Block Editor] Contentlet included by the second block editor is not shown in a page #32522
+47. https://github.com/dotCMS/core/issues/31790#issuecomment-2941061548 : Using Containers in theme files
