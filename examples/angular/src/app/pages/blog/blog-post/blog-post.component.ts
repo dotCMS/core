@@ -1,6 +1,6 @@
 import { Component, computed, input, OnChanges, signal } from '@angular/core';
 
-import { DotCMSBlockEditorRendererComponent } from '@dotcms/angular/next';
+import { DotCMSBlockEditorRendererComponent } from '@dotcms/angular';
 import { BlogContentlet } from '../blog.component';
 import { BlockEditorContent, UVE_MODE } from '@dotcms/types';
 import { NgOptimizedImage } from '@angular/common';

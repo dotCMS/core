@@ -6,7 +6,6 @@
     },
     "allowedNonPeerDependencies": [
         "@dotcms/uve",
-        "@dotcms/client",
         "@dotcms/types",
         "@tinymce/tinymce-angular"
     ]

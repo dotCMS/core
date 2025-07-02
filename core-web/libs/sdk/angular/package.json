@@ -5,11 +5,11 @@
     "rxjs": ">=7.0.0",
     "@angular/common": ">=17.0.0",
     "@angular/core": ">=17.0.0",
-    "@angular/router": ">=17.0.0"
+    "@angular/router": ">=17.0.0",
+    "@dotcms/client": "next"
   },
   "dependencies": {
     "@dotcms/uve": "next",
-    "@dotcms/client": "next",
     "@tinymce/tinymce-angular": "8.0.0"
   },
   "devDependencies": {
