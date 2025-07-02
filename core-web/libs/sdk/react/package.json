@@ -29,13 +29,11 @@
   ],
   "exports": {
     "./package.json": "./package.json",
-    ".": "./src/index.ts",
-    "./next": "./src/next.ts"
+    ".": "./src/index.ts"
   },
   "typesVersions": {
     "*": {
-      ".": ["./src/index.d.ts"],
-      "next": ["./src/next.d.ts"]
+      ".": ["./src/index.d.ts"]
     }
   },
   "author": "dotcms <dev@dotcms.com>",
