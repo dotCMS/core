@@ -4,6 +4,7 @@ import { z } from 'zod';
 
 import { registerContentTypeTools } from './tools/content-types';
 import { registerContextTools } from './tools/context';
+import { registerSearchTools } from './tools/search';
 import { registerWorkflowTools } from './tools/workflow';
 import { createContextCheckingServer } from './utils/context-checking-server';
 
@@ -35,6 +36,9 @@ registerContextTools(server);
 
 // Register content type tools (will be protected by context checking)
 registerContentTypeTools(server);
+
+// Register search tools (will be protected by context checking)
+registerSearchTools(server);
 
 // Register workflow tools (will be protected by context checking)
 registerWorkflowTools(server);
