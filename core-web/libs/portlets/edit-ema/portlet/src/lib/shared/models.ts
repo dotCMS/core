@@ -1,4 +1,3 @@
-
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DotCMSUVEAction } from '@dotcms/types';
 import { InfoPage } from '@dotcms/ui';
