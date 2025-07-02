@@ -21,6 +21,7 @@ import {
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotCMSInlineEditingPayload } from '@dotcms/types';
 import { DotMessagePipe } from '@dotcms/ui';
 
 export interface BlockEditorData {
@@ -78,7 +79,7 @@ export class DotBlockEditorSidebarComponent {
      * @param {InlineEditorData} { fieldName, contentType, inode, language, blockEditorContent }
      * @memberof DotBlockEditorSidebarComponent
      */
-    open({ inode, content, language, fieldName, contentType }): void {
+    open({ inode, content, language, fieldName, contentType }: DotCMSInlineEditingPayload): void {
         this.#getEditorField({ fieldName, contentType }).subscribe({
             next: (field) =>
                 this.contentlet.set({
