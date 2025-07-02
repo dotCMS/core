@@ -14,7 +14,6 @@ import { map, take } from 'rxjs/operators';
 import { JSONContent } from '@tiptap/core';
 
 import { BlockEditorModule } from '@dotcms/block-editor';
-import { InlineEditorData } from '@dotcms/client';
 import {
     DotAlertConfirmService,
     DotContentTypeService,
@@ -79,7 +78,7 @@ export class DotBlockEditorSidebarComponent {
      * @param {InlineEditorData} { fieldName, contentType, inode, language, blockEditorContent }
      * @memberof DotBlockEditorSidebarComponent
      */
-    open({ inode, content, language, fieldName, contentType }: InlineEditorData): void {
+    open({ inode, content, language, fieldName, contentType }): void {
         this.#getEditorField({ fieldName, contentType }).subscribe({
             next: (field) =>
                 this.contentlet.set({

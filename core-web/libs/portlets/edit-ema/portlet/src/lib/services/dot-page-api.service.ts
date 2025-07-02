@@ -1,3 +1,4 @@
+import { graphqlToPageEntity } from 'libs/sdk/client/src/lib/utils';
 import { EMPTY, Observable } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
@@ -5,7 +6,6 @@ import { Injectable } from '@angular/core';
 
 import { catchError, map, pluck } from 'rxjs/operators';
 
-import { graphqlToPageEntity } from '@dotcms/client';
 import { DEFAULT_VARIANT_ID, DotPersona } from '@dotcms/dotcms-models';
 import { DotCMSGraphQLPageResponse, DotCMSPageAsset, UVE_MODE } from '@dotcms/types';
 
