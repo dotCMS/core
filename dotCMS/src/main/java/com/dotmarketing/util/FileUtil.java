@@ -61,10 +61,27 @@ public class FileUtil {
 	private static Set<String> getEditableAsTextFileTypes() {
 		final Set<String> editableTypes = new HashSet<>();
 		editableTypes.addAll(Set.of(
-				"application/xml",
+				// Scripts and source code
+				"application/javascript",
+				"application/ecmascript",
+				"application/x-typescript",
+				"application/x-sh",              // Shell script
+				"application/x-httpd-php",       // PHP scripts
+				"application/x-latex",           // LaTeX documents
+
+				// Structured data formats
 				"application/json",
+				"application/xml",
 				"application/x-yaml",
-				"application/x-sql"));
+				"application/toml",
+				"application/x-toml",
+				"application/x-www-form-urlencoded",
+				"application/x-sql",
+
+				// React/TSX extensions
+				"application/jsx",
+				"application/tsx"
+		));
 		editableTypes.addAll(new HashSet<>(Arrays.asList(Config.getStringArrayProperty(
 				"EDITABLE_AS_TEXT_FILE_TYPES", new String[]{}))));
 		return editableTypes;
@@ -191,7 +208,7 @@ public class FileUtil {
    * cleans filenames and allows unicode- taken from
    * https://stackoverflow.com/questions/1155107/is-there-a-cross-platform-java-method-to-remove-filename-special-chars
    * 
-   * @param badFileName
+   * @param badFileNameIncoming
    * @return
    */
   public static String sanitizeFileName(final String badFileNameIncoming) {
