@@ -1,7 +1,11 @@
 import { Page } from "@playwright/test";
+import { BasePage } from "./base.page";
 
-export class LoginPage {
-  constructor(private page: Page) {}
+export class LoginPage extends BasePage {
+  constructor(protected page: Page) {
+    super(page);
+  }
+
   /**
    *  Login to dotCMS
    * @param page
@@ -20,5 +24,7 @@ export class LoginPage {
 
     const loginBtnLocator = this.page.getByTestId("submitButton");
     await loginBtnLocator.click();
+
+    await this.sideMenu.openMenu();
   }
 }

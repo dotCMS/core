@@ -12,17 +12,16 @@ import { createDefaultContentType } from "@data/defaultContentType";
 const contentTypeName = faker.lorem.word().toLocaleLowerCase();
 
 test.beforeEach("Navigate to content types", async ({ page, request }) => {
-  const listingContentTypesPage = new ListingContentTypesPage(page, request);
-  const contentTypeFormPage = new ContentTypeFormPage(page);
-
   // Get the username and password from the environment variables
   const username = process.env.USERNAME as string;
   const password = process.env.PASSWORD as string;
-
-  // Login to dotCMS
   const loginPage = new LoginPage(page);
 
   await loginPage.login(username, password);
+
+  const listingContentTypesPage = new ListingContentTypesPage(page, request);
+  const contentTypeFormPage = new ContentTypeFormPage(page);
+
   await listingContentTypesPage.toggleNewContentEditor(true);
   await listingContentTypesPage.goToUrl();
   await listingContentTypesPage.addNewContentType(contentTypeName);
@@ -43,11 +42,12 @@ test.skip("should save a site or folder field", async ({ page }) => {
   await expect(locatorFieldLocator).toBeVisible();
 
   const newEditContentFormPage = new NewEditContentFormPage(page);
-  const listingContentPage = new ListingContentPage(page);
 
   const selectedFolder = await newEditContentFormPage.selectSiteOrFolderField();
   await newEditContentFormPage.save();
-  await newEditContentFormPage.goToBack();
+
+  const listingContentPage = new ListingContentPage(page);
+  await listingContentPage.goTo(contentTypeName);
   await listingContentPage.clickFirstContentRow();
 
   await expect(locatorFieldLocator).toHaveText(`//${selectedFolder}`);

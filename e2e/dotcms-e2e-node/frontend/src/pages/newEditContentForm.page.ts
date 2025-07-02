@@ -1,7 +1,10 @@
 import { expect, Page } from "@playwright/test";
+import { BasePage } from "./base.page";
 
-export class NewEditContentFormPage {
-  constructor(private page: Page) {}
+export class NewEditContentFormPage extends BasePage {
+  constructor(protected page: Page) {
+    super(page);
+  }
 
   async fillTextField(text: string) {
     const textFieldLocator = this.page.getByTestId("textField");
@@ -24,7 +27,9 @@ export class NewEditContentFormPage {
   }
 
   async save() {
-    const saveButtonLocator = this.page.getByRole("button", { name: "Save" });
+    const saveButtonLocator = this.page.getByRole("button", {
+      name: "Save",
+    });
     await saveButtonLocator.click();
     await this.page.waitForResponse((response) => {
       return (
@@ -32,11 +37,6 @@ export class NewEditContentFormPage {
         response.url().includes("/api/v1/workflow/actions/")
       );
     });
-  }
-
-  async goToBack() {
-    const backButtonLocator = this.page.getByTestId("back-button");
-    await backButtonLocator.click();
   }
 
   async goToContent(id: string) {

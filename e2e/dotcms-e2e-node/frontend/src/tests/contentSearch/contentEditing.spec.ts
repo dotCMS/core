@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
-import { LoginPage, SideMenuPage } from "@pages";
+import { LoginPage } from "@pages";
+import { SideMenuComponent } from "@components/sideMenu.component";
 import { waitForVisibleAndCallback } from "@utils/utils";
 import { ContentPage } from "@pages";
 import {
@@ -22,7 +23,7 @@ import { assert } from "console";
  */
 test.beforeEach("Navigate to content portlet", async ({ page }) => {
   const loginPage = new LoginPage(page);
-  const sideMenuPage = new SideMenuPage(page);
+  const sideMenuPage = new SideMenuComponent(page);
 
   // Get the username and password from the environment variables
   const username = process.env.USERNAME as string;

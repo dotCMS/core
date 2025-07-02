@@ -311,7 +311,9 @@ export class ContentPage {
         );
         await iframe.getByRole("link", { name: "Advanced" }).click();
         await iframe.locator("#widget_showingSelect div").first().click();
-        const dropDownMenu = iframe.getByRole("option", { name: "Archived" });
+        const dropDownMenu = iframe.getByRole("option", {
+          name: "Archived",
+        });
         await waitForVisibleAndCallback(dropDownMenu, () =>
           dropDownMenu.click(),
         );
