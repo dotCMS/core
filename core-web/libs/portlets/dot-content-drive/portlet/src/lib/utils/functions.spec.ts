@@ -36,5 +36,20 @@ describe('Utility Functions', () => {
             const result = decodeFilters('contentType:Blog;contentType:News');
             expect(result).toEqual({ contentType: 'News' });
         });
+
+        it('should handle datetime values with multiple colons - edge case', () => {
+            const result = decodeFilters('modDate:2023-10-15T14:30:45;status:published');
+            expect(result).toEqual({ modDate: '2023-10-15T14:30:45', status: 'published' });
+        });
+
+        it('should handle values with multiple colons and multiple semicolons - edge case', () => {
+            const result = decodeFilters(
+                'someContentType.url:http://some.url;modDate:2023-10-15T14:30:45'
+            );
+            expect(result).toEqual({
+                'someContentType.url': 'http://some.url',
+                modDate: '2023-10-15T14:30:45'
+            });
+        });
     });
 });

@@ -7,7 +7,13 @@ export function decodeFilters(filters: string): Record<string, string> {
 
     return filtersArray.reduce(
         (acc, filter) => {
-            const [key, value] = filter.split(':').map((part) => part.trim());
+            // Get the first colon index
+            const colonIndex = filter.indexOf(':');
+
+            // Handle the case where the filter has a colon in the value
+            // Ex. someContentType.url:http://some.url (Looking forward for complex filters)
+            const key = filter.substring(0, colonIndex).trim();
+            const value = filter.substring(colonIndex + 1).trim();
 
             // We have to handle the multiselector (,) but this is enough to pave the path for now
             acc[key] = value;
