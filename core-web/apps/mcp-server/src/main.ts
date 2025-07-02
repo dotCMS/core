@@ -5,11 +5,15 @@ import { z } from 'zod';
 import { registerContentTypeTools } from './tools/content-types';
 import { registerContextTools } from './tools/context';
 import { registerWorkflowTools } from './tools/workflow';
+import { createContextCheckingServer } from './utils/context-checking-server';
 
-const server = new McpServer({
+const originalServer = new McpServer({
     name: 'DotCMS',
     version: '1.0.0'
 });
+
+// Create context-checking server proxy to enforce initialization requirements
+const server = createContextCheckingServer(originalServer);
 
 const DOTCMS_URL = process.env.DOTCMS_URL;
 const AUTH_TOKEN = process.env.AUTH_TOKEN;
@@ -26,14 +30,14 @@ try {
     process.exit(1);
 }
 
-// Register content type tools
+// Register context tools first (context_initialization is exempt from checking)
+registerContextTools(server);
+
+// Register content type tools (will be protected by context checking)
 registerContentTypeTools(server);
 
-// Register workflow tools
+// Register workflow tools (will be protected by context checking)
 registerWorkflowTools(server);
-
-// Register context tools
-registerContextTools(server);
 
 const transport = new StdioServerTransport();
 (async () => {

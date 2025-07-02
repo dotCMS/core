@@ -4,6 +4,7 @@ import { createResponseText } from "./formatters";
 import { ContentTypeService } from "../../services/contentype";
 import { SiteService } from "../../services/site";
 import { WorkflowService } from "../../services/workflow";
+import { getContextStore } from "../../utils/context-store";
 import { Logger } from "../../utils/logger";
 import { executeWithErrorHandling, createSuccessResponse } from "../../utils/response";
 
@@ -12,6 +13,7 @@ const contentTypeService = new ContentTypeService();
 const siteService = new SiteService();
 const workflowService = new WorkflowService();
 const logger = new Logger('CONTEXT_TOOL');
+const contextStore = getContextStore();
 
 /**
  * Handles context initialization operations
@@ -30,6 +32,9 @@ export async function contextInitializationHandler() {
                     contentTypeCount: cachedData.data.contentTypes.length,
                     workflowSchemeCount: cachedData.data.workflowSchemes.length
                 });
+
+                // Set context as initialized since we have valid cached data
+                contextStore.setInitialized();
 
                 const responseText = createResponseText(
                     cachedData.data.contentTypes,
@@ -59,6 +64,9 @@ export async function contextInitializationHandler() {
 
             // Cache the fresh data
             setCacheData(contentTypes, currentSite, workflowSchemes.entity);
+
+            // Set context as initialized since we successfully fetched fresh data
+            contextStore.setInitialized();
 
             const responseText = createResponseText(
                 contentTypes,
