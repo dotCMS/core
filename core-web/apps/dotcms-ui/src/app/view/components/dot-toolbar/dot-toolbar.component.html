@@ -6,14 +6,14 @@
         <div class="flex gap-1 align-items-center">
             <div class="px-2">
                 <dot-site-selector
-                (switch)="siteChange($event)"
-                (hide)="iframeOverlayService.hide()"
-                (display)="iframeOverlayService.show()"
-                [archive]="false"
-                class="toolbar__site-selector"
-                #siteSelector
-                width="12.5rem"
-                cssClass="d-secondary" />
+                    (switch)="siteChange($event)"
+                    (hide)="iframeOverlayService.hide()"
+                    (display)="iframeOverlayService.show()"
+                    [archive]="false"
+                    class="toolbar__site-selector"
+                    #siteSelector
+                    width="12.5rem"
+                    cssClass="d-secondary" />
             </div>
             <ng-container *dotShowHideFeature="featureFlagAnnouncements">
                 <dot-toolbar-announcements />
