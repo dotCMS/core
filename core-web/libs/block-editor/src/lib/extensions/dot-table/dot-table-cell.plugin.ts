@@ -4,8 +4,7 @@ import tippy, { Instance, Props } from 'tippy.js';
 
 import { getCellsOptions } from './utils';
 
-import { SuggestionsComponent } from '../../shared';
-import { popperModifiers } from '../bubble-menu/utils';
+import { SuggestionsComponent, popperModifiers } from '../../shared';
 
 class DotTableCellPluginView {
     public tippy: Instance | undefined;

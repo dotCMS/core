@@ -16,8 +16,8 @@ import { map, take } from 'rxjs/operators';
 import { DotLanguagesService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSContentType, DotLanguage } from '@dotcms/dotcms-models';
 
-import { DEFAULT_LANG_ID } from '../../../extensions';
 import { SuggestionsService } from '../../services';
+import { DEFAULT_LANG_ID } from '../../utils';
 import { SuggestionListComponent } from '../suggestion-list/suggestion-list.component';
 
 export interface SuggestionsCommandProps {
