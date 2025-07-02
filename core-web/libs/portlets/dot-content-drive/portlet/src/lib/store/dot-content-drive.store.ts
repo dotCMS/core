@@ -11,7 +11,7 @@ import {
     DotContentDriveStatus,
     BASE_QUERY,
     SYSTEM_HOST
-} from './models';
+} from '../shared/models';
 
 const initialState: DotContentDriveState = {
     currentSite: SYSTEM_HOST,

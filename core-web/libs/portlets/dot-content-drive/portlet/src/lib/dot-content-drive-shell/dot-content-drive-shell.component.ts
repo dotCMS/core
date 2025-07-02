@@ -9,8 +9,8 @@ import { DotContentSearchService, DotSiteService } from '@dotcms/data-access';
 import { ESContent } from '@dotcms/dotcms-models';
 import { DotFolderListViewComponent } from '@dotcms/portlets/content-drive/ui';
 
+import { DotContentDriveStatus, SYSTEM_HOST } from '../shared/models';
 import { DotContentDriveStore } from '../store/dot-content-drive.store';
-import { DotContentDriveStatus, SYSTEM_HOST } from '../store/models';
 import { decodeFilters } from '../utils/functions';
 
 @Component({
@@ -34,16 +34,17 @@ export class DotContentDriveShellComponent implements OnInit {
 
     readonly itemsEffect = effect(() => {
         const currentSite = untracked(() => this.#store.currentSite());
+        const query = this.#store.$query();
 
         // If the current site is the system host, we don't need to search for content
         // It initializes the store with the system host and the path
-        if (currentSite.identifier === SYSTEM_HOST.identifier) {
+        if (currentSite?.identifier === SYSTEM_HOST.identifier) {
             return;
         }
 
         this.#contentSearchService
             .get<ESContent>({
-                query: this.#store.$query(),
+                query,
                 limit: 40,
                 offset: 0
             })
@@ -68,7 +69,6 @@ export class DotContentDriveShellComponent implements OnInit {
         this.#siteService
             .getCurrentSite()
             .pipe(
-                take(1),
                 catchError(() => {
                     return of(SYSTEM_HOST);
                 })
