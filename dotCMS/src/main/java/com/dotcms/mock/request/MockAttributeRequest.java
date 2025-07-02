@@ -45,4 +45,9 @@ public class MockAttributeRequest extends HttpServletRequestWrapper implements M
         attributes.put(name, o);
     }
 
+    @Override
+    public void removeAttribute(String name) {
+        attributes.remove(name);
+    }
+
 }
