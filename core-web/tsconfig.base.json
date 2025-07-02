@@ -24,6 +24,7 @@
             "@dotcms/app/*": ["apps/dotcms-ui/src/app/*"],
             "@dotcms/block-editor": ["libs/block-editor/src/public-api.ts"],
             "@dotcms/client": ["libs/sdk/client/src/index.ts"],
+            "@dotcms/client/next": ["libs/sdk/client/src/next.ts"],
             "@dotcms/contenttype-fields": ["libs/contenttype-fields/src/index.ts"],
             "@dotcms/data-access": ["libs/data-access/src/index.ts"],
             "@dotcms/dot-layout-grid": ["libs/dot-layout-grid/src/public_api.ts"],
@@ -39,6 +40,12 @@
             "@dotcms/edit-content-bridge": ["libs/edit-content-bridge/src/index.ts"],
             "@dotcms/edit-content/*": ["libs/edit-content/src/lib/*"],
             "@dotcms/experiments": ["libs/sdk/experiments/src/index.ts"],
+            "@dotcms/portlets/content-drive/portlet": [
+                "libs/portlets/dot-content-drive/portlet/src/index.ts"
+            ],
+            "@dotcms/portlets/content-drive/ui": [
+                "libs/portlets/dot-content-drive/ui/src/index.ts"
+            ],
             "@dotcms/portlets/dot-analytics-search/portlet": [
                 "libs/portlets/dot-analytics-search/portlet/src/index.ts"
             ],

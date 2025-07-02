@@ -7,7 +7,7 @@ import { pluck } from 'rxjs/operators';
 
 import { DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
 
-import { ContentletFilters, DEFAULT_LANG_ID } from '../../../extensions';
+import { ContentletFilters, DEFAULT_LANG_ID } from '../../../shared';
 
 @Injectable()
 export class SuggestionsService {

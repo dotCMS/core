@@ -3,9 +3,11 @@ package com.dotcms.graphql.datafetcher;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.graphql.DotGraphQLContext;
 import com.dotcms.rest.ContentHelper;
+import com.dotcms.variant.VariantAPI;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.contentlet.transform.DotContentletTransformer;
 import com.dotmarketing.portlets.contentlet.transform.DotTransformerBuilder;
+import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONObject;
@@ -46,7 +48,8 @@ public class ContentMapDataFetcher implements DataFetcher<Object> {
             final Contentlet contentlet = environment.getSource();
             final String key = environment.getArgument("key");
             final int depth = environment.getArgument("depth");
-            Boolean render = environment.getArgument("render");
+            final Boolean renderArg = environment.getArgument("render");
+            final boolean render = Boolean.TRUE.equals(renderArg);
 
             final HttpServletRequest request = ((DotGraphQLContext) environment.getContext())
                     .getHttpServletRequest();
@@ -57,7 +60,7 @@ public class ContentMapDataFetcher implements DataFetcher<Object> {
             Logger.debug(this, ()-> "Fetching content map for contentlet: " + contentlet.getIdentifier());
             if(UtilMethods.isSet(key)) {
                 Object fieldValue;
-                if(UtilMethods.isSet(render) && render) {
+                if(render) {
                     fieldValue = getRenderedFieldValue(request, response, contentlet, key);
                 } else {
                     fieldValue = contentlet.get(key);
@@ -67,24 +70,14 @@ public class ContentMapDataFetcher implements DataFetcher<Object> {
 
             final User user = ((DotGraphQLContext) environment.getContext()).getUser();
 
-            final DotTransformerBuilder transformerBuilder = new DotTransformerBuilder();
-
-            if(UtilMethods.isSet(render) && render) {
-                transformerBuilder.hydratedContentMapTransformer(RENDER_FIELDS);
-            } else {
-                render = false;
-                transformerBuilder.hydratedContentMapTransformer();
-            }
-
-            final DotContentletTransformer myTransformer = transformerBuilder.content(contentlet).build();
-
-            final Map<String, Object> hydratedMap =  myTransformer.toMaps().get(0);
+            // Resolve hydrated contentlet map with optional variant handling
+            Map<String, Object> hydratedMap = getHydratedMapWithVariantFallback(request, contentlet, render);
             final JSONObject contentMapInJSON = new JSONObject();
 
             // this only adds relationships to any json. We would need to return them with the transformations already
 
             final JSONObject jsonWithRels = ContentHelper.getInstance().addRelationshipsToJSON(request, response,
-                    render.toString(), user, depth, false, contentlet,
+                    Boolean.toString(render), user, depth, false, contentlet,
                     contentMapInJSON, null, 1, true, false,
                     true);
 
@@ -131,11 +124,11 @@ public class ContentMapDataFetcher implements DataFetcher<Object> {
 
 
     private Object getRenderedFieldValue(final HttpServletRequest request,
-            final HttpServletResponse response, final Contentlet contentlet,
-            final String key) {
+                                         final HttpServletResponse response, final Contentlet contentlet,
+                                         final String key) {
         final Field field = Try.of(()-> contentlet.getContentType().fields()
                 .stream().filter((myField)->myField.variable().equals(key)).collect(
-                Collectors.toList()).get(0)).getOrNull();
+                        Collectors.toList()).get(0)).getOrNull();
 
         if(!isFieldRenderable(field)) {
             return contentlet.get(key);
@@ -143,4 +136,82 @@ public class ContentMapDataFetcher implements DataFetcher<Object> {
 
         return renderFieldValue(request, response, (String) contentlet.get(key), contentlet, field.variable());
     }
+
+    /**
+     * Attempts to retrieve a hydrated contentlet map, respecting an explicitly requested variant if present.
+     * <p>
+     * Behavior:
+     * <ul>
+     *   <li>If a variant is explicitly provided via {@link VariantAPI#VARIANT_KEY} in the request,
+     *       it is set on the contentlet.</li>
+     *   <li>If the variant is {@code DEFAULT}, no fallback is performed on error.</li>
+     *   <li>If no variant is provided, the contentlet will implicitly use the {@code DEFAULT} variant.</li>
+     *   <li>If a variant is set and fails to resolve (e.g., the contentlet has no version for it),
+     *       a fallback attempt is made using the {@code DEFAULT} variant.</li>
+     * </ul>
+     *
+     * @param request    the current HTTP request, used to extract the variant key if provided
+     * @param user       the user requesting the content, used for permissions and rendering
+     * @param contentlet the contentlet to hydrate
+     * @param render     whether renderable fields should be velocity-rendered
+     * @return a hydrated content map including field values (rendered if requested)
+     */
+    private Map<String, Object> getHydratedMapWithVariantFallback(
+            final HttpServletRequest request,
+            final Contentlet contentlet,
+            final boolean render
+    ) {
+        // Create a defensive copy to avoid modifying the original contentlet
+        final Contentlet contentletCopy = new Contentlet(contentlet.getMap());
+        final DotTransformerBuilder transformerBuilder = new DotTransformerBuilder();
+        if(render) {
+            transformerBuilder.hydratedContentMapTransformer(RENDER_FIELDS);
+        } else {
+            transformerBuilder.hydratedContentMapTransformer();
+        }
+        final Object variantAttr = request.getAttribute(VariantAPI.VARIANT_KEY);
+
+        // Set variantId only if explicitly requested
+        if (UtilMethods.isSet(variantAttr)) {
+            final String variantName = variantAttr.toString();
+
+            // Avoid fallback loop if DEFAULT is already being used
+            assert VariantAPI.DEFAULT_VARIANT.name() != null;
+            if (VariantAPI.DEFAULT_VARIANT.name().equals(variantName)) {
+                contentletCopy.setVariantId(variantName);
+                return transformContentlet(transformerBuilder, contentletCopy);
+            }
+
+            try {
+                contentletCopy.setVariantId(variantName);
+                return transformContentlet(transformerBuilder, contentletCopy);
+            } catch (DotStateException e) {
+                Logger.debug(this, () -> String.format(
+                        "Variant '%s' not found for contentlet '%s'. Falling back to DEFAULT variant.",
+                        variantName, contentletCopy.getIdentifier()
+                ));
+
+                contentletCopy.setVariantId(VariantAPI.DEFAULT_VARIANT.name());
+                return transformContentlet(transformerBuilder, contentletCopy);
+            }
+        }
+
+        // No variantAttr: implicitly uses DEFAULT variant
+        return transformContentlet(transformerBuilder, contentletCopy);
+    }
+
+    /**
+     * Transforms the given {@link Contentlet} using the provided {@link DotTransformerBuilder}
+     * and returns the first entry from the resulting hydrated content map.
+     *
+     * @param builder     the transformer builder preconfigured with hydration settings
+     * @param contentlet  the contentlet to transform into a hydrated map
+     * @return the first (and typically only) map resulting from the contentlet transformation
+     */
+    private Map<String, Object> transformContentlet(final DotTransformerBuilder builder, final Contentlet contentlet) {
+        return builder.content(contentlet).build().toMaps().get(0);
+    }
+
+
+
 }

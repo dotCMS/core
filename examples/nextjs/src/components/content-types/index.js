@@ -2,7 +2,6 @@ import { CustomNoComponent } from "./Empty";
 import Activity from "./Activity";
 import Banner from "./Banner";
 import BannerCarousel from "./BannerCarousel";
-import Blog from "./Blog";
 import CalendarEvent from "./CalendarEvent";
 import CallToAction from "./CallToAction";
 import CategoryFilter from "./CategoryFilter";
@@ -18,7 +17,6 @@ export const pageComponents = {
     Activity: Activity,
     Banner: Banner,
     BannerCarousel: BannerCarousel,
-    Blog: Blog,
     calendarEvent: CalendarEvent,
     CallToAction: CallToAction,
     CategoryFilter: CategoryFilter,

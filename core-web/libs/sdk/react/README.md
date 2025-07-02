@@ -78,13 +78,17 @@ For detailed instructions, please refer to the [dotCMS API Documentation - Read-
 ### Install Dependencies
 
 ```bash
-npm install @dotcms/react@next @dotcms/uve@next @dotcms/client@next @dotcms/types@next @tinymce/tinymce-react
+npm install @dotcms/react@next
 ```
+
+This will automatically install the required dependencies:
+- `@dotcms/uve`: Enables interaction with the [Universal Visual Editor](https://dev.dotcms.com/docs/uve-headless-config) for real-time content editing
+- `@dotcms/client`: Provides the core client functionality for fetching and managing dotCMS data
 
 ### dotCMS Client Configuration
 
 ```typescript
-import { createDotCMSClient } from '@dotcms/client';
+import { createDotCMSClient } from '@dotcms/client/next';
 
 type DotCMSClient = ReturnType<typeof createDotCMSClient>;
 

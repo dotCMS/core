@@ -17,6 +17,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.model.User;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.glassfish.jersey.server.JSONP;
 
 import javax.servlet.http.HttpServletRequest;
@@ -40,6 +41,7 @@ import java.util.Optional;
  * It includes methods for searching content based on a given query and finding related content.
  */
 @Path("/v1/ai/search")
+@Tag(name = "AI", description = "AI-powered content generation and analysis endpoints")
 public class SearchResource {
 
     /**

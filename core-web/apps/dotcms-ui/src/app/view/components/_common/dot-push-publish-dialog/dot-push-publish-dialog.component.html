@@ -4,10 +4,13 @@
     [actions]="dialogActions"
     [header]="eventData?.title"
     [hideButtons]="!!eventData?.customCode">
-    <dot-push-publish-form
-        *ngIf="eventData"
-        (value)="formData = $event"
-        (valid)="updateFormValid($event)"
-        [data]="eventData"></dot-push-publish-form>
-    <span *ngIf="errorMessage" class="dot-push-publish-dialog__error">{{ errorMessage }}</span>
+    @if (eventData) {
+        <dot-push-publish-form
+            (value)="formData = $event"
+            (valid)="updateFormValid($event)"
+            [data]="eventData"></dot-push-publish-form>
+    }
+    @if (errorMessage) {
+        <span class="dot-push-publish-dialog__error">{{ errorMessage }}</span>
+    }
 </dot-dialog>

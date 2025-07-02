@@ -31,6 +31,7 @@ import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.util.HttpHeaders;
 import com.liferay.util.StringPool;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vavr.control.Try;
 import org.apache.commons.lang.time.StopWatch;
 import org.glassfish.jersey.media.multipart.BodyPart;
@@ -59,6 +60,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.Future;
 
+@Tag(name = "Temporary Files")
 @Path("/v1/temp")
 public class TempFileResource {
 

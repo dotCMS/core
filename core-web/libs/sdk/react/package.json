@@ -3,10 +3,12 @@
   "version": "0.0.1-beta-2",
   "peerDependencies": {
     "react": ">=18",
-    "react-dom": ">=18",
-    "@dotcms/client": "next",
+    "react-dom": ">=18"
+  },
+  "dependencies": {
     "@dotcms/uve": "next",
-    "@tinymce/tinymce-react": "^6.0.0"
+    "@dotcms/client": "next",
+    "@tinymce/tinymce-react": "6.2.1"
   },
   "devDependencies": {
     "@dotcms/types": "next"

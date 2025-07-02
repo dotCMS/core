@@ -28,9 +28,9 @@ import {
     SuggestionsCommandProps,
     SuggestionsComponent
 } from '../../shared';
+import { NodeTypes } from '../../shared/utils';
 import { AI_CONTENT_PROMPT_EXTENSION_NAME } from '../ai-content-prompt/ai-content-prompt.extension';
 import { AI_IMAGE_PROMPT_EXTENSION_NAME } from '../ai-image-prompt/ai-image-prompt.extension';
-import { NodeTypes } from '../bubble-menu/models';
 
 const AI_BLOCK_EXTENSIONS_IDS = [AI_CONTENT_PROMPT_EXTENSION_NAME, AI_IMAGE_PROMPT_EXTENSION_NAME];
 declare module '@tiptap/core' {
