@@ -10,6 +10,10 @@ export function decodeFilters(filters: string): Record<string, string> {
             // Get the first colon index
             const colonIndex = filter.indexOf(':');
 
+            if (colonIndex === -1) {
+                return acc;
+            }
+
             // Handle the case where the filter has a colon in the value
             // Ex. someContentType.url:http://some.url (Looking forward for complex filters)
             const key = filter.substring(0, colonIndex).trim();

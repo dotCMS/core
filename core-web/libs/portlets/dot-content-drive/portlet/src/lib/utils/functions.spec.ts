@@ -51,5 +51,10 @@ describe('Utility Functions', () => {
                 modDate: '2023-10-15T14:30:45'
             });
         });
+
+        it('should handle filters without colons - edge case', () => {
+            const result = decodeFilters('contentType:Blog;status');
+            expect(result).toEqual({ contentType: 'Blog' });
+        });
     });
 });

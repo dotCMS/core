@@ -180,7 +180,7 @@ describe('DotContentDriveShellComponent', () => {
             spectator.detectChanges();
 
             expect(store.setStatus).toHaveBeenCalledWith(DotContentDriveStatus.ERROR);
-            expect(store.setItems).toHaveBeenCalledWith([]);
+            expect(store.setItems).not.toHaveBeenCalled();
         });
     });
 

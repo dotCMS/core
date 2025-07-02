@@ -1,4 +1,4 @@
-import { of } from 'rxjs';
+import { EMPTY, of } from 'rxjs';
 
 import { Component, effect, inject, OnInit, untracked } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
@@ -53,11 +53,7 @@ export class DotContentDriveShellComponent implements OnInit {
                 catchError(() => {
                     this.#store.setStatus(DotContentDriveStatus.ERROR);
 
-                    return of({
-                        jsonObjectView: {
-                            contentlets: []
-                        }
-                    });
+                    return EMPTY;
                 })
             )
             .subscribe((response) => {
