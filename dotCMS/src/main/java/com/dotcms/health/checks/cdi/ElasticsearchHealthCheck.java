@@ -23,6 +23,12 @@ public class ElasticsearchHealthCheck extends HealthCheckBase {
     
     @Override
     protected CheckResult performCheck() throws Exception {
+        // Skip expensive Elasticsearch operations during shutdown
+        if (isShutdownInProgress()) {
+            Logger.debug(this, "Skipping Elasticsearch connectivity test during shutdown");
+            return new CheckResult(false, 0L, "Elasticsearch health check skipped during shutdown to avoid network calls while search services are shutting down");
+        }
+        
         // Use the utility method for consistent timing and error handling
         return measureExecution(() -> {
             // Test actual Elasticsearch connectivity
