@@ -50,6 +50,7 @@ export interface DotNotifyMessages {
 }
 
 const CONTAINERS_URL = 'v1/containers';
+const DEFAULT_MAX_PAGE_LINKS = 5;
 
 @Injectable()
 export class DotContainerListStore extends ComponentStore<DotContainerListState> {
@@ -100,7 +101,7 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
                         failsInfo: []
                     } as DotNotifyMessages,
                     containers: [],
-                    maxPageLinks: 5,
+                    maxPageLinks: DEFAULT_MAX_PAGE_LINKS,
                     totalRecords: 0
                 });
             });
