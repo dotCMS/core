@@ -7,8 +7,9 @@ import { QueryBuilder } from '@dotcms/query-builder';
 
 import { DotContentDriveStore } from './dot-content-drive.store';
 
+import { SYSTEM_HOST } from '../shared/constants';
 import { mockItems } from '../shared/mocks';
-import { DotContentDriveStatus, SYSTEM_HOST } from '../shared/models';
+import { DotContentDriveStatus } from '../shared/models';
 
 describe('DotContentDriveStore', () => {
     let spectator: SpectatorService<InstanceType<typeof DotContentDriveStore>>;

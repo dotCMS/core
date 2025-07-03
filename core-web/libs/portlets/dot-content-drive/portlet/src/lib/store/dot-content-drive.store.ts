@@ -5,13 +5,8 @@ import { computed } from '@angular/core';
 import { DotContentDriveItem } from '@dotcms/dotcms-models';
 import { QueryBuilder } from '@dotcms/query-builder';
 
-import {
-    DotContentDriveInit,
-    DotContentDriveState,
-    DotContentDriveStatus,
-    BASE_QUERY,
-    SYSTEM_HOST
-} from '../shared/models';
+import { BASE_QUERY, SYSTEM_HOST } from '../shared/constants';
+import { DotContentDriveInit, DotContentDriveState, DotContentDriveStatus } from '../shared/models';
 
 const initialState: DotContentDriveState = {
     currentSite: SYSTEM_HOST,

@@ -9,7 +9,8 @@ import { DotContentSearchService, DotSiteService } from '@dotcms/data-access';
 import { ESContent } from '@dotcms/dotcms-models';
 import { DotFolderListViewComponent } from '@dotcms/portlets/content-drive/ui';
 
-import { DotContentDriveStatus, SYSTEM_HOST } from '../shared/models';
+import { SYSTEM_HOST } from '../shared/constants';
+import { DotContentDriveStatus } from '../shared/models';
 import { DotContentDriveStore } from '../store/dot-content-drive.store';
 import { decodeFilters } from '../utils/functions';
 

@@ -11,8 +11,9 @@ import { DotFolderListViewComponent } from '@dotcms/portlets/content-drive/ui';
 
 import { DotContentDriveShellComponent } from './dot-content-drive-shell.component';
 
+import { SYSTEM_HOST } from '../shared/constants';
 import { mockItems, mockRoute, mockSearchResponse } from '../shared/mocks';
-import { DotContentDriveStatus, SYSTEM_HOST } from '../shared/models';
+import { DotContentDriveStatus } from '../shared/models';
 import { DotContentDriveStore } from '../store/dot-content-drive.store';
 
 describe('DotContentDriveShellComponent', () => {
