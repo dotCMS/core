@@ -137,4 +137,5 @@ This maintenance release includes the following code fixes:
 131. https://github.com/dotCMS/core/issues/32075 : When a folder contains Parentheses dotCLI pulls error. #32075
 132. https://github.com/dotCMS/core/issues/31859 : Apps Export Configurations Error Handling #31859
 133. https://github.com/dotCMS/core/issues/31792 : Static Push Fails with uppercase extensions #31792
+134. https://github.com/dotCMS/core/issues/29324 : Unable to Upload Image from Custom Tool Group #29324
 
