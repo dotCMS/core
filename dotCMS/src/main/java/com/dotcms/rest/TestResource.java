@@ -26,6 +26,7 @@ import javax.ws.rs.core.Response;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -63,7 +64,8 @@ public class TestResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Test operation completed successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(type = "object", description = "Test response containing success status, message, and echoed parameters (param1, param2)"))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - missing required parameters (param1, param2)",
                     content = @Content(mediaType = "application/json")),
@@ -164,7 +166,8 @@ public class TestResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Test POST operation completed successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(type = "object", description = "Test POST response containing success status, message, and echoed parameters (param1, param2)"))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - missing required parameters (param1, param2)",
                     content = @Content(mediaType = "application/json")),
