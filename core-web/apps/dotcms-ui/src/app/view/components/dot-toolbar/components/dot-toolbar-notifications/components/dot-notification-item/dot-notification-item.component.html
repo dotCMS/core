@@ -1,0 +1,35 @@
+@let data = $data();
+@let level = data.level;
+@let iconName = $getIconName();
+
+<li class="notification-item {{ level | lowercase }}">
+    <div class="notification-item__wrapper">
+        <i [class]="iconName"></i>
+        <div class="notification-item__content">
+            <p class="notification-item__message" [id]="'notification-item-message-' + data.id">
+                {{ data.message }}
+                @if ($showLinkAction()) {
+                    <a
+                        [href]="data.notificationData.actions[0].action"
+                        class="notification-item__link"
+                        id="{{ 'notification-item-link-action' + data.id }}">
+                        {{ data.notificationData.actions[0].text }}
+                    </a>
+                }
+                <dot-custom-time
+                    id="{{ 'notification-item-date-' + data.id }}"
+                    time="{{ data.timeSent }}" />
+            </p>
+            <!--TODO: handle more than one action-->
+        </div>
+        <p-button
+            (click)="onClear()"
+            class="notification-item__close"
+            [id]="'notification-item-button-close-' + data.id"
+            icon="pi pi-times"
+            [title]="'notifications_dismiss' | dm"
+            [rounded]="true"
+            [text]="true"
+            styleClass="p-button-sm p-button-primary" />
+    </div>
+</li>

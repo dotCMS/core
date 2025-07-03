@@ -129,6 +129,20 @@ describe('Container', () => {
 
             expect(emptyContainerMessage).toBeNull();
         });
+
+        test('should have data-dot-object="empty-content"', () => {
+            const { container } = renderWithContext(<Container container={MOCK_CONTAINER} />, {
+                ...DEFAULT_CONTEXT_VALUE,
+                pageAsset: EMPTY_PAGE_ASSET,
+                mode: 'development'
+            });
+
+            const emptyContainerMessage = container.querySelector(
+                '[data-testid="empty-container-message"]'
+            );
+
+            expect(emptyContainerMessage?.getAttribute('data-dot-object')).toBe('empty-content');
+        });
     });
 
     describe('CONTAINER NOT FOUND', () => {

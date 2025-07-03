@@ -6,39 +6,12 @@ import { Injectable } from '@angular/core';
 import { catchError, map, pluck } from 'rxjs/operators';
 
 import { graphqlToPageEntity } from '@dotcms/client';
-import { Site } from '@dotcms/dotcms-js';
-import {
-    DEFAULT_VARIANT_ID,
-    DotCMSContentlet,
-    DotLanguage,
-    DotLayout,
-    DotPageContainerStructure,
-    DotPersona,
-    DotTemplate,
-    VanityUrl
-} from '@dotcms/dotcms-models';
-import { DotCMSGraphQLPageResponse, UVE_MODE } from '@dotcms/types';
+import { DEFAULT_VARIANT_ID, DotPersona } from '@dotcms/dotcms-models';
+import { DotCMSGraphQLPageResponse, DotCMSPageAsset, UVE_MODE } from '@dotcms/types';
 
 import { PERSONA_KEY } from '../shared/consts';
-import { DotPage, DotPageAssetParams, SavePagePayload } from '../shared/models';
+import { DotPageAssetParams, SavePagePayload } from '../shared/models';
 import { getFullPageURL } from '../utils';
-
-export interface DotPageApiResponse {
-    page: DotPage;
-    site: Site;
-    viewAs: {
-        language: DotLanguage;
-        persona?: DotPersona;
-        variantId?: string;
-    };
-    layout: DotLayout;
-    template: DotTemplate;
-    containers: DotPageContainerStructure;
-    urlContentMap?: DotCMSContentlet;
-    vanityUrl?: VanityUrl;
-    runningExperimentId?: string;
-    numberContents: number;
-}
 
 export interface DotPageApiParams {
     url: string;
@@ -50,6 +23,9 @@ export interface DotPageApiParams {
     experimentId?: string;
     clientHost?: string;
     publishDate?: string;
+    // We need this to allow any other query param to be passed by the user
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    [x: string]: any;
 }
 
 export enum DotPageAssetKeys {
@@ -90,17 +66,17 @@ export class DotPageApiService {
      * Get a page from the Page API
      *
      * @param {DotPageApiParams} { url, language_id }
-     * @return {*}  {Observable<DotPageApiResponse>}
+     * @return {*}  {Observable<DotCMSPageAsset>}
      * @memberof DotPageApiService
      */
-    get(queryParams: DotPageAssetParams): Observable<DotPageApiResponse> {
+    get(queryParams: DotPageAssetParams): Observable<DotCMSPageAsset> {
         const { clientHost, ...params } = queryParams;
         const pageType = clientHost ? 'json' : 'render';
         const pageURL = getFullPageURL({ url: params.url, params });
 
         return this.http
             .get<{
-                entity: DotPageApiResponse;
+                entity: DotCMSPageAsset;
             }>(`/api/v1/page/${pageType}/${pageURL}`)
             .pipe(pluck('entity'));
     }
@@ -188,7 +164,7 @@ export class DotPageApiService {
         query: string;
         variables: Record<string, string>;
     }): Observable<{
-        pageAsset: DotPageApiResponse;
+        pageAsset: DotCMSPageAsset;
         content: Record<string, unknown>;
     }> {
         const headers = {

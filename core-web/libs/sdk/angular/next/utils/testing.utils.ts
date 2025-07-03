@@ -41,7 +41,7 @@ export const PageResponseMock: DotCMSPageAsset = {
                         baseType: 'CONTENT',
                         inode: 'b77151f2-7206-4b03-862d-68217432d54d',
                         archived: false,
-                        ownerName: 'Admin User',
+                        ownerUserName: 'Admin User',
                         host: '48190c8c-42c4-46af-8d1a-0cd5db894797',
                         working: true,
                         locked: false,
@@ -70,7 +70,7 @@ export const PageResponseMock: DotCMSPageAsset = {
                         sortOrder: 0,
                         modUser: 'dotcms.org.1',
                         onNumberOfPages: '3'
-                    }
+                    } as unknown as DotCMSBasicContentlet
                 ]
             },
             container: {
@@ -160,7 +160,7 @@ export const PageResponseMock: DotCMSPageAsset = {
                         baseType: 'CONTENT',
                         inode: '84534373-582a-4e62-8189-03abd0435778',
                         archived: false,
-                        ownerName: 'Admin User',
+                        ownerUserName: 'Admin User',
                         host: '48190c8c-42c4-46af-8d1a-0cd5db894797',
                         working: true,
                         locked: false,
@@ -190,7 +190,7 @@ export const PageResponseMock: DotCMSPageAsset = {
                         sortOrder: 0,
                         modUser: 'dotcms.org.1',
                         onNumberOfPages: '1'
-                    }
+                    } as unknown as DotCMSBasicContentlet
                 ]
             },
             container: {
@@ -475,6 +475,7 @@ export const PageResponseMock: DotCMSPageAsset = {
         }
     },
     page: {
+        contentType: 'htmlpageasset',
         template: 'fdc739f6-fe53-4271-9c8c-a3e05d12fcac',
         modDate: 1689887118429,
         metadata: '',

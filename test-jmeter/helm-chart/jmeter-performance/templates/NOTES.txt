@@ -1,0 +1,67 @@
+🚀 JMeter Performance Testing Framework Deployed Successfully!
+
+📊 Configuration Summary:
+- Namespace: {{ .Values.namespace.name }}
+- Pod Name: {{ .Values.pod.name }}
+- Environment: {{ .Values.environment.name }}
+
+🔗 Endpoints Configured:
+- DotCMS API: {{ .Values.endpoints.dotcms.scheme }}://{{ .Values.endpoints.dotcms.host }}:{{ .Values.endpoints.dotcms.port }}{{ .Values.endpoints.dotcms.path }}
+- Analytics API: {{ .Values.endpoints.analytics.scheme }}://{{ .Values.endpoints.analytics.host }}:{{ .Values.endpoints.analytics.port }}{{ .Values.endpoints.analytics.path }}
+
+📋 Next Steps:
+
+1. Check pod status:
+   kubectl get pod {{ .Values.pod.name }} -n {{ .Values.namespace.name }}
+
+2. Wait for pod to be ready:
+   kubectl wait --for=condition=Ready pod/{{ .Values.pod.name }} -n {{ .Values.namespace.name }} --timeout=180s
+
+3. Run a quick test:
+   kubectl exec {{ .Values.pod.name }} -n {{ .Values.namespace.name }} -- bash -c "
+     export PATH=/opt/jmeter/bin:\$PATH &&
+     jmeter -n -t /opt/jmx-tests/analytics-api-cluster-test.jmx \\
+       -l /opt/test-results/quick-test.jtl \\
+       -j /opt/test-results/quick-test.log \\
+       -Jthread.number=10 -Jevents.per.second=25 -Jtest.duration=30"
+
+4. Run performance limits test:
+   kubectl exec {{ .Values.pod.name }} -n {{ .Values.namespace.name }} -- bash /opt/jmeter-scripts/performance-limits-test.sh
+
+5. Copy results:
+   kubectl exec {{ .Values.pod.name }} -n {{ .Values.namespace.name }} -- find /opt/test-results -name "*.csv" -exec cat {} \; > results.csv
+
+6. View logs:
+   kubectl logs {{ .Values.pod.name }} -n {{ .Values.namespace.name }}
+
+7. Open shell for debugging:
+   kubectl exec -it {{ .Values.pod.name }} -n {{ .Values.namespace.name }} -- /bin/bash
+
+💡 Authentication Notes:
+
+  JWT Token: DotCMS API token for authenticated requests
+  - Source: DotCMS Admin → User Tools → API Tokens
+  - Format: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...
+
+  Analytics Key: From DotCMS Analytics App Configuration
+  - Source: DotCMS → Apps → Analytics → Configuration → Analytics Key  
+  - Format: js.cluster1.customer1.vgwy3nli4co84u531c
+
+💡 Helm Management Commands:
+
+  # Upgrade with new JWT token:
+  helm upgrade {{ .Release.Name }} ./helm-chart/jmeter-performance --set auth.jwtToken="NEW_JWT_TOKEN"
+
+  # Check values:
+  helm get values {{ .Release.Name }}
+
+  # Uninstall:
+  helm uninstall {{ .Release.Name }}
+
+🔧 Resource Allocation:
+- CPU Request: {{ .Values.pod.resources.requests.cpu }}
+- Memory Request: {{ .Values.pod.resources.requests.memory }}
+- CPU Limit: {{ .Values.pod.resources.limits.cpu }}
+- Memory Limit: {{ .Values.pod.resources.limits.memory }}
+
+📧 For support: {{ .Values.annotations.contact }} 

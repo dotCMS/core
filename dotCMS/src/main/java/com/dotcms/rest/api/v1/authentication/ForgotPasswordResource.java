@@ -32,6 +32,7 @@ import java.io.Serializable;
 import java.util.Locale;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 /**
  * This resource sends email with a link to recovery your password, if it is successfully returns the User email where the message is gonna be sent,
@@ -40,6 +41,7 @@ import javax.servlet.http.HttpServletResponse;
  * @author jsanca
  */
 @Path("/v1/forgotpassword")
+@Tag(name = "Authentication", description = "User authentication and session management")
 public class ForgotPasswordResource implements Serializable {
 
     private final UserLocalManager userLocalManager;

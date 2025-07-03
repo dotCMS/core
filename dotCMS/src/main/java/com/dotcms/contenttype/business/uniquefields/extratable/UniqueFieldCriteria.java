@@ -1,9 +1,5 @@
 package com.dotcms.contenttype.business.uniquefields.extratable;
 
-
-import com.dotcms.api.APIProvider;
-import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
-
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.beans.Host;
@@ -26,10 +22,14 @@ import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.UNIQ
  * <ul>
  *     <li>The ID of the Content Type it belongs to.</li>
  *     <li>The Velocity Var Name of the field.</li>
- *     <li>The unique value.</li>
  *     <li>The Language of the Contentlet using it.</li>
+ *     <li>The unique value, which is case-insensitive.</li>
  *     <li>The Site where the Contentlet lives.</li>
+ *     <li>The Identifiers of the Contentlets that can have the same unique value, for backwards
+ *     compatibility.</li>
  *     <li>The Variant that the Contentlet belongs to.</li>
+ *     <li>The value of the {@code uniquePerSite} Field Variable.</li>
+ *     <li>Whether the Contentlet is live or not.</li>
  * </ul>
  *
  * @author Freddy Rodriguez
@@ -46,16 +46,14 @@ public class UniqueFieldCriteria {
     public static final String VARIANT_ATTR = "variant";
     public static final String UNIQUE_PER_SITE_ATTR = "uniquePerSite";
     public static final String LIVE_ATTR = "live";
+
     private final ContentType contentType;
     private final Field field;
     private final Object value;
     private final Language language;
     private final Host site;
-
     private final String variantName;
-
-    private boolean isLive;
-
+    private final boolean isLive;
 
     public UniqueFieldCriteria(final Builder builder) {
         this.contentType = builder.contentType;
@@ -178,8 +176,19 @@ public class UniqueFieldCriteria {
             return this;
         }
 
+        /**
+         * Sets the value for the Unique Field in this builder. If the provided value is a String,
+         * it trims and converts it to lowercase before assigning it. For other types, the value is
+         * assigned as-is.
+         *
+         * @param value the value to set; can be of any object type
+         *
+         * @return the builder instance for method chaining
+         */
         public Builder setValue(final Object value) {
-            this.value = value;
+            this.value = (value instanceof String)
+                    ? ((String) value).trim().toLowerCase()
+                    : value;
             return this;
         }
 
@@ -194,10 +203,10 @@ public class UniqueFieldCriteria {
         }
 
         public UniqueFieldCriteria build(){
-            Objects.requireNonNull(contentType);
-            Objects.requireNonNull(field);
-            Objects.requireNonNull(value);
-            Objects.requireNonNull(language);
+            Objects.requireNonNull(contentType, "Content Type cannot be null");
+            Objects.requireNonNull(field, "Field cannot be null");
+            Objects.requireNonNull(value, "Value cannot be null");
+            Objects.requireNonNull(language, "Language cannot be null");
 
             if (isUniqueForSite(contentType.id(), field.variable())) {
                 Objects.requireNonNull(site);
@@ -210,6 +219,7 @@ public class UniqueFieldCriteria {
             this.isLive = live;
             return this;
         }
+
     }
 
 }

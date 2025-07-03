@@ -1,0 +1,44 @@
+@use "variables" as *;
+
+.form {
+    display: flex;
+    flex-direction: column;
+    width: 18.75rem;
+    gap: $spacing-4;
+    background-color: $white;
+    border-radius: $border-radius-md;
+    padding: $spacing-3;
+    box-shadow: $shadow-m;
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: $spacing-1;
+
+        label {
+            font-weight: $font-weight-semi-bold;
+            margin-bottom: $spacing-0;
+
+            .required {
+                color: $color-palette-red;
+            }
+        }
+
+        input[pInputText] {
+            border-radius: $border-radius-md;
+            border: 1px solid $color-palette-gray-300;
+            padding: $spacing-1 $spacing-2;
+            font-size: $font-size-lmd;
+
+            &.ng-invalid {
+                border-color: $color-palette-red;
+            }
+        }
+    }
+
+    .bubble-menu-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: $spacing-1;
+    }
+}

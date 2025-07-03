@@ -1,12 +1,20 @@
 import { of } from 'rxjs';
 
 import { CurrentUser } from '@dotcms/dotcms-js';
+import { DEFAULT_VARIANT_ID, CONTAINER_SOURCE, FeaturedFlags } from '@dotcms/dotcms-models';
 import {
-    DEFAULT_VARIANT_ID,
-    DotPageContainerStructure,
-    CONTAINER_SOURCE,
-    FeaturedFlags
-} from '@dotcms/dotcms-models';
+    DotCMSLayout,
+    DotCMSPageAsset,
+    DotCMSSite,
+    DotCMSViewAsPersona,
+    DotCMSPageAssetContainers,
+    DotCMSPage,
+    DotCMSTemplate,
+    DotCMSContainerStructure,
+    DotCMSContainer,
+    DotCMSVanityUrl,
+    DotCMSURLContentMap
+} from '@dotcms/types';
 import {
     mockSites,
     mockDotLayout,
@@ -23,7 +31,6 @@ import {
     ContentletArea,
     Container
 } from '../edit-ema-editor/components/ema-page-dropzone/types';
-import { DotPageApiResponse } from '../services/dot-page-api.service';
 
 export const HEADLESS_BASE_QUERY_PARAMS = {
     url: 'test-url',
@@ -145,7 +152,7 @@ export const PAYLOAD_MOCK: ActionPayload = {
     position: 'before'
 };
 
-export const MOCK_RESPONSE_HEADLESS: DotPageApiResponse = {
+export const MOCK_RESPONSE_HEADLESS: DotCMSPageAsset = {
     page: {
         pageURI: 'test-url',
         title: 'Test Page',
@@ -160,7 +167,7 @@ export const MOCK_RESPONSE_HEADLESS: DotPageApiResponse = {
         lockedBy: '',
         lockedByName: '',
         live: true
-    },
+    } as unknown as DotCMSPage,
     numberContents: 6,
     viewAs: {
         language: {
@@ -171,17 +178,18 @@ export const MOCK_RESPONSE_HEADLESS: DotPageApiResponse = {
             country: 'United States'
         },
         variantId: DEFAULT_VARIANT_ID,
+        mode: 'LIVE',
         persona: {
             ...DEFAULT_PERSONA
-        }
+        } as unknown as DotCMSViewAsPersona
     },
-    site: mockSites[0],
-    layout: mockDotLayout(),
-    template: mockDotTemplate(),
-    containers: mockDotContainers()
+    site: mockSites[0] as DotCMSSite,
+    layout: mockDotLayout() as DotCMSLayout,
+    template: mockDotTemplate() as unknown as DotCMSTemplate,
+    containers: mockDotContainers() as unknown as DotCMSPageAssetContainers
 };
 
-export const URL_CONTENT_MAP_MOCK = {
+export const URL_CONTENT_MAP_MOCK: DotCMSURLContentMap = {
     contentType: 'Blog',
     identifier: '123',
     inode: '1234',
@@ -204,10 +212,11 @@ export const URL_CONTENT_MAP_MOCK = {
     sortOrder: 0,
     stInode: '799f176a-d32e-4844-a07c-1b5fcd107578',
     titleImage: 'image',
-    URL_MAP_FOR_CONTENT: '/test-url'
+    URL_MAP_FOR_CONTENT: '/test-url',
+    urlMap: 'test'
 };
 
-export const MOCK_RESPONSE_VTL: DotPageApiResponse = {
+export const MOCK_RESPONSE_VTL: DotCMSPageAsset = {
     page: {
         pageURI: 'test-url',
         title: 'Test Page',
@@ -225,7 +234,7 @@ export const MOCK_RESPONSE_VTL: DotPageApiResponse = {
         live: true,
         liveInode: '1234',
         stInode: '12345'
-    },
+    } as unknown as DotCMSPage,
     numberContents: 6,
     viewAs: {
         language: {
@@ -235,15 +244,15 @@ export const MOCK_RESPONSE_VTL: DotPageApiResponse = {
             languageCode: '1',
             country: 'United States'
         },
-
+        mode: 'LIVE',
         persona: {
             ...DEFAULT_PERSONA
-        }
+        } as unknown as DotCMSViewAsPersona
     },
-    site: mockSites[0],
-    layout: mockDotLayout(),
-    template: mockDotTemplate(),
-    containers: mockDotContainers()
+    site: mockSites[0] as DotCMSSite,
+    layout: mockDotLayout() as DotCMSLayout,
+    template: mockDotTemplate() as unknown as DotCMSTemplate,
+    containers: mockDotContainers() as unknown as DotCMSPageAssetContainers
 };
 
 export const PAGE_RESPONSE_URL_CONTENT_MAP = {
@@ -251,7 +260,7 @@ export const PAGE_RESPONSE_URL_CONTENT_MAP = {
     urlContentMap: URL_CONTENT_MAP_MOCK
 };
 
-export const dotPageContainerStructureMock: DotPageContainerStructure = {
+export const dotPageContainerStructureMock: DotCMSPageAssetContainers = {
     '123': {
         container: {
             archived: false,
@@ -264,27 +273,23 @@ export const dotPageContainerStructureMock: DotPageContainerStructure = {
             maxContentlets: 123,
             name: '123',
             path: '123',
-            pathName: '123',
             postLoop: '123',
             preLoop: '123',
             source: CONTAINER_SOURCE.DB,
             title: '123',
             type: '123',
             working: false
-        },
+        } as DotCMSContainer,
         containerStructures: [
             {
                 contentTypeVar: '123'
             }
-        ],
+        ] as DotCMSContainerStructure[],
         contentlets: {
             '123': [
                 {
                     baseType: '123',
-                    content: 'something',
                     contentType: '123',
-                    dateCreated: '123',
-                    dateModifed: '123',
                     folder: '123',
                     host: '123',
                     identifier: '123',
@@ -311,15 +316,12 @@ export const dotPageContainerStructureMock: DotPageContainerStructure = {
                 },
                 {
                     baseType: '456',
-                    content: 'something',
                     contentType: '456',
-                    dateCreated: '456',
                     folder: '456',
                     identifier: '456',
                     inode: '456',
                     languageId: 456,
                     live: false,
-                    dateModifed: '456',
                     modDate: '456',
                     host: '456',
                     working: false,
@@ -343,11 +345,8 @@ export const dotPageContainerStructureMock: DotPageContainerStructure = {
             '456': [
                 {
                     contentType: '123',
-                    content: 'something',
-                    dateCreated: '123',
                     baseType: '123',
                     folder: '123',
-                    dateModifed: '123',
                     identifier: '123',
                     host: '123',
                     live: false,
@@ -519,7 +518,16 @@ export const getVanityUrl = (url, mock) =>
             ...mock,
             url
         }
-    }) as unknown as DotPageApiResponse;
+    }) as unknown as DotCMSPageAsset;
+
+export const getNewVanityUrl = (uri: string, mock: Partial<DotCMSVanityUrl>) =>
+    ({
+        vanityUrl: {
+            ...mock,
+            uri,
+            url: uri
+        }
+    }) as unknown as DotCMSPageAsset;
 
 export const FORWARD_VANITY_URL = {
     pattern: '',
@@ -561,6 +569,30 @@ export const TEMPORARY_REDIRECT_VANITY_URL = {
     temporaryRedirect: true,
     permanentRedirect: false,
     forward: false
+};
+
+export const NEW_TEMPORARY_REDIRECT_VANITY_URL = {
+    action: 302,
+    forwardTo: 'new-vanity-url',
+    uri: 'test-url'
+};
+
+export const NEW_PERMANENT_REDIRECT_VANITY_URL = {
+    action: 301,
+    forwardTo: 'new-vanity-url',
+    uri: 'test-url'
+};
+
+export const NEW_PERMANENT_REDIRECT_VANITY_URL_WITH_RESPONSE = {
+    forwardTo: 'new-vanity-url',
+    uri: 'test-url',
+    response: 200
+};
+
+export const NEW_PERMANENT_REDIRECT_VANITY_URL_WITH_ACTION = {
+    action: 200,
+    forwardTo: 'new-vanity-url',
+    uri: 'test-url'
 };
 
 export const EMA_DRAG_ITEM_CONTENTLET_MOCK: EmaDragItem = {

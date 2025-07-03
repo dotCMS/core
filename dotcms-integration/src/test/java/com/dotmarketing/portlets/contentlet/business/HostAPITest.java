@@ -48,7 +48,6 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
-import java.util.Date;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -59,6 +58,7 @@ import org.quartz.JobExecutionContext;
 import org.quartz.Trigger;
 
 import javax.enterprise.context.Dependent;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -73,6 +73,7 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -195,7 +196,7 @@ public class HostAPITest extends IntegrationTestBase  {
     }
 
     @Test
-    public void testDeleteHost() throws Exception {
+    public void testDeleteSite() throws Exception {
 
         User user = APILocator.getUserAPI().getSystemUser();
         Host sourceHost = null;
@@ -237,7 +238,7 @@ public class HostAPITest extends IntegrationTestBase  {
             TestDataUtils.waitForEmptyQueue();
 
             //Create a new test host
-            Host host = createHost("copy" + System.currentTimeMillis() + ".demo.dotcms.com", user);
+            Host host = createSite("copy" + System.currentTimeMillis() + ".demo.dotcms.com", user);
             String newHostIdentifier = host.getIdentifier();
             String newHostName = host.getHostname();
 
@@ -295,7 +296,7 @@ public class HostAPITest extends IntegrationTestBase  {
 
         //Create a new test host
         final String newHostName = "test" + System.currentTimeMillis() + ".dotcms.com";
-        Host host = createHost(newHostName, user);
+        Host host = createSite(newHostName, user);
         String newHostIdentifier = host.getIdentifier();
 
         //Publish the host
@@ -347,7 +348,7 @@ public class HostAPITest extends IntegrationTestBase  {
          * Validate if the current Original default host is the current default one
          */
         host = APILocator.getHostAPI().findDefaultHost(user, false);
-        Assert.assertEquals(defaultHost.getIdentifier(), host.getIdentifier());
+        assertEquals(defaultHost.getIdentifier(), host.getIdentifier());
     }
 
     @Test
@@ -361,7 +362,7 @@ public class HostAPITest extends IntegrationTestBase  {
         final String newHostName = "demo.test" + System.currentTimeMillis() + ".dotcms.com";
 
         //Create a new test host
-        Host host = createHost(newHostName, user);
+        Host host = createSite(newHostName, user);
         final String newHostIdentifier = host.getIdentifier();
 
         //Publish the host
@@ -379,7 +380,7 @@ public class HostAPITest extends IntegrationTestBase  {
                 .search(newHostName, Boolean.FALSE, Boolean.FALSE, 0, 0, user, Boolean.TRUE);
         //Validate if the search is bringing the right amount of results
         assertTrue(hosts.size() == 1 && hosts.getTotalResults() == 1);
-        Assert.assertEquals(hosts.get(0).getHostname(), newHostName);
+        assertEquals(hosts.get(0).getHostname(), newHostName);
 
         //Unpublish, archive and delete the host
         unpublishHost(host, user);
@@ -437,7 +438,7 @@ public class HostAPITest extends IntegrationTestBase  {
         final String newHostName = "test" + System.currentTimeMillis() + ".dotcms.com";
 
         //Create a new test host
-        Host host = createHost(newHostName, user);
+        Host host = createSite(newHostName, user);
         String newHostIdentifier = host.getIdentifier();
 
         //Archive the just created host in order to be able to delete it
@@ -460,20 +461,20 @@ public class HostAPITest extends IntegrationTestBase  {
                         .find(testContentType.variable());
                 assertNotNull(
                         foundContentType);
-                Assert.assertEquals(system, foundContentType.system());
-                Assert.assertEquals(defaultType, foundContentType.defaultType());
-                Assert.assertEquals(testContentType.system(), foundContentType.system());
-                Assert.assertEquals(testContentType.defaultType(),
+                assertEquals(system, foundContentType.system());
+                assertEquals(defaultType, foundContentType.defaultType());
+                assertEquals(testContentType.system(), foundContentType.system());
+                assertEquals(testContentType.defaultType(),
                         foundContentType.defaultType());
-                Assert.assertEquals(testContentType.id(), foundContentType.id());
-                Assert.assertEquals(testContentType.variable(),
+                assertEquals(testContentType.id(), foundContentType.id());
+                assertEquals(testContentType.variable(),
                         foundContentType.variable());
 
                 //Make sure the host was changed to SYSTEM_HOST
-                Assert.assertEquals(APILocator.getHostAPI().findSystemHost().getIdentifier(),
+                assertEquals(APILocator.getHostAPI().findSystemHost().getIdentifier(),
                         foundContentType.host());
             } catch (Exception e) {
-                Assert.fail(String.format("Unable to create delete test content type [%s] [%s]",
+                fail(String.format("Unable to create delete test content type [%s] [%s]",
                         testContentType.id(),
                         e.getMessage()));
             } finally {
@@ -506,7 +507,7 @@ public class HostAPITest extends IntegrationTestBase  {
             } catch (NotFoundInDbException e) {
                 //Expected, the content type should be deleted
             } catch (Exception e) {
-                Assert.fail(String.format("Unable to create delete test content type [%s] [%s]",
+                fail(String.format("Unable to create delete test content type [%s] [%s]",
                         testContentType.id(),
                         e.getMessage()));
             }
@@ -540,36 +541,42 @@ public class HostAPITest extends IntegrationTestBase  {
         //Make sure was created properly
         ContentType foundContentType = APILocator.getContentTypeAPI(user).find(structureVarName);
         assertNotNull(foundContentType);
-        Assert.assertEquals(structureId, foundContentType.id());
-        Assert.assertEquals(defaultType, foundContentType.defaultType());
-        Assert.assertEquals(system, foundContentType.system());
-        Assert.assertEquals(structureVarName, foundContentType.variable());
-        Assert.assertEquals(host.getIdentifier(), foundContentType.host());
+        assertEquals(structureId, foundContentType.id());
+        assertEquals(defaultType, foundContentType.defaultType());
+        assertEquals(system, foundContentType.system());
+        assertEquals(structureVarName, foundContentType.variable());
+        assertEquals(host.getIdentifier(), foundContentType.host());
 
         return contentType;
     }
 
     /**
-     * Creates a test host with a given host name
+     * Creates a new site with the given siteName and user.
+     *
+     * @param siteName the name to assign to the new host
+     * @param user     the user performing the creation operation
+     *
+     * @return the newly created Host object
+     *
+     * @throws DotHibernateException if an error occurs during the database transaction
      */
-    private Host createHost(final String hostName, final User user) throws DotHibernateException {
-
-        Host host = new Host();
-        host.setHostname(hostName);
-        host.setDefault(false);
+    private Host createSite(final String siteName, final User user) throws DotHibernateException {
+        Host site = new Host();
+        site.setHostname(siteName);
+        site.setDefault(false);
+        site.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
         try {
             HibernateUtil.startTransaction();
-            host.setIndexPolicy(IndexPolicy.FORCE);
-            host = APILocator.getHostAPI().save(host, user, false);
+            site.setIndexPolicy(IndexPolicy.FORCE);
+            site = APILocator.getHostAPI().save(site, user, false);
             HibernateUtil.closeAndCommitTransaction();
-        } catch (Exception e) {
+        } catch (final Exception e) {
             HibernateUtil.rollbackTransaction();
             Logger.error(HostAPITest.class, e.getMessage(), e);
-            Assert.fail(String.format("Unable to create test host [%s] [%s]", hostName,
+            Assert.fail(String.format("Unable to create test site [%s] [%s]", siteName,
                     e.getMessage()));
         }
-
-        return host;
+        return site;
     }
 
     /**
@@ -1030,12 +1037,15 @@ public class HostAPITest extends IntegrationTestBase  {
     }
 
     /**
-     * Host must be Language independent.
-     * Even though they can be assigned with a language we should not relay on the lang id to find it.
-     * Method to test: {@link HostAPI#DBSearch(String, User, boolean)}
-     * This Test is meant to verify a changed introduced in DBSearch to find ContentletVersionInfo regardless of the language
-     * Also it verifies there is always only one entry on version-info for every contentlet of type Host.
-     * Regardless of the operation we perform.
+     * <ul>
+     *     <li><b>Method to test: </b>{@link HostAPI#DBSearch(String, User, boolean)}</li>
+     *     <li><b>Given Scenario: </b>Sites must be Language independent. Even though they can be
+     *     assigned with a language, we should not relay on the lang id to find them.</li>
+     *     <li><b>Expected Result: </b>This test is meant to verify a change introduced in the
+     *     DBSearch method to find the {@link ContentletVersionInfo} regardless of the language.
+     *     Also, it verifies there is always only one entry on the version-info for every contentlet
+     *     of type Host, regardless of the operation we perform.</li>
+     * </ul>
      */
     @Test
     public void Test_Host_With_Multiple_Lang_Versions_Return_Default_Lang_OtherWise_First_Occurrence()
@@ -1047,62 +1057,64 @@ public class HostAPITest extends IntegrationTestBase  {
         final User systemUser = APILocator.systemUser();
         final VersionableAPI versionableAPI = APILocator.getVersionableAPI();
 
-        Host host = null;
+        Host site = null;
         try {
             final SiteDataGen siteDataGen = new SiteDataGen();
-            host = siteDataGen.name("xyx" + System.currentTimeMillis())
+            site = siteDataGen.name("xyx" + System.currentTimeMillis())
                     .aliases("xyz" + System.currentTimeMillis() + ".dotcms.com").next();
+            site.setLanguageId(languageAPI.getDefaultLanguage().getId());
+            site = siteDataGen.persist(site, false);
 
-            host.setLanguageId(0);
-            host = siteDataGen.persist(host, false);
-
-            //Host are created by default under the default language.
-            Assert.assertEquals(languageAPI.getDefaultLanguage().getId(), host.getLanguageId());
+            // Sites are created by default under the default language
+            assertEquals(languageAPI.getDefaultLanguage().getId(), site.getLanguageId());
 
             List<ContentletVersionInfo> verInfos = versionableAPI
-                    .findContentletVersionInfos(host.getIdentifier());
+                    .findContentletVersionInfos(site.getIdentifier());
 
-            Assert.assertEquals("There should be only one entry.", 1, verInfos.size());
+            assertEquals("There should be only one entry.", 1, verInfos.size());
 
-            Host dbSearch = hostAPI.DBSearch(host.getIdentifier(), systemUser, false);
-            Assert.assertNotNull(dbSearch);
+            final Host dbSearch = hostAPI.DBSearch(site.getIdentifier(), systemUser, false);
+            assertNotNull("The Site queried directly in the database cannot be null", dbSearch);
 
-            Assert.assertEquals(verInfos.get(0).getWorkingInode(), dbSearch.getInode());
+            assertEquals(verInfos.get(0).getWorkingInode(), dbSearch.getInode());
 
             Assert.assertNull("There shouldn't be a live version yet.", verInfos.get(0).getLiveInode());
 
-            contentletAPI.publish(host, systemUser, false);
+            contentletAPI.publish(site, systemUser, false);
 
-            verInfos = versionableAPI.findContentletVersionInfos(host.getIdentifier());
+            verInfos = versionableAPI.findContentletVersionInfos(site.getIdentifier());
 
-            Assert.assertNotNull("There should be a live version now.", verInfos.get(0).getLiveInode());
+            assertNotNull("There should be a live version now.", verInfos.get(0).getLiveInode());
 
             //This should create another version of the host in a different language.
             final Language newLanguage = new LanguageDataGen().languageName("ES").nextPersisted();
 
-            host.setLanguageId(newLanguage.getId());
-            hostAPI.save(host, systemUser, false);
+            site.setLanguageId(newLanguage.getId());
+            hostAPI.save(site, systemUser, false);
 
             verInfos = versionableAPI
-                    .findContentletVersionInfos(host.getIdentifier());
-            Assert.assertEquals("There should be two entries one for each language.", 2, verInfos.size());
+                    .findContentletVersionInfos(site.getIdentifier());
+            assertEquals("There should be two entries one for each language.", 2, verInfos.size());
 
             final long newRandomDefaultLangId = -1;
             final Language mockDefaultLang = mock(Language.class);
             when(mockDefaultLang.getId()).thenReturn(newRandomDefaultLangId);
 
             final HostAPI hostAPIWithMockedLangAPI = new HostAPIImpl(APILocator.getSystemEventsAPI());
-            final Host dbSearchNoDefaultLang = hostAPIWithMockedLangAPI.DBSearch(host.getIdentifier(), systemUser, false);
+            final Host dbSearchNoDefaultLang = hostAPIWithMockedLangAPI.DBSearch(site.getIdentifier(), systemUser, false);
 
-            //Since Default language is changed now we still get something here.
+            //Since the Default language is changed now we still get something here.
             assertNotNull(dbSearchNoDefaultLang);
             //And System-host should still be system host
-            assertNotNull(hostAPIWithMockedLangAPI.findSystemHost());
+            assertNotNull("The System Host must have been returned", hostAPIWithMockedLangAPI.findSystemHost());
         } finally {
             // Cleanup
-            unpublishHost(host, systemUser);
-            archiveHost(host, systemUser);
-            deleteHost(host, systemUser);
+            if (null != site) {
+                site.setIndexPolicy(IndexPolicy.WAIT_FOR);
+                contentletAPI.unpublish(site, systemUser, false);
+                contentletAPI.archive(site, systemUser, false);
+                this.deleteHost(site, systemUser);
+            }
         }
 
     }
