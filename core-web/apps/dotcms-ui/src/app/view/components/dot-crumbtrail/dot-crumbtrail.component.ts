@@ -1,11 +1,12 @@
-import { Component, inject, computed } from '@angular/core';
+import { Component, inject, computed, ChangeDetectionStrategy } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 
 import { DotCrumbtrailService } from './service/dot-crumbtrail.service';
 @Component({
     selector: 'dot-crumbtrail',
     templateUrl: './dot-crumbtrail.component.html',
-    styleUrls: ['./dot-crumbtrail.component.scss']
+    styleUrls: ['./dot-crumbtrail.component.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotCrumbtrailComponent {
     /** Service responsible for managing breadcrumb data */
