@@ -2,12 +2,12 @@
 @let lastBreadcrumb = $lastBreadcrumb();
 
 <div class="flex flex-column gap-0">
-    <div data-testid="breadcrumb-parent">
+    <div data-testid="breadcrumb-crumbs">
         <dot-collapse-breadcrumb [model]="collapsedBreadcrumbs" />
     </div>
 
     <div
-        data-testid="breadcrumb-last"
+        data-testid="breadcrumb-title"
         class="text-black text-xl font-extrabold tracking-tight leading-tight">
         {{ lastBreadcrumb }}
     </div>

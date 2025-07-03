@@ -423,11 +423,9 @@ test("Add a new page", async ({ page }) => {
     cacheTTL: pageAssetContent.cacheTTL,
     action: contentProperties.publishWfAction,
   });
-  const dataFrame = page.frameLocator(iFramesLocators.dataTestId);
-  await waitForVisibleAndCallback(dataFrame.getByRole("banner"));
-  await expect(page.locator("ol")).toContainText(
-    "Pages" + pageAssetContent.title,
-  );
+
+  const breadcrumbLocator = page.getByTestId("breadcrumb-title");
+  await expect(breadcrumbLocator).toContainText(pageAssetContent.title);
 });
 
 /**
