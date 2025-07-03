@@ -21,6 +21,7 @@ import com.liferay.portal.SystemException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -36,7 +37,8 @@ public class RestExamplePortlet extends BaseRestPortlet {
         @ApiResponses(value = {
                 @ApiResponse(responseCode = "200", 
                             description = "Test JSON returned successfully",
-                            content = @Content(mediaType = "application/json")),
+                            content = @Content(mediaType = "application/json",
+                                              schema = @Schema(type = "object", description = "Test JSON object with a simple test property"))),
                 @ApiResponse(responseCode = "500", 
                             description = "Internal server error",
                             content = @Content(mediaType = "application/json"))
