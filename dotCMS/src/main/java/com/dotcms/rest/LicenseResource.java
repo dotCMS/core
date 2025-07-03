@@ -69,7 +69,8 @@ public class LicenseResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Licenses retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(type = "array", description = "Array of license objects containing license details including serverId, serial, level, dates, and ping status"))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - backend user authentication required",
                     content = @Content(mediaType = "application/json")),
@@ -150,8 +151,7 @@ public class LicenseResource {
     )
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
-                    description = "License file uploaded successfully",
-                    content = @Content(mediaType = "application/json")),
+                    description = "License file uploaded successfully (no body)"),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - no file provided or invalid file format",
                     content = @Content(mediaType = "text/plain")),
@@ -214,8 +214,7 @@ public class LicenseResource {
     )
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
-                    description = "License deleted successfully",
-                    content = @Content(mediaType = "application/json")),
+                    description = "License deleted successfully (no body)"),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - no license ID provided",
                     content = @Content(mediaType = "text/plain")),
@@ -276,8 +275,7 @@ public class LicenseResource {
     )
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
-                    description = "License picked successfully",
-                    content = @Content(mediaType = "application/json")),
+                    description = "License picked successfully (no body)"),
         @ApiResponse(responseCode = "304", 
                     description = "Not modified - license already selected or community level",
                     content = @Content(mediaType = "application/json")),
@@ -352,8 +350,7 @@ public class LicenseResource {
     )
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
-                    description = "License freed successfully",
-                    content = @Content(mediaType = "application/json")),
+                    description = "License freed successfully (no body)"),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - backend user authentication required",
                     content = @Content(mediaType = "application/json")),
