@@ -1405,7 +1405,6 @@ public class ContainerResource implements Serializable {
                 description = "Internal server error during container deletion",
                 content = @Content(mediaType = "application/json"))
     @DELETE
-    @Path("/")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
