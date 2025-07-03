@@ -24,6 +24,7 @@ import com.dotcms.rest.BaseRestPortlet;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -44,8 +45,9 @@ public class PersonasResourcePortlet extends BaseRestPortlet{
 	)
 	@ApiResponses(value = {
 		@ApiResponse(responseCode = "200", 
-					description = "Personas retrieved successfully",
-					content = @Content(mediaType = "application/json")),
+					description = "Personas retrieved successfully (not implemented)",
+					content = @Content(mediaType = "application/json",
+									  schema = @Schema(type = "object", description = "Map of persona objects keyed by identifier"))),
 		@ApiResponse(responseCode = "400", 
 					description = "Bad request - invalid site ID",
 					content = @Content(mediaType = "application/json")),
