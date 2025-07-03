@@ -1,3 +1,18 @@
+/**
+ * Decodes the filters string into a record of key-value pairs.
+ *
+ * @example
+ *
+ * ```typescript
+ * decodeFilters('contentType:Blog;language:en;folder:123')
+ * // Output:
+ * // { contentType: 'Blog', language: 'en', folder: '123' }
+ * ```
+ *
+ * @export
+ * @param {string} filters
+ * @return {*}  {Record<string, string>}
+ */
 export function decodeFilters(filters: string): Record<string, string> {
     if (!filters) {
         return {};
