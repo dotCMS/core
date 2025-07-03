@@ -1,5 +1,5 @@
 import { it, describe, expect, beforeEach } from '@jest/globals';
-import { createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
+import { createComponentFactory, mockProvider, Spectator, SpyObject } from '@ngneat/spectator/jest';
 import { of, throwError } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
@@ -18,9 +18,9 @@ import { DotContentDriveStore } from '../store/dot-content-drive.store';
 
 describe('DotContentDriveShellComponent', () => {
     let spectator: Spectator<DotContentDriveShellComponent>;
-    let contentSearchService: DotContentSearchService;
-    let siteService: DotSiteService;
-    let activatedRoute: ActivatedRoute;
+    let contentSearchService: jest.Mocked<DotContentSearchService>;
+    let siteService: jest.Mocked<DotSiteService>;
+    let activatedRoute: SpyObject<ActivatedRoute>;
     let store: jest.Mocked<InstanceType<typeof DotContentDriveStore>>;
 
     const createComponent = createComponentFactory({
@@ -79,7 +79,7 @@ describe('DotContentDriveShellComponent', () => {
         });
 
         it('should use SYSTEM_HOST if getCurrentSite fails', () => {
-            jest.spyOn(siteService, 'getCurrentSite').mockReturnValue(
+            siteService.getCurrentSite.mockReturnValue(
                 throwError(() => new Error('Failed to get site'))
             );
 
