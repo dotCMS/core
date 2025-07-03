@@ -632,6 +632,20 @@ public class FileAssetAPIImpl implements FileAssetAPI {
     }
 
 	/**
+	 * Returns the file on the filesystem that backup the fileAsset ignoring the case of the extension
+	 * @param inode
+	 * @param fileName generally speaking this method is expected to be called using the Underlying File Name property
+	 * e.g.   getRealAssetPathIgnoreExtensionCase(inode, fileAsset.getUnderlyingFileName())
+	 * @return
+	 */
+	@Override
+	public String getRealAssetPathIgnoreExtensionCase(String inode, String fileName) {
+		String extension = UtilMethods.getFileExtensionIgnoreCase(fileName);
+		String fileNameWOExtenstion  =  UtilMethods.getFileName(fileName);
+		return getRealAssetPath(inode, fileNameWOExtenstion, extension);
+	}
+
+	/**
 	 * This method returns the relative path for assets
      *
      * @return the relative folder of where assets are stored
