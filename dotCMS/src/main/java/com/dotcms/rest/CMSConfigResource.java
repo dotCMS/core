@@ -28,6 +28,7 @@ import com.liferay.util.StringPool;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -85,7 +86,8 @@ public class CMSConfigResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Company basic information saved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(type = "object", description = "Simple response object with success status and message"))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - missing or invalid required parameters",
                     content = @Content(mediaType = "application/json")),
@@ -211,7 +213,8 @@ public class CMSConfigResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Company locale information saved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(type = "object", description = "Simple response object with success status and message"))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - missing or invalid timezone/language parameters",
                     content = @Content(mediaType = "application/json")),
@@ -300,7 +303,8 @@ public class CMSConfigResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Company authentication type saved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(type = "object", description = "Simple response object with success status and message"))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - missing or invalid authentication type parameter",
                     content = @Content(mediaType = "application/json")),
@@ -703,7 +707,7 @@ public class CMSConfigResource {
             final CompanyAPI companyAPI = APILocator.getCompanyAPI();
             final Company defaultCompany = companyAPI.getDefaultCompany();
             final Company updatedCompany = companyAPI.regenerateKey(defaultCompany, user);
-            return Response.ok(new ResponseEntityView(updatedCompany.getKeyDigest())).build(); // 200
+            return Response.ok(new ResponseEntityView<>(updatedCompany.getKeyDigest())).build(); // 200
         } catch (Exception e) {
             Logger.error(this.getClass(), "Exception calling regenerateKey." , e);
             return ResponseUtil.mapExceptionResponse(e);
