@@ -105,13 +105,13 @@ export class DotEditContentLayoutComponent {
      * Content type ID for dialog mode initialization.
      * When provided, enables dialog mode and initializes new content for the specified type.
      */
-    readonly contentTypeId = input<string>();
+    readonly $contentTypeId = input<string>('', { alias: 'contentTypeId' });
 
     /**
      * Contentlet inode for dialog mode initialization.
      * When provided, enables dialog mode and loads existing content for editing.
      */
-    readonly contentletInode = input<string>();
+    readonly $contentletInode = input<string>('', { alias: 'contentletInode' });
 
     /**
      * Emitted when content is successfully saved through workflow actions.
@@ -134,8 +134,8 @@ export class DotEditContentLayoutComponent {
         // Initialize component based on input parameters
         effect(
             () => {
-                const contentTypeId = this.contentTypeId();
-                const contentletInode = this.contentletInode();
+                const contentTypeId = this.$contentTypeId();
+                const contentletInode = this.$contentletInode();
 
                 if (contentTypeId || contentletInode) {
                     // Dialog mode: Initialize with provided parameters

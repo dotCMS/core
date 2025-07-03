@@ -102,7 +102,7 @@ describe('EditContentLayoutComponent', () => {
                 provide: ActivatedRoute,
                 useValue: {
                     get snapshot() {
-                        return { params: { id: undefined, contentType: undefined } };
+                        return { params: { id: '', contentType: '' } };
                     }
                 }
             },
@@ -185,7 +185,7 @@ describe('EditContentLayoutComponent', () => {
 
             expect(initializeDialogModeSpy).toHaveBeenCalledWith({
                 contentTypeId: 'blog-post',
-                contentletInode: undefined
+                contentletInode: ''
             });
             expect(initializeFromRouteSpy).not.toHaveBeenCalled();
         });
@@ -204,7 +204,7 @@ describe('EditContentLayoutComponent', () => {
             dialogSpectator.setInput('contentletInode', 'abc123');
 
             expect(initializeDialogModeSpy).toHaveBeenCalledWith({
-                contentTypeId: undefined,
+                contentTypeId: '',
                 contentletInode: 'abc123'
             });
             expect(initializeFromRouteSpy).not.toHaveBeenCalled();
@@ -219,14 +219,14 @@ describe('EditContentLayoutComponent', () => {
             dialogSpectator.setInput('contentTypeId', 'blog-post');
             expect(initializeDialogModeSpy).toHaveBeenCalledWith({
                 contentTypeId: 'blog-post',
-                contentletInode: undefined
+                contentletInode: ''
             });
 
             // Change input
             dialogSpectator.setInput('contentTypeId', 'news-article');
             expect(initializeDialogModeSpy).toHaveBeenCalledWith({
                 contentTypeId: 'news-article',
-                contentletInode: undefined
+                contentletInode: ''
             });
 
             expect(initializeDialogModeSpy).toHaveBeenCalledTimes(2);
