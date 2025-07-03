@@ -26,22 +26,13 @@ describe('DotContentDriveShellComponent', () => {
     const createComponent = createComponentFactory({
         component: DotContentDriveShellComponent,
         providers: [
-            {
-                provide: DotSiteService,
-                useValue: {
-                    getCurrentSite: jest.fn().mockReturnValue(of(mockSites[0]))
-                }
-            },
-            {
-                provide: DotContentSearchService,
-                useValue: {
-                    get: jest.fn().mockReturnValue(of(mockSearchResponse))
-                }
-            },
-            {
-                provide: ActivatedRoute,
-                useValue: mockRoute
-            },
+            mockProvider(DotSiteService, {
+                getCurrentSite: jest.fn().mockReturnValue(of(mockSites[0]))
+            }),
+            mockProvider(DotContentSearchService, {
+                get: jest.fn().mockReturnValue(of(mockSearchResponse))
+            }),
+            mockProvider(ActivatedRoute, mockRoute),
             provideHttpClient()
         ],
         componentProviders: [DotContentDriveStore],

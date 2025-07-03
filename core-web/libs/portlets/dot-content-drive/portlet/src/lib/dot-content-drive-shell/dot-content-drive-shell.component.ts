@@ -1,6 +1,13 @@
 import { EMPTY, of } from 'rxjs';
 
-import { Component, effect, inject, OnInit, untracked } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    effect,
+    inject,
+    OnInit,
+    untracked
+} from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
 import { catchError, take } from 'rxjs/operators';
@@ -20,7 +27,8 @@ import { decodeFilters } from '../utils/functions';
     imports: [DotFolderListViewComponent],
     providers: [DotContentDriveStore, DotSiteService],
     templateUrl: './dot-content-drive-shell.component.html',
-    styleUrl: './dot-content-drive-shell.component.scss'
+    styleUrl: './dot-content-drive-shell.component.scss',
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotContentDriveShellComponent implements OnInit {
     readonly #store = inject(DotContentDriveStore);

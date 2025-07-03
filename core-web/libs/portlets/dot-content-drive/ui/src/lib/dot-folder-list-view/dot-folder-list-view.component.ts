@@ -1,4 +1,4 @@
-import { Component, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
 import { DotContentDriveItem } from '@dotcms/dotcms-models';
 
@@ -7,7 +7,8 @@ import { DotContentDriveItem } from '@dotcms/dotcms-models';
     standalone: true,
     imports: [],
     templateUrl: './dot-folder-list-view.component.html',
-    styleUrl: './dot-folder-list-view.component.scss'
+    styleUrl: './dot-folder-list-view.component.scss',
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotFolderListViewComponent {
     items = input<DotContentDriveItem[]>([]);
