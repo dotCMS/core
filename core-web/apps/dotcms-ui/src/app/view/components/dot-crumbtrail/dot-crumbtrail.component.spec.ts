@@ -146,7 +146,7 @@ describe('DotCrumbtrailComponent', () => {
             { label: 'Second', target: '_blank', url: '/second' }
         ]);
 
-        const breadcrumbLast = spectator.query(byTestId('breadcrumb-last'));
+        const breadcrumbLast = spectator.query(byTestId('breadcrumb-title'));
         expect(breadcrumbLast.textContent.trim()).toBe('Last');
     });
 });
