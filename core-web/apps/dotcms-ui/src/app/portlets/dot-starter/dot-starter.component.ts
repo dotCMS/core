@@ -1,6 +1,7 @@
 import { Observable } from 'rxjs';
 
-import { Component, OnInit } from '@angular/core';
+import { Component, DestroyRef, inject, OnInit } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 
 import { map, pluck, take } from 'rxjs/operators';
@@ -26,6 +27,8 @@ export class DotStarterComponent implements OnInit {
     showCreateDataModelLink: boolean;
     showCreatePageLink: boolean;
     showCreateTemplateLink: boolean;
+
+    readonly #destroyRef = inject(DestroyRef);
 
     constructor(
         private route: ActivatedRoute,
@@ -62,10 +65,11 @@ export class DotStarterComponent implements OnInit {
      * @memberof DotStarterComponent
      */
     handleVisibility(hide: boolean): void {
-        if (hide) {
-            this.dotAccountService.removeStarterPage().subscribe();
-        } else {
-            this.dotAccountService.addStarterPage().subscribe();
-        }
+
+        const subscription = hide ? this.dotAccountService.removeStarterPage() : this.dotAccountService.addStarterPage();
+
+        subscription.pipe(
+            takeUntilDestroyed(this.#destroyRef)
+        ).subscribe();
     }
 }
