@@ -23,6 +23,25 @@ export DOTCMS_URL="https://your-dotcms-instance.com"
 export AUTH_TOKEN="your-auth-token"
 ```
 
+#### Configuration example:
+
+``` JSON
+{
+  "mcpServers": {
+    "dotcms": {
+      "command": "node",
+      "args": [
+        "/Users/fmontes/Developer/dotcms/core/core-web/dist/apps/mcp-server/main.js"
+      ],
+      "env": {
+        "DOTCMS_URL": "http://localhost:8080",
+        "AUTH_TOKEN": "YOUR_DOTCMS_AUTH_TOKEN"
+      }
+    }
+  }
+}
+```
+
 ## Architecture Overview
 
 This is a **Model Context Protocol (MCP) server** for dotCMS, built with TypeScript and using the `@modelcontextprotocol/sdk` library. The server provides AI assistants with tools to interact with dotCMS content management functionality.
