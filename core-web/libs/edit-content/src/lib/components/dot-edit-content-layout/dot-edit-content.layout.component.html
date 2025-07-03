@@ -1,6 +1,4 @@
 @if ($store.isLoaded() || $store.isSaving()) {
-    @let contentType = $store.contentType();
-    @let variable = contentType.variable;
     @let showSidebar = $store.isSidebarOpen();
     @let showSelectWorkflowWarning = $store.showSelectWorkflowWarning();
     @let lockWarningMessage = $store.lockWarningMessage();
