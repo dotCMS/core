@@ -135,4 +135,5 @@ This maintenance release includes the following code fixes:
 129. https://github.com/dotCMS/core/issues/32473 : [Edit Contentlet]: Binary field editor not showing for JS files #32473
 130. https://github.com/dotCMS/core/issues/32130 : Users with CMS Admin Role don’t update correctly if you change User Details #32130
 131. https://github.com/dotCMS/core/issues/32075 : When a folder contains Parentheses dotCLI pulls error. #32075
+132. https://github.com/dotCMS/core/issues/31859 : Apps Export Configurations Error Handling #31859
 
