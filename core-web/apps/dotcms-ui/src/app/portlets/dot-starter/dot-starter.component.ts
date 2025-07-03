@@ -65,11 +65,10 @@ export class DotStarterComponent implements OnInit {
      * @memberof DotStarterComponent
      */
     handleVisibility(hide: boolean): void {
+        const subscription = hide
+            ? this.dotAccountService.removeStarterPage()
+            : this.dotAccountService.addStarterPage();
 
-        const subscription = hide ? this.dotAccountService.removeStarterPage() : this.dotAccountService.addStarterPage();
-
-        subscription.pipe(
-            takeUntilDestroyed(this.#destroyRef)
-        ).subscribe();
+        subscription.pipe(takeUntilDestroyed(this.#destroyRef)).subscribe();
     }
 }
