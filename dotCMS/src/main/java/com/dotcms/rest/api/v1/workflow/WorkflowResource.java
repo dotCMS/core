@@ -508,7 +508,7 @@ public class WorkflowResource {
             final List<WorkflowScheme> schemes = this.workflowHelper.findSchemes();
             final List<WorkflowScheme> contentTypeSchemes = this.workflowHelper.findSchemesByContentType(contentTypeId, initDataObject.getUser());
 
-            return Response.ok(new ResponseEntityView(
+            return Response.ok(new ResponseEntityView<>(
                     new SchemesAndSchemesContentTypeView(schemes, contentTypeSchemes)))
                     .build(); // 200
         } catch (Exception e) {
@@ -845,7 +845,7 @@ public class WorkflowResource {
                 try {
                     final BulkActionsResultView view = workflowHelper
                             .fireBulkActions(fireBulkActionsForm, initDataObject.getUser());
-                    return Response.ok( new ResponseEntityView(view)).build();
+                    return Response.ok( new ResponseEntityView<>(view)).build();
                 } catch (Exception e) {
                     asyncResponse.resume(ResponseUtil.mapExceptionResponse(e));
                 }
@@ -989,7 +989,7 @@ public class WorkflowResource {
         try {
             Logger.debug(this, ()->"Finding the workflow action " + actionId);
             final WorkflowAction action = this.workflowHelper.findAction(actionId, initDataObject.getUser());
-            return Response.ok(new ResponseEntityView(this.toWorkflowActionView(action))).build(); // 200
+            return Response.ok(new ResponseEntityView<>(this.toWorkflowActionView(action))).build(); // 200
         } catch (Exception e) {
             Logger.error(this.getClass(),
                     "Exception on findAction, actionId: " + actionId +
@@ -1043,7 +1043,7 @@ public class WorkflowResource {
             Logger.debug(this, ()->"Finding the workflow action " + actionId);
 
             final String evaluated = workflowHelper.evaluateActionCondition(actionId, initDataObject.getUser(), request, response);
-            return Response.ok(new ResponseEntityView(evaluated)).build(); // 200
+            return Response.ok(new ResponseEntityView<>(evaluated)).build(); // 200
         } catch (Exception e) {
             Logger.error(this.getClass(),
                     "Exception on evaluateActionCondition, actionId: " + actionId +
@@ -1099,7 +1099,7 @@ public class WorkflowResource {
         try {
             Logger.debug(this, "Getting the workflow action " + actionId + " for the step: " + stepId);
             final WorkflowAction action = this.workflowHelper.findAction(actionId, stepId, initDataObject.getUser());
-            return Response.ok(new ResponseEntityView(action)).build(); // 200
+            return Response.ok(new ResponseEntityView<>(action)).build(); // 200
         } catch (Exception e) {
             Logger.error(this.getClass(),
                     "Exception on findAction, actionId: " + actionId +
@@ -1515,7 +1515,7 @@ public class WorkflowResource {
                                             "scheme: " + workflowSystemActionForm.getSchemeId():
                                             "var: "    + workflowSystemActionForm.getContentTypeVariable()));
 
-            return Response.ok(new ResponseEntityView(
+            return Response.ok(new ResponseEntityView<>(
                     this.workflowHelper.mapSystemActionToWorkflowAction(workflowSystemActionForm, initDataObject.getUser())))
                     .build(); // 200
         }  catch (final Exception e) {
@@ -1578,7 +1578,7 @@ public class WorkflowResource {
 
             Logger.debug(this, ()-> "Deleting system action: " + identifier);
 
-            return Response.ok(new ResponseEntityView(
+            return Response.ok(new ResponseEntityView<>(
                     this.workflowHelper.deleteSystemAction(identifier, initDataObject.getUser())))
                     .build(); // 200
         }  catch (final Exception e) {
@@ -1668,7 +1668,7 @@ public class WorkflowResource {
             DotPreconditions.notNull(workflowActionForm,"Expected Request body was empty.");
             Logger.debug(this, "Saving new workflow action: " + workflowActionForm.getActionName());
             newAction = this.workflowHelper.saveAction(workflowActionForm, initDataObject.getUser());
-            return Response.ok(new ResponseEntityView(newAction)).build(); // 200
+            return Response.ok(new ResponseEntityView<>(newAction)).build(); // 200
 
         }  catch (final Exception e) {
 
@@ -1815,7 +1815,7 @@ public class WorkflowResource {
             DotPreconditions.notNull(workflowActionForm,"Expected Request body was empty.");
             Logger.debug(this, "Updating action with id: " + actionId);
             final WorkflowAction workflowAction = this.workflowHelper.updateAction(actionId, workflowActionForm, initDataObject.getUser());
-            return Response.ok(new ResponseEntityView(workflowAction)).build(); // 200
+            return Response.ok(new ResponseEntityView<>(workflowAction)).build(); // 200
         } catch (final Exception e) {
             Logger.error(this.getClass(),
                     "Exception on updateAction, actionId: " +actionId+", workflowActionForm: " + workflowActionForm +
@@ -1917,7 +1917,7 @@ public class WorkflowResource {
                     + " in to a step: " + stepId);
             this.workflowHelper.saveActionToStep(new WorkflowActionStepBean.Builder().stepId(stepId)
                     .actionId(workflowActionStepForm.getActionId()).build(), initDataObject.getUser());
-            return Response.ok(new ResponseEntityView(OK)).build(); // 200
+            return Response.ok(new ResponseEntityView<>(OK)).build(); // 200
         } catch (final Exception e) {
             Logger.error(this.getClass(),
                     "Exception on saveActionToStep, stepId: "+stepId+", saveActionToStep: " + workflowActionStepForm +
@@ -2023,7 +2023,7 @@ public class WorkflowResource {
                             .order(workflowActionletActionForm.getOrder())
                             .parameters(workflowActionletActionForm.getParameters()).build()
                     , initDataObject.getUser());
-            return Response.ok(new ResponseEntityView(OK)).build(); // 200
+            return Response.ok(new ResponseEntityView<>(OK)).build(); // 200
         } catch (final Exception e) {
             Logger.error(this.getClass(),
                     "Exception on saveActionletToAction, actionId: "+actionId+", saveActionletToAction: " + workflowActionletActionForm +
@@ -2126,7 +2126,7 @@ public class WorkflowResource {
 
             Logger.debug(this, "Deleting the action: " + actionId + " for the step: " + stepId);
             this.workflowHelper.deleteAction(actionId, stepId, initDataObject.getUser());
-            return Response.ok(new ResponseEntityView(OK)).build(); // 200
+            return Response.ok(new ResponseEntityView<>(OK)).build(); // 200
         } catch (final Exception e) {
             Logger.error(this.getClass(),
                     "Exception on deleteAction, actionId: "+actionId+", stepId: " + stepId +
@@ -2176,7 +2176,7 @@ public class WorkflowResource {
 
             Logger.debug(this, "Deleting the action: " + actionId);
             this.workflowHelper.deleteAction(actionId, initDataObject.getUser());
-            return Response.ok(new ResponseEntityView(OK)).build(); // 200
+            return Response.ok(new ResponseEntityView<>(OK)).build(); // 200
         } catch (Exception e) {
             Logger.error(this.getClass(),
                     "Exception on deleteAction, action: " + actionId +
@@ -2238,7 +2238,7 @@ public class WorkflowResource {
                     DoesNotExistException.class);
 
             this.workflowAPI.deleteActionClass(actionClass, initDataObject.getUser());
-            return Response.ok(new ResponseEntityView(OK)).build(); // 200
+            return Response.ok(new ResponseEntityView<>(OK)).build(); // 200
         } catch (Exception e) {
             Logger.error(this.getClass(),
                     "Exception on deleteActionlet, actionletId: " + actionletId +
@@ -2297,7 +2297,7 @@ public class WorkflowResource {
 
             Logger.debug(this, "Doing reordering of step: " + stepId + ", order: " + order);
             this.workflowHelper.reorderStep(stepId, order, initDataObject.getUser());
-            return Response.ok(new ResponseEntityView(OK)).build(); // 200
+            return Response.ok(new ResponseEntityView<>(OK)).build(); // 200
         } catch (Exception e) {
             Logger.error(this.getClass(),
                     "WorkflowPortletAccessException on reorderStep, stepId: " + stepId +
@@ -2368,7 +2368,7 @@ public class WorkflowResource {
         try {
             DotPreconditions.notNull(stepForm,"Expected Request body was empty.");
             final WorkflowStep step = this.workflowHelper.updateStep(stepId, stepForm, initDataObject.getUser());
-            return Response.ok(new ResponseEntityView(step)).build();
+            return Response.ok(new ResponseEntityView<>(step)).build();
         } catch (Exception e) {
             Logger.error(this.getClass(),
                     "WorkflowPortletAccessException on updateStep, stepId: " + stepId +
@@ -2432,7 +2432,7 @@ public class WorkflowResource {
             final InitDataObject initDataObject = this.webResource.init(null, request, response, true, null);
             Logger.debug(this, "updating step for scheme with schemeId: " + schemeId);
             final WorkflowStep step = this.workflowHelper.addStep(newStepForm, initDataObject.getUser());
-            return Response.ok(new ResponseEntityView(step)).build();
+            return Response.ok(new ResponseEntityView<>(step)).build();
         } catch (final Exception e) {
             Logger.error(this.getClass(),
                     "Exception on addStep, schemeId: " + schemeId +
@@ -2478,7 +2478,7 @@ public class WorkflowResource {
         Logger.debug(this, "finding step by id stepId: " + stepId);
         try {
             final WorkflowStep step = this.workflowHelper.findStepById(stepId);
-            return Response.ok(new ResponseEntityView(step)).build();
+            return Response.ok(new ResponseEntityView<>(step)).build();
         } catch (Exception e) {
             Logger.error(this.getClass(),
                     "Exception on findStepById, stepId: " + stepId +
@@ -2512,7 +2512,7 @@ public class WorkflowResource {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Fired action successfully",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseEntityContentletView.class)
+                                    schema = @Schema(implementation = ResponseEntityMapView.class)
                             )
                     ),
                     @ApiResponse(responseCode = "400", description = "Bad request"), // invalid param string like `\`
@@ -2655,7 +2655,7 @@ public class WorkflowResource {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Fired action successfully",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseEntityContentletView.class)
+                                    schema = @Schema(implementation = ResponseEntityMapView.class)
                             )
                     ),
                     @ApiResponse(responseCode = "400", description = "Bad request"), // invalid param string like `\`
@@ -2930,7 +2930,7 @@ public class WorkflowResource {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Fired action successfully",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseEntityContentletView.class)
+                                    schema = @Schema(implementation = ResponseEntityMapView.class)
                             )
                     ),
                     @ApiResponse(responseCode = "400", description = "Bad request"), // invalid param string like `\`
@@ -3151,7 +3151,7 @@ public class WorkflowResource {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Fired action successfully",
                             content = @Content(mediaType = "application/octet-stream",
-                                    schema = @Schema(implementation = ResponseEntityContentletView.class),
+                                    schema = @Schema(implementation = ResponseEntityMapView.class),
                                     examples = @ExampleObject(value = "{\n" +
                                             "  \"entity\": {\n" +
                                             "    \"results\": [\n" +
@@ -3444,7 +3444,7 @@ public class WorkflowResource {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Contentlet(s) modified successfully",
                             content = @Content(mediaType = "application/octet-stream",
-                                    schema = @Schema(implementation = ResponseEntityContentletView.class),
+                                    schema = @Schema(implementation = ResponseEntityMapView.class),
                                     examples = @ExampleObject(value = "{\n" +
                                             "  \"entity\": {\n" +
                                             "    \"results\": [\n" +
@@ -3905,7 +3905,7 @@ public class WorkflowResource {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Fired action successfully",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseEntityContentletView.class)
+                                    schema = @Schema(implementation = ResponseEntityMapView.class)
                             )
                     ),
                     @ApiResponse(responseCode = "400", description = "Bad request"), // invalid param string like `\`
@@ -4053,7 +4053,7 @@ public class WorkflowResource {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Fired action successfully",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseEntityContentletView.class)
+                                    schema = @Schema(implementation = ResponseEntityMapView.class)
                             )
                     ),
                     @ApiResponse(responseCode = "400", description = "Bad request"), // invalid param string like `\`
@@ -4230,7 +4230,7 @@ public class WorkflowResource {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Fired action successfully",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseEntityContentletView.class)
+                                    schema = @Schema(implementation = ResponseEntityMapView.class)
                             )
                     ),
                     @ApiResponse(responseCode = "400", description = "Bad request"), // invalid param string like `\`
@@ -4783,7 +4783,7 @@ public class WorkflowResource {
                     new WorkflowReorderBean.Builder().stepId(stepId).actionId(actionId)
                             .order(workflowReorderActionStepForm.getOrder()).build(),
                     initDataObject.getUser());
-            return Response.ok(new ResponseEntityView(OK)).build(); // 200
+            return Response.ok(new ResponseEntityView<>(OK)).build(); // 200
         } catch (Exception e) {
 
             Logger.error(this.getClass(),
@@ -4862,7 +4862,7 @@ public class WorkflowResource {
                     exportObject,
                     workflowSchemeImportForm.getPermissions(),
                     initDataObject.getUser());
-            response     = Response.ok(new ResponseEntityView("OK")).build(); // 200
+            response     = Response.ok(new ResponseEntityView<>("OK")).build(); // 200
         } catch (Exception e){
 
             Logger.error(this.getClass(),
@@ -5071,7 +5071,7 @@ public class WorkflowResource {
             scheme = this.workflowAPI.findScheme(schemeIdOrVariable);
             exportObject = this.workflowImportExportUtil.buildExportObject(Arrays.asList(scheme));
             permissions  = this.workflowHelper.getActionsPermissions(exportObject.getActions());
-            response     = Response.ok(new ResponseEntityView(
+            response     = Response.ok(new ResponseEntityView<>(
                     Map.of("workflowObject", new WorkflowSchemeImportExportObjectView(VERSION, exportObject),
                             "permissions", permissions))).build(); // 200
         } catch (Exception e){
@@ -5155,7 +5155,7 @@ public class WorkflowResource {
             );
 
             Logger.debug(this, "Copying the workflow scheme: " + schemeId);
-            response     = Response.ok(new ResponseEntityView(
+            response     = Response.ok(new ResponseEntityView<>(
                     this.workflowAPI.deepCopyWorkflowScheme(
                             this.workflowAPI.findScheme(schemeId),
                             initDataObject.getUser(), workflowName))
@@ -5370,7 +5370,7 @@ public class WorkflowResource {
             DotPreconditions.notNull(workflowSchemeForm,"Expected Request body was empty.");
             Logger.debug(this, ()->"Saving scheme named: " + workflowSchemeForm.getSchemeName());
             final WorkflowScheme scheme = this.workflowHelper.saveOrUpdate(null, workflowSchemeForm, initDataObject.getUser());
-            return Response.ok(new ResponseEntityView(scheme)).build(); // 200
+            return Response.ok(new ResponseEntityView<>(scheme)).build(); // 200
         } catch (Exception e) {
             final String schemeName = workflowSchemeForm == null ? "" : workflowSchemeForm.getSchemeName();
             Logger.error(this.getClass(), "Exception on save, schema named: " + schemeName + ", exception message: " + e.getMessage(), e);
@@ -5432,7 +5432,7 @@ public class WorkflowResource {
             DotPreconditions.notNull(workflowSchemeForm,"Expected Request body was empty.");
             final User           user   = initDataObject.getUser();
             final WorkflowScheme scheme = this.workflowHelper.saveOrUpdate(schemeId, workflowSchemeForm, user);
-            return Response.ok(new ResponseEntityView(scheme)).build(); // 200
+            return Response.ok(new ResponseEntityView<>(scheme)).build(); // 200
         }  catch (Exception e) {
             Logger.error(this.getClass(), "Exception attempting to update schema identified by : " +schemeId + ", exception message: " + e.getMessage(), e);
             return ResponseUtil.mapExceptionResponse(e);

@@ -21,6 +21,7 @@ import com.liferay.portal.model.User;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -61,7 +62,8 @@ public class PersonaResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Personas retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = MapStringRestPersonaView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - site ID required or invalid",
                     content = @Content(mediaType = "application/json")),
@@ -105,7 +107,8 @@ public class PersonaResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Persona retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = RestPersona.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - persona ID or site ID required",
                     content = @Content(mediaType = "application/json")),

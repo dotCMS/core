@@ -10,8 +10,7 @@ import com.dotcms.rest.ContentHelper;
 import com.dotcms.rest.CountView;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.MapToContentletPopulator;
-import com.dotcms.rest.ResponseEntityContentletListView;
-import com.dotcms.rest.ResponseEntityContentletView;
+import com.dotcms.rest.ResponseEntityListMapView;
 import com.dotcms.rest.ResponseEntityCountView;
 import com.dotcms.rest.ResponseEntityMapView;
 import com.dotcms.rest.ResponseEntityView;
@@ -166,7 +165,7 @@ public class ContentResource {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Draft saved successfully",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseEntityContentletView.class))),
+                                    schema = @Schema(implementation = ResponseEntityMapView.class))),
                     @ApiResponse(responseCode = "400", description = "Bad request - Invalid content data"),
                     @ApiResponse(responseCode = "401", description = "Unauthorized - User not authenticated"),
                     @ApiResponse(responseCode = "403", description = "Forbidden - User lacks write permissions"),
@@ -174,7 +173,7 @@ public class ContentResource {
                     @ApiResponse(responseCode = "500", description = "Internal server error")
             }
     )
-    public final ResponseEntityContentletView saveDraft(@Context final HttpServletRequest request,
+    public final ResponseEntityMapView saveDraft(@Context final HttpServletRequest request,
                                                      @Parameter(description = "Content inode for existing content") @QueryParam("inode") final String inode,
                                                      @Parameter(description = "Content identifier for existing content") @QueryParam("identifier") final String identifier,
                                                      @Parameter(description = "Index policy (DEFER_UNTIL_PUBLISH, FORCE, WAIT_FOR)") @QueryParam("indexPolicy") final String indexPolicy,
@@ -203,7 +202,7 @@ public class ContentResource {
         APILocator.getContentletAPI().saveDraft(contentlet,
                 (ContentletRelationships) contentlet.get(Contentlet.RELATIONSHIP_KEY), categories.orElse(null), null,
                 initDataObject.getUser(), false);
-        return new ResponseEntityContentletView(
+        return new ResponseEntityMapView(
                 new DotTransformerBuilder().defaultOptions().content(contentlet).build().toMaps().stream().findFirst().orElse(Collections.emptyMap()));
     }
 
@@ -327,7 +326,7 @@ public class ContentResource {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Contentlet retrieved successfully",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseEntityContentletView.class))),
+                                    schema = @Schema(implementation = ResponseEntityMapView.class))),
                     @ApiResponse(responseCode = "400", description = "Bad request - Invalid identifier format"),
                     @ApiResponse(responseCode = "401", description = "Unauthorized - User not authenticated"),
                     @ApiResponse(responseCode = "403", description = "Forbidden - User lacks read permissions"),
@@ -438,7 +437,7 @@ public class ContentResource {
         @ApiResponse(responseCode = "200", 
                     description = "References retrieved successfully",
                     content = @Content(mediaType = "application/json",
-                                      schema = @Schema(implementation = ResponseEntityView.class))),
+                                      schema = @Schema(implementation = ResponseEntityContentReferenceListView.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - authentication required",
                     content = @Content(mediaType = "application/json")),
@@ -449,7 +448,7 @@ public class ContentResource {
     @GET
     @Path("/{inodeOrIdentifier}/references")
     @Produces(MediaType.APPLICATION_JSON)
-    public ResponseEntityView<List<ContentReferenceView>> getContentletReferences(
+    public ResponseEntityContentReferenceListView getContentletReferences(
             @Context HttpServletRequest request,
             @Context final HttpServletResponse response,
             @Parameter(description = "Content inode or identifier", required = true)
@@ -481,7 +480,7 @@ public class ContentResource {
                         (String) reference.get("personaName")))
                 .collect(Collectors.toList()):
                 List.of();
-        return new ResponseEntityView<>(contentReferenceViews);
+        return new ResponseEntityContentReferenceListView(contentReferenceViews);
     }
 
     /**
@@ -514,7 +513,7 @@ public class ContentResource {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Successfully retrieved lock status",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseEntityView.class)
+                                    schema = @Schema(implementation = ResponseEntityMapView.class)
                             )
                     ),
                     @ApiResponse(responseCode = "400", description = "Bad request"), // invalid param string like `\`
@@ -807,7 +806,7 @@ public class ContentResource {
         @ApiResponse(responseCode = "200", 
                     description = "Related content retrieved successfully",
                     content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ResponseEntityContentletListView.class))),
+                            schema = @Schema(implementation = ResponseEntityListMapView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - contentlet does not have a relationship field",
                     content = @Content(mediaType = "application/json")),

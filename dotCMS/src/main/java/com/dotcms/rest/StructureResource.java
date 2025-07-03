@@ -27,6 +27,7 @@ import javax.servlet.http.HttpServletResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -43,7 +44,8 @@ public class StructureResource {
 	@ApiResponses(value = {
 		@ApiResponse(responseCode = "200", 
 					description = "Structures retrieved successfully",
-					content = @Content(mediaType = "application/json")),
+					content = @Content(mediaType = "application/json",
+									  schema = @Schema(type = "object", description = "JSON response containing structure list with id and name properties, or individual structure object for specific inode requests"))),
 		@ApiResponse(responseCode = "403", 
 					description = "Forbidden - insufficient permissions",
 					content = @Content(mediaType = "application/json")),

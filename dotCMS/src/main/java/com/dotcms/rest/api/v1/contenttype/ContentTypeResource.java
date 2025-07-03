@@ -15,7 +15,7 @@ import com.dotcms.contenttype.transform.contenttype.ContentTypeInternationalizat
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.InitDataObject;
-import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.ResponseEntityListMapView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.InitRequestRequired;
 import com.dotcms.rest.annotation.NoCache;
@@ -205,7 +205,8 @@ public class ContentTypeResource implements Serializable {
 															"  }\n" +
 															"}"
 											)
-									}
+									},
+									schema = @Schema(implementation = ResponseEntityContentTypeOperationView.class)
 							)
 					),
 					@ApiResponse(responseCode = "400", description = "Bad Request"),
@@ -442,7 +443,8 @@ public class ContentTypeResource implements Serializable {
 															"  \"permissions\": []\n" +
 															"}"
 											)
-									}
+									},
+									schema = @Schema(implementation = ResponseEntityListMapView.class)
 							)
 					),
 					@ApiResponse(responseCode = "400", description = "Bad Request"),
@@ -554,7 +556,7 @@ public class ContentTypeResource implements Serializable {
                   session.removeAttribute(SELECTED_STRUCTURE_KEY);
 				}
 			}
-			return Response.ok(new ResponseEntityContentTypeListView(savedContentTypes)).build();
+			return Response.ok(new ResponseEntityListMapView(savedContentTypes)).build();
 		} catch (final IllegalArgumentException e) {
 			final String errorMsg = String.format("Missing required information when creating Content Type(s): " +
 					"%s", ExceptionUtil.getErrorMessage(e));
@@ -640,7 +642,8 @@ public class ContentTypeResource implements Serializable {
 															"  \"permissions\": []\n" +
 															"}"
 											)
-									}
+									},
+									schema = @Schema(implementation = ResponseEntityContentTypeDetailView.class)
 							)
 					),
 					@ApiResponse(responseCode = "400", description = "Bad Request"),
@@ -974,7 +977,8 @@ public class ContentTypeResource implements Serializable {
 															"  \"permissions\": []\n" +
 															"}"
 											)
-									}
+									},
+									schema = @Schema(implementation = ResponseEntityContentTypeJsonView.class)
 							)
 					),
 					@ApiResponse(responseCode = "403", description = "Forbidden"),
@@ -1072,7 +1076,8 @@ public class ContentTypeResource implements Serializable {
 															"  \"permissions\": []\n" +
 															"}\n"
 											)
-									}
+									},
+									schema = @Schema(implementation = ResponseEntityContentTypeDetailView.class)
 							)
 					),
 					@ApiResponse(responseCode = "403", description = "Forbidden"),
@@ -1235,7 +1240,8 @@ public class ContentTypeResource implements Serializable {
 															"  \"permissions\": []\n" +
 															"}\n"
 											)
-									}
+									},
+									schema = @Schema(implementation = ResponseEntityListContentTypeView.class)
 							)
 					),
 					@ApiResponse(responseCode = "400", description = "Bad Request"),
@@ -1335,7 +1341,8 @@ public class ContentTypeResource implements Serializable {
 															"  \"permissions\": []\n" +
 															"}"
 											)
-									}
+									},
+									schema = @Schema(implementation = ResponseEntityBaseContentTypesView.class)
 							)
 					),
 					@ApiResponse(responseCode = "500", description = "Internal Server Error")

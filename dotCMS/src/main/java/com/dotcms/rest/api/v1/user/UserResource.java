@@ -14,7 +14,6 @@ import com.dotcms.rest.api.DotRestInstanceProvider;
 import com.dotcms.rest.api.v1.authentication.IncorrectPasswordException;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.rest.api.v1.site.ResponseSiteVariablesEntityView;
-import com.dotcms.rest.api.v1.workflow.BulkActionsResultView;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
@@ -149,7 +148,8 @@ public class UserResource implements Serializable {
 	@io.swagger.v3.oas.annotations.responses.ApiResponses(value = {
 		@ApiResponse(responseCode = "200", 
 					description = "Current user information retrieved successfully",
-					content = @Content(mediaType = "application/json")),
+					content = @Content(mediaType = "application/json",
+									  schema = @Schema(implementation = RestUser.class))),
 		@ApiResponse(responseCode = "401", 
 					description = "Unauthorized - authentication required",
 					content = @Content(mediaType = "application/json")),
@@ -291,7 +291,7 @@ public class UserResource implements Serializable {
 				userMap = userToUpdated.toMap();
 			}
 
-			response = Response.ok(new ResponseEntityView(Map.of(USER_ID, userToUpdated.getUserId(),
+			response = Response.ok(new ResponseEntityView<>(Map.of(USER_ID, userToUpdated.getUserId(),
 					"reauthenticate", reAuthenticationRequired, "user", userMap))).build(); // 200
 		} catch (final UserFirstNameException e) {
 
@@ -381,7 +381,8 @@ public class UserResource implements Serializable {
 	@io.swagger.v3.oas.annotations.responses.ApiResponses(value = {
 		@ApiResponse(responseCode = "200", 
 					description = "Users retrieved successfully",
-					content = @Content(mediaType = "application/json")),
+					content = @Content(mediaType = "application/json",
+									  schema = @Schema(implementation = ResponseEntityListUserView.class))),
 		@ApiResponse(responseCode = "401", 
 					description = "Unauthorized - authentication required",
 					content = @Content(mediaType = "application/json")),
@@ -479,7 +480,7 @@ public class UserResource implements Serializable {
 			updateLoginAsSessionInfo(request, Host.class.cast(sessionData.get(com.dotmarketing.util.WebKeys
 					.CURRENT_HOST)), currentUser.getUserId(), loginAsUserId);
 			this.setImpersonatedUserSite(request, sessionData.get(WebKeys.USER_ID).toString());
-			response = Response.ok(new ResponseEntityView(Map.of("loginAs", true))).build();
+			response = Response.ok(new ResponseEntityView<>(Map.of("loginAs", true))).build();
 		} catch (final NoSuchUserException | DotSecurityException e) {
 			SecurityLogger.logInfo(UserResource.class, String.format("ERROR: An attempt to login as a different user " +
 							"was made by UserID '%s' / Remote IP '%s': %s", currentUser.getUserId(), request.getRemoteAddr(),
@@ -642,7 +643,7 @@ public class UserResource implements Serializable {
 			final Map<String, Object> sessionData = this.helper.doLogoutAs(principalUserId, currentLoginAsUser, serverName);
 			revertLoginAsSessionInfo(httpServletRequest, Host.class.cast(sessionData.get(com.dotmarketing.util.WebKeys
 					.CURRENT_HOST)), principalUserId);
-			response = Response.ok(new ResponseEntityView(Map.of("logoutAs", true))).build();
+			response = Response.ok(new ResponseEntityView<>(Map.of("logoutAs", true))).build();
 		} catch (final DotSecurityException | DotDataException e) {
 			SecurityLogger.logInfo(UserResource.class, String.format("ERROR: An error occurred when attempting to log " +
 							"out as user '%s' by UserID '%s' / Remote IP '%s': %s", currentLoginAsUser.getUserId(),
@@ -668,7 +669,8 @@ public class UserResource implements Serializable {
 	@ApiResponses(value = {
 	    @ApiResponse(responseCode = "200", 
 	                description = "User list retrieved successfully",
-	                content = @Content(mediaType = "application/json")),
+	                content = @Content(mediaType = "application/json",
+	                                  schema = @Schema(implementation = ResponseEntityListUserView.class))),
 	    @ApiResponse(responseCode = "401", 
 	                description = "Unauthorized - authentication required",
 	                content = @Content(mediaType = "application/json")),
@@ -790,7 +792,7 @@ public class UserResource implements Serializable {
 			final User userToUpdated = this.createNewUser(
 					modUser, createUserForm);
 
-			return Response.ok(new ResponseEntityView(Map.of(USER_ID, userToUpdated.getUserId(),
+			return Response.ok(new ResponseEntityView<>(Map.of(USER_ID, userToUpdated.getUserId(),
 					"user", userToUpdated.toMap()))).build(); // 200
 		}
 

@@ -4,6 +4,7 @@ import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityRelationshipPaginationView;
+import com.dotcms.rest.ResponseEntityListMapView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
@@ -72,7 +73,7 @@ public class RelationshipsResource {
         @ApiResponse(responseCode = "200", 
                     description = "Cardinalities retrieved successfully",
                     content = @Content(mediaType = "application/json",
-                                      schema = @Schema(implementation = ResponseEntityRelationshipCardinalitiesView.class))),
+                                      schema = @Schema(implementation = ResponseEntityListMapView.class))),
         @ApiResponse(responseCode = "500", 
                     description = "Internal server error",
                     content = @Content(mediaType = "application/json"))
@@ -104,7 +105,7 @@ public class RelationshipsResource {
                       })
                       .collect(Collectors.toList());
                       
-        return Response.ok(new ResponseEntityRelationshipCardinalitiesView(cardinalities)).build();
+        return Response.ok(new ResponseEntityListMapView(cardinalities)).build();
     }
 
     @Operation(

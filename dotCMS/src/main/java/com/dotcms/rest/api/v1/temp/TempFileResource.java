@@ -7,6 +7,7 @@ import com.dotcms.mock.request.DotCMSMockRequestWithSession;
 import com.dotcms.rest.AnonymousAccess;
 import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.ResponseEntityMapView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;

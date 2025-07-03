@@ -1,9 +1,11 @@
 package com.dotcms.rest.api.v1.theme;
 
 import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.ResponseEntityMapView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.api.v1.page.ResponseEntityPaginatedArrayListMapView;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.pagination.OrderDirection;
@@ -78,7 +80,8 @@ public class ThemeResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Themes retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityPaginatedArrayListMapView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - hostId is required",
                     content = @Content(mediaType = "application/json")),
@@ -133,7 +136,7 @@ public class ThemeResource {
         @ApiResponse(responseCode = "200", 
                     description = "Theme retrieved successfully",
                     content = @Content(mediaType = "application/json",
-                                      schema = @Schema(implementation = ResponseEntityThemeView.class))),
+                                      schema = @Schema(implementation = ResponseEntityMapView.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - authentication required",
                     content = @Content(mediaType = "application/json")),
@@ -162,7 +165,7 @@ public class ThemeResource {
                 .requestAndResponse(request, response).rejectWhenNoUser(true).init();
         final User user = initData.getUser();
         return Response
-                .ok(new ResponseEntityView(themeAPI.findThemeById(themeId, user, false).getMap()))
+                .ok(new ResponseEntityView<>(themeAPI.findThemeById(themeId, user, false).getMap()))
                 .build();
     }
 }

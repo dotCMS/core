@@ -110,7 +110,7 @@ public class TagResource {
         @ApiResponse(responseCode = "200", 
                     description = "Tags retrieved successfully",
                     content = @Content(mediaType = "application/json",
-                                      schema = @Schema(implementation = Map.class))),
+                                      schema = @Schema(type = "object"))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - authentication required",
                     content = @Content(mediaType = "application/json")),
@@ -306,7 +306,7 @@ public class TagResource {
         try {
             tagAPI.updateTag(tagForm.tagId, tagForm.tagName, false, tagForm.siteId);
             return Response
-                    .ok(new ResponseEntityView(toRestTagMap(tagAPI.getTagByTagId(tagForm.tagId))))
+                    .ok(new ResponseEntityView<>(toRestTagMap(tagAPI.getTagByTagId(tagForm.tagId))))
                     .build();
 
         } catch (DotDataException e) {
@@ -381,7 +381,7 @@ public class TagResource {
             Logger.error(TagResource.class, errorMessage);
             throw new DoesNotExistException(errorMessage);
         }
-        return Response.ok(new ResponseEntityView(toRestTagMap(tags))).build();
+        return Response.ok(new ResponseEntityView<>(toRestTagMap(tags))).build();
     }
 
     /**
@@ -446,7 +446,7 @@ public class TagResource {
         if(foundTags.isEmpty()){
            return Response.status(Status.NOT_FOUND).build();
         }
-        return Response.ok(new ResponseEntityView(toRestTagMap(foundTags))).build();
+        return Response.ok(new ResponseEntityView<>(toRestTagMap(foundTags))).build();
     }
 
 
@@ -513,7 +513,7 @@ public class TagResource {
         }
         try {
             tagAPI.deleteTag(tagByTagId);
-            return Response.ok(new ResponseEntityView(OK)).build();
+            return Response.ok(new ResponseEntityView<>(OK)).build();
         } catch (Exception e) {
             Logger.error(TagResource.class,
                     String.format("Exception removing tag  with id `%s`", tagId), e);
@@ -736,7 +736,7 @@ public class TagResource {
             Logger.error(TagResource.class, errorMessage);
             throw new BadRequestException(e, errorMessage);
         }
-        return Response.ok(new ResponseEntityView(OK)).build();
+        return Response.ok(new ResponseEntityView<>(OK)).build();
 
     }
 
@@ -794,7 +794,7 @@ public class TagResource {
             Logger.error(TagResource.class,"Failure Importing tags file", e);
             throw new BadRequestException(e, "Failure Importing tags file");
         }
-        return Response.ok(new ResponseEntityView(OK)).build();
+        return Response.ok(new ResponseEntityView<>(OK)).build();
 
     }
 

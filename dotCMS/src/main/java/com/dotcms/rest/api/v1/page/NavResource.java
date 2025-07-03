@@ -6,6 +6,7 @@ import com.dotcms.rendering.velocity.viewtools.navigation.NavTool;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.ResponseEntityMapView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
@@ -77,7 +78,7 @@ public class NavResource {
         @ApiResponse(responseCode = "200", 
                     description = "Navigation retrieved successfully",
                     content = @Content(mediaType = "application/json",
-                                      schema = @Schema(implementation = ResponseEntityNavigationView.class))),
+                                      schema = @Schema(implementation = ResponseEntityMapView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Invalid depth or languageId parameters",
                     content = @Content(mediaType = "application/json")),
@@ -152,7 +153,7 @@ public class NavResource {
 
 
 
-            return Response.ok(new ResponseEntityNavigationView(navMap)).build(); // 200
+            return Response.ok(new ResponseEntityMapView(navMap)).build(); // 200
         } catch (Exception e) {
             Logger.error(this.getClass(),
                     "Exception on NavResource exception message: " + e.getMessage(), e);

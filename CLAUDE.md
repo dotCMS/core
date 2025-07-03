@@ -239,7 +239,8 @@ public class MyResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Resource found successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityMyResourceView.class))),
         @ApiResponse(responseCode = "404", 
                     description = "Resource not found",
                     content = @Content(mediaType = "application/json")),
@@ -248,7 +249,7 @@ public class MyResource {
                     content = @Content(mediaType = "application/json"))
     })
     @GET @Path("/{id}") @Produces(MediaType.APPLICATION_JSON) @NoCache
-    public Response getById(@Context HttpServletRequest request,
+    public ResponseEntityMyResourceView getById(@Context HttpServletRequest request,
                            @Parameter(description = "Resource identifier", required = true)
                            @PathParam("id") String id) {
         // ALWAYS initialize request context
@@ -256,7 +257,7 @@ public class MyResource {
         User user = initData.getUser();
         
         // Business logic
-        return Response.ok(new ResponseEntityView<>(result)).build();
+        return new ResponseEntityMyResourceView(result);
     }
     
     @Operation(
@@ -266,7 +267,8 @@ public class MyResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "201", 
                     description = "Resource created successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityMyResourceView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Invalid request data",
                     content = @Content(mediaType = "application/json")),
@@ -284,7 +286,7 @@ public class MyResource {
         User user = initData.getUser();
         
         // Business logic
-        return Response.status(201).entity(new ResponseEntityView<>(result)).build();
+        return Response.status(201).entity(new ResponseEntityMyResourceView(result)).build();
     }
 }
 ```
@@ -300,7 +302,8 @@ public class MyResource {
 @Operation(summary = "Brief action", description = "Detailed explanation")
 @ApiResponses(value = {
     @ApiResponse(responseCode = "200", description = "Success description",
-                content = @Content(mediaType = "application/json")),
+                content = @Content(mediaType = "application/json",
+                                  schema = @Schema(implementation = ResponseEntitySpecificView.class))),
     @ApiResponse(responseCode = "4xx/5xx", description = "Error description",
                 content = @Content(mediaType = "application/json"))
 })
@@ -311,6 +314,158 @@ public class MyResource {
 // Request bodies - ALL POST/PUT/PATCH with bodies MUST be documented
 @RequestBody(description = "Body purpose", required = true,
            content = @Content(schema = @Schema(implementation = FormClass.class)))
+```
+
+**Parameter Annotation Rules:**
+```java
+// Path parameters - for URL path segments
+@Path("/resource/{id}")
+public Response getById(@PathParam("id") String id) {...}
+
+// Query parameters - for URL query strings (?param=value)
+@QueryParam("filter") String filter        // /resource?filter=value
+@QueryParam("allUsers") Boolean allUsers   // /resource?allUsers=true
+
+// ❌ WRONG - @PathParam without corresponding @Path placeholder
+@Path("/resource")  // No {params} placeholder
+public Response get(@PathParam("params") String params) {...}
+
+// ✅ CORRECT - @QueryParam for optional filtering
+@Path("/resource")
+public Response get(@QueryParam("filter") String filter) {...}
+```
+
+**🚨 CRITICAL: @Schema Implementation Rules**
+
+**The @Schema implementation must match what the method actually returns!**
+
+### ✅ Pattern 1: Methods Returning ResponseEntity*View Wrappers
+```java
+// Method that returns wrapped response:
+public ResponseEntityUserView getUser() {
+    return new ResponseEntityUserView(user);
+}
+
+// OR method that wraps in Response.ok():
+public Response getUser() {
+    return Response.ok(new ResponseEntityUserView(user)).build();
+}
+
+// ✅ CORRECT @Schema - matches the wrapper class
+@Schema(implementation = ResponseEntityUserView.class)
+@Schema(implementation = ResponseEntityWorkflowStepsView.class)
+@Schema(implementation = ResponseEntityContentTypeListView.class)
+```
+
+### ✅ Pattern 2: Methods Returning Unwrapped Collections/Maps
+```java
+// Method that returns unwrapped Map directly:
+public Map<String, RestLanguage> list() {
+    return languageMap;  // Direct Map return, no wrapper
+}
+
+// Method that returns unwrapped List directly:
+public List<ContentType> getTypes() {
+    return contentTypes;  // Direct List return, no wrapper
+}
+
+// ✅ CORRECT @Schema - use Object.class for unwrapped collections
+@Schema(implementation = Object.class)  // For direct Map<String, RestLanguage>
+@Schema(implementation = Object.class)  // For direct List<ContentType>
+```
+
+### ✅ Pattern 2b: Typed Maps Require Specific View Classes
+```java
+// Method that returns typed Map with specific domain objects:
+public Map<String, RestPersona> list() {
+    return personaMap;  // Direct Map<String, RestPersona> return
+}
+
+// ✅ CORRECT @Schema - create specific view class for typed maps
+@Schema(implementation = MapStringRestPersonaView.class)
+
+// The view class must extend the actual map type:
+public class MapStringRestPersonaView extends HashMap<String, RestPersona> {
+    public MapStringRestPersonaView() { super(); }
+    public MapStringRestPersonaView(Map<String, RestPersona> map) { super(map); }
+}
+
+// ❌ WRONG - Object.class loses type information for API documentation
+@Schema(implementation = Object.class)  // Don't use for typed maps!
+```
+
+### ✅ Pattern 3: Generic Utility Classes (When No Specific Class Exists)
+```java
+// Method that returns generic wrapped response:
+public Response getSomething() {
+    return Response.ok(new ResponseEntityView<>(mapData)).build();
+}
+
+// ✅ CORRECT @Schema - use appropriate generic class
+@Schema(implementation = ResponseEntityMapView.class)      // For Map<String, Object> wrapped
+@Schema(implementation = ResponseEntityListView.class)     // For List<T> wrapped
+@Schema(implementation = ResponseEntityBooleanView.class)  // For boolean operations
+@Schema(implementation = ResponseEntityStringView.class)   // For string responses
+@Schema(implementation = ResponseEntityCountView.class)    // For count operations
+```
+
+### ✅ Pattern 4: Complex Dynamic JSON (Rare Cases)
+```java
+// Method that returns complex dynamic structures:
+public Response getComplexData() {
+    Map<String, Object> complex = Map.of("nested", nestedMap, "arrays", arrays);
+    return Response.ok(complex).build();
+}
+
+// ✅ CORRECT @Schema - only for truly dynamic complex JSON
+@Schema(implementation = Object.class)  // For JSONObject, complex Map.of(), etc.
+```
+
+**❌ NEVER Use These Antipatterns:**
+```java
+// ❌ WRONG - provides no meaningful API documentation
+@Schema(implementation = ResponseEntityView.class)
+
+// ❌ WRONG - missing schema entirely  
+content = @Content(mediaType = "application/json")
+
+// ❌ WRONG - using wrapper schema for unwrapped return
+// Method returns: Map<String, RestLanguage> (unwrapped)
+@Schema(implementation = ResponseEntityMapView.class)  // WRONG - no wrapper used
+
+// ❌ WRONG - using Object.class for wrapped return  
+// Method returns: new ResponseEntityUserView(user) (wrapped)
+@Schema(implementation = Object.class)  // WRONG - specific wrapper exists
+```
+
+**🔍 How to Determine the Correct @Schema:**
+
+1. **Check the method's return statement** - what does it actually return?
+2. **Wrapped returns** → Use the specific ResponseEntity*View class
+3. **Unwrapped collections/maps** → Use Object.class  
+4. **No specific class exists** → Use generic ResponseEntity*View utilities
+
+**Available ResponseEntity*View Classes (80+ available):**
+```java
+// Core Utility Classes (use when no specific domain class exists)
+ResponseEntityBooleanView, ResponseEntityStringView, ResponseEntityListView,
+ResponseEntityMapView, ResponseEntityCountView, ResponseEntityJobView
+
+// Authentication & User Management
+ResponseEntityUserView, ResponseEntityApiTokenView, ResponseEntityLoginFormView,
+ResponseEntityJwtView, ResponseEntityPasswordResetView
+
+// Content Management
+ResponseEntityContentletView, ResponseEntityContentTypeListView,
+ResponseEntityContentTypeOperationView, ResponseEntityFieldView
+
+// Workflow System
+ResponseEntityWorkflowSchemeView, ResponseEntityWorkflowStepView,
+ResponseEntityWorkflowActionView, ResponseEntityBulkActionView
+
+// Infrastructure
+ResponseEntityContainerView, ResponseEntityTemplateView, ResponseEntityCategoryView,
+ResponseEntityTagView, ResponseEntityExperimentView, ResponseEntityHealthStatusView
 ```
 
 **Media Type Annotation Rules:**
@@ -619,14 +774,14 @@ Valid log levels: `TRACE`, `DEBUG`, `INFO`, `WARN`, `ERROR`, `FATAL`, `OFF`
 - ✅ Use `Config.getProperty()` and `Logger.info(this, ...)`
 - ✅ Use `APILocator.getXXXAPI()` for services
 - ✅ Use `@Value.Immutable` for data objects
-- ✅ Use JAX-RS `@Path` for REST endpoints with complete Swagger documentation
+- ✅ Use JAX-RS `@Path` for REST endpoints - **See [REST API Guide](dotCMS/src/main/java/com/dotcms/rest/CLAUDE.md)**
 - ✅ Use `data-testid` for Angular testing
 - ✅ Use modern Java 21 syntax (Java 11 compatible)
 - ✅ Follow domain-driven package organization for new features
-- ✅ **REST Documentation**: All endpoints MUST have `@Tag`, `@Operation`, `@ApiResponses`, `@Parameter`/`@RequestBody`
-- ✅ **Media Types**: `@Produces` at method level, `@Consumes` only on endpoints with request bodies
-- ✅ **ResponseEntity Views**: Use specific typed view classes (e.g., `ResponseEntityStringView`, `ResponseEntityWorkflowStepsView`) instead of generic `ResponseEntityView`
+- ✅ **@Schema Rules**: Match schema to actual return type (wrapped vs unwrapped) - **See [REST Guide](dotCMS/src/main/java/com/dotcms/rest/CLAUDE.md)**
 - ❌ Avoid DWR, Struts, portlets, console logging, direct system properties
 - ❌ Avoid Java 21 runtime features in core modules
-- ❌ Avoid `@Consumes` on GET endpoints unless they accept request bodies (non-standard)
-- ❌ Avoid generic `ResponseEntityView.class` in `@Schema` - use specific view classes
+- ❌ **Never use raw `ResponseEntityView.class` as @Schema implementation**
+- ❌ **NEVER use `ResponseEntityView.class`** in `@Schema` - provides no meaningful API documentation
+- ❌ **NEVER omit `@Schema`** from @ApiResponse(200) - incomplete Swagger documentation
+- ❌ **NEVER use `@PathParam`** without corresponding @Path placeholder - use @QueryParam instead

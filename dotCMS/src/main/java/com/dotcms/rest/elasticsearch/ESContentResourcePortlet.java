@@ -40,6 +40,7 @@ import java.io.IOException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -80,7 +81,8 @@ public class ESContentResourcePortlet extends BaseRestPortlet {
 	@ApiResponses(value = {
 		@ApiResponse(responseCode = "200", 
 					description = "Search executed successfully",
-					content = @Content(mediaType = "application/json")),
+					content = @Content(mediaType = "application/json",
+									  schema = @Schema(type = "object", description = "Search results containing contentlets array and elasticsearch response metadata"))),
 		@ApiResponse(responseCode = "400", 
 					description = "Bad request - invalid Elasticsearch query or depth parameter",
 					content = @Content(mediaType = "application/json")),
@@ -188,7 +190,8 @@ public class ESContentResourcePortlet extends BaseRestPortlet {
 	@ApiResponses(value = {
 		@ApiResponse(responseCode = "200", 
 					description = "Search executed successfully",
-					content = @Content(mediaType = "application/json")),
+					content = @Content(mediaType = "application/json",
+									  schema = @Schema(type = "object", description = "Search results containing contentlets array and elasticsearch response metadata"))),
 		@ApiResponse(responseCode = "400", 
 					description = "Bad request - invalid Elasticsearch query or depth parameter",
 					content = @Content(mediaType = "application/json")),
@@ -220,7 +223,8 @@ public class ESContentResourcePortlet extends BaseRestPortlet {
 	@ApiResponses(value = {
 		@ApiResponse(responseCode = "200", 
 					description = "Raw search executed successfully",
-					content = @Content(mediaType = "application/json")),
+					content = @Content(mediaType = "application/json",
+									  schema = @Schema(type = "object", description = "Raw Elasticsearch query response as JSON object"))),
 		@ApiResponse(responseCode = "401", 
 					description = "Unauthorized - authentication required",
 					content = @Content(mediaType = "application/json")),
@@ -243,7 +247,8 @@ public class ESContentResourcePortlet extends BaseRestPortlet {
 	@ApiResponses(value = {
 		@ApiResponse(responseCode = "200", 
 					description = "Raw search executed successfully",
-					content = @Content(mediaType = "application/json")),
+					content = @Content(mediaType = "application/json",
+									  schema = @Schema(type = "object", description = "Raw Elasticsearch query response as JSON object"))),
 		@ApiResponse(responseCode = "401", 
 					description = "Unauthorized - authentication required",
 					content = @Content(mediaType = "application/json")),

@@ -4,6 +4,7 @@ import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.ResponseEntityStringView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.util.DbExporterUtil;
@@ -94,7 +95,7 @@ public class MaintenanceResource implements Serializable {
         @ApiResponse(responseCode = "200", 
                     description = "Shutdown initiated successfully",
                     content = @Content(mediaType = "application/json",
-                                      schema = @io.swagger.v3.oas.annotations.media.Schema(implementation = ResponseEntityMaintenanceOperationView.class))),
+                                      schema = @io.swagger.v3.oas.annotations.media.Schema(implementation = ResponseEntityStringView.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - authentication required",
                     content = @Content(mediaType = "application/json")),
@@ -137,7 +138,7 @@ public class MaintenanceResource implements Serializable {
                         TimeUnit.SECONDS
                 );
 
-        return Response.ok(new ResponseEntityMaintenanceOperationView("Shutdown")).build();
+        return Response.ok(new ResponseEntityStringView("Shutdown")).build();
     }
 
     @Operation(
@@ -148,7 +149,7 @@ public class MaintenanceResource implements Serializable {
         @ApiResponse(responseCode = "200", 
                     description = "Cluster shutdown initiated successfully",
                     content = @Content(mediaType = "application/json",
-                                      schema = @io.swagger.v3.oas.annotations.media.Schema(implementation = ResponseEntityMaintenanceOperationView.class))),
+                                      schema = @io.swagger.v3.oas.annotations.media.Schema(implementation = ResponseEntityStringView.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - authentication required",
                     content = @Content(mediaType = "application/json")),
@@ -182,7 +183,7 @@ public class MaintenanceResource implements Serializable {
             return Response.status(Status.FORBIDDEN).build();
         }
         ClusterManagementTopic.getInstance().restartCluster(rollingDelay);
-        return Response.ok(new ResponseEntityMaintenanceOperationView("Shutdown")).build();
+        return Response.ok(new ResponseEntityStringView("Shutdown")).build();
     }
     
     @Operation(

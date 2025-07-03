@@ -127,7 +127,7 @@ public class ForgotPasswordResource implements Serializable {
             this.userService.sendResetPassword(
                     this.companyAPI.getCompanyId(request), emailAddress, locale);
 
-            res = Response.ok(new ResponseEntityView(emailAddress)).build(); // 200
+            res = Response.ok(new ResponseEntityView<>(emailAddress)).build(); // 200
 
         } catch (NoSuchUserException e) {
 
@@ -152,7 +152,7 @@ public class ForgotPasswordResource implements Serializable {
                                 "User [%s] does NOT exist in the Database, returning OK message for security reasons. IP [%s]",
                                 emailAddress, request.getRemoteAddr()));
 
-                res = Response.ok(new ResponseEntityView(emailAddress)).build(); // 200
+                res = Response.ok(new ResponseEntityView<>(emailAddress)).build(); // 200
             }
         } catch (SendPasswordException e) {
 

@@ -1,6 +1,9 @@
 package com.dotcms.rest.api.v1.index;
 
 import com.dotcms.content.elasticsearch.util.ESMappingUtilHelper;
+import com.dotcms.rest.ResponseEntityMapView;
+import com.dotcms.rest.ResponseEntityListMapView;
+import com.dotcms.rest.ResponseEntityListStringView;
 import com.liferay.portal.language.LanguageUtil;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -152,7 +155,7 @@ public class ESIndexResource {
         @ApiResponse(responseCode = "200", 
                     description = "Cluster statistics retrieved successfully",
                     content = @Content(mediaType = "application/json",
-                                      schema = @Schema(implementation = ResponseEntityIndexStatsView.class))),
+                                      schema = @Schema(implementation = ResponseEntityMapView.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - CMS Administrator role required",
                     content = @Content(mediaType = "application/json")),
@@ -189,7 +192,7 @@ public class ESIndexResource {
                 .put("size", stats.getSize())
                 .put("count", stats.getDocCount());
         }
-        return Response.ok(new ResponseEntityIndexStatsView(builder.build())).build();
+        return Response.ok(new ResponseEntityMapView(builder.build())).build();
     }
     
     @Operation(
@@ -200,7 +203,7 @@ public class ESIndexResource {
         @ApiResponse(responseCode = "200", 
                     description = "Failed reindex records retrieved successfully",
                     content = @Content(mediaType = "application/json",
-                                      schema = @Schema(implementation = ResponseEntityIndexFailureListView.class))),
+                                      schema = @Schema(implementation = ResponseEntityListMapView.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - CMS Administrator role required",
                     content = @Content(mediaType = "application/json")),
@@ -252,7 +255,7 @@ public class ESIndexResource {
             results.add(failure);
         });
 
-        return Response.ok(new ResponseEntityIndexFailureListView(results)).build();
+        return Response.ok(new ResponseEntityListMapView(results)).build();
     }
 
     @CloseDBIfOpened
@@ -292,9 +295,7 @@ public class ESIndexResource {
     )
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
-                    description = "Index optimization completed successfully",
-                    content = @Content(mediaType = "application/json",
-                                      schema = @Schema(implementation = ResponseEntityIndexOperationView.class))),
+                    description = "Index optimization completed successfully (no body)"),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - CMS Administrator role required",
                     content = @Content(mediaType = "application/json")),
@@ -681,7 +682,7 @@ public class ESIndexResource {
 
             //Creating an utility response object
 
-            return Response.ok(new ResponseEntityIndexListView(APILocator.getContentletIndexAPI().listDotCMSIndices())).build();
+            return Response.ok(new ResponseEntityListStringView(APILocator.getContentletIndexAPI().listDotCMSIndices())).build();
         } catch (Exception e) {
             Logger.error(this.getClass(),"Exception trying to list indices: " + e.getMessage(), e);
             return ResponseUtil.mapExceptionResponse(e);
@@ -788,7 +789,7 @@ public class ESIndexResource {
         @ApiResponse(responseCode = "200", 
                     description = "Index status retrieved successfully",
                     content = @Content(mediaType = "application/json",
-                                      schema = @Schema(implementation = ResponseEntityIndexListView.class))),
+                                      schema = @Schema(implementation = ResponseEntityListMapView.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - CMS Administrator role required",
                     content = @Content(mediaType = "application/json")),
@@ -810,7 +811,7 @@ public class ESIndexResource {
         
         final InitDataObject init = auth(request, response);
 
-        return Response.ok(new ResponseEntityIndexStatsListView(IndexResourceHelper.getInstance().indexStatsList())).build();
+        return Response.ok(new ResponseEntityListMapView(IndexResourceHelper.getInstance().indexStatsList())).build();
 
     }
     

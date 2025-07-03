@@ -9,7 +9,9 @@ import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.MessageEntity;
 import com.dotcms.rest.RESTParams;
+import com.dotcms.rest.ResponseEntityBooleanView;
 import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.ResponseEntityMapView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.InitRequestRequired;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
@@ -94,7 +96,7 @@ public class NotificationResource {
         @ApiResponse(responseCode = "200", 
                     description = "Notifications retrieved successfully",
                     content = @Content(mediaType = "application/json",
-                                      schema = @Schema(implementation = ResponseEntityNotificationListView.class))),
+                                      schema = @Schema(implementation = ResponseEntityMapView.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - authentication required",
                     content = @Content(mediaType = "application/json")),
@@ -172,7 +174,7 @@ public class NotificationResource {
                 });
             }
 
-            return Response.ok(new ResponseEntityView(Map.of("totalUnreadNotifications", totalUnreadNotifications,
+            return Response.ok(new ResponseEntityView<>(Map.of("totalUnreadNotifications", totalUnreadNotifications,
                     "notifications", notificationsResult, "total", notificationsCount)))
                     .header("Content-Range", "items " + offset + "-" + limit + "/" + totalUnreadNotifications)
                     .build(); // 200
@@ -235,7 +237,7 @@ public class NotificationResource {
                 }
             }
 
-            response = Response.ok(new ResponseEntityView(newNotificationsCount))
+            response = Response.ok(new ResponseEntityView<>(newNotificationsCount))
                     .build(); // 200
         } catch (Exception e) { // this is an unknown error, so we report as a 500.
 
@@ -253,7 +255,7 @@ public class NotificationResource {
         @ApiResponse(responseCode = "200", 
                     description = "Notifications marked as read successfully",
                     content = @Content(mediaType = "application/json",
-                                      schema = @Schema(implementation = ResponseEntityNotificationOperationView.class))),
+                                      schema = @Schema(implementation = ResponseEntityBooleanView.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - authentication required",
                     content = @Content(mediaType = "application/json")),
@@ -287,7 +289,7 @@ public class NotificationResource {
                 this.notificationAPI.markNotificationsAsRead(user.getUserId());
             }
 
-            return Response.ok(new ResponseEntityView(Boolean.TRUE,
+            return Response.ok(new ResponseEntityView<>(Boolean.TRUE,
                     list(new MessageEntity(LanguageUtil.get(user.getLocale(), "notification.success.markasread")))))
                     .build(); // 200
         } catch (Exception e) { // this is an unknown error, so we report as a 500.
@@ -306,7 +308,7 @@ public class NotificationResource {
         @ApiResponse(responseCode = "200", 
                     description = "Notification deleted successfully",
                     content = @Content(mediaType = "application/json",
-                                      schema = @Schema(implementation = ResponseEntityNotificationOperationView.class))),
+                                      schema = @Schema(implementation = ResponseEntityBooleanView.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - authentication required",
                     content = @Content(mediaType = "application/json")),
@@ -343,7 +345,7 @@ public class NotificationResource {
                 this.notificationAPI.deleteNotification(user.getUserId(), groupId); // todo: include the user id, in order to remove by id.
             }
 
-            return Response.ok(new ResponseEntityView(Boolean.TRUE,
+            return Response.ok(new ResponseEntityView<>(Boolean.TRUE,
                     list(new MessageEntity(LanguageUtil.get(user.getLocale(),
                             "notification.success.delete", groupId)))))
                     .build(); // 200
@@ -365,7 +367,7 @@ public class NotificationResource {
         @ApiResponse(responseCode = "200", 
                     description = "Notifications deleted successfully",
                     content = @Content(mediaType = "application/json",
-                                      schema = @Schema(implementation = ResponseEntityNotificationOperationView.class))),
+                                      schema = @Schema(implementation = ResponseEntityBooleanView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid notification IDs",
                     content = @Content(mediaType = "application/json")),
@@ -407,7 +409,7 @@ public class NotificationResource {
                 this.notificationAPI.deleteNotifications(user.getUserId(), deleteForm.getItems().toArray(new String[] {}));
             }
 
-            response =  Response.ok(new ResponseEntityView(Boolean.TRUE,
+            response =  Response.ok(new ResponseEntityView<>(Boolean.TRUE,
                     list(new MessageEntity(LanguageUtil.get(user.getLocale(),
                             "notifications.success.delete", deleteForm.getItems())))))
                     .build(); // 200

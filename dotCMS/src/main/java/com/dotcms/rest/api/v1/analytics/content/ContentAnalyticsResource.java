@@ -6,18 +6,14 @@ import com.dotcms.analytics.content.ReportResponse;
 import com.dotcms.analytics.model.ResultSetItem;
 import com.dotcms.analytics.track.collectors.Collector;
 import com.dotcms.experiments.business.ConfigExperimentUtil;
-import com.dotcms.jitsu.ValidAnalyticsEventPayloadAttributes;
-import com.dotcms.jitsu.validators.AnalyticsValidatorUtil;
 import com.dotcms.rest.AnonymousAccess;
 import com.dotcms.rest.InitDataObject;
-import com.dotcms.rest.ResponseEntityStringView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.v1.analytics.content.util.AnalyticsEventsResult;
 import com.dotcms.rest.api.v1.analytics.content.util.ContentAnalyticsUtil;
 import com.dotcms.util.JsonUtil;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -26,6 +22,7 @@ import com.liferay.portal.model.User;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vavr.Lazy;
@@ -42,7 +39,6 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.Serializable;
-import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -98,6 +94,7 @@ public class ContentAnalyticsResource {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Content Analytics data being queried",
                             content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ReportResponseEntityView.class),
                                     examples = {
                                             @ExampleObject(
                                                     value = "{\n" +
@@ -168,6 +165,7 @@ public class ContentAnalyticsResource {
                     @ApiResponse(responseCode = "200", description = "Content Analytics data " +
                             "being queried",
                             content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ReportResponseEntityView.class),
                                     examples = {
                                             @ExampleObject(
                                                     value = "{\n" +
@@ -236,6 +234,7 @@ public class ContentAnalyticsResource {
                     @ApiResponse(responseCode = "200", description = "Content Analytics data " +
                             "being queried",
                             content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ReportResponseEntityView.class),
                                     examples = {
                                             @ExampleObject(
                                                     value = "{\n" +
@@ -298,6 +297,7 @@ public class ContentAnalyticsResource {
             responses = {
                     @ApiResponse(responseCode = "200", description = "If the event was created successfully",
                             content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = AnalyticsEventsResult.class),
                                     examples = {
                                             @ExampleObject(
                                                     value = "TBD"

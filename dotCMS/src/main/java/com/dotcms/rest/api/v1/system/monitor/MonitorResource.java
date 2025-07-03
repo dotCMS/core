@@ -4,7 +4,6 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.rest.annotation.NoCache;
 import org.glassfish.jersey.server.JSONP;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -60,7 +59,7 @@ public class MonitorResource {
         @ApiResponse(responseCode = "200", 
                     description = "System is healthy",
                     content = @Content(mediaType = "application/json",
-                                      schema = @Schema(implementation = ResponseEntityMapView.class))),
+                                      schema = @Schema(implementation = ResponseEntityMonitorStatsView.class))),
         @ApiResponse(responseCode = "403", 
                     description = "Forbidden - access not granted",
                     content = @Content(mediaType = "application/json")),
@@ -98,7 +97,7 @@ public class MonitorResource {
         @ApiResponse(responseCode = "200", 
                     description = "System is ready",
                     content = @Content(mediaType = "application/json",
-                                      schema = @Schema(implementation = ResponseEntityMapView.class))),
+                                      schema = @Schema(implementation = ResponseEntityMonitorStatsView.class))),
         @ApiResponse(responseCode = "403", 
                     description = "Forbidden - access not granted",
                     content = @Content(mediaType = "application/json")),

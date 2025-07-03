@@ -3,6 +3,7 @@ package com.dotcms.rest.api.v1.sites.ruleengine.rules.conditions;
 import com.dotcms.enterprise.rules.RulesAPI;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.com.google.common.collect.Lists;
+import com.dotcms.rest.ResponseEntityStringView;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
@@ -74,7 +75,8 @@ public class ConditionValueResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Condition values retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = MapStringRestConditionValueView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid site ID or condition ID",
                     content = @Content(mediaType = "application/json")),
@@ -116,7 +118,8 @@ public class ConditionValueResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Condition value retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = RestConditionValue.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid parameters",
                     content = @Content(mediaType = "application/json")),
@@ -161,7 +164,12 @@ public class ConditionValueResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Condition value created successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(
+                                    type = "object",
+                                    example = "{\"id\": \"12345\"}",
+                                    description = "Response containing the created condition value ID"
+                            ))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid parameters or condition value data",
                     content = @Content(mediaType = "application/json")),
@@ -214,7 +222,8 @@ public class ConditionValueResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Condition value updated successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = RestConditionValue.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid parameters or condition value data",
                     content = @Content(mediaType = "application/json")),

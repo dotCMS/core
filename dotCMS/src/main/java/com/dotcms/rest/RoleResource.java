@@ -20,6 +20,7 @@ import com.dotmarketing.util.json.JSONObject;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -74,7 +75,8 @@ public class RoleResource {
 	@ApiResponses(value = {
 		@ApiResponse(responseCode = "200", 
 					description = "Role children loaded successfully",
-					content = @Content(mediaType = "application/json")),
+					content = @Content(mediaType = "application/json",
+									  schema = @Schema(type = "object", description = "Role hierarchy tree with child roles containing id, name, locked, and children properties"))),
 		@ApiResponse(responseCode = "401", 
 					description = "Unauthorized - backend user authentication required",
 					content = @Content(mediaType = "application/json")),
@@ -205,7 +207,8 @@ public class RoleResource {
 	@ApiResponses(value = {
 		@ApiResponse(responseCode = "200", 
 					description = "Role loaded successfully",
-					content = @Content(mediaType = "application/json")),
+					content = @Content(mediaType = "application/json",
+									  schema = @Schema(type = "object", description = "Role details including DBFQN, FQN, description, permissions, id, name, and other role properties"))),
 		@ApiResponse(responseCode = "401", 
 					description = "Unauthorized - backend user authentication required",
 					content = @Content(mediaType = "application/json")),
@@ -291,7 +294,8 @@ public class RoleResource {
 	@ApiResponses(value = {
 		@ApiResponse(responseCode = "200", 
 					description = "Filtered roles loaded successfully",
-					content = @Content(mediaType = "application/json")),
+					content = @Content(mediaType = "application/json",
+									  schema = @Schema(type = "object", description = "Filtered role tree structure with identifier, label, and items containing matching roles"))),
 		@ApiResponse(responseCode = "401", 
 					description = "Unauthorized - backend user authentication required",
 					content = @Content(mediaType = "application/json")),

@@ -66,7 +66,8 @@ public class SearchResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Test response returned successfully",
-                    content = @Content(mediaType = "application/json"))
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(type = "object", description = "Simple key-value map indicating search service type")))
     })
     @GET
     @JSONP
@@ -95,7 +96,8 @@ public class SearchResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Search results returned successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(type = "object", description = "AI search results containing matching contentlets and text fragments"))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - authentication required",
                     content = @Content(mediaType = "application/json")),
@@ -161,13 +163,14 @@ public class SearchResource {
         description = "Searches content using AI-powered semantic search with form data containing search parameters"
     )
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", 
+        @ApiResponse(responseCode = "200",
                     description = "Search results returned successfully",
-                    content = @Content(mediaType = "application/json")),
-        @ApiResponse(responseCode = "401", 
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(type = "object", description = "AI search results containing matching contentlets and text fragments"))),
+        @ApiResponse(responseCode = "401",
                     description = "Unauthorized - authentication required",
                     content = @Content(mediaType = "application/json")),
-        @ApiResponse(responseCode = "500", 
+        @ApiResponse(responseCode = "500",
                     description = "Internal server error",
                     content = @Content(mediaType = "application/json"))
     })
@@ -177,7 +180,7 @@ public class SearchResource {
     @Consumes(MediaType.APPLICATION_JSON)
     public final Response searchByPost(@Context final HttpServletRequest request,
                                        @Context final HttpServletResponse response,
-                                       @RequestBody(description = "Form data containing search query and configuration options", 
+                                       @RequestBody(description = "Form data containing search query and configuration options",
                                                   required = true,
                                                   content = @Content(schema = @Schema(implementation = CompletionsForm.class)))
                                        final CompletionsForm form) {
@@ -213,7 +216,8 @@ public class SearchResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Related content found successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(type = "object", description = "Related content results containing array of content items with similarity scores and matching text fragments"))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - authentication required",
                     content = @Content(mediaType = "application/json")),
@@ -270,7 +274,8 @@ public class SearchResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Related content found successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(type = "object", description = "Simple key-value map indicating search service type"))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - authentication required",
                     content = @Content(mediaType = "application/json")),
@@ -290,7 +295,7 @@ public class SearchResource {
                                         @Context final HttpServletResponse response,
                                         @RequestBody(description = "JSON object containing content identifier, inode, language, indexName, and fieldVar", 
                                                    required = true,
-                                                   content = @Content(schema = @Schema(implementation = JSONObject.class)))
+                                                   content = @Content(schema = @Schema(type = "object", description = "JSON object containing content identifier, inode, language, indexName, and fieldVar for finding related content")))
                                         final JSONObject json)
             throws DotDataException, DotSecurityException {
 

@@ -172,7 +172,7 @@ public class ContentResource {
         @ApiResponse(responseCode = "200", 
                     description = "Search completed successfully",
                     content = @Content(mediaType = "application/json",
-                                      schema = @Schema(implementation = ResponseEntityView.class))),
+                                      schema = @Schema(implementation = ResponseEntitySearchView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Invalid search parameters or malformed query",
                     content = @Content(mediaType = "application/json")),

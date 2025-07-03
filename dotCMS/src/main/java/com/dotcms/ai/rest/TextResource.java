@@ -59,7 +59,8 @@ public class TextResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Text generated successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(type = "object", description = "AI text generation response with generated content and metadata"))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - prompt is required",
                     content = @Content(mediaType = "application/json")),
@@ -97,7 +98,8 @@ public class TextResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Text generated successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(type = "object", description = "AI text generation response with generated content and metadata"))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - prompt is required",
                     content = @Content(mediaType = "application/json")),

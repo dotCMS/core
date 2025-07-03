@@ -3,10 +3,13 @@ package com.dotcms.rest.api.v1.browser;
 import com.dotcms.browser.BrowserAPI;
 import com.dotcms.browser.BrowserQuery;
 import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.ResponseEntityMapStringObjectView;
 import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.ResponseEntityBooleanView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.v1.browsertree.BrowserTreeHelper;
+import com.dotcms.rest.api.v1.folder.ResponseEntityFolderView;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -66,7 +69,8 @@ public class BrowserResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Selected folder retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityFolderView.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - authentication required",
                     content = @Content(mediaType = "application/json")),
@@ -98,7 +102,7 @@ public class BrowserResource {
 
         final Optional<String> selectedPathOpt = Optional.ofNullable((String) request.getSession().getAttribute(ACTIVE_FOLDER_ID));
         return selectedPathOpt.isPresent()?
-                Response.ok(new ResponseEntityView(APILocator.getFolderAPI().find(selectedPathOpt.get(), user, false))).build():
+                Response.ok(new ResponseEntityView<>(APILocator.getFolderAPI().find(selectedPathOpt.get(), user, false))).build():
                 Response.status(Response.Status.NOT_FOUND).build();
     }
 
@@ -109,7 +113,8 @@ public class BrowserResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Folder selection updated successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityBooleanView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid folder path",
                     content = @Content(mediaType = "application/json")),
@@ -151,7 +156,7 @@ public class BrowserResource {
         Logger.debug(this, ()-> "Selecting the folder on the site browser: " + folderPath);
         browserTreeHelper.selectFolder(request, folderPath, user, respectFrontendRoles);
 
-        return Response.ok(new ResponseEntityView(Boolean.TRUE)).build();
+        return Response.ok(new ResponseEntityView<>(Boolean.TRUE)).build();
     }
 
     @Operation(
@@ -161,7 +166,8 @@ public class BrowserResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Folder content retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityMapStringObjectView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid query parameters",
                     content = @Content(mediaType = "application/json")),
@@ -202,7 +208,7 @@ public class BrowserResource {
 
         Logger.debug(this, "Getting folder contents, browser query form: " + browserQueryForm);
 
-        return Response.ok(new ResponseEntityView(this.browserAPI.getFolderContent(
+        return Response.ok(new ResponseEntityView<>(this.browserAPI.getFolderContent(
                 BrowserQuery.builder()
                         .showDotAssets(browserQueryForm.isShowDotAssets())
                         .showLinks(browserQueryForm.isShowLinks())

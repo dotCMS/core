@@ -185,7 +185,8 @@ public class IntegrityResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Integrity data generation started successfully",
-                    content = @Content(mediaType = "text/plain")),
+                    content = @Content(mediaType = "text/plain",
+                                      schema = @Schema(implementation = String.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - invalid or missing authentication token",
                     content = @Content(mediaType = "text/plain")),
@@ -278,7 +279,8 @@ public class IntegrityResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Integrity data ZIP file ready for download",
-                    content = @Content(mediaType = "application/zip")),
+                    content = @Content(mediaType = "application/zip",
+                                      schema = @Schema(type = "string", format = "binary"))),
         @ApiResponse(responseCode = "202", 
                     description = "Accepted - integrity data generation still processing",
                     content = @Content(mediaType = "application/json")),
@@ -436,7 +438,8 @@ public class IntegrityResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Integrity check process initiated successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(type = "object", description = "JSON response with success status and initialization message"))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - missing required endpoint parameter",
                     content = @Content(mediaType = "text/plain")),
@@ -592,7 +595,8 @@ public class IntegrityResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Process status retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(type = "object", description = "JSON response containing process status (processing, finished, noConflicts, error) and relevant messages"))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - missing required endpoint parameter",
                     content = @Content(mediaType = "application/json")),
@@ -689,7 +693,8 @@ public class IntegrityResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Integrity results retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(type = "object", description = "JSON response containing integrity conflict results grouped by object type (htmlpages, contentlets, folders, etc.) with detailed conflict information"))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - missing required endpoint parameter",
                     content = @Content(mediaType = "application/json")),
@@ -836,7 +841,8 @@ public class IntegrityResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Conflicts discarded successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(type = "object", description = "JSON response confirming successful discard of conflicts for the specified type"))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - missing required endpoint or type parameters",
                     content = @Content(mediaType = "application/json")),
@@ -910,7 +916,8 @@ public class IntegrityResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Conflicts fixed successfully in remote endpoint",
-                    content = @Content(mediaType = "text/plain")),
+                    content = @Content(mediaType = "text/plain",
+                                      schema = @Schema(implementation = String.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - invalid or missing authentication token",
                     content = @Content(mediaType = "text/plain")),
@@ -999,7 +1006,8 @@ public class IntegrityResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Conflicts fixed successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(type = "object", description = "JSON response with success status and message indicating conflicts were fixed locally or remotely"))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - missing required parameters (endpoint, type, or whereToFix)",
                     content = @Content(mediaType = "application/json")),

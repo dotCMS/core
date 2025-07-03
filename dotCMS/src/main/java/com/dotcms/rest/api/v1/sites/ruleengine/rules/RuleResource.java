@@ -79,7 +79,8 @@ public class RuleResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Rules retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(type = "object", description = "Map of rule keys to RestRule objects containing all rules for the site"))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid site ID",
                     content = @Content(mediaType = "application/json")),
@@ -118,7 +119,8 @@ public class RuleResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Rule retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = RestRule.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid site ID or rule ID",
                     content = @Content(mediaType = "application/json")),
@@ -153,7 +155,8 @@ public class RuleResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Rule created successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(type = "object", description = "JSON object containing the created rule ID in format: { 'id': 'rule-uuid' }"))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid site ID or rule data",
                     content = @Content(mediaType = "application/json")),
@@ -200,7 +203,8 @@ public class RuleResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Rule updated successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = RestRule.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid parameters or rule data",
                     content = @Content(mediaType = "application/json")),

@@ -134,7 +134,8 @@ public class RoleResource implements Serializable {
 	@ApiResponses(value = {
 		@ApiResponse(responseCode = "200", 
 					description = "Role check completed successfully",
-					content = @Content(mediaType = "application/json")),
+					content = @Content(mediaType = "application/json",
+									  schema = @Schema(implementation = ResponseEntityRoleOperationView.class))),
 		@ApiResponse(responseCode = "401", 
 					description = "Unauthorized - authentication required",
 					content = @Content(mediaType = "application/json")),
@@ -185,7 +186,8 @@ public class RoleResource implements Serializable {
 	@ApiResponses(value = {
 		@ApiResponse(responseCode = "200", 
 					description = "Layouts deleted successfully",
-					content = @Content(mediaType = "application/json")),
+					content = @Content(mediaType = "application/json",
+									  schema = @Schema(implementation = ResponseEntityRoleOperationView.class))),
 		@ApiResponse(responseCode = "400", 
 					description = "Bad request - invalid role or layout data",
 					content = @Content(mediaType = "application/json")),
@@ -247,7 +249,8 @@ public class RoleResource implements Serializable {
 	@ApiResponses(value = {
 		@ApiResponse(responseCode = "200", 
 					description = "Role created successfully",
-					content = @Content(mediaType = "application/json")),
+					content = @Content(mediaType = "application/json",
+									  schema = @Schema(implementation = RoleResponseEntityView.class))),
 		@ApiResponse(responseCode = "400", 
 					description = "Bad request - invalid role data or role name failed",
 					content = @Content(mediaType = "application/json")),
@@ -338,7 +341,8 @@ public class RoleResource implements Serializable {
 	@ApiResponses(value = {
 		@ApiResponse(responseCode = "200", 
 					description = "Layouts saved successfully",
-					content = @Content(mediaType = "application/json")),
+					content = @Content(mediaType = "application/json",
+									  schema = @Schema(implementation = ResponseEntityRoleOperationView.class))),
 		@ApiResponse(responseCode = "400", 
 					description = "Bad request - invalid role or layout data",
 					content = @Content(mediaType = "application/json")),
@@ -399,7 +403,8 @@ public class RoleResource implements Serializable {
 	@ApiResponses(value = {
 		@ApiResponse(responseCode = "200", 
 					description = "Role layouts retrieved successfully",
-					content = @Content(mediaType = "application/json")),
+					content = @Content(mediaType = "application/json",
+									  schema = @Schema(implementation = ResponseEntityLayoutList.class))),
 		@ApiResponse(responseCode = "400", 
 					description = "Bad request - invalid role ID",
 					content = @Content(mediaType = "application/json")),
@@ -428,9 +433,8 @@ public class RoleResource implements Serializable {
 		final Role role              = roleAPI.loadRoleById(roleId);
 		final LayoutAPI layoutAPI    = APILocator.getLayoutAPI();
 
-		return Response.ok(new ResponseEntityView<>(
-				layoutAPI.loadLayoutsForRole(role)
-		)).build();
+        return Response.ok(new ResponseEntityLayoutList(layoutAPI.loadLayoutsForRole(role)))
+                .build();
 	}
 
 	/**
@@ -451,7 +455,8 @@ public class RoleResource implements Serializable {
 	@ApiResponses(value = {
 		@ApiResponse(responseCode = "200", 
 					description = "Users and roles retrieved successfully",
-					content = @Content(mediaType = "application/json")),
+					content = @Content(mediaType = "application/json",
+									  schema = @Schema(implementation = ResponseEntityRoleListView.class))),
 		@ApiResponse(responseCode = "400", 
 					description = "Bad request - invalid role ID",
 					content = @Content(mediaType = "application/json")),
@@ -543,7 +548,8 @@ public class RoleResource implements Serializable {
 	@ApiResponses(value = {
 		@ApiResponse(responseCode = "200", 
 					description = "Role retrieved successfully",
-					content = @Content(mediaType = "application/json")),
+					content = @Content(mediaType = "application/json",
+									  schema = @Schema(implementation = ResponseEntityRoleDetailView.class))),
 		@ApiResponse(responseCode = "400", 
 					description = "Bad request - invalid role ID",
 					content = @Content(mediaType = "application/json")),
@@ -607,7 +613,8 @@ public class RoleResource implements Serializable {
 	@ApiResponses(value = {
 		@ApiResponse(responseCode = "200", 
 					description = "Root roles retrieved successfully",
-					content = @Content(mediaType = "application/json")),
+					content = @Content(mediaType = "application/json",
+									  schema = @Schema(implementation = ResponseEntityRoleViewListView.class))),
 		@ApiResponse(responseCode = "401", 
 					description = "Unauthorized - authentication required",
 					content = @Content(mediaType = "application/json")),
@@ -755,7 +762,8 @@ public class RoleResource implements Serializable {
 	@ApiResponses(value = {
 		@ApiResponse(responseCode = "200", 
 					description = "Layouts retrieved successfully",
-					content = @Content(mediaType = "application/json")),
+					content = @Content(mediaType = "application/json",
+									  schema = @Schema(implementation = LayoutMapResponseEntityView.class))),
 		@ApiResponse(responseCode = "401", 
 					description = "Unauthorized - authentication required",
 					content = @Content(mediaType = "application/json")),

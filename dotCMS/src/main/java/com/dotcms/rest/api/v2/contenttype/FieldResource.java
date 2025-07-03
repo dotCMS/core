@@ -232,7 +232,7 @@ public class FieldResource implements Serializable {
 
             final Field field = fieldAPI.find(fieldId);
 
-            response = Response.ok(new ResponseEntityView(new JsonFieldTransformer(field).mapObject())).build();
+            response = Response.ok(new ResponseEntityView<>(new JsonFieldTransformer(field).mapObject())).build();
 
         } catch (Exception e) {
 
@@ -271,7 +271,7 @@ public class FieldResource implements Serializable {
                     : APILocator.getContentTypeAPI(user).find(typeIdOrVarName).id();
             final Field field = fieldAPI.byContentTypeIdAndVar(contentTypeId, fieldVar);
 
-            response = Response.ok(new ResponseEntityView(new JsonFieldTransformer(field).mapObject())).build();
+            response = Response.ok(new ResponseEntityView<>(new JsonFieldTransformer(field).mapObject())).build();
 
         } catch (Exception e) {
 

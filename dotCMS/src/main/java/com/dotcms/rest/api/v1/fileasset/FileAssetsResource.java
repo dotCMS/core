@@ -11,6 +11,7 @@ import javax.ws.rs.core.Response;
 import org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.ResponseEntityMapView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
@@ -62,7 +63,7 @@ public class FileAssetsResource {
         @ApiResponse(responseCode = "200", 
                     description = "Resource link generated successfully",
                     content = @Content(mediaType = "application/json",
-                                      schema = @Schema(implementation = ResponseEntityResourceLinkView.class))),
+                                      schema = @Schema(implementation = ResponseEntityMapView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - missing or invalid inode parameter",
                     content = @Content(mediaType = "application/json")),
@@ -98,7 +99,7 @@ public class FileAssetsResource {
             if(link.isDownloadRestricted()){
                throw new DotSecurityException("The Resource link to the contentlet is restricted.");
             }
-            return Response.ok(new ResponseEntityResourceLinkView(ImmutableMap.of("resourceLink",
+            return Response.ok(new ResponseEntityMapView(ImmutableMap.of("resourceLink",
                     ImmutableMap.of(
                     "href", link.getResourceLinkAsString(),
                     "text", link.getResourceLinkUriAsString(),

@@ -60,7 +60,7 @@ public class VariantResource {
                     "This action makes the variant content live for all users.",
             tags = {"Variants"},
             responses = {
-                    @ApiResponse(responseCode = "200", description = "Variant promoted successfully"),
+                    @ApiResponse(responseCode = "200", description = "Variant promoted successfully (no body)"),
                     @ApiResponse(responseCode = "400", description = "Bad request - Invalid variant name"),
                     @ApiResponse(responseCode = "401", description = "Unauthorized - User not authenticated"),
                     @ApiResponse(responseCode = "403", description = "Forbidden - User lacks required permissions"),

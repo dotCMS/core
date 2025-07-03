@@ -4,7 +4,7 @@ import com.dotcms.jobs.business.error.JobValidationException;
 import com.dotcms.jobs.business.job.Job;
 import com.dotcms.jobs.business.job.JobPaginatedResult;
 import com.dotcms.rest.ResponseEntityJobPaginatedResultView;
-import com.dotcms.rest.ResponseEntityJobQueueNamesView;
+import com.dotcms.rest.ResponseEntitySetStringView;
 import com.dotcms.rest.ResponseEntityJobStatusView;
 import com.dotcms.rest.ResponseEntityJobView;
 import com.dotcms.rest.ResponseEntityStringView;
@@ -131,7 +131,7 @@ public class JobQueueResource {
             @Parameter(description = "Name of the job queue to submit to") @PathParam("queueName") String queueName,
             @RequestBody(description = "Job parameters as JSON key-value pairs",
                     required = true,
-                    content = @Content(schema = @Schema(type = "object", additionalProperties = Schema.AdditionalPropertiesValue.TRUE)))
+                    content = @Content(schema = @Schema(type = "object", description = "JSON object containing job parameters as key-value pairs", additionalProperties = Schema.AdditionalPropertiesValue.TRUE)))
             Map<String, Object> parameters) throws DotDataException {
 
         final var initDataObject = new InitBuilder(webResource)
@@ -162,7 +162,7 @@ public class JobQueueResource {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Queues retrieved successfully",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseEntityJobQueueNamesView.class))),
+                                    schema = @Schema(implementation = ResponseEntitySetStringView.class))),
                     @ApiResponse(responseCode = "401", description = "Unauthorized - User not authenticated"),
                     @ApiResponse(responseCode = "403", description = "Forbidden - User lacks required permissions"),
                     @ApiResponse(responseCode = "500", description = "Internal server error")
@@ -176,7 +176,7 @@ public class JobQueueResource {
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
                 .init();
-        return new ResponseEntityJobQueueNamesView(helper.getQueueNames());
+        return new ResponseEntitySetStringView(helper.getQueueNames());
     }
 
     @GET

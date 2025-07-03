@@ -3,6 +3,8 @@ package com.dotcms.rest.api.v1.content;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.ResponseEntityMapStringObjectView;
+import com.dotcms.rest.ResponseEntityMapView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
@@ -28,6 +30,7 @@ import org.glassfish.jersey.server.JSONP;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -92,7 +95,8 @@ public class ResourceLinkResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Resource link retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityMapStringObjectView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - missing inode/identifier parameter",
                     content = @Content(mediaType = "application/json")),
@@ -151,10 +155,10 @@ public class ResourceLinkResource {
                 throw new DotSecurityException("The Resource link to the contentlet is restricted.");
             }
 
-            return Response.ok(new ResponseEntityView(this.toMapView(contentlet, link))).build();
+            return Response.ok(new ResponseEntityView<>(this.toMapView(contentlet, link))).build();
         }catch (DoesNotExistException e) {
 
-            return Response.ok(new ResponseEntityView(Collections.emptyMap())).build();
+            return Response.ok(new ResponseEntityView<>(Collections.emptyMap())).build();
         }
     }
 
@@ -224,7 +228,8 @@ public class ResourceLinkResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Resource links retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityMapStringObjectView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - missing inode/identifier parameter",
                     content = @Content(mediaType = "application/json")),
@@ -278,10 +283,10 @@ public class ResourceLinkResource {
                 resourceLinkMap.put(fieldName, this.toMapView(contentlet, link));
             }
 
-            return Response.ok(new ResponseEntityView(resourceLinkMap)).build();
+            return Response.ok(new ResponseEntityView<>(resourceLinkMap)).build();
         } catch (DoesNotExistException e) {
 
-            return Response.ok(new ResponseEntityView(Collections.emptyList())).build();
+            return Response.ok(new ResponseEntityView<>(Collections.emptyList())).build();
         }
     }
 

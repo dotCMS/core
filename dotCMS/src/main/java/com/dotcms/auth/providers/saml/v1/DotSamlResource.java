@@ -110,8 +110,7 @@ public class DotSamlResource implements Serializable {
 	)
 	@ApiResponses(value = {
 		@ApiResponse(responseCode = "200", 
-					description = "SAML authentication request initiated successfully",
-					content = @Content(mediaType = "application/json")),
+					description = "SAML authentication request initiated successfully (no body)"),
 		@ApiResponse(responseCode = "400", 
 					description = "Bad request - invalid IDP configuration ID",
 					content = @Content(mediaType = "application/json")),

@@ -8,6 +8,8 @@ import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityBulkResultView;
+import com.dotcms.rest.ResponseEntityBooleanView;
+import com.dotcms.rest.ResponseEntityMapStringStringView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.BulkResultView;
@@ -258,7 +260,8 @@ public class ContainerResource implements Serializable {
     )
     @ApiResponse(responseCode = "200", 
                 description = "Container content rendered successfully",
-                content = @Content(mediaType = "application/json"))
+                content = @Content(mediaType = "application/json",
+                                  schema = @Schema(implementation = ResponseEntityMapStringStringView.class)))
     @ApiResponse(responseCode = "401", 
                 description = "Unauthorized - authentication required",
                 content = @Content(mediaType = "application/json"))
@@ -307,7 +310,7 @@ public class ContainerResource implements Serializable {
 
             final Map<String, String> response = ImmutableMap.<String, String> builder().put(MessageConstants.RENDER, html).build();
 
-            return Response.ok(new ResponseEntityContainerMapView(response)).build();
+            return Response.ok(new ResponseEntityMapStringStringView(response)).build();
         } catch (DotSecurityException e) {
             throw new ForbiddenException(e);
         }
@@ -336,7 +339,8 @@ public class ContainerResource implements Serializable {
     )
     @ApiResponse(responseCode = "200", 
                 description = "Container content rendered successfully",
-                content = @Content(mediaType = "application/json"))
+                content = @Content(mediaType = "application/json",
+                                  schema = @Schema(implementation = ResponseEntityMapStringStringView.class)))
     @ApiResponse(responseCode = "401", 
                 description = "Unauthorized - authentication required",
                 content = @Content(mediaType = "application/json"))
@@ -389,7 +393,8 @@ public class ContainerResource implements Serializable {
     )
     @ApiResponse(responseCode = "200", 
                 description = "Container form rendered successfully",
-                content = @Content(mediaType = "application/json"))
+                content = @Content(mediaType = "application/json",
+                                  schema = @Schema(implementation = ResponseEntityContainerObjectMapView.class)))
     @ApiResponse(responseCode = "401", 
                 description = "Unauthorized - authentication required",
                 content = @Content(mediaType = "application/json"))
@@ -706,7 +711,8 @@ public class ContainerResource implements Serializable {
     )
     @ApiResponse(responseCode = "200", 
                 description = "Container contents retrieved successfully",
-                content = @Content(mediaType = "application/json"))
+                content = @Content(mediaType = "application/json",
+                                  schema = @Schema(type = "object", description = "Rendered container content with template output")))
     @ApiResponse(responseCode = "401", 
                 description = "Unauthorized - authentication required",
                 content = @Content(mediaType = "application/json"))
@@ -1229,7 +1235,8 @@ public class ContainerResource implements Serializable {
     )
     @ApiResponse(responseCode = "200", 
                 description = "Container archived successfully",
-                content = @Content(mediaType = "application/json"))
+                content = @Content(mediaType = "application/json",
+                                  schema = @Schema(implementation = ResponseEntitySingleContainerView.class)))
     @ApiResponse(responseCode = "400", 
                 description = "Bad request - container ID is required",
                 content = @Content(mediaType = "application/json"))
@@ -1304,7 +1311,8 @@ public class ContainerResource implements Serializable {
     )
     @ApiResponse(responseCode = "200", 
                 description = "Container unarchived successfully",
-                content = @Content(mediaType = "application/json"))
+                content = @Content(mediaType = "application/json",
+                                  schema = @Schema(implementation = ResponseEntitySingleContainerView.class)))
     @ApiResponse(responseCode = "400", 
                 description = "Bad request - container ID is required",
                 content = @Content(mediaType = "application/json"))
@@ -1380,7 +1388,7 @@ public class ContainerResource implements Serializable {
     @ApiResponse(responseCode = "200", 
                 description = "Container deleted successfully",
                 content = @Content(mediaType = "application/json",
-                                  schema = @Schema(implementation = ResponseEntityContainerOperationView.class)))
+                                  schema = @Schema(implementation = ResponseEntityBooleanView.class)))
     @ApiResponse(responseCode = "400", 
                 description = "Bad request - container ID is required",
                 content = @Content(mediaType = "application/json"))
@@ -1427,13 +1435,13 @@ public class ContainerResource implements Serializable {
                 ActivityLogger.logInfo(this.getClass(),
                         "Done Delete Container",
                         getInfoMessage(user, MessageConstants.DELETED + container.getIdentifier()));
-                return Response.ok(new ResponseEntityContainerOperationView(true)).build();
+                return Response.ok(new ResponseEntityBooleanView(true)).build();
             }
 
             ActivityLogger.logInfo(this.getClass(),
                     "Can not Delete Container",
                     getInfoMessage(user, MessageConstants.CANNOT_DELETE + container.getIdentifier()));
-            return Response.ok(new ResponseEntityContainerOperationView(false)).build();
+            return Response.ok(new ResponseEntityBooleanView(false)).build();
         } else {
 
             Logger.error(this, MessageConstants.CONTAINER_ID_WITH + containerId + MessageConstants.DOES_NOT_EXIST);

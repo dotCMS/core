@@ -3,6 +3,7 @@ package com.dotcms.rest.api.v1.content;
 import static com.dotcms.rest.api.v1.authentication.ResponseUtil.getFormattedMessage;
 
 import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.ResponseEntityMapView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
@@ -52,6 +53,7 @@ import org.glassfish.jersey.server.JSONP;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -106,7 +108,8 @@ public class ContentVersionResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Content versions retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityMapView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - missing identifier/inodes or invalid parameters",
                     content = @Content(mediaType = "application/json")),
@@ -152,12 +155,12 @@ public class ContentVersionResource {
                if(groupByLang){
                    final Map<String, List<Map<String, Object>>> versionsByLang = mapVersionsByLang(contentletAPI
                            .findAllVersions(identifierObj, user, respectFrontendRoles), showing);
-                   responseEntityView = new ResponseEntityView(ImmutableMap.of(VERSIONS, versionsByLang));
+                   responseEntityView = new ResponseEntityView<>(ImmutableMap.of(VERSIONS, versionsByLang));
                } else {
                    final List<Map<String, Object>> versions = mapVersions(contentletAPI
                             .findAllVersions(identifierObj, user, respectFrontendRoles), showing);
 
-                   responseEntityView = new ResponseEntityView(ImmutableMap.of(VERSIONS, versions));
+                   responseEntityView = new ResponseEntityView<>(ImmutableMap.of(VERSIONS, versions));
                }
            } else {
                final Set<String> inodesSet =
@@ -171,10 +174,10 @@ public class ContentVersionResource {
 
                    if(groupByLang){
                        final Map<String, List<Map<String, Object>>> versionsByLang = mapVersionsByLang(findByInodes(user, inodesSet, respectFrontendRoles), showing);
-                       responseEntityView = new ResponseEntityView(ImmutableMap.of(VERSIONS, versionsByLang));
+                       responseEntityView = new ResponseEntityView<>(ImmutableMap.of(VERSIONS, versionsByLang));
                    } else {
                        final Map<String,Map<String,Object>> versions = mapVersionsByInode(findByInodes(user, inodesSet, respectFrontendRoles), showing);
-                       responseEntityView = new ResponseEntityView(ImmutableMap.of(VERSIONS, versions));
+                       responseEntityView = new ResponseEntityView<>(ImmutableMap.of(VERSIONS, versions));
                    }
 
 
@@ -305,7 +308,8 @@ public class ContentVersionResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Content found successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityMapView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid inode format",
                     content = @Content(mediaType = "application/json")),
@@ -349,7 +353,7 @@ public class ContentVersionResource {
                                 inode));
             }
             final Response.ResponseBuilder responseBuilder = Response.ok(
-                    new ResponseEntityView(contentletToMap(contentlet))
+                    new ResponseEntityView<>(contentletToMap(contentlet))
             );
             return responseBuilder.build();
         } catch (Exception ex) {

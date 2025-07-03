@@ -130,7 +130,8 @@ public class EnvironmentResource {
 	@ApiResponses(value = {
 		@ApiResponse(responseCode = "200", 
 					description = "Environments loaded successfully",
-					content = @Content(mediaType = "application/json")),
+					content = @Content(mediaType = "application/json",
+									  schema = @Schema(type = "object", description = "JSON array of environment objects with id and name properties"))),
 		@ApiResponse(responseCode = "401", 
 					description = "Unauthorized - backend user authentication required",
 					content = @Content(mediaType = "application/json")),

@@ -7,6 +7,7 @@ import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.repackage.org.apache.commons.net.util.SubnetUtils;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.ResponseEntityMapView;
 import com.dotcms.rest.RestClientBuilder;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
@@ -111,7 +112,7 @@ public class ApiTokenResource implements Serializable {
             responses = {
                     @ApiResponse(responseCode = "200", description = "User's API tokens successfully retrieved",
                             content = @Content(mediaType = "application/json",
-                                              schema = @Schema(implementation = ResponseEntityApiTokenListView.class),
+                                              schema = @Schema(implementation = ResponseEntityMapView.class),
                                     examples = {
                                             @ExampleObject(
                                                     value = "{\n" +
@@ -175,7 +176,8 @@ public class ApiTokenResource implements Serializable {
         final InitDataObject initDataObject = this.webResource.init(null, true, request, true, "users");
         final List<ApiToken> tokens = tokenApi.findApiTokensByUserId(userId, showRevoked, initDataObject.getUser());
 
-        return Response.ok(new ResponseEntityView(Map.of("tokens", tokens), EMPTY_MAP)).build(); // 200
+        return Response.ok(new ResponseEntityMapView(Map.of("tokens", tokens), EMPTY_MAP))
+                .build(); // 200
     }
 
     @PUT
@@ -191,7 +193,7 @@ public class ApiTokenResource implements Serializable {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Token revoked successfully",
                             content = @Content(mediaType = "application/json",
-                                              schema = @Schema(implementation = ResponseEntityApiTokenView.class),
+                                              schema = @Schema(implementation = ResponseEntityMapView.class),
                                     examples = {
                                             @ExampleObject(
                                                     value = "{\n" +
@@ -259,7 +261,7 @@ public class ApiTokenResource implements Serializable {
             SecurityLogger.logInfo(this.getClass(), "Revoking token " + token + " from " + request.getRemoteAddr() + " ");
             this.tokenApi.revokeToken(token, user);
             token = this.tokenApi.findApiToken(tokenId).get();
-            return Response.ok(new ResponseEntityView(Map.of("revoked", token), EMPTY_MAP)).build(); // 200
+            return Response.ok(new ResponseEntityMapView(Map.of("revoked", token))).build(); // 200
         }
 
         return ExceptionMapperUtil.createResponse(new DotStateException("No token"), Response.Status.NOT_FOUND);
@@ -278,7 +280,7 @@ public class ApiTokenResource implements Serializable {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Token successfully deleted",
                             content = @Content(mediaType = "application/json",
-                                              schema = @Schema(implementation = ResponseEntityApiTokenView.class),
+                                              schema = @Schema(implementation = ResponseEntityMapView.class),
                                     examples = {
                                             @ExampleObject(
                                                     value = "{\n" +
@@ -341,7 +343,8 @@ public class ApiTokenResource implements Serializable {
 
             if(tokenApi.deleteToken(token, user)) {
 
-                return Response.ok(new ResponseEntityView(Map.of("deleted", token), EMPTY_MAP)).build(); // 200
+                return Response.ok(new ResponseEntityMapView(Map.of("deleted", token)))
+                        .build(); // 200
             }
 
             return ExceptionMapperUtil.createResponse(new DotStateException("No permissions to token"), Response.Status.FORBIDDEN);
@@ -490,7 +493,8 @@ public class ApiTokenResource implements Serializable {
 
         token = this.tokenApi.persistApiToken(token, requestingUser);
         final String jwt = this.tokenApi.getJWT(token, requestingUser);
-        return Response.ok(new ResponseEntityView(Map.of("token", token,"jwt", jwt), EMPTY_MAP)).build(); // 200
+        return Response.ok(new ResponseEntityMapView(Map.of("token", token, "jwt", jwt)))
+                .build(); // 200
     }
 
     private User getUserById(ApiTokenForm formData, User requestingUser) {
@@ -767,7 +771,7 @@ public class ApiTokenResource implements Serializable {
 
         SecurityLogger.logInfo(this.getClass(), "Revealing token to user: " + user.getUserId() + " from: " + request.getRemoteAddr() + " token:"  + token );
         final String jwt = tokenApi.getJWT(token, user);
-        return Response.ok(new ResponseEntityView(Map.of("jwt", jwt), EMPTY_MAP)).build(); // 200
+        return Response.ok(new ResponseEntityMapView(Map.of("jwt", jwt))).build(); // 200
     }
 
 
@@ -785,7 +789,7 @@ public class ApiTokenResource implements Serializable {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Tokens revoked successfully",
                             content = @Content(mediaType = "application/json",
-                                              schema = @Schema(implementation = ResponseEntityApiTokenView.class)
+                                              schema = @Schema(implementation = ResponseEntityMapView.class)
                             )
                     ),
                     @ApiResponse(responseCode = "400", description = "Bad request"),
@@ -817,7 +821,8 @@ public class ApiTokenResource implements Serializable {
                 SecurityLogger.logInfo(this.getClass(), "Revoking token " + userId + " from " + request.getRemoteAddr() + " ");
                 userToken.setSkinId(UUIDGenerator.generateUuid()); // setting a new id will invalidate the token
                 APILocator.getUserAPI().save(userToken, user, PageMode.get(request).respectAnonPerms); // this will invalidate
-                return Response.ok(new ResponseEntityView(Map.of("revoked", userId), EMPTY_MAP)).build(); // 200
+                return Response.ok(new ResponseEntityMapView(Map.of("revoked", userId)))
+                        .build(); // 200
             }
         } else {
 
@@ -844,7 +849,7 @@ public class ApiTokenResource implements Serializable {
             responses = {
                     @ApiResponse(responseCode = "200", description = "User tokens successfully revoked",
                             content = @Content(mediaType = "application/json",
-                                              schema = @Schema(implementation = ResponseEntityApiTokenView.class),
+                                              schema = @Schema(implementation = ResponseEntityMapView.class),
                                     examples = {
                                             @ExampleObject(
                                                     value = "{\n" +
@@ -889,7 +894,10 @@ public class ApiTokenResource implements Serializable {
                     userTokenIds.add( userToken.getUserId());
                 }
 
-                return Response.ok(new ResponseEntityView(Map.of("revoked", userTokenIds), EMPTY_MAP)).build(); // 200
+                return Response.ok(
+                                new ResponseEntityMapView(
+                                        Map.of("revoked", userTokenIds)))
+                        .build(); // 200
             }
         } else {
 

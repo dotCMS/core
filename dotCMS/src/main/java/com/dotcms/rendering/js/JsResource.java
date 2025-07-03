@@ -11,6 +11,7 @@ import com.dotcms.rendering.util.ScriptingUtil;
 import com.dotcms.rendering.velocity.viewtools.exception.DotToolException;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.PATCH;
+import com.dotcms.rest.ResponseEntityMapView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.MultiPartUtils;

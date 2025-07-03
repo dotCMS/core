@@ -2,6 +2,7 @@ package com.dotcms.rest.api.v1.system;
 
 import com.dotcms.business.SystemTable;
 import com.dotcms.rest.ResponseEntityStringView;
+import com.dotcms.rest.ResponseEntityMapStringStringView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource.InitBuilder;
 import com.dotcms.rest.annotation.NoCache;
@@ -78,7 +79,7 @@ public class SystemTableResource implements Serializable {
 		@ApiResponse(responseCode = "200", 
 					description = "System table entries retrieved successfully",
 					content = @Content(mediaType = "application/json",
-									  schema = @Schema(implementation = ResponseEntitySystemTableView.class))),
+									  schema = @Schema(implementation = ResponseEntityMapStringStringView.class))),
 		@ApiResponse(responseCode = "401", 
 					description = "Unauthorized - authentication required",
 					content = @Content(mediaType = "application/json")),
@@ -100,7 +101,7 @@ public class SystemTableResource implements Serializable {
 				.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
 		Logger.debug(this, ()-> "Getting all system table values");
-		return new ResponseEntitySystemTableView(filteredEntries);
+		return new ResponseEntityMapStringStringView(filteredEntries);
 	}
 
 	/**
@@ -393,7 +394,7 @@ public class SystemTableResource implements Serializable {
 			@io.swagger.v3.oas.annotations.parameters.RequestBody(
 				description = "Map containing the key to delete", 
 				required = true,
-				content = @Content(schema = @Schema(implementation = Map.class))
+				content = @Content(schema = @Schema(type = "object"))
 			)
 			final Map<String,String> keyMap) {
 		if(UtilMethods.isEmpty(()->keyMap.get("key"))){

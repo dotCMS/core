@@ -2,6 +2,7 @@ package com.dotcms.rest.api.v1.authentication;
 
 import com.dotcms.cms.login.LoginServiceAPI;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.rest.ResponseEntityStringView;
 import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -72,7 +73,7 @@ public class LogoutResource implements Serializable {
         @ApiResponse(responseCode = "200", 
                     description = "User logged out successfully",
                     content = @Content(mediaType = "application/json",
-                                      schema = @Schema(implementation = ResponseEntityLogoutView.class))),
+                                      schema = @Schema(implementation = ResponseEntityStringView.class))),
         @ApiResponse(responseCode = "403", 
                     description = "Forbidden - security exception during logout",
                     content = @Content(mediaType = "application/json")),
@@ -105,10 +106,10 @@ public class LogoutResource implements Serializable {
             url = Config.getStringProperty("logout.url", StringPool.BLANK);
 
             res = UtilMethods.isSet(url)?
-                    Response.ok(new ResponseEntityView("Logout successfully"))
+                    Response.ok(new ResponseEntityView<>("Logout successfully"))
                     .header("url", Config.getStringProperty("logout.url", StringPool.BLANK))
                     .build(): // 200
-                    Response.ok(new ResponseEntityView("Logout successfully"))
+                    Response.ok(new ResponseEntityView<>("Logout successfully"))
                     .build();
 
         } catch (DotSecurityException e) {

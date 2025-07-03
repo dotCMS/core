@@ -117,7 +117,8 @@ public class TagResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Tags retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityTagMapView.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - authentication required",
                     content = @Content(mediaType = "application/json")),
@@ -170,7 +171,8 @@ public class TagResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Tags created successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityTagMapView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid tag data or parameters",
                     content = @Content(mediaType = "application/json")),
@@ -263,7 +265,8 @@ public class TagResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Tag updated successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityTagMapView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid or incomplete tag data",
                     content = @Content(mediaType = "application/json")),
@@ -345,7 +348,8 @@ public class TagResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "User tags retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityTagMapView.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - authentication required",
                     content = @Content(mediaType = "application/json")),
@@ -404,7 +408,8 @@ public class TagResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Tags retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityTagMapView.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - authentication required",
                     content = @Content(mediaType = "application/json")),
@@ -466,7 +471,8 @@ public class TagResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Tag deleted successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityBooleanView.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - authentication required",
                     content = @Content(mediaType = "application/json")),
@@ -526,7 +532,8 @@ public class TagResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Tags linked to inode successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityTagInodesMapView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid tag name/ID or inode",
                     content = @Content(mediaType = "application/json")),
@@ -601,7 +608,8 @@ public class TagResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Tags retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityTagInodesMapView.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - authentication required",
                     content = @Content(mediaType = "application/json")),
@@ -652,7 +660,8 @@ public class TagResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Tag-inode associations deleted successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityBooleanView.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - authentication required",
                     content = @Content(mediaType = "application/json")),
@@ -735,7 +744,8 @@ public class TagResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Tags imported successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityBooleanView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid CSV file format or data",
                     content = @Content(mediaType = "application/json")),

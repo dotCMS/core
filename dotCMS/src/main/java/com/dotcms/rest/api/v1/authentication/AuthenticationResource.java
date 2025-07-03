@@ -4,6 +4,8 @@ import com.dotcms.cms.login.LoginServiceAPI;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.rest.ErrorEntity;
+import com.dotcms.rest.ResponseEntityMapMapView;
+import com.dotcms.rest.ResponseEntityMapView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.ForbiddenException;
@@ -118,7 +120,7 @@ public class AuthenticationResource implements Serializable {
                 responses = {
                     @ApiResponse(responseCode = "200", description = "User authentication successful",
                         content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ResponseEntityUserMapView.class))),
+                            schema = @Schema(implementation = ResponseEntityMapMapView.class))),
                     @ApiResponse(responseCode = "401", description = "User not authenticated"),
                     @ApiResponse(responseCode = "403", description = "Forbidden request"),
                     @ApiResponse(responseCode = "415", description = "Unsupported Media Type"),
@@ -176,7 +178,7 @@ public class AuthenticationResource implements Serializable {
                 LoginMode.set(request,
                         authenticationForm.isBackEndLogin()? LoginMode.BE:LoginMode.FE);
 
-                res = Response.ok(new ResponseEntityView(userMap)).build(); // 200
+                res = Response.ok(new ResponseEntityMapView(userMap)).build(); // 200
                 request.getSession().setAttribute(Globals.LOCALE_KEY, locale);
             } else {
 
@@ -191,7 +193,7 @@ public class AuthenticationResource implements Serializable {
 
             try {
 
-                res = Response.status(Response.Status.UNAUTHORIZED).entity(new ResponseEntityView
+                res = Response.status(Response.Status.UNAUTHORIZED).entity(new ResponseEntityView<>
                         (List.of(new ErrorEntity("your-account-is-not-active",
                                 LanguageUtil.format(locale,
                                         "your-account-is-not-active", new LanguageWrapper[]{
@@ -224,7 +226,7 @@ public class AuthenticationResource implements Serializable {
                 responses = {
                     @ApiResponse(responseCode = "200", description = "User data successfully collected",
                                 content = @Content(
-                                    schema = @Schema(implementation = ResponseEntityUserView.class)
+                                    schema = @Schema(implementation = ResponseEntityMapView.class)
                                 )),
                     @ApiResponse(responseCode = "400", description = "Bad request"),
                     @ApiResponse(responseCode = "401", description = "Unauthorized request"),
@@ -235,9 +237,9 @@ public class AuthenticationResource implements Serializable {
         Response res = null;
 
         try {
-            Map<String, Map> users = authenticationHelper.getUsers(request);
+            Map<String, Map<String,Object>> users = authenticationHelper.getUsers(request);
             // todo: add here the loggedInDate???
-            res = Response.ok(new ResponseEntityView(users)).build();
+            res = Response.ok(new ResponseEntityMapMapView(users)).build();
         } catch (Exception e) {
             res = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
         }

@@ -5,9 +5,12 @@ import com.dotcms.enterprise.HostAssetsJobProxy;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.ResponseEntityListMapView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
+import com.dotcms.rest.api.v1.page.ResponseEntityPaginatedArrayListHostView;
+import com.dotcms.rest.api.v1.page.ResponseEntityPaginatedArrayListMapView;
 import com.dotcms.rest.api.v1.temp.DotTempFile;
 import com.dotcms.rest.api.v1.temp.TempFileAPI;
 import com.dotcms.rest.exception.ForbiddenException;
@@ -230,7 +233,7 @@ public class SiteResource implements Serializable {
         @ApiResponse(responseCode = "200", 
                     description = "Sites retrieved successfully",
                     content = @Content(mediaType = "application/json",
-                                      schema = @Schema(implementation = ResponseEntityView.class))),
+                                      schema = @Schema(implementation = ResponseEntityPaginatedArrayListHostView.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - authentication required",
                     content = @Content(mediaType = "application/json")),
@@ -417,7 +420,7 @@ public class SiteResource implements Serializable {
         @ApiResponse(responseCode = "200", 
                     description = "Site thumbnails retrieved successfully",
                     content = @Content(mediaType = "application/json",
-                                      schema = @Schema(implementation = ResponseEntitySiteThumbnailsView.class))),
+                                      schema = @Schema(implementation = ResponseEntityListMapView.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - authentication required",
                     content = @Content(mediaType = "application/json")),
@@ -450,7 +453,7 @@ public class SiteResource implements Serializable {
 
         Logger.debug(this, ()-> "Finding all site thumbnails...");
 
-        return Response.ok(new ResponseEntitySiteThumbnailsView(hosts.stream().filter(DotLambdas.not(Host::isSystemHost))
+        return Response.ok(new ResponseEntityListMapView(hosts.stream().filter(DotLambdas.not(Host::isSystemHost))
                 .sorted(hostNameComparator).map(host -> this.toSiteMap(user, contentletAPI, host))
                 .collect(Collectors.toList()))).build();
     }

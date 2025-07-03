@@ -108,7 +108,7 @@ public class ResetPasswordResource {
 
             SecurityLogger.logInfo(ResetPasswordResource.class,
                     String.format("User %s successful changed his password from IP: %s", userIdOpt.get(), request.getRemoteAddr()));
-            res = Response.ok(new ResponseEntityView(userIdOpt.get())).build();
+            res = Response.ok(new ResponseEntityView<>(userIdOpt.get())).build();
         } catch (NoSuchUserException e) {
         	SecurityLogger.logInfo(ResetPasswordResource.class,
         			"Error resetting password. "

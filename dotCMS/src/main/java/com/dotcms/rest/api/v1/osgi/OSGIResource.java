@@ -1,7 +1,7 @@
 package com.dotcms.rest.api.v1.osgi;
 
 import com.dotcms.rest.ResponseEntityBooleanView;
-import com.dotcms.rest.ResponseEntityListView;
+import com.dotcms.rest.ResponseEntityListStringView;
 import com.dotcms.rest.ResponseEntityStringView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
@@ -650,9 +650,9 @@ public class OSGIResource {
                     @ApiResponse(
                             responseCode = "200",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseEntityListView.class)))
+                                    schema = @Schema(implementation = ResponseEntityListStringView.class)))
             })
-    public ResponseEntityListView<String> getAvailablePlugis (@Context HttpServletRequest request,
+    public ResponseEntityListStringView getAvailablePlugis (@Context HttpServletRequest request,
                                                       @Context final HttpServletResponse response) {
 
         checkUserPermissions(request, response, DYNAMIC_PLUGINS);
@@ -662,7 +662,7 @@ public class OSGIResource {
         final String path = OSGIUtil.getInstance().getFelixUndeployPath();
         final File undeployDirectory = new File(path);
 
-        return new ResponseEntityListView<>(
+        return new ResponseEntityListStringView(
                 Arrays.stream(undeployDirectory.list()).filter(f -> f.toLowerCase().endsWith(".jar")).collect(Collectors.toList())
         );
     }

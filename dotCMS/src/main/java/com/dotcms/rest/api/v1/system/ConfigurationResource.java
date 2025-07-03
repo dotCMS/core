@@ -1,6 +1,8 @@
 package com.dotcms.rest.api.v1.system;
 
 import static com.dotcms.rest.ResponseEntityView.OK;
+import com.dotcms.rest.ResponseEntityStringView;
+import com.dotcms.rest.ResponseEntityMapView;
 
 import com.dotcms.featureflag.FeatureFlagName;
 import com.dotcms.rest.InitDataObject;
@@ -106,7 +108,7 @@ public class ConfigurationResource implements Serializable {
 		@ApiResponse(responseCode = "200", 
 					description = "Configuration variables retrieved successfully",
 					content = @Content(mediaType = "application/json",
-									  schema = @Schema(implementation = ResponseEntityConfigurationView.class))),
+									  schema = @Schema(implementation = ResponseEntityMapView.class))),
 		@ApiResponse(responseCode = "401", 
 					description = "Unauthorized - authentication required",
 					content = @Content(mediaType = "application/json")),
@@ -145,7 +147,7 @@ public class ConfigurationResource implements Serializable {
 			}
 		}
 
-		return Response.ok(new ResponseEntityView(resultMap)).build();
+		return Response.ok(new ResponseEntityView<>(resultMap)).build();
 	}
 
 	private String removePrefix (final String key) {
@@ -188,7 +190,7 @@ public class ConfigurationResource implements Serializable {
 		@ApiResponse(responseCode = "200", 
 					description = "Configuration properties retrieved successfully",
 					content = @Content(mediaType = "application/json",
-									  schema = @Schema(implementation = ResponseEntityConfigurationView.class))),
+									  schema = @Schema(implementation = ResponseEntityMapView.class))),
 		@ApiResponse(responseCode = "500", 
 					description = "Internal server error",
 					content = @Content(mediaType = "application/json"))
@@ -202,7 +204,7 @@ public class ConfigurationResource implements Serializable {
 
 			final Locale locale = LocaleUtil.getLocale(request);
 			final Map<String, Object> configPropsMap = helper.getConfigProperties(request, locale);
-			return Response.ok(new ResponseEntityView(configPropsMap)).build();
+			return Response.ok(new ResponseEntityView<>(configPropsMap)).build();
 		} catch (Exception e) {
 			// In case of unknown error, so we report it as a 500
 			return ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
@@ -221,8 +223,7 @@ public class ConfigurationResource implements Serializable {
 	)
 	@ApiResponses(value = {
 		@ApiResponse(responseCode = "200", 
-					description = "Configuration properties set successfully",
-					content = @Content(mediaType = "application/json")),
+					description = "Configuration properties set successfully (no body)"),
 		@ApiResponse(responseCode = "401", 
 					description = "Unauthorized - authentication required",
 					content = @Content(mediaType = "application/json")),
@@ -241,7 +242,7 @@ public class ConfigurationResource implements Serializable {
 			@io.swagger.v3.oas.annotations.parameters.RequestBody(
 				description = "Map of configuration properties to set", 
 				required = true,
-				content = @Content(schema = @Schema(implementation = Map.class))
+				content = @Content(schema = @Schema(type = "object"))
 			)
 			Map<String, String> properties) {
 
@@ -267,7 +268,7 @@ public class ConfigurationResource implements Serializable {
 		@ApiResponse(responseCode = "200", 
 					description = "Validation email sent successfully",
 					content = @Content(mediaType = "application/json",
-									  schema = @Schema(implementation = ResponseEntityConfigurationOperationView.class))),
+									  schema = @Schema(implementation = ResponseEntityStringView.class))),
 		@ApiResponse(responseCode = "401", 
 					description = "Unauthorized - authentication required",
 					content = @Content(mediaType = "application/json")),
@@ -302,7 +303,7 @@ public class ConfigurationResource implements Serializable {
 
 		final Tuple2<String, String> mailAndSender = helper.parseMailAndSender(form.getSenderAndEmail());
 		helper.sendValidationEmail(mailAndSender._1, mailAndSender._2, dataObject.getUser());
-		return Response.ok(new ResponseEntityView(OK)).build();
+		return Response.ok(new ResponseEntityView<>(OK)).build();
 	}
 
 }

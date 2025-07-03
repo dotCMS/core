@@ -141,7 +141,7 @@ public class MenuResource implements Serializable {
 				}
 			}
 
-			res = Response.ok(new ResponseEntityView(menus)).build(); // 200
+			res = Response.ok(new ResponseEntityView<>(menus)).build(); // 200
 	    } catch (DotDataException | NoSuchUserException e) {
 
 			res = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);

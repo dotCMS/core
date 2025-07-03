@@ -2,7 +2,10 @@ package com.dotcms.rest.api.v1.system.redis;
 
 import com.dotcms.cache.lettuce.RedisClient;
 import com.dotcms.cache.lettuce.RedisClientFactory;
+import com.dotcms.rest.ResponseEntityMapStringObjectView;
 import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.ResponseEntityStringView;
+import com.dotcms.rest.ResponseEntityMapView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
@@ -68,7 +71,8 @@ public class RedisResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Redis ping successful",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityStringView.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - authentication required",
                     content = @Content(mediaType = "application/json")),
@@ -90,7 +94,7 @@ public class RedisResource {
                 .requiredPortlet(PortletID.MAINTENANCE.toString().toLowerCase())
                 .rejectWhenNoUser(true).init();
 
-        return Response.ok(new ResponseEntityView(this.client.ping())).build();
+        return Response.ok(new ResponseEntityView<>(this.client.ping())).build();
     }
 
     @Operation(
@@ -100,7 +104,8 @@ public class RedisResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Message echoed successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityStringView.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - authentication required",
                     content = @Content(mediaType = "application/json")),
@@ -124,7 +129,7 @@ public class RedisResource {
                 .requiredPortlet(PortletID.MAINTENANCE.toString().toLowerCase())
                 .rejectWhenNoUser(true).init();
 
-        return Response.ok(new ResponseEntityView(this.client.echo(message))).build();
+        return Response.ok(new ResponseEntityView<>(this.client.echo(message))).build();
     }
 
     @Operation(
@@ -134,7 +139,8 @@ public class RedisResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Key-value set successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityStringView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid data",
                     content = @Content(mediaType = "application/json")),
@@ -163,7 +169,7 @@ public class RedisResource {
                 .requiredPortlet(PortletID.MAINTENANCE.toString().toLowerCase())
                 .rejectWhenNoUser(true).init();
 
-        return Response.ok(new ResponseEntityView(
+        return Response.ok(new ResponseEntityView<>(
                 this.client.set(setForm.getKey(), setForm.getValue()))).build();
     }
 
@@ -174,7 +180,8 @@ public class RedisResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Value retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityStringView.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - authentication required",
                     content = @Content(mediaType = "application/json")),
@@ -201,7 +208,7 @@ public class RedisResource {
                 .requiredPortlet(PortletID.MAINTENANCE.toString().toLowerCase())
                 .rejectWhenNoUser(true).init();
 
-        return Response.ok(new ResponseEntityView(this.client.get(key))).build();
+        return Response.ok(new ResponseEntityView<>(this.client.get(key))).build();
     }
 
     @Operation(
@@ -211,7 +218,8 @@ public class RedisResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Key deleted successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityStringView.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - authentication required",
                     content = @Content(mediaType = "application/json")),
@@ -235,7 +243,7 @@ public class RedisResource {
                 .requiredPortlet(PortletID.MAINTENANCE.toString().toLowerCase())
                 .rejectWhenNoUser(true).init();
 
-        return Response.ok(new ResponseEntityView(this.client.delete(key))).build();
+        return Response.ok(new ResponseEntityView<>(this.client.delete(key))).build();
     }
 
     /////// HASHES
@@ -246,7 +254,8 @@ public class RedisResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Hash set successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityStringView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid hash data",
                     content = @Content(mediaType = "application/json")),
@@ -276,7 +285,7 @@ public class RedisResource {
                 .requiredPortlet(PortletID.MAINTENANCE.toString().toLowerCase())
                 .rejectWhenNoUser(true).init();
 
-        return Response.ok(new ResponseEntityView(
+        return Response.ok(new ResponseEntityView<>(
                 this.client.setHash(setForm.getKey(), setForm.getFields()))).build();
     }
 
@@ -287,7 +296,8 @@ public class RedisResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Hash retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityMapStringObjectView.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - authentication required",
                     content = @Content(mediaType = "application/json")),
@@ -314,7 +324,7 @@ public class RedisResource {
                 .requiredPortlet(PortletID.MAINTENANCE.toString().toLowerCase())
                 .rejectWhenNoUser(true).init();
 
-        return Response.ok(new ResponseEntityView(this.client.getHash(key))).build();
+        return Response.ok(new ResponseEntityView<>(this.client.getHash(key))).build();
     }
 
     @Operation(
@@ -324,7 +334,8 @@ public class RedisResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Hash deleted successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityMapStringObjectView.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - authentication required",
                     content = @Content(mediaType = "application/json")),
@@ -353,7 +364,7 @@ public class RedisResource {
         final long rowsAffected  = UtilMethods.isSet(fields)?
                 this.client.deleteHash(key, fields.toArray(new String[]{})):0;
 
-        return Response.ok(new ResponseEntityView(Map.of("rowsAffected", rowsAffected))).build();
+        return Response.ok(new ResponseEntityView<>(Map.of("rowsAffected", rowsAffected))).build();
     }
 
     /////// INCREMENT
@@ -364,7 +375,8 @@ public class RedisResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Key incremented successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityStringView.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - authentication required",
                     content = @Content(mediaType = "application/json")),
@@ -393,7 +405,7 @@ public class RedisResource {
             try {
 
                 final Future<Long> resultFuture = this.client.incrementOneAsync(key);
-                return Response.ok( new ResponseEntityView(resultFuture.get())).build();
+                return Response.ok( new ResponseEntityView<>(resultFuture.get())).build();
             } catch (Exception e) {
                 asyncResponse.resume(ResponseUtil.mapExceptionResponse(e));
             }
@@ -408,7 +420,8 @@ public class RedisResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Increment value retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityStringView.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - authentication required",
                     content = @Content(mediaType = "application/json")),
@@ -435,7 +448,7 @@ public class RedisResource {
                 .requiredPortlet(PortletID.MAINTENANCE.toString().toLowerCase())
                 .rejectWhenNoUser(true).init();
 
-        return Response.ok(new ResponseEntityView(this.client.getIncrement(key))).build();
+        return Response.ok(new ResponseEntityView<>(this.client.getIncrement(key))).build();
     }
 
 }

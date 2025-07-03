@@ -278,7 +278,7 @@ public class FieldResource {
         final ContentTypeFieldLayoutAPI.DeleteFieldResult deleteFieldResult =
                 this.contentTypeFieldLayoutAPI.deleteField(contentType, fieldsID, user);
 
-        return Response.ok(new ResponseEntityView(
+        return Response.ok(new ResponseEntityView<>(
                 Map.of(
                    "fields", deleteFieldResult.getLayout().getRows(),
                         "deletedIds", deleteFieldResult.getFieldDeletedIds()

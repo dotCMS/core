@@ -2,6 +2,7 @@ package com.dotcms.rest.api.v1.system;
 
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.ResponseEntityMapView;
 import com.dotcms.rest.annotation.AccessControlAllowOrigin;
 import com.dotcms.rest.annotation.InitRequestRequired;
 import com.dotcms.rest.annotation.NoCache;
@@ -77,9 +78,9 @@ public class AppContextInitResource implements Serializable {
     )
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
-                    description = "Configuration data retrieved successfully",
+                    description = "Configuration data retrieved successfully (no body if k8s probe)",
                     content = @Content(mediaType = "application/json",
-                                      schema = @Schema(implementation = ResponseEntityAppConfigurationView.class))),
+                                      schema = @Schema(implementation = ResponseEntityMapView.class))),
         @ApiResponse(responseCode = "500",
                     description = "Internal server error",
                     content = @Content(mediaType = "application/json"))
@@ -102,7 +103,7 @@ public class AppContextInitResource implements Serializable {
 
             final Map<String, Object> configMap = Map.of(CONFIG, configData);
 
-            return Response.ok(new ResponseEntityView(configMap)).build();
+            return Response.ok(new ResponseEntityView<>(configMap)).build();
         } catch (Exception e) {
             // In case of unknown error, so we report it as a 500
             return ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);

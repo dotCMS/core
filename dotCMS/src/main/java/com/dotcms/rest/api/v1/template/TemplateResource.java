@@ -3,6 +3,7 @@ package com.dotcms.rest.api.v1.template;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.ResponseEntityBulkResultView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.BulkResultView;
@@ -114,7 +115,8 @@ public class TemplateResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Templates retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityListTemplateView.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - authentication required",
                     content = @Content(mediaType = "application/json")),
@@ -173,7 +175,8 @@ public class TemplateResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Live template retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityTemplateView.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - authentication required",
                     content = @Content(mediaType = "application/json")),
@@ -219,7 +222,8 @@ public class TemplateResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Working template retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityTemplateView.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - authentication required",
                     content = @Content(mediaType = "application/json")),
@@ -265,7 +269,8 @@ public class TemplateResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Template created successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityTemplateView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid template data",
                     content = @Content(mediaType = "application/json")),
@@ -311,7 +316,8 @@ public class TemplateResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Template saved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityTemplateView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid template data or missing identifier",
                     content = @Content(mediaType = "application/json")),
@@ -366,7 +372,8 @@ public class TemplateResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Template draft saved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityTemplateView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid template data or missing identifier",
                     content = @Content(mediaType = "application/json")),
@@ -516,7 +523,8 @@ public class TemplateResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Template saved and published successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityTemplateView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid template data or missing identifier",
                     content = @Content(mediaType = "application/json")),
@@ -602,7 +610,8 @@ public class TemplateResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Templates publish operation completed",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityBulkResultView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid template identifiers or empty list",
                     content = @Content(mediaType = "application/json")),
@@ -661,7 +670,7 @@ public class TemplateResource {
             }
         }
 
-        return Response.ok(new ResponseEntityView(
+        return Response.ok(new ResponseEntityView<>(
                 new BulkResultView(publishedTemplatesCount,0L,failedToPublish)))
                 .build();
     }
@@ -673,7 +682,8 @@ public class TemplateResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Templates unpublish operation completed",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityBulkResultView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid template identifiers or empty list",
                     content = @Content(mediaType = "application/json")),
@@ -732,7 +742,7 @@ public class TemplateResource {
             }
         }
 
-        return Response.ok(new ResponseEntityView(
+        return Response.ok(new ResponseEntityView<>(
                 new BulkResultView(unpublishedTemplatesCount,0L,failedToUnpublish)))
                 .build();
     }
@@ -744,7 +754,8 @@ public class TemplateResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Template copied successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityTemplateView.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - authentication required",
                     content = @Content(mediaType = "application/json")),
@@ -781,7 +792,7 @@ public class TemplateResource {
             throw new DoesNotExistException("Template with Id: " + templateId + " does not exist");
         }
 
-        return Response.ok(new ResponseEntityView(
+        return Response.ok(new ResponseEntityView<>(
                 this.templateHelper.toTemplateView(this.templateAPI.copy(template, user), user))).build();
     }
 
@@ -793,7 +804,8 @@ public class TemplateResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Templates archive operation completed",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityBulkResultView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid template identifiers or empty list",
                     content = @Content(mediaType = "application/json")),
@@ -852,7 +864,7 @@ public class TemplateResource {
             }
         }
 
-        return Response.ok(new ResponseEntityView(
+        return Response.ok(new ResponseEntityView<>(
                 new BulkResultView(archivedTemplatesCount,0L,failedToArchive)))
                 .build();
     }
@@ -864,7 +876,8 @@ public class TemplateResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Templates unarchive operation completed",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityBulkResultView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid template identifiers or empty list",
                     content = @Content(mediaType = "application/json")),
@@ -923,7 +936,7 @@ public class TemplateResource {
             }
         }
 
-        return Response.ok(new ResponseEntityView(
+        return Response.ok(new ResponseEntityView<>(
                 new BulkResultView(unarchivedTemplatesCount,0L,failedToUnarchive)))
                 .build();
     }
@@ -935,7 +948,8 @@ public class TemplateResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Templates delete operation completed",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityBulkResultView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid template identifiers or empty list",
                     content = @Content(mediaType = "application/json")),
@@ -993,7 +1007,7 @@ public class TemplateResource {
             }
         }
 
-        return Response.ok(new ResponseEntityView(
+        return Response.ok(new ResponseEntityView<>(
                 new BulkResultView(deletedTemplatesCount,0L,failedToDelete)))
                 .build();
     }
@@ -1005,7 +1019,8 @@ public class TemplateResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Template image retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityTemplateView.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - authentication required",
                     content = @Content(mediaType = "application/json")),

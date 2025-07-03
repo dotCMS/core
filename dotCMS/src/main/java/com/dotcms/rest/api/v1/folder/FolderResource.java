@@ -4,6 +4,9 @@ import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.ResponseEntityBooleanView;
+import com.dotcms.rest.ResponseEntityListMapView;
+import com.dotcms.rest.ResponseEntityListStringView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.BadRequestException;
@@ -91,7 +94,8 @@ public class FolderResource implements Serializable {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Folders deleted successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityListStringView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid paths or site name",
                     content = @Content(mediaType = "application/json")),
@@ -153,7 +157,7 @@ public class FolderResource implements Serializable {
             }
         }
 
-        return Response.ok(new ResponseEntityFolderPathsView(deletedFolders)).build(); // 200
+        return Response.ok(new ResponseEntityListStringView(deletedFolders)).build(); // 200
     }
 
     @Operation(
@@ -163,7 +167,8 @@ public class FolderResource implements Serializable {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Folders created successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityListMapView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid paths or site name",
                     content = @Content(mediaType = "application/json")),
@@ -206,7 +211,7 @@ public class FolderResource implements Serializable {
 
             final List<Map<String, Object>> createdFolders = folderHelper.createFolders(paths, siteName, user);
 
-            return Response.ok(new ResponseEntityFolderListView(createdFolders)).build(); // 200
+            return Response.ok(new ResponseEntityListMapView(createdFolders)).build(); // 200
     }
 
     @Operation(
@@ -215,8 +220,7 @@ public class FolderResource implements Serializable {
     )
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
-                    description = "Folder selected successfully",
-                    content = @Content(mediaType = "application/json")),
+                    description = "Folder selected successfully (no body)"),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - backend user authentication required",
                     content = @Content(mediaType = "application/json")),
@@ -257,7 +261,8 @@ public class FolderResource implements Serializable {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Folder loaded successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityFolderView.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - user authentication required",
                     content = @Content(mediaType = "application/json")),
@@ -487,7 +492,8 @@ public class FolderResource implements Serializable {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Folder found successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityFolderView.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - backend user authentication required",
                     content = @Content(mediaType = "application/json")),

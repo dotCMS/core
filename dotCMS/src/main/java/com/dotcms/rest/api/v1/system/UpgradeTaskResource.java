@@ -2,6 +2,7 @@ package com.dotcms.rest.api.v1.system;
 
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.ResponseEntityStringView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.util.ReflectionUtils;
@@ -54,7 +55,7 @@ public class UpgradeTaskResource {
         @ApiResponse(responseCode = "200", 
                     description = "Upgrade task ran successfully",
                     content = @Content(mediaType = "application/json",
-                                      schema = @Schema(implementation = ResponseEntityUpgradeTaskView.class))),
+                                      schema = @Schema(implementation = ResponseEntityStringView.class))),
         @ApiResponse(responseCode = "304", 
                     description = "Not modified - upgrade task does not need to be executed",
                     content = @Content(mediaType = "application/json")),
@@ -113,7 +114,7 @@ public class UpgradeTaskResource {
                     startupTask.executeUpgrade();
                     HibernateUtil.closeAndCommitTransaction();
                     Logger.info(this, "Ran the upgrade task: " + upgradeTaskClassName);
-                    return Response.ok(new ResponseEntityUpgradeTaskView(
+                    return Response.ok(new ResponseEntityStringView(
                             "Ran the upgrade task: " + upgradeTaskClassName)).build(); // 200
                 } else {
 

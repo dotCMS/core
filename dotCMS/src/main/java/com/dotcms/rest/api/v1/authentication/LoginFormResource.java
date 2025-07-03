@@ -153,7 +153,7 @@ public class LoginFormResource implements Serializable {
                             userLocale.getDisplayName(userLocale)))
                 .companyEmail("@" + defaultCompany.getMx());
 
-            res = Response.ok(new ResponseEntityView(builder.build(), messagesMap)).build(); // 200
+            res = Response.ok(new ResponseEntityView<>(builder.build(), messagesMap)).build(); // 200
 
         } catch (DotSecurityException e) {
             throw new ForbiddenException(e);

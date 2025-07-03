@@ -66,7 +66,8 @@ public class LanguagesResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Languages retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = MapStringRestLanguageView.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - authentication required",
                     content = @Content(mediaType = "application/json")),
@@ -139,7 +140,7 @@ public class LanguagesResource {
                             i18NForm.getMessagesKey(), request,
                             true); // want to create a session to store the locale.
 
-            res = Response.ok(new ResponseEntityView(null, messagesMap)).build(); // 200
+            res = Response.ok(new ResponseEntityView<>(null, messagesMap)).build(); // 200
         } catch (Exception e) { // this is an unknown error, so we report as a 500.
 
             res = Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(e).build();

@@ -14,7 +14,7 @@ import com.dotcms.ema.resolver.EMAConfigStrategy;
 import com.dotcms.ema.resolver.EMAConfigStrategyResolver;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityBooleanView;
-import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.ResponseEntityMapView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.v1.page.ImmutablePageRenderParams.Builder;
@@ -182,7 +182,8 @@ public class PageResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Page metadata retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityPageView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Invalid request parameters",
                     content = @Content(mediaType = "application/json")),
@@ -253,7 +254,8 @@ public class PageResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Page rendered successfully with full HTML content",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityPageView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Invalid request parameters",
                     content = @Content(mediaType = "application/json")),
@@ -683,7 +685,8 @@ public class PageResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Page content updated successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityPageOperationView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Invalid request data or container/content validation failed",
                     content = @Content(mediaType = "application/json")),
@@ -895,7 +898,8 @@ public class PageResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Pages found successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityContentletMapsView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Invalid search parameters",
                     content = @Content(mediaType = "application/json")),
@@ -956,7 +960,8 @@ public class PageResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Page render versions retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityPageLivePreviewVersionView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Invalid page ID or language ID",
                     content = @Content(mediaType = "application/json")),
@@ -1003,7 +1008,8 @@ public class PageResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Page content tree retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityMulitreeView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Invalid page ID",
                     content = @Content(mediaType = "application/json")),
@@ -1054,7 +1060,8 @@ public class PageResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Page personas retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityListPersonalizationPersonaPageView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Invalid pagination or filter parameters",
                     content = @Content(mediaType = "application/json")),
@@ -1228,7 +1235,8 @@ public class PageResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Content copied successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityMapView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Invalid form data or missing required fields",
                     content = @Content(mediaType = "application/json")),
@@ -1251,7 +1259,7 @@ public class PageResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/copyContent")
-    public final ResponseEntityPageCopyView copyContent(
+    public final ResponseEntityMapView copyContent(
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             @RequestBody(description = "Content copy form with source contentlet information", required = true,
@@ -1273,7 +1281,7 @@ public class PageResource {
         final Contentlet copiedContentlet = this.pageResourceHelper.copyContentlet(copyContentletForm, user, pageMode, language);
         final Map<String, Object> entity = (Map<String, Object>)new DotTransformerBuilder().defaultOptions().content(copiedContentlet).build()
                 .toMaps().stream().findFirst().orElse(Collections.emptyMap());
-        return new ResponseEntityPageCopyView(entity);
+        return new ResponseEntityMapView(entity);
     }
 
     @Operation(
@@ -1285,7 +1293,8 @@ public class PageResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Page deep copied successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityMapView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Invalid page ID",
                     content = @Content(mediaType = "application/json")),
@@ -1308,7 +1317,7 @@ public class PageResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/{pageId}/_deepcopy")
-    public final ResponseEntityPageCopyView deepCopyPage(
+    public final ResponseEntityMapView deepCopyPage(
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             @Parameter(description = "Page identifier to deep copy", required = true)
@@ -1330,7 +1339,7 @@ public class PageResource {
 
         final Contentlet copiedContentlet = this.pageResourceHelper.copyPage(page, user, pageMode, language);
 
-        return new ResponseEntityPageCopyView(new DotTransformerBuilder().defaultOptions().content(copiedContentlet).build()
+        return new ResponseEntityMapView(new DotTransformerBuilder().defaultOptions().content(copiedContentlet).build()
                 .toMaps().stream().findFirst().orElse(Collections.emptyMap()));
     } // deepCopyPage.
 
@@ -1352,7 +1361,8 @@ public class PageResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Page types retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityPaginatedArrayListMapView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Invalid pagination or filter parameters",
                     content = @Content(mediaType = "application/json")),
@@ -1419,7 +1429,8 @@ public class PageResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Permission check completed successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityBooleanView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Invalid request parameters or malformed form data",
                     content = @Content(mediaType = "application/json")),
@@ -1506,7 +1517,8 @@ public class PageResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Available workflow actions retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityPageWorkflowActionsView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Invalid request parameters or malformed form data",
                     content = @Content(mediaType = "application/json")),
@@ -1579,27 +1591,33 @@ public class PageResource {
                 findAvailableActionsForm.getLanguageId(), findAvailableActionsForm.getHostId()));
     } // findAvailableActions.
 
-    /**
-     * Receives the Identifier of an HTML Page, returns all the available languages in dotCMS and,
-     * for each of them, adds a flag indicating whether the page is available in that language or
-     * not. This may be particularly useful when requiring the system to provide a specific action
-     * when a page is NOT available in a given language. Here's an example of how you can use it:
-     * <pre>
-     *     GET <a href="http://localhost:8080/api/v1/page/${PAGE_ID}/languages">http://localhost:8080/api/v1/page/${PAGE_ID}/languages</a>
-     * </pre>
-     *
-     * @param request  The current instance of the {@link HttpServletRequest}.
-     * @param response The current instance of the {@link HttpServletResponse}.
-     * @param pageId   The Identifier of the HTML Page whose available languages will be checked.
-     *
-     * @return A {@link Response} object containing the list of languages and the flag indicating
-     * whether the page is available in such a language or not.
-     *
-     * @throws DotDataException An error occurred when interacting with the database.
-     * @deprecated This method is deprecated and will be removed in future versions. Please use the
-     * more generic REST Endpoint
-     * {@link com.dotcms.rest.api.v1.content.ContentResource#getExistingLanguagesForContent(String, User)} instead.
-     */
+    @Operation(
+        summary = "Get page language versions (deprecated)",
+        description = "Returns all available languages in dotCMS with flags indicating whether the page is available in each language. " +
+                     "This endpoint is deprecated - use ContentResource.getExistingLanguagesForContent instead.",
+        deprecated = true
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Page language versions retrieved successfully (deprecated endpoint)",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityLanguagesForPageView.class))),
+        @ApiResponse(responseCode = "400", 
+                    description = "Invalid page ID",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized access - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "Page not found",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @Path("/{pageId}/languages")
     @JSONP
@@ -1608,6 +1626,7 @@ public class PageResource {
     @Deprecated(since = "Nov 7th, 24", forRemoval = true)
     public Response checkPageLanguageVersions(@Context final HttpServletRequest request,
                                               @Context final HttpServletResponse response,
+                                              @Parameter(description = "Page identifier", required = true)
                                               @PathParam("pageId") final String pageId) throws DotDataException {
         final User user = new WebResource.InitBuilder(webResource).requestAndResponse(request, response)
                 .rejectWhenNoUser(true)

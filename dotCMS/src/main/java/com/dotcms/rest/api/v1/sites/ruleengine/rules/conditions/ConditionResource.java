@@ -77,7 +77,8 @@ public class ConditionResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Condition retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = RestCondition.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid site ID or condition ID",
                     content = @Content(mediaType = "application/json")),
@@ -121,7 +122,8 @@ public class ConditionResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Condition created successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(type = "object", description = "JSON object containing the created condition ID in format: { 'id': 'condition-uuid' }"))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid site ID or condition data",
                     content = @Content(mediaType = "application/json")),
@@ -170,7 +172,8 @@ public class ConditionResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Condition updated successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = RestCondition.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid parameters or condition data",
                     content = @Content(mediaType = "application/json")),

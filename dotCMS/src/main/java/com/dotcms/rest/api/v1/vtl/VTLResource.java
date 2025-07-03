@@ -110,7 +110,7 @@ public class VTLResource {
                         @Parameter(description = "Additional path parameters") @PathParam("pathParam") final String pathParam, 
                         @io.swagger.v3.oas.annotations.parameters.RequestBody(
                             description = "Request body parameters for template processing", 
-                            content = @Content(schema = @Schema(type = "object"))
+                            content = @Content(schema = @Schema(type = "object", description = "JSON object with parameters for VTL template processing"))
                         ) final Map<String, Object> bodyMap) {
 
         return processRequest(request, response, uriInfo, folderName, pathParam, HTTPMethod.GET, bodyMap);
@@ -147,7 +147,7 @@ public class VTLResource {
                         @Context UriInfo uriInfo, @Parameter(description = "VTL template folder name", required = true) @PathParam("folder") final String folderName,
                         @io.swagger.v3.oas.annotations.parameters.RequestBody(
                             description = "Request body parameters for template processing", 
-                            content = @Content(schema = @Schema(type = "object"))
+                            content = @Content(schema = @Schema(type = "object", description = "JSON object with parameters for VTL template processing"))
                         ) final Map<String, Object> bodyMap) {
 
         return processRequest(request, response, uriInfo, folderName, null, HTTPMethod.GET, bodyMap);
@@ -186,7 +186,7 @@ public class VTLResource {
                                @Parameter(description = "Additional path parameters") @PathParam("pathParam") final String pathParam,
                                @io.swagger.v3.oas.annotations.parameters.RequestBody(
                                    description = "Request body parameters for template processing", 
-                                   content = @Content(schema = @Schema(type = "object"))
+                                   content = @Content(schema = @Schema(type = "object", description = "JSON object with parameters for VTL template processing"))
                                ) final Map<String, Object> bodyMap) {
 
         return processRequest(request, response, uriInfo, folderName, pathParam, HTTPMethod.POST, bodyMap);
@@ -224,7 +224,7 @@ public class VTLResource {
                                @Context UriInfo uriInfo, @Parameter(description = "VTL template folder name", required = true) @PathParam("folder") final String folderName,
                                @io.swagger.v3.oas.annotations.parameters.RequestBody(
                                    description = "Request body parameters for template processing", 
-                                   content = @Content(schema = @Schema(type = "object"))
+                                   content = @Content(schema = @Schema(type = "object", description = "JSON object with parameters for VTL template processing"))
                                ) final Map<String, Object> bodyMap) {
 
         return processRequest(request, response, uriInfo, folderName, null, HTTPMethod.POST, bodyMap);
@@ -263,7 +263,7 @@ public class VTLResource {
                                @Parameter(description = "Additional path parameters") @PathParam("pathParam") final String pathParam,
                                @io.swagger.v3.oas.annotations.parameters.RequestBody(
                                    description = "Request body parameters for template processing", 
-                                   content = @Content(schema = @Schema(type = "object"))
+                                   content = @Content(schema = @Schema(type = "object", description = "JSON object with parameters for VTL template processing"))
                                ) final Map<String, Object> bodyMap) {
 
         return processRequest(request, response, uriInfo, folderName, pathParam, HTTPMethod.PUT, bodyMap);
@@ -301,7 +301,7 @@ public class VTLResource {
                               @Context UriInfo uriInfo, @Parameter(description = "VTL template folder name", required = true) @PathParam("folder") final String folderName,
                               @io.swagger.v3.oas.annotations.parameters.RequestBody(
                                   description = "Request body parameters for template processing", 
-                                  content = @Content(schema = @Schema(type = "object"))
+                                  content = @Content(schema = @Schema(type = "object", description = "JSON object with parameters for VTL template processing"))
                               ) final Map<String, Object> bodyMap) {
 
         return processRequest(request, response, uriInfo, folderName, null, HTTPMethod.PUT, bodyMap);
@@ -340,7 +340,7 @@ public class VTLResource {
                               @Parameter(description = "Additional path parameters") @PathParam("pathParam") final String pathParam,
                               @io.swagger.v3.oas.annotations.parameters.RequestBody(
                                   description = "Request body parameters for template processing", 
-                                  content = @Content(schema = @Schema(type = "object"))
+                                  content = @Content(schema = @Schema(type = "object", description = "JSON object with parameters for VTL template processing"))
                               ) final Map<String, Object> bodyMap) {
 
         return processRequest(request, response, uriInfo, folderName, pathParam, HTTPMethod.PATCH, bodyMap);
@@ -378,7 +378,7 @@ public class VTLResource {
                                 @Context UriInfo uriInfo, @Parameter(description = "VTL template folder name", required = true) @PathParam("folder") final String folderName,
                                 @io.swagger.v3.oas.annotations.parameters.RequestBody(
                                     description = "Request body parameters for template processing", 
-                                    content = @Content(schema = @Schema(type = "object"))
+                                    content = @Content(schema = @Schema(type = "object", description = "JSON object with parameters for VTL template processing"))
                                 ) final Map<String, Object> bodyMap) {
 
         return processRequest(request, response, uriInfo, folderName, null, HTTPMethod.PATCH, bodyMap);
@@ -417,7 +417,7 @@ public class VTLResource {
                                @Parameter(description = "Additional path parameters") @PathParam("pathParam") final String pathParam,
                                @io.swagger.v3.oas.annotations.parameters.RequestBody(
                                    description = "Request body parameters for template processing", 
-                                   content = @Content(schema = @Schema(type = "object"))
+                                   content = @Content(schema = @Schema(type = "object", description = "JSON object with parameters for VTL template processing"))
                                ) final Map<String, Object> requestJSONMap) {
 
         return processRequest(request, response, uriInfo, folderName, pathParam, HTTPMethod.DELETE, requestJSONMap);
@@ -455,7 +455,7 @@ public class VTLResource {
                                  @Context UriInfo uriInfo, @Parameter(description = "VTL template folder name", required = true) @PathParam("folder") final String folderName,
                                  @io.swagger.v3.oas.annotations.parameters.RequestBody(
                                      description = "Request body parameters for template processing", 
-                                     content = @Content(schema = @Schema(type = "object"))
+                                     content = @Content(schema = @Schema(type = "object", description = "JSON object with parameters for VTL template processing"))
                                  ) final Map<String, Object> requestJSONMap) {
 
         return processRequest(request, response, uriInfo, folderName, null, HTTPMethod.DELETE, requestJSONMap);

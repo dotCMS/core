@@ -8,6 +8,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.json.JSONException;
+import com.dotcms.rest.ResponseEntityStringView;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -51,7 +52,7 @@ public class PublishQueueResource {
         @ApiResponse(responseCode = "200", 
                     description = "Elements removed from publish queue successfully",
                     content = @Content(mediaType = "application/json",
-                                      schema = @Schema(implementation = ResponseEntityPublishQueueOperationView.class))),
+                                      schema = @Schema(implementation = ResponseEntityStringView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid identifiers or form data",
                     content = @Content(mediaType = "application/json")),
@@ -89,7 +90,7 @@ public class PublishQueueResource {
                 deletePPQueueElementsByIdentifierForm.getIdentifiers(),
                 0);
 
-        return Response.ok(new ResponseEntityPublishQueueOperationView(
+        return Response.ok(new ResponseEntityStringView(
                 "Requested elements were removed from the Push-Publish Queue")).build();
     }
 }

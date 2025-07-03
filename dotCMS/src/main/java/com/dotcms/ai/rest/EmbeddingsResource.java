@@ -69,7 +69,8 @@ public class EmbeddingsResource {
     )
     @ApiResponse(responseCode = "200", 
                 description = "Test response returned successfully",
-                content = @Content(mediaType = "application/json"))
+                content = @Content(mediaType = "application/json",
+                                  schema = @Schema(type = "object", description = "Simple key-value map indicating embeddings service type")))
     @GET
     @JSONP
     @Path("/test")
@@ -94,7 +95,8 @@ public class EmbeddingsResource {
     )
     @ApiResponse(responseCode = "200", 
                 description = "Embeddings created successfully",
-                content = @Content(mediaType = "application/json"))
+                content = @Content(mediaType = "application/json",
+                                  schema = @Schema(type = "object", description = "Embeddings operation result containing timing and count information")))
     @ApiResponse(responseCode = "401", 
                 description = "Unauthorized - backend user authentication required",
                 content = @Content(mediaType = "application/json"))
@@ -108,7 +110,7 @@ public class EmbeddingsResource {
     @Consumes(MediaType.APPLICATION_JSON)
     public final Response embed(@Context final HttpServletRequest request,
                                 @Context final HttpServletResponse response,
-                                @RequestBody(description = "Form data containing query, limit, offset, and index configuration for embeddings creation", 
+                                @RequestBody(description = "JSON Response containing time to embeddings, total to embed and index name",
                                            required = true,
                                            content = @Content(schema = @Schema(implementation = EmbeddingsForm.class)))
                                 final EmbeddingsForm embeddingsForm) {
@@ -172,7 +174,8 @@ public class EmbeddingsResource {
     )
     @ApiResponse(responseCode = "200", 
                 description = "Embeddings deleted successfully",
-                content = @Content(mediaType = "application/json"))
+                content = @Content(mediaType = "application/json",
+                                  schema = @Schema(type = "object", description = "Deletion result containing count of deleted items")))
     @ApiResponse(responseCode = "401", 
                 description = "Unauthorized - backend user authentication required",
                 content = @Content(mediaType = "application/json"))
@@ -183,9 +186,9 @@ public class EmbeddingsResource {
     @Consumes(MediaType.APPLICATION_JSON)
     public final Response delete(@Context final HttpServletRequest request,
                                  @Context final HttpServletResponse response,
-                                 @RequestBody(description = "JSON object containing deletion criteria (deleteQuery, indexName, identifier, language, inode, contentType, site)", 
+                                 @RequestBody(description = "JSON object containing deleted key",
                                             required = true,
-                                            content = @Content(schema = @Schema(implementation = JSONObject.class)))
+                                            content = @Content(schema = @Schema(type = "object", description = "Deletion criteria including query, identifier, inode, or content type")))
                                  final JSONObject json) {
 
         final User user = new WebResource.InitBuilder(request, response).requiredBackendUser(true).init().getUser();
@@ -226,7 +229,8 @@ public class EmbeddingsResource {
     )
     @ApiResponse(responseCode = "200", 
                 description = "Tables dropped and recreated successfully",
-                content = @Content(mediaType = "application/json"))
+                content = @Content(mediaType = "application/json",
+                                  schema = @Schema(type = "object", description = "Table creation result status")))
     @ApiResponse(responseCode = "401", 
                 description = "Unauthorized - backend user authentication required",
                 content = @Content(mediaType = "application/json"))
@@ -240,9 +244,9 @@ public class EmbeddingsResource {
     @Consumes(MediaType.APPLICATION_JSON)
     public final Response dropAndRecreateTables(@Context final HttpServletRequest request,
                                                 @Context final HttpServletResponse response,
-                                                @RequestBody(description = "JSON object (can be empty) for the operation", 
+                                                @RequestBody(description = "JSON object with created boolean key",
                                                            required = true,
-                                                           content = @Content(schema = @Schema(implementation = JSONObject.class)))
+                                                           content = @Content(schema = @Schema(type = "object", description = "Empty JSON object for triggering table recreation")))
                                                 final JSONObject json) {
 
         new WebResource.InitBuilder(request, response)
@@ -276,8 +280,9 @@ public class EmbeddingsResource {
         description = "Counts embeddings based on provided query parameters such as site, content type, index name, etc."
     )
     @ApiResponse(responseCode = "200", 
-                description = "Embeddings count retrieved successfully",
-                content = @Content(mediaType = "application/json"))
+                description = "JSON object containing embeddingsCount key",
+                content = @Content(mediaType = "application/json",
+                                  schema = @Schema(type = "object", description = "Count results containing embedding statistics")))
     @ApiResponse(responseCode = "401", 
                 description = "Unauthorized - backend user authentication required",
                 content = @Content(mediaType = "application/json"))
@@ -327,8 +332,9 @@ public class EmbeddingsResource {
         description = "Counts embeddings based on provided form data containing search criteria"
     )
     @ApiResponse(responseCode = "200", 
-                description = "Embeddings count retrieved successfully",
-                content = @Content(mediaType = "application/json"))
+                description = "JSON object containing embeddingsCount key",
+                content = @Content(mediaType = "application/json",
+                                  schema = @Schema(type = "object", description = "Count results containing embedding statistics")))
     @ApiResponse(responseCode = "401", 
                 description = "Unauthorized - backend user authentication required",
                 content = @Content(mediaType = "application/json"))
@@ -339,7 +345,7 @@ public class EmbeddingsResource {
     @Consumes(MediaType.APPLICATION_JSON)
     public final Response count(@Context final HttpServletRequest request,
                                 @Context final HttpServletResponse response,
-                                @RequestBody(description = "Form data containing count criteria (site, contentType, language, fieldVar, indexName)", 
+                                @RequestBody(description = "JSON Object containing embeddingsCount key",
                                            required = false,
                                            content = @Content(schema = @Schema(implementation = CompletionsForm.class)))
                                 final CompletionsForm form) {
@@ -365,8 +371,9 @@ public class EmbeddingsResource {
         description = "Returns count of embeddings grouped by index name. Requires CMS Administrator role."
     )
     @ApiResponse(responseCode = "200", 
-                description = "Index count retrieved successfully",
-                content = @Content(mediaType = "application/json"))
+                description = "JSON Object containing indexCount key",
+                content = @Content(mediaType = "application/json",
+                                  schema = @Schema(type = "object", description = "Count results containing index statistics grouped by index name")))
     @ApiResponse(responseCode = "401", 
                 description = "Unauthorized - backend user authentication required",
                 content = @Content(mediaType = "application/json"))

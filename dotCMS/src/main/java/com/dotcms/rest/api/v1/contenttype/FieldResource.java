@@ -9,7 +9,11 @@ import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.transform.field.JsonFieldTransformer;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.ResponseEntityMapStringObjectView;
+import com.dotcms.rest.ResponseEntityMapView;
+import com.dotcms.rest.ResponseEntityStringView;
 import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.ResponseEntityListMapView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.ForbiddenException;
@@ -76,7 +80,8 @@ public class FieldResource implements Serializable {
 	@ApiResponses(value = {
 		@ApiResponse(responseCode = "200", 
 					description = "Fields updated successfully",
-					content = @Content(mediaType = "application/json")),
+					content = @Content(mediaType = "application/json",
+									  schema = @Schema(implementation = ResponseEntityListMapView.class))),
 		@ApiResponse(responseCode = "400", 
 					description = "Bad request - invalid field data",
 					content = @Content(mediaType = "application/json")),
@@ -142,7 +147,8 @@ public class FieldResource implements Serializable {
 	@ApiResponses(value = {
 		@ApiResponse(responseCode = "200", 
 					description = "Field created successfully",
-					content = @Content(mediaType = "application/json")),
+					content = @Content(mediaType = "application/json",
+									  schema = @Schema(implementation = ResponseEntityMapStringObjectView.class))),
 		@ApiResponse(responseCode = "400", 
 					description = "Bad request - invalid field data",
 					content = @Content(mediaType = "application/json")),
@@ -185,7 +191,7 @@ public class FieldResource implements Serializable {
 
 				field = fapi.save(field, user);
 
-				response = Response.ok(new ResponseEntityView(new JsonFieldTransformer(field).mapObject())).build();
+				response = Response.ok(new ResponseEntityView<>(new JsonFieldTransformer(field).mapObject())).build();
 			}
 		} catch (DotStateException e) {
 
@@ -210,11 +216,24 @@ public class FieldResource implements Serializable {
 		summary = "Get content type fields (deprecated)",
 		description = "Retrieves all fields for a specific content type. Use v2 API instead for new implementations."
 	)
-	@ApiResponse(responseCode = "200", description = "Fields retrieved successfully")
-	@ApiResponse(responseCode = "401", description = "Unauthorized - authentication required")
-	@ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions")
-	@ApiResponse(responseCode = "404", description = "Content type not found")
-	@ApiResponse(responseCode = "500", description = "Internal server error")
+	@ApiResponses(value = {
+		@ApiResponse(responseCode = "200", 
+					description = "Fields retrieved successfully",
+					content = @Content(mediaType = "application/json",
+									  schema = @Schema(implementation = ResponseEntityListMapView.class))),
+		@ApiResponse(responseCode = "401", 
+					description = "Unauthorized - authentication required",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "403", 
+					description = "Forbidden - insufficient permissions",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "404", 
+					description = "Content type not found",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "500", 
+					description = "Internal server error",
+					content = @Content(mediaType = "application/json"))
+	})
 	@GET
 	@JSONP
 	@NoCache
@@ -254,11 +273,24 @@ public class FieldResource implements Serializable {
 		summary = "Get content type field by ID (deprecated)",
 		description = "Retrieves a specific field from a content type by its unique field ID. Use v2 API instead for new implementations."
 	)
-	@ApiResponse(responseCode = "200", description = "Field retrieved successfully")
-	@ApiResponse(responseCode = "401", description = "Unauthorized - authentication required")
-	@ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions")
-	@ApiResponse(responseCode = "404", description = "Content type or field not found")
-	@ApiResponse(responseCode = "500", description = "Internal server error")
+	@ApiResponses(value = {
+		@ApiResponse(responseCode = "200", 
+					description = "Field retrieved successfully",
+					content = @Content(mediaType = "application/json",
+									  schema = @Schema(implementation = ResponseEntityMapStringObjectView.class))),
+		@ApiResponse(responseCode = "401", 
+					description = "Unauthorized - authentication required",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "403", 
+					description = "Forbidden - insufficient permissions",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "404", 
+					description = "Content type or field not found",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "500", 
+					description = "Internal server error",
+					content = @Content(mediaType = "application/json"))
+	})
 	@GET
 	@Path("/id/{fieldId}")
 	@JSONP
@@ -276,7 +308,7 @@ public class FieldResource implements Serializable {
 
 			Field field = fapi.find(fieldId);
 
-			response = Response.ok(new ResponseEntityView(new JsonFieldTransformer(field).mapObject())).build();
+			response = Response.ok(new ResponseEntityView<>(new JsonFieldTransformer(field).mapObject())).build();
 
 		} catch (NotFoundInDbException e) {
 
@@ -294,11 +326,24 @@ public class FieldResource implements Serializable {
 		summary = "Get content type field by variable name (deprecated)",
 		description = "Retrieves a specific field from a content type by its variable name. Use v2 API instead for new implementations."
 	)
-	@ApiResponse(responseCode = "200", description = "Field retrieved successfully")
-	@ApiResponse(responseCode = "401", description = "Unauthorized - authentication required")
-	@ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions")
-	@ApiResponse(responseCode = "404", description = "Content type or field not found")
-	@ApiResponse(responseCode = "500", description = "Internal server error")
+	@ApiResponses(value = {
+		@ApiResponse(responseCode = "200", 
+					description = "Field retrieved successfully",
+					content = @Content(mediaType = "application/json",
+									  schema = @Schema(implementation = ResponseEntityMapStringObjectView.class))),
+		@ApiResponse(responseCode = "401", 
+					description = "Unauthorized - authentication required",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "403", 
+					description = "Forbidden - insufficient permissions",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "404", 
+					description = "Content type or field not found",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "500", 
+					description = "Internal server error",
+					content = @Content(mediaType = "application/json"))
+	})
 	@GET
 	@Path("/var/{fieldVar}")
 	@JSONP
@@ -316,7 +361,7 @@ public class FieldResource implements Serializable {
 
 			Field field = typeFieldAPI.byContentTypeIdAndVar(typeId, fieldVar);
 
-			response = Response.ok(new ResponseEntityView(new JsonFieldTransformer(field).mapObject())).build();
+			response = Response.ok(new ResponseEntityView<>(new JsonFieldTransformer(field).mapObject())).build();
 
 		} catch (NotFoundInDbException e) {
 
@@ -335,12 +380,27 @@ public class FieldResource implements Serializable {
 		summary = "Update content type field by ID (deprecated)",
 		description = "Updates a specific field in a content type by its field ID. Use v2 API instead for new implementations."
 	)
-	@ApiResponse(responseCode = "200", description = "Field updated successfully")
-	@ApiResponse(responseCode = "400", description = "Bad request - invalid field data or missing field ID")
-	@ApiResponse(responseCode = "401", description = "Unauthorized - authentication required")
-	@ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions")
-	@ApiResponse(responseCode = "404", description = "Content type or field not found")
-	@ApiResponse(responseCode = "500", description = "Internal server error")
+	@ApiResponses(value = {
+		@ApiResponse(responseCode = "200", 
+					description = "Field updated successfully",
+					content = @Content(mediaType = "application/json",
+									  schema = @Schema(implementation = ResponseEntityMapStringObjectView.class))),
+		@ApiResponse(responseCode = "400", 
+					description = "Bad request - invalid field data or missing field ID",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "401", 
+					description = "Unauthorized - authentication required",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "403", 
+					description = "Forbidden - insufficient permissions",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "404", 
+					description = "Content type or field not found",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "500", 
+					description = "Internal server error",
+					content = @Content(mediaType = "application/json"))
+	})
 	@PUT
 	@Path("/id/{fieldId}")
 	@JSONP
@@ -374,7 +434,7 @@ public class FieldResource implements Serializable {
 
 					field = fapi.save(field, user);
 
-					response = Response.ok(new ResponseEntityView(new JsonFieldTransformer(field).mapObject())).build();
+					response = Response.ok(new ResponseEntityView<>(new JsonFieldTransformer(field).mapObject())).build();
 				}
 			}
 		} catch (DotStateException e) {
@@ -400,12 +460,27 @@ public class FieldResource implements Serializable {
 		summary = "Update content type field by variable name (deprecated)",
 		description = "Updates a specific field in a content type by its variable name. Use v2 API instead for new implementations."
 	)
-	@ApiResponse(responseCode = "200", description = "Field updated successfully")
-	@ApiResponse(responseCode = "400", description = "Bad request - invalid field data")
-	@ApiResponse(responseCode = "401", description = "Unauthorized - authentication required")
-	@ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions")
-	@ApiResponse(responseCode = "404", description = "Content type or field not found")
-	@ApiResponse(responseCode = "500", description = "Internal server error")
+	@ApiResponses(value = {
+		@ApiResponse(responseCode = "200", 
+					description = "Field updated successfully",
+					content = @Content(mediaType = "application/json",
+									  schema = @Schema(implementation = ResponseEntityMapStringObjectView.class))),
+		@ApiResponse(responseCode = "400", 
+					description = "Bad request - invalid field data",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "401", 
+					description = "Unauthorized - authentication required",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "403", 
+					description = "Forbidden - insufficient permissions",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "404", 
+					description = "Content type or field not found",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "500", 
+					description = "Internal server error",
+					content = @Content(mediaType = "application/json"))
+	})
 	@PUT
 	@Path("/var/{fieldVar}")
 	@JSONP
@@ -439,7 +514,7 @@ public class FieldResource implements Serializable {
 
 					field = fapi.save(field, user);
 
-					response = Response.ok(new ResponseEntityView(new JsonFieldTransformer(field).mapObject())).build();
+					response = Response.ok(new ResponseEntityView<>(new JsonFieldTransformer(field).mapObject())).build();
 				}
 			}
 		} catch (DotStateException e) {
@@ -466,12 +541,27 @@ public class FieldResource implements Serializable {
 		summary = "Delete multiple fields (deprecated)",
 		description = "Deletes multiple fields from a content type by their field IDs. Use v2 API instead for new implementations."
 	)
-	@ApiResponse(responseCode = "200", description = "Fields deleted successfully")
-	@ApiResponse(responseCode = "400", description = "Bad request - invalid field IDs")
-	@ApiResponse(responseCode = "401", description = "Unauthorized - authentication required")
-	@ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions")
-	@ApiResponse(responseCode = "404", description = "Content type or one or more fields not found")
-	@ApiResponse(responseCode = "500", description = "Internal server error")
+	@ApiResponses(value = {
+		@ApiResponse(responseCode = "200", 
+					description = "Fields deleted successfully",
+					content = @Content(mediaType = "application/json",
+									  schema = @Schema(implementation = ResponseEntityMapView.class))),
+		@ApiResponse(responseCode = "400", 
+					description = "Bad request - invalid field IDs",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "401", 
+					description = "Unauthorized - authentication required",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "403", 
+					description = "Forbidden - insufficient permissions",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "404", 
+					description = "Content type or one or more fields not found",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "500", 
+					description = "Internal server error",
+					content = @Content(mediaType = "application/json"))
+	})
 	@DELETE
 	@JSONP
 	@NoCache
@@ -498,7 +588,7 @@ public class FieldResource implements Serializable {
 			}
 
 			final List<Field> contentTypeFields = fieldAPI.byContentTypeId(typeId);
-			response = Response.ok(new ResponseEntityView(imap("deletedIds", deletedIds,
+			response = Response.ok(new ResponseEntityView<>(imap("deletedIds", deletedIds,
 					"fields", new JsonFieldTransformer(contentTypeFields).mapList()))).build();
 
 		} catch (DotSecurityException e) {
@@ -516,11 +606,24 @@ public class FieldResource implements Serializable {
 		summary = "Delete content type field by ID (deprecated)",
 		description = "Deletes a specific field from a content type by its field ID. Use v2 API instead for new implementations."
 	)
-	@ApiResponse(responseCode = "200", description = "Field deleted successfully")
-	@ApiResponse(responseCode = "401", description = "Unauthorized - authentication required")
-	@ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions")
-	@ApiResponse(responseCode = "404", description = "Content type or field not found")
-	@ApiResponse(responseCode = "500", description = "Internal server error")
+	@ApiResponses(value = {
+		@ApiResponse(responseCode = "200", 
+					description = "Field deleted successfully",
+					content = @Content(mediaType = "application/json",
+									  schema = @Schema(implementation = ResponseEntityStringView.class))),
+		@ApiResponse(responseCode = "401", 
+					description = "Unauthorized - authentication required",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "403", 
+					description = "Forbidden - insufficient permissions",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "404", 
+					description = "Content type or field not found",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "500", 
+					description = "Internal server error",
+					content = @Content(mediaType = "application/json"))
+	})
 	@DELETE
 	@Path("/id/{fieldId}")
 	@JSONP
@@ -561,11 +664,24 @@ public class FieldResource implements Serializable {
 		summary = "Delete content type field by variable name (deprecated)",
 		description = "Deletes a specific field from a content type by its variable name. Use v2 API instead for new implementations."
 	)
-	@ApiResponse(responseCode = "200", description = "Field deleted successfully")
-	@ApiResponse(responseCode = "401", description = "Unauthorized - authentication required")
-	@ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions")
-	@ApiResponse(responseCode = "404", description = "Content type or field not found")
-	@ApiResponse(responseCode = "500", description = "Internal server error")
+	@ApiResponses(value = {
+		@ApiResponse(responseCode = "200", 
+					description = "Field deleted successfully",
+					content = @Content(mediaType = "application/json",
+									  schema = @Schema(implementation = ResponseEntityStringView.class))),
+		@ApiResponse(responseCode = "401", 
+					description = "Unauthorized - authentication required",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "403", 
+					description = "Forbidden - insufficient permissions",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "404", 
+					description = "Content type or field not found",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "500", 
+					description = "Internal server error",
+					content = @Content(mediaType = "application/json"))
+	})
 	@DELETE
 	@Path("/var/{fieldVar}")
 	@JSONP

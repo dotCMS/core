@@ -92,7 +92,7 @@ public class LoggerResource {
         final Object loggerClass = Logger.getLogger(loggerName);
         if (null != loggerClass) {
 
-            return Response.ok(new ResponseEntityView(this.toView(loggerClass))).build();
+            return Response.ok(new ResponseEntityView<>(this.toView(loggerClass))).build();
         }
 
         throw new DoesNotExistException("Logger: " + loggerName + " does not exists");

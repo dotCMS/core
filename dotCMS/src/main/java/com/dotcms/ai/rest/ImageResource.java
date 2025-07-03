@@ -57,7 +57,8 @@ public class ImageResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Test response returned successfully",
-                    content = @Content(mediaType = "application/json"))
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(type = "object", description = "Simple key-value map indicating image service type")))
     })
     @GET
     @JSONP
@@ -85,7 +86,8 @@ public class ImageResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Images generated successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(type = "object", description = "AI image generation response containing image URLs and metadata"))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - prompt is required",
                     content = @Content(mediaType = "application/json")),
@@ -125,7 +127,8 @@ public class ImageResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Images generated successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(type = "object", description = "AI image generation response containing image URLs and metadata"))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - prompt is required",
                     content = @Content(mediaType = "application/json")),
@@ -144,7 +147,9 @@ public class ImageResource {
                                        @Context final HttpServletResponse response,
                                        @RequestBody(description = "Image generation request containing prompt and configuration options", 
                                                   required = true,
-                                                  content = @Content(schema = @Schema(implementation = AIImageRequestDTO.class)))
+                                                    content = @Content(mediaType = "application/json",
+                                                       schema = @Schema(type = "object", description = "JSON object with image generation form data including prompt, size, and style parameters")))
+
                                        final AIImageRequestDTO aiImageRequestDTO) throws IOException {
         final User user = new WebResource.InitBuilder(request, response)
                 .requiredBackendUser(true)

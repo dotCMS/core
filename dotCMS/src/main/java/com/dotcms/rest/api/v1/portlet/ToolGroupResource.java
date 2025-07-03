@@ -1,6 +1,8 @@
 package com.dotcms.rest.api.v1.portlet;
 
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.rest.ResponseEntityMapStringObjectView;
+import com.dotcms.rest.ResponseEntityMapView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
@@ -13,6 +15,7 @@ import com.liferay.portal.model.User;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -64,7 +67,8 @@ public class ToolGroupResource implements Serializable {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Toolgroup removed from user successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityMapStringObjectView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid layout ID",
                     content = @Content(mediaType = "application/json")),
@@ -109,7 +113,7 @@ public class ToolGroupResource implements Serializable {
 
         APILocator.getRoleAPI().removeLayoutFromRole(layoutToRemove,
                 null == userid ? loggedInUser.getUserRole() : user.getUserRole());
-        return Response.ok(new ResponseEntityView(Map.of("message",
+        return Response.ok(new ResponseEntityView<>(Map.of("message",
                         layoutId + " removed from " + (null == userid ? loggedInUser.getUserId()
                                 : userid))))
                 .build();
@@ -124,7 +128,8 @@ public class ToolGroupResource implements Serializable {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Toolgroup added to user successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityMapStringObjectView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid layout ID",
                     content = @Content(mediaType = "application/json")),
@@ -169,7 +174,7 @@ public class ToolGroupResource implements Serializable {
 
         APILocator.getLayoutAPI()
                 .addLayoutForUser(layoutToAdd, null == userid ? loggedInUser : user);
-        return Response.ok(new ResponseEntityView(Map.of("message",
+        return Response.ok(new ResponseEntityView<>(Map.of("message",
                 layoutId + " added to " + (null == userid ? loggedInUser.getUserId()
                         : userid))))
                 .build();
@@ -182,7 +187,8 @@ public class ToolGroupResource implements Serializable {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Layout check completed successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityMapStringObjectView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid layout ID",
                     content = @Content(mediaType = "application/json")),
@@ -225,7 +231,7 @@ public class ToolGroupResource implements Serializable {
 
         final Layout layout = getLayout(layoutId);
 
-        return Response.ok(new ResponseEntityView(Map.of("message", APILocator.getRoleAPI()
+        return Response.ok(new ResponseEntityView<>(Map.of("message", APILocator.getRoleAPI()
                 .roleHasLayout(layout,
                         null == userid ? loggedInUser.getUserRole() : user.getUserRole()))))
                 .build();

@@ -4,6 +4,8 @@ import com.dotcms.health.api.HealthService;
 import com.dotcms.health.model.HealthCheckResult;
 import com.dotcms.health.model.HealthResponse;
 import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.ResponseEntityListStringView;
+import com.dotcms.rest.ResponseEntityMapView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
@@ -323,7 +325,7 @@ public class HealthResource {
                             description = "Successfully retrieved health check names",
                             content = @Content(
                                     mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseEntityHealthCheckNamesView.class)
+                                    schema = @Schema(implementation = ResponseEntityListStringView.class)
                             )
                     ),
                     @ApiResponse(responseCode = "403", description = "Forbidden - Authentication required"),
@@ -345,7 +347,7 @@ public class HealthResource {
             }
             
             List<String> checkNames = healthService.getHealthCheckNames();
-            return Response.ok(new ResponseEntityHealthCheckNamesView(checkNames)).build();
+            return Response.ok(new ResponseEntityListStringView(checkNames)).build();
             
         } catch (DotDataException e) {
             Logger.error(this, "Error retrieving health check names", e);
@@ -375,7 +377,7 @@ public class HealthResource {
                             description = "Successfully retrieved system status summary",
                             content = @Content(
                                     mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseEntityHealthStatusView.class)
+                                    schema = @Schema(implementation = ResponseEntityMapView.class)
                             )
                     ),
                     @ApiResponse(responseCode = "403", description = "Forbidden - Authentication required"),
@@ -400,7 +402,7 @@ public class HealthResource {
                 "alive", healthService.isAlive(),
                 "ready", healthService.isReady()
             );
-            return Response.ok(new ResponseEntityHealthStatusView(status)).build();
+            return Response.ok(new ResponseEntityMapView(status)).build();
             
         } catch (DotDataException e) {
             Logger.error(this, "Error retrieving system status", e);
@@ -431,7 +433,7 @@ public class HealthResource {
                             description = "Successfully triggered health checks refresh",
                             content = @Content(
                                     mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseEntityHealthStatusView.class)
+                                    schema = @Schema(implementation = ResponseEntityMapView.class)
                             )
                     ),
                     @ApiResponse(responseCode = "403", description = "Forbidden - Authentication required"),
@@ -454,7 +456,7 @@ public class HealthResource {
             
             healthService.refreshHealthChecks();
             Map<String, Object> result = Map.of("message", "Health checks refresh triggered");
-            return Response.ok(new ResponseEntityHealthStatusView(result)).build();
+            return Response.ok(new ResponseEntityMapView(result)).build();
             
         } catch (DotDataException e) {
             Logger.error(this, "Error refreshing health checks", e);
@@ -486,7 +488,7 @@ public class HealthResource {
                             description = "Successfully refreshed the health check",
                             content = @Content(
                                     mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseEntityHealthStatusView.class)
+                                    schema = @Schema(implementation = ResponseEntityMapView.class)
                             )
                     ),
                     @ApiResponse(responseCode = "403", description = "Forbidden - Authentication required"),
@@ -516,7 +518,7 @@ public class HealthResource {
             boolean success = healthService.refreshHealthCheck(checkName);
             if (success) {
                 Map<String, Object> result = Map.of("message", "Health check refreshed: " + checkName);
-                return Response.ok(new ResponseEntityHealthStatusView(result)).build();
+                return Response.ok(new ResponseEntityMapView(result)).build();
             } else {
                 return ExceptionMapperUtil.createResponse("", "Health check not found: " + checkName, Response.Status.NOT_FOUND);
             }

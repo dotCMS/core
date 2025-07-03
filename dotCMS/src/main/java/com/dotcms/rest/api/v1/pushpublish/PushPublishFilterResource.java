@@ -4,7 +4,7 @@ import com.dotcms.publishing.FilterDescriptor;
 import com.dotcms.publishing.PublisherAPI;
 import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.InitDataObject;
-import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.ResponseEntityListStringView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.MultiPartUtils;
@@ -175,7 +175,7 @@ public class PushPublishFilterResource {
         @ApiResponse(responseCode = "200", 
                     description = "Filter created successfully",
                     content = @Content(mediaType = "application/json",
-                                      schema = @Schema(implementation = ResponseEntityFilterNamesView.class))),
+                                      schema = @Schema(implementation = ResponseEntityListStringView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid filter data or filter already exists",
                     content = @Content(mediaType = "application/json")),
@@ -225,7 +225,7 @@ public class PushPublishFilterResource {
         }
 
         final List<String> filterNames = saveAndReloadFiltersFromForm(filterDescriptorForm, user);
-        return Response.ok(new ResponseEntityFilterNamesView(filterNames)).build();
+        return Response.ok(new ResponseEntityListStringView(filterNames)).build();
     }
 
     @Operation(
@@ -236,7 +236,7 @@ public class PushPublishFilterResource {
         @ApiResponse(responseCode = "200", 
                     description = "Filter created successfully from file",
                     content = @Content(mediaType = "application/json",
-                                      schema = @Schema(implementation = ResponseEntityFilterNamesView.class))),
+                                      schema = @Schema(implementation = ResponseEntityListStringView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid file format or filter already exists",
                     content = @Content(mediaType = "application/json")),
@@ -278,7 +278,7 @@ public class PushPublishFilterResource {
 
         Logger.debug(this, ()-> "Adding PP filter by file");
         final List<String> filterNames = saveAndReloadFiltersFromFile(multipart, user);
-        return Response.ok(new ResponseEntityFilterNamesView(filterNames)).build();
+        return Response.ok(new ResponseEntityListStringView(filterNames)).build();
     }
 
     @Operation(
@@ -289,7 +289,7 @@ public class PushPublishFilterResource {
         @ApiResponse(responseCode = "200", 
                     description = "Filter updated successfully",
                     content = @Content(mediaType = "application/json",
-                                      schema = @Schema(implementation = ResponseEntityFilterNamesView.class))),
+                                      schema = @Schema(implementation = ResponseEntityListStringView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid filter data",
                     content = @Content(mediaType = "application/json")),
@@ -338,7 +338,7 @@ public class PushPublishFilterResource {
         }
 
         final List<String> filterNames = saveAndReloadFiltersFromForm(filterDescriptorForm, user);
-        return Response.ok(new ResponseEntityFilterNamesView(filterNames)).build();
+        return Response.ok(new ResponseEntityListStringView(filterNames)).build();
     }
 
     @Operation(
@@ -349,7 +349,7 @@ public class PushPublishFilterResource {
         @ApiResponse(responseCode = "200", 
                     description = "Filter updated successfully from file",
                     content = @Content(mediaType = "application/json",
-                                      schema = @Schema(implementation = ResponseEntityFilterNamesView.class))),
+                                      schema = @Schema(implementation = ResponseEntityListStringView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid file format",
                     content = @Content(mediaType = "application/json")),
@@ -391,7 +391,7 @@ public class PushPublishFilterResource {
 
         Logger.debug(this, ()-> "Updating PP filter by file");
         final List<String> filterNames = updateAndReloadFiltersFromFile(multipart, user);
-        return Response.ok(new ResponseEntityFilterNamesView(filterNames)).build();
+        return Response.ok(new ResponseEntityListStringView(filterNames)).build();
     }
 
     @Operation(
@@ -402,7 +402,7 @@ public class PushPublishFilterResource {
         @ApiResponse(responseCode = "200", 
                     description = "Filter deleted successfully",
                     content = @Content(mediaType = "application/json",
-                                      schema = @Schema(implementation = ResponseEntityFilterNamesView.class))),
+                                      schema = @Schema(implementation = ResponseEntityListStringView.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - authentication required",
                     content = @Content(mediaType = "application/json")),
@@ -441,7 +441,7 @@ public class PushPublishFilterResource {
         if (deleted) {
             final List<String> filterNames =
                     this.publisherAPI.get().getFiltersDescriptorsByRole(user).stream().map(FilterDescriptor::getKey).collect(Collectors.toList());
-            return Response.ok(new ResponseEntityFilterNamesView(filterNames)).build();
+            return Response.ok(new ResponseEntityListStringView(filterNames)).build();
         }
         return Response.status(Response.Status.EXPECTATION_FAILED).
                 entity(new ResponseEntityFilterErrorView(List.of(

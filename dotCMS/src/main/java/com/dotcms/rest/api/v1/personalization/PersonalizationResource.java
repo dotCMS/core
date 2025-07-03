@@ -2,6 +2,7 @@ package com.dotcms.rest.api.v1.personalization;
 
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.ResponseEntityStringView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.BadRequestException;
@@ -160,7 +161,7 @@ public class PersonalizationResource {
         @ApiResponse(responseCode = "200", 
                     description = "Page personalization deleted successfully",
                     content = @Content(mediaType = "application/json",
-                                      schema = @Schema(implementation = ResponseEntityPersonalizationOperationView.class))),
+                                      schema = @Schema(implementation = ResponseEntityStringView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid parameters, trying to delete default personalization, or persona doesn't exist",
                     content = @Content(mediaType = "application/json")),
@@ -216,6 +217,6 @@ public class PersonalizationResource {
                 Persona.DOT_PERSONA_PREFIX_SCHEME + StringPool.COLON + personalization,
                 currentVariantId);
 
-        return Response.ok(new ResponseEntityView("OK")).build();
+        return Response.ok(new ResponseEntityView<>("OK")).build();
     } // personalizePageContainers
 }

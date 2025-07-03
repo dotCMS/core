@@ -2,6 +2,7 @@ package com.dotcms.rest.api.v1.system.permission;
 
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.ResponseEntityMapView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
@@ -93,7 +94,8 @@ public class PermissionResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Permissions retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityPermissionsByTypeView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid parameters",
                     content = @Content(mediaType = "application/json")),
@@ -142,7 +144,7 @@ public class PermissionResource {
                 null != permissionableTypes? Arrays.asList(permissionableTypes.split(StringPool.COMMA)): null
                 );
 
-        return Response.ok(new ResponseEntityView(permissionsMap)).build();
+        return Response.ok(new ResponseEntityView<>(permissionsMap)).build();
     }
 
     /**

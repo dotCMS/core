@@ -71,7 +71,7 @@ public class CompletionsResource {
         responses = {
             @ApiResponse(responseCode = "200", description = "Completion generated successfully",
                 content = @Content(mediaType = "application/json",
-                    schema = @Schema(implementation = Object.class))),
+                    schema = @Schema(type = "object", description = "AI completion response containing generated text and metadata"))),
             @ApiResponse(responseCode = "400", description = "Bad request - Missing or invalid prompt"),
             @ApiResponse(responseCode = "401", description = "Unauthorized - User not authenticated"),
             @ApiResponse(responseCode = "500", description = "Internal server error")
@@ -114,7 +114,7 @@ public class CompletionsResource {
         responses = {
             @ApiResponse(responseCode = "200", description = "Raw completion generated successfully",
                 content = @Content(mediaType = "application/json",
-                    schema = @Schema(implementation = Object.class))),
+                    schema = @Schema(type = "object", description = "AI completion response containing generated text and metadata"))),
             @ApiResponse(responseCode = "400", description = "Bad request - Missing or invalid prompt"),
             @ApiResponse(responseCode = "401", description = "Unauthorized - User not authenticated"),
             @ApiResponse(responseCode = "500", description = "Internal server error")
@@ -155,7 +155,7 @@ public class CompletionsResource {
         responses = {
             @ApiResponse(responseCode = "200", description = "Configuration retrieved successfully",
                 content = @Content(mediaType = "application/json",
-                    schema = @Schema(implementation = Map.class))),
+                    schema = @Schema(type = "object", description = "AI service configuration with available models and settings"))),
             @ApiResponse(responseCode = "401", description = "Unauthorized - User not authenticated"),
             @ApiResponse(responseCode = "500", description = "Internal server error")
         }

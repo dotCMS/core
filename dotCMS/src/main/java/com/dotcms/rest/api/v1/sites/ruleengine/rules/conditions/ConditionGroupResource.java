@@ -80,7 +80,8 @@ public class ConditionGroupResource  {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Condition groups retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = MapStringRestConditionGroupView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid site ID or rule ID",
                     content = @Content(mediaType = "application/json")),
@@ -123,7 +124,8 @@ public class ConditionGroupResource  {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Condition group retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = RestConditionGroup.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid parameters",
                     content = @Content(mediaType = "application/json")),
@@ -162,7 +164,8 @@ public class ConditionGroupResource  {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Condition group created successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(type = "object", description = "Response containing the created condition group ID"))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid parameters or condition group data",
                     content = @Content(mediaType = "application/json")),
@@ -215,7 +218,8 @@ public class ConditionGroupResource  {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Condition group updated successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = RestConditionGroup.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid parameters or condition group data",
                     content = @Content(mediaType = "application/json")),
