@@ -21,6 +21,12 @@ import com.dotmarketing.util.UtilMethods;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -65,15 +71,37 @@ public class BundlePublisherResource {
 	 *
 	 * @see PushPublisherJob
 	 */
+	@Operation(
+		summary = "Publish content bundle",
+		description = "Receives a content bundle from another dotCMS instance and publishes it. Validates authentication tokens and adds the bundle to the publish thread for processing. Requires Enterprise license."
+	)
+	@ApiResponses(value = {
+		@ApiResponse(responseCode = "200", 
+					description = "Bundle published successfully",
+					content = @Content(mediaType = "application/json",
+									  schema = @Schema(implementation = Bundle.class))),
+		@ApiResponse(responseCode = "400", 
+					description = "Bad request - bundle expected in request body",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "401", 
+					description = "Unauthorized - invalid or missing authentication token",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "403", 
+					description = "Forbidden - community license or insufficient permissions",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "500", 
+					description = "Internal server error during bundle publishing",
+					content = @Content(mediaType = "application/json"))
+	})
 	@POST
 	@Path("/publish")
 	@Consumes(MediaType.APPLICATION_OCTET_STREAM)
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response publish(
-			@QueryParam("type")        final String type,
-			@QueryParam("callback")    final String callback,
-			@QueryParam("FORCE_PUSH")  final boolean forcePush,
-			@QueryParam("filterkey")   final String filterKey,
+			@Parameter(description = "Response type for the operation", required = false) @QueryParam("type")        final String type,
+			@Parameter(description = "Response callback for the operation", required = false) @QueryParam("callback")    final String callback,
+			@Parameter(description = "Whether to force push everything regardless of filters", required = false) @QueryParam("FORCE_PUSH")  final boolean forcePush,
+			@Parameter(description = "ID of the Push Publishing Filter used to generate the bundle", required = false) @QueryParam("filterkey")   final String filterKey,
 			@Context final HttpServletRequest  request,
 			@Context final HttpServletResponse response) throws Exception {
 		if (LicenseManager.getInstance().isCommunity()) {

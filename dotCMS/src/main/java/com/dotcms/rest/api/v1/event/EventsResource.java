@@ -29,6 +29,12 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import javax.servlet.http.HttpServletRequest;
@@ -50,7 +56,7 @@ import java.util.concurrent.TimeUnit;
  * @since Jul 7, 2016
  */
 @SuppressWarnings("serial")
-@Tag(name = "Administration")
+@Tag(name = "Administration", description = "System events and long polling endpoints for real-time event monitoring")
 @Path("/ws/v1/system")
 public class EventsResource implements Serializable {
 
@@ -87,13 +93,32 @@ public class EventsResource implements Serializable {
     }
 
 
+    @Operation(
+        summary = "Get synchronous system events",
+        description = "Retrieves system events synchronously using long polling. Alternative to WebSocket when WebSocket connection is not available. Returns immediately with available events."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "System events retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntitySystemEventsView.class))),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @Path("/syncevents")
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response getSyncEvents(@Context final HttpServletRequest httpServletRequest,
                                         @Context final HttpServletResponse httpServletResponse,
-                                        @QueryParam("lastcallback") Long lastCallback) {
+                                        @Parameter(description = "Timestamp of last callback to filter events (optional)") @QueryParam("lastcallback") Long lastCallback) {
 
 
         Response response              = null;
@@ -120,7 +145,7 @@ public class EventsResource implements Serializable {
 
                 systemEvents = appContext.getAttribute(SystemEventsDelegate.RESULT);
 
-                response = Response.ok(marshalUtils.marshal(new ResponseEntityView<>(systemEvents))).build();
+                response = Response.ok(marshalUtils.marshal(new ResponseEntitySystemEventsView(systemEvents))).build();
             }
         } catch (Exception e) { // this is an unknown error, so we report as a 500.
 
@@ -130,6 +155,28 @@ public class EventsResource implements Serializable {
         return response;
     } // getSyncEvents.
 
+    @Operation(
+        summary = "Get asynchronous system events",
+        description = "Establishes an asynchronous long polling connection to receive system events. Connection will timeout after configured seconds (default 30s). Uses suspended AsyncResponse for efficient resource utilization."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "System events retrieved successfully via async response",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntitySystemEventsView.class))),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "503", 
+                    description = "Service unavailable - operation timeout",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @Path("/events")
     @NoCache
@@ -137,7 +184,7 @@ public class EventsResource implements Serializable {
     public final void getEvents(@Context final HttpServletRequest httpServletRequest,
                                 @Context final HttpServletResponse httpServletResponse,
                                 @Suspended final AsyncResponse asyncResponse,
-                                @QueryParam("lastcallback") Long lastCallback) {
+                                @Parameter(description = "Timestamp of last callback to filter events (optional)") @QueryParam("lastcallback") Long lastCallback) {
         Response response;
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
@@ -197,7 +244,7 @@ public class EventsResource implements Serializable {
 
             Logger.debug(this, "Operation time out for a asyn response on Events long polling");
             final Response response = Response.status(Response.Status.SERVICE_UNAVAILABLE).entity(
-                    new ResponseEntityView(Arrays.asList(new ErrorEntity("operation-timeout", message)))).build();
+                    new ResponseEntityEventErrorView(Arrays.asList(new ErrorEntity("operation-timeout", message)))).build();
 
             asyncResponse.resume(response);
         }

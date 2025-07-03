@@ -27,7 +27,14 @@ import com.dotmarketing.util.SecurityLogger;
 import com.liferay.portal.ejb.UserManager;
 import com.liferay.portal.ejb.UserManagerFactory;
 import com.liferay.util.LocaleUtil;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import javax.ws.rs.Consumes;
 
 /**
  * This resource change the user password.
@@ -54,12 +61,35 @@ public class ResetPasswordResource {
         this.responseUtil = responseUtil;
     }
 
+    @Operation(
+        summary = "Reset user password",
+        description = "Resets a user's password using a valid token received via email or other secure channel"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Password reset successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityPasswordResetView.class))),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid login, token, or password",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - token expired or invalid",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @POST
     @JSONP
     @InitRequestRequired
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Consumes(MediaType.APPLICATION_JSON)
     public final Response resetPassword(@Context final HttpServletRequest request,
+                                        @RequestBody(description = "Reset password form containing token and new password", 
+                                                   required = true,
+                                                   content = @Content(schema = @Schema(implementation = ResetPasswordForm.class)))
                                         final ResetPasswordForm resetPasswordForm) {
 
         Response res;
@@ -78,7 +108,7 @@ public class ResetPasswordResource {
 
             SecurityLogger.logInfo(ResetPasswordResource.class,
                     String.format("User %s successful changed his password from IP: %s", userIdOpt.get(), request.getRemoteAddr()));
-            res = Response.ok(new ResponseEntityView(userIdOpt.get())).build();
+            res = Response.ok(new ResponseEntityView<>(userIdOpt.get())).build();
         } catch (NoSuchUserException e) {
         	SecurityLogger.logInfo(ResetPasswordResource.class,
         			"Error resetting password. "

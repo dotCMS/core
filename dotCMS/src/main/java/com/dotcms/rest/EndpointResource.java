@@ -49,7 +49,7 @@ import java.util.Set;
 
 /**
  * Endpoint for managing PP endpoints
- @author jsanca
+ * @author jsanca
  */
 @Tag(name = "Environment")
 @Path("/v1/environments/endpoints")

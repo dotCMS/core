@@ -1,7 +1,10 @@
 package com.dotcms.rest.api.v1.system.cache;
 
 import com.dotcms.enterprise.cache.provider.CacheProviderAPIImpl;
+import com.dotcms.rest.ResponseEntityMapStringObjectView;
+import com.dotcms.rest.ResponseEntitySetStringView;
 import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.ResponseEntityStringView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotmarketing.business.APILocator;
@@ -11,6 +14,12 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.MaintenanceUtil;
 import com.dotmarketing.util.PortletID;
 import com.google.common.annotations.VisibleForTesting;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import javax.servlet.http.HttpServletRequest;
@@ -103,12 +112,29 @@ public class CacheResource {
      * @param group {@link String}
      * @return Response
      */
+    @Operation(
+        summary = "Show cache providers for group",
+        description = "Returns the providers associated to a group"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Cache providers retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityListCacheProviderView.class))),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - maintenance portlet access required",
+                    content = @Content(mediaType = "application/json"))
+    })
     @NoCache
     @GET
     @Path("/providers/{group: .*}")
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public Response showProviders(@Context final HttpServletRequest request,
                                   @Context final HttpServletResponse response,
+                                  @Parameter(description = "Cache group", required = true)
                                   @PathParam("group") final String group) {
 
         new WebResource.InitBuilder(webResource)
@@ -132,13 +158,31 @@ public class CacheResource {
      *
      * @return Response
      */
+    @Operation(
+        summary = "Show specific cache provider",
+        description = "Returns the provider associated to a group"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Cache provider retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityCacheProviderView.class))),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - maintenance portlet access required",
+                    content = @Content(mediaType = "application/json"))
+    })
     @NoCache
     @GET
     @Path("/provider/{provider: .*}/{group: .*}")
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public Response showProviders(@Context final HttpServletRequest request,
                                   @Context final HttpServletResponse response,
+                                  @Parameter(description = "Cache provider name", required = true)
                                   @PathParam("provider") final String provider,
+                                  @Parameter(description = "Cache group", required = true)
                                   @PathParam("group") final String group) {
 
         new WebResource.InitBuilder(webResource)
@@ -150,7 +194,7 @@ public class CacheResource {
 
         Logger.debug(this, ()-> "Showing cache providers, group: " + group + ", provider = " + provider);
 
-        return Response.ok(new ResponseEntityView(this.getProvider(provider, group))).build();
+        return Response.ok(new ResponseEntityView<>(this.getProvider(provider, group))).build();
     }
 
     /**
@@ -162,13 +206,31 @@ public class CacheResource {
      *  @param group {@link String}
      *  @return Response
      */
+    @Operation(
+        summary = "Get cache keys",
+        description = "Get keys for a provider and group"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Cache keys retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntitySetStringView.class))),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - maintenance portlet access required",
+                    content = @Content(mediaType = "application/json"))
+    })
     @NoCache
     @GET
     @Path("/provider/{provider: .*}/keys/{group: .*}")
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public Response getKeys(@Context final HttpServletRequest request,
                             @Context final HttpServletResponse response,
+                            @Parameter(description = "Cache provider name", required = true)
                             @PathParam("provider") final String provider,
+                            @Parameter(description = "Cache group", required = true)
                             @PathParam("group") final String group) {
 
         new WebResource.InitBuilder(webResource)
@@ -180,8 +242,10 @@ public class CacheResource {
 
         Logger.debug(this, ()-> "Showing cache Key providers, group: " + group + ", provider = " + provider);
 
-        return Response.ok(new ResponseEntityView(
-                this.getProvider(provider, group).getKeys(group))).build();
+        return Response.ok(
+                        new ResponseEntitySetStringView(
+                                this.getProvider(provider, group).getKeys(group)))
+                .build();
     }
 
     /**
@@ -193,14 +257,33 @@ public class CacheResource {
      *  @param id {@link String}
      *  @return Response
      */
+    @Operation(
+        summary = "Show cache object",
+        description = "Shows a specific object by id in cache provider and group"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Cache object retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityCacheObjectView.class))),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - maintenance portlet access required",
+                    content = @Content(mediaType = "application/json"))
+    })
     @NoCache
     @GET
     @Path("/provider/{provider: .*}/object/{group: .*}/{id: .*}")
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public Response showObject(@Context final HttpServletRequest request,
                                @Context final HttpServletResponse response,
+                               @Parameter(description = "Cache provider name", required = true)
                                @PathParam("provider") final String provider,
+                               @Parameter(description = "Cache group", required = true)
                                @PathParam("group") final String group,
+                               @Parameter(description = "Object ID", required = true)
                                @PathParam("id") final String id) {
 
         new WebResource.InitBuilder(webResource)
@@ -214,7 +297,7 @@ public class CacheResource {
                 + ", provider = " + provider + ", id = " + id);
 
         final Object obj = this.getProvider(provider, group).get(group, id);
-        return Response.ok(new ResponseEntityView(obj == null? "NOPE" : obj)).build();
+        return Response.ok(new ResponseEntityView<>(obj == null? "NOPE" : obj)).build();
     }
 
     /**
@@ -225,13 +308,31 @@ public class CacheResource {
      *  @param group {@link String}
      * @return Response
      */
+    @Operation(
+        summary = "Show all cache objects",
+        description = "Show all objects for a provider and group"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Cache objects retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityMapStringObjectView.class))),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - maintenance portlet access required",
+                    content = @Content(mediaType = "application/json"))
+    })
     @NoCache
     @GET
     @Path("/provider/{provider: .*}/objects/{group: .*}")
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public Response showObjects(@Context final HttpServletRequest request,
                                @Context final HttpServletResponse response,
+                               @Parameter(description = "Cache provider name", required = true)
                                @PathParam("provider") final String provider,
+                               @Parameter(description = "Cache group", required = true)
                                @PathParam("group") final String group) {
 
         new WebResource.InitBuilder(webResource)
@@ -252,7 +353,7 @@ public class CacheResource {
             final Object obj = this.getProvider(provider, group).get(group, key);
             objectMap.put(key, obj == null? "NOPE" : obj);
         }
-        return Response.ok(new ResponseEntityView(objectMap)).build();
+        return Response.ok(new ResponseEntityView<>(objectMap)).build();
     }
 
     /**
@@ -263,13 +364,31 @@ public class CacheResource {
      *  @param group {@link String}
      * @return Response
      */
+    @Operation(
+        summary = "Flush cache group",
+        description = "Flush all objects for a provider and group"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Cache group flushed successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityStringView.class))),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - maintenance portlet access required",
+                    content = @Content(mediaType = "application/json"))
+    })
     @NoCache
     @DELETE
     @Path("/provider/{provider: .*}/flush/{group: .*}")
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public Response flushGroup(@Context final HttpServletRequest request,
                                @Context final HttpServletResponse response,
+                               @Parameter(description = "Cache provider name", required = true)
                                @PathParam("provider") final String provider,
+                               @Parameter(description = "Cache group", required = true)
                                @PathParam("group") final String group) {
 
         new WebResource.InitBuilder(webResource)
@@ -283,7 +402,7 @@ public class CacheResource {
                 + ", provider = " + provider);
 
         this.getProvider(provider, group).remove(group);
-        return Response.ok(new ResponseEntityView("flushed")).build();
+        return Response.ok(new ResponseEntityView<>("flushed")).build();
     }
 
     /**
@@ -294,14 +413,33 @@ public class CacheResource {
      *  @param group {@link String}
      * @return Response
      */
+    @Operation(
+        summary = "Flush cache object",
+        description = "Deletes a specific object for a provider and group"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Cache object flushed successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityStringView.class))),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - maintenance portlet access required",
+                    content = @Content(mediaType = "application/json"))
+    })
     @NoCache
     @DELETE
     @Path("/provider/{provider: .*}/flush/{group: .*}/{id: .*}")
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public Response flushObject(@Context final HttpServletRequest request,
                                 @Context final HttpServletResponse response,
+                                @Parameter(description = "Cache provider name", required = true)
                                 @PathParam("provider") final String provider,
+                                @Parameter(description = "Cache group", required = true)
                                 @PathParam("group") final String group,
+                                @Parameter(description = "Object ID", required = true)
                                 @PathParam("id") final String id) {
 
         new WebResource.InitBuilder(webResource)
@@ -315,7 +453,7 @@ public class CacheResource {
                 + ", provider = " + provider);
 
         this.getProvider(provider, group).remove(group, id);
-        return Response.ok(new ResponseEntityView("flushed")).build();
+        return Response.ok(new ResponseEntityView<>("flushed")).build();
     }
 
     /**
@@ -325,12 +463,29 @@ public class CacheResource {
      *  @param provider {@link String}
      * @return Response
      */
+    @Operation(
+        summary = "Flush all cache for provider",
+        description = "Deletes all objects for a provider (will clean all groups and generate a new key)"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "All cache for provider flushed successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityStringView.class))),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - maintenance portlet access required",
+                    content = @Content(mediaType = "application/json"))
+    })
     @NoCache
     @DELETE
     @Path("/provider/{provider: .*}/flush")
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public Response flushAll(@Context final HttpServletRequest request,
                                 @Context final HttpServletResponse response,
+                                @Parameter(description = "Cache provider name", required = true)
                                 @PathParam("provider") final String provider) {
 
         new WebResource.InitBuilder(webResource)
@@ -343,6 +498,6 @@ public class CacheResource {
         Logger.debug(this, ()-> "Deletes all objects on  cache provider = " + provider);
 
         MaintenanceUtil.flushCache();
-        return Response.ok(new ResponseEntityView("flushed all")).build();
+        return Response.ok(new ResponseEntityView<>("flushed all")).build();
     }
 }

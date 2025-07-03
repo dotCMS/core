@@ -3,6 +3,11 @@ package com.dotcms.rest.api.v1.system.monitor;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.rest.annotation.NoCache;
 import org.glassfish.jersey.server.JSONP;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import javax.servlet.http.HttpServletRequest;
@@ -46,6 +51,22 @@ public class MonitorResource {
      * @param request
      * @return
      */
+    @Operation(
+        summary = "Heavy system check",
+        description = "Comprehensive health check for dotCMS startup and subsystems status"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "System is healthy",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityMonitorStatsView.class))),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - access not granted",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "503", 
+                    description = "Service unavailable - system not healthy",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @JSONP
     @Path("/")
@@ -68,6 +89,22 @@ public class MonitorResource {
         return Response.ok(helper.getMonitorStats(request).toMap()).build();
     }
 
+    @Operation(
+        summary = "System ready check",
+        description = "Checks if the system is ready to serve traffic (alias for heavy check)"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "System is ready",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityMonitorStatsView.class))),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - access not granted",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "503", 
+                    description = "Service unavailable - system not ready",
+                    content = @Content(mediaType = "application/json"))
+    })
     @NoCache
     @GET
     @JSONP
@@ -87,6 +124,19 @@ public class MonitorResource {
      * @param request
      * @return
      */
+    @Operation(
+        summary = "Light system check",
+        description = "Lightweight health check for load balancers and kubernetes"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "System is alive (no body)"
+                    ),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - access not granted (no body)"),
+        @ApiResponse(responseCode = "503", 
+                    description = "Service unavailable - system not alive (no body)")
+    })
     @GET
     @Path("/{a:alive|light}")
     @CloseDBIfOpened

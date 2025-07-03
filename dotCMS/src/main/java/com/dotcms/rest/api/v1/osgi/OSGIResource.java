@@ -1,7 +1,7 @@
 package com.dotcms.rest.api.v1.osgi;
 
 import com.dotcms.rest.ResponseEntityBooleanView;
-import com.dotcms.rest.ResponseEntityListView;
+import com.dotcms.rest.ResponseEntityListStringView;
 import com.dotcms.rest.ResponseEntityStringView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
@@ -17,8 +17,10 @@ import com.dotmarketing.util.SecurityLogger;
 import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vavr.Tuple2;
@@ -576,9 +578,9 @@ public class OSGIResource {
                                     schema = @Schema(implementation = ResponseEntityStringView.class))),
                     @ApiResponse(responseCode = "403", description = "Can not access the upload folder or invalid OSGI Upload request"),
             })
-    public final Response uploadBundles(@Context final HttpServletRequest request,
-                                              @Context final HttpServletResponse response,
-                                              final FormDataMultiPart multipart) throws IOException {
+    public final Response uploadBundles(@Parameter(hidden = true) @Context final HttpServletRequest request,
+                                              @Parameter(hidden = true) @Context final HttpServletResponse response,
+                                              @RequestBody(description = "Multipart form data containing OSGI bundle files", required = true) final FormDataMultiPart multipart) throws IOException {
 
         checkUserPermissions(request, response, PortletID.DYNAMIC_PLUGINS.toString());
 
@@ -648,9 +650,9 @@ public class OSGIResource {
                     @ApiResponse(
                             responseCode = "200",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseEntityListView.class)))
+                                    schema = @Schema(implementation = ResponseEntityListStringView.class)))
             })
-    public ResponseEntityListView<String> getAvailablePlugis (@Context HttpServletRequest request,
+    public ResponseEntityListStringView getAvailablePlugis (@Context HttpServletRequest request,
                                                       @Context final HttpServletResponse response) {
 
         checkUserPermissions(request, response, DYNAMIC_PLUGINS);
@@ -660,7 +662,7 @@ public class OSGIResource {
         final String path = OSGIUtil.getInstance().getFelixUndeployPath();
         final File undeployDirectory = new File(path);
 
-        return new ResponseEntityListView<>(
+        return new ResponseEntityListStringView(
                 Arrays.stream(undeployDirectory.list()).filter(f -> f.toLowerCase().endsWith(".jar")).collect(Collectors.toList())
         );
     }

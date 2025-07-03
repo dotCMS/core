@@ -15,7 +15,7 @@ import com.dotcms.contenttype.transform.contenttype.ContentTypeInternationalizat
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.InitDataObject;
-import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.ResponseEntityListMapView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.InitRequestRequired;
 import com.dotcms.rest.annotation.NoCache;
@@ -205,7 +205,8 @@ public class ContentTypeResource implements Serializable {
 															"  }\n" +
 															"}"
 											)
-									}
+									},
+									schema = @Schema(implementation = ResponseEntityContentTypeOperationView.class)
 							)
 					),
 					@ApiResponse(responseCode = "400", description = "Bad Request"),
@@ -279,7 +280,7 @@ public class ContentTypeResource implements Serializable {
 				session.removeAttribute(SELECTED_STRUCTURE_KEY);
 			}
 
-			response = Response.ok(new ResponseEntityView<>(responseMap)).build();
+			response = Response.ok(new ResponseEntityContentTypeOperationView(responseMap)).build();
 		} catch (final IllegalArgumentException e) {
 			final String errorMsg = String.format("Missing required information when copying Content Type " +
 					"'%s': %s", baseVariableName, ExceptionUtil.getErrorMessage(e));
@@ -442,7 +443,8 @@ public class ContentTypeResource implements Serializable {
 															"  \"permissions\": []\n" +
 															"}"
 											)
-									}
+									},
+									schema = @Schema(implementation = ResponseEntityListMapView.class)
 							)
 					),
 					@ApiResponse(responseCode = "400", description = "Bad Request"),
@@ -523,7 +525,7 @@ public class ContentTypeResource implements Serializable {
 			Logger.debug(this, ()->String.format("Creating Content Type(s): %s", form.getRequestJson()));
 			final HttpSession session = req.getSession(false);
 			final Iterable<ContentTypeForm.ContentTypeFormEntry> typesToSave = form.getIterable();
-			final List<Map<Object, Object>> savedContentTypes = new ArrayList<>();
+			final List<Map<String, Object>> savedContentTypes = new ArrayList<>();
 
 			for (final ContentTypeForm.ContentTypeFormEntry entry : typesToSave) {
 				final ContentType type = contentTypeHelper.evaluateContentTypeRequest(
@@ -540,7 +542,7 @@ public class ContentTypeResource implements Serializable {
 								entry.workflows,
 							form.getSystemActions(), APILocator.getContentTypeAPI(user, true), true);
 				final ContentType contentTypeSaved = tuple2._1;
-				final ImmutableMap<Object, Object> responseMap = ImmutableMap.builder()
+				final ImmutableMap<String, Object> responseMap = ImmutableMap.<String, Object>builder()
 						.putAll(contentTypeHelper.contentTypeToMap(contentTypeSaved, user))
 						.put(MAP_KEY_WORKFLOWS,
 								this.workflowHelper.findSchemesByContentType(contentTypeSaved.id(),
@@ -554,7 +556,7 @@ public class ContentTypeResource implements Serializable {
                   session.removeAttribute(SELECTED_STRUCTURE_KEY);
 				}
 			}
-			return Response.ok(new ResponseEntityView<>(savedContentTypes)).build();
+			return Response.ok(new ResponseEntityListMapView(savedContentTypes)).build();
 		} catch (final IllegalArgumentException e) {
 			final String errorMsg = String.format("Missing required information when creating Content Type(s): " +
 					"%s", ExceptionUtil.getErrorMessage(e));
@@ -640,7 +642,8 @@ public class ContentTypeResource implements Serializable {
 															"  \"permissions\": []\n" +
 															"}"
 											)
-									}
+									},
+									schema = @Schema(implementation = ResponseEntityContentTypeDetailView.class)
 							)
 					),
 					@ApiResponse(responseCode = "400", description = "Bad Request"),
@@ -717,8 +720,8 @@ public class ContentTypeResource implements Serializable {
 					this.saveContentTypeAndDependencies(contentType, user,
 							form.getWorkflows(), form.getSystemActions(),
 							contentTypeAPI, false);
-			final ImmutableMap.Builder<Object, Object> builderMap =
-					ImmutableMap.builder()
+			final ImmutableMap.Builder<String, Object> builderMap =
+					ImmutableMap.<String, Object>builder()
 							.putAll(contentTypeHelper.contentTypeToMap(tuple2._1, user))
 							.put(MAP_KEY_WORKFLOWS,
 									this.workflowHelper.findSchemesByContentType(
@@ -727,7 +730,7 @@ public class ContentTypeResource implements Serializable {
 									.collect(Collectors.toMap(
 											SystemActionWorkflowActionMapping::getSystemAction,
 											mapping -> mapping)));
-			return Response.ok(new ResponseEntityView<>(builderMap.build())).build();
+			return Response.ok(new ResponseEntityContentTypeDetailView(builderMap.build())).build();
 		} catch (final NotFoundInDbException e) {
 			Logger.error(this, String.format("Content Type with ID or var name '%s' was not found", idOrVar), e);
 			return ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
@@ -974,7 +977,8 @@ public class ContentTypeResource implements Serializable {
 															"  \"permissions\": []\n" +
 															"}"
 											)
-									}
+									},
+									schema = @Schema(implementation = ResponseEntityContentTypeJsonView.class)
 							)
 					),
 					@ApiResponse(responseCode = "403", description = "Forbidden"),
@@ -1007,7 +1011,7 @@ public class ContentTypeResource implements Serializable {
 			JSONObject joe = new JSONObject();
 			joe.put("deleted", type.id());
 
-			return Response.ok(new ResponseEntityView<>(joe.toString())).build();
+			return Response.ok(new ResponseEntityContentTypeJsonView(joe.toString())).build();
 		} catch (final DotSecurityException e) {
 			throw new ForbiddenException(e);
 		} catch (final Exception e) {
@@ -1072,7 +1076,8 @@ public class ContentTypeResource implements Serializable {
 															"  \"permissions\": []\n" +
 															"}\n"
 											)
-									}
+									},
+									schema = @Schema(implementation = ResponseEntityContentTypeDetailView.class)
 							)
 					),
 					@ApiResponse(responseCode = "403", description = "Forbidden"),
@@ -1127,7 +1132,7 @@ public class ContentTypeResource implements Serializable {
 
 			final ContentTypeInternationalization contentTypeInternationalization = languageId != null ?
 					new ContentTypeInternationalization(languageId, live, user) : null;
-			final ImmutableMap<Object, Object> resultMap = ImmutableMap.builder()
+			final ImmutableMap<String, Object> resultMap = ImmutableMap.<String, Object>builder()
 					.putAll(contentTypeHelper.contentTypeToMap(type,
 							contentTypeInternationalization, user))
 					.put(MAP_KEY_WORKFLOWS, this.workflowHelper.findSchemesByContentType(
@@ -1139,8 +1144,9 @@ public class ContentTypeResource implements Serializable {
 									mapping -> mapping))).build();
 
 			response = ("true".equalsIgnoreCase(req.getParameter("include_permissions")))?
-					Response.ok(new ResponseEntityView<>(resultMap, PermissionsUtil.getInstance().getPermissionsArray(type, initData.getUser()))).build():
-					Response.ok(new ResponseEntityView<>(resultMap)).build();
+					Response.ok(new ResponseEntityContentTypeDetailView(
+                            (Map<String, Object>) resultMap, PermissionsUtil.getInstance().getPermissionsArray(type, initData.getUser()))).build():
+					Response.ok(new ResponseEntityContentTypeDetailView((Map<String, Object>) resultMap)).build();
 		} catch (final DotSecurityException e) {
 			throw new ForbiddenException(e);
 		} catch (final NotFoundInDbException nfdb2) {
@@ -1234,7 +1240,8 @@ public class ContentTypeResource implements Serializable {
 															"  \"permissions\": []\n" +
 															"}\n"
 											)
-									}
+									},
+									schema = @Schema(implementation = ResponseEntityListContentTypeView.class)
 							)
 					),
 					@ApiResponse(responseCode = "400", description = "Bad Request"),
@@ -1334,7 +1341,8 @@ public class ContentTypeResource implements Serializable {
 															"  \"permissions\": []\n" +
 															"}"
 											)
-									}
+									},
+									schema = @Schema(implementation = ResponseEntityBaseContentTypesView.class)
 							)
 					),
 					@ApiResponse(responseCode = "500", description = "Internal Server Error")
@@ -1344,7 +1352,7 @@ public class ContentTypeResource implements Serializable {
 		Response response;
 		try {
 			final List<BaseContentTypesView> types = contentTypeHelper.getTypes(request);
-			response = Response.ok(new ResponseEntityView<>(types)).build();
+			response = Response.ok(new ResponseEntityBaseContentTypesView(types)).build();
 		} catch (Exception e) { // this is an unknown error, so we report as a 500.
 
 			response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
@@ -1371,9 +1379,8 @@ public class ContentTypeResource implements Serializable {
 	 *                     Variable Name, or Inode. You can pass down part of the characters.
 	 * @param page         The selected results page, for pagination purposes.
 	 * @param perPage      The number of results to return per page, for pagination purposes.
-	 * @param orderByParam The column name that will be used to sort the paginated results. For
-	 *                     reference, please check
-	 *                     {@link com.dotmarketing.common.util.SQLUtil#ORDERBY_WHITELIST}.
+	 * @param orderByParam The column name that will be used to sort the paginated results.
+	 *                     .
 	 * @param direction    The direction of the sorting. It can be either "ASC" or "DESC".
 	 * @param type         The Velocity variable name of the Content Type  to retrieve.
 	 * @param siteId       The identifier of the Site where the requested Content Types live.

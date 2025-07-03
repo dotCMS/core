@@ -2,7 +2,6 @@ package com.dotcms.rest.api.v1.accessibility;
 
 import com.dotcms.enterprise.achecker.ACheckerResponse;
 import com.dotcms.enterprise.achecker.model.GuideLineBean;
-import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotmarketing.business.APILocator;
@@ -10,6 +9,7 @@ import com.google.common.annotations.VisibleForTesting;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.glassfish.jersey.server.JSONP;
@@ -74,7 +74,8 @@ public class ACheckerResource {
             tags = {"Accessibility Checker"},
             responses = {
                     @ApiResponse(responseCode = "200", description = "Guideline list retrieved successfully",
-                            content = @Content(mediaType = "application/json")),
+                            content = @Content(mediaType = "application/json",
+                                              schema = @Schema(implementation = ResponseEntityAccessibilityGuidelinesView.class))),
                     @ApiResponse(responseCode = "500", description = "Internal Server Error")
             }
     )
@@ -88,7 +89,7 @@ public class ACheckerResource {
                 .requireLicense(true)
                 .init();
         final List<GuideLineBean> guidelines = APILocator.getACheckerAPI().getAccessibilityGuidelineList();
-        return Response.ok(new ResponseEntityView<>(guidelines)).build();
+        return Response.ok(new ResponseEntityAccessibilityGuidelinesView(guidelines)).build();
     }
 
     /**
@@ -124,6 +125,7 @@ public class ACheckerResource {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Content validated successfully",
                             content = @Content(mediaType = "application/json",
+                                              schema = @Schema(implementation = ResponseACheckerEntityView.class),
                                     examples = {
                                             @ExampleObject(
                                                     value = "{\n" +

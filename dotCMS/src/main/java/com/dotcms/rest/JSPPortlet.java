@@ -19,6 +19,11 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 /**
@@ -30,25 +35,98 @@ import io.swagger.v3.oas.annotations.tags.Tag;
  * can use Jersey Annotations to produce or consume web services
  * 
  */
-@Tag(name = "Portlets")
+@Tag(name = "Portlets", description = "Legacy JSP portlet rendering endpoints")
 @Path("/portlet")
 public class JSPPortlet extends BaseRestPortlet {
 
+	@Operation(
+		summary = "Render portlet layout (GET)",
+		description = "Renders a JSP portlet layout using GET method. Looks for render.jsp under /WEB-INF/jsp/{portlet-id}/ directory. This is a legacy portlet rendering mechanism."
+	)
+	@ApiResponses(value = {
+		@ApiResponse(responseCode = "200", 
+					description = "Portlet layout rendered successfully",
+					content = @Content(mediaType = "text/html")),
+		@ApiResponse(responseCode = "401", 
+					description = "Unauthorized access",
+					content = @Content(mediaType = "text/html")),
+		@ApiResponse(responseCode = "403", 
+					description = "Forbidden - insufficient permissions",
+					content = @Content(mediaType = "text/html")),
+		@ApiResponse(responseCode = "404", 
+					description = "Portlet JSP not found",
+					content = @Content(mediaType = "text/html")),
+		@ApiResponse(responseCode = "500", 
+					description = "Internal server error during portlet rendering",
+					content = @Content(mediaType = "text/html"))
+	})
 	@GET
 	@Path("/{params:.*}")
 	@Produces("text/html")
-	public Response layoutGet(@Context HttpServletRequest request, @Context HttpServletResponse response, @PathParam("params") String params) throws DotDataException,
+	public Response layoutGet(@Context HttpServletRequest request, @Context HttpServletResponse response, 
+		@Parameter(description = "Portlet parameters and path information", required = true) @PathParam("params") String params) throws DotDataException,
 			DotSecurityException, ServletException, IOException, DotRuntimeException, PortalException, SystemException {
 
 		return super.getLayout(request, response, params);
 	}
 
+	@Operation(
+		summary = "Render portlet layout (POST)",
+		description = "Renders a JSP portlet layout using POST method. Handles form submissions and looks for render.jsp under /WEB-INF/jsp/{portlet-id}/ directory. This is a legacy portlet rendering mechanism."
+	)
+	@ApiResponses(value = {
+		@ApiResponse(responseCode = "200", 
+					description = "Portlet layout rendered successfully",
+					content = @Content(mediaType = "text/html")),
+		@ApiResponse(responseCode = "401", 
+					description = "Unauthorized access",
+					content = @Content(mediaType = "text/html")),
+		@ApiResponse(responseCode = "403", 
+					description = "Forbidden - insufficient permissions",
+					content = @Content(mediaType = "text/html")),
+		@ApiResponse(responseCode = "404", 
+					description = "Portlet JSP not found",
+					content = @Content(mediaType = "text/html")),
+		@ApiResponse(responseCode = "500", 
+					description = "Internal server error during portlet rendering",
+					content = @Content(mediaType = "text/html"))
+	})
 	@POST
 	@Path("/{params:.*}")
 	@Produces("text/html")
-	public Response layoutPost(@Context HttpServletRequest request, @Context HttpServletResponse response, @PathParam("params") String params) throws DotDataException,
+	public Response layoutPost(@Context HttpServletRequest request, @Context HttpServletResponse response, 
+		@Parameter(description = "Portlet parameters and path information", required = true) @PathParam("params") String params) throws DotDataException,
 			DotSecurityException, ServletException, IOException, DotRuntimeException, PortalException, SystemException {
 
+		return super.getLayout(request, response, params);
+	}
+
+	@Operation(
+		summary = "Load JSP portlet layout component",
+		description = "Renders the JSP portlet layout component for the dotCMS backend interface. This is the standard layout endpoint that follows the BaseRestPortlet pattern."
+	)
+	@ApiResponses(value = {
+		@ApiResponse(responseCode = "200", 
+					description = "JSP layout loaded successfully",
+					content = @Content(mediaType = "text/html")),
+		@ApiResponse(responseCode = "401", 
+					description = "Unauthorized - user authentication required",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "403", 
+					description = "Forbidden - insufficient permissions to access JSP portlet",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "500", 
+					description = "Internal server error loading layout",
+					content = @Content(mediaType = "application/json"))
+	})
+	@GET
+	@Path("/layout/{params:.*}")
+	@Produces("text/html")
+	public Response getLayout(@Context HttpServletRequest request, 
+							 @Context HttpServletResponse response, 
+							 @Parameter(description = "Layout parameters (portletId/jspName)", required = true)
+							 @PathParam("params") String params)
+			throws DotDataException, ServletException, IOException, PortalException, SystemException {
 		return super.getLayout(request, response, params);
 	}
 

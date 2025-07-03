@@ -17,6 +17,12 @@ import com.dotcms.util.DotPreconditions;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.struts.MultiMessageResources;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.Collections;
 import java.util.Locale;
@@ -29,16 +35,39 @@ import org.apache.commons.lang.StringUtils;
  * @author Geoff M. Granum
  */
 @Path("/v1/system/i18n")
-@Tag(name = "Internationalization")
+@Tag(name = "Internationalization", description = "Internationalization and localization support")
 public class I18NResource {
 
     public I18NResource() {
     }
 
+    @Operation(
+        summary = "Get localized messages",
+        description = "Retrieves localized messages for a specific language and resource key"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Localized messages retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(type = "object",
+                                      description = "Localized message strings as key-value pairs"))),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid language or resource key",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "No resource messages found",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @Path("/{lang:[\\w]{2,3}(?:-?[\\w]{2})?}/{rsrc:.*}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response list(@PathParam("lang") String lang, @PathParam("rsrc") String rsrc) {
+    public Response list(@Parameter(description = "Language code (e.g., 'en', 'es', 'en-US')", required = true)
+                        @PathParam("lang") String lang, 
+                        @Parameter(description = "Resource key path (e.g., 'messages/login')", required = true)
+                        @PathParam("rsrc") String rsrc) {
         RestResourceLookup lookup = new RestResourceLookup(lang, rsrc == null ? "" : rsrc);
         Response response;
 

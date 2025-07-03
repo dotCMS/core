@@ -18,7 +18,11 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.json.JSONObject;
 import com.fasterxml.jackson.jaxrs.json.annotation.JSONP;
 import com.google.common.annotations.VisibleForTesting;
-import com.liferay.portal.model.User;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import javax.servlet.http.HttpServletRequest;
@@ -36,7 +40,7 @@ import java.util.Optional;
  * Resource API that deals with secrets and their usage on third-party apps integrations.
  * @author jsanca
  */
-@Tag(name = "Apps")
+@Tag(name = "Apps", description = "Enterprise Mobile Application configuration and app integration management")
 @Path("/v1/ema")
 public class EMAResource {
 
@@ -57,14 +61,28 @@ public class EMAResource {
     }
 
 
-    /**
-     * Returns the ema config for the current site
-     * @param request
-     * @param response
-     * @return Response
-     * @throws DotDataException
-     * @throws DotSecurityException
-     */
+    @Operation(
+        summary = "Get EMA configuration details",
+        description = "Returns the Enterprise Mobile Application (EMA) configuration for the current site. Retrieves app secrets and configuration from the dotema-config-v2 app."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "EMA configuration retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityEmaConfigurationView.class))),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "EMA configuration not found for current site",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @JSONP
     @NoCache
