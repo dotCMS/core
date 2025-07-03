@@ -424,6 +424,8 @@ test("Add a new page", async ({ page }) => {
     action: contentProperties.publishWfAction,
   });
 
+  await page.waitForTimeout(3000);
+
   const breadcrumbLocator = page.getByTestId("breadcrumb-title");
   await expect(breadcrumbLocator).toContainText(pageAssetContent.title);
 });
