@@ -5,12 +5,13 @@ import { Injectable } from '@angular/core';
 
 import { catchError, map, pluck } from 'rxjs/operators';
 
+import { graphqlToPageEntity } from '@dotcms/client/internal';
 import { DEFAULT_VARIANT_ID, DotPersona } from '@dotcms/dotcms-models';
 import { DotCMSGraphQLPageResponse, DotCMSPageAsset, UVE_MODE } from '@dotcms/types';
 
 import { PERSONA_KEY } from '../shared/consts';
 import { DotPageAssetParams, SavePagePayload } from '../shared/models';
-import { getFullPageURL, graphqlToPageEntity } from '../utils';
+import { getFullPageURL } from '../utils';
 
 export interface DotPageApiParams {
     url: string;
