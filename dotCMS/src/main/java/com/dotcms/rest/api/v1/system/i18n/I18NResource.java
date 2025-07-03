@@ -20,6 +20,7 @@ import com.liferay.portal.struts.MultiMessageResources;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -47,7 +48,8 @@ public class I18NResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Localized messages retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityStringView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid language or resource key",
                     content = @Content(mediaType = "application/json")),
