@@ -103,4 +103,11 @@ google-ads:
 
 api_keys: '${env.API_KEYS_URL|}'
 
-destinations: '${env.DESTINATIONS_URL|}'
+destinations:
+  my_clickhouse:
+    type: clickhouse
+    host: http://localhost:8123
+    database: clickhouse_test_db
+    username: clickhouse_test_user
+    password: clickhouse_password
+    mode: stream
