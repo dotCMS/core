@@ -66,6 +66,7 @@ export class DotContentDriveShellComponent implements OnInit {
         this.#siteService
             .getCurrentSite()
             .pipe(
+                take(1),
                 catchError(() => {
                     return of(SYSTEM_HOST);
                 })
