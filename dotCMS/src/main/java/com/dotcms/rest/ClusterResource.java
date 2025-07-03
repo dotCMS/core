@@ -37,6 +37,7 @@ import com.dotmarketing.util.json.JSONObject;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -67,7 +68,8 @@ public class ClusterResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Cluster nodes status retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityMapView.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - backend user authentication required",
                     content = @Content(mediaType = "application/json")),
@@ -143,7 +145,8 @@ public class ClusterResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Elasticsearch configuration properties retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityStringView.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - backend user authentication required",
                     content = @Content(mediaType = "application/json")),
@@ -187,7 +190,8 @@ public class ClusterResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "License repository status retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityStringView.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - backend user authentication required",
                     content = @Content(mediaType = "application/json")),
@@ -221,8 +225,7 @@ public class ClusterResource {
     )
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
-                    description = "Server removed from cluster successfully",
-                    content = @Content(mediaType = "application/json")),
+                    description = "Server removed from cluster successfully (no body)"),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - backend user authentication required",
                     content = @Content(mediaType = "application/json")),
@@ -274,8 +277,7 @@ public class ClusterResource {
     )
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
-                    description = "Cluster test completed successfully",
-                    content = @Content(mediaType = "application/json")),
+                    description = "Cluster test completed successfully (no body)"),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - backend user authentication required",
                     content = @Content(mediaType = "application/json")),
