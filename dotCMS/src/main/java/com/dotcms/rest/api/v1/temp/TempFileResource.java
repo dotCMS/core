@@ -270,7 +270,8 @@ public class TempFileResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "File copied from URL successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityMapView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid URL, referer, or missing URL parameter",
                     content = @Content(mediaType = "application/json")),
