@@ -1,7 +1,6 @@
 import { expect, Page } from "@playwright/test";
-import { BasePage } from "./base.page";
 
-export class ListingContentPage extends BasePage {
+export class ListingContentPage {
   private addBtn = this.page.locator(
     "span[widgetid='dijit_form_DropDownButton_0']",
   );
@@ -13,9 +12,7 @@ export class ListingContentPage extends BasePage {
     .contentFrame()
     .locator("#results_table");
 
-  constructor(protected page: Page) {
-    super(page);
-  }
+  constructor(private page: Page) {}
 
   async goTo(filter?: string) {
     const urlPath = "/dotAdmin/#c/content";

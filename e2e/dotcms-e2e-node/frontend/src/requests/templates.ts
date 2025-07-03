@@ -2,11 +2,19 @@ import { APIRequestContext, expect } from "@playwright/test";
 import { admin1 } from "../tests/login/credentialsData";
 import { generateBase64Credentials } from "@utils/generateBase64Credential";
 
-export async function updateFeatureFlag(
-  request: APIRequestContext,
-  data: Record<string, unknown>,
-) {
-  const endpoint = `/api/v1/system-table/`;
+interface Template {
+  friendlyName: string;
+  identifier: string;
+  image: string;
+  theme: string;
+  title: string;
+  layout?: Record<string, unknown>;
+}
+
+type CreateTemplate = Omit<Template, "identifier">;
+
+export async function createTemplate(request: APIRequestContext, data: CreateTemplate) {
+  const endpoint = `/api/v1/templates`;
   const contentTypeResponse = await request.post(endpoint, {
     data,
     headers: {
@@ -18,4 +26,7 @@ export async function updateFeatureFlag(
   });
 
   expect(contentTypeResponse.status()).toBe(200);
+
+  const response = await contentTypeResponse.json() as Template;
+  return response;
 }

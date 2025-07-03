@@ -1,14 +1,8 @@
 import { APIRequestContext, Page } from "@playwright/test";
 import { updateFeatureFlag } from "@requests/updateFeatureFlag";
-import { BasePage } from "./base.page";
 
-export class ListingContentTypesPage extends BasePage {
-  constructor(
-    protected page: Page,
-    private request: APIRequestContext,
-  ) {
-    super(page);
-  }
+export class ListingContentTypesPage {
+  constructor(private page: Page, private request: APIRequestContext) {}
 
   async goToUrl() {
     await this.page.goto("/dotAdmin/#/content-types-angular");

@@ -1,10 +1,8 @@
+import { SideMenuComponent } from "@components/sideMenu.component";
 import { Page } from "@playwright/test";
-import { BasePage } from "./base.page";
 
-export class LoginPage extends BasePage {
-  constructor(protected page: Page) {
-    super(page);
-  }
+export class LoginPage{
+  constructor(private page: Page) {}
 
   /**
    *  Login to dotCMS
@@ -25,6 +23,7 @@ export class LoginPage extends BasePage {
     const loginBtnLocator = this.page.getByTestId("submitButton");
     await loginBtnLocator.click();
 
-    await this.sideMenu.openMenu();
+    const sideMenu = new SideMenuComponent(this.page);
+    await sideMenu.openMenu();
   }
 }

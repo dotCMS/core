@@ -1,10 +1,7 @@
 import { expect, Page } from "@playwright/test";
-import { BasePage } from "./base.page";
 
-export class NewEditContentFormPage extends BasePage {
-  constructor(protected page: Page) {
-    super(page);
-  }
+export class NewEditContentFormPage {
+  constructor(private page: Page) {}
 
   async fillTextField(text: string) {
     const textFieldLocator = this.page.getByTestId("textField");
