@@ -57,6 +57,7 @@ import java.util.Optional;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -135,7 +136,8 @@ public class JsResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "JavaScript executed successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityMapView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid JavaScript or parameters",
                     content = @Content(mediaType = "application/json")),
@@ -175,7 +177,8 @@ public class JsResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "JavaScript executed successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityMapView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid JavaScript or request body",
                     content = @Content(mediaType = "application/json")),
@@ -211,7 +214,8 @@ public class JsResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "JavaScript executed successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityMapView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid JavaScript or request body",
                     content = @Content(mediaType = "application/json")),
@@ -252,7 +256,8 @@ public class JsResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "JavaScript executed successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityMapView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid JavaScript or request body",
                     content = @Content(mediaType = "application/json")),
@@ -288,7 +293,8 @@ public class JsResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "JavaScript executed successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityMapView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid JavaScript or request body",
                     content = @Content(mediaType = "application/json")),
@@ -329,7 +335,8 @@ public class JsResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "JavaScript executed successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityMapView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid JavaScript or request body",
                     content = @Content(mediaType = "application/json")),
@@ -365,7 +372,8 @@ public class JsResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "JavaScript executed successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityMapView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid JavaScript or request body",
                     content = @Content(mediaType = "application/json")),
@@ -406,7 +414,8 @@ public class JsResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "JavaScript executed successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityMapView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid JavaScript or request body",
                     content = @Content(mediaType = "application/json")),
@@ -442,7 +451,8 @@ public class JsResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "JavaScript executed successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityMapView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid JavaScript or request body",
                     content = @Content(mediaType = "application/json")),
@@ -480,7 +490,8 @@ public class JsResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "JavaScript executed successfully with multipart data",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityMapView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid JavaScript or multipart data",
                     content = @Content(mediaType = "application/json")),
@@ -517,7 +528,8 @@ public class JsResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "JavaScript executed successfully with multipart data",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityMapView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid JavaScript or multipart data",
                     content = @Content(mediaType = "application/json")),
@@ -557,7 +569,8 @@ public class JsResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "JavaScript executed successfully with multipart data",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityMapView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid JavaScript or multipart data",
                     content = @Content(mediaType = "application/json")),
@@ -595,7 +608,8 @@ public class JsResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "JavaScript executed successfully with multipart data",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityMapView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid JavaScript or multipart data",
                     content = @Content(mediaType = "application/json")),
@@ -634,7 +648,8 @@ public class JsResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "JavaScript executed successfully with multipart data",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityMapView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid JavaScript or multipart data",
                     content = @Content(mediaType = "application/json")),
@@ -672,7 +687,8 @@ public class JsResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "JavaScript executed successfully with multipart data",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityMapView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid JavaScript or multipart data",
                     content = @Content(mediaType = "application/json")),
@@ -712,7 +728,8 @@ public class JsResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Dynamic JavaScript executed successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityMapView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid JavaScript code or parameters",
                     content = @Content(mediaType = "application/json")),
@@ -746,7 +763,8 @@ public class JsResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Dynamic JavaScript executed successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityMapView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid JavaScript code",
                     content = @Content(mediaType = "application/json")),
@@ -780,7 +798,8 @@ public class JsResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Dynamic JavaScript executed successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityMapView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid JavaScript code or parameters",
                     content = @Content(mediaType = "application/json")),
@@ -814,7 +833,8 @@ public class JsResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Dynamic JavaScript executed successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityMapView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid JavaScript code",
                     content = @Content(mediaType = "application/json")),
@@ -848,7 +868,8 @@ public class JsResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Dynamic JavaScript executed successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityMapView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid JavaScript code or parameters",
                     content = @Content(mediaType = "application/json")),
@@ -881,7 +902,8 @@ public class JsResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Dynamic JavaScript executed successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityMapView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid JavaScript code",
                     content = @Content(mediaType = "application/json")),
@@ -915,7 +937,8 @@ public class JsResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Dynamic JavaScript executed successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityMapView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid JavaScript code or parameters",
                     content = @Content(mediaType = "application/json")),
@@ -953,7 +976,8 @@ public class JsResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "Dynamic JavaScript executed successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityMapView.class))),
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - invalid JavaScript code or parameters",
                     content = @Content(mediaType = "application/json")),
