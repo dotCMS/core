@@ -75,7 +75,7 @@ public class OSGIResource  {
         @ApiResponse(responseCode = "200", 
                     description = "Installed bundles retrieved successfully",
                     content = @Content(mediaType = "application/json",
-                                      schema = @Schema(type = "string"))),
+                                      schema = @Schema(type = "object", description = "Collection of OSGi bundles with metadata and status information"))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - backend user authentication required",
                     content = @Content(mediaType = "application/json")),
@@ -182,7 +182,7 @@ public class OSGIResource  {
         @ApiResponse(responseCode = "200", 
                     description = "Bundle exports processed successfully",
                     content = @Content(mediaType = "application/json",
-                                      schema = @Schema(type = "string"))),
+                                      schema = @Schema(type = "object", description = "Bundle export processing result with operation status"))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - backend user authentication required",
                     content = @Content(mediaType = "application/json")),
@@ -242,7 +242,7 @@ public class OSGIResource  {
         @ApiResponse(responseCode = "200", 
                     description = "Bundles uploaded successfully",
                     content = @Content(mediaType = "application/json",
-                                      schema = @Schema(implementation = ResponseEntityOSGIFileNamesView.class))),
+                                      schema = @Schema(implementation = ResponseEntitySetStringView.class))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - backend user authentication required",
                     content = @Content(mediaType = "application/json")),
@@ -290,7 +290,7 @@ public class OSGIResource  {
         final File felixFolder = new File(felixUploadFolder);
         if (!felixFolder.exists() || !felixFolder.canWrite()) {
 
-            return Response.status(403).entity(new ResponseEntityOSGIMessageView(
+            return Response.status(403).entity(new ResponseEntityStringView(
                     "Can not access the upload folder")).build();
         }
 
@@ -303,7 +303,7 @@ public class OSGIResource  {
                 final String errorMsg = "Invalid OSGI Upload request:" +
                         osgiJar.getCanonicalPath() + " from:" +request.getRemoteHost();
                 SecurityLogger.logInfo(this.getClass(),  errorMsg);
-                return Response.status(403).entity(new ResponseEntityOSGIMessageView(errorMsg)).build();
+                return Response.status(403).entity(new ResponseEntityStringView(errorMsg)).build();
             }
 
             Logger.debug(this, "Coping the file: " + uploadedBundleFile.getName() +
@@ -320,7 +320,7 @@ public class OSGIResource  {
         // refresh strategy is running by schedule job
         OSGIUtil.getInstance().checkUploadFolder();
 
-        return Response.ok(new ResponseEntityOSGIFileNamesView(
+        return Response.ok(new ResponseEntitySetStringView(
                 files.stream().map(File::getName).collect(Collectors.toSet())))
                 .build();
     }
