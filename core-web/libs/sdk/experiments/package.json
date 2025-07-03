@@ -27,6 +27,7 @@
     "react-dom": ">=18",
     "@dotcms/client": "next",
     "@dotcms/react": "next",
-    "@dotcms/uve": "next"
+    "@dotcms/uve": "next",
+    "@dotcms/types": "next"
   }
 }

@@ -12,3 +12,5 @@ export {
     DotCMSBlockEditorRenderer,
     BlockEditorRendererProps
 } from './lib/next/components/DotCMSBlockEditorRenderer/DotCMSBlockEditorRenderer';
+
+export { DotCMSLayoutBodyProps } from './lib/next/components/DotCMSLayoutBody/DotCMSLayoutBody';
