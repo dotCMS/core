@@ -133,4 +133,5 @@ This maintenance release includes the following code fixes:
 127. https://github.com/dotCMS/core/issues/32186 : Experiments: Variant is sporadically not added to index #32186
 128. https://github.com/dotCMS/core/issues/32522 : [Block Editor] Contentlet included by the second block editor is not shown in a page #32522
 129. https://github.com/dotCMS/core/issues/32473 : [Edit Contentlet]: Binary field editor not showing for JS files #32473
+130. https://github.com/dotCMS/core/issues/32130 : Users with CMS Admin Role don’t update correctly if you change User Details #32130
 
