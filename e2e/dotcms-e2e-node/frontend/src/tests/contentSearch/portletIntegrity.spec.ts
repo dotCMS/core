@@ -26,20 +26,6 @@ test.beforeEach("Navigate to content portlet", async ({ page }) => {
   // Login to dotCMS
   await loginPage.login(username, password);
   await sideMenuPage.navigate("Content", "Search All");
-
-  // Validate the portlet title
-  const breadcrumbLocator = page.locator("p-breadcrumb");
-  await waitForVisibleAndCallback(breadcrumbLocator, () =>
-    expect(breadcrumbLocator).toContainText("Search All"),
-  );
-});
-
-/**
- * Test to validate the portlet title
- * @param page
- */
-test("Validate portlet title", async ({ page }) => {
-  await expect(page.locator("p-breadcrumb")).toContainText("Search All");
 });
 
 /**

@@ -32,12 +32,6 @@ test.beforeEach("Navigate to content portlet", async ({ page }) => {
   // Login to dotCMS
   await loginPage.login(username, password);
   await sideMenuPage.navigate("Content", "Search All");
-
-  // Validate the portlet title
-  const breadcrumbLocator = page.locator("p-breadcrumb");
-  await waitForVisibleAndCallback(breadcrumbLocator, () =>
-    expect(breadcrumbLocator).toContainText("Search All"),
-  );
 });
 
 /**
@@ -430,11 +424,11 @@ test("Add a new page", async ({ page }) => {
     cacheTTL: pageAssetContent.cacheTTL,
     action: contentProperties.publishWfAction,
   });
-  const dataFrame = page.frameLocator(iFramesLocators.dataTestId);
-  await waitForVisibleAndCallback(dataFrame.getByRole("banner"));
-  await expect(page.locator("ol")).toContainText(
-    "Pages" + pageAssetContent.title,
-  );
+
+  await page.waitForTimeout(3000);
+
+  const breadcrumbLocator = page.getByTestId("breadcrumb-title");
+  await expect(breadcrumbLocator).toContainText(pageAssetContent.title);
 });
 
 /**

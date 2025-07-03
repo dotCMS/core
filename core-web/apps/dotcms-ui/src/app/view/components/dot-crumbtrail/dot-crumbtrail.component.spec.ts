@@ -43,7 +43,7 @@ describe('DotCrumbtrailComponent', () => {
 
     it('should have breadcrumb parent container', () => {
         spectator.detectChanges();
-        const breadcrumbParent = spectator.query(byTestId('breadcrumb-parent'));
+        const breadcrumbParent = spectator.query(byTestId('breadcrumb-crumbs'));
         expect(breadcrumbParent).toBeTruthy();
     });
 
@@ -55,7 +55,7 @@ describe('DotCrumbtrailComponent', () => {
 
     it('should have breadcrumb last item container', () => {
         spectator.detectChanges();
-        const breadcrumbLast = spectator.query(byTestId('breadcrumb-last'));
+        const breadcrumbLast = spectator.query(byTestId('breadcrumb-title'));
         expect(breadcrumbLast).toBeTruthy();
     });
 
@@ -86,7 +86,7 @@ describe('DotCrumbtrailComponent', () => {
         mockService.trigger(crumbs);
         spectator.detectChanges();
 
-        const breadcrumbLast = spectator.query(byTestId('breadcrumb-last'));
+        const breadcrumbLast = spectator.query(byTestId('breadcrumb-title'));
         expect(breadcrumbLast.textContent.trim()).toBe('Last');
     });
 
@@ -106,7 +106,7 @@ describe('DotCrumbtrailComponent', () => {
         mockService.trigger(crumbs);
         spectator.detectChanges();
 
-        const breadcrumbLast = spectator.query(byTestId('breadcrumb-last'));
+        const breadcrumbLast = spectator.query(byTestId('breadcrumb-title'));
         expect(breadcrumbLast.textContent.trim()).toBe('Single Item');
     });
 
@@ -116,7 +116,7 @@ describe('DotCrumbtrailComponent', () => {
         mockService.trigger(crumbs);
         spectator.detectChanges();
 
-        const breadcrumbLast = spectator.query(byTestId('breadcrumb-last'));
+        const breadcrumbLast = spectator.query(byTestId('breadcrumb-title'));
         expect(breadcrumbLast.textContent.trim()).toBe('');
     });
 
@@ -146,7 +146,7 @@ describe('DotCrumbtrailComponent', () => {
             { label: 'Second', target: '_blank', url: '/second' }
         ]);
 
-        const breadcrumbLast = spectator.query(byTestId('breadcrumb-last'));
+        const breadcrumbLast = spectator.query(byTestId('breadcrumb-title'));
         expect(breadcrumbLast.textContent.trim()).toBe('Last');
     });
 });
