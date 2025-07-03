@@ -1,5 +1,6 @@
 package com.dotcms.rest;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -56,7 +57,8 @@ public class UserResource {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
                     description = "User information retrieved successfully",
-                    content = @Content(mediaType = "application/json")),
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(type = "object", description = "User information containing userId, emailAddress, firstName, lastName, and roleId"))),
         @ApiResponse(responseCode = "401", 
                     description = "Unauthorized - backend user authentication required",
                     content = @Content(mediaType = "application/json")),
