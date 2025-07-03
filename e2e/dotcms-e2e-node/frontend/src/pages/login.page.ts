@@ -1,4 +1,3 @@
-import { SideMenuComponent } from "@components/sideMenu.component";
 import { Page } from "@playwright/test";
 
 export class LoginPage{
@@ -22,8 +21,5 @@ export class LoginPage{
 
     const loginBtnLocator = this.page.getByTestId("submitButton");
     await loginBtnLocator.click();
-
-    const sideMenu = new SideMenuComponent(this.page);
-    await sideMenu.openMenu();
   }
 }

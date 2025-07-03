@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { BreadcrumbComponent } from "@components/breadcrumb.component";
 import { LoginPage } from "@pages";
-import { createTemplate } from "@requests/templates";
+import { archiveTemplate, createTemplate, deleteTemplate } from "@requests/templates";
 
 test.beforeEach("Login", async ({ page }) => {
   // Get the username and password from the environment variables
@@ -62,11 +62,20 @@ test("should display correctly on the Content Types page", async ({ page }) => {
   await expect(title).toHaveText("Content Types");
 });
 
-test.beforeEach(async ({ request }) => {
-  await createTemplate(request, {
+test("should display correctly on the Template page", async ({ page, request }) => {
+
+  const template = await createTemplate(request, {
     friendlyName: "Test Template",
     image: "test-image",
     theme: "test-theme",
     title: "Test Template",
   });
+
+  await page.goto(`/dotAdmin/#/templates/edit/${template.identifier}`);
+  const breadcrumb = new BreadcrumbComponent(page);
+  const title = breadcrumb.getTitle();
+  await expect(title).toHaveText(template.title);
+
+  await archiveTemplate(request, [template.identifier]);
+  await deleteTemplate(request, [template.identifier]);
 });
