@@ -29,8 +29,7 @@ public class ContainerCacheImpl extends ContainerCache {
     if(DbConnectionFactory.inTransaction()) {
       return container;
     }
-
-    key = primaryGroup + key;
+    
 
     // Add the key to the cache
     cache.put(primaryGroup + key, container, primaryGroup);
