@@ -6,9 +6,11 @@
         <dot-collapse-breadcrumb [model]="collapsedBreadcrumbs" />
     </div>
 
-    <div
-        data-testid="breadcrumb-title"
-        class="text-black text-xl font-extrabold tracking-tight leading-tight">
-        {{ lastBreadcrumb }}
-    </div>
+    @if (lastBreadcrumb) {
+        <div
+            data-testid="breadcrumb-title"
+            class="text-black text-xl font-extrabold tracking-tight leading-tight">
+            {{ lastBreadcrumb }}
+        </div>
+    }
 </div>

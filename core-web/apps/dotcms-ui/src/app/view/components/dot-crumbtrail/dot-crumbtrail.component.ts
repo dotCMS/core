@@ -41,13 +41,8 @@ export class DotCrumbtrailComponent {
      */
     $lastBreadcrumb = computed(() => {
         const crumbs = this.$breadcrumbsMenu();
-
         const last = crumbs.length ? crumbs.at(-1) : null;
 
-        if (last) {
-            return last.label;
-        }
-
-        return null;
+        return last?.label;
     });
 }
