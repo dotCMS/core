@@ -47,7 +47,16 @@
                 <td>
                     <p-tableCheckbox [value]="item" />
                 </td>
-                <td>{{ item.title }}</td>
+                <td class="list-view-title" style="max-width: 100%">
+                    <div class="container-thumbnail">
+                        <dot-contentlet-thumbnail
+                            [fieldVariable]="item?.contentType"
+                            [iconSize]="'48px'"
+                            [contentlet]="item"
+                            data-testId="contentlet-thumbnail" />
+                    </div>
+                    {{ item.title }}
+                </td>
                 <td>
                     @if (status === 'Published') {
                         <p-chip styleClass="p-chip-sm p-chip-success" [label]="status" />

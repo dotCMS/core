@@ -1,4 +1,10 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    CUSTOM_ELEMENTS_SCHEMA,
+    input,
+    output
+} from '@angular/core';
 
 import { LazyLoadEvent, SortEvent } from 'primeng/api';
 import { ChipModule } from 'primeng/chip';
@@ -7,6 +13,8 @@ import { TableModule } from 'primeng/table';
 
 import { DotContentDriveItem } from '@dotcms/dotcms-models';
 import { DotContentletStatusPipe, DotMessagePipe, DotRelativeDatePipe } from '@dotcms/ui';
+
+import { HEADER_COLUMNS } from '../shared/constants';
 
 @Component({
     selector: 'dot-folder-list-view',
@@ -19,6 +27,7 @@ import { DotContentletStatusPipe, DotMessagePipe, DotRelativeDatePipe } from '@d
         DotContentletStatusPipe,
         ChipModule
     ],
+    schemas: [CUSTOM_ELEMENTS_SCHEMA],
     templateUrl: './dot-folder-list-view.component.html',
     styleUrl: './dot-folder-list-view.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -34,13 +43,7 @@ export class DotFolderListViewComponent {
     paginate = output<LazyLoadEvent>();
     sort = output<SortEvent>();
 
-    readonly headerColumns = [
-        { field: 'title', header: 'title', width: '45%' },
-        { field: 'live', header: 'status', width: '10%' },
-        { field: 'baseType', header: 'type', sortable: true, width: '10%' },
-        { field: 'modUserName', header: 'Edited-By', width: '15%' },
-        { field: 'modDate', header: 'Last-Edited', sortable: true, width: '15%' }
-    ];
+    readonly headerColumns = HEADER_COLUMNS;
 
     onPage(event: LazyLoadEvent) {
         this.paginate.emit(event);
