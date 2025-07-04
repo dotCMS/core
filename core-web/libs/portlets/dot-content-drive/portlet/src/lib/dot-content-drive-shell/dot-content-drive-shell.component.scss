@@ -45,14 +45,6 @@ dot-folder-list-view {
     grid-row-start: 2;
 
     width: 100%;
-
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-
-    font-size: $font-size-xl;
-    font-weight: $font-weight-medium-bold;
 }
 
 .detail-view {

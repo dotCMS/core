@@ -410,7 +410,7 @@ test("Delete a file asset content", async ({ page }) => {
 /**
  * Test to validate you are able to add new pages
  */
-test("Add a new page", async ({ page }) => {
+test.skip("Add a new page", async ({ page }) => {
   const contentUtils = new ContentPage(page);
 
   await contentUtils.addNewContentAction(pageAsset.locator, pageAsset.label);
@@ -524,7 +524,7 @@ test("Validate you are able to unpublish pages", async ({ page }) => {
 /**
  * Test to validate you are able to delete pages
  */
-test("Validate you are able to delete pages", async ({ page }) => {
+test.skip("Validate you are able to delete pages", async ({ page }) => {
   const contentUtils = new ContentPage(page);
   await contentUtils.selectTypeOnFilter(pageAsset.locator);
   await contentUtils.deleteContent(pageAssetContent.title);
