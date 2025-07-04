@@ -81,17 +81,26 @@ public class FileUtil {
 	private static Set<String> getEditableAsTextFileTypes() {
 		final Set<String> editableTypes = new HashSet<>();
 		editableTypes.addAll(Set.of(
-				"text/plain",
-				"text/css",
-				"text/javascript",
-				"text/markdown",
-				"text/xml",
-				"text/csv",
-				"text/html",
-				"application/xml",
+				// Scripts and source code
+				"application/javascript",
+				"application/ecmascript",
+				"application/x-typescript",
+				"application/x-sh",              // Shell script
+				"application/x-httpd-php",       // PHP scripts
+				"application/x-latex",           // LaTeX documents
+
+				// Structured data formats
 				"application/json",
+				"application/xml",
 				"application/x-yaml",
-				"application/x-sql"));
+				"application/toml",
+				"application/x-toml",
+				"application/x-www-form-urlencoded",
+				"application/x-sql",
+
+				// React/TSX extensions
+				"application/jsx",
+				"application/tsx"
 		editableTypes.addAll(new HashSet<>(Arrays.asList(Config.getStringArrayProperty(
 				"EDITABLE_AS_TEXT_FILE_TYPES", new String[]{}))));
 		return editableTypes;
