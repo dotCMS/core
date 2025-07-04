@@ -70,7 +70,7 @@ public class AIAppValidator {
                     .map(Model::getName)
                     .filter(model -> !supportedModels.contains(model))
                     .collect(Collectors.toSet());
-            if (!unsupportedModels.isEmpty()) {
+            if (unsupportedModels.isEmpty()) {
                 return;
             }
 
