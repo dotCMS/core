@@ -33,6 +33,7 @@ import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.dotmarketing.portlets.workflows.model.WorkflowTimelineItem;
 import com.liferay.portal.model.User;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.EnumSet;
@@ -1226,7 +1227,7 @@ public interface WorkflowAPI {
 	 * Core system actions available as part of the API.
 	 * Users can create new content, edit the content, publish/upublish, etc.
 	 */
-	enum SystemAction {
+	public enum SystemAction {
 
 		NEW,
 		EDIT,
@@ -1235,14 +1236,23 @@ public interface WorkflowAPI {
 		ARCHIVE,
 		UNARCHIVE,
 		DELETE,
-		DESTROY;
+		DESTROY,
+		PUSH_PUBLISHED;
 
+		public static String[] asStringArray(){
+			return Arrays.stream(values())
+					.map(Enum::name)
+					.map(String::toLowerCase)
+					.toArray(String[]::new);
+
+
+		}
 		/**
 		 * Prefer this over valueOf(String..) since mySQL sends lowercased vals
 		 * @param value
 		 * @return
 		 */
-		public static SystemAction fromString(final String value){
+		public static final SystemAction fromString(final String value){
 		   return valueOf(value.toUpperCase());
 		}
 
