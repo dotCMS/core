@@ -17,4 +17,5 @@ params:
     label: "Generate Site Key"
     hint: "Generates the Site Key (if not set yet) and the basic JavaScript configuration required to enable Content Analytics in your pages."
     required: false
+    enableButton: true
     value: "/api/v1/analytics/content/siteconfig/$siteId"
