@@ -1,5 +1,7 @@
 import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 
+import { DotContentDriveItem } from '@dotcms/dotcms-models';
+
 import { DotFolderListViewComponent } from './dot-folder-list-view.component';
 
 describe('DotFolderListViewComponent', () => {
@@ -16,12 +18,14 @@ describe('DotFolderListViewComponent', () => {
         spectator = createComponent();
     });
 
-    describe('DOM', () => {
-        it('should have a placeholder message', () => {
-            const placeholderMessage = spectator.query('p');
+    it('should set items input property', () => {
+        const mockItems: DotContentDriveItem[] = [
+            { identifier: '123', title: 'Item 1' } as DotContentDriveItem,
+            { identifier: '456', title: 'Item 2' } as DotContentDriveItem
+        ];
 
-            expect(placeholderMessage).toBeTruthy();
-            expect(placeholderMessage?.textContent).toContain('dot-folder-list-view works');
-        });
+        spectator.setInput('items', mockItems);
+
+        expect(spectator.component.items()).toEqual(mockItems);
     });
 });
