@@ -12,10 +12,11 @@ import io.swagger.v3.oas.annotations.servers.Server;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vavr.Lazy;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Set;
+import javax.enterprise.inject.spi.CDI;
 import javax.inject.Singleton;
 import javax.ws.rs.ApplicationPath;
 import org.glassfish.hk2.utilities.binding.AbstractBinder;
@@ -39,8 +40,8 @@ import org.glassfish.jersey.server.spi.internal.ResourceMethodInvocationHandlerP
 				title = "dotCMS REST API",
 				version = "3"),
 		servers = @Server(
-						description = "dotCMS Server",
-						url = "/"),
+				description = "dotCMS Server",
+				url = "/"),
 		tags = {
 				@Tag(name = "Accessibility Checker", description = "Web accessibility checking and compliance"),
 				@Tag(name = "Administration", description = "System administration and management tools"),
@@ -107,13 +108,26 @@ public class DotRestApplication extends ResourceConfig {
 	private static final Lazy<Boolean> ENABLE_TELEMETRY_FROM_CORE = Lazy.of(() ->
 			Config.getBooleanProperty(FeatureFlagName.FEATURE_FLAG_TELEMETRY_CORE_ENABLED, true));
 
-	public DotRestApplication() {
+	private static final WeakClassRegistry customClasses = new WeakClassRegistry();
 
-		// Registrar providers Before anything else
+	/**
+	 * Default constructor that initializes the application with the current viable classes.
+	 * This constructor is used when no specific dynamic classes are provided.
+	 */
+	public DotRestApplication() {
+		this(customClasses.getViableClasses());
+	}
+
+	/**
+	 * Constructor that initializes the application with a set of dynamic classes.
+	 * @param dynamicClasses the set of classes to be included in the application configuration.
+	 */
+	public DotRestApplication(Set<Class<?>> dynamicClasses) {
+		// Register providers before anything else
 		registerEarlyProviders();
 
 		// Then: Include the rest of the application configuration
-		configureApplication();
+		configureApplication(dynamicClasses);
 	}
 
 	/**
@@ -133,7 +147,7 @@ public class DotRestApplication extends ResourceConfig {
 		Logger.debug(DotRestApplication.class, "MethodInvocationHandlerProvider provider registered");
 	}
 
-	private void configureApplication() {
+	private void configureApplication(Set<Class<?>> dynamicClasses) {
 		final List<String> packages = new ArrayList<>(List.of(
 				"com.dotcms.rest",
 				"com.dotcms.contenttype.model.field",
@@ -147,48 +161,117 @@ public class DotRestApplication extends ResourceConfig {
 		}
 
 		register(MultiPartFeature.class)
-		.register(JacksonJaxbJsonProvider.class)
-		.registerClasses(customClasses.keySet())
-		.packages(packages.toArray(new String[0])
-		);
+				.register(JacksonJaxbJsonProvider.class)
+				.registerClasses(dynamicClasses != null ? dynamicClasses : Collections.emptySet())
+				.packages(packages.toArray(new String[0]));
+
+		Logger.info(DotRestApplication.class,
+				"DotRestApplication configured with " +
+						(dynamicClasses != null ? dynamicClasses.size() : 0) + " dynamic classes");
 	}
 
 	/**
-	 * This is the cheap way to create a concurrent set of user provided classes
+	 * Creates a fresh ResourceConfig instance with current viable classes
+	 * This method ensures no pollution from previous configurations
 	 */
-	private static final Map<Class<?>, Boolean> customClasses = new ConcurrentHashMap<>();
+	public static ResourceConfig createFreshConfig() {
+		Set<Class<?>> currentClasses = customClasses.getViableClasses();
+		Logger.info(DotRestApplication.class,
+				"Creating fresh ResourceConfig with " + currentClasses.size() + " viable classes");
+
+		return new DotRestApplication(currentClasses);
+	}
 
 	/**
-	 * adds a class and reloads
-	 * @param clazz the class ot add
+	 * Creates a fresh ResourceConfig instance excluding specific classes
+	 * Useful for removing problematic classes during reload
+	 */
+	public static ResourceConfig createFreshConfigExcluding(Set<Class<?>> classesToExclude) {
+		Set<Class<?>> currentClasses = customClasses.getViableClasses();
+
+		if (classesToExclude != null && !classesToExclude.isEmpty()) {
+			currentClasses.removeAll(classesToExclude);
+			Logger.info(DotRestApplication.class,
+					"Creating fresh ResourceConfig excluding " + classesToExclude.size() +
+							" classes, final count: " + currentClasses.size());
+		}
+
+		return new DotRestApplication(currentClasses);
+	}
+
+	/**
+	 * Adds a class and reloads using a fresh configuration
 	 */
 	public static synchronized void addClass(final Class<?> clazz) {
-		if(clazz==null){
+		if (clazz == null) {
 			return;
 		}
+
 		if (Boolean.TRUE.equals(ENABLE_TELEMETRY_FROM_CORE.get())
 				&& clazz.getName().equalsIgnoreCase("com.dotcms.experience.TelemetryResource")) {
 			Logger.warn(DotRestApplication.class, "Bypassing activation of Telemetry REST Endpoint from OSGi");
 			return;
 		}
-		if (Boolean.TRUE.equals(customClasses.computeIfAbsent(clazz,c -> true))) {
-			final Optional<ContainerReloader> reloader = CDIUtils.getBean(ContainerReloader.class);
-            reloader.ifPresent(ContainerReloader::reload);
+
+		if (customClasses.addIfAbsent(clazz)) {
+			Logger.info(DotRestApplication.class,
+					" ::: Adding custom class: " + clazz.getName() + " and classloader: " + clazz.getClassLoader());
+
+			// Use fresh config to avoid pollution
+			reloadWithFreshConfig();
 		}
 	}
 
 	/**
-	 * removes a class and reloads
+	 * Removes a class and reloads using a fresh configuration
 	 * @param clazz
 	 */
 	public static synchronized void removeClass(Class<?> clazz) {
-		if(clazz==null){
+		if (clazz == null) {
 			return;
 		}
-		if(customClasses.remove(clazz) != null){
-			final Optional<ContainerReloader> reloader = CDIUtils.getBean(ContainerReloader.class);
-			reloader.ifPresent(ContainerReloader::reload);
+
+		CDI.current().getBeanManager().
+				getBeans(clazz).forEach(bean -> {
+					try {
+						CDI.current().destroy(bean);
+					}catch (Exception e) {
+						Logger.error(DotRestApplication.class,
+								"Error destroying bean of class: " + clazz.getName(), e);
+					}
+				});
+
+
+		if (customClasses.remove(clazz)) {
+			Logger.info(DotRestApplication.class,
+					" ::: Removing custom class: " + clazz.getName());
+			System.gc();
+			// Use fresh config to avoid pollution
+			reloadWithFreshConfig();
 		}
 	}
 
+	/**
+	 * Reloads the container with a completely fresh configuration
+	 */
+	private static void reloadWithFreshConfig() {
+		final Optional<ContainerReloader> reloader = CDIUtils.getBean(ContainerReloader.class);
+		if (reloader.isPresent()) {
+			// Create completely fresh config instead of reusing potentially polluted one
+			ResourceConfig freshConfig = createFreshConfig();
+			reloader.get().reload(freshConfig);
+		}
+	}
+
+	/**
+	 * Emergency method to reload excluding problematic classes
+	 */
+	public static synchronized void reloadExcluding(Class<?>... problematicClasses) {
+		Set<Class<?>> toExclude = Set.of(problematicClasses);
+		final Optional<ContainerReloader> reloader = CDIUtils.getBean(ContainerReloader.class);
+		if (reloader.isPresent()) {
+			ResourceConfig cleanConfig = createFreshConfigExcluding(toExclude);
+			reloader.get().reload(cleanConfig);
+		}
+	}
 }
