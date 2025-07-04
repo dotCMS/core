@@ -1,31 +1,12 @@
 import { ContentTypeService } from './contentype';
 
-// Mock the AgnosticClient
-const mockFetch = jest.fn();
-jest.mock('./client', () => {
-    return {
-        AgnosticClient: class MockAgnosticClient {
-            fetch = mockFetch;
-        }
-    };
-});
-
-// Mock Logger
-jest.mock('../utils/logger', () => {
-    return {
-        Logger: jest.fn().mockImplementation(() => ({
-            log: jest.fn(),
-            error: jest.fn()
-        }))
-    };
-});
+import { mockFetch } from '../test-setup';
 
 describe('ContentTypeService', () => {
     let service: ContentTypeService;
 
     beforeEach(() => {
         service = new ContentTypeService();
-        mockFetch.mockClear();
     });
 
     describe('list', () => {

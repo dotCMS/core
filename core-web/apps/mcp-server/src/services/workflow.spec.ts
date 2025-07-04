@@ -1,31 +1,12 @@
 import { WorkflowService } from './workflow';
 
-// Mock the AgnosticClient
-const mockFetch = jest.fn();
-jest.mock('./client', () => {
-    return {
-        AgnosticClient: class MockAgnosticClient {
-            fetch = mockFetch;
-        }
-    };
-});
-
-// Mock Logger
-jest.mock('../utils/logger', () => {
-    return {
-        Logger: jest.fn().mockImplementation(() => ({
-            log: jest.fn(),
-            error: jest.fn()
-        }))
-    };
-});
+import { mockFetch } from '../test-setup';
 
 describe('WorkflowService', () => {
     let service: WorkflowService;
 
     beforeEach(() => {
         service = new WorkflowService();
-        mockFetch.mockClear();
     });
 
     describe('saveContent', () => {
@@ -115,7 +96,7 @@ describe('WorkflowService', () => {
                 action: 'PUBLISH' as const
             };
 
-            await expect(service.performContentAction(invalidParams as any)).rejects.toThrow('Invalid content action parameters');
+            await expect(service.performContentAction(invalidParams as never)).rejects.toThrow('Invalid content action parameters');
         });
     });
 
