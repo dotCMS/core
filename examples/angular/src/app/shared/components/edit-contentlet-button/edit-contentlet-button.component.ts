@@ -1,7 +1,7 @@
 import { Component, HostBinding, input } from '@angular/core';
 
 import { Contentlet } from '../../contentlet.model';
-import { DotCMSShowWhenDirective } from '@dotcms/angular';
+import { DotCMSShowWhenDirective } from '@dotcms/angular/next';
 import { editContentlet } from '@dotcms/uve';
 import { UVE_MODE } from '@dotcms/types';
 

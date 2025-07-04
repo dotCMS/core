@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 
-import { DotCMSShowWhenDirective } from '@dotcms/angular';
+import { DotCMSShowWhenDirective } from '@dotcms/angular/next';
 import { reorderMenu } from '@dotcms/uve';
 import { UVE_MODE } from '@dotcms/types';
 

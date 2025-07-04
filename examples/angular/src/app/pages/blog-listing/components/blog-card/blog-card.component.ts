@@ -4,7 +4,7 @@ import { RouterLink } from '@angular/router';
 import { editContentlet } from '@dotcms/uve';
 import { Blog } from '../../../../shared/contentlet.model';
 import { UVE_MODE } from '@dotcms/types';
-import { DotCMSShowWhenDirective } from '@dotcms/angular';
+import { DotCMSShowWhenDirective } from '@dotcms/angular/next';
 @Component({
     selector: 'app-blog-card',
     templateUrl: './blog-card.component.html',

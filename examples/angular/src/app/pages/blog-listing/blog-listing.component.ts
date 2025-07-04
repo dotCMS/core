@@ -14,7 +14,7 @@ import { DYNAMIC_COMPONENTS } from '../../shared/dynamic-components';
 import { BASE_EXTRA_QUERIES } from '../../shared/queries';
 import { ExtraContent, Blog } from '../../shared/contentlet.model';
 import { PageState } from '../../shared/models';
-import { DotCMSClient } from '@dotcms/angular';
+import { DotCMSClient } from '@dotcms/angular/next';
 
 // Function to debounce calls
 function debounce<T extends (...args: any[]) => void>(

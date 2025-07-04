@@ -6,7 +6,7 @@ import { HeaderComponent } from '../../shared/components/header/header.component
 import { NavigationComponent } from '../../shared/components/navigation/navigation.component';
 import { FooterComponent } from '../../shared/components/footer/footer.component';
 
-import { DotCMSLayoutBodyComponent } from '@dotcms/angular';
+import { DotCMSLayoutBodyComponent } from '@dotcms/angular/next';
 import { DotCMSPageAsset } from '@dotcms/types';
 import { EditablePageService } from '../../services/editable-page.service';
 import { DYNAMIC_COMPONENTS } from '../../shared/dynamic-components';
