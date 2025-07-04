@@ -10,7 +10,7 @@
             "options": {
                 "format": ["esm", "cjs"],
                 "compiler": "tsc",
-                "additionalEntryPoints": ["libs/sdk/client/src/next.ts"],
+                "additionalEntryPoints": ["libs/sdk/client/src/internal.ts"],
                 "generateExportsField": true,
                 "outputPath": "dist/libs/sdk/client",
                 "assets": [{ "input": "libs/sdk/client", "output": ".", "glob": "*.md" }],

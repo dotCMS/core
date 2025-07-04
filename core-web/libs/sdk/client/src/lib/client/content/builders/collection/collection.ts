@@ -1,4 +1,3 @@
-import { ClientOptions } from '../../../../deprecated/sdk-js-client';
 import { CONTENT_API_URL } from '../../shared/const';
 import {
     GetCollectionResponse,
@@ -12,6 +11,8 @@ import {
 import { sanitizeQueryForContentType } from '../../shared/utils';
 import { Equals } from '../query/lucene-syntax';
 import { QueryBuilder } from '../query/query';
+
+export type ClientOptions = Omit<RequestInit, 'body' | 'method'>;
 
 /**
  * Creates a Builder to filter and fetch content from the content API for a specific content type.

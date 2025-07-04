@@ -2,9 +2,8 @@ import { expect } from '@jest/globals';
 import { fireEvent, render, screen } from '@testing-library/react';
 import * as tinymceReact from '@tinymce/tinymce-react';
 
-import * as dotcmsClient from '@dotcms/client';
-import { CLIENT_ACTIONS } from '@dotcms/client';
 import { DotCMSBasicContentlet, DotCMSUVEAction, UVE_MODE } from '@dotcms/types';
+import { __DOTCMS_UVE_EVENT__ } from '@dotcms/types/internal';
 import * as dotcmsUVE from '@dotcms/uve';
 import { sendMessageToUVE, getUVEState } from '@dotcms/uve';
 
@@ -221,8 +220,7 @@ describe('DotCMSEditableText', () => {
                     window.dispatchEvent(
                         new MessageEvent('message', {
                             data: {
-                                name: dotcmsClient.NOTIFY_CLIENT
-                                    .UVE_COPY_CONTENTLET_INLINE_EDITING_SUCCESS,
+                                name: __DOTCMS_UVE_EVENT__.UVE_COPY_CONTENTLET_INLINE_EDITING_SUCCESS,
                                 payload: {
                                     oldInode: MOCK_CONTENTLET['inode'],
                                     inode: '456'
@@ -321,7 +319,7 @@ describe('DotCMSEditableText', () => {
                     fireEvent(editorElem, event);
 
                     const postMessageData = {
-                        action: CLIENT_ACTIONS.UPDATE_CONTENTLET_INLINE_EDITING,
+                        action: DotCMSUVEAction.UPDATE_CONTENTLET_INLINE_EDITING,
                         payload: {
                             content: 'New content',
                             dataset: {

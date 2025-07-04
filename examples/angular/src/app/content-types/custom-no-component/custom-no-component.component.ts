@@ -1,5 +1,5 @@
 import { Component, input } from '@angular/core';
-import { DotCMSContentlet } from '@dotcms/angular';
+import { DotCMSBasicContentlet } from '@dotcms/types';
 
 @Component({
   selector: 'app-custom-no-component',
@@ -14,5 +14,5 @@ import { DotCMSContentlet } from '@dotcms/angular';
   styles: '',
 })
 export class CustomNoComponent {
-  contentlet = input.required<DotCMSContentlet>();
+  contentlet = input.required<DotCMSBasicContentlet>();
 }

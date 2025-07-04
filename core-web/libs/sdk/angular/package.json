@@ -5,15 +5,15 @@
     "rxjs": ">=7.0.0",
     "@angular/common": ">=17.0.0",
     "@angular/core": ">=17.0.0",
-    "@angular/router": ">=17.0.0"
+    "@angular/router": ">=17.0.0",
+    "@dotcms/client": "latest",
+    "@dotcms/uve": "latest"
   },
   "dependencies": {
-    "@dotcms/uve": "next",
-    "@dotcms/client": "next",
     "@tinymce/tinymce-angular": "8.0.0"
   },
   "devDependencies": {
-    "@dotcms/types": "next"
+    "@dotcms/types": "latest"
   },
   "description": "Official Angular Components library to render a dotCMS page.",
   "repository": {

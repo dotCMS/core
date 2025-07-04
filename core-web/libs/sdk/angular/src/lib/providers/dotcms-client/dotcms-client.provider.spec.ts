@@ -1,12 +1,12 @@
 import { TestBed } from '@angular/core/testing';
 
-import { createDotCMSClient } from '@dotcms/client/next';
+import { createDotCMSClient } from '@dotcms/client';
 import { DotCMSClientConfig } from '@dotcms/types';
 
 import { provideDotCMSClient, DotCMSClient } from './dotcms-client.provider';
 
 // Mock the createDotCMSClient function since it's not available in test environment
-jest.mock('@dotcms/client/next', () => ({
+jest.mock('@dotcms/client', () => ({
     createDotCMSClient: jest.fn()
 }));
 

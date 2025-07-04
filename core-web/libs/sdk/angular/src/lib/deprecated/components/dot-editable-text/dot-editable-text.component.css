@@ -1,4 +1,0 @@
-:host ::ng-deep .mce-content-body:not(.mce-edit-focus):hover {
-    outline: 2px solid #006ce7;
-    border-radius: 4px;
-}

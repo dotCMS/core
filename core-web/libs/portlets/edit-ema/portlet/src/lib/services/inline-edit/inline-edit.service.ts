@@ -1,6 +1,6 @@
 import { ElementRef, Injectable, signal } from '@angular/core';
 
-import { CLIENT_ACTIONS } from '@dotcms/client';
+import { DotCMSUVEAction } from '@dotcms/types';
 
 import { InlineEditingContentletDataset } from '../../edit-ema-editor/components/ema-page-dropzone/types';
 
@@ -139,7 +139,7 @@ export class InlineEditService {
 
         window.parent.postMessage(
             {
-                action: CLIENT_ACTIONS.INIT_INLINE_EDITING,
+                action: DotCMSUVEAction.INIT_INLINE_EDITING,
                 payload: {
                     type: 'WYSIWYG'
                 }
