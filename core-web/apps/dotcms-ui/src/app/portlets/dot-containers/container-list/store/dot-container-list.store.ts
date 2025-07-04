@@ -1,5 +1,4 @@
 import { ComponentStore } from '@ngrx/component-store';
-import { forkJoin } from 'rxjs';
 
 import { Injectable } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
@@ -51,6 +50,7 @@ export interface DotNotifyMessages {
 }
 
 const CONTAINERS_URL = 'v1/containers';
+const DEFAULT_MAX_PAGE_LINKS = 5;
 
 @Injectable()
 export class DotContainerListStore extends ComponentStore<DotContainerListState> {
@@ -78,41 +78,33 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
 
                     this.paginatorService.setExtraParams('host', identifier);
 
-                    return forkJoin([
-                        this.route.data.pipe(pluck('dotContainerListResolverData'), take(1)),
-                        this.paginatorService.get()
-                    ]);
+                    return this.route.data.pipe(pluck('dotContainerListResolverData'), take(1));
                 })
             )
-            .subscribe(
-                ([[isEnterprise, hasEnvironments], containers]: [
-                    [boolean, boolean],
-                    DotContainer[]
-                ]) => {
-                    this.setState({
-                        containerBulkActions: this.getContainerBulkActions(
-                            hasEnvironments,
-                            isEnterprise
-                        ),
-                        tableColumns: this.getContainerColumns(),
-                        stateLabels: this.getStateLabels(),
-                        isEnterprise: isEnterprise,
-                        hasEnvironments: hasEnvironments,
-                        addToBundleIdentifier: '',
-                        selectedContainers: [],
-                        actionHeaderOptions: this.getActionHeaderOptions(),
-                        listing: {} as DotListingDataTableComponent,
-                        notifyMessages: {
-                            payload: {},
-                            message: null,
-                            failsInfo: []
-                        } as DotNotifyMessages,
-                        containers,
-                        maxPageLinks: this.paginatorService.maxLinksPage,
-                        totalRecords: this.paginatorService.totalRecords
-                    });
-                }
-            );
+            .subscribe(([isEnterprise, hasEnvironments]: [boolean, boolean]) => {
+                this.setState({
+                    containerBulkActions: this.getContainerBulkActions(
+                        hasEnvironments,
+                        isEnterprise
+                    ),
+                    tableColumns: this.getContainerColumns(),
+                    stateLabels: this.getStateLabels(),
+                    isEnterprise: isEnterprise,
+                    hasEnvironments: hasEnvironments,
+                    addToBundleIdentifier: '',
+                    selectedContainers: [],
+                    actionHeaderOptions: this.getActionHeaderOptions(),
+                    listing: {} as DotListingDataTableComponent,
+                    notifyMessages: {
+                        payload: {},
+                        message: null,
+                        failsInfo: []
+                    } as DotNotifyMessages,
+                    containers: [],
+                    maxPageLinks: DEFAULT_MAX_PAGE_LINKS,
+                    totalRecords: 0
+                });
+            });
     }
 
     readonly vm$ = this.select(
