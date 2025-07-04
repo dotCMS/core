@@ -35,5 +35,11 @@ public enum ValidationErrorCode {
      * Indicates that a field in the JSON payload is not defined in the validation configuration.
      * This error occurs when the input data contains fields that are not expected or allowed.
      */
-    UNKNOWN_FIELD;
+    UNKNOWN_FIELD,
+
+    /**
+     * Indicates that a field expected to be a date is not in the correct format.
+     * This error occurs when validating fields that should contain date values in the format '2025-06-09T14:30:00+02:00'.
+     */
+    INVALID_DATE_FORMAT;
 }

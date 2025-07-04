@@ -34,6 +34,7 @@ import javax.servlet.http.HttpSession;
 import java.io.Serializable;
 import java.util.Locale;
 import java.util.Map;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 
 /**
@@ -41,6 +42,7 @@ import java.util.Map;
  * @author jsanca
  */
 @Path("/v1/loginform")
+@Tag(name = "Authentication", description = "User authentication and session management")
 public class LoginFormResource implements Serializable {
 
     private final LanguageAPI languageAPI;

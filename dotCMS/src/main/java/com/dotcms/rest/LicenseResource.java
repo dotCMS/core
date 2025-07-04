@@ -24,6 +24,7 @@ import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -48,6 +49,7 @@ import org.glassfish.jersey.media.multipart.FormDataParam;
 
 
 @Path("/license")
+@Tag(name = "License")
 public class LicenseResource {
 
     private final WebResource webResource = new WebResource();

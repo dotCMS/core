@@ -18,6 +18,10 @@ const mockConsoleError = jest.spyOn(console, 'error').mockImplementation(() => {
     // do nothing
 });
 
+const mockConsoleWarn = jest.spyOn(console, 'warn').mockImplementation(() => {
+    // do nothing
+});
+
 describe('DotAnalytics HTTP Utils', () => {
     let mockConfig: DotCMSAnalyticsConfig;
     let mockPayload: DotCMSPageViewRequestBody | DotCMSTrackRequestBody;
@@ -27,6 +31,7 @@ describe('DotAnalytics HTTP Utils', () => {
         jest.clearAllMocks();
         mockFetch.mockClear();
         mockConsoleError.mockClear();
+        mockConsoleWarn.mockClear();
 
         // Setup test data
         mockConfig = {
@@ -46,21 +51,23 @@ describe('DotAnalytics HTTP Utils', () => {
                 {
                     event_type: 'pageview',
                     local_time: Date.now().toString(),
-                    page: {
-                        url: 'https://example.com/page',
-                        doc_encoding: 'UTF-8',
-                        doc_hash: 'test-hash',
-                        doc_protocol: 'https',
-                        doc_search: 'test-search',
-                        dot_host: 'example.com',
-                        dot_path: '/page',
-                        title: 'Test Page'
-                    },
-                    device: {
-                        screen_resolution: '1920x1080',
-                        language: 'en-US',
-                        viewport_width: '1920',
-                        viewport_height: '1080'
+                    data: {
+                        page: {
+                            url: 'https://example.com/page',
+                            doc_encoding: 'UTF-8',
+                            doc_hash: 'test-hash',
+                            doc_protocol: 'https',
+                            doc_search: 'test-search',
+                            doc_host: 'example.com',
+                            doc_path: '/page',
+                            title: 'Test Page'
+                        },
+                        device: {
+                            screen_resolution: '1920x1080',
+                            language: 'en-US',
+                            viewport_width: '1920',
+                            viewport_height: '1080'
+                        }
                     }
                 }
             ]
@@ -68,8 +75,9 @@ describe('DotAnalytics HTTP Utils', () => {
     });
 
     afterAll(() => {
-        // Restore console.error
+        // Restore console methods
         mockConsoleError.mockRestore();
+        mockConsoleWarn.mockRestore();
     });
 
     describe('sendAnalyticsEventToServer', () => {
@@ -95,6 +103,7 @@ describe('DotAnalytics HTTP Utils', () => {
 
             // Verify no errors were logged
             expect(mockConsoleError).not.toHaveBeenCalled();
+            expect(mockConsoleWarn).not.toHaveBeenCalled();
         });
 
         it('should handle different server URLs correctly', async () => {
@@ -124,21 +133,31 @@ describe('DotAnalytics HTTP Utils', () => {
         });
 
         it('should serialize complex payload objects correctly', async () => {
-            const complexPayload = {
-                event: 'complex_event',
-                properties: {
-                    nested: {
-                        value: 'test',
-                        number: 42,
-                        boolean: true,
-                        array: [1, 2, 3],
-                        nullValue: null
-                    }
+            const complexPayload: DotCMSTrackRequestBody = {
+                context: {
+                    site_key: 'test-site-key',
+                    session_id: 'test-session-id',
+                    user_id: 'test-user-id'
                 },
-                timestamp: 1234567890,
-                metadata: {
-                    source: 'unit-test'
-                }
+                events: [
+                    {
+                        event_type: 'track',
+                        local_time: Date.now().toString(),
+                        data: {
+                            nested: {
+                                value: 'test',
+                                number: 42,
+                                boolean: true,
+                                array: [1, 2, 3],
+                                nullValue: null
+                            },
+                            timestamp: 1234567890,
+                            metadata: {
+                                source: 'unit-test'
+                            }
+                        }
+                    }
+                ]
             };
 
             const mockResponse = {
@@ -162,16 +181,24 @@ describe('DotAnalytics HTTP Utils', () => {
             const mockResponse = {
                 ok: false,
                 status: 400,
-                statusText: 'Bad Request'
-            } as Response;
+                statusText: 'Bad Request',
+                headers: new Headers(),
+                redirected: false,
+                type: 'default' as ResponseType,
+                url: '',
+                json: jest.fn().mockImplementation(() => {
+                    throw new Error('response.json is not a function');
+                })
+            } as unknown as Response;
 
             mockFetch.mockResolvedValue(mockResponse);
 
             await sendAnalyticsEventToServer(mockPayload, mockConfig);
 
-            expect(mockConsoleError).toHaveBeenCalledTimes(1);
-            expect(mockConsoleError).toHaveBeenCalledWith(
-                'DotAnalytics: Server responded with status 400'
+            expect(mockConsoleWarn).toHaveBeenCalledTimes(1);
+            expect(mockConsoleWarn).toHaveBeenCalledWith(
+                'DotAnalytics: HTTP 400: Bad Request - Failed to parse error response:',
+                expect.any(Error)
             );
         });
 
@@ -180,20 +207,28 @@ describe('DotAnalytics HTTP Utils', () => {
 
             for (const status of statusCodes) {
                 mockFetch.mockClear();
-                mockConsoleError.mockClear();
+                mockConsoleWarn.mockClear();
 
                 const mockResponse = {
                     ok: false,
                     status,
-                    statusText: `HTTP ${status}`
-                } as Response;
+                    statusText: `HTTP ${status}`,
+                    headers: new Headers(),
+                    redirected: false,
+                    type: 'default' as ResponseType,
+                    url: '',
+                    json: jest.fn().mockImplementation(() => {
+                        throw new Error('response.json is not a function');
+                    })
+                } as unknown as Response;
 
                 mockFetch.mockResolvedValue(mockResponse);
 
                 await sendAnalyticsEventToServer(mockPayload, mockConfig);
 
-                expect(mockConsoleError).toHaveBeenCalledWith(
-                    `DotAnalytics: Server responded with status ${status}`
+                expect(mockConsoleWarn).toHaveBeenCalledWith(
+                    `DotAnalytics: HTTP ${status}: HTTP ${status} - Failed to parse error response:`,
+                    expect.any(Error)
                 );
             }
         });
@@ -226,8 +261,20 @@ describe('DotAnalytics HTTP Utils', () => {
 
         it('should handle JSON serialization errors', async () => {
             // Create a payload that can't be serialized (circular reference)
-            const circularPayload: any = { event: 'test' };
-            circularPayload.self = circularPayload;
+            const circularPayload: DotCMSTrackRequestBody = {
+                context: {
+                    site_key: 'test-site-key',
+                    session_id: 'test-session-id',
+                    user_id: 'test-user-id'
+                },
+                events: [
+                    {
+                        event_type: 'track',
+                        local_time: Date.now().toString(),
+                        data: { event: 'test' }
+                    }
+                ]
+            };
 
             // Mock JSON.stringify to throw error
             const originalStringify = JSON.stringify;
@@ -255,13 +302,22 @@ describe('DotAnalytics HTTP Utils', () => {
         });
 
         it('should not make any requests when payload is empty', async () => {
-            await sendAnalyticsEventToServer({}, mockConfig);
+            const emptyPayload: DotCMSTrackRequestBody = {
+                context: {
+                    site_key: 'test-site-key',
+                    session_id: 'test-session-id',
+                    user_id: 'test-user-id'
+                },
+                events: []
+            };
+
+            await sendAnalyticsEventToServer(emptyPayload, mockConfig);
 
             expect(mockFetch).toHaveBeenCalledTimes(1);
             expect(mockFetch).toHaveBeenCalledWith(
                 expect.any(String),
                 expect.objectContaining({
-                    body: JSON.stringify({})
+                    body: JSON.stringify(emptyPayload)
                 })
             );
         });
@@ -334,16 +390,26 @@ describe('DotAnalytics HTTP Utils', () => {
 
         it('should handle large payloads', async () => {
             // Create a large payload
-            const largePayload = {
-                event: 'large_event',
-                properties: {
-                    largeString: 'x'.repeat(10000), // 10KB string
-                    largeArray: Array.from({ length: 1000 }, (_, i) => ({
-                        id: i,
-                        data: `item-${i}`,
-                        value: Math.random()
-                    }))
-                }
+            const largePayload: DotCMSTrackRequestBody = {
+                context: {
+                    site_key: 'test-site-key',
+                    session_id: 'test-session-id',
+                    user_id: 'test-user-id'
+                },
+                events: [
+                    {
+                        event_type: 'track',
+                        local_time: Date.now().toString(),
+                        data: {
+                            largeString: 'x'.repeat(10000), // 10KB string
+                            largeArray: Array.from({ length: 1000 }, (_, i) => ({
+                                id: i,
+                                data: `item-${i}`,
+                                value: Math.random()
+                            }))
+                        }
+                    }
+                ]
             };
 
             const mockResponse = {
@@ -368,9 +434,24 @@ describe('DotAnalytics HTTP Utils', () => {
             mockFetch.mockResolvedValue(mockResponse);
 
             // Send multiple requests concurrently
-            const promises = Array.from({ length: 5 }, (_, i) =>
-                sendAnalyticsEventToServer({ ...mockPayload, id: i }, mockConfig)
-            );
+            const promises = Array.from({ length: 5 }, (_, i) => {
+                const concurrentPayload: DotCMSTrackRequestBody = {
+                    context: {
+                        site_key: 'test-site-key',
+                        session_id: 'test-session-id',
+                        user_id: 'test-user-id'
+                    },
+                    events: [
+                        {
+                            event_type: 'track',
+                            local_time: Date.now().toString(),
+                            data: { requestId: i }
+                        }
+                    ]
+                };
+
+                return sendAnalyticsEventToServer(concurrentPayload, mockConfig);
+            });
 
             await Promise.all(promises);
 
