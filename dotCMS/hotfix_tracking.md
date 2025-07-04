@@ -52,3 +52,4 @@ This maintenance release includes the following code fixes:
 46. https://github.com/dotCMS/core/issues/32522 : [Block Editor] Contentlet included by the second block editor is not shown in a page #32522
 47. https://github.com/dotCMS/core/issues/31790#issuecomment-2941061548 : Using Containers in theme files
 48. https://github.com/dotCMS/core/issues/32473 : [Edit Contentlet]: Binary field editor not showing for JS files #32473
+49. https://github.com/dotCMS/core/issues/32423 : [Push Publishing] : Error when pushing Advanced Templates #32423
