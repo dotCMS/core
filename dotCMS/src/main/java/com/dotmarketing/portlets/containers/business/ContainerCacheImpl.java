@@ -33,7 +33,7 @@ public class ContainerCacheImpl extends ContainerCache {
     key = primaryGroup + key;
 
     // Add the key to the cache
-    cache.put(key, container, primaryGroup);
+    cache.put(primaryGroup + key, container, primaryGroup);
 
     return container;
   }
