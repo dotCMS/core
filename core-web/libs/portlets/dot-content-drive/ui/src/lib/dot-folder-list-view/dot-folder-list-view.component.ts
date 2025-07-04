@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 
-import { LazyLoadEvent } from 'primeng/api';
+import { LazyLoadEvent, SortEvent } from 'primeng/api';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TableModule } from 'primeng/table';
 
@@ -21,16 +21,17 @@ export class DotFolderListViewComponent {
     loading = input<boolean>(false);
 
     selectedItems: DotContentDriveItem[] = [];
-    paginate = output<LazyLoadEvent>();
 
     selectionChange = output<DotContentDriveItem[]>();
+    paginate = output<LazyLoadEvent>();
+    sort = output<SortEvent>();
 
     readonly headerColumns = [
-        { field: 'title', header: 'title', sortable: true },
-        { field: 'live', header: 'status' },
-        { field: 'baseType', header: 'type', sortable: true },
-        { field: 'modUserName', header: 'Edited-By', sortable: true },
-        { field: 'modDate', header: 'Last-Edited', sortable: true }
+        { field: 'title', header: 'title', width: '45%' },
+        { field: 'live', header: 'status', width: '10%' },
+        { field: 'baseType', header: 'type', sortable: true, width: '10%' },
+        { field: 'modUserName', header: 'Edited-By', width: '15%' },
+        { field: 'modDate', header: 'Last-Edited', sortable: true, width: '15%' }
     ];
 
     onPage(event: LazyLoadEvent) {
@@ -39,5 +40,9 @@ export class DotFolderListViewComponent {
 
     onSelectionChange() {
         this.selectionChange.emit(this.selectedItems);
+    }
+
+    onSort(event: SortEvent) {
+        this.sort.emit(event);
     }
 }

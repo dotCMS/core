@@ -1,6 +1,6 @@
 import { Site } from '@dotcms/dotcms-js';
 
-import { DotContentDrivePagination } from './models';
+import { DotContentDrivePagination, DotContentDriveSortOrder } from './models';
 
 export const SYSTEM_HOST: Site = {
     identifier: 'SYSTEM_HOST',
@@ -16,4 +16,9 @@ export const BASE_QUERY = '+systemType:false -contentType:forms -contentType:Hos
 export const DEFAULT_PAGINATION: DotContentDrivePagination = {
     limit: 20,
     offset: 0
+};
+
+export const SORT_ORDER = {
+    1: DotContentDriveSortOrder.ASC,
+    '-1': DotContentDriveSortOrder.DESC
 };

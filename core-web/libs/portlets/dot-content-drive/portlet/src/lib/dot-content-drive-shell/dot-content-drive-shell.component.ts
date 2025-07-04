@@ -10,7 +10,7 @@ import {
 } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
-import { LazyLoadEvent } from 'primeng/api';
+import { LazyLoadEvent, SortEvent } from 'primeng/api';
 
 import { catchError, take } from 'rxjs/operators';
 
@@ -18,7 +18,7 @@ import { DotContentSearchService, DotSiteService } from '@dotcms/data-access';
 import { ESContent } from '@dotcms/dotcms-models';
 import { DotFolderListViewComponent } from '@dotcms/portlets/content-drive/ui';
 
-import { SYSTEM_HOST } from '../shared/constants';
+import { SORT_ORDER, SYSTEM_HOST } from '../shared/constants';
 import { DotContentDriveStatus } from '../shared/models';
 import { DotContentDriveStore } from '../store/dot-content-drive.store';
 import { decodeFilters } from '../utils/functions';
@@ -52,6 +52,7 @@ export class DotContentDriveShellComponent implements OnInit {
             const currentSite = untracked(() => this.#store.currentSite());
             const query = this.#store.$query();
             const { limit, offset } = this.#store.pagination();
+            const { field, order } = this.#store.sort();
 
             // If the current site is the system host, we don't need to search for content
             // It initializes the store with the system host and the path
@@ -65,7 +66,8 @@ export class DotContentDriveShellComponent implements OnInit {
                 .get<ESContent>({
                     query,
                     limit,
-                    offset
+                    offset,
+                    sort: `score,${field} ${order}`
                 })
                 .pipe(
                     take(1),
@@ -110,6 +112,13 @@ export class DotContentDriveShellComponent implements OnInit {
         this.#store.setPagination({
             limit: event.rows,
             offset: event.first
+        });
+    }
+
+    onSort(event: SortEvent) {
+        this.#store.setSort({
+            field: event.field,
+            order: SORT_ORDER[event.order]
         });
     }
 }

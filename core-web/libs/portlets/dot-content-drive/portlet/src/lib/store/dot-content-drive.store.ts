@@ -9,6 +9,8 @@ import { BASE_QUERY, DEFAULT_PAGINATION, SYSTEM_HOST } from '../shared/constants
 import {
     DotContentDriveInit,
     DotContentDrivePagination,
+    DotContentDriveSort,
+    DotContentDriveSortOrder,
     DotContentDriveState,
     DotContentDriveStatus
 } from '../shared/models';
@@ -20,7 +22,11 @@ const initialState: DotContentDriveState = {
     items: [],
     status: DotContentDriveStatus.LOADING,
     totalItems: 0,
-    pagination: DEFAULT_PAGINATION
+    pagination: DEFAULT_PAGINATION,
+    sort: {
+        field: 'modDate',
+        order: DotContentDriveSortOrder.ASC
+    }
 };
 
 export const DotContentDriveStore = signalStore(
@@ -80,6 +86,9 @@ export const DotContentDriveStore = signalStore(
             },
             setPagination(pagination: DotContentDrivePagination) {
                 patchState(store, { pagination });
+            },
+            setSort(sort: DotContentDriveSort) {
+                patchState(store, { sort });
             }
         };
     })

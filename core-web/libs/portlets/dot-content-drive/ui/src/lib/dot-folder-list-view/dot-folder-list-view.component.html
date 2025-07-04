@@ -8,22 +8,24 @@
     [totalRecords]="totalItems()"
     [lazy]="true"
     (onPage)="onPage($event)"
-    sortMode="multiple"
+    sortMode="single"
     [(selection)]="selectedItems"
     selectionMode="multiple"
     (selectionChange)="onSelectionChange()"
-    styleClass="dotTable">
+    styleClass="dotTable"
+    sortField="modDate"
+    (onSort)="onSort($event)">
     <ng-template pTemplate="header">
         <tr>
             <th style="width: 2.5rem"><p-tableHeaderCheckbox /></th>
             @for (column of headerColumns; track column.field) {
                 @if (column.sortable) {
-                    <th [pSortableColumn]="column.field">
+                    <th [pSortableColumn]="column.field" [width]="column.width">
                         {{ column.header | dm }}
                         <p-sortIcon [field]="column.field" />
                     </th>
                 } @else {
-                    <th>
+                    <th [width]="column.width">
                         {{ column.header | dm }}
                     </th>
                 }
@@ -33,13 +35,13 @@
 
     <ng-template pTemplate="body" let-item>
         @if (loading()) {
-            <tr style="height: 4rem">
-                <td colspan="6" style="height: 100%">
+            <tr>
+                <td colspan="6">
                     <p-skeleton height="100%" width="100%" />
                 </td>
             </tr>
         } @else {
-            <tr style="height: 4rem">
+            <tr>
                 <td>
                     <p-tableCheckbox [value]="item" />
                 </td>

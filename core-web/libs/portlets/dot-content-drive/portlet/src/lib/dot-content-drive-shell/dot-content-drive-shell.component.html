@@ -7,6 +7,7 @@
     [items]="$items()"
     [totalItems]="$totalItems()"
     [loading]="$status() === DOT_CONTENT_DRIVE_STATUS.LOADING"
-    (paginate)="onPaginate($event)" />
+    (paginate)="onPaginate($event)"
+    (sort)="onSort($event)" />
 
 <div class="detail-view center-content">Detail view works</div>
