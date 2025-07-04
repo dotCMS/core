@@ -549,6 +549,9 @@ runs:
           echo "📦 Processing @dotcms/${sdk}..."
           cd $sdk && echo "  Working directory: $(pwd)"
           
+          # Save original version before any modifications
+          ORIGINAL_VERSION=$(jq -r '.version' package.json)
+          
           # Publish to latest tag if needed
           if [ "$SHOULD_PUBLISH_LATEST" = "true" ]; then
             echo "  🚀 Publishing to latest tag: @dotcms/${sdk}@${NEXT_VERSION}"
@@ -575,6 +578,10 @@ runs:
               echo "  ❌ Failed to publish to next tag"
               PUBLISH_NEXT_SUCCESS=false
             fi
+            
+            # IMPORTANT: Revert package.json back to original stable version
+            jq --arg original_version "$ORIGINAL_VERSION" '.version = $original_version' package.json > tmp.$$.json && mv tmp.$$.json package.json
+            echo "  ↩️ Reverted package.json version back to $ORIGINAL_VERSION"
           fi
           
           cd ..
