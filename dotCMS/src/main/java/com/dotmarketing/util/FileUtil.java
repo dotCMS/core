@@ -101,6 +101,7 @@ public class FileUtil {
 				// React/TSX extensions
 				"application/jsx",
 				"application/tsx"
+		));
 		editableTypes.addAll(new HashSet<>(Arrays.asList(Config.getStringArrayProperty(
 				"EDITABLE_AS_TEXT_FILE_TYPES", new String[]{}))));
 		return editableTypes;
