@@ -34,6 +34,8 @@
     </ng-template>
 
     <ng-template pTemplate="body" let-item>
+        @let status = item | dcs;
+
         @if (loading()) {
             <tr>
                 <td colspan="6">
@@ -46,8 +48,16 @@
                     <p-tableCheckbox [value]="item" />
                 </td>
                 <td>{{ item.title }}</td>
-                <td>{{ item.live ? 'Published' : 'Draft' }}</td>
-                <td>{{ item.baseType }}</td>
+                <td>
+                    @if (status === 'Published') {
+                        <p-chip styleClass="p-chip-sm p-chip-success" [label]="status" />
+                    } @else if (status === 'Archived') {
+                        <p-chip styleClass="p-chip-sm p-chip-danger" [label]="status" />
+                    } @else {
+                        <p-chip styleClass="p-chip-sm p-chip-warning" [label]="status" />
+                    }
+                </td>
+                <td>{{ item.baseType | dm }}</td>
                 <td>{{ item.modUserName }}</td>
                 <td>{{ item.modDate | dotRelativeDate }}</td>
             </tr>

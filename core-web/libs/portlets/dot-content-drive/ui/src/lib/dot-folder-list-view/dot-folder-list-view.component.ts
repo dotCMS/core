@@ -1,16 +1,24 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 
 import { LazyLoadEvent, SortEvent } from 'primeng/api';
+import { ChipModule } from 'primeng/chip';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TableModule } from 'primeng/table';
 
 import { DotContentDriveItem } from '@dotcms/dotcms-models';
-import { DotMessagePipe, DotRelativeDatePipe } from '@dotcms/ui';
+import { DotContentletStatusPipe, DotMessagePipe, DotRelativeDatePipe } from '@dotcms/ui';
 
 @Component({
     selector: 'dot-folder-list-view',
     standalone: true,
-    imports: [TableModule, DotRelativeDatePipe, SkeletonModule, DotMessagePipe],
+    imports: [
+        TableModule,
+        DotRelativeDatePipe,
+        SkeletonModule,
+        DotMessagePipe,
+        DotContentletStatusPipe,
+        ChipModule
+    ],
     templateUrl: './dot-folder-list-view.component.html',
     styleUrl: './dot-folder-list-view.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
