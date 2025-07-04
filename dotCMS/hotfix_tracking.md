@@ -54,3 +54,4 @@ This maintenance release includes the following code fixes:
 48. https://github.com/dotCMS/core/issues/32473 : [Edit Contentlet]: Binary field editor not showing for JS files #32473
 49. https://github.com/dotCMS/core/issues/32423 : [Push Publishing] : Error when pushing Advanced Templates #32423
 50. https://github.com/dotCMS/core/issues/32130 : Users with CMS Admin Role don’t update correctly if you change User Details #32130
+51. https://github.com/dotCMS/core/issues/32075 : When a folder contains Parentheses dotCLI pulls error. #32075
