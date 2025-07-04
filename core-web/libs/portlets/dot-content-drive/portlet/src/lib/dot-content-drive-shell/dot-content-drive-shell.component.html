@@ -3,7 +3,10 @@
 <div class="toolbar center-content">Toolbar works</div>
 
 <div class="tree-selector center-content">Tree selector works</div>
-
-<dot-folder-list-view [items]="$items()" />
+<dot-folder-list-view
+    [items]="$items()"
+    [totalItems]="$totalItems()"
+    [loading]="$status() === DOT_CONTENT_DRIVE_STATUS.LOADING"
+    (paginate)="onPaginate($event)" />
 
 <div class="detail-view center-content">Detail view works</div>

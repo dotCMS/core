@@ -7,12 +7,19 @@ export enum DotContentDriveStatus {
     ERROR = 'error'
 }
 
+export interface DotContentDrivePagination {
+    limit: number;
+    offset: number;
+}
+
 export interface DotContentDriveState {
     currentSite: Site;
     path: string;
     filters: Record<string, string>;
     items: DotContentDriveItem[];
     status: DotContentDriveStatus;
+    totalItems: number;
+    pagination: DotContentDrivePagination;
 }
 
 export interface DotContentDriveInit {

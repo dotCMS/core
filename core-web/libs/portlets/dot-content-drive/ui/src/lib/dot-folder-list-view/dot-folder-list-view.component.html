@@ -1,3 +1,54 @@
-@for (item of items(); track item.identifier) {
-    <div>{{ item.title }}</div>
-}
+<p-table
+    [value]="items()"
+    [tableStyle]="{ width: '100%' }"
+    dataKey="identifier"
+    [paginator]="true"
+    [rows]="20"
+    [rowsPerPageOptions]="[20, 40, 60]"
+    [totalRecords]="totalItems()"
+    [lazy]="true"
+    (onPage)="onPage($event)"
+    sortMode="multiple"
+    [(selection)]="selectedItems"
+    selectionMode="multiple"
+    (selectionChange)="onSelectionChange()"
+    styleClass="dotTable">
+    <ng-template pTemplate="header">
+        <tr>
+            <th style="width: 2.5rem"><p-tableHeaderCheckbox /></th>
+            @for (column of headerColumns; track column.field) {
+                @if (column.sortable) {
+                    <th [pSortableColumn]="column.field">
+                        {{ column.header | dm }}
+                        <p-sortIcon [field]="column.field" />
+                    </th>
+                } @else {
+                    <th>
+                        {{ column.header | dm }}
+                    </th>
+                }
+            }
+        </tr>
+    </ng-template>
+
+    <ng-template pTemplate="body" let-item>
+        @if (loading()) {
+            <tr style="height: 4rem">
+                <td colspan="6" style="height: 100%">
+                    <p-skeleton height="100%" width="100%" />
+                </td>
+            </tr>
+        } @else {
+            <tr style="height: 4rem">
+                <td>
+                    <p-tableCheckbox [value]="item" />
+                </td>
+                <td>{{ item.title }}</td>
+                <td>{{ item.live ? 'Published' : 'Draft' }}</td>
+                <td>{{ item.baseType }}</td>
+                <td>{{ item.modUserName }}</td>
+                <td>{{ item.modDate | dotRelativeDate }}</td>
+            </tr>
+        }
+    </ng-template>
+</p-table>

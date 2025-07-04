@@ -39,6 +39,7 @@ $dot-table-cell-height: 1.25rem;
         > .p-datatable-wrapper {
             border-radius: $border-radius-md;
             border: 1px solid $color-palette-gray-400;
+            border-width: 0 1px 1px 1px;
         }
 
         .p-paginator-top,
@@ -67,7 +68,7 @@ $dot-table-cell-height: 1.25rem;
             line-height: $dot-table-header-cell-height;
 
             &:has(p-tableHeaderCheckbox) {
-                width: 40px;
+                width: 2.5rem;
             }
 
             &:first-child {

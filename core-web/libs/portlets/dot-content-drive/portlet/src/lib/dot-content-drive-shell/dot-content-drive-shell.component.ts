@@ -10,6 +10,8 @@ import {
 } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
+import { LazyLoadEvent } from 'primeng/api';
+
 import { catchError, take } from 'rxjs/operators';
 
 import { DotContentSearchService, DotSiteService } from '@dotcms/data-access';
@@ -40,35 +42,46 @@ export class DotContentDriveShellComponent implements OnInit {
     readonly #route = inject(ActivatedRoute);
 
     readonly $items = this.#store.items;
+    readonly $totalItems = this.#store.totalItems;
+    readonly $status = this.#store.status;
 
-    readonly itemsEffect = effect(() => {
-        const currentSite = untracked(() => this.#store.currentSite());
-        const query = this.#store.$query();
+    readonly DOT_CONTENT_DRIVE_STATUS = DotContentDriveStatus;
 
-        // If the current site is the system host, we don't need to search for content
-        // It initializes the store with the system host and the path
-        if (currentSite?.identifier === SYSTEM_HOST.identifier) {
-            return;
-        }
+    readonly itemsEffect = effect(
+        () => {
+            const currentSite = untracked(() => this.#store.currentSite());
+            const query = this.#store.$query();
+            const { limit, offset } = this.#store.pagination();
 
-        this.#contentSearchService
-            .get<ESContent>({
-                query,
-                limit: 40,
-                offset: 0
-            })
-            .pipe(
-                take(1),
-                catchError(() => {
-                    this.#store.setStatus(DotContentDriveStatus.ERROR);
+            // If the current site is the system host, we don't need to search for content
+            // It initializes the store with the system host and the path
+            if (currentSite?.identifier === SYSTEM_HOST.identifier) {
+                return;
+            }
 
-                    return EMPTY;
+            this.#store.setStatus(DotContentDriveStatus.LOADING);
+
+            this.#contentSearchService
+                .get<ESContent>({
+                    query,
+                    limit,
+                    offset
                 })
-            )
-            .subscribe((response) => {
-                this.#store.setItems(response.jsonObjectView.contentlets);
-            });
-    });
+                .pipe(
+                    take(1),
+
+                    catchError(() => {
+                        this.#store.setStatus(DotContentDriveStatus.ERROR);
+
+                        return EMPTY;
+                    })
+                )
+                .subscribe((response) => {
+                    this.#store.setItems(response.jsonObjectView.contentlets, response.resultsSize);
+                });
+        },
+        { allowSignalWrites: true }
+    );
 
     ngOnInit(): void {
         this.#siteService
@@ -91,5 +104,12 @@ export class DotContentDriveShellComponent implements OnInit {
                     filters
                 });
             });
+    }
+
+    onPaginate(event: LazyLoadEvent) {
+        this.#store.setPagination({
+            limit: event.rows,
+            offset: event.first
+        });
     }
 }
