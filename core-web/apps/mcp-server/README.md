@@ -235,15 +235,6 @@ AI: [Calls content_search with appropriate Lucene query]
 -   Wildcard and fuzzy search
 -   Boolean operators (AND, OR, NOT)
 
-## Configuration
-
-### Environment Variables
-
-| Variable     | Required | Description                        |
-| ------------ | -------- | ---------------------------------- |
-| `DOTCMS_URL` | ✅       | Your dotCMS instance URL           |
-| `AUTH_TOKEN` | ✅       | API authentication token           |
-| `VERBOSE`    | ❌       | Set to `true` for detailed logging |
 
 ## Development
 
@@ -265,6 +256,10 @@ yarn install
 yarn nx build mcp-server
 ```
 
+> [!NOTE]
+> Files are located in `core-web/apps/mcp-server` and we use [Nx monorepo](https://nx.dev/)
+
+
 #### 2. Use Local Build in AI Assistants
 
 **Claude Desktop Configuration:**
@@ -275,7 +270,7 @@ yarn nx build mcp-server
             "command": "node",
             "args": ["/path/to/dotcms/core/core-web/dist/apps/mcp-server/main.js"],
             "env": {
-                "DOTCMS_URL": "http://localhost:8080",
+                "DOTCMS_URL": "your-dotcms-url",
                 "AUTH_TOKEN": "your-auth-token"
             }
         }
@@ -291,7 +286,7 @@ yarn nx build mcp-server
             "command": "node",
             "args": ["/path/to/dotcms/core/core-web/dist/apps/mcp-server/main.js"],
             "env": {
-                "DOTCMS_URL": "http://localhost:8080",
+                "DOTCMS_URL": "your-dotcms-url",
                 "AUTH_TOKEN": "your-auth-token"
             }
         }
@@ -348,9 +343,6 @@ mcp-server/
 ```bash
 # Build for development
 yarn nx build mcp-server
-
-# Build for production
-yarn nx build mcp-server --configuration=production
 
 # Lint the code
 yarn nx lint mcp-server
