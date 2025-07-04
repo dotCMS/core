@@ -1,7 +1,8 @@
 import { Page } from "@playwright/test";
 
-export class LoginPage {
+export class LoginPage{
   constructor(private page: Page) {}
+
   /**
    *  Login to dotCMS
    * @param page

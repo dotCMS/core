@@ -1,5 +1,6 @@
 import { APIRequestContext, expect } from "@playwright/test";
 import { admin1 } from "../tests/login/credentialsData";
+import { generateBase64Credentials } from "@utils/generateBase64Credential";
 
 export async function updateFeatureFlag(
   request: APIRequestContext,
@@ -17,9 +18,4 @@ export async function updateFeatureFlag(
   });
 
   expect(contentTypeResponse.status()).toBe(200);
-}
-
-export function generateBase64Credentials(username: string, password: string) {
-  const credentialsBase64 = btoa(`${username}:${password}`);
-  return `Basic ${credentialsBase64}`;
 }

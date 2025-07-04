@@ -8,7 +8,8 @@ import {
   contentGeneric,
 } from "@locators/globalLocators";
 import { contentProperties, genericContent1 } from "./contentData";
-import { SideMenuPage, LoginPage } from "@pages";
+import { LoginPage } from "@pages";
+import { SideMenuComponent } from "@components/sideMenu.component";
 
 /**
  * Test to navigate to the content portlet and login to the dotCMS instance
@@ -16,7 +17,7 @@ import { SideMenuPage, LoginPage } from "@pages";
  */
 test.beforeEach("Navigate to content portlet", async ({ page }) => {
   const loginPage = new LoginPage(page);
-  const sideMenuPage = new SideMenuPage(page);
+  const sideMenuPage = new SideMenuComponent(page);
 
   // Get the username and password from the environment variables
   const username = process.env.USERNAME as string;

@@ -1,11 +1,8 @@
 import { APIRequestContext, Page } from "@playwright/test";
-import { updateFeatureFlag } from "@utils/api";
+import { updateFeatureFlag } from "@requests/updateFeatureFlag";
 
 export class ListingContentTypesPage {
-  constructor(
-    private page: Page,
-    private request: APIRequestContext,
-  ) {}
+  constructor(private page: Page, private request: APIRequestContext) {}
 
   async goToUrl() {
     await this.page.goto("/dotAdmin/#/content-types-angular");
@@ -29,7 +26,11 @@ export class ListingContentTypesPage {
 
   async addNewContentType(name: string) {
     await this.page.getByTestId("dot-action-button").click();
-    await this.page.getByLabel("Content").locator("a").click();
+    await this.page
+      .locator(".p-menu-overlay")
+      .getByLabel("Content")
+      .locator("a")
+      .click();
     await this.page
       .locator('[data-test-id="content-type__new-content-banner"] div')
       .nth(2)
