@@ -3,10 +3,11 @@ import {
     Component,
     ElementRef,
     EventEmitter,
-    Input,
     OnInit,
     Output,
-    ViewChild
+    ViewChild,
+    computed,
+    input
 } from '@angular/core';
 import { NgForm, UntypedFormControl, UntypedFormGroup, Validators } from '@angular/forms';
 
@@ -28,18 +29,42 @@ export class DotAppsConfigurationDetailFormComponent implements OnInit, AfterVie
     @ViewChild('form', { static: true }) public form: NgForm;
     @ViewChild('formContainer', { static: true }) public formContainer: ElementRef;
 
-    @Input() formFields: DotAppsSecret[];
-    @Input() appConfigured = false;
+    // Convert to signals
+    formFields = input<DotAppsSecret[]>([]);
+    appConfigured = input<boolean>(false);
     @Output() data = new EventEmitter<{ [key: string]: string }>();
     @Output() valid = new EventEmitter<boolean>();
     myFormGroup: UntypedFormGroup;
+
+    // Computed signal for button enabled state
+    protected readonly isButtonEnabled = computed(() => {
+        console.log('appConfigured', this.appConfigured());
+        console.log('formFields', this.formFields());
+
+        const appConfiguredValue = this.appConfigured();
+
+        return (field: DotAppsSecret): boolean => {
+            // Opción 1: Si el field tiene enableButton definido, usarlo
+            if (field.enableButton !== undefined) {
+                return field.enableButton;
+            }
+
+            // Opción 2: Para botones, usar 'required: true' como indicador de habilitado
+            if (field.type === 'BUTTON' && field.required === true) {
+                return true;
+            }
+
+            // Opción 3: Comportamiento por defecto (usar appConfigured)
+            return appConfiguredValue;
+        };
+    });
 
     constructor(private dotMessageService: DotMessageService) {}
 
     ngOnInit() {
         const group = {};
 
-        this.formFields.forEach((field: DotAppsSecret) => {
+        this.formFields().forEach((field: DotAppsSecret) => {
             const status = this.resolveFieldStatus(field);
             group[field.name] = new UntypedFormControl(
                 this.getFieldValue(field, status),
@@ -58,7 +83,7 @@ export class DotAppsConfigurationDetailFormComponent implements OnInit, AfterVie
 
     ngAfterViewInit() {
         // Do it this way because the form is rendered dynamically
-        this.formContainer.nativeElement.querySelector(`#${this.formFields[0].name}`).focus();
+        this.formContainer.nativeElement.querySelector(`#${this.formFields()[0].name}`).focus();
     }
 
     /**
