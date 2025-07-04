@@ -1,7 +1,7 @@
 @if (vm$ | async; as vm) {
     @if (vm.working.identifier) {
         <dot-portlet-base [boxed]="false">
-            <dot-portlet-toolbar [title]="vm.working.title">
+            <dot-portlet-toolbar>
                 @if (vm.working.title) {
                     <ng-container left>
                         <button
@@ -11,7 +11,7 @@
                             data-testId="editTemplateButton"
                             pButton
                             icon="pi pi-pencil"></button>
-                        <dot-api-link [href]="vm.apiLink"></dot-api-link>
+                        <dot-api-link [href]="vm.apiLink" />
                     </ng-container>
                 }
             </dot-portlet-toolbar>
@@ -22,7 +22,7 @@
                 (cancel)="cancelTemplate()"
                 (custom)="onCustomEvent($event)"
                 [didTemplateChanged]="vm.didTemplateChanged"
-                [item]="vm.working"></dot-template-builder>
+                [item]="vm.working" />
         </dot-portlet-base>
     }
 }

@@ -3,21 +3,28 @@
         <dot-crumbtrail class="toolbar__crumbtrail" />
     </ng-template>
     <ng-template pTemplate="end">
-        <dot-site-selector
-            (switch)="siteChange($event)"
-            (hide)="iframeOverlayService.hide()"
-            (display)="iframeOverlayService.show()"
-            [archive]="false"
-            class="toolbar__site-selector"
-            #siteSelector
-            width="12.5rem"
-            cssClass="d-secondary" />
-        <div class="flex gap-1">
+        <div class="flex gap-1 align-items-center">
+            <div class="px-2">
+                <dot-site-selector
+                    (switch)="siteChange($event)"
+                    (hide)="iframeOverlayService.hide()"
+                    (display)="iframeOverlayService.show()"
+                    [archive]="false"
+                    class="toolbar__site-selector"
+                    #siteSelector
+                    width="12.5rem"
+                    cssClass="d-secondary" />
+            </div>
             <ng-container *dotShowHideFeature="featureFlagAnnouncements">
                 <dot-toolbar-announcements />
             </ng-container>
             <dot-toolbar-notifications />
         </div>
-        <dot-toolbar-user />
+        <div class="flex align-items-center gap-0">
+            <div class="h-2rem">
+                <p-divider layout="vertical" styleClass="ml-0 text-gray-500" />
+            </div>
+            <dot-toolbar-user />
+        </div>
     </ng-template>
 </p-toolbar>
