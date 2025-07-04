@@ -12,11 +12,23 @@
             "options": {
                 "platform": "node",
                 "outputPath": "dist/apps/mcp-server",
-                "format": ["cjs"],
-                "bundle": false,
+                "format": ["esm"],
+                "bundle": true,
                 "main": "apps/mcp-server/src/main.ts",
                 "tsConfig": "apps/mcp-server/tsconfig.app.json",
-                "assets": ["apps/mcp-server/src/assets"],
+                "assets": [
+                    "apps/mcp-server/src/assets",
+                    {
+                        "input": "apps/mcp-server",
+                        "glob": "README.md",
+                        "output": "."
+                    },
+                    {
+                        "input": "apps/mcp-server",
+                        "glob": "package.json",
+                        "output": "."
+                    }
+                ],
                 "esbuildOptions": {
                     "sourcemap": true,
                     "outExtension": {
@@ -29,8 +41,8 @@
                 "production": {
                     "esbuildOptions": {
                         "sourcemap": false,
-                        "outExtension": {
-                            ".js": ".js"
+                        "banner": {
+                            "js": "#!/usr/bin/env node"
                         }
                     }
                 }
