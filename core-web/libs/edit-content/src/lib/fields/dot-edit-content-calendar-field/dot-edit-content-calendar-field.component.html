@@ -16,8 +16,8 @@
         [showIcon]="true"
         [icon]="fieldTypeConfig.icon"
         [showButtonBar]="true"
-        [dataType]="'string'"
         [defaultDate]="defaultDate"
+        [dataType]="'string'"
         [attr.aria-label]="field.name"
         [attr.aria-describedby]="field.hint ? 'hint-' + field.variable : null" />
 
@@ -37,9 +37,10 @@
             </div>
             @if (systemTimezone && $showSystemTimezoneLabel()) {
                 <small data-testid="calendar-field-timezone" role="status" aria-live="polite">
-                    {{ systemTimezone.label }}
+                     {{ systemTimezone.label }}
                 </small>
             }
         </div>
     }
 </div>
+
