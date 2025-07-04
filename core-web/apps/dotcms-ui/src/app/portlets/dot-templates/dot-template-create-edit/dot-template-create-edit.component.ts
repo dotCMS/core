@@ -139,7 +139,8 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
      * @memberof DotTemplateBuilderComponent
      */
     onCustomEvent($event: CustomEvent): void {
-        this.store.goToEditTemplate($event.detail.data.id, $event.detail.data.inode);
+        const { data } = $event.detail;
+        this.store.goToEditTemplate(data.id, data.inode);
     }
 
     private createTemplate(): void {
