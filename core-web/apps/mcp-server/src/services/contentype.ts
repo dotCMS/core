@@ -91,7 +91,7 @@ const ContentTypeFieldSchema = z.object({
     indexed: z.boolean().optional(),
     hint: z.string().optional(),
     // For Checkbox, Multi-Select, Radio, Select: value is required, otherwise optional
-    value: z.string().optional(),
+    values: z.string().optional(),
 }).superRefine((data, ctx) => {
     const needsValue = [
         'Checkbox',
@@ -99,11 +99,11 @@ const ContentTypeFieldSchema = z.object({
         'Radio',
         'Select',
     ];
-    if (needsValue.includes(data.fieldType) && (!data.value || data.value.trim() === '')) {
+    if (needsValue.includes(data.fieldType) && (!data.values || data.values.trim() === '')) {
         ctx.addIssue({
             code: z.ZodIssueCode.custom,
             message: `Field type '${data.fieldType}' requires a 'value' property with options in the format 'Label|value' (one per line).`,
-            path: ['value']
+            path: ['values']
         });
     }
 });
@@ -211,7 +211,7 @@ export class ContentTypeService extends AgnosticClient {
                     'Multi-Select',
                     'Radio',
                     'Select',
-                ].includes(field.fieldType) && (!field.value || field.value.trim() === '')) {
+                ].includes(field.fieldType) && (!field.values || field.values.trim() === '')) {
                     throw new Error(`Field '${field.name}' of type '${field.fieldType}' requires a 'value' property with options in the format 'Label|value' (one per line).`);
                 }
             }
