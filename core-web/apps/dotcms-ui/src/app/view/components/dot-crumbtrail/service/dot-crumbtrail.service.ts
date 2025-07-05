@@ -133,7 +133,7 @@ export class DotCrumbtrailService {
     }
 
     private getCrumbtrail(url: string): Observable<DotCrumb[]> {
-        const sections: string[] = this.splitURL(url);
+        const sections = this.splitURL(url);
         const portletId = replaceSectionsMap[sections[0]] || sections[0];
 
         const isEditPage =
