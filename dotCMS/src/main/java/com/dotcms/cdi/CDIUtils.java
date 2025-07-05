@@ -8,8 +8,11 @@ import java.util.stream.Collectors;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.CDI;
 import org.jboss.weld.bean.builtin.BeanManagerProxy;
+import org.jboss.weld.bootstrap.api.ServiceRegistry;
 import org.jboss.weld.manager.BeanManagerImpl;
 import org.jboss.weld.resources.ClassTransformer;
+import org.jboss.weld.resources.ReflectionCache;
+import org.jboss.weld.resources.SharedObjectCache;
 
 /**
  * Utility class to get beans from CDI container
@@ -108,16 +111,39 @@ public class CDIUtils {
      * internal method
      */
     private static void internalCleanUp() {
-        final Optional<BeanManagerImpl> optional = getBeanManagerImpl();
-        if (optional.isPresent()) {
-            final BeanManagerImpl impl = optional.get();
-            final ClassTransformer classTransformer = impl.getServices().get(ClassTransformer.class);
+        final Optional<BeanManagerImpl> beanManager = getBeanManagerImpl();
+        if (beanManager.isEmpty()) {
+            Logger.warn(CDIUtils.class, "BeanManager not available");
+            return;
+        }
+
+        final ServiceRegistry services = beanManager.get().getServices();
+        if (services == null) {
+            Logger.warn(CDIUtils.class, "ServiceRegistry not available");
+            return;
+        }
+
+        final ClassTransformer classTransformer = services.get(ClassTransformer.class);
+        if (classTransformer == null) {
+            Logger.warn(CDIUtils.class, "ClassTransformer not available");
+            return;
+        }
+
+        try {
             classTransformer.cleanup();
-            classTransformer.getSharedObjectCache().cleanup();
-            classTransformer.getReflectionCache().cleanup();
-            Logger.info(CDIUtils.class, "BeanManager cache cleared.");
-        } else {
-            Logger.warn(CDIUtils.class, "BeanManagerImpl not properly cleaned up");
+
+            if (classTransformer.getSharedObjectCache() != null) {
+                classTransformer.getSharedObjectCache().cleanup();
+            }
+
+            if (classTransformer.getReflectionCache() != null) {
+                classTransformer.getReflectionCache().cleanup();
+            }
+
+            Logger.info(CDIUtils.class, "BeanManager cache cleared");
+        } catch (Exception e) {
+            Logger.error(CDIUtils.class, "Cache cleanup failed", e);
+            throw e;
         }
     }
 
