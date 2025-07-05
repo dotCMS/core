@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.folders.business;
 
 import com.dotcms.api.tree.Parentable;
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.business.DotIdentifierStateException;
@@ -30,7 +31,7 @@ import java.util.function.Predicate;
  public interface FolderAPI   {
 
 	String SYSTEM_FOLDER = "SYSTEM_FOLDER";
-	String SYSTEM_FOLDER_ID = "bc9a1d37-dd2d-4d49-a29d-0c9be740bfaf";
+	String OLD_SYSTEM_FOLDER_ID = "bc9a1d37-dd2d-4d49-a29d-0c9be740bfaf";
 	String SYSTEM_FOLDER_ASSET_NAME = "system folder";
 	String SYSTEM_FOLDER_PARENT_PATH = "/System folder";
 
@@ -623,4 +624,22 @@ import java.util.function.Predicate;
 	int getContentTypeCount(final Folder folder, final User user,
 							final boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException;
 
+
+	/**
+	 * Determines if the folder IDs in the current context require fixing.
+	 *
+	 * This method checks folder.identifiers and folder.inodes to see if they match
+	 *
+	 * @return true if the folder IDs need fixing, false otherwise.
+	 */
+    boolean folderIdsNeedFixing();
+
+	/**
+	 * Updates and corrects folder IDs within the system.
+	 * This method ensures that all folder identifiers and inodes are valid and consistent.
+	 */
+	void fixFolderIds();
+
+	@CloseDBIfOpened
+	void fixFolderId(String inode, String identifier);
 }
