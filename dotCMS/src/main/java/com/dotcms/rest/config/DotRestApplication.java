@@ -187,6 +187,7 @@ public class DotRestApplication extends ResourceConfig {
 		}
 		if(customClasses.remove(clazz) != null){
 			final Optional<ContainerReloader> reloader = CDIUtils.getBean(ContainerReloader.class);
+			BeanManagerCleanUpService.cleanUp();
 			reloader.ifPresent(ContainerReloader::reload);
 		}
 	}
