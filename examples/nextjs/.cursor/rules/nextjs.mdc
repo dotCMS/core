@@ -51,10 +51,14 @@ React Best Practices
 - Use cleanup functions in useEffect to prevent memory leaks.
 - Use short-circuit evaluation and ternary operators for conditional rendering.
 
+Next.js Best Practices
+- For rendering images always use `<Image>` component from Next.js, we already have a proper image loader `src/utils/imageLoader.js`
+- For links always use `<Link>` from Next.js
+
 State Management
-- Use Zustand for global state management.
 - Lift state up when needed to share state between components.
 - Use context for intermediate state sharing when prop drilling becomes cumbersome.
+- For complex states (when need more than 3 useState), use useReducer instead.
 
 UI and Styling
 - Implement responsive design with Tailwind CSS; use a mobile-first approach.
