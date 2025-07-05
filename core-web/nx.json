@@ -134,6 +134,11 @@
         },
         "e2e-ci--**/*": {
             "dependsOn": ["^build"]
+        },
+        "@nx/esbuild:esbuild": {
+            "cache": true,
+            "dependsOn": ["^build"],
+            "inputs": ["production", "^production"]
         }
     },
     "namedInputs": {
