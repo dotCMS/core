@@ -90,6 +90,22 @@ const ContentTypeFieldSchema = z.object({
     searchable: z.boolean().optional(),
     indexed: z.boolean().optional(),
     hint: z.string().optional(),
+    // For Checkbox, Multi-Select, Radio, Select: value is required, otherwise optional
+    value: z.string().optional(),
+}).superRefine((data, ctx) => {
+    const needsValue = [
+        'Checkbox',
+        'Multi-Select',
+        'Radio',
+        'Select',
+    ];
+    if (needsValue.includes(data.fieldType) && (!data.value || data.value.trim() === '')) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: `Field type '${data.fieldType}' requires a 'value' property with options in the format 'Label|value' (one per line).`,
+            path: ['value']
+        });
+    }
 });
 
 export const ContentTypeCreateParamsSchema = z.object({
@@ -185,6 +201,20 @@ export class ContentTypeService extends AgnosticClient {
         if (!validated.success) {
             this.serviceLogger.error('Invalid content type creation parameters', validated.error);
             throw new Error('Invalid parameters: ' + JSON.stringify(validated.error.format()));
+        }
+
+        // Extra runtime check for value property on special field types
+        for (const contentType of validated.data) {
+            for (const field of contentType.fields) {
+                if ([
+                    'Checkbox',
+                    'Multi-Select',
+                    'Radio',
+                    'Select',
+                ].includes(field.fieldType) && (!field.value || field.value.trim() === '')) {
+                    throw new Error(`Field '${field.name}' of type '${field.fieldType}' requires a 'value' property with options in the format 'Label|value' (one per line).`);
+                }
+            }
         }
 
         this.serviceLogger.log('Content type creation parameters validated successfully', validated.data);
