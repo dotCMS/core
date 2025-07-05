@@ -521,6 +521,7 @@ runs:
       shell: bash
 
     - name: 'Publishing sdk into NPM registry'
+      id: publish_packages
       working-directory: ${{ github.workspace }}/core-web/dist/libs/sdk/
       env:
         NEXT_VERSION: ${{ steps.next_version.outputs.next_version }}
@@ -595,15 +596,19 @@ runs:
           echo "❌ Some publications failed"
           exit 1
         fi
+        
+        # At the end of the publishing step, set the actual results
+        echo "actual_published_latest=$PUBLISH_LATEST_SUCCESS" >> $GITHUB_OUTPUT
+        echo "actual_published_next=$PUBLISH_NEXT_SUCCESS" >> $GITHUB_OUTPUT
         echo "::endgroup::"
       shell: bash
 
     - name: 'Set output'
       id: deployment_status
+      if: success()
       env:
-        SHOULD_PUBLISH_LATEST: ${{ steps.validate_version.outputs.should_publish_latest }}
-        SHOULD_PUBLISH_NEXT: ${{ steps.validate_version.outputs.should_publish_next }}
+        ACTUAL_PUBLISHED_LATEST: ${{ steps.publish_packages.outputs.actual_published_latest }}
+        ACTUAL_PUBLISHED_NEXT: ${{ steps.publish_packages.outputs.actual_published_next }}
       run: |
-        echo "published_latest=$SHOULD_PUBLISH_LATEST" >> $GITHUB_OUTPUT
-        echo "published_next=$SHOULD_PUBLISH_NEXT" >> $GITHUB_OUTPUT
-      shell: bash
+        echo "published_latest=$ACTUAL_PUBLISHED_LATEST" >> $GITHUB_OUTPUT
+        echo "published_next=$ACTUAL_PUBLISHED_NEXT" >> $GITHUB_OUTPUT
