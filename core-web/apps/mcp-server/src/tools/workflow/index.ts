@@ -15,7 +15,7 @@ export function registerWorkflowTools(server: McpServer) {
         {
             title: 'Save Content',
             description:
-                'Saves content by firing a workflow action. This method creates new content or updates existing content based on the provided parameters. Only contentType and languageId are required fields. All other fields depend on the content type schema.',
+                'Saves content by firing a workflow action. This method creates new content or updates existing content based on the provided parameters. Only contentType and languageId are required fields. All other fields depend on the content type schema. Fields checkbox, radio, select and multiselect are a string of comma separated values.',
             annotations: {
                 title: 'Save Content',
                 readOnlyHint: false,
