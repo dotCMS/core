@@ -89,11 +89,14 @@ Error Handling and Validation
 - Implement proper error logging and user-friendly error messages.
 - Model expected errors as return values in Server Actions.
 
+DotCMS Image Rules
+- Never user images as background, prefer Image and make it absolute
+- When rendering an image check if the property is an object and if so, pass to the src `prop.identifier` instead of the `prop`.
+
 Accessibility (a11y)
 - Use semantic HTML elements.
 - Implement proper ARIA attributes.
 - Ensure keyboard navigation support.
-
 
 Security
 - Sanitize user inputs to prevent XSS attacks.
