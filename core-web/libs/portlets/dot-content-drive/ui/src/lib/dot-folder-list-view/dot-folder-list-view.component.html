@@ -14,18 +14,22 @@
     (selectionChange)="onSelectionChange()"
     styleClass="dotTable"
     sortField="modDate"
+    data-testId="table"
     (onSort)="onSort($event)">
     <ng-template pTemplate="header">
-        <tr>
-            <th style="width: 2.5rem"><p-tableHeaderCheckbox /></th>
+        <tr data-testId="header-row">
+            <th style="width: 2.5rem"><p-tableHeaderCheckbox data-testId="header-checkbox" /></th>
             @for (column of headerColumns; track column.field) {
                 @if (column.sortable) {
-                    <th [pSortableColumn]="column.field" [width]="column.width">
+                    <th
+                        [pSortableColumn]="column.field"
+                        [width]="column.width"
+                        data-testId="header-column-sortable">
                         {{ column.header | dm }}
-                        <p-sortIcon [field]="column.field" />
+                        <p-sortIcon [field]="column.field" data-testId="sort-icon" />
                     </th>
                 } @else {
-                    <th [width]="column.width">
+                    <th [width]="column.width" data-testId="header-column-not-sortable">
                         {{ column.header | dm }}
                     </th>
                 }
@@ -37,17 +41,17 @@
         @let status = item | dcs;
 
         @if (loading()) {
-            <tr>
+            <tr data-testId="loading-row">
                 <td colspan="6">
-                    <p-skeleton height="100%" width="100%" />
+                    <p-skeleton height="3rem" width="100%" />
                 </td>
             </tr>
         } @else {
-            <tr>
-                <td>
+            <tr data-testId="item-row">
+                <td data-testId="item-checkbox">
                     <p-tableCheckbox [value]="item" />
                 </td>
-                <td class="list-view-title" style="max-width: 100%">
+                <td class="list-view-title" style="max-width: 100%" data-testId="item-title">
                     <div class="container-thumbnail">
                         <dot-contentlet-thumbnail
                             [fieldVariable]="item?.contentType"
@@ -57,7 +61,7 @@
                     </div>
                     {{ item.title }}
                 </td>
-                <td>
+                <td data-testId="item-status">
                     @if (status === 'Published') {
                         <p-chip styleClass="p-chip-sm p-chip-success" [label]="status" />
                     } @else if (status === 'Archived') {
@@ -66,9 +70,9 @@
                         <p-chip styleClass="p-chip-sm p-chip-warning" [label]="status" />
                     }
                 </td>
-                <td>{{ item.baseType | dm }}</td>
-                <td>{{ item.modUserName }}</td>
-                <td>{{ item.modDate | dotRelativeDate }}</td>
+                <td data-testId="item-base-type">{{ item.baseType | dm }}</td>
+                <td data-testId="item-mod-user-name">{{ item.modUserName }}</td>
+                <td data-testId="item-mod-date">{{ item.modDate | dotRelativeDate }}</td>
             </tr>
         }
     </ng-template>

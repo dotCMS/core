@@ -37,13 +37,12 @@ export class DotFolderListViewComponent {
     totalItems = input<number>(0);
     loading = input<boolean>(false);
 
-    selectedItems: DotContentDriveItem[] = [];
-
     selectionChange = output<DotContentDriveItem[]>();
     paginate = output<LazyLoadEvent>();
     sort = output<SortEvent>();
 
     readonly headerColumns = HEADER_COLUMNS;
+    readonly selectedItems: DotContentDriveItem[] = [];
 
     onPage(event: LazyLoadEvent) {
         this.paginate.emit(event);

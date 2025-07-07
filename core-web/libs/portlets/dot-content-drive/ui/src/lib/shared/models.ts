@@ -8,4 +8,5 @@ export interface DotFolderListViewColumn {
     header: string;
     width: string;
     sortable?: boolean;
+    order: number;
 }

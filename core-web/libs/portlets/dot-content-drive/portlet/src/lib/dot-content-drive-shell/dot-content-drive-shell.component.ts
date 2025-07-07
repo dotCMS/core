@@ -56,6 +56,7 @@ export class DotContentDriveShellComponent implements OnInit {
 
             // If the current site is the system host, we don't need to search for content
             // It initializes the store with the system host and the path
+
             if (currentSite?.identifier === SYSTEM_HOST.identifier) {
                 return;
             }
@@ -71,7 +72,6 @@ export class DotContentDriveShellComponent implements OnInit {
                 })
                 .pipe(
                     take(1),
-
                     catchError(() => {
                         this.#store.setStatus(DotContentDriveStatus.ERROR);
 
