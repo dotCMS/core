@@ -9,11 +9,11 @@ import { DotCMSContentlet } from '@dotcms/dotcms-models';
 })
 export class DotContentletStatusPipe implements PipeTransform {
     transform(value: DotCMSContentlet): string {
-        if (value.archived) {
+        if (value?.archived) {
             return 'Archived';
         }
 
-        if (value.live) {
+        if (value?.live) {
             return 'Published';
         }
 

@@ -23,4 +23,9 @@ describe('DotContentletStatusPipe', () => {
         const contentlet = { archived: false, live: false } as DotCMSContentlet;
         expect(pipe.transform(contentlet)).toEqual('Draft');
     });
+
+    it('should return "Draft" when contentlet is null', () => {
+        const contentlet = null as DotCMSContentlet;
+        expect(pipe.transform(contentlet)).toEqual('Draft');
+    });
 });

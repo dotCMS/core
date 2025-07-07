@@ -42,7 +42,7 @@
 
         @if (loading()) {
             <tr data-testId="loading-row">
-                <td colspan="6">
+                <td [colSpan]="SKELETON_SPAN">
                     <p-skeleton height="3rem" width="100%" />
                 </td>
             </tr>

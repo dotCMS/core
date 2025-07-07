@@ -42,7 +42,9 @@ export class DotFolderListViewComponent {
     sort = output<SortEvent>();
 
     readonly headerColumns = HEADER_COLUMNS;
-    readonly selectedItems: DotContentDriveItem[] = [];
+
+    readonly SKELETON_SPAN = HEADER_COLUMNS.length + 1;
+    selectedItems: DotContentDriveItem[] = [];
 
     onPage(event: LazyLoadEvent) {
         this.paginate.emit(event);
