@@ -5,7 +5,7 @@ import { Injectable } from '@angular/core';
 
 import { catchError, map, pluck } from 'rxjs/operators';
 
-import { graphqlToPageEntity } from '@dotcms/client';
+import { graphqlToPageEntity } from '@dotcms/client/internal';
 import { DEFAULT_VARIANT_ID, DotPersona } from '@dotcms/dotcms-models';
 import { DotCMSGraphQLPageResponse, DotCMSPageAsset, UVE_MODE } from '@dotcms/types';
 

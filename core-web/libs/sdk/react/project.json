@@ -17,7 +17,6 @@
             "outputs": ["{options.outputPath}"],
             "options": {
                 "main": "libs/sdk/react/src/index.ts",
-                "additionalEntryPoints": ["libs/sdk/react/src/next.ts"],
                 "generateExportsField": true,
                 "outputPath": "dist/libs/sdk/react",
                 "tsConfig": "libs/sdk/react/tsconfig.lib.json",
