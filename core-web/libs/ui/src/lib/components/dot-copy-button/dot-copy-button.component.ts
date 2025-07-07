@@ -67,15 +67,8 @@ export class DotCopyButtonComponent {
 
         this.dotClipboardUtil
             .copy(this.copy())
-            .then(() => {
-                this.$tempTooltipText.set(this.dotMessageService.get('Copied'));
-
-                setTimeout(() => {
-                    this.$tempTooltipText.set('');
-                }, 1000);
-            })
-            .catch(() => {
-                this.$tempTooltipText.set('Error');
-            });
+            .then(() => this.$tempTooltipText.set(this.dotMessageService.get('Copied')))
+            .catch(() => this.$tempTooltipText.set('Error'))
+            .finally(() => setTimeout(() => this.$tempTooltipText.set(''), 1000));
     }
 }
