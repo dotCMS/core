@@ -2,7 +2,7 @@
     <dot-category-field-list-skeleton />
 } @else {
     @if ($categories().length) {
-        <div class="w-full category-list__header">
+        <div class="w-full category-list__header flex align-items-center h-3rem">
             <dot-collapse-breadcrumb data-testId="breadcrumb-menu" [model]="$breadcrumbsMenu()" />
         </div>
         <div

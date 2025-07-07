@@ -12,6 +12,7 @@ import {
     DotCMSAnalyticsPayload,
     DotCMSBrowserEventData,
     DotCMSDeviceData,
+    DotCMSPageData,
     DotCMSUtmData
 } from './dot-content-analytics.model';
 
@@ -315,28 +316,6 @@ export const extractUTMParameters = (location: Location): Record<string, string>
 export const defaultRedirectFn = (href: string) => (window.location.href = href);
 
 /**
- * Check if we're inside the DotCMS editor
- */
-export const isInsideEditor = (): boolean => {
-    if (typeof window === 'undefined') {
-        return false; // SSR safe
-    }
-
-    try {
-        // Check if we're in an iframe
-        const inIframe = window.self !== window.top;
-
-        // Check for DotCMS editor indicators
-        const hasEditorParams = window.location.href.includes('mode=EDIT_MODE');
-        const hasVtlServlet = window.location.href.includes('/vtl/');
-
-        return inIframe || hasEditorParams || hasVtlServlet;
-    } catch {
-        return false;
-    }
-};
-
-/**
  * Gets timezone offset in the format +HH:mm or -HH:mm
  */
 const getTimezoneOffset = (): string => {
@@ -354,23 +333,22 @@ const getTimezoneOffset = (): string => {
 };
 
 /**
- * Gets local time in ISO format
+ * Gets local time in ISO format without milliseconds
  */
 export const getLocalTime = (): string => {
     try {
         const now = new Date();
         const timezoneOffset = getTimezoneOffset();
 
-        // Format: YYYY-MM-DDTHH:mm:ss.sss+HH:mm
+        // Format: YYYY-MM-DDTHH:mm:ss+HH:mm (without milliseconds)
         const year = now.getFullYear();
         const month = (now.getMonth() + 1).toString().padStart(2, '0');
         const day = now.getDate().toString().padStart(2, '0');
         const hours = now.getHours().toString().padStart(2, '0');
         const minutes = now.getMinutes().toString().padStart(2, '0');
         const seconds = now.getSeconds().toString().padStart(2, '0');
-        const milliseconds = now.getMilliseconds().toString().padStart(3, '0');
 
-        return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}.${milliseconds}${timezoneOffset}`;
+        return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}${timezoneOffset}`;
     } catch {
         return new Date().toISOString();
     }
@@ -474,15 +452,17 @@ export const enrichPagePayloadOptimized = (
     const { properties } = payload;
     const { utm } = properties as Record<string, unknown>;
 
-    const pageData: PageData = {
+    const pageData: DotCMSPageData = {
         url: (properties.url as string) ?? location.href,
-        path: (properties.path as string) ?? location.pathname,
-        hash: (properties.hash as string) ?? location.hash ?? '',
-        search: (properties.search as string) ?? location.search ?? '',
+        doc_encoding: staticData.doc_encoding,
+        doc_hash: (properties.hash as string) ?? location.hash ?? '',
+        doc_protocol: location.protocol,
+        doc_search: (properties.search as string) ?? location.search ?? '',
+        doc_host: location.hostname,
+        doc_path: (properties.path as string) ?? location.pathname,
         title: (properties.title as string) ?? document?.title,
-        width: String(properties.width),
-        height: String(properties.height),
-        referrer: (properties.referrer as string) ?? document?.referrer
+        language_id: undefined,
+        persona: undefined
     };
 
     const deviceData: DotCMSDeviceData = {

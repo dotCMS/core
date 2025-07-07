@@ -1,14 +1,10 @@
 @use "variables" as *;
 
-.category-field__search-input.p-inputtext.p-element,
-.category-field__search-icon-clear,
-.category-field__search-icon-loading {
-    border-right: none;
+.category-field__search-input.p-inputtext.p-element {
+    border-right: none !important;
 }
 
-.category-field__search--icon-search,
-.category-field__search-icon-clear,
-.category-field__search-icon-loading {
+p-inputgroup > .p-inputgroup .p-inputgroup-addon {
+    border: 0;
     color: $color-palette-primary;
-    padding: 0;
 }

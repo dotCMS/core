@@ -7,7 +7,18 @@ export const ANALYTICS_SOURCE_TYPE = ANALYTICS_WINDOWS_KEY;
 // Analytics endpoint for sending events to server
 export const ANALYTICS_ENDPOINT = '/api/v1/analytics/content/event';
 
-// Expected UTM parameter keys for campaign tracking
+/**
+ * Event Types
+ * Only two event types are supported in DotCMS Analytics
+ */
+export const EVENT_TYPES = {
+    PAGEVIEW: 'pageview',
+    TRACK: 'track'
+} as const;
+
+/**
+ * Expected UTM parameter keys for campaign tracking
+ */
 export const EXPECTED_UTM_KEYS = [
     'utm_source',
     'utm_medium',
@@ -15,7 +26,7 @@ export const EXPECTED_UTM_KEYS = [
     'utm_term',
     'utm_content',
     'utm_id'
-];
+] as const;
 
 /**
  * Session configuration constants
@@ -39,4 +50,4 @@ export const USER_ID_KEY = 'dot_analytics_user_id';
  * - click: Detects real user interaction with minimal performance impact
  * - visibilitychange: Handled separately to detect tab changes
  */
-export const ACTIVITY_EVENTS = ['click'];
+export const ACTIVITY_EVENTS = ['click'] as const;

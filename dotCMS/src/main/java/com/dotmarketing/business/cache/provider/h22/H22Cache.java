@@ -127,6 +127,10 @@ public class H22Cache extends CacheProvider {
 
 	@Override
 	public void put(final String group, final String key, final Object content) {
+		// Don't accept new cache operations during shutdown
+		if (!isInitialized || com.dotcms.shutdown.ShutdownCoordinator.isShutdownStarted()) {
+			return;
+		}
 		// Building the key
 		final Fqn fqn = new Fqn(group, key);
         if(exclude(fqn)) {
@@ -166,6 +170,10 @@ public class H22Cache extends CacheProvider {
 	
 	@Override
 	public Object get(String group, String key) {
+		// Don't accept new cache operations during shutdown
+		if (!isInitialized || com.dotcms.shutdown.ShutdownCoordinator.isShutdownStarted()) {
+			return null;
+		}
 
 
 		Object foundObject = null;
@@ -396,8 +404,36 @@ public class H22Cache extends CacheProvider {
 	@Override
 	public void shutdown() {
 		isInitialized = false;
-		// don't trash on shutdown
-		dispose(false);
+		// don't trash on shutdown - just close existing pools without creating new ones
+		shutdownPools();
+	}
+
+	/**
+	 * Shutdown existing pools without creating new ones (for clean shutdown)
+	 */
+	private void shutdownPools() {
+		for (int db = 0; db < numberOfDbs; db++) {
+			try {
+				final H22HikariPool pool = pools[db];
+				if (pool != null) {
+					pool.close();
+					pools[db] = null;
+				}
+			} catch (Exception e) {
+				Logger.error(this.getClass(), "Error closing H22 cache pool " + db + ": " + e.getMessage(), e);
+			}
+		}
+		
+		// Shutdown the async executor service
+		try {
+			executorService.shutdown();
+			if (!executorService.awaitTermination(2, java.util.concurrent.TimeUnit.SECONDS)) {
+				executorService.shutdownNow();
+			}
+		} catch (InterruptedException e) {
+			executorService.shutdownNow();
+			Thread.currentThread().interrupt();
+		}
 	}
 
 	protected void dispose(boolean trashMe) {
@@ -429,6 +465,10 @@ public class H22Cache extends CacheProvider {
 	private final Semaphore building = new Semaphore(1, true);
 
 	private Optional<H22HikariPool> getPool(final int dbNum, final boolean startup) throws SQLException {
+		// Don't create new pools during shutdown
+		if (!isInitialized && com.dotcms.shutdown.ShutdownCoordinator.isShutdownStarted()) {
+			return Optional.empty();
+		}
 
 		H22HikariPool source = pools[dbNum];
 		if (source == null) {

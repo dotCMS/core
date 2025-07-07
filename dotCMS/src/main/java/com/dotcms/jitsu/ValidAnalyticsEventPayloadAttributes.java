@@ -22,4 +22,7 @@ public interface ValidAnalyticsEventPayloadAttributes {
     String URL_ATTRIBUTE_NAME = "url";
     String REFERER_ATTRIBUTE_NAME = "referer";
     String USER_AGENT_ATTRIBUTE_NAME = "user_agent";
+    String EVENT_TYPE_ATTRIBUTE_NAME = "event_type";
+
+    String LOCAL_TIME_ATTRIBUTE_NAME = "local_time";
 }

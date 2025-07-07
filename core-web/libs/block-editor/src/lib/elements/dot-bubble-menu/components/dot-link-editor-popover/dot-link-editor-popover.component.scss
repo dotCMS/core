@@ -1,0 +1,140 @@
+@use "variables" as *;
+
+.bubble-link-form {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-4;
+    width: 18rem;
+    padding: $spacing-2;
+    background: $white;
+    border-radius: $border-radius-lg;
+    box-shadow: $shadow-m;
+
+    ::ng-deep {
+        p-listbox {
+            width: 100%;
+        }
+
+        .p-listbox-items {
+            display: flex;
+            flex-direction: column;
+            gap: $spacing-1;
+        }
+
+        .p-listbox-item {
+            width: 100%;
+            height: 100%;
+            padding: $spacing-1;
+
+            &.p-highlight,
+            &.p-focus,
+            &:hover {
+                background-color: $color-palette-gray-300;
+            }
+        }
+    }
+
+    .search-input {
+        height: 2rem;
+    }
+}
+
+.current-link-view {
+    &__header {
+        display: flex;
+        align-items: center;
+        gap: $spacing-1;
+        margin-bottom: $spacing-3;
+    }
+
+    &__icon {
+        font-size: 1.5em;
+    }
+
+    &__link {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        max-width: 18.75rem;
+        display: inline-block;
+    }
+
+    &__checkbox-container {
+        margin-bottom: $spacing-4;
+    }
+
+    &__checkbox {
+        margin-right: $spacing-0;
+    }
+
+    &__actions {
+        display: flex;
+        gap: $spacing-2;
+    }
+
+    &__action-button {
+        width: 50%;
+    }
+}
+
+.listbox-item {
+    display: flex;
+    align-items: center;
+    gap: $spacing-2;
+    padding: $spacing-0 0;
+    height: 100%;
+    width: 100%;
+}
+
+.listbox-item__img {
+    width: 3rem;
+    height: 3rem;
+    object-fit: cover;
+    border-radius: $border-radius-sm;
+    background: $color-palette-gray-200;
+}
+
+.listbox-item__icon {
+    font-size: $font-size-xxxl;
+    color: $color-palette-gray-500;
+    width: 3rem;
+    text-align: center;
+    border-radius: $border-radius-sm;
+    border: 1px solid $color-palette-gray-300;
+}
+
+.listbox-item__content {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+}
+
+.listbox-item__title {
+    font-weight: $font-weight-semi-bold;
+    color: $black;
+}
+
+.listbox-item__url {
+    font-size: $font-size-sm;
+    color: $color-palette-gray-600;
+    word-break: break-all;
+}
+
+.skeleton-item {
+    display: flex;
+    align-items: center;
+    gap: $spacing-3;
+}
+.skeleton-lines {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-1;
+}
+
+.empty-message {
+    text-align: center;
+    padding: $spacing-6 0;
+    font-size: $font-size-lmd;
+    word-break: break-word;
+}

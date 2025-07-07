@@ -1,4 +1,4 @@
-import { ANALYTICS_SOURCE_TYPE } from '../../shared/dot-content-analytics.constants';
+import { ANALYTICS_SOURCE_TYPE, EVENT_TYPES } from '../../shared/dot-content-analytics.constants';
 import { DotCMSAnalyticsPayload } from '../../shared/dot-content-analytics.model';
 import { enrichPagePayloadOptimized, getLocalTime } from '../../shared/dot-content-analytics.utils';
 
@@ -22,6 +22,7 @@ export const dotAnalyticsEnricherPlugin = () => {
             return enrichPagePayloadOptimized(payload);
         },
 
+        // TODO: Fix this when we haver the final design for the track event
         /**
          * TRACK EVENT ENRICHMENT - Runs after identity context injection
          * Creates structured track events with pre-injected context
@@ -32,10 +33,10 @@ export const dotAnalyticsEnricherPlugin = () => {
             const enrichedPayload = {
                 events: [
                     {
-                        event_type: 'track',
-                        custom_event: payload.event,
+                        event_type: EVENT_TYPES.TRACK,
                         local_time: local_time,
-                        properties: {
+                        data: {
+                            event: payload.event,
                             ...payload.properties,
                             src: ANALYTICS_SOURCE_TYPE
                         }

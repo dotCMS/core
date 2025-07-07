@@ -17,20 +17,13 @@ const INTERCEPTOR_CONFIG = {
         short: 500,
         long: 1000
     },
-    // Sync timeouts consolidados
-    syncTimeouts: [100, 500, 1000]
+    // Normal sync timeouts (when Angular is available)
+    syncTimeouts: [100, 500, 1000],
+    // Fallback timeouts (when Angular is not available)
+    fallbackTimeouts: [500, 1000, 2000]
 };
 
-/**
- * Logger instance for this module
- */
-const fieldLogger = window.DotLegacyLogger?.createLogger('FieldInterceptor') || {
-    error: (msg) => console.error(`❌ [FieldInterceptor] ${msg}`),
-    warn: (msg) => console.warn(`⚠️ [FieldInterceptor] ${msg}`),
-    info: (msg) => console.log(`ℹ️ [FieldInterceptor] ${msg}`),
-    debug: (msg) => console.log(`🔧 [FieldInterceptor] ${msg}`),
-    trace: (msg) => console.log(`🔍 [FieldInterceptor] ${msg}`)
-};
+
 
 /**
  * DotFieldInterceptorManager
@@ -57,7 +50,6 @@ class DotFieldInterceptorManager {
      */
     init(fields, contentlet) {
         if (this.isInitialized) {
-            fieldLogger.warn('Field interceptor manager already initialized');
             return;
         }
 
@@ -65,8 +57,6 @@ class DotFieldInterceptorManager {
         this.contentlet = contentlet || {};
         this.bodyElement = document.querySelector('body');
         this.isInitialized = true;
-
-        fieldLogger.info(`Initializing Field Interceptor Manager (${this.allFields.length} fields)`);
 
         this.createInitialHiddenInputs();
         this.installGlobalInterceptors();
@@ -78,11 +68,6 @@ class DotFieldInterceptorManager {
      * @param {string} specificValue - Value for the specific field
      */
     syncFieldValues(specificVariable = null, specificValue = null) {
-        fieldLogger.debug(specificVariable ?
-            `Syncing specific field: ${specificVariable}` :
-            'Starting field synchronization...'
-        );
-
         let syncCount = 0;
         let errorCount = 0;
 
@@ -94,10 +79,9 @@ class DotFieldInterceptorManager {
             let foundValue = specificValue;
             let source = specificValue ? 'provided value' : '';
 
-            // Si no tenemos un valor específico, buscamos el valor actual
+
             if (!foundValue) {
                 const hiddenInput = document.getElementById(variable);
-                fieldLogger.trace(`Checking field: ${variable}`);
 
                 // Method 1: Check the exact DOM element that VTL sets
                 const vtlTargetElement = document.getElementById(variable);
@@ -147,10 +131,11 @@ class DotFieldInterceptorManager {
                     const currentHiddenValue = hiddenInput.value;
                     const shouldForceSync = !hiddenInput._angularSynced;
 
-                    if (currentHiddenValue !== foundValue || shouldForceSync) {
-                        const reason = shouldForceSync ? "FORCE INITIAL SYNC" : "VALUE CHANGED";
-                        fieldLogger.debug(`Syncing ${variable}: "${currentHiddenValue}" → "${foundValue}" (${source}) [${reason}]`);
+                    // Smart initial sync: only sync if there's a real difference
+                    const hasRealDifference = currentHiddenValue !== foundValue;
+                    const isInitialSyncNeeded = shouldForceSync && hasRealDifference;
 
+                    if (hasRealDifference || isInitialSyncNeeded) {
                         hiddenInput.value = foundValue;
 
                         if (window.DotCustomFieldApi) {
@@ -158,62 +143,27 @@ class DotFieldInterceptorManager {
                                 window.DotCustomFieldApi.set(variable, foundValue);
                                 hiddenInput._angularSynced = true;
                                 syncCount++;
-
-                                // Verification only in debug mode
-                                this.verifySync(variable);
                             } catch (error) {
-                                fieldLogger.error(`Error calling DotCustomFieldApi.set for ${variable}:`, error);
+                                console.error(`Error calling DotCustomFieldApi.set for ${variable}:`, error);
                                 errorCount++;
                             }
                         } else {
-                            fieldLogger.error('DotCustomFieldApi not available!');
+                            console.error('DotCustomFieldApi not available!');
                             errorCount++;
                         }
+                    } else if (shouldForceSync && !hasRealDifference) {
+                        hiddenInput._angularSynced = true;
                     }
                 }
             }
         });
 
-        // Summary log
-        if (syncCount > 0 || errorCount > 0) {
-            fieldLogger.info(`Sync completed: ${syncCount} fields synchronized${errorCount > 0 ? `, ${errorCount} errors` : ''}`);
-        }
+
     }
 
-    /**
-     * Syncs all visible field values with Angular
-     */
-    syncAllVisibleValues() {
-        this.syncFieldValues();
-    }
 
-    /**
-     * Syncs a specific field value with Angular
-     * @param {string} variable - Field variable name
-     * @param {string} value - Field value to sync
-     */
-    syncFieldValue(variable, value) {
-        this.syncFieldValues(variable, value);
-    }
 
-    /**
-     * Verifies field synchronization in debug mode only
-     * @param {string} variable - Field variable to verify
-     */
-    verifySync(variable) {
-        if (window.DotLegacyLogger?.getConfig().logLevel >= window.DotLegacyLogger?.LOG_LEVELS.DEBUG) {
-            setTimeout(() => {
-                if (window.DotCustomFieldApi.get) {
-                    try {
-                        const verifyValue = window.DotCustomFieldApi.get(variable);
-                        fieldLogger.trace(`Verification: ${variable} = "${verifyValue}"`);
-                    } catch (error) {
-                        fieldLogger.warn(`Could not verify ${variable}: ${error.message}`);
-                    }
-                }
-            }, 100);
-        }
-    }
+
 
     /**
      * Creates a hidden input element for field tracking
@@ -251,7 +201,6 @@ class DotFieldInterceptorManager {
                     const oldValue = valueDescriptor.get.apply(this);
                     valueDescriptor.set.apply(this, [value]);
                     if (oldValue !== value && !isAngularUpdate) {
-                        fieldLogger.debug(`Programmatic value change detected on ${variable}: "${value}"`);
                         if (window.DotCustomFieldApi) {
                             window.DotCustomFieldApi.set(variable, value);
                         }
@@ -267,9 +216,8 @@ class DotFieldInterceptorManager {
             };
 
             input._dotIntercepted = true;
-            fieldLogger.debug(`Smart interceptor added for: ${variable}`);
         } catch (error) {
-            fieldLogger.error(`Failed to intercept input: ${variable} - ${error.message}`);
+            console.error(`Failed to intercept input: ${variable} - ${error.message}`);
         }
 
         return input;
@@ -300,19 +248,13 @@ class DotFieldInterceptorManager {
      */
     interceptExistingInputs() {
         const inputs = Array.from(document.querySelectorAll('input'));
-        const interceptedCount = this.interceptInputs(inputs);
-
-        if (interceptedCount > 0) {
-            fieldLogger.debug(`Intercepted ${interceptedCount} existing inputs`);
-        }
+        this.interceptInputs(inputs);
     }
 
     /**
      * Installs global interceptors for input tracking and value changes
      */
     installGlobalInterceptors() {
-        fieldLogger.debug('Installing global interceptors...');
-
         // Intercept setAttribute calls
         const originalSetAttribute = HTMLInputElement.prototype.setAttribute;
         HTMLInputElement.prototype.setAttribute = function(name, value) {
@@ -334,8 +276,6 @@ class DotFieldInterceptorManager {
 
         // Watch for new inputs being added
         this.setupMutationObserver();
-
-        fieldLogger.info('Global interceptors installed');
     }
 
     /**
@@ -346,7 +286,6 @@ class DotFieldInterceptorManager {
             this.mutationObserver.disconnect();
         }
 
-        let newInputCount = 0;
         this.mutationObserver = new MutationObserver(mutations => {
             const newInputs = [];
 
@@ -362,12 +301,7 @@ class DotFieldInterceptorManager {
             }
 
             if (newInputs.length > 0) {
-                newInputCount += this.interceptInputs(newInputs);
-            }
-
-            if (newInputCount > 0) {
-                fieldLogger.debug(`Intercepted ${newInputCount} new dynamic inputs`);
-                newInputCount = 0;
+                this.interceptInputs(newInputs);
             }
         });
 
@@ -381,14 +315,10 @@ class DotFieldInterceptorManager {
      * Creates initial hidden inputs for all field definitions
      */
     createInitialHiddenInputs() {
-        fieldLogger.debug(`Creating ${this.allFields.length} initial hidden inputs...`);
-
         this.allFields.forEach(({ variable }) => {
-            // ELIMINADA la llamada duplicada a addSmartInterceptor
             this.createHiddenInput(variable, this.contentlet[variable] || "");
         });
 
-        // this.debugAngularAPI();
         this.setupEventHandlers();
         this.waitForAngularAndSync();
     }
@@ -397,32 +327,27 @@ class DotFieldInterceptorManager {
      * Sets up unified blur and change event handlers for field synchronization
      */
     setupEventHandlers() {
-        fieldLogger.debug('Setting up event handlers...');
-
         const handleInputEvent = (event, eventType) => {
             const target = event.target;
-            fieldLogger.trace(`${eventType} event on: ${target.tagName} ${target.id} ${target.name} = "${target.value}"`);
 
             if (target && target.tagName === 'INPUT') {
                 const variable = target.name || target.id;
 
                 // Direct field match
                 if (variable && this.allFields.some(f => f.variable === variable)) {
-                    fieldLogger.debug(`Direct ${eventType} event on ${variable}: "${target.value}"`);
-                    this.syncFieldValue(variable, target.value);
+                    this.syncFieldValues(variable, target.value);
                 }
                 // Widget input (like cachettlbox -> cachettl)
                 else if (variable && variable.endsWith('box')) {
                     const baseVariable = variable.replace(/box$/, '');
                     if (this.allFields.some(f => f.variable === baseVariable)) {
-                        fieldLogger.debug(`Widget ${eventType} event on ${variable} -> syncing ${baseVariable}: "${target.value}"`);
-                        this.syncFieldValue(baseVariable, target.value);
+                        this.syncFieldValues(baseVariable, target.value);
 
                         // Delayed sync for hidden field
                         setTimeout(() => {
                             const hiddenField = document.getElementById(baseVariable);
                             if (hiddenField && hiddenField.value) {
-                                this.syncFieldValue(baseVariable, hiddenField.value);
+                                this.syncFieldValues(baseVariable, hiddenField.value);
                             }
                         }, 100);
                     }
@@ -430,11 +355,8 @@ class DotFieldInterceptorManager {
             }
         };
 
-        // Event listeners unificados
         document.addEventListener('blur', (event) => handleInputEvent(event, 'blur'), true);
         document.addEventListener('change', (event) => handleInputEvent(event, 'change'), true);
-
-        fieldLogger.info('Event handlers set up');
     }
 
     /**
@@ -447,7 +369,7 @@ class DotFieldInterceptorManager {
 
         INTERCEPTOR_CONFIG.syncTimeouts.forEach(timeout => {
             setTimeout(() => {
-                this.syncAllVisibleValues();
+                this.syncFieldValues();
                 // Reset flag after last sync
                 if (timeout === INTERCEPTOR_CONFIG.syncTimeouts[INTERCEPTOR_CONFIG.syncTimeouts.length - 1]) {
                     this.syncScheduled = false;
@@ -461,22 +383,13 @@ class DotFieldInterceptorManager {
      */
     waitForAngularAndSync() {
         if (window.DotCustomFieldApi && window.DotCustomFieldApi.ready) {
-            fieldLogger.debug('Waiting for Angular to be ready...');
-
             window.DotCustomFieldApi.ready((api) => {
-                fieldLogger.info('Angular is ready! Starting initial sync...');
-                fieldLogger.debug('API methods available:', {
-                    set: typeof api.set,
-                    get: typeof api.get
-                });
-
                 this.scheduleSync();
             });
         } else {
-            fieldLogger.warn('DotCustomFieldApi.ready not available, using fallback timeouts');
-            // Fallback con timeouts más largos
-            [500, 1000, 2000].forEach(timeout => {
-                setTimeout(() => this.syncAllVisibleValues(), timeout);
+            // Fallback with longer timeouts
+            INTERCEPTOR_CONFIG.fallbackTimeouts.forEach(timeout => {
+                setTimeout(() => this.syncFieldValues(), timeout);
             });
         }
     }
@@ -486,7 +399,6 @@ class DotFieldInterceptorManager {
      */
     setupDojoIntegration() {
         if (typeof dojo === 'undefined') {
-            fieldLogger.warn('Dojo not available, skipping Dojo integration');
             return;
         }
 
@@ -508,8 +420,6 @@ class DotFieldInterceptorManager {
                     });
                 });
             });
-
-            fieldLogger.info('Dojo integration setup complete');
         });
     }
 
@@ -519,7 +429,7 @@ class DotFieldInterceptorManager {
      * @param {Error} e - Error object
      */
     DWRErrorHandler(msg, e) {
-        fieldLogger.error(`DWR Error: ${msg}`, e);
+        console.error(`DWR Error: ${msg}`, e);
     }
 
     /**
@@ -531,7 +441,6 @@ class DotFieldInterceptorManager {
             this.mutationObserver = null;
         }
 
-        fieldLogger.info('Field interceptor manager cleaned up');
         this.isInitialized = false;
     }
 
@@ -543,40 +452,7 @@ class DotFieldInterceptorManager {
         return INTERCEPTOR_CONFIG;
     }
 
-    /**
-     * Debug utility to analyze Angular API availability and field values
-     */
-    debugAngularAPI() {
-        if (window.DotLegacyLogger?.getConfig().logLevel < window.DotLegacyLogger?.LOG_LEVELS.DEBUG) return;
 
-        console.log('🔍 DEBUG: Angular API Analysis');
-        console.log('==============================');
-        console.log('window.DotCustomFieldApi exists:', !!window.DotCustomFieldApi);
-        if (window.DotCustomFieldApi) {
-            console.log('API methods:', {
-                set: typeof window.DotCustomFieldApi.set,
-                get: typeof window.DotCustomFieldApi.get,
-                ready: typeof window.DotCustomFieldApi.ready,
-                onChangeField: typeof window.DotCustomFieldApi.onChangeField
-            });
-
-            console.log('\n📋 Current field values:');
-            this.allFields.forEach(({ variable }) => {
-                if (window.DotCustomFieldApi.get) {
-                    try {
-                        const value = window.DotCustomFieldApi.get(variable);
-                        console.log(`  ${variable}: "${value}"`);
-                    } catch (error) {
-                        console.log(`  ${variable}: ERROR - ${error.message}`);
-                    }
-                }
-            });
-        } else {
-            console.log('❌ DotCustomFieldApi NOT FOUND');
-            console.log('Available window properties:', Object.keys(window).filter(k => k.includes('Dot')));
-        }
-        console.log('==============================');
-    }
 }
 
 /**
@@ -619,17 +495,7 @@ window.DotFieldInterceptors = {
     setupInterceptorCleanup,
     INTERCEPTOR_CONFIG,
 
-    syncNow: () => {
-        if (window.DotFieldInterceptorManager_Instance) {
-            window.DotFieldInterceptorManager_Instance.syncAllVisibleValues();
-        }
-    },
 
-    setLogLevel: (level) => {
-        if (window.DotLegacyLogger) {
-            window.DotLegacyLogger.setGlobalLogLevel(level);
-        } else {
-            console.error('❌ Shared logger not available');
-        }
-    }
+
+
 };

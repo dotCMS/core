@@ -107,6 +107,12 @@ public class DbConnectionFactory {
             synchronized (DbConnectionFactory.class) {
 
                 if (null == defaultDataSource) {
+                    // Prevent DataSource recreation during shutdown
+                    if (com.dotcms.shutdown.ShutdownCoordinator.isShutdownStarted()) {
+                        Logger.debug(DbConnectionFactory.class, "Shutdown in progress - DataSource not available");
+                        throw new com.dotcms.shutdown.ShutdownException("DataSource not available during shutdown");
+                    }
+                    
                     try {
                         defaultDataSource = DataSourceStrategyProvider.getInstance().get();
                         addDatasourceToJNDIIfNeeded();
@@ -116,7 +122,7 @@ public class DbConnectionFactory {
                                 e);
                         if(Config.getBooleanProperty("SYSTEM_EXIT_ON_STARTUP_FAILURE", true)){
                             e.printStackTrace();
-                            System.exit(1);
+                            com.dotcms.shutdown.SystemExitManager.databaseFailureExit("Database connection initialization failed: " + e.getMessage());
                         }
 
                         throw new DotRuntimeException(e.toString());
@@ -230,9 +236,18 @@ public class DbConnectionFactory {
  
 
             return connection;
+        } catch (com.dotcms.shutdown.ShutdownException e) {
+            // Handle shutdown exceptions quietly
+            Logger.debug(DbConnectionFactory.class, "Database access during shutdown: " + e.getMessage());
+            throw e;
         } catch (Exception e) {
-            Logger.error(DbConnectionFactory.class, "---------- DBConnectionFactory: error : " + e);
-            Logger.debug(DbConnectionFactory.class, "---------- DBConnectionFactory: error ", e);
+            // Check if this is during shutdown to reduce noise
+            if (com.dotcms.shutdown.ShutdownCoordinator.isShutdownStarted()) {
+                Logger.debug(DbConnectionFactory.class, "Database access during shutdown: " + e.getMessage());
+            } else {
+                Logger.error(DbConnectionFactory.class, "---------- DBConnectionFactory: error : " + e);
+                Logger.debug(DbConnectionFactory.class, "---------- DBConnectionFactory: error ", e);
+            }
             throw new DotRuntimeException(e.getMessage(), e);
         }
     }
@@ -702,5 +717,30 @@ public class DbConnectionFactory {
 
         return isConstraintViolationException;
     } // isConstraintViolationException.
+
+    /**
+     * Shuts down the default DataSource to stop connection pool threads and prevent memory leaks.
+     * This should be called during application shutdown to properly close the HikariCP connection pool.
+     */
+    public static void shutdownDataSource() {
+        if (defaultDataSource != null) {
+            try {
+                // Check if it's a HikariDataSource and close it properly
+                if (defaultDataSource instanceof com.zaxxer.hikari.HikariDataSource) {
+                    Logger.info(DbConnectionFactory.class, "Shutting down HikariCP DataSource");
+                    ((com.zaxxer.hikari.HikariDataSource) defaultDataSource).close();
+                    Logger.info(DbConnectionFactory.class, "HikariCP DataSource shutdown completed");
+                } else {
+                    Logger.debug(DbConnectionFactory.class, "DataSource is not HikariDataSource, no shutdown needed");
+                }
+            } catch (Exception e) {
+                Logger.warn(DbConnectionFactory.class, "Error shutting down DataSource: " + e.getMessage(), e);
+            } finally {
+                defaultDataSource = null;
+            }
+        } else {
+            Logger.debug(DbConnectionFactory.class, "No DataSource to shutdown");
+        }
+    }
 
 }
