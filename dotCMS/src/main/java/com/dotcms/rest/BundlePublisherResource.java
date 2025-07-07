@@ -21,6 +21,7 @@ import com.dotmarketing.util.UtilMethods;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -38,6 +39,7 @@ import java.util.Optional;
 import static com.liferay.util.StringPool.BLANK;
 
 @Path("/bundlePublisher")
+@Tag(name = "Bundle", description = "Content bundle management and deployment")
 public class BundlePublisherResource {
 
 	public static String MY_TEMP = "";

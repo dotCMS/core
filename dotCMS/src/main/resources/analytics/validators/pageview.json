@@ -3,6 +3,10 @@
     "type": "string",
     "required": true
   },
+  "local_time": {
+    "type": "date",
+    "required": true
+  },
   "data": {
     "type": "json_object",
     "required": true,

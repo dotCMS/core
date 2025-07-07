@@ -30,6 +30,7 @@
         <git.origin.branch>origin/main</git.origin.branch>
         <nx.affected.options>--base=${git.origin.branch} --head=HEAD</nx.affected.options>
         <pretty.quick.options>--branch=${git.origin.branch}</pretty.quick.options>
+        <skip.nx.reset.execution>true</skip.nx.reset.execution>
     </properties>
 
     <dependencies>
@@ -195,6 +196,18 @@
                             <arguments>run nx run-many -t test --exclude='tag:skip:test'</arguments>
                         </configuration>
                     </execution>
+
+                    <execution>
+                        <id>nx-reset</id>
+                        <goals>
+                            <goal>yarn</goal>
+                        </goals>
+                        <phase>validate</phase>
+                        <configuration>
+                            <arguments>exec nx reset</arguments>
+                            <skip>${skip.nx.reset.execution}</skip>
+                        </configuration>
+                    </execution>
                 </executions>
 
             </plugin>
@@ -303,6 +316,18 @@
                 <yarn.install.cmd>--frozen-lockfile --prefer-offline</yarn.install.cmd>
             </properties>
             <build/>
+        </profile>
+
+        <profile>
+            <id>do-nx-reset</id>
+            <activation>
+                <property>
+                    <name>nx.reset</name>
+                </property>
+            </activation>
+            <properties>
+                <skip.nx.reset.execution>false</skip.nx.reset.execution>
+            </properties>
         </profile>
 
         <profile>

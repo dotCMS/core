@@ -15,6 +15,8 @@ import java.util.stream.Collectors;
  */
 public class AnalyticsValidatorUtil {
 
+    public final static AnalyticsValidatorUtil INSTANCE = new AnalyticsValidatorUtil();
+
     private final Validators globalValidators;
     private final Map<EventType, Validators> eventsValidators;
 
@@ -23,7 +25,7 @@ public class AnalyticsValidatorUtil {
      * Constructor that initializes the validators map by processing JSON validation files.
      * It delegates to AnalyticsValidatorProcessor for the actual processing.
      */
-    public AnalyticsValidatorUtil() {
+    private AnalyticsValidatorUtil() {
         globalValidators = AnalyticsValidatorProcessor.INSTANCE.getGlobalValidators();
         eventsValidators = AnalyticsValidatorProcessor.INSTANCE.getEventTypeValidators();
     }
@@ -206,6 +208,30 @@ public class AnalyticsValidatorUtil {
         } catch (IllegalArgumentException e) {
             return Optional.empty();
         }
+    }
+
+    /**
+     * Retrieves a list of field paths that have date validators associated with them for a specific event type.
+     * This method examines all validators for the given event type and identifies fields that are validated
+     * using a DateValidator.
+     *
+     * @param eventType The event type for which to find date fields
+     * @return A list of paths (in dot notation) to fields that are validated as dates
+     */
+    public List<String> getDateField(final EventType eventType) {
+        final List<String> paths = new ArrayList<>();
+        final Validators validators = eventsValidators.get(eventType);
+
+        for (String path : validators.getPaths()) {
+            final boolean isDate = validators.getValidators(path).stream()
+                    .anyMatch(validator -> DateValidator.class.isAssignableFrom(validator.getClass()));
+
+            if (isDate) {
+                paths.add(path);
+            }
+        }
+
+        return paths;
     }
 
     private static class JsonValues {

@@ -1,8 +1,11 @@
+import { EVENT_TYPES } from '../shared/dot-content-analytics.constants';
 import { sendAnalyticsEventToServer } from '../shared/dot-content-analytics.http';
 import {
     DotCMSAnalyticsConfig,
     DotCMSAnalyticsParams,
+    DotCMSEnrichedPayload,
     DotCMSPageViewRequestBody,
+    DotCMSTrackEvent,
     DotCMSTrackRequestBody
 } from '../shared/dot-content-analytics.model';
 
@@ -45,27 +48,34 @@ export const dotAnalytics = (config: DotCMSAnalyticsConfig) => {
                 throw new Error('DotAnalytics: Plugin not initialized');
             }
 
-            // Build final structured event
+            if (!context || !page || !device || !local_time) {
+                throw new Error('DotAnalytics: Missing required payload data for pageview event');
+            }
+
+            // Build final structured event with data property
             const body: DotCMSPageViewRequestBody = {
                 context,
                 events: [
                     {
-                        event_type: 'pageview',
+                        event_type: EVENT_TYPES.PAGEVIEW,
                         local_time,
-                        page,
-                        device,
-                        ...(utm && { utm: utm })
+                        data: {
+                            page,
+                            device,
+                            ...(utm && { utm: utm })
+                        }
                     }
                 ]
             };
 
             if (config.debug) {
-                console.warn('Event to send:', body);
+                console.warn('DotAnalytics: Pageview event to send:', body);
             }
 
             return sendAnalyticsEventToServer(body, config);
         },
 
+        // TODO: Fix this when we haver the final design for the track event
         /**
          * Track a custom event
          * Takes enriched data and sends it to the analytics server
@@ -77,10 +87,44 @@ export const dotAnalytics = (config: DotCMSAnalyticsConfig) => {
                 throw new Error('DotAnalytics: Plugin not initialized');
             }
 
-            // For track events, use the enriched payload directly
+            // Check if payload has events array (from enricher plugin)
+            if ('events' in payload && Array.isArray((payload as DotCMSEnrichedPayload).events)) {
+                // Use the enriched payload structure directly
+                const enrichedPayload = payload as DotCMSEnrichedPayload;
+                const body: DotCMSTrackRequestBody = {
+                    context: enrichedPayload.context,
+                    events: enrichedPayload.events as DotCMSTrackEvent[]
+                };
+
+                if (config.debug) {
+                    console.warn('DotAnalytics: Track event to send:', body);
+                }
+
+                return sendAnalyticsEventToServer(body, config);
+            }
+
+            // Fallback for legacy payload structure (should not happen with enricher plugin)
+            if (!payload.context || !payload.local_time) {
+                throw new Error('DotAnalytics: Missing required payload data for track event');
+            }
+
             const body: DotCMSTrackRequestBody = {
-                context: payload.context
+                context: payload.context,
+                events: [
+                    {
+                        event_type: EVENT_TYPES.TRACK,
+                        local_time: payload.local_time,
+                        data: {
+                            event: payload.event,
+                            ...payload.properties
+                        }
+                    }
+                ]
             };
+
+            if (config.debug) {
+                console.warn('DotAnalytics: Track event to send (fallback):', body);
+            }
 
             return sendAnalyticsEventToServer(body, config);
         },

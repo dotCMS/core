@@ -80,7 +80,8 @@ public class AnalyticsValidatorProcessor {
         new RequiredFieldValidator(),
         new StringTypeValidator(),
         new JsonObjectTypeValidator(),
-        new JsonArrayTypeValidator()
+        new JsonArrayTypeValidator(),
+        new DateValidator()
     );
 
     public Validators getGlobalValidators(){
@@ -212,6 +213,7 @@ public class AnalyticsValidatorProcessor {
     private  enum ValidatorType {
         JSON_OBJECT,
         JSON_ARRAY,
-        STRING;
+        STRING,
+        DATE;
     }
 }

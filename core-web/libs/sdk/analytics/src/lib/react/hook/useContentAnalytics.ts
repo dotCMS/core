@@ -1,7 +1,8 @@
 import { useCallback, useContext, useRef } from 'react';
 
+import { getUVEState } from '@dotcms/uve';
+
 import { DotCMSAnalytics } from '../../dotAnalytics/shared/dot-content-analytics.model';
-import { isInsideEditor } from '../../dotAnalytics/shared/dot-content-analytics.utils';
 import DotContentAnalyticsContext from '../contexts/DotContentAnalyticsContext';
 
 /**
@@ -65,7 +66,8 @@ export const useContentAnalytics = (): DotCMSAnalytics => {
 
     const track = useCallback(
         (eventName: string, payload: Record<string, unknown> = {}) => {
-            if (!isInsideEditor()) {
+            const uveState = getUVEState();
+            if (!uveState) {
                 instance.track(eventName, {
                     ...payload,
                     timestamp: new Date().toISOString()
@@ -75,18 +77,16 @@ export const useContentAnalytics = (): DotCMSAnalytics => {
         [instance]
     );
 
-    const pageView = useCallback(
-        (payload: Record<string, unknown> = {}) => {
-            if (!isInsideEditor()) {
-                const currentPath = window.location.pathname;
-                if (currentPath !== lastPathRef.current) {
-                    lastPathRef.current = currentPath;
-                    instance.pageView(payload);
-                }
+    const pageView = useCallback(() => {
+        const uveState = getUVEState();
+        if (!uveState) {
+            const currentPath = window.location.pathname;
+            if (currentPath !== lastPathRef.current) {
+                lastPathRef.current = currentPath;
+                instance.pageView();
             }
-        },
-        [instance]
-    );
+        }
+    }, [instance]);
 
     return {
         track,
