@@ -17,6 +17,7 @@ import com.dotcms.util.DotPreconditions;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.struts.MultiMessageResources;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.Collections;
 import java.util.Locale;
 import java.util.Map;
@@ -28,6 +29,7 @@ import org.apache.commons.lang.StringUtils;
  * @author Geoff M. Granum
  */
 @Path("/v1/system/i18n")
+@Tag(name = "Internationalization")
 public class I18NResource {
 
     public I18NResource() {

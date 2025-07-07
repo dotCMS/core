@@ -7,6 +7,7 @@ import com.dotcms.health.util.HealthCheckUtils;
 
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
+import com.dotmarketing.util.Logger;
 import javax.enterprise.context.ApplicationScoped;
 import java.util.HashMap;
 import java.util.Map;
@@ -31,6 +32,12 @@ public class CacheHealthCheck extends HealthCheckBase {
     
     @Override
     protected CheckResult performCheck() throws Exception {
+        // Skip cache operations during shutdown to avoid accessing cache systems that are shutting down
+        if (isShutdownInProgress()) {
+            Logger.debug(this, "Skipping cache operations test during shutdown");
+            return new CheckResult(false, 0L, "Cache health check skipped during shutdown to avoid cache operations while cache systems are shutting down");
+        }
+        
         int timeoutMs = getTimeoutMs();
         String testKey = getConfigProperty("test-key", "health-check-cache-test");
         String testGroup = getConfigProperty("test-group", "health.check");

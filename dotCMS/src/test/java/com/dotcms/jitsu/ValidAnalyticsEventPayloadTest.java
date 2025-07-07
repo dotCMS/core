@@ -21,7 +21,8 @@ public class ValidAnalyticsEventPayloadTest  {
         "}," +
          " \"events\": [" +
             "{" +
-               "\"event_type\": \"page_view\"," +
+                "\"event_type\": \"pageview\"," +
+                "\"local_time\": \"2025-06-09T14:30:00+02:00\"," +
                 "\"data\": {" +
                     "\"page\": {" +
                         "\"url\": \"http://loquesea.com/index#pepito?a=b\"," +
@@ -53,7 +54,8 @@ public class ValidAnalyticsEventPayloadTest  {
                 "}" +
             "}," +
             "{" +
-                "\"eventType\": \"page_view\"," +
+                "\"event_type\": \"pageview\"," +
+                "\"local_time\": \"2025-06-09T14:30:00+02:00\"," +
                 "\"data\": {" +
                     "\"page\": {" +
                         "\"url\": \"http://loquesea.com/another_page#pepe?c=d\"," +
@@ -89,7 +91,7 @@ public class ValidAnalyticsEventPayloadTest  {
 
     /**
      * Method to test: {@link ValidAnalyticsEventPayload#payloads()}
-     * when: a {@link ValidAnalyticsEventPayload} is created with a payload with sevarls events
+     * when: a {@link ValidAnalyticsEventPayload} is created with a payload with sevarals events
      * should: return a EventPayload for each event
      */
     @Test
@@ -124,6 +126,7 @@ public class ValidAnalyticsEventPayloadTest  {
 
             assertEquals("abc", payload.get("sessionid"));
             assertEquals(events.get(i).get("event_type"), payload.get("event_type"));
+            assertEquals("2025-06-09T12:30:00.000000Z", payload.get("utc_time"));
 
             Map<String, Object> dataAttributes = (Map<String, Object>) events.get(i).get("data");
             checkAttributes(payload, dataAttributes, "page", Map.of("title", "page_title", "language", "userlanguage"));

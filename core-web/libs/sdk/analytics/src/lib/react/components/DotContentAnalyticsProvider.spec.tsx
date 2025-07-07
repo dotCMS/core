@@ -13,7 +13,7 @@ jest.mock('../hook/useRouterTracker');
 
 describe('DotContentAnalyticsProvider', () => {
     const mockConfig: DotContentAnalyticsConfig = {
-        apiKey: 'test-key',
+        siteKey: 'test-key',
         server: 'test-server',
         debug: false
     };
@@ -68,6 +68,31 @@ describe('DotContentAnalyticsProvider', () => {
 
         render(
             <DotContentAnalyticsProvider config={configWithAutoPageViewDisabled}>
+                <div>Test Content</div>
+            </DotContentAnalyticsProvider>
+        );
+
+        expect(useRouterTrackerSpy).not.toHaveBeenCalled();
+    });
+
+    it('should handle null analytics instance gracefully', () => {
+        (initializeContentAnalytics as jest.Mock).mockReturnValue(null);
+
+        const { getByText } = render(
+            <DotContentAnalyticsProvider config={mockConfig}>
+                <div>Test Content</div>
+            </DotContentAnalyticsProvider>
+        );
+
+        expect(getByText('Test Content')).toBeInTheDocument();
+        expect(useRouterTrackerSpy).not.toHaveBeenCalled();
+    });
+
+    it('should not enable router tracking when analytics initialization fails', () => {
+        (initializeContentAnalytics as jest.Mock).mockReturnValue(null);
+
+        render(
+            <DotContentAnalyticsProvider config={mockConfig}>
                 <div>Test Content</div>
             </DotContentAnalyticsProvider>
         );

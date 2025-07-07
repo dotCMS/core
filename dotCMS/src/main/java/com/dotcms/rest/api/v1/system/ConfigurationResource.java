@@ -36,6 +36,7 @@ import com.dotmarketing.util.Config;
 import io.vavr.control.Try;
 import org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.ResponseEntityView;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.liferay.util.LocaleUtil;
@@ -56,6 +57,7 @@ import com.liferay.util.LocaleUtil;
  *
  */
 @Path("/v1/configuration")
+@Tag(name = "System Configuration", description = "System configuration and company settings")
 @SuppressWarnings("serial")
 public class ConfigurationResource implements Serializable {
 

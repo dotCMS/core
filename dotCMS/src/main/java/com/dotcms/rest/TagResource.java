@@ -56,6 +56,7 @@ import static com.dotmarketing.util.UUIDUtil.isUUID;
  * @see com.dotcms.rest.api.v2.tags.TagResource
  */
 @Path("/v1/tags")
+@io.swagger.v3.oas.annotations.tags.Tag(name = "Tags", description = "Content tagging and labeling")
 @Deprecated(since = "23.12")
 public class TagResource {
 

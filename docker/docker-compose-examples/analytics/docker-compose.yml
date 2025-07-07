@@ -1,5 +1,3 @@
-version: '2.2'
-
 services:
 
   postgres:
@@ -11,7 +9,7 @@ services:
       POSTGRES_USER: ${POSTGRESQL_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRESQL_PASS:-postgres}
     ports:
-      - ${POSTGRESQL_HOST_PORT:-54321}:5432
+      - ${POSTGRESQL_HOST_PORT:-5432}:5432
 
   keycloak:
     container_name: keycloak
@@ -35,28 +33,42 @@ services:
 
   dotcms-analytics:
     container_name: dotcms-analytics
-    image: dotcms/configurator:latest
+    image: ghcr.io/dotcms/internal-infrastructure/configurator:latest
     environment:
-      - JITSU_USE_CONFIGURATOR='true'
-      - JITSU_JITSU_CONFIGURATOR=http://host.docker.internal:7007/
-      - JITSU_CLUSTER_TOKEN=myadmin
+      #- JITSU_USE_CONFIGURATOR='true'
+      #- JITSU_JITSU_CONFIGURATOR=http://host.docker.internal:7007/
+      - JITSU_CLUSTER_ADMIN_TOKEN=myadmin
       - JITSU_JITSU_SERVER=http://jitsu:8001/
+      ## For local development ONLY. This forces events to be immediately persisted
+      ## to ClickHouse. For PROD instances, this must be set to 'batch'
+      - JITSU_DESTINATIONS_CLICKHOUSE_MODE=stream
       - QUARKUS_OIDC_AUTH_SERVER_URL=${AUTH_SERVER_URL:-http://host.docker.internal:61111/realms/dotcms}
       - QUARKUS_DATASOURCE_DB_KIND=postgresql
-      - QUARKUS_DATASOURCE_REACTIVE_URL=postgresql://postgres:54321/${POSTGRESQL_DB:-keycloak}
+      - QUARKUS_DATASOURCE_REACTIVE_URL=postgresql://postgres:5432/${POSTGRESQL_DB:-postgres}
       - QUARKUS_DATASOURCE_USERNAME=${POSTGRESQL_USER:-postgres}
       - QUARKUS_DATASOURCE_PASSWORD=${POSTGRESQL_PASS:-postgres}
       - QUARKUS_HIBERNATE_ORM_DATABASE_GENERATION=drop-and-create
       - QUARKUS_HIBERNATE_ORM_DATABASE_GENERATION_CREATE_SCHEMAS=true
       - QUARKUS_SWAGGER_UI_ALWAYS_INCLUDE=true
       - EXCLUDED_QUERY_PARAMS=${ANALYTICS_EXCLUDED_QUERY_PARAMS:-variantName,redirect}
+      ## Enable this for extended logging and troubleshooting
+      #- QUARKUS_LOG_LEVEL=DEBUG
+      - QUARKUS_PROFILE=prod
+      - QUARKUS_KUBERNETES_CONFIG_ENABLED=false
+      ## If not using the prod profid, the jwks url and issuer need to be set directly.
+      #- MP_JWT_VERIFY_PUBLICKEY_LOCATION=http://host.docker.internal:61111/realms/dotcms/protocol/openid-connect/certs
+      #- MP_JWT_VERIFY_ISSUER=http://host.docker.internal:61111/realms/dotcms
+      ##  Or, for local testing only, you can set issuer to 'NONE' to not validate
+      #- MP_JWT_VERIFY_ISSUER=NONE
+      - ISSUER_URI=${ISSUER_URI:-NONE}
+      - JWKS_URI=${JWKS_URL:-http://host.docker.internal:61111/realms/dotcms/protocol/openid-connect/certs}
+      - CLICKHOUSE_URL=http://${CH_USER:-clickhouse_test_user}:${CH_PWD:-clickhouse_password}@ch_server:8123
     ports:
       - "${DOTCMS_ANALYTICS_HOST_PORT:-8088}:8080"
     depends_on:
       - keycloak
       - postgres
       - jitsu
-      - jitsu-configurator
 
   jitsu:
     container_name: jitsu
@@ -64,8 +76,7 @@ services:
     environment:
       - CLUSTER_ADMIN_TOKEN=myadmin
       - REDIS_URL=redis://jitsu_redis:6379
-      - JITSU_CONFIGURATOR_URL=${JITSU_CONFIGURATOR_URL:-http://host.docker.internal:7007}
-#      - JITSU_CONFIGURATOR_URL=${JITSU_CONFIGURATOR_URL:-http://dotcms-analytics:8090}
+      - JITSU_CONFIGURATOR_URL=${JITSU_CONFIGURATOR_URL:-http://host.docker.internal:8088}
       - SERVER_PORT=8001
       - TERM=xterm-256color
       - TLS_SKIP_VERIFY=true
@@ -77,27 +88,6 @@ services:
     restart: always
     ports:
       - "${JITSU_HOST_PORT:-8081}:8001"
-
-  jitsu-configurator:
-    container_name: jitsu-configurator
-    image: jitsucom/configurator:latest
-    environment:
-      - CLUSTER_ADMIN_TOKEN=myadmin
-      - REDIS_URL=redis://jitsu_redis:6379
-      - JITSU_SERVER_URL=http://jitsu:8001
-      - BACKEND_API_BASE=redis
-      - JITSU_EXTENDED_TELEMETRY_DISABLED=true
-      - JITSU_HTTP_CONTEXT_ENRICHMENT=true
-      - TERM=xterm-256color
-      - TLS_SKIP_VERIFY=true
-    depends_on:
-      redis:
-        condition: service_healthy
-      ch_server:
-        condition: service_healthy
-    restart: always
-    ports:
-      - "${JITSU_CONFIGURATOR_PORT:-7007}:7000"
 
   redis:
     container_name: jitsu_redis
@@ -124,7 +114,7 @@ services:
       - CUBEJS_DB_PASS=${CH_PWD:-clickhouse_password}
       - CUBEJS_JWK_URL=${JWKS_URL:-http://host.docker.internal:61111/realms/dotcms/protocol/openid-connect/certs}
       - CUBEJS_JWT_AUDIENCE=api-dotcms-analytics-audience
-      - CUBEJS_JWT_ISSUER=${AUTH_SERVER_URL:-http://host.docker.internal:61111/realms/dotcms}
+      #- CUBEJS_JWT_ISSUER=${AUTH_SERVER_URL:-http://host.docker.internal:61111/realms/dotcms}
       - CUBEJS_JWT_ALGS=RS256
       - CUBEJS_JWT_CLAIMS_NAMESPACE=https://dotcms.com/analytics
       - CUBEJS_LOG_LEVEL=debug
