@@ -186,7 +186,13 @@ runs:
           if [ "$current_base" = "$base_version" ]; then
             # Same base version, increment the patch number
             local current_patch=$(echo "$current_next" | sed 's/.*-next\.//')
-            echo "$((current_patch + 1))"
+            # Validate that current_patch is numeric to prevent arithmetic errors
+            if [[ "$current_patch" =~ ^[0-9]+$ ]]; then
+              echo "$((current_patch + 1))"
+            else
+              # If patch number is not numeric (malformed), treat as different base version
+              echo "1"
+            fi
           else
             # Different base version, start from 1
             echo "1"
