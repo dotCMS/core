@@ -10,6 +10,22 @@ import { formatContentTypesAsText } from "../content-types/formatters";
  * Formats site information for context response
  */
 export function formatSiteInfo(site: Site): string {
+    const dotcmsUrl = process.env.DOTCMS_URL || '';
+
+    if (!dotcmsUrl) {
+        return `Current Site: ${site.name} (${site.hostname})
+
+IMPORTANT: When creating or updating content, use this current site's identifier (${site.identifier}) for any host or site fields. This ensures content is properly associated with the current site.
+
+TIPS:
+
+1. To enable content editing URLs, set the DOTCMS_URL environment variable to your dotCMS instance URL (e.g., https://demo.dotcms.com)
+
+2. Once DOTCMS_URL is set, you'll be able to access:
+   - Content editing: https://<your-dotcms-url>/dotAdmin/#/c/content/<content-inode>/
+   - Content type editing: https://<your-dotcms-url>/dotAdmin/#/content-types-angular/edit/<content-type-identifier>`;
+    }
+
     return `Current Site: ${site.name} (${site.hostname})
 
 IMPORTANT: When creating or updating content, use this current site's identifier (${site.identifier}) for any host or site fields. This ensures content is properly associated with the current site.
@@ -17,10 +33,10 @@ IMPORTANT: When creating or updating content, use this current site's identifier
 TIPS:
 
 1. Url to edit a piece of content after creation:
-https://<dotcms-url>/dotAdmin/#/c/content/<content-inode>/
+https://${dotcmsUrl}/dotAdmin/#/c/content/<content-inode>/
 
 2. Url to edit a content type after creation:
-https://<dotcms-url>dotAdmin/#/content-types-angular/edit/<content-type-identifier>
+https://${dotcmsUrl}/dotAdmin/#/content-types-angular/edit/<content-type-identifier>
 `;
 }
 
@@ -55,10 +71,10 @@ ${schemesText}`;
  * Creates the complete context response text
  */
 export function createResponseText(
-    contentTypes: ContentType[], 
-    site: Site, 
-    workflowSchemes: WorkflowScheme[], 
-    isCached: boolean, 
+    contentTypes: ContentType[],
+    site: Site,
+    workflowSchemes: WorkflowScheme[],
+    isCached: boolean,
     cacheAge?: number
 ): string {
     const formattedText = formatContentTypesAsText(contentTypes);

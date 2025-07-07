@@ -1,6 +1,6 @@
 {
     "name": "@dotcms/mcp-server",
-    "version": "0.0.8",
+    "version": "0.0.9",
     "description": "Model Context Protocol (MCP) server for dotCMS - enables AI agents to interact with dotCMS content management capabilities",
     "main": "main.js",
     "type": "module",
