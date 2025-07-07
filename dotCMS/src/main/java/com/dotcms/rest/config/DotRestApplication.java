@@ -16,12 +16,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import javax.inject.Singleton;
 import javax.ws.rs.ApplicationPath;
-import org.glassfish.hk2.utilities.binding.AbstractBinder;
 import org.glassfish.jersey.media.multipart.MultiPartFeature;
 import org.glassfish.jersey.server.ResourceConfig;
-import org.glassfish.jersey.server.spi.internal.ResourceMethodInvocationHandlerProvider;
 
 /**
  * This class provides the list of all the REST end-points in dotCMS. Every new
@@ -109,29 +106,10 @@ public class DotRestApplication extends ResourceConfig {
 
 	public DotRestApplication() {
 
-		// Registrar providers Before anything else
-		registerEarlyProviders();
-
-		// Then: Include the rest of the application configuration
+		// Include the rest of the application configuration
 		configureApplication();
 	}
 
-	/**
-	 * Registers the {@link DotResourceMethodInvocationHandlerProvider} as the first
-	 */
-	private void registerEarlyProviders() {
-		register(DotResourceMethodInvocationHandlerProvider.class);
-		register(new AbstractBinder() {
-			@Override
-			protected void configure() {
-				bind(DotResourceMethodInvocationHandlerProvider.class)
-						.to(ResourceMethodInvocationHandlerProvider.class)
-						.in(Singleton.class)
-						.ranked(1); // Ensure this provider is used first
-			}
-		});
-		Logger.debug(DotRestApplication.class, "MethodInvocationHandlerProvider provider registered");
-	}
 
 	private void configureApplication() {
 		final List<String> packages = new ArrayList<>(List.of(
