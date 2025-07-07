@@ -5,7 +5,7 @@
     [label]="label()"
     [pTooltip]="tooltipContent"
     appendTo="body"
-    hideDelay="1000"
+    hideDelay="800"
     icon="pi pi-copy"
     pButton
     tooltipPosition="bottom"
@@ -13,5 +13,5 @@
     type="button"></button>
 
 <ng-template #tooltipContent>
-    <span>{{ $tooltipText() }}</span>
+    <span data-testid="tooltip-content">{{ $tooltipText() }}</span>
 </ng-template>
