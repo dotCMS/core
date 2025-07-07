@@ -38,8 +38,8 @@ inputs:
     required: true
 outputs:
   npm-package-version:
-    description: 'SDK libs - NPM package version for latest tag'
-    value: ${{ steps.next_version.outputs.next_version }}
+    description: 'SDK libs - NPM package version (formatted for notifications)'
+    value: ${{ steps.deployment_status.outputs.npm_package_version }}
   npm-package-version-next:
     description: 'SDK libs - NPM package version for next tag'
     value: ${{ steps.next_version.outputs.next_version_next }}
@@ -49,6 +49,9 @@ outputs:
   published-next:
     description: 'SDK libs - Published to next tag'
     value: ${{ steps.deployment_status.outputs.published_next }}
+  published:
+    description: 'SDK libs - Published (backward compatibility - true if any tag published)'
+    value: ${{ steps.deployment_status.outputs.published }}
   version-type-used:
     description: 'Type of version increment that was applied'
     value: ${{ steps.next_version.outputs.version_type_used }}
@@ -615,6 +618,38 @@ runs:
       env:
         ACTUAL_PUBLISHED_LATEST: ${{ steps.publish_packages.outputs.actual_published_latest }}
         ACTUAL_PUBLISHED_NEXT: ${{ steps.publish_packages.outputs.actual_published_next }}
+        NEXT_VERSION: ${{ steps.next_version.outputs.next_version }}
+        NEXT_VERSION_NEXT: ${{ steps.next_version.outputs.next_version_next }}
       run: |
         echo "published_latest=$ACTUAL_PUBLISHED_LATEST" >> $GITHUB_OUTPUT
         echo "published_next=$ACTUAL_PUBLISHED_NEXT" >> $GITHUB_OUTPUT
+        
+        # Backward compatibility: published is true if either latest or next was published
+        if [ "$ACTUAL_PUBLISHED_LATEST" = "true" ] || [ "$ACTUAL_PUBLISHED_NEXT" = "true" ]; then
+          PUBLISHED="true"
+        else
+          PUBLISHED="false"
+        fi
+        echo "published=$PUBLISHED" >> $GITHUB_OUTPUT
+        
+        # Create npm-package-version output that works with existing message template
+        # Template expects: [ `${{ outputs.npm-package-version }}` ]
+        if [ "$ACTUAL_PUBLISHED_LATEST" = "true" ] && [ "$ACTUAL_PUBLISHED_NEXT" = "true" ]; then
+          # Both published - format to work with existing [ `...` ] template
+          NPM_PACKAGE_VERSION="${NEXT_VERSION}\` ] (latest) and [ \`${NEXT_VERSION_NEXT}\` ] (next"
+        elif [ "$ACTUAL_PUBLISHED_LATEST" = "true" ]; then
+          # Only latest published
+          NPM_PACKAGE_VERSION="$NEXT_VERSION"
+        elif [ "$ACTUAL_PUBLISHED_NEXT" = "true" ]; then
+          # Only next published
+          NPM_PACKAGE_VERSION="$NEXT_VERSION_NEXT"
+        else
+          # Nothing published (shouldn't happen if we reach this step)
+          NPM_PACKAGE_VERSION="No versions published"
+        fi
+        echo "npm_package_version=$NPM_PACKAGE_VERSION" >> $GITHUB_OUTPUT
+        
+        echo "✅ Outputs set:"
+        echo "  published: $PUBLISHED"
+        echo "  npm_package_version: $NPM_PACKAGE_VERSION"
+      shell: bash
