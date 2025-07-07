@@ -41,6 +41,9 @@ export class DotAppsConfigurationDetailFormComponent implements OnInit, AfterVie
         console.log('appConfigured', this.appConfigured());
         console.log('formFields', this.formFields());
 
+        //TODO: Remove this after testing
+        return true;
+
         const appConfiguredValue = this.appConfigured();
 
         return (field: DotAppsSecret): boolean => {
