@@ -7,19 +7,20 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 
 /**
- * This is an implementation of a Parameter
- * Class used to collect properties or secrets set from the front-end
- * This is mostly used to pass values from the front-end into the Resource.
+ * This is an implementation of a Parameter Class used to collect properties or secrets set from the
+ * front-end. This is mostly used to pass values from the front-end into the Resource.
+ *
+ * @author Fabrizzio Araya
+ * @since Jan 27th 2020
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonDeserialize(builder = ParamDescriptor.Builder.class)
 public final class ParamDescriptor extends AbstractProperty<Object>{
 
     private final String label;
-
     private final String hint;
-
     private final Boolean required;
+    private final Boolean enableButton;
 
     private ParamDescriptor(final Object value,
                             final Boolean hidden,
@@ -28,11 +29,13 @@ public final class ParamDescriptor extends AbstractProperty<Object>{
                             final Boolean envShow,
                             final String label,
                             final String hint,
-                            final Boolean required) {
+                            final Boolean required,
+                            final Boolean enableButton) {
         super(value, hidden, type, envVar, envShow);
         this.label = label;
         this.hint = hint;
         this.required = required;
+        this.enableButton = enableButton;
     }
 
     /**
@@ -67,6 +70,17 @@ public final class ParamDescriptor extends AbstractProperty<Object>{
         return required;
     }
 
+    /**
+     * For {@link Type.BUTTON} parameters, this attribute determines whether the button must be
+     * enabled even if the App has not been configured yet.
+     *
+     * @return If the button must be enabled even though the App has not been configured yet,
+     * returns {@code true}.
+     */
+    public Boolean getEnableButton() {
+        return enableButton;
+    }
+
     public static Builder builder() {
         return new Builder();
     }
@@ -88,6 +102,7 @@ public final class ParamDescriptor extends AbstractProperty<Object>{
         private String label;
         private String hint;
         private Boolean required;
+        private Boolean enableButton;
 
         private Builder() {
         }
@@ -132,8 +147,22 @@ public final class ParamDescriptor extends AbstractProperty<Object>{
             return this;
         }
 
+        /**
+         * For {@link Type.BUTTON} parameters, this attribute determines whether the button must be
+         * enabled even if the App has not been configured yet.
+         *
+         * @param enableButton If the button must be enabled even though the App has not been
+         *                     configured yet, set this to {@code true}.
+         *
+         * @return The builder instance.
+         */
+        public Builder withEnableButton(final Boolean enableButton) {
+            this.enableButton = enableButton;
+            return this;
+        }
+
         public ParamDescriptor build() {
-            return new ParamDescriptor(value, hidden, type, envVar, envShow, label, hint, required);
+            return new ParamDescriptor(value, hidden, type, envVar, envShow, label, hint, required, enableButton);
         }
 
     }
