@@ -27,13 +27,16 @@ export class NewEditContentFormPage {
     const saveButtonLocator = this.page.getByRole("button", {
       name: "Save",
     });
-    await saveButtonLocator.click();
-    await this.page.waitForResponse((response) => {
+    await expect(saveButtonLocator).toBeVisible();
+
+    const responsePromise = this.page.waitForResponse((response) => {
       return (
         response.status() === 200 &&
         response.url().includes("/api/v1/workflow/actions/")
       );
     });
+    await saveButtonLocator.click();
+    await responsePromise;
   }
 
   async goToContent(id: string) {

@@ -5,7 +5,15 @@ export class ListingContentTypesPage {
   constructor(private page: Page, private request: APIRequestContext) {}
 
   async goToUrl() {
+    const responsePromise = this.page.waitForResponse((response) => {
+      return (
+        response.status() === 200 &&
+        response.url().includes("/api/v1/contenttype") &&
+        response.request().method() === "GET"
+      );
+    });
     await this.page.goto("/dotAdmin/#/content-types-angular");
+    await responsePromise;
   }
 
   async toggleNewContentEditor(boolean: boolean) {
@@ -37,13 +45,14 @@ export class ListingContentTypesPage {
       .click();
 
     await this.page.getByLabel("Content Name").fill(name);
-    await this.page.getByTestId("dotDialogAcceptAction").click();
-    await this.page.waitForResponse((response) => {
+    const responsePromise = this.page.waitForResponse((response) => {
       return (
         response.status() === 200 &&
         response.url().includes("/api/v1/contenttype")
       );
     });
+    await this.page.getByTestId("dotDialogAcceptAction").click();
+    await responsePromise;
   }
 
   async goToAddNewContentType(contentType: string) {

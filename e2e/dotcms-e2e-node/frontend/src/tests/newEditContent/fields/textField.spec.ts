@@ -21,7 +21,7 @@ test.beforeEach("Navigate to content types", async ({ page, request }) => {
 
   // Login to dotCMS
   const loginPage = new LoginPage(page);
-  await loginPage.login(username, password);
+  await loginPage.loginAndOpenSideMenu(username, password);
 
   await listingContentTypesPage.toggleNewContentEditor(true);
   await listingContentTypesPage.goToUrl();
@@ -38,7 +38,7 @@ test.afterEach(async ({ page, request }) => {
   await listingContentTypesPage.toggleNewContentEditor(false);
 });
 
-test.skip("should save a text field", async ({ page }) => {
+test("should save a text field", async ({ page }) => {
   const locatorField = page.getByTestId("textField");
 
   await expect(locatorField).toBeVisible();

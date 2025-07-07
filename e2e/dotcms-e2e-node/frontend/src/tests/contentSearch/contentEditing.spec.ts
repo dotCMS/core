@@ -410,7 +410,7 @@ test("Delete a file asset content", async ({ page }) => {
 /**
  * Test to validate you are able to add new pages
  */
-test.skip("Add a new page", async ({ page }) => {
+test("Add a new page", async ({ page }) => {
   const contentUtils = new ContentPage(page);
 
   await contentUtils.addNewContentAction(pageAsset.locator, pageAsset.label);
