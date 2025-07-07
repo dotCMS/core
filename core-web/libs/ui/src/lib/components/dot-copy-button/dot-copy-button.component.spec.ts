@@ -72,7 +72,7 @@ describe('DotCopyButtonComponent', () => {
         it('should have pTooltip attributes', () => {
             expect(button.attributes.appendTo).toEqual('body');
             expect(button.attributes.tooltipPosition).toEqual('bottom');
-            // expect(button.attributes.hideDelay).toEqual('800');
+            expect(button.attributes.hideDelay).toEqual('800');
         });
 
         it('should copy text to clipboard', () => {
@@ -99,7 +99,7 @@ describe('DotCopyButtonComponent', () => {
             nativeButton.dispatchEvent(new Event('mouseenter'));
             fixture.detectChanges();
 
-            tick(100); // Give time for tooltip to render
+            tick(100);
             fixture.detectChanges();
 
             const tooltipElement = document.querySelector('[data-testid="tooltip-content"]');
@@ -111,19 +111,16 @@ describe('DotCopyButtonComponent', () => {
         it('should show "Copied" in tooltip after clicking the button', fakeAsync(() => {
             const nativeButton = button.nativeElement;
 
-            // 1. Hover to show the tooltip
             nativeButton.dispatchEvent(new Event('mouseenter'));
             fixture.detectChanges();
-            tick(100); // Give time for tooltip to render
+            tick(100);
             fixture.detectChanges();
 
-            // 2. Click the button to trigger copy and update tooltip
             nativeButton.dispatchEvent(new Event('click'));
             fixture.detectChanges();
-            tick(100); // Give time for promise resolution and tooltip update
+            tick(100);
             fixture.detectChanges();
 
-            // 3. Assert tooltip content is "Copied"
             const tooltipElement = document.querySelector('[data-testid="tooltip-content"]');
             expect(tooltipElement).toBeTruthy();
             expect(tooltipElement.textContent.trim()).toBe('Copied');
