@@ -67,8 +67,13 @@ export class DotCopyButtonComponent {
 
         this.dotClipboardUtil
             .copy(this.copy())
-            .then(() => this.$tempTooltipText.set(this.dotMessageService.get('Copied')))
-            .catch(() => this.$tempTooltipText.set('Error'))
-            .finally(() => setTimeout(() => this.$tempTooltipText.set(''), 1000));
+            .then(() => {
+                this.$tempTooltipText.set(this.dotMessageService.get('Copied'));
+                setTimeout(() => this.$tempTooltipText.set(''), 1000);
+            })
+            .catch((error) => {
+                this.$tempTooltipText.set('Error');
+                console.error('[DotCopyButtonComponent] Error copying to clipboard: ', error);
+            });
     }
 }
