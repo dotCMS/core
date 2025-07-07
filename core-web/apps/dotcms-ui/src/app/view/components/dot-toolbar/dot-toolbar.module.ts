@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
+import { DividerModule } from 'primeng/divider';
 import { ToolbarModule } from 'primeng/toolbar';
 
 import { DotSiteSelectorModule } from '@components/_common/dot-site-selector/dot-site-selector.module';
@@ -23,7 +24,8 @@ import { DotToolbarComponent } from './dot-toolbar.component';
         DotToolbarAnnouncementsComponent,
         ToolbarModule,
         DotToolbarUserComponent,
-        DotShowHideFeatureDirective
+        DotShowHideFeatureDirective,
+        DividerModule
     ],
     declarations: [DotToolbarComponent],
     exports: [DotToolbarComponent]
