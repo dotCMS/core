@@ -445,4 +445,3 @@ To deepen your understanding of this integration, explore these official dotCMS 
 Additional resources:
 - [dotCMS Developer Documentation](https://dev.dotcms.com/)
 - [Next.js Documentation](https://nextjs.org/docs)
-
