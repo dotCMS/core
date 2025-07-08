@@ -2,7 +2,7 @@ import { APIRequestContext, expect } from "@playwright/test";
 import { admin1 } from "../tests/login/credentialsData";
 import { generateBase64Credentials } from "@utils/generateBase64Credential";
 
-interface Template {
+export interface Template {
   friendlyName: string;
   identifier: string;
   image: string;

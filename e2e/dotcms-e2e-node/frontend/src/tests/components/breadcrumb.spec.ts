@@ -5,6 +5,7 @@ import {
   archiveTemplate,
   createTemplate,
   deleteTemplate,
+  Template,
 } from "@requests/templates";
 
 test.beforeEach("Login", async ({ page }) => {
@@ -66,22 +67,29 @@ test("should display correctly on the Content Types page", async ({ page }) => {
   await expect(title).toHaveText("Content Types");
 });
 
-test("should display correctly on the Template page", async ({
-  page,
-  request,
-}) => {
-  const template = await createTemplate(request, {
-    friendlyName: "Test Template",
-    image: "test-image",
-    theme: "test-theme",
-    title: "Test Template",
+test.describe("should display correctly on the Template page", () => {
+  let template: Template | null = null;
+
+  test.beforeEach(async ({ request }) => {
+    template = await createTemplate(request, {
+      friendlyName: "Test Template",
+      image: "test-image",
+      theme: "test-theme",
+      title: "Test Template",
+    });
   });
 
-  await page.goto(`/dotAdmin/#/templates/edit/${template.identifier}`);
-  const breadcrumb = new BreadcrumbComponent(page);
-  const title = breadcrumb.getTitle();
-  await expect(title).toHaveText(template.title);
+  test("should display correctly on the Template page", async ({ page }) => {
+    await page.goto(`/dotAdmin/#/templates/edit/${template.identifier}`);
+    const breadcrumb = new BreadcrumbComponent(page);
+    const title = breadcrumb.getTitle();
+    await expect(title).toHaveText(template.title);
+  });
 
-  await archiveTemplate(request, [template.identifier]);
-  await deleteTemplate(request, [template.identifier]);
+  test.afterEach(async ({ request }) => {
+    if (template) {
+      await archiveTemplate(request, [template.identifier]);
+      await deleteTemplate(request, [template.identifier]);
+    }
+  });
 });
