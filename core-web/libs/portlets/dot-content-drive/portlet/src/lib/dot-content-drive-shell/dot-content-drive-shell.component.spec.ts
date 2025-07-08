@@ -286,5 +286,18 @@ describe('DotContentDriveShellComponent', () => {
 
             spectator.triggerEventHandler(folderListView, 'sort', { order: 1 });
         });
+
+        it('should set sort with default order if order is 0', () => {
+            const folderListView = spectator.debugElement.query(
+                By.directive(DotFolderListViewComponent)
+            );
+
+            spectator.triggerEventHandler(folderListView, 'sort', { field: 'modDate', order: 0 });
+
+            expect(store.setSort).toHaveBeenCalledWith({
+                field: 'modDate',
+                order: DotContentDriveSortOrder.ASC
+            });
+        });
     });
 });
