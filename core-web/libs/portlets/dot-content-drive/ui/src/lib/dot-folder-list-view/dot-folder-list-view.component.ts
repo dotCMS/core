@@ -41,7 +41,7 @@ export class DotFolderListViewComponent {
     paginate = output<LazyLoadEvent>();
     sort = output<SortEvent>();
 
-    readonly headerColumns = HEADER_COLUMNS;
+    readonly HEADER_COLUMNS = HEADER_COLUMNS;
     readonly SKELETON_SPAN = HEADER_COLUMNS.length + 1;
 
     // Model for the table selection

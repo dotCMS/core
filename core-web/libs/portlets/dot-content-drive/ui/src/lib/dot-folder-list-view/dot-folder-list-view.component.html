@@ -19,7 +19,7 @@
     <ng-template pTemplate="header">
         <tr data-testId="header-row">
             <th style="width: 2.5rem"><p-tableHeaderCheckbox data-testId="header-checkbox" /></th>
-            @for (column of headerColumns; track column.field) {
+            @for (column of HEADER_COLUMNS; track column.field) {
                 @if (column.sortable) {
                     <th
                         [pSortableColumn]="column.field"
