@@ -7,15 +7,9 @@ params:
   siteKey:
     value: ""
     hidden: false
-    type: "STRING"
+    type: "GENERATED_STRING"
     label: "Site Key"
-    hint: "The Site Key is required in all requests that send Events to the Content Analytics Service."
-    required: false
-  buttonParam:
-    hidden: false
-    type: "BUTTON"
-    label: "Generate Site Key"
-    hint: "Generates the Site Key (if not set yet) and the basic JavaScript configuration required to enable Content Analytics in your pages."
-    required: false
-    enableButton: true
-    value: "/api/v1/analytics/content/siteconfig/$siteId"
+    hint: "The Site Key is required in all requests that send Events to the Content Analytics Service. You can either enter your own Site Key, or have dotCMS generate a secure one for you."
+    required: true
+    buttonLabel: "Auto Generate Site Key"
+    buttonEndpoint: "/api/v1/analytics/content/sitekey/$siteId"

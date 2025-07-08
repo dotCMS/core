@@ -20,7 +20,8 @@ public final class ParamDescriptor extends AbstractProperty<Object>{
     private final String label;
     private final String hint;
     private final Boolean required;
-    private final Boolean enableButton;
+    private final String buttonLabel;
+    private final String buttonEndpoint;
 
     private ParamDescriptor(final Object value,
                             final Boolean hidden,
@@ -30,12 +31,14 @@ public final class ParamDescriptor extends AbstractProperty<Object>{
                             final String label,
                             final String hint,
                             final Boolean required,
-                            final Boolean enableButton) {
+                            final String buttonLabel,
+                            final String buttonEndpoint) {
         super(value, hidden, type, envVar, envShow);
         this.label = label;
         this.hint = hint;
         this.required = required;
-        this.enableButton = enableButton;
+        this.buttonLabel = buttonLabel;
+        this.buttonEndpoint = buttonEndpoint;
     }
 
     /**
@@ -71,14 +74,24 @@ public final class ParamDescriptor extends AbstractProperty<Object>{
     }
 
     /**
-     * For {@link Type.BUTTON} parameters, this attribute determines whether the button must be
-     * enabled even if the App has not been configured yet.
+     * For {@link Type.GENERATED_STRING} fields, this attribute the label of the button that will be
+     * displayed next to the input field.
      *
-     * @return If the button must be enabled even though the App has not been configured yet,
-     * returns {@code true}.
+     * @return The button label.
      */
-    public Boolean getEnableButton() {
-        return enableButton;
+    public String getButtonLabel() {
+        return this.buttonLabel;
+    }
+
+    /**
+     * For {@link Type.GENERATED_STRING} fields, this attribute represents the REST Endpoint that
+     * will be called when the user clicks the button. The response from such an endpoint will be
+     * used as the value of the input field.
+     *
+     * @return The button endpoint.
+     */
+    public  String getButtonEndpoint() {
+        return this.buttonEndpoint;
     }
 
     public static Builder builder() {
@@ -102,7 +115,8 @@ public final class ParamDescriptor extends AbstractProperty<Object>{
         private String label;
         private String hint;
         private Boolean required;
-        private Boolean enableButton;
+        private String buttonLabel;
+        private String buttonEndpoint;
 
         private Builder() {
         }
@@ -148,21 +162,37 @@ public final class ParamDescriptor extends AbstractProperty<Object>{
         }
 
         /**
-         * For {@link Type.BUTTON} parameters, this attribute determines whether the button must be
-         * enabled even if the App has not been configured yet.
+         * For {@link Type.GENERATED_STRING} input fields, this attribute the label of the button
+         * that will be displayed next to the input field.
          *
-         * @param enableButton If the button must be enabled even though the App has not been
-         *                     configured yet, set this to {@code true}.
+         * @param buttonLabel The label of the button that will be displayed next to the input
+         *                    field.
          *
          * @return The builder instance.
          */
-        public Builder withEnableButton(final Boolean enableButton) {
-            this.enableButton = enableButton;
+        public Builder withButtonLabel(final String buttonLabel) {
+            this.buttonLabel = buttonLabel;
+            return this;
+        }
+
+        /**
+         * For {@link Type.GENERATED_STRING} input fields, this attribute represents the REST
+         * Endpoint that will be called when the user clicks the button. The response from such an
+         * endpoint will be used as the value of the input field.
+         *
+         * @param buttonEndpoint The REST Endpoint that will be called when the user clicks the
+         *                       button.
+         *
+         * @return The builder instance.
+         */
+        public Builder withButtonEndpoint(final String buttonEndpoint) {
+            this.buttonEndpoint = buttonEndpoint;
             return this;
         }
 
         public ParamDescriptor build() {
-            return new ParamDescriptor(value, hidden, type, envVar, envShow, label, hint, required, enableButton);
+            return new ParamDescriptor(value, hidden, type, envVar, envShow, label, hint,
+                    required, buttonLabel, buttonEndpoint);
         }
 
     }

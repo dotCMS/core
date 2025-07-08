@@ -167,14 +167,23 @@ public class SecretView {
             buildCommonJson(secret, map);
         }
 
+        /**
+         * Builds the JSON for a {@link ParamDescriptor} by exposing the appropriate relevant
+         * properties. Different types of input fields might expose different attributes.
+         *
+         * @param paramDescriptor The {@link ParamDescriptor} that will be exposed.
+         * @param map The JSON map that will be updated with the properties of the
+         *            {@link ParamDescriptor}.
+         */
         private void buildParam(final ParamDescriptor paramDescriptor,
                 final Map<String, Object> map) {
             buildCommonJson(paramDescriptor, map);
             map.put("hint", paramDescriptor.getHint());
             map.put("label", paramDescriptor.getLabel());
             map.put("required", paramDescriptor.isRequired());
-            if (Type.BUTTON.equals(paramDescriptor.getType())) {
-                map.put("enableButton", paramDescriptor.getEnableButton());
+            if (Type.GENERATED_STRING.equals(paramDescriptor.getType())) {
+                map.put("buttonLabel", paramDescriptor.getButtonLabel());
+                map.put("buttonEndpoint", paramDescriptor.getButtonEndpoint());
             }
         }
 
