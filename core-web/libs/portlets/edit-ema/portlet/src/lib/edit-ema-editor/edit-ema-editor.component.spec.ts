@@ -20,7 +20,6 @@ import { DialogService } from 'primeng/dynamicdialog';
 
 import { map } from 'rxjs/operators';
 
-import { CLIENT_ACTIONS } from '@dotcms/client';
 import {
     DotAlertConfirmService,
     DotAnalyticsTrackerService,
@@ -60,7 +59,7 @@ import {
 } from '@dotcms/dotcms-js';
 import { DotCMSContentlet, DEFAULT_VARIANT_ID, DotCMSTempFile } from '@dotcms/dotcms-models';
 import { DotResultsSeoToolComponent } from '@dotcms/portlets/dot-ema/ui';
-import { UVE_MODE } from '@dotcms/types';
+import { DotCMSUVEAction, UVE_MODE } from '@dotcms/types';
 import { DotCopyContentModalService, ModelCopyContentResponse, SafeUrlPipe } from '@dotcms/ui';
 import { WINDOW } from '@dotcms/utils';
 import {
@@ -690,7 +689,7 @@ describe('EditEmaEditorComponent', () => {
                         new MessageEvent('message', {
                             origin: HOST,
                             data: {
-                                action: CLIENT_ACTIONS.EDIT_CONTENTLET,
+                                action: DotCMSUVEAction.EDIT_CONTENTLET,
                                 payload: CONTENTLETS_MOCK[0]
                             }
                         })
@@ -735,7 +734,7 @@ describe('EditEmaEditorComponent', () => {
                         new MessageEvent('message', {
                             origin: HOST,
                             data: {
-                                action: CLIENT_ACTIONS.INIT_INLINE_EDITING,
+                                action: DotCMSUVEAction.INIT_INLINE_EDITING,
                                 payload: {
                                     type: 'BLOCK_EDITOR',
                                     data: {}
@@ -769,7 +768,7 @@ describe('EditEmaEditorComponent', () => {
                         new MessageEvent('message', {
                             origin: HOST,
                             data: {
-                                action: CLIENT_ACTIONS.INIT_INLINE_EDITING,
+                                action: DotCMSUVEAction.INIT_INLINE_EDITING,
                                 payload: {}
                             }
                         })
@@ -790,7 +789,7 @@ describe('EditEmaEditorComponent', () => {
                             new MessageEvent('message', {
                                 origin: HOST,
                                 data: {
-                                    action: CLIENT_ACTIONS.REORDER_MENU,
+                                    action: DotCMSUVEAction.REORDER_MENU,
                                     payload: {
                                         startLevel: 1,
                                         depth: 2
@@ -866,7 +865,7 @@ describe('EditEmaEditorComponent', () => {
                             new MessageEvent('message', {
                                 origin: HOST,
                                 data: {
-                                    action: CLIENT_ACTIONS.REORDER_MENU,
+                                    action: DotCMSUVEAction.REORDER_MENU,
                                     payload: {
                                         startLevel: 1,
                                         depth: 2
@@ -1142,7 +1141,7 @@ describe('EditEmaEditorComponent', () => {
                             new MessageEvent('message', {
                                 origin: HOST,
                                 data: {
-                                    action: CLIENT_ACTIONS.COPY_CONTENTLET_INLINE_EDITING,
+                                    action: DotCMSUVEAction.COPY_CONTENTLET_INLINE_EDITING,
                                     payload: {
                                         inode: '123'
                                     }
@@ -2916,7 +2915,7 @@ describe('EditEmaEditorComponent', () => {
                         new MessageEvent('message', {
                             origin: HOST,
                             data: {
-                                action: CLIENT_ACTIONS.UPDATE_CONTENTLET_INLINE_EDITING,
+                                action: DotCMSUVEAction.UPDATE_CONTENTLET_INLINE_EDITING,
                                 payload: {
                                     dataset: {
                                         inode: '123',
@@ -2952,7 +2951,7 @@ describe('EditEmaEditorComponent', () => {
                         new MessageEvent('message', {
                             origin: HOST,
                             data: {
-                                action: CLIENT_ACTIONS.UPDATE_CONTENTLET_INLINE_EDITING,
+                                action: DotCMSUVEAction.UPDATE_CONTENTLET_INLINE_EDITING,
                                 payload: null
                             }
                         })
@@ -2969,7 +2968,7 @@ describe('EditEmaEditorComponent', () => {
                         new MessageEvent('message', {
                             origin: HOST,
                             data: {
-                                action: CLIENT_ACTIONS.UPDATE_CONTENTLET_INLINE_EDITING,
+                                action: DotCMSUVEAction.UPDATE_CONTENTLET_INLINE_EDITING,
                                 payload: {
                                     dataset: {
                                         inode: '123',
@@ -3010,7 +3009,7 @@ describe('EditEmaEditorComponent', () => {
                             new MessageEvent('message', {
                                 origin: HOST,
                                 data: {
-                                    action: CLIENT_ACTIONS.CLIENT_READY,
+                                    action: DotCMSUVEAction.CLIENT_READY,
                                     payload: config
                                 }
                             })
@@ -3030,7 +3029,7 @@ describe('EditEmaEditorComponent', () => {
                             new MessageEvent('message', {
                                 origin: HOST,
                                 data: {
-                                    action: CLIENT_ACTIONS.CLIENT_READY,
+                                    action: DotCMSUVEAction.CLIENT_READY,
                                     payload: config
                                 }
                             })

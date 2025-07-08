@@ -1,6 +1,6 @@
 import { ReactElement, ReactNode, useEffect, useState } from 'react';
 
-import { isInsideEditor } from '@dotcms/client';
+import { getUVEState } from '@dotcms/uve';
 
 import DotExperimentsContext from '../contexts/DotExperimentsContext';
 import { DotExperiments } from '../dot-experiments';
@@ -62,7 +62,7 @@ export const DotExperimentsProvider = ({
 
     // Initialize the DotExperiments instance
     useEffect(() => {
-        const insideEditor = isInsideEditor();
+        const insideEditor = getUVEState()?.mode;
 
         if (!insideEditor) {
             const dotExperimentsInstance = DotExperiments.getInstance(config);

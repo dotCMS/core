@@ -1,11 +1,9 @@
 import { ApplicationConfig } from '@angular/core';
 import { provideRouter } from '@angular/router';
 
-import { provideDotCMSImageLoader } from '@dotcms/angular';
-
 import { routes } from './app.routes';
 import { environment } from '../environments/environment';
-import { DotCMSEditablePageService, provideDotCMSClient } from '@dotcms/angular/next';
+import { DotCMSEditablePageService, provideDotCMSClient, provideDotCMSImageLoader } from '@dotcms/angular/next';
 
 export const appConfig: ApplicationConfig = {
     providers: [
