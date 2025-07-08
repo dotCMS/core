@@ -1,5 +1,5 @@
 import { Component, computed, input } from '@angular/core';
-import { DotCMSShowWhenDirective } from '@dotcms/angular/next';
+import { DotCMSShowWhenDirective } from '@dotcms/angular';
 import { UVE_MODE } from '@dotcms/types';
 import { ContactUsComponent } from './components/contact-us/contact-us.component';
 import { PageForm } from '../../shared/contentlet.model';

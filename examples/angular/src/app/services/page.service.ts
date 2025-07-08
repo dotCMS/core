@@ -8,7 +8,7 @@ import {
     DotCMSExtendedPageResponse
 } from '@dotcms/types';
 
-import { DotCMSClient } from '@dotcms/angular/next';
+import { DotCMSClient } from '@dotcms/angular';
 
 @Injectable({
     providedIn: 'root'
