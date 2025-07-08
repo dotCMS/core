@@ -53,6 +53,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -368,10 +369,26 @@ public class SAMLHelper {
             user.setFirstName(attributesBean.getFirstName());
             user.setLastName(attributesBean.getLastName());
 
+            // setting the last login date
+            user.setLastLoginDate(new Date());
+
             if (Objects.nonNull(attributesBean.getAdditionalAttributes()) &&
                     attributesBean.getAdditionalAttributes().size() > 0) {
 
-                user.setAdditionalInfo(attributesBean.getAdditionalAttributes());
+                final Map<String, Object> additionalInfo = user.getAdditionalInfo();
+                final Map<String, Object> additionalAttr = attributesBean.getAdditionalAttributes();
+                final Map<String, Object> finalAdditionalInfo = new HashMap<>();
+                finalAdditionalInfo.putAll(additionalAttr); // assumes override the idp info
+                if (samlConfigurationService // by default it overrides
+                        .getConfigAsBoolean(identityProviderConfiguration, SamlName.DOTCMS_MERGE_ADDITIONAL_ATTRIBUTES, ()->false)) {
+                    Logger.debug(this, ()-> "Merging additional attributes for user with email '" + attributesBean.getEmail() + "'");
+                    // merge
+                    finalAdditionalInfo.putAll(additionalInfo);
+                    Logger.debug(this, ()-> "Merged additional attributes for user with email '"
+                            + attributesBean.getEmail() + "', attributes: " + finalAdditionalInfo);
+                }
+
+                user.setAdditionalInfo(finalAdditionalInfo);
             }
 
             this.userAPI.save(user, systemUser, false);

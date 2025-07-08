@@ -20,7 +20,6 @@ import { DialogService } from 'primeng/dynamicdialog';
 
 import { map } from 'rxjs/operators';
 
-import { CLIENT_ACTIONS } from '@dotcms/client';
 import {
     DotAlertConfirmService,
     DotAnalyticsTrackerService,
@@ -60,7 +59,7 @@ import {
 } from '@dotcms/dotcms-js';
 import { DotCMSContentlet, DEFAULT_VARIANT_ID, DotCMSTempFile } from '@dotcms/dotcms-models';
 import { DotResultsSeoToolComponent } from '@dotcms/portlets/dot-ema/ui';
-import { UVE_MODE } from '@dotcms/types';
+import { DotCMSUVEAction, UVE_MODE } from '@dotcms/types';
 import { DotCopyContentModalService, ModelCopyContentResponse, SafeUrlPipe } from '@dotcms/ui';
 import { WINDOW } from '@dotcms/utils';
 import {
@@ -127,7 +126,10 @@ const messagesMock = {
     'editpage.content.add.already.message': 'This content is already added to this container',
     'editpage.not.lincese.error':
         'Inline editing is available only with an enterprise license. Please contact support to upgrade your license.',
-    'dot.common.license.enterprise.only.error': 'Enterprise Only'
+    'dot.common.license.enterprise.only.error': 'Enterprise Only',
+    'message.content.saved': 'Content saved',
+    'message.content.note.already.published':
+        'Note: If you edit auto-published content, changes apply immediately.'
 };
 
 const createRouting = () =>
@@ -641,6 +643,7 @@ describe('EditEmaEditorComponent', () => {
 
                 it('should open a dialog and save after backend emit', (done) => {
                     spectator.detectChanges();
+
                     const dialog = spectator.debugElement.query(
                         By.css('[data-testId="ema-dialog"]')
                     );
@@ -686,7 +689,7 @@ describe('EditEmaEditorComponent', () => {
                         new MessageEvent('message', {
                             origin: HOST,
                             data: {
-                                action: CLIENT_ACTIONS.EDIT_CONTENTLET,
+                                action: DotCMSUVEAction.EDIT_CONTENTLET,
                                 payload: CONTENTLETS_MOCK[0]
                             }
                         })
@@ -731,7 +734,7 @@ describe('EditEmaEditorComponent', () => {
                         new MessageEvent('message', {
                             origin: HOST,
                             data: {
-                                action: CLIENT_ACTIONS.INIT_INLINE_EDITING,
+                                action: DotCMSUVEAction.INIT_INLINE_EDITING,
                                 payload: {
                                     type: 'BLOCK_EDITOR',
                                     data: {}
@@ -765,7 +768,7 @@ describe('EditEmaEditorComponent', () => {
                         new MessageEvent('message', {
                             origin: HOST,
                             data: {
-                                action: CLIENT_ACTIONS.INIT_INLINE_EDITING,
+                                action: DotCMSUVEAction.INIT_INLINE_EDITING,
                                 payload: {}
                             }
                         })
@@ -786,7 +789,7 @@ describe('EditEmaEditorComponent', () => {
                             new MessageEvent('message', {
                                 origin: HOST,
                                 data: {
-                                    action: CLIENT_ACTIONS.REORDER_MENU,
+                                    action: DotCMSUVEAction.REORDER_MENU,
                                     payload: {
                                         startLevel: 1,
                                         depth: 2
@@ -862,7 +865,7 @@ describe('EditEmaEditorComponent', () => {
                             new MessageEvent('message', {
                                 origin: HOST,
                                 data: {
-                                    action: CLIENT_ACTIONS.REORDER_MENU,
+                                    action: DotCMSUVEAction.REORDER_MENU,
                                     payload: {
                                         startLevel: 1,
                                         depth: 2
@@ -1138,7 +1141,7 @@ describe('EditEmaEditorComponent', () => {
                             new MessageEvent('message', {
                                 origin: HOST,
                                 data: {
-                                    action: CLIENT_ACTIONS.COPY_CONTENTLET_INLINE_EDITING,
+                                    action: DotCMSUVEAction.COPY_CONTENTLET_INLINE_EDITING,
                                     payload: {
                                         inode: '123'
                                     }
@@ -2912,7 +2915,7 @@ describe('EditEmaEditorComponent', () => {
                         new MessageEvent('message', {
                             origin: HOST,
                             data: {
-                                action: CLIENT_ACTIONS.UPDATE_CONTENTLET_INLINE_EDITING,
+                                action: DotCMSUVEAction.UPDATE_CONTENTLET_INLINE_EDITING,
                                 payload: {
                                     dataset: {
                                         inode: '123',
@@ -2948,7 +2951,7 @@ describe('EditEmaEditorComponent', () => {
                         new MessageEvent('message', {
                             origin: HOST,
                             data: {
-                                action: CLIENT_ACTIONS.UPDATE_CONTENTLET_INLINE_EDITING,
+                                action: DotCMSUVEAction.UPDATE_CONTENTLET_INLINE_EDITING,
                                 payload: null
                             }
                         })
@@ -2956,6 +2959,38 @@ describe('EditEmaEditorComponent', () => {
 
                     expect(saveContentletSpy).not.toHaveBeenCalled();
                     expect(setEditorState).toHaveBeenCalledWith(EDITOR_STATE.IDLE);
+                });
+
+                it('should show a helper message when save content when inline editing', () => {
+                    const messageSpy = jest.spyOn(messageService, 'add');
+
+                    window.dispatchEvent(
+                        new MessageEvent('message', {
+                            origin: HOST,
+                            data: {
+                                action: DotCMSUVEAction.UPDATE_CONTENTLET_INLINE_EDITING,
+                                payload: {
+                                    dataset: {
+                                        inode: '123',
+                                        fieldName: 'title',
+                                        mode: 'full',
+                                        language: '1'
+                                    },
+                                    content: 'Hello World II',
+                                    element: {},
+                                    eventType: '',
+                                    isNotDirty: false
+                                }
+                            }
+                        })
+                    );
+
+                    expect(messageSpy).toHaveBeenCalledWith({
+                        severity: 'success',
+                        summary: 'Content saved',
+                        detail: 'Note: If you edit auto-published content, changes apply immediately.',
+                        life: 2000
+                    });
                 });
             });
 
@@ -2974,7 +3009,7 @@ describe('EditEmaEditorComponent', () => {
                             new MessageEvent('message', {
                                 origin: HOST,
                                 data: {
-                                    action: CLIENT_ACTIONS.CLIENT_READY,
+                                    action: DotCMSUVEAction.CLIENT_READY,
                                     payload: config
                                 }
                             })
@@ -2994,7 +3029,7 @@ describe('EditEmaEditorComponent', () => {
                             new MessageEvent('message', {
                                 origin: HOST,
                                 data: {
-                                    action: CLIENT_ACTIONS.CLIENT_READY,
+                                    action: DotCMSUVEAction.CLIENT_READY,
                                     payload: config
                                 }
                             })

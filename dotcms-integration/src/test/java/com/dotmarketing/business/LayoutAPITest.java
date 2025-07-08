@@ -17,21 +17,32 @@ import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+import javax.servlet.http.HttpServletRequest;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import javax.servlet.http.HttpServletRequest;
-
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
+/**
+ * Class LayoutAPITest is responsible for testing the functionality of the LayoutAPI. This class
+ * extends IntegrationTestBase to use initialization of integration test services. The tested
+ * functionalities include creation, update, retrieval, and removal of layouts, resolving layouts
+ * based on various request parameters, and verifying user access permissions to portlets based on
+ * user roles and permissions.
+ * <p>
+ * The class uses JUnit framework for defining test cases and assertions.
+ *
+ * @author Erick Gonzalez
+ * @since Jun 29th, 2018
+ */
 public class LayoutAPITest extends IntegrationTestBase {
 
     private static LayoutAPI layoutAPI;
@@ -151,10 +162,14 @@ public class LayoutAPITest extends IntegrationTestBase {
   }
 
     /**
-     * Method to test: {@link LayoutAPI#doesUserHaveAccessToPortlet(String, User)}
-     * Given Scenario:  You should be able to edit content within the Edit Page, regardless of the portlets you have assigned.
-     * ExpectedResult: If the user has. edit permissions, they should be given access to the portlet.
-     *
+     * <ul>
+     *     <li><b>Method to test:</b> {@link LayoutAPI#doesUserHaveAccessToPortlet(String, User)}
+     *     </li>
+     *     <li><b>Given Scenario:</b> You should be able to edit content within the Edit Page,
+     *     regardless of the portlets you have assigned.</li>
+     *     <li><b>Expected Result:</b> If the user has edit permissions, they should be given
+     *     access to the portlet.</li>
+     * </ul>
      */
     @Test
     public void test_doesUserHaveAccessToPortlet_editPagePortletShouldBeAccessedIfValidPermission() throws DotDataException, DotSecurityException, SystemException, PortalException {
@@ -163,10 +178,11 @@ public class LayoutAPITest extends IntegrationTestBase {
         final User newUser = new UserDataGen().roles(TestUserUtils.getBackendRole()).nextPersisted();
         final User systemUser = APILocator.systemUser();
 
-        //create a host
-        Host host = new Host();
-        host.setHostname("testHost"+System.currentTimeMillis());
-        host = APILocator.getHostAPI().save(host, systemUser, false);
+        // Create a site
+        Host site = new Host();
+        site.setHostname("testHost"+System.currentTimeMillis());
+        site.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
+        site = APILocator.getHostAPI().save(site, systemUser, false);
 
         //create a role
         final String roleName = "testRole"+System.currentTimeMillis();
@@ -190,9 +206,9 @@ public class LayoutAPITest extends IntegrationTestBase {
         permList.put("pages", Integer.toString(PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT));
         permList.put("content", Integer.toString(PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT));
         RoleAjax roleAjax = new RoleAjax();
-        roleAjax.saveRolePermission(nrole.getId(), host.getIdentifier(), permList, false);
+        roleAjax.saveRolePermission(nrole.getId(), site.getIdentifier(), permList, false);
 
-        //validate that user does have access to the portlet
+        //validate that the user does have access to the portlet
         assertTrue("The user should have access to the portlet", layoutAPI.doesUserHaveAccessToPortlet("edit-page", newUser));
     }
 

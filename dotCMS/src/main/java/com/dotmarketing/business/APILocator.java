@@ -62,6 +62,7 @@ import com.dotcms.experiments.business.ExperimentsAPI;
 import com.dotcms.experiments.business.ExperimentsAPIImpl;
 import com.dotcms.graphql.business.GraphqlAPI;
 import com.dotcms.graphql.business.GraphqlAPIImpl;
+import com.dotcms.health.api.HealthService;
 import com.dotcms.jobs.business.api.JobQueueManagerAPI;
 import com.dotcms.keyvalue.business.KeyValueAPI;
 import com.dotcms.keyvalue.business.KeyValueAPIImpl;
@@ -1206,6 +1207,17 @@ public class APILocator extends Locator<APIIndex> {
 	 */
 	public static MetricsAPI getMetricsAPI() {
 		return CDIUtils.getBeanThrows(MetricsAPI.class);
+	}
+
+	/**
+	 * Returns the Health Service for programmatic access to health check status
+	 * from non-CDI aware code. This provides convenient methods for querying
+	 * health status, individual checks, and overall system health.
+	 * 
+	 * @return The {@link HealthService} CDI bean instance
+	 */
+	public static HealthService getHealthService() {
+		return CDIUtils.getBeanThrows(HealthService.class);
 	}
 
 	/**

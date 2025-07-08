@@ -3,5 +3,6 @@
     "dest": "../../../dist/libs/sdk/angular",
     "lib": {
         "entryFile": "src/public_api.ts"
-    }
+    },
+    "allowedNonPeerDependencies": ["@dotcms/uve", "@dotcms/types", "@tinymce/tinymce-angular"]
 }

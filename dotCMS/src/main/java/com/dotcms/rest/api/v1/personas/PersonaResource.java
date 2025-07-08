@@ -18,6 +18,7 @@ import com.dotmarketing.portlets.personas.business.PersonaAPI;
 import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
@@ -31,6 +32,7 @@ import javax.ws.rs.core.MediaType;
 import org.glassfish.jersey.server.JSONP;
 
 @Path("/v1/personas")
+@Tag(name = "Personalization")
 public class PersonaResource {
 
     private final PersonaAPI personaAPI;

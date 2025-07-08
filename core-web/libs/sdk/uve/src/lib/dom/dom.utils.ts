@@ -154,8 +154,13 @@ export function getClosestDotCMSContainerData(element: Element) {
 export function findDotCMSElement(element: HTMLElement | null): HTMLElement | null {
     if (!element) return null;
 
+    const emptyContent = element.querySelector('[data-dot-object="empty-content"]');
+
     if (
         element?.dataset?.['dotObject'] === 'contentlet' ||
+        // The container inside Headless components have a span with the data-dot-object="container" attribute
+        (element?.dataset?.['dotObject'] === 'container' && emptyContent) ||
+        // The container inside Traditional have no content inside
         (element?.dataset?.['dotObject'] === 'container' && element.children.length === 0)
     ) {
         return element;

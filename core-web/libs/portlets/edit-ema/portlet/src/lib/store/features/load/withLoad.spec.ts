@@ -1,4 +1,4 @@
-import { describe, expect } from '@jest/globals';
+import { describe, expect, it } from '@jest/globals';
 import {
     createServiceFactory,
     mockProvider,
@@ -34,10 +34,15 @@ import { DotPageApiParams, DotPageApiService } from '../../../services/dot-page-
 import { PERSONA_KEY } from '../../../shared/consts';
 import { UVE_STATUS } from '../../../shared/enums';
 import {
+    getNewVanityUrl,
     getVanityUrl,
     HEADLESS_BASE_QUERY_PARAMS,
     MOCK_RESPONSE_HEADLESS,
     MOCK_RESPONSE_VTL,
+    NEW_PERMANENT_REDIRECT_VANITY_URL,
+    NEW_PERMANENT_REDIRECT_VANITY_URL_WITH_ACTION,
+    NEW_PERMANENT_REDIRECT_VANITY_URL_WITH_RESPONSE,
+    NEW_TEMPORARY_REDIRECT_VANITY_URL,
     PERMANENT_REDIRECT_VANITY_URL,
     TEMPORARY_REDIRECT_VANITY_URL,
     VTL_BASE_QUERY_PARAMS
@@ -231,6 +236,75 @@ describe('withLoad', () => {
                     queryParamsHandling: 'merge'
                 });
             });
+
+            it('should update the pageParams with the vanity URL on new temporary redirect', () => {
+                const temporaryRedirect = getNewVanityUrl(
+                    VTL_BASE_QUERY_PARAMS.url,
+                    NEW_TEMPORARY_REDIRECT_VANITY_URL
+                );
+
+                const forwardTo = NEW_TEMPORARY_REDIRECT_VANITY_URL.forwardTo;
+
+                jest.spyOn(dotPageApiService, 'get').mockImplementation(() =>
+                    of(temporaryRedirect)
+                );
+
+                store.loadPageAsset(VTL_BASE_QUERY_PARAMS);
+
+                expect(router.navigate).toHaveBeenCalledWith([], {
+                    queryParams: { url: forwardTo },
+                    queryParamsHandling: 'merge'
+                });
+            });
+
+            it('should update the pageParams with the vanity URL on new permanent redirect', () => {
+                const permanentRedirect = getNewVanityUrl(
+                    VTL_BASE_QUERY_PARAMS.url,
+                    NEW_PERMANENT_REDIRECT_VANITY_URL
+                );
+
+                const forwardTo = NEW_PERMANENT_REDIRECT_VANITY_URL.forwardTo;
+
+                jest.spyOn(dotPageApiService, 'get').mockImplementation(() =>
+                    of(permanentRedirect)
+                );
+
+                store.loadPageAsset(VTL_BASE_QUERY_PARAMS);
+
+                expect(router.navigate).toHaveBeenCalledWith([], {
+                    queryParams: { url: forwardTo },
+                    queryParamsHandling: 'merge'
+                });
+            });
+
+            it('should not navigate if the vanity URL has a response 200', () => {
+                const permanentRedirect = getNewVanityUrl(
+                    VTL_BASE_QUERY_PARAMS.url,
+                    NEW_PERMANENT_REDIRECT_VANITY_URL_WITH_RESPONSE
+                );
+
+                jest.spyOn(dotPageApiService, 'get').mockImplementation(() =>
+                    of(permanentRedirect)
+                );
+
+                store.loadPageAsset(VTL_BASE_QUERY_PARAMS);
+
+                expect(router.navigate).not.toHaveBeenCalled();
+            });
+            it('should not navigate if the vanity URL has a action 200', () => {
+                const permanentRedirect = getNewVanityUrl(
+                    VTL_BASE_QUERY_PARAMS.url,
+                    NEW_PERMANENT_REDIRECT_VANITY_URL_WITH_ACTION
+                );
+
+                jest.spyOn(dotPageApiService, 'get').mockImplementation(() =>
+                    of(permanentRedirect)
+                );
+
+                store.loadPageAsset(VTL_BASE_QUERY_PARAMS);
+
+                expect(router.navigate).not.toHaveBeenCalled();
+            });
         });
 
         describe('reloadCurrentPage', () => {
@@ -269,6 +343,5 @@ describe('withLoad', () => {
             });
         });
     });
-
     afterEach(() => jest.clearAllMocks());
 });

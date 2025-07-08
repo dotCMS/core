@@ -306,6 +306,17 @@ export const getDotCMSPage = async (path, searchParams) => {
 
 Learn more about the `@dotcms/client` package [here](https://www.npmjs.com/package/@dotcms/client/v/next).
 
+### How dotCMS Routes Pages
+dotCMS allows a single page to be accessed via multiple URL paths (e.g., / and /index for the same "Home" page). This flexibility means your Next.js application needs to handle these variations.
+
+To ensure all paths to the same content are properly managed and to prevent 404/500 errors, we recommend using a catch-all route strategy in Next.js.
+
+How to Implement in Next.js:
+
+Implement a dynamic route like `[[...slug]]` in your Next.js app. This route will capture all URL segments, allowing your application to correctly process any path dotCMS uses for your content.
+
+You can learn more about Next.js routing strategies [here](https://nextjs.org/docs/app/api-reference/file-conventions/dynamic-routes#typescript)
+
 ### How to Render Your Page
 
 The rendering process for dotCMS content in Next.js involves several key components working together:
@@ -434,4 +445,3 @@ To deepen your understanding of this integration, explore these official dotCMS 
 Additional resources:
 - [dotCMS Developer Documentation](https://dev.dotcms.com/)
 - [Next.js Documentation](https://nextjs.org/docs)
-

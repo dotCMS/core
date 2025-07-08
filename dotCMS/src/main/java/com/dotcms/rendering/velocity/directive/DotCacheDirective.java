@@ -1,5 +1,6 @@
 package com.dotcms.rendering.velocity.directive;
 
+import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotmarketing.util.Logger;
 import java.io.IOException;
 import java.io.Serializable;
@@ -7,6 +8,8 @@ import java.io.StringWriter;
 import java.io.Writer;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
+
+import org.apache.velocity.context.Context;
 import org.apache.velocity.context.InternalContextAdapter;
 import org.apache.velocity.exception.MethodInvocationException;
 import org.apache.velocity.exception.ParseErrorException;
@@ -20,6 +23,8 @@ import com.dotmarketing.util.PageMode;
 import io.vavr.control.Try;
 
 public class DotCacheDirective extends Directive {
+
+    public static final String DONT_USE_DIRECTIVE_CACHE = "_dotDontUseDirectiveCache";
 
     private static final long serialVersionUID = 1L;
 
@@ -39,7 +44,7 @@ public class DotCacheDirective extends Directive {
 
 
         HttpServletRequest request = (HttpServletRequest) context.get("request");
-        boolean shouldCache = shouldCache(request);
+        boolean shouldCache = shouldCache(context, request);
         boolean refreshCache = refreshCache(request);
 
         int ttl = 0;
@@ -82,8 +87,11 @@ public class DotCacheDirective extends Directive {
     }
 
 
-    boolean shouldCache(HttpServletRequest request) {
+    boolean shouldCache(final Context context, HttpServletRequest request) {
         if (request == null) {
+            return false;
+        }
+        if (VelocityUtil.getDontUseDirectiveCache(context)) {
             return false;
         }
         if ("no".equals(request.getParameter(getName())) || "no".equals(request.getAttribute(getName()))) {

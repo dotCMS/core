@@ -23,12 +23,13 @@
         "analytics": "^0.8.14"
     },
     "peerDependencies": {
-        "react": "^18.2.0"
+        "react": "19.1.0",
+        "@dotcms/uve": "latest"
     },
     "devDependencies": {
-        "vite": "~5.0.0",
         "@testing-library/jest-dom": "^6.1.6",
-        "@testing-library/react": "^14.0.0"
+        "@testing-library/react": "^14.0.0",
+        "vite": "~5.0.0"
     },
     "main": "./index.cjs.js",
     "module": "./index.esm.js",

@@ -7,7 +7,7 @@
     "url": "git+https://github.com/dotCMS/core.git#main"
   },
   "devDependencies": {
-    "@dotcms/types": "next"
+    "@dotcms/types": "latest"
   },
   "keywords": [
     "dotCMS",

@@ -153,6 +153,28 @@ public abstract class DotAbstractSamlConfigurationServiceImpl implements SamlCon
     }
 
     @Override
+    public Boolean getConfigAsBoolean(IdentityProviderConfiguration identityProviderConfiguration, SamlName samlName, Supplier<Boolean> defaultValueSupplier) {
+
+        try {
+
+            final Boolean value =  identityProviderConfiguration.containsOptionalProperty(samlName.getPropertyName())?
+                    Boolean.parseBoolean((String) identityProviderConfiguration.getOptionalProperty(samlName.getPropertyName())):
+                    defaultValueSupplier.get();
+
+            Logger.debug(this,
+                    ()->"Found " + samlName.getPropertyName() + " : " + ((value == null) ? "null" : value));
+
+            return value;
+        } catch (Exception e) {
+
+            Logger.warn(this, "Cast exception on " + samlName.getPropertyName()
+                    + " property. idpConfigId: " + identityProviderConfiguration.getId());
+        }
+
+        return false;
+    }
+
+    @Override
     public String[] getConfigAsArrayString(final IdentityProviderConfiguration identityProviderConfiguration, final SamlName samlName) {
 
         try {

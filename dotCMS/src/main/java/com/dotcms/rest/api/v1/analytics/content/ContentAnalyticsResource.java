@@ -8,13 +8,14 @@ import com.dotcms.analytics.track.collectors.Collector;
 import com.dotcms.experiments.business.ConfigExperimentUtil;
 import com.dotcms.rest.AnonymousAccess;
 import com.dotcms.rest.InitDataObject;
-import com.dotcms.rest.ResponseEntityStringView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.api.v1.analytics.content.util.AnalyticsEventsResult;
 import com.dotcms.rest.api.v1.analytics.content.util.ContentAnalyticsUtil;
 import com.dotcms.util.JsonUtil;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -32,17 +33,22 @@ import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import java.io.Serializable;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static com.dotcms.util.DotPreconditions.checkArgument;
 import static com.dotcms.util.DotPreconditions.checkNotNull;
+import static com.dotmarketing.util.Constants.DONT_RESPECT_FRONT_END_ROLES;
 
 /**
  * Resource class that exposes endpoints to query content analytics data.
@@ -53,11 +59,11 @@ import static com.dotcms.util.DotPreconditions.checkNotNull;
  * @author Jose Castro
  * @since Sep 13th, 2024
  */
-
 @Path("/v1/analytics/content")
 @Tag(name = "Content Analytics",
         description = "This REST Endpoint exposes information related to how dotCMS content is accessed and interacted with by users.")
 public class ContentAnalyticsResource {
+
     private final Lazy<Boolean> ANALYTICS_EVENTS_REQUIRE_AUTHENTICATION = Lazy.of(() -> Config.getBooleanProperty("ANALYTICS_EVENTS_REQUIRE_AUTHENTICATION", true));
 
     private final WebResource webResource;
@@ -312,7 +318,7 @@ public class ContentAnalyticsResource {
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public ResponseEntityStringView fireUserCustomEvent(@Context final HttpServletRequest request,
+    public Response fireUserCustomEvent(@Context final HttpServletRequest request,
                                                 @Context final HttpServletResponse response,
                                                 final Map<String, Serializable> userEventPayload) throws DotSecurityException {
 
@@ -331,18 +337,57 @@ public class ContentAnalyticsResource {
             if (user.isAnonymousUser()) {
                 throw new DotSecurityException("Anonymous user is not allowed to fire an event");
             }
-        } else {
-
-            if (user.isAnonymousUser() && isNotValidKey(userEventPayload, WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request))) {
-                throw new DotSecurityException("The user is not allowed to fire an event");
-            }
-        }
+        } 
 
         Logger.debug(this,  ()->"Creating an user custom event with the payload: " + userEventPayload);
 
-        ContentAnalyticsUtil.registerContentAnalyticsRestEvent(request, response, userEventPayload);
+        final AnalyticsEventsResult analyticsEventsResult =
+                ContentAnalyticsUtil.registerContentAnalyticsRestEvent(request, response, userEventPayload);
 
-        return new ResponseEntityStringView("User event created successfully");
+        return Response.status(getResponseStatus(analyticsEventsResult)).entity(analyticsEventsResult).build();
+    }
+
+    @Operation(
+            operationId = "getSiteConfig",
+            summary = "Site Configuration",
+            description = "Returns the expected JS configuration object that must be used for " +
+                    "client-side JS code to send custom Events",
+            tags = {"Content Analytics"},
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "The Site configuration was " +
+                            "returned successfully"),
+                    @ApiResponse(responseCode = "400", description = "Bad Request"),
+                    @ApiResponse(responseCode = "403", description = "Forbidden"),
+                    @ApiResponse(responseCode = "415", description = "Unsupported Media Type"),
+                    @ApiResponse(responseCode = "404", description = "Site ID in path is not " +
+                            "present"),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error")
+            }
+    )
+    @GET
+    @Path("/siteconfig/{siteId}")
+    @JSONP
+    @NoCache
+    @Consumes(MediaType.TEXT_PLAIN)
+    @Produces({MediaType.TEXT_PLAIN, "text/plain"})
+    public Response getSiteConfig(@PathParam("siteId") final String siteId,
+                                  @Context final HttpServletRequest request,
+                                  @Context final HttpServletResponse response) throws DotDataException, DotSecurityException {
+        final InitDataObject initDataObject = new WebResource.InitBuilder(this.webResource)
+                .requestAndResponse(request, response)
+                .requiredBackendUser(true)
+                .rejectWhenNoUser(true)
+                .init();
+        final User user = initDataObject.getUser();
+        final Host site = APILocator.getHostAPI().find(siteId, user, DONT_RESPECT_FRONT_END_ROLES);
+        Objects.requireNonNull(site, String.format("Site with ID '%s' was not found", siteId));
+        return Response.ok().entity(ContentAnalyticsUtil.getSiteJSConfig(site)).build();
+    }
+
+    private int getResponseStatus(final AnalyticsEventsResult analyticsEventsResult) {
+        return analyticsEventsResult.getStatus() == AnalyticsEventsResult.ResponseStatus.ERROR ? 400
+                : analyticsEventsResult.getStatus() == AnalyticsEventsResult.ResponseStatus.SUCCESS ? 200
+                : 207;
     }
 
     // Isnt valid if the payload does not contain the key or the key is different from the one in the site
@@ -350,4 +395,5 @@ public class ContentAnalyticsResource {
 
         return !userEventPayload.containsKey("key") || !ConfigExperimentUtil.INSTANCE.getAnalyticsKey(site).equals(userEventPayload.get("key"));
     }
+
 }
