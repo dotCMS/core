@@ -162,7 +162,7 @@ export class DotLinkEditorPopoverComponent implements OnDestroy {
             // Blur the search input and focus the listbox
             // So we can handle the selection of a link using the enter key
             this.searchInput?.nativeElement.blur();
-            this.searchResultsListbox?.listViewChild?.nativeElement.focus();
+            this.searchResultsListbox?.listViewChild?.nativeElement?.focus?.();
         }
     }
 
