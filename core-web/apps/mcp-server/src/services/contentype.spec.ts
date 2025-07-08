@@ -1,4 +1,4 @@
-import { ContentTypeService } from './contentype';
+import { ContentTypeService } from './contentType';
 
 import { mockFetch } from '../test-setup';
 

@@ -6,7 +6,7 @@ import { contentTypeListHandler, contentTypeCreateHandler } from './handlers';
 import {
     ContentTypeListParamsSchema,
     ContentTypeCreateParamsSchema
-} from '../../services/contentype';
+} from '../../services/contentType';
 
 /**
  * Registers content type tools with the MCP server

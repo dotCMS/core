@@ -1,7 +1,7 @@
 import { getCachedData, setCacheData } from './cache';
 import { createResponseText } from './formatters';
 
-import { ContentTypeService } from '../../services/contentype';
+import { ContentTypeService } from '../../services/contentType';
 import { SiteService } from '../../services/site';
 import { WorkflowService } from '../../services/workflow';
 import { getContextStore } from '../../utils/context-store';

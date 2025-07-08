@@ -6,7 +6,7 @@ import {
     ContentTypeService,
     ContentTypeListParamsSchema,
     ContentTypeCreateParamsSchema
-} from '../../services/contentype';
+} from '../../services/contentType';
 import { Logger } from '../../utils/logger';
 import { executeWithErrorHandling, createSuccessResponse } from '../../utils/response';
 
