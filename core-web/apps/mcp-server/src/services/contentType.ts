@@ -12,6 +12,11 @@ import {
 } from '../types/contentype';
 import { Logger } from '../utils/logger';
 
+const DEFAULT_PAGE = 1;
+const DEFAULT_PER_PAGE = 100;
+const DEFAULT_ORDER_BY = 'name';
+const DEFAULT_DIRECTION = 'ASC';
+
 const ContentTypeBaseTypeQueryEnum = z.union([z.literal('ANY'), ContentTypeBaseTypeEnum]);
 
 export const ContentTypeListParamsSchema = z.object({
@@ -278,11 +283,11 @@ export class ContentTypeService extends AgnosticClient {
         this.serviceLogger.log('Starting content types schema fetch operation');
 
         const allContentTypes = await this.list({
-            page: 1,
+            page: DEFAULT_PAGE,
             // TODO: allow the user to specify the number of content types to fetch
-            per_page: 100,
-            orderby: 'name',
-            direction: 'ASC'
+            per_page: DEFAULT_PER_PAGE,
+            orderby: DEFAULT_ORDER_BY,
+            direction: DEFAULT_DIRECTION
         });
 
         this.serviceLogger.log('Retrieved content types for schema', {
