@@ -242,6 +242,8 @@ describe('DotContentDriveShellComponent', () => {
             );
 
             spectator.triggerEventHandler(folderListView, 'paginate', { rows: 10 });
+
+            expect(store.setPagination).not.toHaveBeenCalled();
         });
 
         it('should not set pagination if first are not provided', () => {
@@ -285,6 +287,8 @@ describe('DotContentDriveShellComponent', () => {
             );
 
             spectator.triggerEventHandler(folderListView, 'sort', { order: 1 });
+
+            expect(store.setSort).not.toHaveBeenCalled();
         });
 
         it('should set sort with default order if order is 0', () => {
