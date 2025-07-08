@@ -16,6 +16,7 @@ import {
   pageAssetContent,
 } from "./contentData";
 import { assert } from "console";
+import { faker } from "@faker-js/faker";
 
 /**
  * Test to navigate to the content portlet and login to the dotCMS instance
@@ -415,7 +416,7 @@ test("Add a new page", async ({ page }) => {
 
   await contentUtils.addNewContentAction(pageAsset.locator, pageAsset.label);
   await contentUtils.fillPageAssetForm({
-    title: pageAssetContent.title,
+    title: faker.lorem.word(),
     host: pageAssetContent.host,
     template: pageAssetContent.template,
     friendlyName: pageAssetContent.friendlyName,
@@ -424,8 +425,6 @@ test("Add a new page", async ({ page }) => {
     cacheTTL: pageAssetContent.cacheTTL,
     action: contentProperties.publishWfAction,
   });
-
-  await page.waitForTimeout(3000);
 
   const breadcrumbLocator = page.getByTestId("breadcrumb-title");
   await expect(breadcrumbLocator).toContainText(pageAssetContent.title);
