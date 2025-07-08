@@ -1,7 +1,11 @@
 import { test, expect } from "@playwright/test";
 import { BreadcrumbComponent } from "@components/breadcrumb.component";
 import { LoginPage } from "@pages";
-import { archiveTemplate, createTemplate, deleteTemplate } from "@requests/templates";
+import {
+  archiveTemplate,
+  createTemplate,
+  deleteTemplate,
+} from "@requests/templates";
 
 test.beforeEach("Login", async ({ page }) => {
   // Get the username and password from the environment variables
@@ -62,8 +66,10 @@ test("should display correctly on the Content Types page", async ({ page }) => {
   await expect(title).toHaveText("Content Types");
 });
 
-test("should display correctly on the Template page", async ({ page, request }) => {
-
+test("should display correctly on the Template page", async ({
+  page,
+  request,
+}) => {
   const template = await createTemplate(request, {
     friendlyName: "Test Template",
     image: "test-image",

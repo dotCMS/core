@@ -2,7 +2,10 @@ import { APIRequestContext, Page } from "@playwright/test";
 import { updateFeatureFlag } from "@requests/updateFeatureFlag";
 
 export class ListingContentTypesPage {
-  constructor(private page: Page, private request: APIRequestContext) {}
+  constructor(
+    private page: Page,
+    private request: APIRequestContext,
+  ) {}
 
   async goToUrl() {
     const responsePromise = this.page.waitForResponse((response) => {

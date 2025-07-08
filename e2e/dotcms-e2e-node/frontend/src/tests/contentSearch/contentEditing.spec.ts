@@ -16,7 +16,6 @@ import {
   pageAssetContent,
 } from "./contentData";
 import { assert } from "console";
-import { faker } from "@faker-js/faker";
 
 /**
  * Test to navigate to the content portlet and login to the dotCMS instance
@@ -414,11 +413,9 @@ test("Delete a file asset content", async ({ page }) => {
 test("Add a new page", async ({ page }) => {
   const contentUtils = new ContentPage(page);
 
-  const title = faker.lorem.word();
-
   await contentUtils.addNewContentAction(pageAsset.locator, pageAsset.label);
   await contentUtils.fillPageAssetForm({
-    title,
+    title: pageAssetContent.title,
     host: pageAssetContent.host,
     template: pageAssetContent.template,
     friendlyName: pageAssetContent.friendlyName,
@@ -429,7 +426,7 @@ test("Add a new page", async ({ page }) => {
   });
 
   const breadcrumbLocator = page.getByTestId("breadcrumb-title");
-  await expect(breadcrumbLocator).toContainText(title);
+  await expect(breadcrumbLocator).toContainText(pageAssetContent.title);
 });
 
 /**
@@ -449,10 +446,6 @@ test("Validate URL is unique on pages", async ({ page }) => {
     cacheTTL: pageAssetContent.cacheTTL,
     action: contentProperties.publishWfAction,
   });
-  await page
-    .frameLocator('dot-iframe-dialog iframe[name="detailFrame"]')
-    .getByText("Another Page with the same")
-    .click();
 
   const iframe = page.frameLocator(iFramesLocators.dot_iframe);
   await expect(iframe.getByText("Another Page with the same")).toBeVisible();
