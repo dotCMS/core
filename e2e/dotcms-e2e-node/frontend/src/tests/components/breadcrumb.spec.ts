@@ -5,8 +5,8 @@ import {
   archiveTemplate,
   createTemplate,
   deleteTemplate,
-  Template,
 } from "@requests/templates";
+import { Template } from "@models/template.model";
 
 test.beforeEach("Login", async ({ page }) => {
   // Get the username and password from the environment variables

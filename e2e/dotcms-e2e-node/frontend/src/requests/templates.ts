@@ -1,15 +1,7 @@
 import { APIRequestContext, expect } from "@playwright/test";
 import { admin1 } from "../tests/login/credentialsData";
 import { generateBase64Credentials } from "@utils/generateBase64Credential";
-
-export interface Template {
-  friendlyName: string;
-  identifier: string;
-  image: string;
-  theme: string;
-  title: string;
-  layout?: Record<string, unknown>;
-}
+import { Template } from "@models/template.model";
 
 type CreateTemplate = Omit<Template, "identifier">;
 
