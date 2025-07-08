@@ -9,7 +9,7 @@ import { DotContentDriveStore } from './dot-content-drive.store';
 
 import { SYSTEM_HOST } from '../shared/constants';
 import { mockItems } from '../shared/mocks';
-import { DotContentDriveStatus } from '../shared/models';
+import { DotContentDriveSortOrder, DotContentDriveStatus } from '../shared/models';
 
 describe('DotContentDriveStore', () => {
     let spectator: SpectatorService<InstanceType<typeof DotContentDriveStore>>;
@@ -141,7 +141,7 @@ describe('DotContentDriveStore', () => {
 
         describe('setItems', () => {
             it('should update items and set status to LOADED', () => {
-                store.setItems(mockItems);
+                store.setItems(mockItems, mockItems.length);
 
                 expect(store.items()).toEqual(mockItems);
                 expect(store.status()).toBe(DotContentDriveStatus.LOADED);
@@ -149,12 +149,12 @@ describe('DotContentDriveStore', () => {
 
             it('should update items with empty array', () => {
                 // First set some items
-                store.setItems(mockItems);
+                store.setItems(mockItems, mockItems.length);
                 expect(store.items()).toEqual(mockItems);
 
                 // Then clear them
                 const emptyItems: DotContentDriveItem[] = [];
-                store.setItems(emptyItems);
+                store.setItems(emptyItems, emptyItems.length);
 
                 expect(store.items()).toEqual(emptyItems);
                 expect(store.status()).toBe(DotContentDriveStatus.LOADED);
@@ -175,6 +175,30 @@ describe('DotContentDriveStore', () => {
             it('should update status to ERROR', () => {
                 store.setStatus(DotContentDriveStatus.ERROR);
                 expect(store.status()).toBe(DotContentDriveStatus.ERROR);
+            });
+        });
+
+        describe('setFilters', () => {
+            it('should update filters with provided values', () => {
+                store.setFilters({ contentType: 'Blog' });
+                expect(store.filters()).toEqual({ contentType: 'Blog' });
+            });
+        });
+
+        describe('setPagination', () => {
+            it('should update pagination with provided values', () => {
+                store.setPagination({ limit: 10, offset: 0 });
+                expect(store.pagination()).toEqual({ limit: 10, offset: 0 });
+            });
+        });
+
+        describe('setSort', () => {
+            it('should update sort with provided values', () => {
+                store.setSort({ field: 'modDate', order: DotContentDriveSortOrder.ASC });
+                expect(store.sort()).toEqual({
+                    field: 'modDate',
+                    order: DotContentDriveSortOrder.ASC
+                });
             });
         });
     });
