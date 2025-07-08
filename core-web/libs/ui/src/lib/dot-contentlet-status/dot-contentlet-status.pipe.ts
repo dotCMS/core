@@ -3,7 +3,7 @@ import { Pipe, PipeTransform } from '@angular/core';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
 @Pipe({
-    name: 'dcs',
+    name: 'dotContentletStatus',
     standalone: true,
     pure: true
 })

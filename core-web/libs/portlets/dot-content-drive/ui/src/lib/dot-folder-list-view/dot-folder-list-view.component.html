@@ -1,11 +1,11 @@
 <p-table
-    [value]="items()"
+    [value]="$items()"
     [tableStyle]="{ width: '100%' }"
     dataKey="identifier"
     [paginator]="true"
     [rows]="20"
     [rowsPerPageOptions]="[20, 40, 60]"
-    [totalRecords]="totalItems()"
+    [totalRecords]="$totalItems()"
     [lazy]="true"
     (onPage)="onPage($event)"
     sortMode="single"
@@ -38,9 +38,9 @@
     </ng-template>
 
     <ng-template pTemplate="body" let-item>
-        @let status = item | dcs;
+        @let status = item | dotContentletStatus;
 
-        @if (loading()) {
+        @if ($loading()) {
             <tr data-testId="loading-row">
                 <td [colSpan]="SKELETON_SPAN">
                     <p-skeleton height="3rem" width="100%" />

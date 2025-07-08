@@ -221,7 +221,7 @@ describe('DotContentDriveShellComponent', () => {
             const folderListView = spectator.query(DotFolderListViewComponent);
 
             expect(folderListView).toBeTruthy();
-            expect(folderListView?.items()).toEqual(mockItems);
+            expect(folderListView?.$items()).toEqual(mockItems);
         });
     });
 

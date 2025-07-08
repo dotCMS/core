@@ -33,9 +33,9 @@ import { HEADER_COLUMNS } from '../shared/constants';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotFolderListViewComponent {
-    items = input<DotContentDriveItem[]>([]);
-    totalItems = input<number>(0);
-    loading = input<boolean>(false);
+    $items = input<DotContentDriveItem[]>([], { alias: 'items' });
+    $totalItems = input<number>(0, { alias: 'totalItems' });
+    $loading = input<boolean>(false, { alias: 'loading' });
 
     selectionChange = output<DotContentDriveItem[]>();
     paginate = output<LazyLoadEvent>();

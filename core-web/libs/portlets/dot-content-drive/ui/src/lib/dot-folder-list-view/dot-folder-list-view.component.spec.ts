@@ -35,7 +35,7 @@ describe('DotFolderListViewComponent', () => {
         it('should set items input property', () => {
             spectator.setInput('items', mockItems);
 
-            expect(spectator.component.items()).toEqual(mockItems);
+            expect(spectator.component.$items()).toEqual(mockItems);
         });
 
         it('should set totalItems input property', () => {
@@ -43,13 +43,13 @@ describe('DotFolderListViewComponent', () => {
 
             spectator.setInput('totalItems', mockTotalItems);
 
-            expect(spectator.component.totalItems()).toEqual(mockTotalItems);
+            expect(spectator.component.$totalItems()).toEqual(mockTotalItems);
         });
 
         it('should set loading input property', () => {
             spectator.setInput('loading', true);
 
-            expect(spectator.component.loading()).toBe(true);
+            expect(spectator.component.$loading()).toBe(true);
         });
     });
 
