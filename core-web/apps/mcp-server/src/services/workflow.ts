@@ -17,6 +17,9 @@ import { Logger } from '../utils/logger';
 export class WorkflowService extends AgnosticClient {
     private serviceLogger: Logger;
 
+    private API_RESOURCE_URL = '/api/v1/workflow';
+    private ACTION_FIRE_URL = `${this.API_RESOURCE_URL}/actions/default/fire`;
+
     constructor() {
         super();
         this.serviceLogger = new Logger('WORKFLOW_SERVICE');
@@ -64,7 +67,7 @@ export class WorkflowService extends AgnosticClient {
 
         this.serviceLogger.log('Workflow request validated successfully', validated.data);
 
-        const url = '/api/v1/workflow/actions/default/fire/NEW';
+        const url = `${this.ACTION_FIRE_URL}/NEW`;
 
         try {
             const response = await this.fetch(url, {
@@ -127,7 +130,10 @@ export class WorkflowService extends AgnosticClient {
         };
         const defaultComment = defaultComments[actionType];
 
-        const urlObj = new URL(`/api/v1/workflow/actions/default/fire/${actionType}`, this.dotcmsUrl);
+        const urlObj = new URL(
+            `${this.ACTION_FIRE_URL}/${actionType}`,
+            this.dotcmsUrl
+        );
         urlObj.searchParams.set('identifier', validatedParams.data.identifier);
         urlObj.searchParams.set('variantName', validatedParams.data.variantName);
 
@@ -181,7 +187,7 @@ export class WorkflowService extends AgnosticClient {
     async getWorkflowSchemes(): Promise<WorkflowSchemesResponse> {
         this.serviceLogger.log('Starting workflow schemes fetch operation');
 
-        const url = '/api/v1/workflow/schemes?showArchived=true';
+        const url = `${this.API_RESOURCE_URL}/schemes?showArchived=true`;
 
         try {
             const response = await this.fetch(url, {
