@@ -5,15 +5,28 @@ import { computed } from '@angular/core';
 import { DotContentDriveItem } from '@dotcms/dotcms-models';
 import { QueryBuilder } from '@dotcms/query-builder';
 
-import { BASE_QUERY, SYSTEM_HOST } from '../shared/constants';
-import { DotContentDriveInit, DotContentDriveState, DotContentDriveStatus } from '../shared/models';
+import { BASE_QUERY, DEFAULT_PAGINATION, SYSTEM_HOST } from '../shared/constants';
+import {
+    DotContentDriveInit,
+    DotContentDrivePagination,
+    DotContentDriveSort,
+    DotContentDriveSortOrder,
+    DotContentDriveState,
+    DotContentDriveStatus
+} from '../shared/models';
 
 const initialState: DotContentDriveState = {
     currentSite: SYSTEM_HOST,
     path: '',
     filters: {},
     items: [],
-    status: DotContentDriveStatus.LOADING
+    status: DotContentDriveStatus.LOADING,
+    totalItems: 0,
+    pagination: DEFAULT_PAGINATION,
+    sort: {
+        field: 'modDate',
+        order: DotContentDriveSortOrder.ASC
+    }
 };
 
 export const DotContentDriveStore = signalStore(
@@ -62,11 +75,20 @@ export const DotContentDriveStore = signalStore(
                     status: DotContentDriveStatus.LOADING
                 });
             },
-            setItems(items: DotContentDriveItem[]) {
-                patchState(store, { items, status: DotContentDriveStatus.LOADED });
+            setItems(items: DotContentDriveItem[], totalItems: number) {
+                patchState(store, { items, status: DotContentDriveStatus.LOADED, totalItems });
             },
             setStatus(status: DotContentDriveStatus) {
                 patchState(store, { status });
+            },
+            setFilters(filters: Record<string, string>) {
+                patchState(store, { filters: { ...store.filters(), ...filters } });
+            },
+            setPagination(pagination: DotContentDrivePagination) {
+                patchState(store, { pagination });
+            },
+            setSort(sort: DotContentDriveSort) {
+                patchState(store, { sort });
             }
         };
     })
