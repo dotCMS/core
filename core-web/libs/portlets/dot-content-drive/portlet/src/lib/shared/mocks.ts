@@ -8,7 +8,8 @@ export const mockItems: DotContentDriveItem[] = [
 export const mockSearchResponse = {
     jsonObjectView: {
         contentlets: mockItems
-    }
+    },
+    resultsSize: 2
 };
 
 export const mockRoute = {
