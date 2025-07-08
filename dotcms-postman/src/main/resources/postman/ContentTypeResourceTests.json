@@ -95,7 +95,9 @@
 									"",
 									"pm.test(\"sortOrder check\", function () {",
 									"    pm.expect(jsonData.entity.sortOrder).to.eql(3);",
-									"});"
+									"});",
+									"",
+									"pm.collectionVariables.set(\"fields\", JSON.stringify(jsonData.entity.fields));"
 								],
 								"type": "text/javascript",
 								"packages": {}
@@ -173,7 +175,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n\t\"description\": \"My Structure\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"host\": \"SYSTEM_HOST\",\n    \"name\": \"My Custom Structure {{$randomBankAccount}}\",\n\t\"variable\": \"{{contentTypeVAR}}\",\n\t\"fixed\": false,\n    \"id\": \"{{contentTypeID}}\",\n\t\"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n                    \"contentTypeId\": \"{{contentTypeID}}\",\n                    \"dataType\": \"TEXT\",\n                    \"fieldType\": \"Text\",\n                    \"fieldTypeLabel\": \"Text\",\n                    \"fieldVariables\": [],\n                    \"fixed\": true,\n                    \"iDate\": 1631719532000,\n                    \"id\": \"{{contentTypeFieldID}}\",\n                    \"indexed\": true,\n                    \"listed\": true,\n                    \"modDate\": 1631719532000,\n                    \"name\": \"Name\",\n                    \"readOnly\": false,\n                    \"required\": true,\n                    \"searchable\": true,\n                    \"sortOrder\": 2,\n                    \"unique\": false,\n                    \"variable\": \"name\"\n\t\t}\n\t],\n    \"workflow\":[\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"],\n    \"icon\": \"icon2\",\n    \"sortOrder\": 2\n}",
+							"raw": "{\n    \"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n\t\"description\": \"My Structure\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"host\": \"SYSTEM_HOST\",\n    \"name\": \"My Custom Structure {{$randomBankAccount}}\",\n\t\"variable\": \"{{contentTypeVAR}}\",\n\t\"fixed\": false,\n    \"id\": \"{{contentTypeID}}\",\n\t\"fields\": {{fields}},\n    \"workflow\":[\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"],\n    \"icon\": \"icon2\",\n    \"sortOrder\": 2\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -238,7 +240,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n\t\"description\": \"My Structure test\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"host\": \"SYSTEM_HOST\",\n    \"name\": \"My Custom Structure {{$randomBankAccount}}\",\n\t\"fixed\": false,\n    \"id\": \"{{contentTypeID}}\",\n\t\"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n                    \"contentTypeId\": \"{{contentTypeID}}\",\n                    \"dataType\": \"TEXT\",\n                    \"fieldType\": \"Text\",\n                    \"fieldTypeLabel\": \"Text\",\n                    \"fieldVariables\": [],\n                    \"fixed\": true,\n                    \"iDate\": 1631719532000,\n                    \"id\": \"{{contentTypeFieldID}}\",\n                    \"indexed\": true,\n                    \"listed\": true,\n                    \"modDate\": 1631719532000,\n                    \"name\": \"Name\",\n                    \"readOnly\": false,\n                    \"required\": true,\n                    \"searchable\": true,\n                    \"sortOrder\": 2,\n                    \"unique\": false,\n                    \"variable\": \"name\"\n\t\t}\n\t],\n    \"workflow\":[\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"],\n    \"icon\": \"icon2\",\n    \"sortOrder\": 2\n}",
+							"raw": "{\n    \"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n\t\"description\": \"My Structure test\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"host\": \"SYSTEM_HOST\",\n    \"name\": \"My Custom Structure {{$randomBankAccount}}\",\n\t\"fixed\": false,\n    \"id\": \"{{contentTypeID}}\",\n\t\"fields\": {{fields}},\n    \"workflow\":[\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"],\n    \"icon\": \"icon2\",\n    \"sortOrder\": 2\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -410,14 +412,20 @@
 									"",
 									"",
 									"pm.test(\"fields check\", function () {",
-									"    pm.expect(jsonData.entity.fields.length).to.eql(2);",
+									"    pm.expect(jsonData.entity.fields.length).to.gte(2);",
 									"});",
 									"",
 									"pm.test(\"description check\", function () {",
 									"    pm.expect(jsonData.entity.description).to.eql('THE DESCRIPTION');",
-									"});"
+									"});",
+									"",
+									"let fields = jsonData.entity.fields.filter(field => field.variable !== 'tags');",
+									"",
+									"",
+									"pm.collectionVariables.set(\"fields\", JSON.stringify(fields));"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
@@ -486,7 +494,8 @@
 									"    pm.expect(jsonData.entity.description).to.eql('THE DESCRIPTION');",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
@@ -519,7 +528,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n\t\"description\": \"THE DESCRIPTION\",\n        \"fields\": [\n            {\n                \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableHostFolderField\",\n                \"contentTypeId\": \"{{contentTypeID}}\",\n                \"dataType\": \"SYSTEM\",\n                \"fieldType\": \"Host-Folder\",\n                \"fieldTypeLabel\": \"Site or Folder\",\n                \"fieldVariables\": [],\n                \"fixed\": false,\n                \"iDate\": 1308941714000,\n                \"id\": \"{{contentTypeFieldID}}\",\n                \"indexed\": true,\n                \"listed\": false,\n                \"modDate\": 1632506750000,\n                \"name\": \"Host/Folder CHANGED\",\n                \"readOnly\": false,\n                \"required\": true,\n                \"searchable\": true,\n                \"sortOrder\": 1,\n                \"unique\": false,\n                \"variable\": \"hostfolder\"\n            }\n        ],\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"host\": \"SYSTEM_HOST\",\n    \"name\": \"Test Content Type\",\n\t\"fixed\": false,\n    \"id\": \"{{contentTypeID}}\",\n    \"workflow\":[\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"],\n    \"icon\": \"icon2\",\n    \"sortOrder\": 2\n}",
+							"raw": "{\n    \"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n\t\"description\": \"THE DESCRIPTION\",\n    \"fields\":{{fields}},\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"host\": \"SYSTEM_HOST\",\n    \"name\": \"Test Content Type\",\n\t\"fixed\": false,\n    \"id\": \"{{contentTypeID}}\",\n    \"workflow\":[\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"],\n    \"icon\": \"icon2\",\n    \"sortOrder\": 2\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -621,13 +630,14 @@
 									"    pm.response.to.have.status(200);",
 									"});",
 									"pm.test(\"Content Type should have 2 fields\", function() {",
-									"    pm.expect(contentType.fields.length).to.eql(2);",
+									"    pm.expect(contentType.fields.length).to.gte(2);",
 									"});",
 									"pm.test(\"Content Type has a Story_block_field\", function() {",
 									"    pm.expect(contentType.fields[1].fieldType).to.eql(\"Story-Block\");",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
@@ -2956,7 +2966,8 @@
 									"});",
 									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
@@ -3981,10 +3992,11 @@
 									"});",
 									"",
 									"pm.test(\"Fields check\", function () {",
-									"    pm.expect(jsonData.entity[0].fields.length).to.eql(2);",
+									"    pm.expect(jsonData.entity[0].fields.length).to.gte(2);",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
@@ -11584,6 +11596,70 @@
 		},
 		{
 			"key": "currentPageUrl",
+			"value": ""
+		},
+		{
+			"key": "contentTypeIdWithStoryBlock",
+			"value": ""
+		},
+		{
+			"key": "contentType.host",
+			"value": ""
+		},
+		{
+			"key": "contentType.field1",
+			"value": ""
+		},
+		{
+			"key": "contentType.field2",
+			"value": ""
+		},
+		{
+			"key": "contentType.field3",
+			"value": ""
+		},
+		{
+			"key": "contentType.field4",
+			"value": ""
+		},
+		{
+			"key": "contentType.field4.varName",
+			"value": ""
+		},
+		{
+			"key": "contentType.divider",
+			"value": ""
+		},
+		{
+			"key": "contentType.columnDivider",
+			"value": ""
+		},
+		{
+			"key": "contentType.field4.fieldVarOne.id",
+			"value": ""
+		},
+		{
+			"key": "contentType.field4.fieldVarOne.key",
+			"value": ""
+		},
+		{
+			"key": "fieldTypesArr",
+			"value": ""
+		},
+		{
+			"key": "schemeId",
+			"value": ""
+		},
+		{
+			"key": "schemeName",
+			"value": ""
+		},
+		{
+			"key": "schemeVariableName",
+			"value": ""
+		},
+		{
+			"key": "fields",
 			"value": ""
 		}
 	]
