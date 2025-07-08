@@ -240,7 +240,7 @@ describe('Logger', () => {
             logger.logWithData('Test data', { key: 'value' });
 
             expect(stderrSpy).toHaveBeenCalledTimes(5);
-            stderrSpy.mock.calls.forEach(call => {
+            stderrSpy.mock.calls.forEach((call) => {
                 expect(call[0]).toContain('[TEST_CONTEXT]');
             });
         });

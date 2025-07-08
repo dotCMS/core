@@ -34,9 +34,8 @@ export class Logger {
      */
     error(message: string, error: unknown): void {
         const timestamp = new Date().toISOString();
-        const errorDetails = error instanceof Error
-            ? { message: error.message, stack: error.stack }
-            : error;
+        const errorDetails =
+            error instanceof Error ? { message: error.message, stack: error.stack } : error;
         const logMessage = `[${timestamp}] [${this.context}] ERROR: ${message}\n${JSON.stringify(errorDetails, null, 2)}\n`;
         process.stderr.write(logMessage);
     }

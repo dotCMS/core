@@ -28,15 +28,12 @@ export class SiteService extends AgnosticClient {
 
             if (!parsed.success) {
                 this.serviceLogger.error('Invalid site response format', parsed.error);
-                throw new Error(
-                    'Invalid site response: ' + JSON.stringify(parsed.error.format())
-                );
+                throw new Error('Invalid site response: ' + JSON.stringify(parsed.error.format()));
             }
 
             this.serviceLogger.log('Current site fetched successfully', parsed.data.entity);
 
             return parsed.data.entity;
-
         } catch (error) {
             this.serviceLogger.error('Error fetching current site', error);
             throw error;

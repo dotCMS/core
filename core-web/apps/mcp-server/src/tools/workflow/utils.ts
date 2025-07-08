@@ -17,7 +17,7 @@ export interface WorkflowEntity {
  */
 export function createEntitySuccessResponse(
     actionMessage: string,
-    entity: WorkflowEntity,
+    entity: WorkflowEntity
 ): McpSuccessResponse {
     const text = `${actionMessage}
 
@@ -30,9 +30,9 @@ Language ID: ${entity.languageId}`;
         content: [
             {
                 type: 'text',
-                text,
-            },
-        ],
+                text
+            }
+        ]
     };
 }
 

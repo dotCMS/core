@@ -24,35 +24,29 @@ export type ContentTypeCreateParams = {
  * Handles content type list operations
  */
 export async function contentTypeListHandler(params: ContentTypeListParams) {
-    return executeWithErrorHandling(
-        async () => {
-            logger.log('Starting content type list tool execution', params);
+    return executeWithErrorHandling(async () => {
+        logger.log('Starting content type list tool execution', params);
 
-            const contentTypes = await contentTypeService.list(params);
-            const formattedText = formatContentTypesAsText(contentTypes);
+        const contentTypes = await contentTypeService.list(params);
+        const formattedText = formatContentTypesAsText(contentTypes);
 
-            logger.log('Content types listed successfully', { count: contentTypes.length });
+        logger.log('Content types listed successfully', { count: contentTypes.length });
 
-            return createSuccessResponse(formattedText);
-        },
-        'Error fetching content type schemas'
-    );
+        return createSuccessResponse(formattedText);
+    }, 'Error fetching content type schemas');
 }
 
 /**
  * Handles content type creation operations
  */
 export async function contentTypeCreateHandler(params: ContentTypeCreateParams) {
-    return executeWithErrorHandling(
-        async () => {
-            logger.log('Starting content type creation tool execution', params);
+    return executeWithErrorHandling(async () => {
+        logger.log('Starting content type creation tool execution', params);
 
-            const contentTypes = await contentTypeService.create(params.contentType);
+        const contentTypes = await contentTypeService.create(params.contentType);
 
-            logger.log('Content type created successfully', { count: contentTypes.length });
+        logger.log('Content type created successfully', { count: contentTypes.length });
 
-            return createSuccessResponse(formatContentTypesAsText(contentTypes));
-        },
-        'Error creating content type'
-    );
+        return createSuccessResponse(formatContentTypesAsText(contentTypes));
+    }, 'Error creating content type');
 }

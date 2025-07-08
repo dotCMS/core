@@ -13,15 +13,15 @@ const logger = new Logger('CONTEXT_CHECKING_SERVER');
  * @throws Error if context is not initialized and tool is not exempt
  */
 function enforceInitialContextMiddleware(toolName: string): void {
-  // Allow context_initialization tool to run without checking
-  if (toolName === 'context_initialization') {
-    return;
-  }
+    // Allow context_initialization tool to run without checking
+    if (toolName === 'context_initialization') {
+        return;
+    }
 
-  const contextStore = getContextStore();
+    const contextStore = getContextStore();
 
-  if (!contextStore.getIsInitialized()) {
-    const errorMessage = `Cannot execute tool "${toolName}" because context initialization is required first.
+    if (!contextStore.getIsInitialized()) {
+        const errorMessage = `Cannot execute tool "${toolName}" because context initialization is required first.
 
 REQUIRED ACTION: You must call the "context_initialization" tool before using any other tools.
 
@@ -35,11 +35,11 @@ Please run the context_initialization tool first, then retry your request.
 Current initialization status: ${contextStore.getStatus().isInitialized ? 'Initialized' : 'Not initialized'}
 Timestamp: ${contextStore.getStatus().timestamp || 'Never'}`;
 
-    logger.warn(`Context initialization required for tool: ${toolName}`);
-    throw new Error(errorMessage);
-  }
+        logger.warn(`Context initialization required for tool: ${toolName}`);
+        throw new Error(errorMessage);
+    }
 
-  logger.debug(`Context check passed for tool: ${toolName}`);
+    logger.debug(`Context check passed for tool: ${toolName}`);
 }
 
 /**
@@ -48,33 +48,33 @@ Timestamp: ${contextStore.getStatus().timestamp || 'Never'}`;
  * @returns A proxied server that checks context initialization before tool execution
  */
 export function createContextCheckingServer(server: McpServer): McpServer {
-  const originalRegisterTool = server.registerTool;
+    const originalRegisterTool = server.registerTool;
 
-  logger.log('Creating context-checking server proxy');
+    logger.log('Creating context-checking server proxy');
 
-  return new Proxy(server, {
-    get(target, prop) {
-      if (prop === 'registerTool') {
-        return function (this: McpServer, ...args: Parameters<McpServer['registerTool']>) {
-          const [name, config, callback] = args;
+    return new Proxy(server, {
+        get(target, prop) {
+            if (prop === 'registerTool') {
+                return function (this: McpServer, ...args: Parameters<McpServer['registerTool']>) {
+                    const [name, config, callback] = args;
 
-          logger.debug(`Registering tool with context checking: ${name}`);
+                    logger.debug(`Registering tool with context checking: ${name}`);
 
-          const wrappedCallback = async (
-            args: unknown,
-            extra: RequestHandlerExtra<ServerRequest, ServerNotification>,
-          ) => {
-            enforceInitialContextMiddleware(name);
+                    const wrappedCallback = async (
+                        args: unknown,
+                        extra: RequestHandlerExtra<ServerRequest, ServerNotification>
+                    ) => {
+                        enforceInitialContextMiddleware(name);
 
-            return callback(args, extra);
-          };
+                        return callback(args, extra);
+                    };
 
-          return originalRegisterTool.call(this, name, config, wrappedCallback);
-        };
-      }
+                    return originalRegisterTool.call(this, name, config, wrappedCallback);
+                };
+            }
 
-      // Return the original property for all other properties
-      return Reflect.get(target, prop);
-    },
-  });
+            // Return the original property for all other properties
+            return Reflect.get(target, prop);
+        }
+    });
 }

@@ -51,7 +51,9 @@ describe('WorkflowService', () => {
                 title: 'Test'
             };
 
-            await expect(service.saveContent(invalidParams)).rejects.toThrow('Invalid content parameters');
+            await expect(service.saveContent(invalidParams)).rejects.toThrow(
+                'Invalid content parameters'
+            );
         });
     });
 
@@ -83,10 +85,13 @@ describe('WorkflowService', () => {
 
             const result = await service.performContentAction(params);
 
-            expect(mockFetch).toHaveBeenCalledWith('/api/v1/workflow/actions/default/fire/PUBLISH?identifier=content123&variantName=DEFAULT', {
-                method: 'PUT',
-                body: expect.stringContaining('Publishing content via API')
-            });
+            expect(mockFetch).toHaveBeenCalledWith(
+                '/api/v1/workflow/actions/default/fire/PUBLISH?identifier=content123&variantName=DEFAULT',
+                {
+                    method: 'PUT',
+                    body: expect.stringContaining('Publishing content via API')
+                }
+            );
             expect(result.entity.identifier).toBe('content123');
         });
 
@@ -96,7 +101,9 @@ describe('WorkflowService', () => {
                 action: 'PUBLISH' as const
             };
 
-            await expect(service.performContentAction(invalidParams as never)).rejects.toThrow('Invalid content action parameters');
+            await expect(service.performContentAction(invalidParams as never)).rejects.toThrow(
+                'Invalid content action parameters'
+            );
         });
     });
 
@@ -104,19 +111,21 @@ describe('WorkflowService', () => {
         it('should fetch workflow schemes successfully', async () => {
             const mockResponse = {
                 json: jest.fn().mockResolvedValue({
-                    entity: [{
-                        archived: false,
-                        creationDate: 123456789,
-                        defaultScheme: true,
-                        description: 'Default workflow',
-                        entryActionId: null,
-                        id: 'scheme123',
-                        mandatory: false,
-                        modDate: 123456789,
-                        name: 'System Workflow',
-                        system: true,
-                        variableName: 'systemWorkflow'
-                    }],
+                    entity: [
+                        {
+                            archived: false,
+                            creationDate: 123456789,
+                            defaultScheme: true,
+                            description: 'Default workflow',
+                            entryActionId: null,
+                            id: 'scheme123',
+                            mandatory: false,
+                            modDate: 123456789,
+                            name: 'System Workflow',
+                            system: true,
+                            variableName: 'systemWorkflow'
+                        }
+                    ],
                     errors: [],
                     i18nMessagesMap: {},
                     messages: [],

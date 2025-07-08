@@ -56,12 +56,13 @@ export class AgnosticClient {
         const method = options.method || 'GET';
 
         // If the URL is relative (doesn't start with http:// or https://), prepend the dotCMS base URL
-        const fullUrl = url.startsWith('http://') || url.startsWith('https://')
-            ? url
-            : `${this.dotcmsUrl}${url.startsWith('/') ? url : `/${url}`}`;
+        const fullUrl =
+            url.startsWith('http://') || url.startsWith('https://')
+                ? url
+                : `${this.dotcmsUrl}${url.startsWith('/') ? url : `/${url}`}`;
 
         const headers: Record<string, string> = {
-            ...(options.headers as Record<string, string> || {}),
+            ...((options.headers as Record<string, string>) || {})
         };
         headers['Authorization'] = `Bearer ${this.authToken}`;
 
@@ -99,11 +100,12 @@ export class AgnosticClient {
                     headers: Object.fromEntries(response.headers.entries())
                 });
 
-                throw new Error(`Request failed: ${response.status} ${response.statusText}. Details: ${errorDetails}`);
+                throw new Error(
+                    `Request failed: ${response.status} ${response.statusText}. Details: ${errorDetails}`
+                );
             }
 
             return response;
-
         } catch (error) {
             let errorMessage = 'Error during request';
             let errorStack = undefined;
@@ -115,7 +117,8 @@ export class AgnosticClient {
             }
 
             this.logger.error(errorMessage, {
-                error: error instanceof Error ? { message: error.message, stack: error.stack } : error,
+                error:
+                    error instanceof Error ? { message: error.message, stack: error.stack } : error,
                 url: fullUrl,
                 method
             });

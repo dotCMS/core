@@ -78,13 +78,14 @@ export class WorkflowService extends AgnosticClient {
 
             if (!parsed.success) {
                 this.serviceLogger.error('Invalid workflow response format', parsed.error);
-                throw new Error('Invalid workflow response: ' + JSON.stringify(parsed.error.format()));
+                throw new Error(
+                    'Invalid workflow response: ' + JSON.stringify(parsed.error.format())
+                );
             }
 
             this.serviceLogger.log('Content saved successfully', parsed.data);
 
             return parsed.data;
-
         } catch (error) {
             this.serviceLogger.error('Error during content save operation', error);
             throw error;
@@ -106,19 +107,23 @@ export class WorkflowService extends AgnosticClient {
         if (!validatedParams.success) {
             this.serviceLogger.error('Invalid content action parameters', validatedParams.error);
             throw new Error(
-                'Invalid content action parameters: ' + JSON.stringify(validatedParams.error.format())
+                'Invalid content action parameters: ' +
+                    JSON.stringify(validatedParams.error.format())
             );
         }
 
-        this.serviceLogger.log('Content action parameters validated successfully', validatedParams.data);
+        this.serviceLogger.log(
+            'Content action parameters validated successfully',
+            validatedParams.data
+        );
 
         const actionType = validatedParams.data.action;
         const defaultComments = {
-            'PUBLISH': 'Publishing content via API',
-            'UNPUBLISH': 'Unpublishing content via API',
-            'ARCHIVE': 'Archiving content via API',
-            'UNARCHIVE': 'Unarchiving content via API',
-            'DELETE': 'Deleting content via API'
+            PUBLISH: 'Publishing content via API',
+            UNPUBLISH: 'Unpublishing content via API',
+            ARCHIVE: 'Archiving content via API',
+            UNARCHIVE: 'Unarchiving content via API',
+            DELETE: 'Deleting content via API'
         };
         const defaultComment = defaultComments[actionType];
 
@@ -138,27 +143,28 @@ export class WorkflowService extends AgnosticClient {
 
             if (!parsed.success) {
                 this.serviceLogger.error('Invalid workflow response format', parsed.error);
-                throw new Error('Invalid workflow response: ' + JSON.stringify(parsed.error.format()));
+                throw new Error(
+                    'Invalid workflow response: ' + JSON.stringify(parsed.error.format())
+                );
             }
 
             const successMessages = {
-                'PUBLISH': 'Content published successfully',
-                'UNPUBLISH': 'Content unpublished successfully',
-                'ARCHIVE': 'Content archived successfully',
-                'UNARCHIVE': 'Content unarchived successfully',
-                'DELETE': 'Content deleted successfully'
+                PUBLISH: 'Content published successfully',
+                UNPUBLISH: 'Content unpublished successfully',
+                ARCHIVE: 'Content archived successfully',
+                UNARCHIVE: 'Content unarchived successfully',
+                DELETE: 'Content deleted successfully'
             };
             this.serviceLogger.log(successMessages[actionType], parsed.data);
 
             return parsed.data;
-
         } catch (error) {
             const errorMessages = {
-                'PUBLISH': 'Error during content publish operation',
-                'UNPUBLISH': 'Error during content unpublish operation',
-                'ARCHIVE': 'Error during content archive operation',
-                'UNARCHIVE': 'Error during content unarchive operation',
-                'DELETE': 'Error during content delete operation'
+                PUBLISH: 'Error during content publish operation',
+                UNPUBLISH: 'Error during content unpublish operation',
+                ARCHIVE: 'Error during content archive operation',
+                UNARCHIVE: 'Error during content unarchive operation',
+                DELETE: 'Error during content delete operation'
             };
             this.serviceLogger.error(errorMessages[actionType], error);
             throw error;
@@ -186,7 +192,9 @@ export class WorkflowService extends AgnosticClient {
 
             if (!parsed.success) {
                 this.serviceLogger.error('Invalid workflow schemes response format', parsed.error);
-                throw new Error('Invalid workflow schemes response: ' + JSON.stringify(parsed.error.format()));
+                throw new Error(
+                    'Invalid workflow schemes response: ' + JSON.stringify(parsed.error.format())
+                );
             }
 
             this.serviceLogger.log('Workflow schemes fetched successfully', {
@@ -194,7 +202,6 @@ export class WorkflowService extends AgnosticClient {
             });
 
             return parsed.data;
-
         } catch (error) {
             this.serviceLogger.error('Error during workflow schemes fetch operation', error);
             throw error;

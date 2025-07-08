@@ -5,7 +5,6 @@ import { contentSaveHandler, contentActionHandler } from './handlers';
 
 import { ContentCreateParamsSchema, ContentActionParamsSchema } from '../../types/workflow';
 
-
 /**
  * Registers workflow tools with the MCP server
  */

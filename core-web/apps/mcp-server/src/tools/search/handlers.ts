@@ -11,12 +11,9 @@ const contentSearchService = new ContentSearchService();
  * Handles content search operations for MCP tool
  */
 export async function contentSearchHandler(params: ContentSearchParams) {
-  return executeWithErrorHandling(
-    async () => {
-      const result = await contentSearchService.search(params);
+    return executeWithErrorHandling(async () => {
+        const result = await contentSearchService.search(params);
 
-      return createSuccessResponse('Content search completed successfully!', result);
-    },
-    'Error performing content search'
-  );
+        return createSuccessResponse('Content search completed successfully!', result);
+    }, 'Error performing content search');
 }

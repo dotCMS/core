@@ -2,7 +2,14 @@ import { z } from 'zod';
 
 import { AgnosticClient } from './client';
 
-import { ContentType, ContentTypeBaseTypeEnum, ContentTypeField, ContentTypeSchema, FieldClazz, Layout } from '../types/contentype';
+import {
+    ContentType,
+    ContentTypeBaseTypeEnum,
+    ContentTypeField,
+    ContentTypeSchema,
+    FieldClazz,
+    Layout
+} from '../types/contentype';
 import { Logger } from '../utils/logger';
 
 const ContentTypeBaseTypeQueryEnum = z.union([z.literal('ANY'), ContentTypeBaseTypeEnum]);
@@ -52,61 +59,60 @@ type FieldType = z.infer<typeof FieldTypeEnum>;
 // Mapping function to get clazz from fieldType using the existing enum
 const getClazzFromFieldType = (fieldType: FieldType): FieldClazz => {
     const fieldTypeToClazzMap: Record<FieldType, FieldClazz> = {
-        'Binary': 'com.dotcms.contenttype.model.field.ImmutableBinaryField',
+        Binary: 'com.dotcms.contenttype.model.field.ImmutableBinaryField',
         'Story-Block': 'com.dotcms.contenttype.model.field.ImmutableStoryBlockField',
         'Block Editor': 'com.dotcms.contenttype.model.field.ImmutableStoryBlockField',
-        'Category': 'com.dotcms.contenttype.model.field.ImmutableCategoryField',
-        'Checkbox': 'com.dotcms.contenttype.model.field.ImmutableCheckboxField',
+        Category: 'com.dotcms.contenttype.model.field.ImmutableCategoryField',
+        Checkbox: 'com.dotcms.contenttype.model.field.ImmutableCheckboxField',
         'Constant-Field': 'com.dotcms.contenttype.model.field.ImmutableConstantField',
         'Custom-Field': 'com.dotcms.contenttype.model.field.ImmutableCustomField',
-        'Date': 'com.dotcms.contenttype.model.field.ImmutableDateField',
+        Date: 'com.dotcms.contenttype.model.field.ImmutableDateField',
         'Date-and-Time': 'com.dotcms.contenttype.model.field.ImmutableDateTimeField',
-        'File': 'com.dotcms.contenttype.model.field.ImmutableFileField',
+        File: 'com.dotcms.contenttype.model.field.ImmutableFileField',
         'Hidden-Field': 'com.dotcms.contenttype.model.field.ImmutableHiddenField',
-        'Image': 'com.dotcms.contenttype.model.field.ImmutableImageField',
+        Image: 'com.dotcms.contenttype.model.field.ImmutableImageField',
         'JSON-Field': 'com.dotcms.contenttype.model.field.ImmutableJSONField',
         'Key-Value': 'com.dotcms.contenttype.model.field.ImmutableKeyValueField',
         'Multi-Select': 'com.dotcms.contenttype.model.field.ImmutableMultiSelectField',
-        'Radio': 'com.dotcms.contenttype.model.field.ImmutableRadioField',
-        'Relationship': 'com.dotcms.contenttype.model.field.ImmutableRelationshipField',
-        'Select': 'com.dotcms.contenttype.model.field.ImmutableSelectField',
+        Radio: 'com.dotcms.contenttype.model.field.ImmutableRadioField',
+        Relationship: 'com.dotcms.contenttype.model.field.ImmutableRelationshipField',
+        Select: 'com.dotcms.contenttype.model.field.ImmutableSelectField',
         'Host-Folder': 'com.dotcms.contenttype.model.field.ImmutableHostFolderField',
-        'Tag': 'com.dotcms.contenttype.model.field.ImmutableTagField',
-        'Text': 'com.dotcms.contenttype.model.field.ImmutableTextField',
-        'Textarea': 'com.dotcms.contenttype.model.field.ImmutableTextAreaField',
-        'Time': 'com.dotcms.contenttype.model.field.ImmutableTimeField',
-        'WYSIWYG': 'com.dotcms.contenttype.model.field.ImmutableWysiwygField'
+        Tag: 'com.dotcms.contenttype.model.field.ImmutableTagField',
+        Text: 'com.dotcms.contenttype.model.field.ImmutableTextField',
+        Textarea: 'com.dotcms.contenttype.model.field.ImmutableTextAreaField',
+        Time: 'com.dotcms.contenttype.model.field.ImmutableTimeField',
+        WYSIWYG: 'com.dotcms.contenttype.model.field.ImmutableWysiwygField'
     };
 
-    return fieldTypeToClazzMap[fieldType] || 'com.dotcms.contenttype.model.field.ImmutableTextField';
+    return (
+        fieldTypeToClazzMap[fieldType] || 'com.dotcms.contenttype.model.field.ImmutableTextField'
+    );
 };
 
-const ContentTypeFieldSchema = z.object({
-    name: z.string(),
-    fieldType: FieldTypeEnum,
-    clazz: z.custom<FieldClazz>().optional(), // Optional since it will be auto-generated
-    required: z.boolean().optional(),
-    listed: z.boolean().optional(),
-    searchable: z.boolean().optional(),
-    indexed: z.boolean().optional(),
-    hint: z.string().optional(),
-    // For Checkbox, Multi-Select, Radio, Select: value is required, otherwise optional
-    values: z.string().optional(),
-}).superRefine((data, ctx) => {
-    const needsValue = [
-        'Checkbox',
-        'Multi-Select',
-        'Radio',
-        'Select',
-    ];
-    if (needsValue.includes(data.fieldType) && (!data.values || data.values.trim() === '')) {
-        ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: `Field type '${data.fieldType}' requires a 'value' property with options in the format 'Label|value' (one per line).`,
-            path: ['values']
-        });
-    }
-});
+const ContentTypeFieldSchema = z
+    .object({
+        name: z.string(),
+        fieldType: FieldTypeEnum,
+        clazz: z.custom<FieldClazz>().optional(), // Optional since it will be auto-generated
+        required: z.boolean().optional(),
+        listed: z.boolean().optional(),
+        searchable: z.boolean().optional(),
+        indexed: z.boolean().optional(),
+        hint: z.string().optional(),
+        // For Checkbox, Multi-Select, Radio, Select: value is required, otherwise optional
+        values: z.string().optional()
+    })
+    .superRefine((data, ctx) => {
+        const needsValue = ['Checkbox', 'Multi-Select', 'Radio', 'Select'];
+        if (needsValue.includes(data.fieldType) && (!data.values || data.values.trim() === '')) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: `Field type '${data.fieldType}' requires a 'value' property with options in the format 'Label|value' (one per line).`,
+                path: ['values']
+            });
+        }
+    });
 
 export const ContentTypeCreateParamsSchema = z.object({
     name: z.string(),
@@ -140,7 +146,10 @@ export class ContentTypeService extends AgnosticClient {
             throw new Error('Invalid parameters: ' + JSON.stringify(validated.error.format()));
         }
 
-        this.serviceLogger.log('Content type list parameters validated successfully', validated.data);
+        this.serviceLogger.log(
+            'Content type list parameters validated successfully',
+            validated.data
+        );
 
         const searchParams = new URLSearchParams();
         Object.entries(validated.data).forEach(([key, value]) => {
@@ -157,7 +166,7 @@ export class ContentTypeService extends AgnosticClient {
                 return {
                     ...contentType,
                     fields: this.#extractFieldsFromLayout(contentType.layout)
-                }
+                };
             });
 
             const parsed = z.array(ContentTypeSchema).safeParse(result);
@@ -169,10 +178,11 @@ export class ContentTypeService extends AgnosticClient {
                 );
             }
 
-            this.serviceLogger.log('Content types fetched successfully', { count: parsed.data.length });
+            this.serviceLogger.log('Content types fetched successfully', {
+                count: parsed.data.length
+            });
 
             return parsed.data;
-
         } catch (error) {
             this.serviceLogger.error('Error fetching content types', error);
             throw error;
@@ -206,24 +216,27 @@ export class ContentTypeService extends AgnosticClient {
         // Extra runtime check for value property on special field types
         for (const contentType of validated.data) {
             for (const field of contentType.fields) {
-                if ([
-                    'Checkbox',
-                    'Multi-Select',
-                    'Radio',
-                    'Select',
-                ].includes(field.fieldType) && (!field.values || field.values.trim() === '')) {
-                    throw new Error(`Field '${field.name}' of type '${field.fieldType}' requires a 'value' property with options in the format 'Label|value' (one per line).`);
+                if (
+                    ['Checkbox', 'Multi-Select', 'Radio', 'Select'].includes(field.fieldType) &&
+                    (!field.values || field.values.trim() === '')
+                ) {
+                    throw new Error(
+                        `Field '${field.name}' of type '${field.fieldType}' requires a 'value' property with options in the format 'Label|value' (one per line).`
+                    );
                 }
             }
         }
 
-        this.serviceLogger.log('Content type creation parameters validated successfully', validated.data);
+        this.serviceLogger.log(
+            'Content type creation parameters validated successfully',
+            validated.data
+        );
 
         // Auto-generate clazz for fields that don't have it
-        const processedData = validated.data.map(contentType => ({
+        const processedData = validated.data.map((contentType) => ({
             ...contentType,
             clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
-            fields: contentType.fields.map(field => ({
+            fields: contentType.fields.map((field) => ({
                 ...field,
                 clazz: field.clazz || getClazzFromFieldType(field.fieldType)
             }))
@@ -250,10 +263,11 @@ export class ContentTypeService extends AgnosticClient {
                 );
             }
 
-            this.serviceLogger.log('Content types created successfully', { count: parsed.data.length });
+            this.serviceLogger.log('Content types created successfully', {
+                count: parsed.data.length
+            });
 
             return parsed.data;
-
         } catch (error) {
             this.serviceLogger.error('Error creating content types', error);
             throw new Error('Error creating content types: ' + error);
@@ -271,20 +285,23 @@ export class ContentTypeService extends AgnosticClient {
             direction: 'ASC'
         });
 
-        this.serviceLogger.log('Retrieved content types for schema', { count: allContentTypes.length });
+        this.serviceLogger.log('Retrieved content types for schema', {
+            count: allContentTypes.length
+        });
 
         const result = allContentTypes.map((contentType) => {
             return {
                 ...contentType,
                 fields: this.#extractFieldsFromLayout(contentType.layout)
-            }
+            };
         });
 
-        this.serviceLogger.log('Content types schema processed successfully', { count: result.length });
+        this.serviceLogger.log('Content types schema processed successfully', {
+            count: result.length
+        });
 
         return result;
     }
-
 
     #extractFieldsFromLayout(layout: Layout[]): ContentTypeField[] {
         const allFields = [];

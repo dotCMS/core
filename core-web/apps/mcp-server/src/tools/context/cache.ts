@@ -1,6 +1,6 @@
-import { ContentType } from "../../types/contentype";
-import { Site } from "../../types/site";
-import { WorkflowScheme } from "../../types/workflow";
+import { ContentType } from '../../types/contentype';
+import { Site } from '../../types/site';
+import { WorkflowScheme } from '../../types/workflow';
 
 // Cache for content type schemas to avoid repeated API calls
 let contentTypeSchemasCache: ContentType[] | null = null;
@@ -26,10 +26,15 @@ export interface CacheData {
  */
 export function getCachedData(): { data: CacheData; age: number } | null {
     const now = Date.now();
-    
-    if (contentTypeSchemasCache && currentSiteCache && workflowSchemesCache && (now - cacheTimestamp) < CACHE_DURATION) {
+
+    if (
+        contentTypeSchemasCache &&
+        currentSiteCache &&
+        workflowSchemesCache &&
+        now - cacheTimestamp < CACHE_DURATION
+    ) {
         const cacheAge = Math.round((now - cacheTimestamp) / 1000);
-        
+
         return {
             data: {
                 contentTypes: contentTypeSchemasCache,
@@ -40,14 +45,18 @@ export function getCachedData(): { data: CacheData; age: number } | null {
             age: cacheAge
         };
     }
-    
+
     return null;
 }
 
 /**
  * Store data in cache
  */
-export function setCacheData(contentTypes: ContentType[], site: Site, workflowSchemes: WorkflowScheme[]): void {
+export function setCacheData(
+    contentTypes: ContentType[],
+    site: Site,
+    workflowSchemes: WorkflowScheme[]
+): void {
     contentTypeSchemasCache = contentTypes;
     currentSiteCache = site;
     workflowSchemesCache = workflowSchemes;

@@ -1,4 +1,4 @@
-import { Logger } from "./logger";
+import { Logger } from './logger';
 
 /**
  * Context Store - Singleton class to manage initialization state

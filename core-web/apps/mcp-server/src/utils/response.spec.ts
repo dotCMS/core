@@ -265,7 +265,7 @@ describe('Response Utils', () => {
 
         it('should handle async operations correctly', async () => {
             const operation = jest.fn().mockImplementation(async () => {
-                await new Promise(resolve => setTimeout(resolve, 10));
+                await new Promise((resolve) => setTimeout(resolve, 10));
 
                 return createSuccessResponse('Async operation complete');
             });

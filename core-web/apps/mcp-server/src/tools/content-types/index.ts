@@ -8,7 +8,6 @@ import {
     ContentTypeCreateParamsSchema
 } from '../../services/contentype';
 
-
 /**
  * Registers content type tools with the MCP server
  */

@@ -29,7 +29,7 @@ describe('ContextStore', () => {
         it('should return the same instance when called multiple times', () => {
             const instance1 = ContextStore.getInstance();
             const instance2 = ContextStore.getInstance();
-            
+
             expect(instance1).toBe(instance2);
         });
 
@@ -37,7 +37,7 @@ describe('ContextStore', () => {
             const instance1 = ContextStore.getInstance();
             const instance2 = ContextStore.getInstance();
             const instance3 = ContextStore.getInstance();
-            
+
             expect(instance1).toBe(instance2);
             expect(instance2).toBe(instance3);
         });
@@ -47,7 +47,7 @@ describe('ContextStore', () => {
         it('should return the same instance as ContextStore.getInstance()', () => {
             const instance1 = ContextStore.getInstance();
             const instance2 = getContextStore();
-            
+
             expect(instance1).toBe(instance2);
         });
     });
@@ -63,7 +63,7 @@ describe('ContextStore', () => {
 
         it('should return correct initial status', () => {
             const status = store.getStatus();
-            
+
             expect(status).toEqual({
                 isInitialized: false,
                 timestamp: null
@@ -74,7 +74,7 @@ describe('ContextStore', () => {
     describe('setInitialized', () => {
         it('should set isInitialized to true', () => {
             store.setInitialized();
-            
+
             expect(store.getIsInitialized()).toBe(true);
         });
 
@@ -82,7 +82,7 @@ describe('ContextStore', () => {
             const beforeTime = new Date();
             store.setInitialized();
             const afterTime = new Date();
-            
+
             const timestamp = store.getInitializationTimestamp();
             expect(timestamp).not.toBeNull();
             expect(timestamp?.getTime()).toBeGreaterThanOrEqual(beforeTime.getTime());
@@ -92,13 +92,13 @@ describe('ContextStore', () => {
         it('should maintain state across multiple calls', async () => {
             store.setInitialized();
             const firstTimestamp = store.getInitializationTimestamp();
-            
+
             // Wait a bit to ensure different timestamp
-            await new Promise(resolve => setTimeout(resolve, 10));
-            
+            await new Promise((resolve) => setTimeout(resolve, 10));
+
             store.setInitialized();
             const secondTimestamp = store.getInitializationTimestamp();
-            
+
             expect(store.getIsInitialized()).toBe(true);
             expect(secondTimestamp).not.toEqual(firstTimestamp);
         });
@@ -107,9 +107,9 @@ describe('ContextStore', () => {
     describe('getStatus', () => {
         it('should return status with age when initialized', () => {
             store.setInitialized();
-            
+
             const status = store.getStatus();
-            
+
             expect(status.isInitialized).toBe(true);
             expect(status.timestamp).not.toBeNull();
             expect(status.age).toBeDefined();
@@ -118,9 +118,9 @@ describe('ContextStore', () => {
 
         it('should format age in seconds for recent initialization', () => {
             store.setInitialized();
-            
+
             const status = store.getStatus();
-            
+
             expect(status.age).toMatch(/^\d+s$/);
         });
 
@@ -130,15 +130,15 @@ describe('ContextStore', () => {
             store.setInitialized();
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (store as any).initializationTimestamp = oldTimestamp;
-            
+
             const status = store.getStatus();
-            
+
             expect(status.age).toMatch(/^\d+m \d+s$/);
         });
 
         it('should not include age when not initialized', () => {
             const status = store.getStatus();
-            
+
             expect(status.age).toBeUndefined();
         });
     });
@@ -147,7 +147,7 @@ describe('ContextStore', () => {
         it('should reset isInitialized to false', () => {
             store.setInitialized();
             expect(store.getIsInitialized()).toBe(true);
-            
+
             store.reset();
             expect(store.getIsInitialized()).toBe(false);
         });
@@ -155,7 +155,7 @@ describe('ContextStore', () => {
         it('should reset timestamp to null', () => {
             store.setInitialized();
             expect(store.getInitializationTimestamp()).not.toBeNull();
-            
+
             store.reset();
             expect(store.getInitializationTimestamp()).toBeNull();
         });
@@ -163,10 +163,10 @@ describe('ContextStore', () => {
         it('should reset status completely', () => {
             store.setInitialized();
             expect(store.getStatus().isInitialized).toBe(true);
-            
+
             store.reset();
             const status = store.getStatus();
-            
+
             expect(status).toEqual({
                 isInitialized: false,
                 timestamp: null
@@ -203,7 +203,7 @@ describe('ContextStore', () => {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (ContextStore as any).instance = null;
             const newStore = ContextStore.getInstance();
-            
+
             // Verify the store was created successfully
             expect(newStore).toBeDefined();
             expect(newStore.getIsInitialized()).toBe(false);
@@ -214,13 +214,13 @@ describe('ContextStore', () => {
         it('should handle multiple rapid setInitialized calls', async () => {
             store.setInitialized();
             const firstTimestamp = store.getInitializationTimestamp();
-            
+
             // Wait a small amount to ensure different timestamps
-            await new Promise(resolve => setTimeout(resolve, 5));
-            
+            await new Promise((resolve) => setTimeout(resolve, 5));
+
             store.setInitialized();
             const secondTimestamp = store.getInitializationTimestamp();
-            
+
             expect(store.getIsInitialized()).toBe(true);
             expect(secondTimestamp?.getTime()).not.toEqual(firstTimestamp?.getTime());
         });
@@ -229,19 +229,19 @@ describe('ContextStore', () => {
             store.setInitialized();
             store.setInitialized();
             store.setInitialized();
-            
+
             store.reset();
-            
+
             expect(store.getIsInitialized()).toBe(false);
             expect(store.getInitializationTimestamp()).toBeNull();
         });
 
         it('should handle getStatus calls in rapid succession', () => {
             store.setInitialized();
-            
+
             const status1 = store.getStatus();
             const status2 = store.getStatus();
-            
+
             expect(status1.isInitialized).toBe(status2.isInitialized);
             expect(status1.timestamp).toEqual(status2.timestamp);
             // Age might differ slightly due to timing
@@ -250,14 +250,14 @@ describe('ContextStore', () => {
 
     describe('Thread Safety Considerations', () => {
         it('should maintain singleton pattern across async operations', async () => {
-            const promises = Array.from({ length: 10 }, () => 
+            const promises = Array.from({ length: 10 }, () =>
                 Promise.resolve(ContextStore.getInstance())
             );
-            
+
             const instances = await Promise.all(promises);
-            
+
             // All instances should be the same
-            instances.forEach(instance => {
+            instances.forEach((instance) => {
                 expect(instance).toBe(instances[0]);
             });
         });

@@ -1,10 +1,9 @@
-import { getCacheAge } from "./cache";
+import { getCacheAge } from './cache';
 
-import { ContentType } from "../../types/contentype";
-import { Site } from "../../types/site";
-import { WorkflowScheme } from "../../types/workflow";
-import { formatContentTypesAsText } from "../content-types/formatters";
-
+import { ContentType } from '../../types/contentype';
+import { Site } from '../../types/site';
+import { WorkflowScheme } from '../../types/workflow';
+import { formatContentTypesAsText } from '../content-types/formatters';
 
 /**
  * Formats site information for context response
@@ -48,19 +47,21 @@ export function formatWorkflowSchemesAsText(workflowSchemes: WorkflowScheme[]): 
         return 'No workflow schemes found.';
     }
 
-    const schemesText = workflowSchemes.map(scheme => {
-        const status = scheme.archived ? '[ARCHIVED]' : '[ACTIVE]';
-        const systemFlag = scheme.system ? ' (SYSTEM)' : '';
-        const defaultFlag = scheme.defaultScheme ? ' (DEFAULT)' : '';
+    const schemesText = workflowSchemes
+        .map((scheme) => {
+            const status = scheme.archived ? '[ARCHIVED]' : '[ACTIVE]';
+            const systemFlag = scheme.system ? ' (SYSTEM)' : '';
+            const defaultFlag = scheme.defaultScheme ? ' (DEFAULT)' : '';
 
-        return `${status} ${scheme.name}${systemFlag}${defaultFlag}
+            return `${status} ${scheme.name}${systemFlag}${defaultFlag}
   ID: ${scheme.id}
   Variable Name: ${scheme.variableName}
   Description: ${scheme.description || 'No description'}
   Mandatory: ${scheme.mandatory}
   Creation Date: ${new Date(scheme.creationDate).toISOString()}
   Modified Date: ${new Date(scheme.modDate).toISOString()}`;
-    }).join('\n\n');
+        })
+        .join('\n\n');
 
     return `WORKFLOW SCHEMES (${workflowSchemes.length} total):
 

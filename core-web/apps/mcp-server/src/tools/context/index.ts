@@ -1,7 +1,7 @@
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp";
-import { z } from "zod";
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp';
+import { z } from 'zod';
 
-import { contextInitializationHandler } from "./handlers";
+import { contextInitializationHandler } from './handlers';
 
 /**
  * Registers context tools with the MCP server

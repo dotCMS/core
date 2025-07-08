@@ -40,7 +40,7 @@ describe('createContextCheckingServer', () => {
         // Mock MCP server
         mockRegisterTool = jest.fn();
         mockServer = {
-            registerTool: mockRegisterTool,
+            registerTool: mockRegisterTool
             // Add other required properties/methods as needed
         } as unknown as jest.Mocked<McpServer>;
 
@@ -66,8 +66,9 @@ describe('createContextCheckingServer', () => {
             // Add a test property to the mock server
             const mockServerWithProp = mockServer as typeof mockServer & { testProperty: string };
             mockServerWithProp.testProperty = 'test value';
-            
-            const contextCheckingServerWithProp = contextCheckingServer as typeof contextCheckingServer & { testProperty: string };
+
+            const contextCheckingServerWithProp =
+                contextCheckingServer as typeof contextCheckingServer & { testProperty: string };
             expect(contextCheckingServerWithProp.testProperty).toBe('test value');
         });
     });
@@ -99,7 +100,7 @@ describe('createContextCheckingServer', () => {
 
             // Get the wrapped callback
             const wrappedCallback = mockRegisterTool.mock.calls[0][2];
-            
+
             // Call the wrapped callback
             const result = await wrappedCallback(mockArgs, mockExtra);
 
@@ -125,7 +126,7 @@ describe('createContextCheckingServer', () => {
 
             // Get the wrapped callback
             const wrappedCallback = mockRegisterTool.mock.calls[0][2];
-            
+
             // Call the wrapped callback
             const result = await wrappedCallback(mockArgs, mockExtra);
 
@@ -151,7 +152,7 @@ describe('createContextCheckingServer', () => {
 
             // Get the wrapped callback
             const wrappedCallback = mockRegisterTool.mock.calls[0][2];
-            
+
             // Call the wrapped callback and expect it to throw
             await expect(wrappedCallback(mockArgs, mockExtra)).rejects.toThrow(
                 'Cannot execute tool "regular-tool" because context initialization is required first'
@@ -178,15 +179,17 @@ describe('createContextCheckingServer', () => {
 
             // Get the wrapped callback
             const wrappedCallback = mockRegisterTool.mock.calls[0][2];
-            
+
             try {
                 await wrappedCallback(mockArgs, mockExtra);
             } catch (error) {
                 expect(error).toBeInstanceOf(Error);
                 const errorMessage = (error as Error).message;
-                
+
                 expect(errorMessage).toContain('Cannot execute tool "content-tool"');
-                expect(errorMessage).toContain('REQUIRED ACTION: You must call the "context_initialization" tool');
+                expect(errorMessage).toContain(
+                    'REQUIRED ACTION: You must call the "context_initialization" tool'
+                );
                 expect(errorMessage).toContain('context_initialization tool:');
                 expect(errorMessage).toContain('- Discovers all available content types');
                 expect(errorMessage).toContain('- Loads current site information');
@@ -214,7 +217,7 @@ describe('createContextCheckingServer', () => {
 
             // Get the wrapped callback
             const wrappedCallback = mockRegisterTool.mock.calls[0][2];
-            
+
             try {
                 await wrappedCallback(mockArgs, mockExtra);
             } catch (error) {
@@ -232,7 +235,11 @@ describe('createContextCheckingServer', () => {
 
             contextCheckingServer.registerTool('tool1', { description: 'Tool 1' }, mockCallback1);
             contextCheckingServer.registerTool('tool2', { description: 'Tool 2' }, mockCallback2);
-            contextCheckingServer.registerTool('context_initialization', { description: 'Context init' }, mockCallback3);
+            contextCheckingServer.registerTool(
+                'context_initialization',
+                { description: 'Context init' },
+                mockCallback3
+            );
 
             expect(mockRegisterTool).toHaveBeenCalledTimes(3);
         });
@@ -285,9 +292,11 @@ describe('createContextCheckingServer', () => {
 
             // Get the wrapped callback
             const wrappedCallback = mockRegisterTool.mock.calls[0][2];
-            
+
             // Call the wrapped callback and expect it to throw the original error
-            await expect(wrappedCallback(mockArgs, mockExtra)).rejects.toThrow('Original callback error');
+            await expect(wrappedCallback(mockArgs, mockExtra)).rejects.toThrow(
+                'Original callback error'
+            );
 
             expect(mockContextStore.getIsInitialized).toHaveBeenCalledTimes(1);
             expect(mockCallback).toHaveBeenCalledWith(mockArgs, mockExtra);
@@ -308,9 +317,11 @@ describe('createContextCheckingServer', () => {
 
             // Get the wrapped callback
             const wrappedCallback = mockRegisterTool.mock.calls[0][2];
-            
+
             // Call the wrapped callback and expect it to throw the context store error
-            await expect(wrappedCallback(mockArgs, mockExtra)).rejects.toThrow('Context store error');
+            await expect(wrappedCallback(mockArgs, mockExtra)).rejects.toThrow(
+                'Context store error'
+            );
 
             expect(mockCallback).not.toHaveBeenCalled();
         });
@@ -325,7 +336,7 @@ describe('createContextCheckingServer', () => {
         it('should log when registering tools', () => {
             const mockCallback = jest.fn();
             contextCheckingServer.registerTool('test-tool', { description: 'Test' }, mockCallback);
-            
+
             // Logger is mocked, so we just verify the registration works
             expect(mockRegisterTool).toHaveBeenCalledTimes(1);
         });
@@ -340,20 +351,24 @@ describe('createContextCheckingServer', () => {
             mockServerWithProps.customProperty = 'custom value';
             mockServerWithProps.customMethod = jest.fn().mockReturnValue('method result');
 
-            const contextCheckingServerWithProps = contextCheckingServer as typeof contextCheckingServer & {
-                customProperty: string;
-                customMethod: jest.Mock;
-            };
+            const contextCheckingServerWithProps =
+                contextCheckingServer as typeof contextCheckingServer & {
+                    customProperty: string;
+                    customMethod: jest.Mock;
+                };
             expect(contextCheckingServerWithProps.customProperty).toBe('custom value');
             expect(contextCheckingServerWithProps.customMethod()).toBe('method result');
         });
 
         it('should forward method calls to original server', () => {
             const mockMethod = jest.fn().mockReturnValue('result');
-            const mockServerWithMethod = mockServer as typeof mockServer & { someMethod: jest.Mock };
+            const mockServerWithMethod = mockServer as typeof mockServer & {
+                someMethod: jest.Mock;
+            };
             mockServerWithMethod.someMethod = mockMethod;
 
-            const contextCheckingServerWithMethod = contextCheckingServer as typeof contextCheckingServer & { someMethod: jest.Mock };
+            const contextCheckingServerWithMethod =
+                contextCheckingServer as typeof contextCheckingServer & { someMethod: jest.Mock };
             const result = contextCheckingServerWithMethod.someMethod('arg1', 'arg2');
 
             expect(mockMethod).toHaveBeenCalledWith('arg1', 'arg2');
@@ -379,7 +394,7 @@ describe('createContextCheckingServer', () => {
 
             // Get the wrapped callback
             const wrappedCallback = mockRegisterTool.mock.calls[0][2];
-            
+
             try {
                 await wrappedCallback(mockArgs, mockExtra);
             } catch (error) {
@@ -405,7 +420,7 @@ describe('createContextCheckingServer', () => {
 
             // Get the wrapped callback
             const wrappedCallback = mockRegisterTool.mock.calls[0][2];
-            
+
             try {
                 await wrappedCallback(mockArgs, mockExtra);
             } catch (error) {

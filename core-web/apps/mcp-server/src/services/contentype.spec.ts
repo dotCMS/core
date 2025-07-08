@@ -13,26 +13,28 @@ describe('ContentTypeService', () => {
         it('should fetch content types successfully', async () => {
             const mockResponse = {
                 json: jest.fn().mockResolvedValue({
-                    entity: [{
-                        id: '1',
-                        name: 'Test Content Type',
-                        baseType: 'CONTENT',
-                        clazz: 'test.class',
-                        defaultType: false,
-                        fixed: false,
-                        folder: 'folder',
-                        folderPath: '/folder',
-                        host: 'host123',
-                        iDate: 123456789,
-                        layout: [],
-                        metadata: {},
-                        modDate: 123456789,
-                        multilingualable: false,
-                        sortOrder: 1,
-                        system: false,
-                        variable: 'testContentType',
-                        versionable: true
-                    }]
+                    entity: [
+                        {
+                            id: '1',
+                            name: 'Test Content Type',
+                            baseType: 'CONTENT',
+                            clazz: 'test.class',
+                            defaultType: false,
+                            fixed: false,
+                            folder: 'folder',
+                            folderPath: '/folder',
+                            host: 'host123',
+                            iDate: 123456789,
+                            layout: [],
+                            metadata: {},
+                            modDate: 123456789,
+                            multilingualable: false,
+                            sortOrder: 1,
+                            system: false,
+                            variable: 'testContentType',
+                            versionable: true
+                        }
+                    ]
                 })
             };
 
@@ -54,26 +56,28 @@ describe('ContentTypeService', () => {
         it('should create content type successfully', async () => {
             const mockResponse = {
                 json: jest.fn().mockResolvedValue({
-                    entity: [{
-                        id: '1',
-                        name: 'New Content Type',
-                        baseType: 'CONTENT',
-                        clazz: 'test.class',
-                        defaultType: false,
-                        fixed: false,
-                        folder: 'folder',
-                        folderPath: '/folder',
-                        host: 'host123',
-                        iDate: 123456789,
-                        layout: [],
-                        metadata: {},
-                        modDate: 123456789,
-                        multilingualable: false,
-                        sortOrder: 1,
-                        system: false,
-                        variable: 'newContentType',
-                        versionable: true
-                    }]
+                    entity: [
+                        {
+                            id: '1',
+                            name: 'New Content Type',
+                            baseType: 'CONTENT',
+                            clazz: 'test.class',
+                            defaultType: false,
+                            fixed: false,
+                            folder: 'folder',
+                            folderPath: '/folder',
+                            host: 'host123',
+                            iDate: 123456789,
+                            layout: [],
+                            metadata: {},
+                            modDate: 123456789,
+                            multilingualable: false,
+                            sortOrder: 1,
+                            system: false,
+                            variable: 'newContentType',
+                            versionable: true
+                        }
+                    ]
                 })
             };
 
@@ -84,10 +88,12 @@ describe('ContentTypeService', () => {
                 description: 'Test description',
                 host: 'host123',
                 workflow: ['workflow1'],
-                fields: [{
-                    name: 'Title',
-                    fieldType: 'Text' as const
-                }]
+                fields: [
+                    {
+                        name: 'Title',
+                        fieldType: 'Text' as const
+                    }
+                ]
             };
 
             const result = await service.create(params);
@@ -117,26 +123,28 @@ describe('ContentTypeService', () => {
         it('should fetch content types schema', async () => {
             const mockResponse = {
                 json: jest.fn().mockResolvedValue({
-                    entity: [{
-                        id: '1',
-                        name: 'Schema Content Type',
-                        baseType: 'CONTENT',
-                        clazz: 'test.class',
-                        defaultType: false,
-                        fixed: false,
-                        folder: 'folder',
-                        folderPath: '/folder', 
-                        host: 'host123',
-                        iDate: 123456789,
-                        layout: [],
-                        metadata: {},
-                        modDate: 123456789,
-                        multilingualable: false,
-                        sortOrder: 1,
-                        system: false,
-                        variable: 'schemaContentType',
-                        versionable: true
-                    }]
+                    entity: [
+                        {
+                            id: '1',
+                            name: 'Schema Content Type',
+                            baseType: 'CONTENT',
+                            clazz: 'test.class',
+                            defaultType: false,
+                            fixed: false,
+                            folder: 'folder',
+                            folderPath: '/folder',
+                            host: 'host123',
+                            iDate: 123456789,
+                            layout: [],
+                            metadata: {},
+                            modDate: 123456789,
+                            multilingualable: false,
+                            sortOrder: 1,
+                            system: false,
+                            variable: 'schemaContentType',
+                            versionable: true
+                        }
+                    ]
                 })
             };
 
@@ -144,7 +152,10 @@ describe('ContentTypeService', () => {
 
             const result = await service.getContentTypesSchema();
 
-            expect(mockFetch).toHaveBeenCalledWith('/api/v1/contenttype?page=1&per_page=100&orderby=name&direction=ASC', { method: 'GET' });
+            expect(mockFetch).toHaveBeenCalledWith(
+                '/api/v1/contenttype?page=1&per_page=100&orderby=name&direction=ASC',
+                { method: 'GET' }
+            );
             expect(result).toHaveLength(1);
             expect(result[0].name).toBe('Schema Content Type');
         });
