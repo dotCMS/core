@@ -77,7 +77,7 @@ For detailed instructions, please refer to the [dotCMS API Documentation - Read-
 ### Installation
 
 ```bash
-npm install @dotcms/angular@next 
+npm install @dotcms/angular@latest
 ```
 
 This will automatically install the required dependencies:
@@ -245,7 +245,7 @@ The following example demonstrates how to quickly set up a basic dotCMS page ren
 // /src/app/pages/dotcms-page.component.ts
 import { Component, signal } from '@angular/core';
 
-import { DotCMSLayoutBody, DotCMSEditablePageService} from '@dotcms/angular/next';
+import { DotCMSLayoutBody, DotCMSEditablePageService} from '@dotcms/angular';
 import { getUVEState } from '@dotcms/uve';
 import { DotCMSPageAsset } from '@dotcms/types';
 
@@ -316,7 +316,7 @@ Looking to get started quickly? We've got you covered! Our [Angular starter proj
 
 ## SDK Reference
 
-All components, directives, and services should be imported from `@dotcms/angular/next`.
+All components, directives, and services should be imported from `@dotcms/angular`.
 
 ### DotCMSLayoutBody
 
@@ -333,7 +333,7 @@ All components, directives, and services should be imported from `@dotcms/angula
 ```typescript
 import { Component, signal } from '@angular/core';
 import { DotCMSPageAsset } from '@dotcms/types';
-import { DotCMSLayoutBody } from '@dotcms/angular/next';
+import { DotCMSLayoutBody } from '@dotcms/angular';
 
 import { DOTCMS_CLIENT_TOKEN } from './app.config';
 
@@ -399,7 +399,7 @@ import { Component, Input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { DotCMSBasicContentlet } from '@dotcms/types';
-import { DotCMSEditableTextComponent } from '@dotcms/angular/next';
+import { DotCMSEditableTextComponent } from '@dotcms/angular';
 
 @Component({
     selector: 'app-your-component',
@@ -450,7 +450,7 @@ export class MyBannerComponent {
 
 ```typescript
 import { DotCMSBasicContentlet } from '@dotcms/types';
-import { DotCMSBlockEditorRenderer } from '@dotcms/angular/next';
+import { DotCMSBlockEditorRenderer } from '@dotcms/angular';
 
 const CUSTOM_RENDERERS = {
     customBlock: import('./custom-block.component').then((c) => c.CustomBlockComponent),
@@ -493,7 +493,7 @@ export class MyBannerComponent {
 
 ```typescript
 import { UVE_MODE } from '@dotcms/types';
-import { DotCMSShowWhen } from '@dotcms/angular/next';
+import { DotCMSShowWhen } from '@dotcms/angular';
 
 @Component({
     selector: 'app-your-component',
@@ -537,7 +537,7 @@ import { Component, OnDestroy, OnInit, signal, inject } from '@angular/core';
 
 import { getUVEState } from '@dotcms/uve';
 import { DotCMSPageAsset } from '@dotcms/types';
-import { DotCMSLayoutBody, DotCMSEditablePageService } from '@dotcms/angular/next';
+import { DotCMSLayoutBody, DotCMSEditablePageService } from '@dotcms/angular';
 import { DOTCMS_CLIENT_TOKEN } from './app.config';
 
 @Component({
@@ -627,7 +627,7 @@ export class PageComponent implements OnInit, OnDestroy {
 
 2. **Runtime Errors**: Console errors about missing imports or components not rendering
     - **Solutions**:
-        - Check all imports are from `@dotcms/angular/next`
+        - Check all imports are from `@dotcms/angular`
         - Verify all peer dependencies are installed
         - Update to latest compatible versions
 
