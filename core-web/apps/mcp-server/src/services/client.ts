@@ -55,11 +55,8 @@ export class AgnosticClient {
     protected async fetch(url: string, options: RequestInit = {}): Promise<Response> {
         const method = options.method || 'GET';
 
-        // If the URL is relative (doesn't start with http:// or https://), prepend the dotCMS base URL
-        const fullUrl =
-            url.startsWith('http://') || url.startsWith('https://')
-                ? url
-                : `${this.dotcmsUrl}${url.startsWith('/') ? url : `/${url}`}`;
+        // Always use the URL API for robust URL construction
+        const fullUrl = new URL(url, this.dotcmsUrl).toString();
 
         const headers: Record<string, string> = {
             ...((options.headers as Record<string, string>) || {})
