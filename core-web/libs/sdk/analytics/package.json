@@ -24,7 +24,7 @@
     },
     "peerDependencies": {
         "react": "19.1.0",
-        "@dotcms/uve": "next"
+        "@dotcms/uve": "latest"
     },
     "devDependencies": {
         "@testing-library/jest-dom": "^6.1.6",
