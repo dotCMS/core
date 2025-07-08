@@ -158,11 +158,6 @@ export class DotLinkEditorPopoverComponent implements OnDestroy {
     protected handleSearchInputKeyDown(event: KeyboardEvent) {
         if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
             this.searchResultsListbox?.onListKeyDown(event);
-
-            // Blur the search input and focus the listbox
-            // So we can handle the selection of a link using the enter key
-            this.searchInput?.nativeElement.blur();
-            this.searchResultsListbox?.listViewChild?.nativeElement?.focus?.();
         }
     }
 
@@ -187,10 +182,15 @@ export class DotLinkEditorPopoverComponent implements OnDestroy {
         const target = this.linkTargetAttribute();
         const isImageNode = this.editor().isActive('dotImage');
 
+        const searchResultIndex = this.searchResultsListbox?.focusedOptionIndex() ?? -1;
+        const searchResult = this.searchResults()[searchResultIndex];
+
+        const linkToSave = searchResult?.url || linkUrl;
+
         if (isImageNode) {
-            this.editor().chain().focus().setImageLink({ href: linkUrl, target }).run();
+            this.editor().chain().focus().setImageLink({ href: linkToSave, target }).run();
         } else {
-            this.editor().chain().focus().setLink({ href: linkUrl, target }).run();
+            this.editor().chain().focus().setLink({ href: linkToSave, target }).run();
         }
 
         this.popover.hide();
