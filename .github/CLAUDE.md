@@ -232,7 +232,6 @@ AI assistants cannot:
 
 ### Follow dotCMS Patterns
 When AI generates workflow code, follow the main codebase standards from [CLAUDE.md](../CLAUDE.md):
-- Use Java 11 compatible syntax in workflow scripts
 - Follow dotCMS logging patterns where applicable
 - Use proper error handling patterns
 

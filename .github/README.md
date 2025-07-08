@@ -113,9 +113,123 @@ All main workflows use these reusable components:
 ### ❌ Never Do
 1. **Create multiple workflows** for the same trigger
 2. **Add secrets to PR workflows** (security violation)
-3. **Modify legacy workflows** without dedicated task and testing
+3. **Modify legacy workflows as part of an unrelated task**
 4. **Use hardcoded values** (use variables instead)
 5. **Implement build logic directly** in main workflows
+
+## 🤖 **AI-Assisted Development with Claude**
+
+### Using Claude for Workflow Validation
+
+**⚠️ Important**: Developers should use Claude to validate their GitHub Actions changes against best practices and security patterns before submitting PRs.
+
+#### 🔍 **Validation Areas**
+
+**Security Validation:**
+- **PR Context Security**: Ensure no secrets are used in PR-triggered workflows
+- **Input Validation**: Check that user inputs are properly validated and sanitized
+- **Permissions**: Verify minimal required permissions are used
+- **Action Pinning**: Confirm actions are pinned to specific versions
+
+**Best Practice Validation:**
+- **Reusable Components**: Verify use of existing reusable components instead of duplicating logic
+- **Change Detection**: Check that appropriate change detection filters are implemented
+- **Conditional Logic**: Ensure proper job dependencies and conditional execution
+- **Error Handling**: Validate error handling and failure scenarios
+
+**Architecture Compliance:**
+- **Naming Conventions**: Confirm adherence to workflow naming patterns
+- **Component Structure**: Verify proper use of modular architecture
+- **Documentation**: Check that changes are properly documented
+- **Legacy Impact**: Assess potential impact on legacy workflows
+
+#### 📋 **How to Use Claude for Validation**
+
+**Before Making Changes:**
+```markdown
+"I'm about to modify [workflow/component name]. Please review the current implementation and help me understand the best practices and security patterns I should follow."
+```
+
+**During Development:**
+```markdown
+"Please review this workflow change for security issues and best practice compliance:
+[paste your workflow code]
+
+Specifically check for:
+- Security violations (secrets in PR context)
+- Proper use of reusable components
+- Appropriate change detection
+- Correct permissions and input validation"
+```
+
+**Before Submitting PR:**
+```markdown
+"Please perform a final validation of my GitHub Actions changes:
+[paste your changes]
+
+Check against:
+- Security guidelines in docs/security.md
+- Architecture patterns in docs/architecture.md
+- Best practices in this README
+- Potential legacy workflow impact"
+```
+
+#### 🎯 **Specific Validation Prompts**
+
+**Security Check:**
+```markdown
+"Review this workflow for security vulnerabilities, particularly:
+- Secrets in PR context
+- Input injection risks
+- Excessive permissions
+- Unpinned actions"
+```
+
+**Architecture Review:**
+```markdown
+"Validate this workflow change against our modular architecture:
+- Are reusable components used properly?
+- Does it follow our naming conventions?
+- Is change detection implemented correctly?
+- Are there any architectural violations?"
+```
+
+**Legacy Impact Assessment:**
+```markdown
+"Assess if this change might impact legacy workflows:
+- Are there shared dependencies?
+- Could this affect release-time workflows?
+- Should I test this in core-workflow-test repository?"
+```
+
+#### 📚 **Claude Knowledge Base**
+
+**Claude has access to:**
+- **[CLAUDE.md](CLAUDE.md)** - AI-specific guidance for GitHub Actions
+- **[Security Guidelines](docs/security.md)** - Comprehensive security patterns
+- **[Architecture Documentation](docs/architecture.md)** - Pipeline structure and components
+- **[Testing Strategy](docs/testing.md)** - Testing best practices
+- **[Troubleshooting Guide](docs/troubleshooting.md)** - Common issues and solutions
+
+**Claude can help with:**
+- **Security pattern validation**
+- **Best practice compliance**
+- **Architecture adherence**
+- **Legacy workflow impact assessment**
+- **Troubleshooting workflow issues**
+- **Code review and optimization**
+
+#### ✅ **Validation Checklist**
+
+**Before submitting any GitHub Actions PR:**
+- [ ] Used Claude to validate security patterns
+- [ ] Confirmed best practice compliance
+- [ ] Verified architecture adherence
+- [ ] Assessed legacy workflow impact
+- [ ] Tested changes appropriately
+- [ ] Documented any significant changes
+
+**Remember**: Claude can help identify issues early that might not be caught until review or deployment, saving time and preventing security vulnerabilities.
 
 ## Support and Maintenance
 
@@ -135,7 +249,7 @@ All main workflows use these reusable components:
 
 **Regular Maintenance**:
 - **Weekly**: Security scan review and action updates
-- **Monthly**: Performance optimization and cache cleanup
+- **Monthly**: Performance optimization and cache cleanup 
 - **Quarterly**: Architecture review and documentation updates
 
 **Emergency Procedures**:
