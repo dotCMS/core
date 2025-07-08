@@ -109,7 +109,7 @@ export class DotContentDriveShellComponent implements OnInit {
     }
 
     onPaginate(event: LazyLoadEvent) {
-        if (!event.rows || !event.first) {
+        if (event.rows === undefined || event.first === undefined) {
             return;
         }
 
@@ -120,7 +120,7 @@ export class DotContentDriveShellComponent implements OnInit {
     }
 
     onSort(event: SortEvent) {
-        if (!event.order || !event.field) {
+        if (event.order === undefined || event.field === undefined) {
             return;
         }
 
