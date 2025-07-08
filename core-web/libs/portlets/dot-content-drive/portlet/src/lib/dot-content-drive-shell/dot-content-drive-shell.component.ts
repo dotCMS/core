@@ -19,7 +19,7 @@ import { ESContent } from '@dotcms/dotcms-models';
 import { DotFolderListViewComponent } from '@dotcms/portlets/content-drive/ui';
 
 import { SORT_ORDER, SYSTEM_HOST } from '../shared/constants';
-import { DotContentDriveStatus } from '../shared/models';
+import { DotContentDriveSortOrder, DotContentDriveStatus } from '../shared/models';
 import { DotContentDriveStore } from '../store/dot-content-drive.store';
 import { decodeFilters } from '../utils/functions';
 
@@ -128,7 +128,7 @@ export class DotContentDriveShellComponent implements OnInit {
 
         this.#store.setSort({
             field: event.field,
-            order: SORT_ORDER[event.order]
+            order: SORT_ORDER[event.order] ?? DotContentDriveSortOrder.ASC
         });
     }
 }
