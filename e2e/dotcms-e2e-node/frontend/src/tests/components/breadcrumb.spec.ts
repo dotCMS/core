@@ -84,7 +84,7 @@ test.describe("should display correctly on the Template page", () => {
     const breadcrumb = new BreadcrumbComponent(page);
 
     const breadcrumbText = breadcrumb.getBreadcrumb();
-    await expect(breadcrumbText).toHaveText("SiteTemplates");
+    await expect(breadcrumbText).toHaveText("Site ManagerTemplates");
 
     const title = breadcrumb.getTitle();
     await expect(title).toHaveText(template.title);
