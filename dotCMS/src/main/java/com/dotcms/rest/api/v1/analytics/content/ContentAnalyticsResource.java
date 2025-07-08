@@ -348,13 +348,13 @@ public class ContentAnalyticsResource {
     }
 
     @Operation(
-            operationId = "getSiteKey",
-            summary = "Site Key",
-            description = "Returns the Site Key that must be used by the client-side JS code to " +
-                    "send custom Events",
+            operationId = "generateSiteKey",
+            summary = "Generate Site Key",
+            description = "Generates and returns a Site Key that must be used by the client-side JS " +
+                    "code to send custom Content Analytics Events",
             tags = {"Content Analytics"},
             responses = {
-                    @ApiResponse(responseCode = "200", description = "The Site key was " +
+                    @ApiResponse(responseCode = "200", description = "The Site key was generated and " +
                             "returned successfully"),
                     @ApiResponse(responseCode = "400", description = "Bad Request"),
                     @ApiResponse(responseCode = "401", description = "Unauthorized"),
@@ -365,13 +365,13 @@ public class ContentAnalyticsResource {
             }
     )
     @GET
-    @Path("/sitekey/{siteId}")
+    @Path("/sitekey/generate/{siteId}")
     @JSONP
     @NoCache
     @Produces({MediaType.TEXT_PLAIN, "text/plain"})
-    public Response getSiteKey(@PathParam("siteId") final String siteId,
-                               @Context final HttpServletRequest request,
-                               @Context final HttpServletResponse response) throws DotDataException, DotSecurityException {
+    public Response generateSiteKey(@PathParam("siteId") final String siteId,
+                                    @Context final HttpServletRequest request,
+                                    @Context final HttpServletResponse response) throws DotDataException, DotSecurityException {
         final InitDataObject initDataObject = new WebResource.InitBuilder(this.webResource)
                 .requestAndResponse(request, response)
                 .requiredBackendUser(true)
@@ -380,7 +380,7 @@ public class ContentAnalyticsResource {
         final User user = initDataObject.getUser();
         final Host site = APILocator.getHostAPI().find(siteId, user, DONT_RESPECT_FRONT_END_ROLES);
         Objects.requireNonNull(site, String.format("Site with ID '%s' was not found", siteId));
-        return Response.ok().entity(ContentAnalyticsUtil.getSiteKey(site)).build();
+        return Response.ok().entity(ContentAnalyticsUtil.generateInternalSiteKey(site.getIdentifier())).build();
     }
 
     private int getResponseStatus(final AnalyticsEventsResult analyticsEventsResult) {

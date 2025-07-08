@@ -1,7 +1,7 @@
 name: "Content Analytics"
 iconUrl: "https://static.dotcms.com/assets/icons/apps/analytics.png"
 allowExtraParameters: false
-description: "Content Analytics allow developers to track user interactions across all Sites in dotCMS."
+description: "Content Analytics allow developers and/or marketers to track user interactions across specified Sites in dotCMS."
 
 params:
   siteKey:
@@ -12,4 +12,4 @@ params:
     hint: "The Site Key is required in all requests that send Events to the Content Analytics Service. You can either enter your own Site Key, or have dotCMS generate a secure one for you."
     required: true
     buttonLabel: "Auto Generate Site Key"
-    buttonEndpoint: "/api/v1/analytics/content/sitekey/$siteId"
+    buttonEndpoint: "/api/v1/analytics/content/sitekey/generate/$siteId"
