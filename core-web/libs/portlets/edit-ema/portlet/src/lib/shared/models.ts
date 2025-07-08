@@ -1,5 +1,5 @@
-import { CLIENT_ACTIONS } from '@dotcms/client';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotCMSUVEAction } from '@dotcms/types';
 import { InfoPage } from '@dotcms/ui';
 
 import { CommonErrors, DialogStatus, FormStatus } from './enums';
@@ -220,7 +220,7 @@ export interface EditEmaDialogState {
      */
     actionPayload?: ActionPayload;
     form: DialogForm;
-    clientAction: CLIENT_ACTIONS;
+    clientAction: DotCMSUVEAction;
 }
 
 export type DialogActionPayload = Pick<EditEmaDialogState, 'actionPayload'>;
@@ -253,7 +253,7 @@ export interface AddContentletAction extends DialogActionPayload {
 }
 
 export interface PostMessage {
-    action: CLIENT_ACTIONS;
+    action: DotCMSUVEAction;
     payload: unknown;
 }
 
