@@ -633,7 +633,7 @@ runs:
         echo "published=$PUBLISHED" >> $GITHUB_OUTPUT
         
         # Create npm-package-version output with clean formatting
-        # Template will wrap with: [ `${{ outputs.npm-package-version }}` ]
+        # Template expects: [ `${{ steps.deployment_status.outputs.npm_package_version }}` ]
         if [ "$ACTUAL_PUBLISHED_LATEST" = "true" ] && [ "$ACTUAL_PUBLISHED_NEXT" = "true" ]; then
           # Both published - clean dual format
           NPM_PACKAGE_VERSION="${NEXT_VERSION} (latest) and ${NEXT_VERSION_NEXT} (next)"
