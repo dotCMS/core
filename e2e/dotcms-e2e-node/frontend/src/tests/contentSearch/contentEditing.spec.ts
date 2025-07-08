@@ -414,9 +414,11 @@ test("Delete a file asset content", async ({ page }) => {
 test("Add a new page", async ({ page }) => {
   const contentUtils = new ContentPage(page);
 
+  const title = faker.lorem.word();
+
   await contentUtils.addNewContentAction(pageAsset.locator, pageAsset.label);
   await contentUtils.fillPageAssetForm({
-    title: faker.lorem.word(),
+    title,
     host: pageAssetContent.host,
     template: pageAssetContent.template,
     friendlyName: pageAssetContent.friendlyName,
@@ -427,7 +429,7 @@ test("Add a new page", async ({ page }) => {
   });
 
   const breadcrumbLocator = page.getByTestId("breadcrumb-title");
-  await expect(breadcrumbLocator).toContainText(pageAssetContent.title);
+  await expect(breadcrumbLocator).toContainText(title);
 });
 
 /**
