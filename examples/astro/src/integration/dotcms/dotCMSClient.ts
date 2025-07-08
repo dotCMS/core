@@ -1,4 +1,4 @@
-import { createDotCMSClient } from "@dotcms/client/next";
+import { createDotCMSClient } from "@dotcms/client";
 
 export const dotCMSClient = createDotCMSClient({
   authToken: import.meta.env.PUBLIC_DOTCMS_AUTH_TOKEN,
