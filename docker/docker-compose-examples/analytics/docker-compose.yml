@@ -33,7 +33,7 @@ services:
 
   dotcms-analytics:
     container_name: dotcms-analytics
-    image: ghcr.io/dotcms/internal-infrastructure/configurator:lastest
+    image: ghcr.io/dotcms/internal-infrastructure/configurator:latest
     environment:
       #- JITSU_USE_CONFIGURATOR='true'
       #- JITSU_JITSU_CONFIGURATOR=http://host.docker.internal:7007/
