@@ -1,5 +1,13 @@
 import { DebugElement } from '@angular/core';
-import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
+import {
+    ComponentFixture,
+    discardPeriodicTasks,
+    fakeAsync,
+    flush,
+    TestBed,
+    tick,
+    waitForAsync
+} from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
 import { ButtonModule } from 'primeng/button';
@@ -77,5 +85,46 @@ describe('DotCopyButtonComponent', () => {
             expect(dotClipboardUtil.copy).toHaveBeenCalledWith('Text to copy');
             expect(stopPropagation).toHaveBeenCalledTimes(1);
         });
+    });
+
+    describe('with tooltip', () => {
+        beforeEach(() => {
+            fixture.componentRef.setInput('tooltipText', 'Tooltip text');
+            button = de.query(By.css('button'));
+            fixture.detectChanges();
+        });
+
+        it('should show tooltip', fakeAsync(() => {
+            const nativeButton = button.nativeElement;
+            nativeButton.dispatchEvent(new Event('mouseenter'));
+            fixture.detectChanges();
+
+            tick(100);
+            fixture.detectChanges();
+
+            const tooltipElement = document.querySelector('[data-testid="tooltip-content"]');
+            expect(tooltipElement).toBeTruthy();
+            expect(tooltipElement.textContent.trim()).toBe('Tooltip text');
+            discardPeriodicTasks();
+        }));
+
+        it('should show "Copied" in tooltip after clicking the button', fakeAsync(() => {
+            const nativeButton = button.nativeElement;
+
+            nativeButton.dispatchEvent(new Event('mouseenter'));
+            fixture.detectChanges();
+            tick(100);
+            fixture.detectChanges();
+
+            nativeButton.dispatchEvent(new Event('click'));
+            fixture.detectChanges();
+            tick(100);
+            fixture.detectChanges();
+
+            const tooltipElement = document.querySelector('[data-testid="tooltip-content"]');
+            expect(tooltipElement).toBeTruthy();
+            expect(tooltipElement.textContent.trim()).toBe('Copied');
+            flush();
+        }));
     });
 });
