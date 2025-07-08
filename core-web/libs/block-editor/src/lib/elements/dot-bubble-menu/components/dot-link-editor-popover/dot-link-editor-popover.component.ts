@@ -158,6 +158,11 @@ export class DotLinkEditorPopoverComponent implements OnDestroy {
     protected handleSearchInputKeyDown(event: KeyboardEvent) {
         if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
             this.searchResultsListbox?.onListKeyDown(event);
+
+            // Blur the search input and focus the listbox
+            // So we can handle the selection of a link using the enter key
+            this.searchInput?.nativeElement.blur();
+            this.searchResultsListbox?.listViewChild?.nativeElement.focus();
         }
     }
 
