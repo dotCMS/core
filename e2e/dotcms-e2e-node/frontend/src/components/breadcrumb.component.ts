@@ -4,12 +4,10 @@ export class BreadcrumbComponent {
   constructor(private page: Page) {}
 
   getBreadcrumb() {
-    const breadcrumb = this.page.getByTestId("breadcrumb-crumbs");
-    return breadcrumb;
+    return this.page.getByTestId("breadcrumb-crumbs");
   }
 
   getTitle() {
-    const breadcrumbLast = this.page.getByTestId("breadcrumb-title");
-    return breadcrumbLast;
+    return this.page.getByTestId("breadcrumb-title");
   }
 }

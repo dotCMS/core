@@ -15,7 +15,7 @@ test.beforeEach("Login", async ({ page }) => {
 
   // Login to dotCMS
   const loginPage = new LoginPage(page);
-  await loginPage.login(username, password);
+  await loginPage.loginAndOpenSideMenu(username, password);
 });
 
 test("should display correctly on the Starter page", async ({ page }) => {
@@ -82,6 +82,10 @@ test.describe("should display correctly on the Template page", () => {
   test("should display correctly on the Template page", async ({ page }) => {
     await page.goto(`/dotAdmin/#/templates/edit/${template.identifier}`);
     const breadcrumb = new BreadcrumbComponent(page);
+
+    const breadcrumbText = breadcrumb.getBreadcrumb();
+    await expect(breadcrumbText).toHaveText("SiteTemplates");
+
     const title = breadcrumb.getTitle();
     await expect(title).toHaveText(template.title);
   });
