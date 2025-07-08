@@ -109,6 +109,10 @@ export class DotContentDriveShellComponent implements OnInit {
     }
 
     onPaginate(event: LazyLoadEvent) {
+        if (!event.rows || !event.first) {
+            return;
+        }
+
         this.#store.setPagination({
             limit: event.rows,
             offset: event.first
@@ -116,6 +120,10 @@ export class DotContentDriveShellComponent implements OnInit {
     }
 
     onSort(event: SortEvent) {
+        if (!event.order || !event.field) {
+            return;
+        }
+
         this.#store.setSort({
             field: event.field,
             order: SORT_ORDER[event.order]

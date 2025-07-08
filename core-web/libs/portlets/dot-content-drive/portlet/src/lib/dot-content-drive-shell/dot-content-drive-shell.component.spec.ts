@@ -235,6 +235,24 @@ describe('DotContentDriveShellComponent', () => {
 
             expect(store.setPagination).toHaveBeenCalledWith({ limit: 10, offset: 0 });
         });
+
+        it('should not set pagination if rows are not provided', () => {
+            const folderListView = spectator.debugElement.query(
+                By.directive(DotFolderListViewComponent)
+            );
+
+            spectator.triggerEventHandler(folderListView, 'paginate', { rows: 10 });
+        });
+
+        it('should not set pagination if first are not provided', () => {
+            const folderListView = spectator.debugElement.query(
+                By.directive(DotFolderListViewComponent)
+            );
+
+            spectator.triggerEventHandler(folderListView, 'paginate', { first: 0 });
+
+            expect(store.setPagination).not.toHaveBeenCalled();
+        });
     });
 
     describe('onSort', () => {
@@ -249,6 +267,24 @@ describe('DotContentDriveShellComponent', () => {
                 field: 'modDate',
                 order: DotContentDriveSortOrder.ASC
             });
+        });
+
+        it('should not set sort if order is not provided', () => {
+            const folderListView = spectator.debugElement.query(
+                By.directive(DotFolderListViewComponent)
+            );
+
+            spectator.triggerEventHandler(folderListView, 'sort', { field: 'modDate' });
+
+            expect(store.setSort).not.toHaveBeenCalled();
+        });
+
+        it('should not set sort if field is not provided', () => {
+            const folderListView = spectator.debugElement.query(
+                By.directive(DotFolderListViewComponent)
+            );
+
+            spectator.triggerEventHandler(folderListView, 'sort', { order: 1 });
         });
     });
 });
