@@ -38,26 +38,17 @@ export class DotAppsConfigurationDetailFormComponent implements OnInit, AfterVie
 
     // Computed signal for button enabled state
     protected readonly isButtonEnabled = computed(() => {
-        console.log('appConfigured', this.appConfigured());
-        console.log('formFields', this.formFields());
-
-        //TODO: Remove this after testing
-        return true;
-
         const appConfiguredValue = this.appConfigured();
 
         return (field: DotAppsSecret): boolean => {
-            // Opción 1: Si el field tiene enableButton definido, usarlo
             if (field.enableButton !== undefined) {
                 return field.enableButton;
             }
 
-            // Opción 2: Para botones, usar 'required: true' como indicador de habilitado
             if (field.type === 'BUTTON' && field.required === true) {
                 return true;
             }
 
-            // Opción 3: Comportamiento por defecto (usar appConfigured)
             return appConfiguredValue;
         };
     });

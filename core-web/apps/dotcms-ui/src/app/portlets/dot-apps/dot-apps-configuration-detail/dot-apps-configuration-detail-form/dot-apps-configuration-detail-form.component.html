@@ -13,6 +13,7 @@
             {{ field.label }}
         </label>
     </ng-template>
+
     <div class="dot-apps-configuration-detail__form" #formContainer>
         @for (field of formFields(); track field) {
             <div [attr.data-testid]="field.name" class="field">
@@ -40,11 +41,7 @@
                         </span>
                     }
                     @case ('STRING') {
-                        <ng-container
-                            *ngTemplateOutlet="
-                                labelField;
-                                context: { field: field }
-                            "></ng-container>
+                        <ng-container *ngTemplateOutlet="labelField; context: { field: field }" />
                         <ng-container
                             *ngTemplateOutlet="
                                 warningIcon;
@@ -60,6 +57,12 @@
                         <span class="p-field-hint">
                             <markdown>{{ field.hint }}</markdown>
                         </span>
+                    }
+                    @case ('GENERATED_STRING') {
+                        <ng-container *ngTemplateOutlet="labelField; context: { field: field }" />
+                        <dot-apps-configuration-detail-generated-string-field
+                            [formControlName]="field.name"
+                            [field]="field" />
                     }
                     @case ('BOOL') {
                         <p-checkbox
@@ -81,11 +84,7 @@
                         </span>
                     }
                     @case ('SELECT') {
-                        <ng-container
-                            *ngTemplateOutlet="
-                                labelField;
-                                context: { field: field }
-                            "></ng-container>
+                        <ng-container *ngTemplateOutlet="labelField; context: { field: field }" />
                         <ng-container
                             *ngTemplateOutlet="
                                 warningIcon;

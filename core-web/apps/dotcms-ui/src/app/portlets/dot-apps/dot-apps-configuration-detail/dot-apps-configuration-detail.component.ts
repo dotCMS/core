@@ -29,7 +29,6 @@ export class DotAppsConfigurationDetailComponent implements OnInit {
 
     ngOnInit() {
         this.route.data.pipe(pluck('data'), take(1)).subscribe((app: DotApp) => {
-            console.log('app', app);
             this.apps = app;
             this.formFields = this.getSecrets(app.sites[0].secrets);
             this.dynamicVariables = this.transformSecretsToKeyValue(
