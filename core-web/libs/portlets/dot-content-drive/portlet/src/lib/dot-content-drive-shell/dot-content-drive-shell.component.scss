@@ -6,7 +6,7 @@
 
     /* This is the height according to figma for the first row */
     grid-template-rows: 4.375rem 1fr;
-    height: 100vh;
+    height: 100%;
 }
 
 /* The styles below are just for the placeholders. */
@@ -35,16 +35,13 @@
     grid-row-start: 2;
 
     /* This is the width according to figma */
-    width: 16.5rem;
+    // width: 16.5rem;
+    width: 0;
 }
 
 dot-folder-list-view {
-    background-color: lightgreen;
-
     grid-column: 2 / 3;
     grid-row-start: 2;
-
-    width: 100%;
 }
 
 .detail-view {
@@ -54,5 +51,6 @@ dot-folder-list-view {
     grid-row-start: 2;
 
     /* This is the width according to figma */
-    width: 21.875rem;
+    // width: 21.875rem;
+    width: 0;
 }
