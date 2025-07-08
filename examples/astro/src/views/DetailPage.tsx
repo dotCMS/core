@@ -5,7 +5,7 @@ import { enableBlockEditorInline } from "@dotcms/uve";
 import {
     DotCMSBlockEditorRenderer,
     useEditableDotCMSPage,
-} from "@dotcms/react/next";
+} from "@dotcms/react";
 
 import type { DotCMSCustomDetailPageResponse } from "@/types/page.model";
 
