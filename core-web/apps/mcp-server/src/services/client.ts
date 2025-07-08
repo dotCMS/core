@@ -105,13 +105,27 @@ export class AgnosticClient {
             return response;
 
         } catch (error) {
-            this.logger.error('Error during request', {
+            let errorMessage = 'Error during request';
+            let errorStack = undefined;
+            if (error instanceof Error) {
+                errorMessage += `: ${error.message}`;
+                errorStack = error.stack;
+            } else {
+                errorMessage += `: ${JSON.stringify(error)}`;
+            }
+
+            this.logger.error(errorMessage, {
                 error: error instanceof Error ? { message: error.message, stack: error.stack } : error,
                 url: fullUrl,
                 method
             });
 
-            throw new Error('Error during request: ' + error);
+            // Prefer to use cause if supported, otherwise attach original error
+            const err = new Error(errorMessage);
+            if (errorStack) err.stack = errorStack;
+            // @ts-expect-error: cause is not standard on all Error types, but used for error chaining
+            err.cause = error;
+            throw err;
         }
     }
 }
