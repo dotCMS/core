@@ -127,10 +127,12 @@ export class WorkflowService extends AgnosticClient {
         };
         const defaultComment = defaultComments[actionType];
 
-        const url = `/api/v1/workflow/actions/default/fire/${actionType}?identifier=${validatedParams.data.identifier}&variantName=${validatedParams.data.variantName}`;
+        const urlObj = new URL(`/api/v1/workflow/actions/default/fire/${actionType}`, this.dotcmsUrl);
+        urlObj.searchParams.set('identifier', validatedParams.data.identifier);
+        urlObj.searchParams.set('variantName', validatedParams.data.variantName);
 
         try {
-            const response = await this.fetch(url, {
+            const response = await this.fetch(urlObj.toString(), {
                 method: 'PUT',
                 body: JSON.stringify({
                     comments: validatedParams.data.comments || defaultComment

@@ -7,6 +7,7 @@ export const mockFetch = jest.fn();
 jest.mock('./services/client', () => {
     return {
         AgnosticClient: class MockAgnosticClient {
+            dotcmsUrl = 'http://localhost';
             fetch = mockFetch;
         }
     };

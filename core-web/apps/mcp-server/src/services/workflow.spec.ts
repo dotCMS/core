@@ -86,7 +86,7 @@ describe('WorkflowService', () => {
             const result = await service.performContentAction(params);
 
             expect(mockFetch).toHaveBeenCalledWith(
-                '/api/v1/workflow/actions/default/fire/PUBLISH?identifier=content123&variantName=DEFAULT',
+                'http://localhost/api/v1/workflow/actions/default/fire/PUBLISH?identifier=content123&variantName=DEFAULT',
                 {
                     method: 'PUT',
                     body: expect.stringContaining('Publishing content via API')
