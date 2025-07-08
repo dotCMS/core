@@ -42,8 +42,9 @@ export class DotFolderListViewComponent {
     sort = output<SortEvent>();
 
     readonly headerColumns = HEADER_COLUMNS;
-
     readonly SKELETON_SPAN = HEADER_COLUMNS.length + 1;
+
+    // Model for the table selection
     selectedItems: DotContentDriveItem[] = [];
 
     onPage(event: LazyLoadEvent) {
