@@ -66,7 +66,8 @@ export function createContextCheckingServer(server: McpServer): McpServer {
                     ) => {
                         enforceInitialContextMiddleware(name);
 
-                        return callback(args, extra);
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        return callback(args as { [x: string]: any }, extra);
                     };
 
                     return originalRegisterTool.call(this, name, config, wrappedCallback);

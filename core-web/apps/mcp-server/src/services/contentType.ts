@@ -167,7 +167,7 @@ export class ContentTypeService extends AgnosticClient {
             const response = await this.fetch(url, { method: 'GET' });
             const data = await response.json();
 
-            const result = data.entity.map((contentType) => {
+            const result = data.entity.map((contentType: ContentType) => {
                 return {
                     ...contentType,
                     fields: this.#extractFieldsFromLayout(contentType.layout)
@@ -309,7 +309,7 @@ export class ContentTypeService extends AgnosticClient {
     }
 
     #extractFieldsFromLayout(layout: Layout[]): ContentTypeField[] {
-        const allFields = [];
+        const allFields: ContentTypeField[] = [];
 
         // Check if layout has a layout property (based on your structure)
 
