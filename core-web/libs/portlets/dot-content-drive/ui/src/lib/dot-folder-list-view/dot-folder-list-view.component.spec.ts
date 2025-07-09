@@ -1,8 +1,15 @@
-import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
 
-import { DotContentDriveItem } from '@dotcms/dotcms-models';
+import { provideHttpClient } from '@angular/common/http';
+import { By } from '@angular/platform-browser';
+
+import { DotFormatDateService, DotMessageService } from '@dotcms/data-access';
+import { DotcmsConfigService } from '@dotcms/dotcms-js';
+import { DotcmsConfigServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotFolderListViewComponent } from './dot-folder-list-view.component';
+
+import { mockItems } from '../shared/mocks';
 
 describe('DotFolderListViewComponent', () => {
     let spectator: Spectator<DotFolderListViewComponent>;
@@ -10,6 +17,12 @@ describe('DotFolderListViewComponent', () => {
     const createComponent = createComponentFactory({
         component: DotFolderListViewComponent,
         imports: [],
+        providers: [
+            mockProvider(DotMessageService, new MockDotMessageService({})),
+            mockProvider(DotcmsConfigService, new DotcmsConfigServiceMock()),
+            mockProvider(DotFormatDateService),
+            provideHttpClient()
+        ],
         declarations: [],
         detectChanges: true
     });
@@ -18,14 +31,226 @@ describe('DotFolderListViewComponent', () => {
         spectator = createComponent();
     });
 
-    it('should set items input property', () => {
-        const mockItems: DotContentDriveItem[] = [
-            { identifier: '123', title: 'Item 1' } as DotContentDriveItem,
-            { identifier: '456', title: 'Item 2' } as DotContentDriveItem
-        ];
+    describe('Input Properties', () => {
+        it('should set items input property', () => {
+            spectator.setInput('items', mockItems);
 
-        spectator.setInput('items', mockItems);
+            expect(spectator.component.$items()).toEqual(mockItems);
+        });
 
-        expect(spectator.component.items()).toEqual(mockItems);
+        it('should set totalItems input property', () => {
+            const mockTotalItems = 10;
+
+            spectator.setInput('totalItems', mockTotalItems);
+
+            expect(spectator.component.$totalItems()).toEqual(mockTotalItems);
+        });
+
+        it('should set loading input property', () => {
+            spectator.setInput('loading', true);
+
+            expect(spectator.component.$loading()).toBe(true);
+        });
+    });
+
+    describe('Output Properties', () => {
+        it('should emit selectionChange event when selection changes', () => {
+            spectator.setInput('items', mockItems);
+
+            const selectionChangeSpy = jest.spyOn(spectator.component.selectionChange, 'emit');
+            const table = spectator.debugElement.query(By.css('[data-testId="table"]'));
+
+            spectator.triggerEventHandler(table, 'selectionChange', mockItems);
+
+            expect(selectionChangeSpy).toHaveBeenCalledWith(mockItems);
+        });
+
+        it('should emit paginate event when page changes', () => {
+            const paginateSpy = jest.spyOn(spectator.component.paginate, 'emit');
+            const table = spectator.debugElement.query(By.css('[data-testId="table"]'));
+
+            spectator.setInput('loading', false);
+
+            spectator.triggerEventHandler(table, 'onPage', { first: 10, rows: 10 });
+
+            expect(paginateSpy).toHaveBeenCalledWith({ first: 10, rows: 10 });
+        });
+
+        it('should emit sort event when sort changes', () => {
+            const sortSpy = jest.spyOn(spectator.component.sort, 'emit');
+            const table = spectator.debugElement.query(By.css('[data-testId="table"]'));
+
+            spectator.triggerEventHandler(table, 'onSort', { field: 'title', order: 1 });
+
+            expect(sortSpy).toHaveBeenCalledWith({ field: 'title', order: 1 });
+        });
+    });
+
+    describe('DOM', () => {
+        it('should show the table', () => {
+            const table = spectator.query(byTestId('table'));
+
+            expect(table).toBeTruthy();
+        });
+
+        describe('Header', () => {
+            it('should show the header', () => {
+                const header = spectator.query(byTestId('header-row'));
+
+                expect(header).toBeTruthy();
+            });
+
+            it('should show 2 sortable columns with sort icon', () => {
+                const sortableColumns = spectator.queryAll(byTestId('header-column-sortable'));
+                const sortIcons = spectator.queryAll(byTestId('sort-icon'));
+
+                expect(sortableColumns.length).toBe(2);
+                expect(sortIcons.length).toBe(2);
+            });
+
+            it('should show 3 not sortable columns', () => {
+                const notSortableColumns = spectator.queryAll(
+                    byTestId('header-column-not-sortable')
+                );
+
+                expect(notSortableColumns.length).toBe(3);
+            });
+
+            it('should have one checkbox column', () => {
+                const checkboxColumn = spectator.query(byTestId('header-checkbox'));
+
+                expect(checkboxColumn).toBeTruthy();
+            });
+
+            it('should have a checkbox column', () => {
+                const checkboxColumn = spectator.query(byTestId('header-checkbox'));
+
+                expect(checkboxColumn).toBeTruthy();
+            });
+        });
+    });
+
+    describe('Loading', () => {
+        it('should show the loading row', () => {
+            spectator.setInput('items', mockItems);
+            spectator.setInput('loading', true);
+            spectator.detectChanges();
+
+            const loadingRow = spectator.query(byTestId('loading-row'));
+
+            expect(loadingRow).toBeTruthy();
+        });
+
+        it('should not show the loading row', () => {
+            spectator.setInput('items', mockItems);
+            spectator.setInput('loading', false);
+            spectator.detectChanges();
+
+            const loadingRow = spectator.query(byTestId('loading-row'));
+
+            expect(loadingRow).toBeNull();
+        });
+    });
+
+    describe('Item Row', () => {
+        const firstItem = mockItems[0];
+        beforeEach(() => {
+            spectator.setInput('items', mockItems);
+            spectator.setInput('loading', false);
+            spectator.detectChanges();
+        });
+
+        it('should show the item row', () => {
+            const itemRow = spectator.query(byTestId('item-row'));
+
+            expect(itemRow).toBeTruthy();
+        });
+
+        it('should have a checkbox column', () => {
+            const checkboxColumn = spectator.query(byTestId('header-checkbox'));
+
+            expect(checkboxColumn).toBeTruthy();
+        });
+
+        it('should have a title column', () => {
+            const titleColumn = spectator.query(byTestId('item-title'));
+
+            expect(titleColumn.textContent.trim()).toBe(firstItem.title);
+        });
+
+        it('should have a status column', () => {
+            const statusColumn = spectator.query(byTestId('item-status'));
+
+            expect(statusColumn).toBeTruthy();
+        });
+
+        it('should have a base type column', () => {
+            const baseTypeColumn = spectator.query(byTestId('item-base-type'));
+
+            expect(baseTypeColumn).toBeTruthy();
+        });
+
+        it('should have a mod user name column', () => {
+            const modUserNameColumn = spectator.query(byTestId('item-mod-user-name'));
+
+            expect(modUserNameColumn.textContent.trim()).toBe(firstItem.modUserName);
+        });
+
+        it('should have a mod date column', () => {
+            const modDateColumn = spectator.query(byTestId('item-mod-date'));
+
+            expect(modDateColumn).toBeTruthy();
+        });
+
+        it('should have a contentlet thumbnail', () => {
+            const contentletThumbnail = spectator.query(byTestId('contentlet-thumbnail'));
+
+            expect(contentletThumbnail).toBeTruthy();
+        });
+
+        it('should have a contentlet title', () => {
+            const contentletTitle = spectator.query(byTestId('item-title'));
+
+            expect(contentletTitle.textContent.trim()).toBe(firstItem.title);
+        });
+
+        describe('Status', () => {
+            it('should have a published status', () => {
+                const statusColumn = spectator.query(byTestId('item-status'));
+
+                expect(statusColumn.textContent.trim()).toBe('Published');
+            });
+
+            it('should have a archived status', () => {
+                spectator.setInput('items', [
+                    {
+                        ...firstItem,
+                        live: false,
+                        archived: true
+                    }
+                ]);
+                spectator.detectChanges();
+
+                const statusColumn = spectator.query(byTestId('item-status'));
+
+                expect(statusColumn.textContent.trim()).toBe('Archived');
+            });
+
+            it('should have a draft status', () => {
+                spectator.setInput('items', [
+                    {
+                        ...firstItem,
+                        live: false,
+                        archived: false,
+                        working: true
+                    }
+                ]);
+                spectator.detectChanges();
+
+                const statusColumn = spectator.query(byTestId('item-status'));
+
+                expect(statusColumn.textContent.trim()).toBe('Draft');
+            });
+        });
     });
 });

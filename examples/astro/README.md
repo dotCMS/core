@@ -85,8 +85,8 @@ This example uses the following npm packages from dotCMS:
 
 | Package | Purpose | Description |
 |---------|---------|-------------|
-| [@dotcms/client](https://www.npmjs.com/package/@dotcms/client/v/next) | API Communication | Core API client for fetching content from dotCMS |
-| [@dotcms/react](https://www.npmjs.com/package/@dotcms/react/v/next) | UI Components | React components and hooks for rendering dotCMS content |
+| [@dotcms/client](https://www.npmjs.com/package/@dotcms/client) | API Communication | Core API client for fetching content from dotCMS |
+| [@dotcms/react](https://www.npmjs.com/package/@dotcms/react) | UI Components | React components and hooks for rendering dotCMS content |
 | [@dotcms/uve](https://www.npmjs.com/package/@dotcms/uve) | Visual Editing | Universal Visual Editor integration |
 | [@dotcms/types](https://www.npmjs.com/package/@dotcms/types) | Type Safety | TypeScript type definitions for dotCMS |
 
@@ -326,7 +326,7 @@ The process works as follows:
 Here's how the client is configured:
 
 ```js
-import { createDotCMSClient } from "@dotcms/client/next";
+import { createDotCMSClient } from "@dotcms/client";
 
 export const dotCMSClient = createDotCMSClient({
     dotcmsUrl: process.env.NEXT_PUBLIC_DOTCMS_HOST,
@@ -351,7 +351,7 @@ export const getDotCMSPage = async (path, searchParams) => {
 };
 ```
 
-Learn more about the `@dotcms/client` package [here](https://www.npmjs.com/package/@dotcms/client/v/next).
+Learn more about the `@dotcms/client` package [here](https://www.npmjs.com/package/@dotcms/client/v).
 
 ### How to Render Your Page
 
@@ -373,7 +373,7 @@ Here's how this looks in code:
 ```js
 "use client";
 
-import { DotCMSBodyLayout, useEditableDotCMSPage } from "@dotcms/react/next";
+import { DotCMSBodyLayout, useEditableDotCMSPage } from "@dotcms/react";
 
 // Define custom components for specific Content Types
 // The key is the Content Type variable name in dotCMS
@@ -401,7 +401,7 @@ export function MyPage({ page }) {
 > - The `DotCMSBodyLayout` component renders both the page structure and content
 > - Custom components defined in `dotComponents` will be used to render Content Types
 
-Learn more about the `@dotcms/react` package [here](https://www.npmjs.com/package/@dotcms/react/v/next).
+Learn more about the `@dotcms/react` package [here](https://www.npmjs.com/package/@dotcms/react).
 
 ### How dotCMS Routes Pages
 dotCMS allows a single page to be accessed via multiple URL paths (e.g., / and /index for the same "Home" page). This flexibility means your Angular application needs to handle these variations.
@@ -468,7 +468,7 @@ This mapping should be passed to the `DotCMSBodyLayout` component as shown in th
 **Learn more about dotCMS Content and Components:**
 - [Understanding Content Types in dotCMS](https://dev.dotcms.com/docs/content-types) - In-depth explanation of content types and their structure
 - [Contentlets in dotCMS](https://dev.dotcms.com/docs/content#Contentlets) - Learn how individual content items (contentlets) work
-- [@dotcms/react Documentation](https://www.npmjs.com/package/@dotcms/react/v/next) - Complete reference for the React components library
+- [@dotcms/react Documentation](https://www.npmjs.com/package/@dotcms/react) - Complete reference for the React components library
 
 ## Conclusion
 

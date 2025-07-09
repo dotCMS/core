@@ -1,4 +1,4 @@
-import { DotCMSLayoutBody, useEditableDotCMSPage } from "@dotcms/react/next";
+import { DotCMSLayoutBody, useEditableDotCMSPage } from "@dotcms/react";
 import type { DotCMSCustomPageResponse } from "@/types/page.model";
 
 import { dotComponents } from "@/components/content-types";
