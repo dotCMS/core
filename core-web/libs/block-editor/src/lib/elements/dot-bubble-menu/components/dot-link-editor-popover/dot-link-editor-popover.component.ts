@@ -182,10 +182,15 @@ export class DotLinkEditorPopoverComponent implements OnDestroy {
         const target = this.linkTargetAttribute();
         const isImageNode = this.editor().isActive('dotImage');
 
+        const searchResultIndex = this.searchResultsListbox?.focusedOptionIndex() ?? -1;
+        const searchResult = this.searchResults()[searchResultIndex];
+
+        const linkToSave = searchResult?.url || linkUrl;
+
         if (isImageNode) {
-            this.editor().chain().focus().setImageLink({ href: linkUrl, target }).run();
+            this.editor().chain().focus().setImageLink({ href: linkToSave, target }).run();
         } else {
-            this.editor().chain().focus().setLink({ href: linkUrl, target }).run();
+            this.editor().chain().focus().setLink({ href: linkToSave, target }).run();
         }
 
         this.popover.hide();

@@ -6,7 +6,7 @@
 ## Installation
 
 ```bash
-npm install @dotcms/types@next --save-dev
+npm install @dotcms/types@latest --save-dev
 ```
 
 ## Overview
