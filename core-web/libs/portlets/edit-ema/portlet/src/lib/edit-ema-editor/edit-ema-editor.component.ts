@@ -800,9 +800,9 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                         } else {
                             this.uveStore.savePage(pageContainers);
                         }
-                    });
 
-                this.dialog.resetDialog();
+                        this.dialog.resetDialog();
+                    });
             },
             [NG_CUSTOM_EVENTS.SAVE_MENU_ORDER]: () => {
                 this.messageService.add({
