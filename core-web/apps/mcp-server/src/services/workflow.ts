@@ -130,10 +130,7 @@ export class WorkflowService extends AgnosticClient {
         };
         const defaultComment = defaultComments[actionType];
 
-        const urlObj = new URL(
-            `${this.ACTION_FIRE_URL}/${actionType}`,
-            this.dotcmsUrl
-        );
+        const urlObj = new URL(`${this.ACTION_FIRE_URL}/${actionType}`, this.dotcmsUrl);
         urlObj.searchParams.set('identifier', validatedParams.data.identifier);
         urlObj.searchParams.set('variantName', validatedParams.data.variantName);
 
