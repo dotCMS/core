@@ -8073,6 +8073,7 @@ paths:
       responses:
         default:
           content:
+            application/javascript: {}
             application/json: {}
           description: default response
       tags:
