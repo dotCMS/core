@@ -3,7 +3,7 @@ import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
 import { DotCMSExtendedPageResponse, DotCMSPageRequestParams } from '@dotcms/types';
 import { filter, startWith, switchMap, tap } from 'rxjs/operators';
 import { PageService } from './page.service';
-import { DotCMSEditablePageService } from '@dotcms/angular/next';
+import { DotCMSEditablePageService } from '@dotcms/angular';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { getUVEState } from '@dotcms/uve';
 import { ComposedPageResponse, PageState } from '../shared/models';

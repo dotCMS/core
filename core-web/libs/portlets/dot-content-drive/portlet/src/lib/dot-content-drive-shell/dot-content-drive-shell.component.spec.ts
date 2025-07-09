@@ -3,6 +3,7 @@ import { createComponentFactory, mockProvider, Spectator, SpyObject } from '@ngn
 import { of, throwError } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
+import { By } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
 
 import { DotContentSearchService, DotSiteService } from '@dotcms/data-access';
@@ -11,9 +12,9 @@ import { DotFolderListViewComponent } from '@dotcms/portlets/content-drive/ui';
 
 import { DotContentDriveShellComponent } from './dot-content-drive-shell.component';
 
-import { SYSTEM_HOST } from '../shared/constants';
+import { DEFAULT_PAGINATION, SYSTEM_HOST } from '../shared/constants';
 import { mockItems, mockRoute, mockSearchResponse } from '../shared/mocks';
-import { DotContentDriveStatus } from '../shared/models';
+import { DotContentDriveSortOrder, DotContentDriveStatus } from '../shared/models';
 import { DotContentDriveStore } from '../store/dot-content-drive.store';
 
 describe('DotContentDriveShellComponent', () => {
@@ -44,11 +45,21 @@ describe('DotContentDriveShellComponent', () => {
             providers: [
                 mockProvider(DotContentDriveStore, {
                     initContentDrive: jest.fn(),
-                    setItems: jest.fn(),
-                    setStatus: jest.fn(),
                     currentSite: jest.fn(),
                     $query: jest.fn(),
-                    items: jest.fn().mockReturnValue(mockItems)
+                    items: jest.fn().mockReturnValue(mockItems),
+                    pagination: jest.fn().mockReturnValue(DEFAULT_PAGINATION),
+                    filters: jest.fn().mockReturnValue({}),
+                    status: jest.fn().mockReturnValue(DotContentDriveStatus.LOADING),
+                    sort: jest
+                        .fn()
+                        .mockReturnValue({ field: 'modDate', order: DotContentDriveSortOrder.ASC }),
+                    totalItems: jest.fn().mockReturnValue(mockItems.length),
+                    setItems: jest.fn(),
+                    setStatus: jest.fn(),
+                    setPagination: jest.fn(),
+                    setSort: jest.fn(),
+                    setFilters: jest.fn()
                 })
             ]
         });
@@ -143,11 +154,12 @@ describe('DotContentDriveShellComponent', () => {
 
             expect(contentSearchService.get).toHaveBeenCalledWith({
                 query: '+testField:testValue',
-                limit: 40,
-                offset: 0
+                limit: DEFAULT_PAGINATION.limit,
+                offset: DEFAULT_PAGINATION.offset,
+                sort: 'score,modDate asc'
             });
 
-            expect(store.setItems).toHaveBeenCalledWith(mockItems);
+            expect(store.setItems).toHaveBeenCalledWith(mockItems, mockItems.length);
         });
 
         it('should not fetch content when current site is SYSTEM_HOST', () => {
@@ -174,6 +186,32 @@ describe('DotContentDriveShellComponent', () => {
             expect(store.setStatus).toHaveBeenCalledWith(DotContentDriveStatus.ERROR);
             expect(store.setItems).not.toHaveBeenCalled();
         });
+
+        it('should handle sorting', () => {
+            store.sort.mockReturnValue({ field: 'baseType', order: DotContentDriveSortOrder.DESC });
+            store.$query.mockReturnValue('+testField:testValue');
+            spectator.detectChanges();
+
+            expect(contentSearchService.get).toHaveBeenCalledWith({
+                query: '+testField:testValue',
+                limit: DEFAULT_PAGINATION.limit,
+                offset: DEFAULT_PAGINATION.offset,
+                sort: 'score,baseType desc'
+            });
+        });
+
+        it('should handle pagination', () => {
+            store.pagination.mockReturnValue({ limit: 10, offset: 0 });
+            store.$query.mockReturnValue('+testField:testValue');
+            spectator.detectChanges();
+
+            expect(contentSearchService.get).toHaveBeenCalledWith({
+                query: '+testField:testValue',
+                limit: 10,
+                offset: 0,
+                sort: 'score,modDate asc'
+            });
+        });
     });
 
     describe('DOM', () => {
@@ -183,7 +221,87 @@ describe('DotContentDriveShellComponent', () => {
             const folderListView = spectator.query(DotFolderListViewComponent);
 
             expect(folderListView).toBeTruthy();
-            expect(folderListView?.items()).toEqual(mockItems);
+            expect(folderListView?.$items()).toEqual(mockItems);
+        });
+    });
+
+    describe('onPaginate', () => {
+        it('should set pagination with provided values', () => {
+            const folderListView = spectator.debugElement.query(
+                By.directive(DotFolderListViewComponent)
+            );
+
+            spectator.triggerEventHandler(folderListView, 'paginate', { rows: 10, first: 0 });
+
+            expect(store.setPagination).toHaveBeenCalledWith({ limit: 10, offset: 0 });
+        });
+
+        it('should not set pagination if rows are not provided', () => {
+            const folderListView = spectator.debugElement.query(
+                By.directive(DotFolderListViewComponent)
+            );
+
+            spectator.triggerEventHandler(folderListView, 'paginate', { rows: 10 });
+
+            expect(store.setPagination).not.toHaveBeenCalled();
+        });
+
+        it('should not set pagination if first are not provided', () => {
+            const folderListView = spectator.debugElement.query(
+                By.directive(DotFolderListViewComponent)
+            );
+
+            spectator.triggerEventHandler(folderListView, 'paginate', { first: 0 });
+
+            expect(store.setPagination).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('onSort', () => {
+        it('should set sort with provided values', () => {
+            const folderListView = spectator.debugElement.query(
+                By.directive(DotFolderListViewComponent)
+            );
+
+            spectator.triggerEventHandler(folderListView, 'sort', { field: 'modDate', order: 1 });
+
+            expect(store.setSort).toHaveBeenCalledWith({
+                field: 'modDate',
+                order: DotContentDriveSortOrder.ASC
+            });
+        });
+
+        it('should not set sort if order is not provided', () => {
+            const folderListView = spectator.debugElement.query(
+                By.directive(DotFolderListViewComponent)
+            );
+
+            spectator.triggerEventHandler(folderListView, 'sort', { field: 'modDate' });
+
+            expect(store.setSort).not.toHaveBeenCalled();
+        });
+
+        it('should not set sort if field is not provided', () => {
+            const folderListView = spectator.debugElement.query(
+                By.directive(DotFolderListViewComponent)
+            );
+
+            spectator.triggerEventHandler(folderListView, 'sort', { order: 1 });
+
+            expect(store.setSort).not.toHaveBeenCalled();
+        });
+
+        it('should set sort with default order if order is 0', () => {
+            const folderListView = spectator.debugElement.query(
+                By.directive(DotFolderListViewComponent)
+            );
+
+            spectator.triggerEventHandler(folderListView, 'sort', { field: 'modDate', order: 0 });
+
+            expect(store.setSort).toHaveBeenCalledWith({
+                field: 'modDate',
+                order: DotContentDriveSortOrder.ASC
+            });
         });
     });
 });

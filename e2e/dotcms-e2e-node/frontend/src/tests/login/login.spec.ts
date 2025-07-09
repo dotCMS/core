@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { admin1, wrong1, wrong2 } from "./credentialsData";
 import { LoginPage } from "@pages";
+import { BreadcrumbComponent } from "@components/breadcrumb.component";
 
 const validCredentials = [
   { username: admin1.username, password: admin1.password }, // admin user
@@ -14,10 +15,12 @@ validCredentials.forEach(({ username, password }) => {
     const loginPage = new LoginPage(page);
     await loginPage.login(username, password);
 
-    const gettingStartedLocator = page.getByRole("link", {
-      name: "Getting Started",
-    });
-    await expect(gettingStartedLocator).toBeVisible();
+    const breadcrumbComponent = new BreadcrumbComponent(page);
+    const breadcrumb = breadcrumbComponent.getBreadcrumb();
+    await expect(breadcrumb).toHaveText("Getting Started");
+
+    const title = breadcrumbComponent.getTitle();
+    await expect(title).toHaveText("Welcome");
   });
 });
 

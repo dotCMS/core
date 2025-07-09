@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-import { useEditableDotCMSPage } from "@dotcms/react/next";
+import { useEditableDotCMSPage } from "@dotcms/react";
 
 import { dotCMSClient } from "@/dotcms-integration";
 import { useDebounce } from "@/hooks";
