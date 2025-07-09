@@ -20,11 +20,14 @@
                 <dot-drop-zone
                     [accept]="store.acceptedFiles()"
                     [maxFileSize]="store.maxFileSize()"
+                    [disabled]="$disabled()"
                     (fileDragLeave)="store.setDropZoneState(false)"
                     (fileDragOver)="store.setDropZoneState(true)"
                     (fileDropped)="handleFileDrop($event)"
                     data-testId="dropzone">
-                    <dot-file-field-ui-message [uiMessage]="store.uiMessage()">
+                    <dot-file-field-ui-message
+                        [uiMessage]="store.uiMessage()"
+                        [disabled]="$disabled()">
                         <button
                             (click)="inputFile.click()"
                             [disabled]="$disabled()"

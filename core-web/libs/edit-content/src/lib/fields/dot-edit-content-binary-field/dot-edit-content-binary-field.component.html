@@ -17,10 +17,14 @@
                         (fileDropped)="handleFileDrop($event)"
                         [accept]="accept"
                         [maxFileSize]="maxFileSize"
+                        [disabled]="$disabled()"
                         data-testId="dropzone">
-                        <dot-binary-field-ui-message [uiMessage]="vm.uiMessage">
+                        <dot-binary-field-ui-message
+                            [uiMessage]="vm.uiMessage"
+                            [disabled]="$disabled()">
                             <button
                                 (click)="openFilePicker()"
+                                [disabled]="$disabled()"
                                 class="binary-field__drop-zone-btn"
                                 data-testId="choose-file-btn"
                                 type="button">

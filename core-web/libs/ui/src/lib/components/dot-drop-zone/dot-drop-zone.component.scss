@@ -1,4 +1,11 @@
+@use "variables" as *;
+
 :host {
     height: 100%;
     width: 100%;
+
+    &.disabled {
+        opacity: $field-disabled-opacity;
+        pointer-events: none;
+    }
 }
