@@ -32,11 +32,11 @@ export class AgnosticClient {
         this.dotcmsUrl = process.env.DOTCMS_URL || '';
         this.authToken = process.env.AUTH_TOKEN || '';
 
-        if (!this.dotcmsUrl) {
+        if (!this.dotcmsUrl?.trim()) {
             throw new Error('DOTCMS_URL environment variable is required');
         }
 
-        if (!this.authToken) {
+        if (!this.authToken?.trim()) {
             throw new Error('AUTH_TOKEN environment variable is required');
         }
 
