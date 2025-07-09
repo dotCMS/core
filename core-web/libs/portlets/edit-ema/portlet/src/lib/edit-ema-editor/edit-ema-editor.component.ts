@@ -799,9 +799,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                             this.uveStore.setUveStatus(UVE_STATUS.LOADED);
                         } else {
                             this.uveStore.savePage(pageContainers);
+                            this.dialog.resetDialog();
                         }
-
-                        this.dialog.resetDialog();
                     });
             },
             [NG_CUSTOM_EVENTS.SAVE_MENU_ORDER]: () => {
