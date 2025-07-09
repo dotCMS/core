@@ -10,7 +10,15 @@ import {
     model,
     signal
 } from '@angular/core';
-import { ControlValueAccessor, FormsModule, NG_VALUE_ACCESSOR } from '@angular/forms';
+import {
+    AbstractControl,
+    ControlValueAccessor,
+    FormsModule,
+    NG_VALIDATORS,
+    NG_VALUE_ACCESSOR,
+    ValidationErrors,
+    Validator
+} from '@angular/forms';
 
 import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -21,7 +29,10 @@ import { TooltipModule } from 'primeng/tooltip';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
 
-// Define the field interface based on the usage pattern
+/**
+ * Configuration interface for the generated string field
+ * Defines the structure and metadata required for field rendering and functionality
+ */
 interface GeneratedStringField {
     name: string;
     label: string;
@@ -34,6 +45,19 @@ interface GeneratedStringField {
     buttonEndpoint: string;
 }
 
+/**
+ * A custom form control component that provides a text input with an integrated
+ * string generation feature. The component implements ControlValueAccessor to work
+ * seamlessly with Angular reactive and template-driven forms.
+ *
+ * Features:
+ * - Text input with real-time value binding
+ * - Generate button that calls a backend API to create new string values
+ * - Confirmation dialog when replacing existing values
+ * - Full integration with Angular Forms (validation, disabled state, etc.)
+ * - Support for hints, warnings, and accessibility features
+ *
+ */
 @Component({
     selector: 'dot-apps-configuration-detail-generated-string-field',
     standalone: true,
@@ -55,44 +79,100 @@ interface GeneratedStringField {
             provide: NG_VALUE_ACCESSOR,
             useExisting: forwardRef(() => DotAppsConfigurationDetailGeneratedStringFieldComponent),
             multi: true
+        },
+        {
+            provide: NG_VALIDATORS,
+            useExisting: forwardRef(() => DotAppsConfigurationDetailGeneratedStringFieldComponent),
+            multi: true
         }
     ]
 })
 export class DotAppsConfigurationDetailGeneratedStringFieldComponent
-    implements ControlValueAccessor
+    implements ControlValueAccessor, Validator
 {
-    // Dependency injection
     readonly #confirmationService = inject(ConfirmationService);
     readonly #http = inject(HttpClient);
     readonly #dotMessageService = inject(DotMessageService);
 
-    // Input for field configuration
+    /**
+     * Required input containing the field configuration and metadata
+     * Defines all aspects of the field including labels, endpoints, and validation rules
+     */
     $field = input.required<GeneratedStringField>({ alias: 'field' });
 
-    // Model signal for bidirectional binding
-    protected readonly $value = model<string>('');
-    protected readonly $isDisabled = signal<boolean>(false);
+    /**
+     * Model signal for bidirectional binding with form controls
+     * Maintains the current value of the input field and syncs with Angular Forms
+     */
+    readonly $value = model<string>('');
 
-    // ControlValueAccessor methods
+    /**
+     * Signal tracking the disabled state of the component
+     * Updated automatically by Angular Forms when the control is enabled/disabled
+     */
+    readonly $isDisabled = signal<boolean>(false);
 
-    private onChange = (value: string) => {
-        // empty
+    /**
+     * Signal tracking the loading state during string generation
+     * True when a generation request is in progress, false otherwise
+     */
+    readonly $isLoading = signal<boolean>(false);
+
+    /**
+     * Signal tracking validation errors for visual feedback
+     * Contains validation errors when the field is invalid
+     */
+    readonly $validationErrors = signal<ValidationErrors | null>(null);
+
+    // ControlValueAccessor callback functions
+
+    /**
+     * Callback function triggered when the component value changes
+     * Registered by Angular Forms to receive value updates
+     */
+    private onChange = (_value: string) => {
+        // Implementation provided by registerOnChange
     };
+
+    /**
+     * Callback function triggered when the component is touched (loses focus)
+     * Registered by Angular Forms to track interaction state
+     */
     private onTouched = () => {
-        // empty
+        // Implementation provided by registerOnTouched
     };
 
+    /**
+     * Initializes the component and sets up the effect for synchronizing
+     * model signal changes with the ControlValueAccessor onChange callback.
+     * This ensures that form controls are notified when the value changes.
+     */
     constructor() {
         // Sync model signal changes with ControlValueAccessor
         effect(() => {
             const currentValue = this.$value();
             this.onChange(currentValue);
+
+            // Update validation state
+            this.updateValidationState();
         });
+    }
+
+    /**
+     * Updates the validation state based on current value
+     * @private
+     */
+    private updateValidationState(): void {
+        const mockControl = { value: this.$value() } as AbstractControl;
+        const errors = this.validate(mockControl);
+        this.$validationErrors.set(errors);
     }
 
     /**
      * Writes a new value to the component
      * Called by Angular forms when the form control value changes
+     *
+     * @param value - The new value to set, or null/undefined for empty
      */
     writeValue(value: string): void {
         this.$value.set(value || '');
@@ -100,6 +180,8 @@ export class DotAppsConfigurationDetailGeneratedStringFieldComponent
 
     /**
      * Registers a callback function that should be called when the control's value changes
+     *
+     * @param fn - Callback function that receives the new value
      */
     registerOnChange(fn: (value: string) => void): void {
         this.onChange = fn;
@@ -107,6 +189,8 @@ export class DotAppsConfigurationDetailGeneratedStringFieldComponent
 
     /**
      * Registers a callback function that should be called when the control is touched
+     *
+     * @param fn - Callback function called when the control loses focus
      */
     registerOnTouched(fn: () => void): void {
         this.onTouched = fn;
@@ -114,40 +198,23 @@ export class DotAppsConfigurationDetailGeneratedStringFieldComponent
 
     /**
      * Called when the form control is disabled/enabled
+     * Updates the component's disabled state signal
+     *
+     * @param isDisabled - True if the control should be disabled, false otherwise
      */
     setDisabledState(isDisabled: boolean): void {
         this.$isDisabled.set(isDisabled);
     }
 
     /**
-     * Handles the blur event and marks the control as touched
-     */
-    protected handleBlur(): void {
-        this.onTouched();
-    }
-
-    /**
-     * Makes HTTP request to generate string from backend
-     */
-    private generateFromBackend(): void {
-        const endpoint = this.$field().buttonEndpoint;
-        this.#http.get(endpoint, { responseType: 'text' }).subscribe({
-            next: (response: string) => {
-                this.$value.set(response);
-                this.onTouched();
-            },
-            error: (error) => {
-                console.error('Error generating string:', error);
-            }
-        });
-    }
-
-    /**
-     * Generates a new string value with confirmation when input has value
+     * Initiates the string generation process with user confirmation when needed.
+     * If the current input is empty, generates immediately. If there's existing content,
+     * shows a confirmation dialog to prevent accidental data loss.
+     *
+     * @param event - The click event from the generate button, used for positioning the confirmation dialog
      */
     protected generateString(event: Event): void {
         const currentValue = this.$value();
-
         const isEmpty = !currentValue || currentValue.trim().length === 0;
 
         if (isEmpty) {
@@ -170,5 +237,44 @@ export class DotAppsConfigurationDetailGeneratedStringFieldComponent
                 }
             });
         }
+    }
+
+    /**
+     * Makes an HTTP request to the configured endpoint to generate a new string value.
+     * Updates the component value with the response and marks the control as touched.
+     * Handles errors by logging them to the console.
+     *
+     * @private
+     */
+    private generateFromBackend(): void {
+        const endpoint = this.$field().buttonEndpoint;
+
+        this.$isLoading.set(true);
+
+        this.#http.get(endpoint, { responseType: 'text' }).subscribe({
+            next: (response: string) => {
+                this.$value.set(response);
+                this.onTouched();
+                this.$isLoading.set(false);
+            },
+            error: (error) => {
+                console.error('Error generating string:', error);
+                this.$isLoading.set(false);
+            }
+        });
+    }
+
+    /**
+     * Custom validator to prevent spaces in the input value
+     * @param control - The form control to validate
+     * @returns ValidationErrors if spaces are found, null otherwise
+     */
+    validate(control: AbstractControl): ValidationErrors | null {
+        const value = control.value;
+        if (value && typeof value === 'string' && value.includes(' ')) {
+            return { noSpaces: { message: 'Spaces are not allowed' } };
+        }
+
+        return null;
     }
 }

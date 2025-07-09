@@ -1,15 +1,14 @@
 import {
-    AfterViewInit,
     Component,
+    effect,
     ElementRef,
-    EventEmitter,
+    inject,
+    input,
     OnInit,
-    Output,
-    ViewChild,
-    computed,
-    input
+    output,
+    viewChild
 } from '@angular/core';
-import { NgForm, UntypedFormControl, UntypedFormGroup, Validators } from '@angular/forms';
+import { UntypedFormControl, UntypedFormGroup, Validators } from '@angular/forms';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotAppsSecret } from '@dotcms/dotcms-models';
@@ -25,40 +24,39 @@ enum FieldStatus {
     templateUrl: './dot-apps-configuration-detail-form.component.html',
     styleUrls: ['./dot-apps-configuration-detail-form.component.scss']
 })
-export class DotAppsConfigurationDetailFormComponent implements OnInit, AfterViewInit {
-    @ViewChild('form', { static: true }) public form: NgForm;
-    @ViewChild('formContainer', { static: true }) public formContainer: ElementRef;
+export class DotAppsConfigurationDetailFormComponent implements OnInit {
+    #dotMessageService = inject(DotMessageService);
 
-    // Convert to signals
-    formFields = input<DotAppsSecret[]>([]);
-    appConfigured = input<boolean>(false);
-    @Output() data = new EventEmitter<{ [key: string]: string }>();
-    @Output() valid = new EventEmitter<boolean>();
+    $formContainer = viewChild<ElementRef>('formContainer');
+
+    $formFields = input<DotAppsSecret[]>([], { alias: 'formFields' });
+    $appConfigured = input<boolean>(false, { alias: 'appConfigured' });
+
+    readonly data = output<{ [key: string]: string }>();
+    readonly valid = output<boolean>();
+
     myFormGroup: UntypedFormGroup;
 
-    // Computed signal for button enabled state
-    protected readonly isButtonEnabled = computed(() => {
-        const appConfiguredValue = this.appConfigured();
+    constructor() {
+        effect(() => {
+            const formFields = this.$formFields();
+            const formContainer = this.$formContainer();
 
-        return (field: DotAppsSecret): boolean => {
-            if (field.enableButton !== undefined) {
-                return field.enableButton;
+            if (formFields.length > 0 && formContainer) {
+                const firstField = formContainer.nativeElement?.querySelector(
+                    `#${formFields[0].name}`
+                );
+                if (firstField && typeof firstField.focus === 'function') {
+                    firstField.focus();
+                }
             }
-
-            if (field.type === 'BUTTON' && field.required === true) {
-                return true;
-            }
-
-            return appConfiguredValue;
-        };
-    });
-
-    constructor(private dotMessageService: DotMessageService) {}
+        });
+    }
 
     ngOnInit() {
         const group = {};
 
-        this.formFields().forEach((field: DotAppsSecret) => {
+        this.$formFields().forEach((field: DotAppsSecret) => {
             const status = this.resolveFieldStatus(field);
             group[field.name] = new UntypedFormControl(
                 this.getFieldValue(field, status),
@@ -73,11 +71,6 @@ export class DotAppsConfigurationDetailFormComponent implements OnInit, AfterVie
         });
 
         setTimeout(() => this.emitValues());
-    }
-
-    ngAfterViewInit() {
-        // Do it this way because the form is rendered dynamically
-        this.formContainer.nativeElement.querySelector(`#${this.formFields()[0].name}`).focus();
     }
 
     /**
@@ -99,7 +92,7 @@ export class DotAppsConfigurationDetailFormComponent implements OnInit, AfterVie
         STRING: (field: DotAppsSecret, status: FieldStatus) => {
             const fieldValue =
                 status === FieldStatus.DISABLED_WITH_MESSAGE
-                    ? this.dotMessageService.get('apps.param.set.from.env')
+                    ? this.#dotMessageService.get('apps.param.set.from.env')
                     : field.value;
 
             return {

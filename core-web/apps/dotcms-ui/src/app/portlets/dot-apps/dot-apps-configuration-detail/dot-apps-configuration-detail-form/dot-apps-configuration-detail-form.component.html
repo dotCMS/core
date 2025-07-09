@@ -15,7 +15,7 @@
     </ng-template>
 
     <div class="dot-apps-configuration-detail__form" #formContainer>
-        @for (field of formFields(); track field) {
+        @for (field of $formFields(); track field) {
             <div [attr.data-testid]="field.name" class="field">
                 @switch (field.type) {
                     @case ('BUTTON') {
@@ -28,7 +28,7 @@
                             (click)="onIntegrate(field.value)"
                             [id]="field.name"
                             [label]="field.label"
-                            [disabled]="!isButtonEnabled()"
+                            [disabled]="!$appConfigured()"
                             pButton
                             type="button"></button>
                         <ng-container
@@ -61,6 +61,7 @@
                     @case ('GENERATED_STRING') {
                         <ng-container *ngTemplateOutlet="labelField; context: { field: field }" />
                         <dot-apps-configuration-detail-generated-string-field
+                            data-testid="generated-string-field"
                             [formControlName]="field.name"
                             [field]="field" />
                     }

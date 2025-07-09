@@ -8,14 +8,14 @@
             data-testid="generated-string-input"
             [id]="field.name"
             [(ngModel)]="$value"
-            (blur)="handleBlur()"
             [placeholder]="'apps.content-analytics.generated.string.placeholder' | dm"
             pInputText />
 
         <button
             type="button"
             data-testid="generate-button"
-            [disabled]="$isDisabled()"
+            [disabled]="$isDisabled() || $isLoading()"
+            [loading]="$isLoading()"
             (click)="generateString($event)"
             pButton
             [label]="field.buttonLabel"></button>
