@@ -246,13 +246,31 @@ needs_openapi_compile() {
     # Check for changes in any @Path annotated files
     if echo "$staged_files" | grep -E "\.java$" > /dev/null 2>&1; then
         # Check if any staged Java files contain REST annotations
-        local java_files=$(echo "$staged_files" | grep "\.java$")
-        for file in $java_files; do
-            if [ -f "${root_dir}/${file}" ] && grep -E "@Path|@GET|@POST|@PUT|@DELETE|@OpenAPIDefinition|@Tag|@Operation" "${root_dir}/${file}" > /dev/null 2>&1; then
-                rest_files_changed=true
-                break
+        # Use macOS-compatible approach to handle files with spaces and special characters
+        local java_files_list
+        java_files_list=$(echo "$staged_files" | grep "\.java$")
+        
+        # Use a more portable approach for iterating over filenames
+        local IFS=$'\n'
+        for file in $java_files_list; do
+            # Check if file exists (for modified files) or if it's a deleted file containing REST annotations
+            if [ -f "${root_dir}/${file}" ]; then
+                # File exists, check for REST annotations
+                if grep -E "@Path|@GET|@POST|@PUT|@DELETE|@OpenAPIDefinition|@Tag|@Operation" "${root_dir}/${file}" > /dev/null 2>&1; then
+                    rest_files_changed=true
+                    break
+                fi
+            else
+                # File was deleted, check git show for REST annotations in the deleted content
+                if git show "HEAD:${file}" 2>/dev/null | grep -E "@Path|@GET|@POST|@PUT|@DELETE|@OpenAPIDefinition|@Tag|@Operation" > /dev/null 2>&1; then
+                    rest_files_changed=true
+                    break
+                fi
             fi
         done
+        
+        # Restore IFS to default
+        unset IFS
     fi
 
     # If no REST files changed, no compile needed
