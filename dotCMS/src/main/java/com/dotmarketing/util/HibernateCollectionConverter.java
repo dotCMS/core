@@ -2,8 +2,8 @@ package com.dotmarketing.util;
 
 import com.thoughtworks.xstream.converters.collections.CollectionConverter;
 import com.thoughtworks.xstream.mapper.Mapper;
-import com.dotcms.repackage.net.sf.hibernate.collection.List;
-import com.dotcms.repackage.net.sf.hibernate.collection.Set;
+import org.hibernate.collection.internal.PersistentList;
+import org.hibernate.collection.internal.PersistentSet;
 
 public class HibernateCollectionConverter extends CollectionConverter {
     public HibernateCollectionConverter(Mapper mapper) {
@@ -11,6 +11,6 @@ public class HibernateCollectionConverter extends CollectionConverter {
     }
 
     public boolean canConvert(Class type) {
-        return super.canConvert(type) || type == List.class || type == Set.class; 
+        return super.canConvert(type) || type == PersistentList.class || type == PersistentSet.class; 
     }
 }

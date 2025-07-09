@@ -631,8 +631,7 @@ public class HibernateUtil {
 			#################################
 			*/
             Configuration cfg = new Configuration().configure();
-            cfg.setProperty("hibernate.cache.region.factory_class",
-                    "com.dotmarketing.db.NoCacheProvider");
+            // No need for custom cache provider when caching is disabled
             cfg.setProperty("hibernate.jdbc.use_scrollable_resultset", "true");
             cfg.setProperty("hibernate.cache.use_second_level_cache", "false");
             cfg.setProperty("hibernate.cache.use_query_cache", "false");

@@ -7,7 +7,7 @@ import com.dotcms.content.business.json.ContentletJsonAPI;
 import com.dotcms.content.business.json.ContentletJsonHelper;
 import com.dotcms.contenttype.util.ContentTypeImportExportUtil;
 import com.dotcms.repackage.com.google.common.collect.Lists;
-import com.dotcms.repackage.net.sf.hibernate.HibernateException;
+import org.hibernate.HibernateException;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.util.transform.TransformerLocator;
 import com.dotmarketing.beans.Clickstream;

@@ -2,7 +2,7 @@ package com.dotmarketing.util;
 
 import com.thoughtworks.xstream.converters.collections.MapConverter;
 import com.thoughtworks.xstream.mapper.Mapper;
-import com.dotcms.repackage.net.sf.hibernate.collection.Map;
+import org.hibernate.collection.internal.PersistentMap;
 
 public class HibernateMapConverter extends MapConverter {
 
@@ -11,6 +11,6 @@ public class HibernateMapConverter extends MapConverter {
     }
 
     public boolean canConvert(Class type) {
-        return super.canConvert(type) || type == Map.class; 
+        return super.canConvert(type) || type == PersistentMap.class; 
     }
 }

@@ -4,15 +4,15 @@ import java.io.Serializable;
 import java.sql.SQLException;
 import java.util.UUID;
 
-import com.dotcms.repackage.net.sf.hibernate.HibernateException;
-import com.dotcms.repackage.net.sf.hibernate.engine.SessionImplementor;
-import com.dotcms.repackage.net.sf.hibernate.id.IdentifierGenerator;
+import org.hibernate.HibernateException;
+import org.hibernate.engine.spi.SharedSessionContractImplementor;
+import org.hibernate.id.IdentifierGenerator;
 import com.dotmarketing.business.APILocator;
 
 public class UUIDGenerator implements IdentifierGenerator {
 
-	public synchronized Serializable generate(SessionImplementor arg0, Object arg1)
-			throws SQLException, HibernateException {
+	public synchronized Serializable generate(SharedSessionContractImplementor arg0, Object arg1)
+			throws HibernateException {
 		return UUIDGenerator.generateUuid();
 
 	}

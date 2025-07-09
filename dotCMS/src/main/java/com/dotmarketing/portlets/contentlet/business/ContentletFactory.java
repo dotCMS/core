@@ -2,7 +2,7 @@ package com.dotmarketing.portlets.contentlet.business;
 
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.repackage.net.sf.hibernate.ObjectNotFoundException;
+import org.hibernate.ObjectNotFoundException;
 import com.dotcms.util.transform.TransformerLocator;
 import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Identifier;

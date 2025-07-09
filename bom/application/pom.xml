@@ -242,11 +242,6 @@
             <!-- Keep repackaged hibernate for gradual migration -->
             <dependency>
                 <groupId>com.dotcms.lib</groupId>
-                <artifactId>dot.hibernate</artifactId>
-                <version>2.1.7_3</version>
-            </dependency>
-            <dependency>
-                <groupId>com.dotcms.lib</groupId>
                 <artifactId>dot.httpbridge</artifactId>
                 <version>ukv_2</version>
             </dependency>

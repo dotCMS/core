@@ -238,11 +238,6 @@
         <!-- Keep repackaged hibernate for gradual migration -->
         <dependency>
             <groupId>com.dotcms.lib</groupId>
-            <artifactId>dot.hibernate</artifactId>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.httpbridge</artifactId>
         </dependency>
         <dependency>
