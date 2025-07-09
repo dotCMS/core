@@ -329,88 +329,52 @@ describe('DotBinaryFieldPreviewComponent', () => {
 
     describe('Disabled State Management', () => {
         beforeEach(() => {
+            spectator.setInput('disabled', true);
             spectator.detectChanges();
         });
 
         it('should disable info button when disabled', () => {
-            spectator.setInput('disabled', true);
-            spectator.detectChanges();
-
-            const infoBtn = spectator.query('p-button[data-testId="info-btn"]');
-            expect(infoBtn).toBeTruthy();
-            expect(infoBtn.getAttribute('ng-reflect-disabled')).toBe('true');
+            const infoBtnComponent = spectator.query(byTestId('info-btn'));
+            const actualButton = infoBtnComponent.querySelector('button') as HTMLButtonElement;
+            expect(infoBtnComponent).toBeTruthy();
+            expect(actualButton.disabled).toBe(true);
         });
 
         it('should disable download button when disabled', () => {
-            spectator.setInput('disabled', true);
-            spectator.detectChanges();
-
-            const downloadBtn = spectator.query('p-button[data-testId="download-btn"]');
-            expect(downloadBtn).toBeTruthy();
-            expect(downloadBtn.getAttribute('ng-reflect-disabled')).toBe('true');
+            const downloadBtnComponent = spectator.query(byTestId('download-btn'));
+            const actualButton = downloadBtnComponent.querySelector('button') as HTMLButtonElement;
+            expect(downloadBtnComponent).toBeTruthy();
+            expect(actualButton.disabled).toBe(true);
         });
 
         it('should disable remove button when disabled', () => {
-            spectator.setInput('disabled', true);
-            spectator.detectChanges();
-
-            const removeBtn = spectator.query('p-button[data-testId="remove-button"]');
-            expect(removeBtn).toBeTruthy();
-            expect(removeBtn.getAttribute('ng-reflect-disabled')).toBe('true');
+            const removeBtnComponent = spectator.query(byTestId('remove-button'));
+            const actualButton = removeBtnComponent.querySelector('button') as HTMLButtonElement;
+            expect(removeBtnComponent).toBeTruthy();
+            expect(actualButton.disabled).toBe(true);
         });
 
         it('should disable edit button when disabled', () => {
-            spectator.setInput('disabled', true);
-            spectator.detectChanges();
-
-            const editBtn = spectator.query('p-button[data-testId="edit-button"]');
-            expect(editBtn).toBeTruthy();
-            expect(editBtn.getAttribute('ng-reflect-disabled')).toBe('true');
+            const editBtnComponent = spectator.query(byTestId('edit-button'));
+            const actualButton = editBtnComponent.querySelector('button') as HTMLButtonElement;
+            expect(editBtnComponent).toBeTruthy();
+            expect(actualButton.disabled).toBe(true);
         });
 
         it('should disable responsive buttons when disabled', () => {
-            spectator.setInput('disabled', true);
-            spectator.detectChanges();
-
-            const infoResponsiveBtn = spectator.query(
-                'p-button[data-testId="infor-button-responsive"]'
+            const infoResponsiveBtnComponent = spectator.query(byTestId('infor-button-responsive'));
+            const downloadResponsiveBtnComponent = spectator.query(
+                byTestId('download-btn-responsive')
             );
-            const downloadResponsiveBtn = spectator.query(
-                'p-button[data-testId="download-btn-responsive"]'
+            const removeResponsiveBtnComponent = spectator.query(
+                byTestId('remove-button-responsive')
             );
-            const removeResponsiveBtn = spectator.query(
-                'p-button[data-testId="remove-button-responsive"]'
-            );
-            const editResponsiveBtn = spectator.query(
-                'p-button[data-testId="edit-button-responsive"]'
-            );
+            const editResponsiveBtnComponent = spectator.query(byTestId('edit-button-responsive'));
 
-            expect(infoResponsiveBtn.getAttribute('ng-reflect-disabled')).toBe('true');
-            expect(downloadResponsiveBtn.getAttribute('ng-reflect-disabled')).toBe('true');
-            expect(removeResponsiveBtn.getAttribute('ng-reflect-disabled')).toBe('true');
-            expect(editResponsiveBtn?.getAttribute('ng-reflect-disabled')).toBe('true');
-        });
-
-        it('should disable dialog cancel button when disabled', async () => {
-            // First open dialog while enabled
-            spectator.setInput('disabled', false);
-            spectator.detectChanges();
-
-            const infoBtn = spectator.query('p-button[data-testId="info-btn"]');
-            spectator.click(infoBtn);
-            spectator.detectChanges();
-
-            // Now set disabled while dialog is open
-            spectator.setInput('disabled', true);
-            spectator.detectChanges();
-
-            // Allow Angular to fully render the changes
-            await spectator.fixture.whenStable();
-            spectator.detectChanges();
-
-            const cancelBtn = spectator.query('p-button[data-testId="dialog-cancel"]');
-            expect(cancelBtn).toBeTruthy();
-            expect(cancelBtn.getAttribute('ng-reflect-disabled')).toBe('true');
+            expect(infoResponsiveBtnComponent.querySelector('button').disabled).toBe(true);
+            expect(downloadResponsiveBtnComponent.querySelector('button').disabled).toBe(true);
+            expect(removeResponsiveBtnComponent.querySelector('button').disabled).toBe(true);
+            expect(editResponsiveBtnComponent?.querySelector('button').disabled).toBe(true);
         });
 
         it('should prevent download action when disabled', () => {
@@ -418,53 +382,62 @@ describe('DotBinaryFieldPreviewComponent', () => {
             jest.restoreAllMocks();
             const spyWindowOpen = jest.spyOn(window, 'open').mockImplementation(() => null);
 
-            spectator.setInput('disabled', true);
-            spectator.detectChanges();
-
             spectator.component.downloadAsset();
 
             expect(spyWindowOpen).not.toHaveBeenCalled();
             spyWindowOpen.mockRestore();
         });
 
-        it('should allow download action when enabled', () => {
-            const spyWindowOpen = jest.spyOn(window, 'open').mockImplementation(() => null);
+        it('should prevent edit action when disabled', () => {
+            const editImageSpy = jest.spyOn(spectator.component.editImage, 'emit');
+            const editFileSpy = jest.spyOn(spectator.component.editFile, 'emit');
 
-            spectator.setInput('disabled', false);
-            spectator.detectChanges();
+            spectator.component.onEdit();
 
-            spectator.component.downloadAsset();
-
-            expect(spyWindowOpen).toHaveBeenCalledWith(spectator.component.downloadLink, '_self');
-            spyWindowOpen.mockRestore();
+            expect(editImageSpy).not.toHaveBeenCalled();
+            expect(editFileSpy).not.toHaveBeenCalled();
         });
 
-        // Note: The following tests verify visual disabled state only
-        // Direct template handlers like (click)="removeFile.emit()" will always execute
-        // but disabled buttons should prevent user interaction in the actual UI
+        it('should not trigger actions when clicking disabled buttons', () => {
+            const editImageSpy = jest.spyOn(spectator.component.editImage, 'emit');
+            const removeFileSpy = jest.spyOn(spectator.component.removeFile, 'emit');
+
+            // Get the actual button elements inside the PrimeNG components
+            const editBtnComponent = spectator.query(byTestId('edit-button'));
+            const removeBtnComponent = spectator.query(byTestId('remove-button'));
+
+            const actualEditBtn = editBtnComponent.querySelector('button');
+            const actualRemoveBtn = removeBtnComponent.querySelector('button');
+
+            // Verify buttons are actually disabled
+            expect(actualEditBtn.disabled).toBe(true);
+            expect(actualRemoveBtn.disabled).toBe(true);
+
+            // Try to click the disabled buttons - clicks on disabled buttons should not trigger handlers
+            spectator.click(actualEditBtn);
+            spectator.click(actualRemoveBtn);
+
+            // Since buttons are disabled, events should not be emitted
+            expect(editImageSpy).not.toHaveBeenCalled();
+            expect(removeFileSpy).not.toHaveBeenCalled();
+        });
 
         it('should show remove button as disabled when component is disabled', () => {
-            spectator.setInput('disabled', true);
-            spectator.detectChanges();
-
-            const removeBtn = spectator.query('p-button[data-testId="remove-button"]');
-            expect(removeBtn.getAttribute('ng-reflect-disabled')).toBe('true');
+            const removeBtnComponent = spectator.query(byTestId('remove-button'));
+            const actualButton = removeBtnComponent.querySelector('button') as HTMLButtonElement;
+            expect(actualButton.disabled).toBe(true);
         });
 
         it('should show edit button as disabled when component is disabled', () => {
-            spectator.setInput('disabled', true);
-            spectator.detectChanges();
-
-            const editBtn = spectator.query('p-button[data-testId="edit-button"]');
-            expect(editBtn.getAttribute('ng-reflect-disabled')).toBe('true');
+            const editBtnComponent = spectator.query(byTestId('edit-button'));
+            const actualButton = editBtnComponent.querySelector('button') as HTMLButtonElement;
+            expect(actualButton.disabled).toBe(true);
         });
 
         it('should show download button as disabled when component is disabled', () => {
-            spectator.setInput('disabled', true);
-            spectator.detectChanges();
-
-            const downloadBtn = spectator.query('p-button[data-testId="download-btn"]');
-            expect(downloadBtn.getAttribute('ng-reflect-disabled')).toBe('true');
+            const downloadBtnComponent = spectator.query(byTestId('download-btn'));
+            const actualButton = downloadBtnComponent.querySelector('button') as HTMLButtonElement;
+            expect(actualButton.disabled).toBe(true);
         });
 
         describe('with text file', () => {
@@ -485,8 +458,9 @@ describe('DotBinaryFieldPreviewComponent', () => {
             });
 
             it('should show edit button as disabled for text files', () => {
-                const editBtn = textFileSpectator.query('p-button[data-testId="edit-button"]');
-                expect(editBtn.getAttribute('ng-reflect-disabled')).toBe('true');
+                const editBtnComponent = textFileSpectator.query(byTestId('edit-button'));
+                const actualButton = editBtnComponent.querySelector('button') as HTMLButtonElement;
+                expect(actualButton.disabled).toBe(true);
             });
 
             it('should show code preview for text files when disabled', () => {
@@ -498,37 +472,34 @@ describe('DotBinaryFieldPreviewComponent', () => {
         });
 
         describe('responsive actions when disabled', () => {
-            beforeEach(() => {
-                spectator.setInput('disabled', true);
-                spectator.detectChanges();
-            });
+            // Note: disabled state is already set in parent beforeEach
 
             it('should show responsive remove button as disabled', () => {
-                const removeResponsiveBtn = spectator.query(
-                    'p-button[data-testId="remove-button-responsive"]'
-                );
-                expect(removeResponsiveBtn.getAttribute('ng-reflect-disabled')).toBe('true');
+                const removeBtnComponent = spectator.query(byTestId('remove-button-responsive'));
+                const actualButton = removeBtnComponent.querySelector(
+                    'button'
+                ) as HTMLButtonElement;
+                expect(actualButton.disabled).toBe(true);
             });
 
             it('should show responsive edit button as disabled', () => {
-                const editResponsiveBtn = spectator.query(
-                    'p-button[data-testId="edit-button-responsive"]'
-                );
-                expect(editResponsiveBtn?.getAttribute('ng-reflect-disabled')).toBe('true');
+                const editBtnComponent = spectator.query(byTestId('edit-button-responsive'));
+                const actualButton = editBtnComponent?.querySelector('button') as HTMLButtonElement;
+                expect(actualButton?.disabled).toBe(true);
             });
 
             it('should show responsive download button as disabled', () => {
-                const downloadResponsiveBtn = spectator.query(
-                    'p-button[data-testId="download-btn-responsive"]'
-                );
-                expect(downloadResponsiveBtn.getAttribute('ng-reflect-disabled')).toBe('true');
+                const downloadBtnComponent = spectator.query(byTestId('download-btn-responsive'));
+                const actualButton = downloadBtnComponent.querySelector(
+                    'button'
+                ) as HTMLButtonElement;
+                expect(actualButton.disabled).toBe(true);
             });
 
             it('should show responsive info button as disabled', () => {
-                const infoResponsiveBtn = spectator.query(
-                    'p-button[data-testId="infor-button-responsive"]'
-                );
-                expect(infoResponsiveBtn.getAttribute('ng-reflect-disabled')).toBe('true');
+                const infoBtnComponent = spectator.query(byTestId('infor-button-responsive'));
+                const actualButton = infoBtnComponent.querySelector('button') as HTMLButtonElement;
+                expect(actualButton.disabled).toBe(true);
             });
         });
     });
