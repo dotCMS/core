@@ -1061,7 +1061,7 @@ public class ImportStarterUtil {
                 this.deleteTable(table);
                 Logger.info(this, "Deleted all records from " + table);
             }
-        } catch (HibernateException e) {
+        } catch (Exception e) {
             Logger.error(this,e.getMessage(),e);
         }
 

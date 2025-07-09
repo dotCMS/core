@@ -44,11 +44,11 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import com.dotcms.repackage.net.sf.hibernate.HibernateException;
-import com.dotcms.repackage.net.sf.hibernate.ObjectNotFoundException;
-import com.dotcms.repackage.net.sf.hibernate.Query;
-import com.dotcms.repackage.net.sf.hibernate.ScrollableResults;
-import com.dotcms.repackage.net.sf.hibernate.Session;
+import org.hibernate.HibernateException;
+import org.hibernate.ObjectNotFoundException;
+import org.hibernate.Query;
+import org.hibernate.ScrollableResults;
+import org.hibernate.Session;
 
 /**
  * <a href="UserPersistence.java.html"><b><i>View Source</i></b></a>
@@ -479,7 +479,7 @@ public class UserPersistence extends BasePersistence {
 			Iterator itr = q.list().iterator();
 
 			if (!itr.hasNext()) {
-				throw new ObjectNotFoundException(null, UserHBM.class);
+				throw new ObjectNotFoundException(null, UserHBM.class.getName());
 			}
 
 			UserHBM userHBM = (UserHBM)itr.next();
@@ -762,7 +762,7 @@ public class UserPersistence extends BasePersistence {
 			Iterator itr = q.list().iterator();
 
 			if (!itr.hasNext()) {
-				throw new ObjectNotFoundException(null, UserHBM.class);
+				throw new ObjectNotFoundException(null, UserHBM.class.getName());
 			}
 
 			UserHBM userHBM = (UserHBM)itr.next();

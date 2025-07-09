@@ -112,7 +112,7 @@ public class FixTaskFixStructureTable  implements FixTask {
 			map.put(Identifier.class, null);
 			try {
 				map.putAll(HibernateUtil.getSession().getSessionFactory().getAllClassMetadata());
-			} catch (HibernateException e) {
+			} catch (Exception e) {
 				throw new DotDataException(e.getMessage(),e);
 			}
 

@@ -158,7 +158,15 @@ public class ExportStarterUtil {
         dbTables.add(User.class);
 
         //end classes no longer mapped with Hibernate
-        dbTables.addAll(HibernateUtil.getSession().getSessionFactory().getAllClassMetadata().keySet());
+        // Get all entity names from the metamodel
+        HibernateUtil.getSession().getSessionFactory().getMetamodel().getEntities()
+                .forEach(entityType -> {
+                    try {
+                        dbTables.add(Class.forName(entityType.getJavaType().getName()));
+                    } catch (ClassNotFoundException e) {
+                        // Skip entities that cannot be loaded
+                    }
+                });
 
         dbTables.removeIf(c->c.equals(Inode.class));
         dbTables.removeIf(c->c.equals(Clickstream.class));

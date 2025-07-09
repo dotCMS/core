@@ -28,9 +28,9 @@ import com.liferay.portal.util.HibernateUtil;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import com.dotcms.repackage.net.sf.hibernate.HibernateException;
-import com.dotcms.repackage.net.sf.hibernate.ObjectNotFoundException;
-import com.dotcms.repackage.net.sf.hibernate.Session;
+import org.hibernate.HibernateException;
+import org.hibernate.ObjectNotFoundException;
+import org.hibernate.Session;
 
 /**
  * <a href="ImagePersistence.java.html"><b><i>View Source</i></b></a>
@@ -158,7 +158,7 @@ public class ImagePersistence extends BasePersistence {
 			query.append("ORDER BY ");
 			query.append("imageId ASC");
 
-			Iterator itr = session.find(query.toString()).iterator();
+			Iterator itr = session.createQuery(query.toString()).list().iterator();
 			List list = new ArrayList();
 
 			while (itr.hasNext()) {

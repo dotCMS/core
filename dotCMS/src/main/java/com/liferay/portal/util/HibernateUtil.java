@@ -1,7 +1,7 @@
 
 package com.liferay.portal.util;
 
-import com.dotcms.repackage.net.sf.hibernate.Session;
+import org.hibernate.Session;
 
 public class HibernateUtil {
 

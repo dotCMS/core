@@ -222,6 +222,20 @@
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.guava</artifactId>
         </dependency>
+        <!-- Modern Hibernate 5.6.15 (last javax-compatible version) -->
+        <dependency>
+            <groupId>org.hibernate</groupId>
+            <artifactId>hibernate-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.hibernate</groupId>
+            <artifactId>hibernate-java8</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.hibernate</groupId>
+            <artifactId>hibernate-ehcache</artifactId>
+        </dependency>
+        <!-- Keep repackaged hibernate for gradual migration -->
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.hibernate</artifactId>

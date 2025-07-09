@@ -122,7 +122,7 @@ public class MaintenanceUtil {
 			map.put(Identifier.class, null);
 			map.putAll(HibernateUtil.getSession().getSessionFactory().getAllClassMetadata());
 
-		} catch (HibernateException e) {
+		} catch (Exception e) {
 			throw new DotDataException(e.getMessage(),e);
 		}
 		Iterator it = map.entrySet().iterator();

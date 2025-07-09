@@ -2,7 +2,7 @@ package com.dotmarketing.servlets;
 
 import java.util.TimeZone;
 import com.dotcms.enterprise.license.LicenseManager;
-import com.dotcms.repackage.net.sf.hibernate.dialect.Dialect;
+import org.hibernate.dialect.Dialect;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
