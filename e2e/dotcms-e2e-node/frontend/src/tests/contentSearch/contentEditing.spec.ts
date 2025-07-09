@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
-import { LoginPage, SideMenuPage } from "@pages";
+import { LoginPage } from "@pages";
+import { SideMenuComponent } from "@components/sideMenu.component";
 import { waitForVisibleAndCallback } from "@utils/utils";
 import { ContentPage } from "@pages";
 import {
@@ -22,7 +23,7 @@ import { assert } from "console";
  */
 test.beforeEach("Navigate to content portlet", async ({ page }) => {
   const loginPage = new LoginPage(page);
-  const sideMenuPage = new SideMenuPage(page);
+  const sideMenuPage = new SideMenuComponent(page);
 
   // Get the username and password from the environment variables
   const username = process.env.USERNAME as string;
@@ -409,7 +410,7 @@ test("Delete a file asset content", async ({ page }) => {
 /**
  * Test to validate you are able to add new pages
  */
-test.skip("Add a new page", async ({ page }) => {
+test("Add a new page", async ({ page }) => {
   const contentUtils = new ContentPage(page);
 
   await contentUtils.addNewContentAction(pageAsset.locator, pageAsset.label);
@@ -423,8 +424,6 @@ test.skip("Add a new page", async ({ page }) => {
     cacheTTL: pageAssetContent.cacheTTL,
     action: contentProperties.publishWfAction,
   });
-
-  await page.waitForTimeout(3000);
 
   const breadcrumbLocator = page.getByTestId("breadcrumb-title");
   await expect(breadcrumbLocator).toContainText(pageAssetContent.title);
@@ -447,10 +446,6 @@ test("Validate URL is unique on pages", async ({ page }) => {
     cacheTTL: pageAssetContent.cacheTTL,
     action: contentProperties.publishWfAction,
   });
-  await page
-    .frameLocator('dot-iframe-dialog iframe[name="detailFrame"]')
-    .getByText("Another Page with the same")
-    .click();
 
   const iframe = page.frameLocator(iFramesLocators.dot_iframe);
   await expect(iframe.getByText("Another Page with the same")).toBeVisible();
