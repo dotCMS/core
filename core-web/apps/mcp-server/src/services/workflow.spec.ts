@@ -51,7 +51,8 @@ describe('WorkflowService', () => {
                 title: 'Test'
             };
 
-            await expect(service.saveContent(invalidParams)).rejects.toThrow(
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            await expect(service.saveContent(invalidParams as any)).rejects.toThrow(
                 'Invalid content parameters'
             );
         });

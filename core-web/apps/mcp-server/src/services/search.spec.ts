@@ -65,7 +65,7 @@ describe('ContentSearchService', () => {
             };
             mockFetch.mockResolvedValue(mockResponse);
 
-            const params = { query: '+title:Test', limit: 1 };
+            const params = { query: '+title:Test', limit: 1, languageId: 1, depth: 1, allCategoriesInfo: false };
             const result = await service.search(params);
 
             expect(mockFetch).toHaveBeenCalledWith(
@@ -91,14 +91,14 @@ describe('ContentSearchService', () => {
                 json: jest.fn().mockResolvedValue({ entity: 'not-an-array' })
             };
             mockFetch.mockResolvedValue(mockResponse);
-            const params = { query: '+title:Test' };
+            const params = { query: '+title:Test', limit: 1, languageId: 1, depth: 1, allCategoriesInfo: false };
             await expect(service.search(params)).rejects.toThrow('Invalid search response');
         });
 
         it('should handle fetch errors', async () => {
             const error = new Error('Network error');
             mockFetch.mockRejectedValue(error);
-            const params = { query: '+title:Test' };
+            const params = { query: '+title:Test', limit: 1, languageId: 1, depth: 1, allCategoriesInfo: false };
             await expect(service.search(params)).rejects.toThrow('Network error');
         });
     });
