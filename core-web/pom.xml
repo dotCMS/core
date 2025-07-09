@@ -31,6 +31,30 @@
         <nx.affected.options>--base=${git.origin.branch} --head=HEAD</nx.affected.options>
         <pretty.quick.options>--branch=${git.origin.branch}</pretty.quick.options>
         <skip.nx.reset.execution>true</skip.nx.reset.execution>
+
+        <!-- E2E Properties -->
+        <e2e.test.skip>true</e2e.test.skip>
+        <e2e.test.env>local</e2e.test.env>
+        <e2e.frontend.dir>${project.basedir}/apps/dotcms-ui-e2e</e2e.frontend.dir>
+        <playwright.add.cmd>global add playwright</playwright.add.cmd>
+        <playwright.install.cmd>playwright install --with-deps</playwright.install.cmd>
+        <e2e.test.debug></e2e.test.debug>
+        <e2e.test.specific></e2e.test.specific>
+        <!-- Updated NX command for running E2E tests -->
+        <e2e.test.cmd>nx e2e dotcms-ui-e2e --env=${e2e.test.env}</e2e.test.cmd>
+        <e2e.post.test.cmd>run post-testing</e2e.post.test.cmd> <!-- This might also need to be an NX command or could be a script within dotcms-ui-e2e package.json -->
+        <dotcms.e2e.port>8088</dotcms.e2e.port>
+        <wiremock.port>8089</wiremock.port>
+        <e2e.server.url>http://localhost:${dotcms.e2e.port}</e2e.server.url>
+        <clean.docker.volumes>true</clean.docker.volumes>
+        <dotcms.e2e.image>dotcms/dotcms:latest</dotcms.e2e.image> <!-- Placeholder image -->
+        <wiremock.api.key>YOUR_WIREMOCK_API_KEY</wiremock.api.key> <!-- Needs to be configured -->
+        <docker.image.wiremock>wiremock/wiremock:2.35.0</docker.image.wiremock> <!-- Specify a version -->
+        <docker.wm.volume>${project.basedir}/apps/dotcms-ui-e2e/src/test/resources/wiremock</docker.wm.volume> <!-- Adjust if path is different -->
+        <docker.wm.volume.internal>/home/wiremock</docker.wm.volume.internal>
+        <cleanup.before.tests>true</cleanup.before.tests>
+        <docker.jacoco.skip>true</docker.jacoco.skip> <!-- Assuming skip by default -->
+        <!-- End E2E Properties -->
     </properties>
 
     <dependencies>
@@ -208,8 +232,97 @@
                             <skip>${skip.nx.reset.execution}</skip>
                         </configuration>
                     </execution>
+
+                    <!-- E2E Test Executions -->
+                    <execution>
+                        <id>install-e2e-deps</id>
+                        <goals>
+                            <goal>yarn</goal>
+                        </goals>
+                        <phase>generate-resources</phase>
+                        <configuration>
+                            <workingDirectory>${e2e.frontend.dir}</workingDirectory>
+                            <!-- The old POM used 'install --frozen-lockfile'. Current yarn.install.cmd is '--frozen-lockfile'. Adding 'install' keyword. -->
+                            <arguments>install ${yarn.install.cmd}</arguments>
+                            <skip>${skip.npm.install}</skip> <!-- Or use ${e2e.test.skip} if deps should only install when tests run -->
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>add-playwright</id>
+                        <goals>
+                            <goal>yarn</goal>
+                        </goals>
+                        <phase>generate-resources</phase>
+                        <configuration>
+                            <workingDirectory>${e2e.frontend.dir}</workingDirectory>
+                            <skip>${e2e.test.skip}</skip>
+                            <arguments>${playwright.add.cmd}</arguments>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>install-playwright</id>
+                        <goals>
+                            <goal>yarn</goal>
+                        </goals>
+                        <phase>generate-resources</phase>
+                        <configuration>
+                            <workingDirectory>${e2e.frontend.dir}</workingDirectory>
+                            <skip>${e2e.test.skip}</skip>
+                            <arguments>${playwright.install.cmd}</arguments>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>run-e2e-tests</id>
+                        <goals>
+                            <goal>yarn</goal>
+                        </goals>
+                        <phase>integration-test</phase>
+                        <configuration>
+                            <workingDirectory>${e2e.frontend.dir}</workingDirectory>
+                            <skip>${e2e.test.skip}</skip>
+                            <arguments>${e2e.test.cmd}</arguments>
+                            <environmentVariables>
+                                <PLAYWRIGHT_SPECIFIC>${e2e.test.specific}</PLAYWRIGHT_SPECIFIC>
+                                <PLAYWRIGHT_DEBUG>${e2e.test.debug}</PLAYWRIGHT_DEBUG>
+                                <E2E_SERVER_URL>${e2e.server.url}</E2E_SERVER_URL>
+                            </environmentVariables>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>run-post-e2e-script</id>
+                        <goals>
+                            <goal>yarn</goal>
+                        </goals>
+                        <phase>integration-test</phase> <!-- Consider post-integration-test if it needs to run after verification -->
+                        <configuration>
+                            <workingDirectory>${e2e.frontend.dir}</workingDirectory>
+                            <skip>${e2e.test.skip}</skip>
+                            <arguments>${e2e.post.test.cmd}</arguments>
+                        </configuration>
+                    </execution>
+                    <!-- End E2E Test Executions -->
                 </executions>
 
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <configuration>
+                    <skipTests>${e2e.test.skip}</skipTests>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>integration-test</id>
+                        <phase>none</phase> <!-- Actual test execution by frontend-maven-plugin -->
+                    </execution>
+                    <execution>
+                        <id>verify</id>
+                        <goals>
+                            <goal>verify</goal>
+                        </goals>
+                        <phase>verify</phase>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -289,6 +402,98 @@
                     </deployables>
                 </configuration>
 
+            </plugin>
+            <plugin>
+                <groupId>io.fabric8</groupId>
+                <artifactId>docker-maven-plugin</artifactId>
+                <version>0.43.4</version> <!-- Use a recent version -->
+                <configuration>
+                    <showLogs>true</showLogs>
+                    <follow>true</follow>
+                    <skip>${e2e.test.skip}</skip>
+                    <images>
+                        <image>
+                            <name>${docker.image.wiremock}</name>
+                            <alias>wiremock</alias>
+                            <run>
+                                <ports>
+                                    <port>${wiremock.port}:8080</port>
+                                </ports>
+                                <volumes>
+                                    <bind>
+                                        <volume>${docker.wm.volume}:${docker.wm.volume.internal}</volume>
+                                    </bind>
+                                </volumes>
+                                <log>
+                                    <prefix>[WireMock]</prefix>
+                                    <color>green</color>
+                                </log>
+                            </run>
+                        </image>
+                        <image>
+                            <name>${dotcms.e2e.image}</name>
+                            <alias>dotcms</alias>
+                            <run>
+                                <ports>
+                                    <port>${dotcms.e2e.port}:8080</port>
+                                </ports>
+                                <env>
+                                    <CATALINA_OPTS>-XX:+PrintFlagsFinal</CATALINA_OPTS>
+                                    <DB_MAX_TOTAL>15</DB_MAX_TOTAL>
+                                    <DOT_INDEX_POLICY_SINGLE_CONTENT>FORCE</DOT_INDEX_POLICY_SINGLE_CONTENT>
+                                    <DOT_ASYNC_REINDEX_COMMIT_LISTENERS>false</DOT_ASYNC_REINDEX_COMMIT_LISTENERS>
+                                    <DOT_ASYNC_COMMIT_LISTENERS>false</DOT_ASYNC_COMMIT_LISTENERS>
+                                    <DOT_CACHE_GRAPHQLQUERYCACHE_SECONDS>600</DOT_CACHE_GRAPHQLQUERYCACHE_SECONDS>
+                                    <JVM_ENDPOINT_TEST_PASS>obfuscate_me</JVM_ENDPOINT_TEST_PASS>
+                                    <DOT_ENABLE_SCRIPTING>true</DOT_ENABLE_SCRIPTING>
+                                    <!-- Updated to use the Docker internal WireMock hostname 'wiremock' on its default port 8080 -->
+                                    <DOT_ANNOUNCEMENTS_BASE_URL>http://localhost:${dotcms.e2e.port}</DOT_ANNOUNCEMENTS_BASE_URL> <!-- This should be the public URL -->
+                                    <DOT_ALLOW_ACCESS_TO_PRIVATE_SUBNETS>true</DOT_ALLOW_ACCESS_TO_PRIVATE_SUBNETS>
+                                    <DOT_DOTCMS_DEV_MODE>true</DOT_DOTCMS_DEV_MODE>
+                                    <DOT_AI_API_URL>http://wiremock:8080/c</DOT_AI_API_URL>
+                                    <DOT_AI_IMAGE_API_URL>http://wiremock:8080/i</DOT_AI_IMAGE_API_URL>
+                                    <DOT_AI_EMBEDDINGS_API_URL>http://wiremock:8080/e</DOT_AI_EMBEDDINGS_API_URL>
+                                    <DOT_AI_MODELS_API_URL>http://wiremock:8080/m</DOT_AI_MODELS_API_URL>
+                                </env>
+                                <links>
+                                    <link>wiremock:wiremock</link> <!-- Link to the wiremock container by its alias -->
+                                </links>
+                                <log>
+                                    <prefix>[dotCMS]</prefix>
+                                    <color>blue</color>
+                                </log>
+                            </run>
+                        </image>
+                    </images>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>cleanup-at-start</id>
+                        <goals>
+                            <goal>stop</goal>
+                            <goal>remove</goal> <!-- 'remove' is the goal for removing containers, 'volume-remove' is for volumes -->
+                        </goals>
+                        <phase>pre-integration-test</phase>
+                        <configuration>
+                            <!-- Configure to remove volumes if needed, typically done via docker daemon settings or manually -->
+                            <!-- <removeVolumes>${clean.docker.volumes}</removeVolumes> -->
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>start</id>
+                        <goals>
+                            <goal>start</goal>
+                        </goals>
+                        <phase>pre-integration-test</phase>
+                    </execution>
+                    <execution>
+                        <id>stop</id>
+                        <goals>
+                            <goal>stop</goal>
+                        </goals>
+                        <phase>post-integration-test</phase> <!-- Run after integration tests and verification -->
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
 
