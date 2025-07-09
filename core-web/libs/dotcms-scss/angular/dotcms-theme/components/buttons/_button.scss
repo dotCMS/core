@@ -138,6 +138,16 @@ a.p-button.p-button-text {
 
 // Shared disabled styles
 .p-button:disabled:not(.p-splitbutton-defaultbutton, .p-splitbutton-menubutton),
+.p-button:disabled.p-button-outlined:not(
+        .p-splitbutton-defaultbutton,
+        .p-splitbutton-menubutton
+    ).p-button-secondary
+    .pi,
+.p-button:disabled.p-button-outlined:not(
+        .p-splitbutton-defaultbutton,
+        .p-splitbutton-menubutton
+    ).p-button-secondary
+    .p-button-label,
 .p-button.p-button-secondary:disabled:not(.p-splitbutton-defaultbutton, .p-splitbutton-menubutton),
 .p-button.p-button-tertiary:disabled:not(.p-splitbutton-defaultbutton, .p-splitbutton-menubutton) {
     // Default
