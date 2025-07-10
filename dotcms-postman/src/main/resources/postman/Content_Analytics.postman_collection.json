@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "0a546c78-d414-42af-96c7-b0fbdef59bd0",
+		"_postman_id": "f51ce1d2-5642-4749-abb7-849e96063901",
 		"name": "Content Analytics",
 		"description": "Performs simple data validation for the Content Analytics REST Endpoint. It's very important to notice that, for the time being, the CICD instance does not start up any of the additional third-party tools required to actually run the Content Analytics feature.\n\nThis means that these test do not deal with retrieveing or saving data at all. It verifies that important/required information is present.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
@@ -1104,8 +1104,6 @@
 											"",
 											"pm.test(\"Check test Site information\", function () {",
 											"    const jsonData = pm.response.json();",
-											"    const siteName = pm.collectionVariables.get(\"siteName\");",
-											"    pm.expect(jsonData.entity.siteName).to.equal(siteName, \"The created Site has a different expected name\");",
 											"    pm.collectionVariables.set(\"siteId\", jsonData.entity.identifier);",
 											"});",
 											""
@@ -1153,7 +1151,7 @@
 							"response": []
 						},
 						{
-							"name": "Get Site Configuration - System Host",
+							"name": "Generate Site Key For System Host",
 							"event": [
 								{
 									"listen": "test",
@@ -1164,8 +1162,7 @@
 											"});",
 											"",
 											"pm.test(\"Verify expected data in response body\", function () {",
-											"    pm.expect(pm.response.text()).to.contain(\"siteKey: 'DOT.SYSTEM_HOST.\", \"Returned 'siteKey' attribute doesn't have the expected value\");",
-											"    pm.expect(pm.response.text()).to.contain(\"server: 'https://System Host\", \"Returned 'server' attribute doesn't have the expected value\");",
+											"    pm.expect(pm.response.text()).to.contain(\"DOT.SYSTEM_HOST.\", \"Returned Site Key doesn't have the expected format/value\");",
 											"});",
 											""
 										],
@@ -1195,7 +1192,7 @@
 									"raw": ""
 								},
 								"url": {
-									"raw": "{{serverURL}}/api/v1/analytics/content/siteconfig/SYSTEM_HOST",
+									"raw": "{{serverURL}}/api/v1/analytics/content/sitekey/generate/SYSTEM_HOST",
 									"host": [
 										"{{serverURL}}"
 									],
@@ -1204,16 +1201,17 @@
 										"v1",
 										"analytics",
 										"content",
-										"siteconfig",
+										"sitekey",
+										"generate",
 										"SYSTEM_HOST"
 									]
 								},
-								"description": "## Endpoint: Get CA Authentication Object for System Host Configuration\n\nThis endpoint retrieves the system host configuration from the server. It is a simple HTTP GET request that does not require any additional parameters or headers.\n\n### Request\n\n- **Method**: GET\n    \n- **URL**: `{{serverURL}}/api/v1/analytics/content/siteconfig/SYSTEM_HOST`\n    \n\n### Request Parameters\n\nThere are no request parameters for this endpoint.\n\n### Request Headers\n\nNo specific headers are required for this request.\n\n### Response\n\n- **Status Code**: 200 OK\n    \n- **Content-Type**: text/plain\n    \n\n### Response Body\n\nThe response body will be empty (`{}`) if the request is successful.\n\n### Possible Response Codes\n\n- **200 OK**: The request was successful, and the system host configuration is returned (or an empty response).\n    \n- **4xx**: Client errors indicating issues with the request.\n    \n- **5xx**: Server errors indicating issues on the server side.\n    \n\n### Notes\n\nThis endpoint is primarily used for retrieving the current system host configuration settings. Ensure that the server is running and accessible to get a successful response."
+								"description": "## Endpoint: Generate Site Key for CA Authentication for System Host\n\nThe purpose of this request is to generate and obtain a secure Site Key -- token -- for the System Host configuration, which is used to allow clients to submit CA Events.\n\n### Request\n\n- **Method**: GET\n    \n- **URL**: `{{serverURL}}/api/v1/analytics/content/sitekey/generate/SYSTEM_HOST`\n    \n\n### Request Parameters\n\nThere are no request parameters for this endpoint.\n\n### Request Headers\n\nNo specific headers are required for this request.\n\n### Response\n\n- **Status Code**: 200 OK\n    \n- **Content-Type**: text/plain\n    \n\n### Response Body\n\nThe response body contains a unique identifier for the system host configuration. The format of the response body is a plain text string, which represents the generated identifier. For example:\n\n```\nDOT.SYSTEM_HOST.xIUpL_9NXGDhoA_JykjWgEQHX\n\n ```\n\n### Possible Response Codes\n\n- **200 OK**: The request was successful, and the system host configuration identifier is returned.\n    \n- **4xx**: Client errors indicating issues with the request.\n    \n- **5xx**: Server errors indicating issues on the server side.\n    \n\n### Notes\n\nThis endpoint is primarily used for retrieving the current system host configuration settings. Ensure that the server is running and accessible to get a successful response. The generated identifier can be utilized for tracking or referencing the specific system host configuration in subsequent requests or operations."
 							},
 							"response": []
 						},
 						{
-							"name": "Get Site Configuration - Test Site",
+							"name": "Generate Site Key For Test Site",
 							"event": [
 								{
 									"listen": "test",
@@ -1225,9 +1223,7 @@
 											"",
 											"pm.test(\"Verify expected data in response body\", function () {",
 											"    const siteId = pm.collectionVariables.get(\"siteId\");",
-											"    const siteName = pm.collectionVariables.get(\"siteName\");",
-											"    pm.expect(pm.response.text()).to.contain(\"siteKey: 'DOT.\" + siteId + \".\", \"Returned 'siteKey' attribute doesn't have the expected value\");",
-											"    pm.expect(pm.response.text()).to.contain(\"server: 'https://\" + siteName + \"'\", \"Returned 'server' attribute doesn't have the expected value\");",
+											"    pm.expect(pm.response.text()).to.contain(\"DOT.\" + siteId + \".\", \"Returned Site Key doesn't have the expected format/value\");",
 											"});",
 											""
 										],
@@ -1257,7 +1253,7 @@
 									"raw": ""
 								},
 								"url": {
-									"raw": "{{serverURL}}/api/v1/analytics/content/siteconfig/{{siteId}}",
+									"raw": "{{serverURL}}/api/v1/analytics/content/sitekey/generate/{{siteId}}",
 									"host": [
 										"{{serverURL}}"
 									],
@@ -1266,11 +1262,12 @@
 										"v1",
 										"analytics",
 										"content",
-										"siteconfig",
+										"sitekey",
+										"generate",
 										"{{siteId}}"
 									]
 								},
-								"description": "## Endpoint: Get CA Authentication Object for Test Site Configuration\n\nThis endpoint retrieves the Test Site configuration from the server. It is a simple HTTP GET request that does not require any additional parameters or headers.\n\n### Request\n\n- **Method**: GET\n    \n- **URL**: `{{serverURL}}/api/v1/analytics/content/siteconfig/{{siteId}}`\n    \n\n### Request Parameters\n\nThere are no request parameters for this endpoint.\n\n### Request Headers\n\nNo specific headers are required for this request.\n\n### Response\n\n- **Status Code**: 200 OK\n    \n- **Content-Type**: text/plain\n    \n\n### Response Body\n\nThe response body will be empty (`{}`) if the request is successful.\n\n### Possible Response Codes\n\n- **200 OK**: The request was successful, and the Test Site configuration is returned (or an empty response).\n    \n- **4xx**: Client errors indicating issues with the request.\n    \n- **5xx**: Server errors indicating issues on the server side.\n    \n\n### Notes\n\nThis endpoint is primarily used for retrieving the current Test Site configuration settings. Ensure that the server is running and accessible to get a successful response."
+								"description": "## Endpoint: Generate Site Key for CA Authentication for Test Site\n\nThe purpose of this request is to generate and obtain a secure Site Key -- token -- for the Test Site configuration, which is used to allow clients to submit CA Events.\n\n### Request\n\n- **Method**: GET\n    \n- **URL**: `{{serverURL}}/api/v1/analytics/content/sitekey/generate/{{siteId}}`\n    \n\n### Request Parameters\n\nThere are no request parameters for this endpoint.\n\n### Request Headers\n\nNo specific headers are required for this request.\n\n### Response\n\n- **Status Code**: 200 OK\n    \n- **Content-Type**: text/plain\n    \n\n### Response Body\n\nThe response body will contain a string representing the CA Authentication Object. For example, the response might look like:\n\n```\nDOT.3ac45bec0907840d1f12dc78e2642d8f.DlaM8q76AOZGimRLAj80Zy_wX\n\n ```\n\n### Possible Response Codes\n\n- **200 OK**: The request was successful, and the CA Authentication Object is returned.\n    \n- **4xx**: Client errors indicating issues with the request.\n    \n- **5xx**: Server errors indicating issues on the server side.\n    \n\n### Notes\n\nThis endpoint is primarily used for retrieving the current Test Site configuration settings. Ensure that the server is running and accessible to get a successful response. The returned CA Authentication Object is essential for further interactions with the Test Site."
 							},
 							"response": []
 						},
@@ -1338,7 +1335,7 @@
 							"response": []
 						},
 						{
-							"name": "Get Site Configuration With Custom Key",
+							"name": "Get App Configuration From Test Site",
 							"event": [
 								{
 									"listen": "test",
@@ -1351,8 +1348,9 @@
 											"pm.test(\"Verify expected data in response body\", function () {",
 											"    const customKeyValue = pm.collectionVariables.get(\"customKeyValue\");",
 											"    const siteName = pm.collectionVariables.get(\"siteName\");",
-											"    pm.expect(pm.response.text()).to.contain(\"siteKey: '\" + customKeyValue + \"'\", \"Returned 'siteKey' attribute doesn't have the expected value\");",
-											"    pm.expect(pm.response.text()).to.contain(\"server: 'https://\" + siteName + \"'\", \"Returned 'server' attribute doesn't have the expected value\");",
+											"    const entity = pm.response.json().entity;",
+											"    pm.expect(entity.sites[0].name).to.equal(siteName, \"The Site Name is not the expected one.\");",
+											"    pm.expect(entity.sites[0].secrets[0].value).to.equal(customKeyValue, \"The custom Site Key is not the expected one.\");",
 											"});",
 											""
 										],
@@ -1382,20 +1380,19 @@
 									"raw": ""
 								},
 								"url": {
-									"raw": "{{serverURL}}/api/v1/analytics/content/siteconfig/{{siteId}}",
+									"raw": "{{serverURL}}/api/v1/apps/dotContentAnalytics-config/{{siteId}}",
 									"host": [
 										"{{serverURL}}"
 									],
 									"path": [
 										"api",
 										"v1",
-										"analytics",
-										"content",
-										"siteconfig",
+										"apps",
+										"dotContentAnalytics-config",
 										"{{siteId}}"
 									]
 								},
-								"description": "## Endpoint: Get CA Authentication Object for Test Site Configuration with Custom Site Key\n\nThis endpoint retrieves the Test Site configuration from the server. It is a simple HTTP GET request that does not require any additional parameters or headers.\n\n### Request\n\n- **Method**: GET\n    \n- **URL**: `{{serverURL}}/api/v1/analytics/content/siteconfig/{{siteId}}`\n    \n\n### Request Parameters\n\nThere are no request parameters for this endpoint.\n\n### Request Headers\n\nNo specific headers are required for this request.\n\n### Response\n\n- **Status Code**: 200 OK\n    \n- **Content-Type**: text/plain\n    \n\n### Response Body\n\nThe response body will be empty (`{}`) if the request is successful.\n\n### Possible Response Codes\n\n- **200 OK**: The request was successful, and the Test Site configuration is returned (or an empty response).\n    \n- **4xx**: Client errors indicating issues with the request.\n    \n- **5xx**: Server errors indicating issues on the server side.\n    \n\n### Notes\n\nThis endpoint is primarily used for retrieving the current Test Site configuration settings. Ensure that the server is running and accessible to get a successful response."
+								"description": "## Endpoint: Get CA Configuration Data for Test Site\n\nThis endpoint retrieves the Test Site configuration from the Content Analytics App. It is a simple HTTP GET request that does not require any additional parameters or headers.\n\n### Request\n\n- **Method**: GET\n    \n- **URL**: `{{serverURL}}/api/v1/apps/dotContentAnalytics-config/{{siteId}}`\n    \n\n### Request Parameters\n\nThere are no request parameters for this endpoint.\n\n### Request Headers\n\nNo specific headers are required for this request.\n\n### Response\n\n- **Status Code**: 200 OK\n    \n- **Content-Type**: application/json\n    \n\n### Response Body\n\nThe response body will contain a JSON object with the following structure:\n\n``` json\n{\n  \"entity\": {\n    \"allowExtraParams\": true,\n    \"configurationsCount\": 0,\n    \"description\": \"\",\n    \"iconUrl\": \"\",\n    \"key\": \"\",\n    \"name\": \"\",\n    \"sites\": [\n      {\n        \"configured\": true,\n        \"id\": \"\",\n        \"name\": \"\",\n        \"secrets\": [\n          {\n            \"buttonEndpoint\": \"\",\n            \"buttonLabel\": \"\",\n            \"dynamic\": true,\n            \"envShow\": true,\n            \"hasEnvVar\": true,\n            \"hasEnvVarValue\": true,\n            \"hidden\": true,\n            \"hint\": \"\",\n            \"label\": \"\",\n            \"name\": \"\",\n            \"required\": true,\n            \"type\": \"\",\n            \"value\": \"\"\n          }\n        ]\n      }\n    ]\n  },\n  \"errors\": [],\n  \"i18nMessagesMap\": {},\n  \"messages\": [],\n  \"pagination\": null,\n  \"permissions\": []\n}\n\n ```\n\n### Possible Response Codes\n\n- **200 OK**: The request was successful, and the Test Site configuration is returned.\n    \n- **4xx**: Client errors indicating issues with the request.\n    \n- **5xx**: Server errors indicating issues on the server side.\n    \n\n### Notes\n\nThis endpoint is primarily used for retrieving the current Test Site configuration settings. Ensure that the server is running and accessible to get a successful response."
 							},
 							"response": []
 						}

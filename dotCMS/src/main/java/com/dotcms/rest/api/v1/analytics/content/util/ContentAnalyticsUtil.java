@@ -7,11 +7,7 @@ import com.dotcms.jitsu.EventLogSubmitter;
 import com.dotcms.jitsu.ValidAnalyticsEventPayload;
 import com.dotcms.jitsu.ValidAnalyticsEventPayloadAttributes;
 import com.dotcms.jitsu.validators.AnalyticsValidatorUtil;
-import com.dotcms.security.apps.AppSecrets;
-import com.dotcms.security.apps.AppsAPI;
-import com.dotcms.security.apps.Secret;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -31,8 +27,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.dotcms.jitsu.ValidAnalyticsEventPayloadAttributes.REFERER_ATTRIBUTE_NAME;
@@ -40,6 +34,8 @@ import static com.dotcms.jitsu.ValidAnalyticsEventPayloadAttributes.URL_ATTRIBUT
 import static com.dotcms.jitsu.ValidAnalyticsEventPayloadAttributes.USER_AGENT_ATTRIBUTE_NAME;
 
 /**
+ * This class exposes useful methods for generating Content Analytics events and interacting with
+ * its configuration parameters.
  *
  * @author Jonathan Sanchez
  * @since Mar 12th, 2025
@@ -47,10 +43,6 @@ import static com.dotcms.jitsu.ValidAnalyticsEventPayloadAttributes.USER_AGENT_A
 public class ContentAnalyticsUtil {
 
     private static final Lazy<String> SITE_KEY_FORMAT = Lazy.of(() -> Config.getStringProperty("CONTENT_ANALYTICS_SITE_KEY_FORMAT", "DOT.%s.%s"));
-    private static final String SAMPLE_CA_JS_CONFIG = "const analyticsConfig = {\n" +
-                "\tsiteKey: '%s',\n" +
-                "\tserver: '%s'\n" +
-            "}";
 
     private static final AnalyticsValidatorUtil analyticsValidatorUtil =  AnalyticsValidatorUtil.INSTANCE;
 
@@ -175,57 +167,6 @@ public class ContentAnalyticsUtil {
     }
 
     /**
-     * Exposes a sample basic JavaScript configuration object that customers can copy and paste to
-     * configure their code to send Analytics Events to our infrastructure.
-     *
-     * @param site The {@link Host} that the configuration belongs to.
-     *
-     * @return The sample JavaScript configuration.
-     */
-    public static String getSiteJSConfig(final Host site) throws DotDataException, DotSecurityException {
-        final String siteKey = getSiteKey(site);
-        return String.format(SAMPLE_CA_JS_CONFIG, siteKey, "https://" + site.getHostname());
-    }
-
-    /**
-     * Returns the authentication key for a specific Site. If the user has NOT provided a custom
-     * key, then dotCMS will generate one for them.
-     *
-     * @param site The {@link Host} that the configuration belongs to.
-     *
-     * @return The Site Key.
-     *
-     * @throws DotDataException     An error occurred when updating the App's secrets.
-     * @throws DotSecurityException A permission error occurred when reading/saving App data.
-     */
-    public static String getSiteKey(final Host site) throws DotDataException, DotSecurityException {
-        final AppsAPI appsAPI = APILocator.getAppsAPI();
-        final Optional<AppSecrets> optionalAppSecrets = appsAPI.getSecrets(CONTENT_ANALYTICS_APP_KEY, false, site, APILocator.systemUser());
-        if (optionalAppSecrets.isPresent()) {
-            final Set<Map.Entry<String, Secret>> appParams = optionalAppSecrets.get().getSecrets().entrySet();
-            final Optional<String> optSiteKey = appParams.stream()
-                    .filter(entry -> "siteKey".equals(entry.getKey()))
-                    .map(entry -> entry.getValue().getString())
-                    .findFirst();
-            if (optSiteKey.isPresent() && !optSiteKey.get().isEmpty()) {
-                return optSiteKey.get();
-            }
-        }
-        // The App config or Site Key doesn't exist, let's create it
-        final String siteKey = generateInternalSiteKey(site.getIdentifier());
-        final AppSecrets.Builder builder = new AppSecrets.Builder();
-        builder.withKey(CONTENT_ANALYTICS_APP_KEY);
-        optionalAppSecrets
-                .map(appSecrets -> appSecrets.getSecrets().entrySet())
-                .orElse(Set.of())
-                .forEach(entry -> builder.withSecret(entry.getKey(), entry.getValue()));
-        builder.withSecret("siteKey", siteKey);
-        final AppSecrets secrets = builder.build();
-        appsAPI.saveSecrets(secrets, site, APILocator.systemUser());
-        return siteKey;
-    }
-
-    /**
      * Generates the encrypted site key that will be used by JavaScript code in HTML Pages to send
      * Analytics Events to our infrastructure. This allows us to provide customers with a secure
      * token that must be passed down to our REST Endpoint in order to varify that the request is
@@ -236,7 +177,7 @@ public class ContentAnalyticsUtil {
      *
      * @return The Encrypted Site Key
      */
-    private static String generateInternalSiteKey(final String siteId) {
+    public static String generateInternalSiteKey(final String siteId) {
         return String.format(SITE_KEY_FORMAT.get(), siteId, KeyGenerator.generateSiteKey());
     }
 

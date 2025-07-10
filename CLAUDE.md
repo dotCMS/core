@@ -47,6 +47,119 @@ Install additional tools: `bash <(curl -fsSL https://raw.githubusercontent.com/d
 
 **Key Technologies:** Spring/CDI, OSGi plugins, immutable models (`@Value.Immutable`), PostgreSQL, Elasticsearch
 
+## Maven Build Structure (CRITICAL)
+
+dotCMS follows a structured Maven build hierarchy with centralized dependency and plugin management:
+
+### Dependency Management Pattern
+**⚠️ CRITICAL: All dependencies must follow this pattern:**
+
+1. **Define versions in BOM**: Add new dependency versions to `bom/application/pom.xml`
+2. **Reference without version in modules**: Use dependencies in `dotCMS/pom.xml` WITHOUT version numbers
+3. **Never override BOM versions**: Let the BOM control all dependency versions
+
+#### Example: Adding a New Dependency
+```xml
+<!-- 1. Add to bom/application/pom.xml -->
+<properties>
+    <new-library.version>1.2.3</new-library.version>
+</properties>
+
+<dependencyManagement>
+    <dependencies>
+        <dependency>
+            <groupId>com.example</groupId>
+            <artifactId>new-library</artifactId>
+            <version>${new-library.version}</version>
+        </dependency>
+    </dependencies>
+</dependencyManagement>
+
+<!-- 2. Use in dotCMS/pom.xml (NO version) -->
+<dependency>
+    <groupId>com.example</groupId>
+    <artifactId>new-library</artifactId>
+</dependency>
+```
+
+#### Existing Swagger/OpenAPI Dependencies
+```xml
+<!-- In bom/application/pom.xml -->
+<swagger.version>2.2.0</swagger.version>
+
+<dependency>
+    <groupId>io.swagger.core.v3</groupId>
+    <artifactId>swagger-jaxrs2</artifactId>
+    <version>${swagger.version}</version>
+</dependency>
+<dependency>
+    <groupId>io.swagger.core.v3</groupId>
+    <artifactId>swagger-jaxrs2-servlet-initializer</artifactId>
+    <version>${swagger.version}</version>
+</dependency>
+
+<!-- In dotCMS/pom.xml (versions inherited from BOM) -->
+<dependency>
+    <groupId>io.swagger.core.v3</groupId>
+    <artifactId>swagger-jaxrs2</artifactId>
+</dependency>
+<dependency>
+    <groupId>io.swagger.core.v3</groupId>
+    <artifactId>swagger-jaxrs2-servlet-initializer</artifactId>
+</dependency>
+```
+
+### Plugin Management Pattern
+**⚠️ CRITICAL: All plugins must follow this pattern:**
+
+1. **Define plugins in parent POM**: Add plugin versions to `parent/pom.xml` in `<pluginManagement>`
+2. **Reference without version in modules**: Use plugins in module POMs WITHOUT version numbers
+3. **Global properties**: All global properties are defined in `parent/pom.xml`
+
+#### Example: Adding a New Plugin
+```xml
+<!-- 1. Add to parent/pom.xml -->
+<pluginManagement>
+    <plugins>
+        <plugin>
+            <groupId>com.example</groupId>
+            <artifactId>example-maven-plugin</artifactId>
+            <version>1.0.0</version>
+            <configuration>
+                <!-- default configuration -->
+            </configuration>
+        </plugin>
+    </plugins>
+</pluginManagement>
+
+<!-- 2. Use in any module POM (NO version) -->
+<plugin>
+    <groupId>com.example</groupId>
+    <artifactId>example-maven-plugin</artifactId>
+    <executions>
+        <execution>
+            <goals>
+                <goal>generate</goal>
+            </goals>
+        </execution>
+    </executions>
+</plugin>
+```
+
+### Build Hierarchy Summary
+```
+parent/pom.xml              # Global properties, plugin management
+├── bom/application/pom.xml # Dependency management (versions)
+└── dotCMS/pom.xml         # Module dependencies (no versions)
+```
+
+**Key Rules:**
+- **NEVER** add version numbers to dependencies in `dotCMS/pom.xml`
+- **NEVER** add version numbers to plugins in module POMs
+- **ALWAYS** add new dependency versions to `bom/application/pom.xml`
+- **ALWAYS** add new plugin versions to `parent/pom.xml`
+- **ALWAYS** define global properties in `parent/pom.xml`
+
 ## Java Version & Coding Standards
 
 **Environment:** Java 21 runtime, **Java 11 syntax required** for core modules
@@ -410,6 +523,26 @@ ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI();   // Modern Cont
 ```
 
 **Key Point**: The Docker container runs the image, not your local compiled classes.
+
+### OpenAPI Specification Management
+The `dotCMS/src/main/webapp/WEB-INF/openapi/openapi.yaml` file is **automatically generated** during compilation. 
+
+**Handling Merge Conflicts:**
+- The file uses Git's "ours" merge strategy - always keeps your current branch version
+- **Never manually edit** the OpenAPI YAML file - changes will be overwritten
+- **Pre-commit hook** automatically regenerates the file when REST API changes are detected
+- **After merge**: The next commit with REST changes will update the OpenAPI spec correctly
+
+**Configuration for stable diffs:**
+```xml
+<prettyPrint>true</prettyPrint>
+<sortOutput>true</sortOutput>
+```
+
+**Workflow:**
+1. Merge branches normally - OpenAPI conflicts resolve automatically using "ours"
+2. Make REST API changes and commit - pre-commit hook regenerates OpenAPI spec
+3. OpenAPI file is always consistent with current branch's REST implementation
 
 ### Immutable Classes Compilation
 When creating new models with `@Value.Immutable`, the concrete classes are generated at compile time. **Always run `./mvnw compile`** after creating abstract immutable interfaces to generate the implementation classes.
