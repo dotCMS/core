@@ -41,5 +41,14 @@ public enum ValidationErrorCode {
      * Indicates that a field expected to be a date is not in the correct format.
      * This error occurs when validating fields that should contain date values in the format '2025-06-09T14:30:00+02:00'.
      */
-    INVALID_DATE_FORMAT;
+    INVALID_DATE_FORMAT,
+
+    /**
+     * Indicates that the value of a given field is not valid from a business perspective. This is
+     * not related to any specific data format or type, but rather a business rule validation. For
+     * instance, if a field is expected to have a valid Identifier, the email address of an existing
+     * user in dotCMS, or a value that must match what's returned by one of our APIs.
+     */
+    INVALID_FIELD_VALUE;
+
 }
