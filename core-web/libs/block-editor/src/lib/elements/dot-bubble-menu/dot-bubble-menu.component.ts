@@ -150,7 +150,7 @@ export class DotBubbleMenuComponent {
     ];
 
     protected readonly tippyOptions = {
-        maxWidth: '100%',
+        maxWidth: '10%',
         onBeforeUpdate: this.onBeforeUpdate.bind(this),
         placement: 'top-start',
         trigger: 'manual'
