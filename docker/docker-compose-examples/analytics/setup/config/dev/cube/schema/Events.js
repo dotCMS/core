@@ -189,6 +189,7 @@ cube('request', {
     }
   },*/
   dimensions: {
+    eventType: { sql: 'event_type', type: `string` },
     userAgent: { sql: 'user_agent', type: `string` },
     referer: { sql: 'referer', type: `string` },
     url: { sql: 'url', type: `string` },
