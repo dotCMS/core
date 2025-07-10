@@ -11,7 +11,7 @@
     padding: $spacing-3;
 
     &.disabled {
-        opacity: $field-disabled-opacity;
+        opacity: 1; // Override the global disabled opacity
         pointer-events: none;
     }
 }
