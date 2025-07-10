@@ -111,11 +111,6 @@ permissions:
   pull-requests: write  # PR management
 ```
 
-**Security Gap:**
-- 🔴 **Critical**: 37 out of 47 workflows use default permissions
-- 🔴 **Risk**: Default permissions grant broad access including write to contents, issues, PRs
-- ⚠️ **Concerning**: High-risk workflows (deployment, docs publishing) use default permissions
-
 **Recommended Improvements:**
 ```yaml
 # RECOMMENDED: Explicit minimal permissions for all workflows
@@ -409,35 +404,6 @@ semgrep:
 - Secret access anomalies
 - Permission escalation attempts
 
-## Security Incident Response
-
-### Immediate Response
-
-**If security incident detected:**
-1. **Disable affected workflows** immediately
-2. **Rotate compromised secrets** 
-3. **Review audit logs** for impact assessment
-4. **Notify security team** via established channels
-
-### Investigation Procedure
-
-**Evidence Collection:**
-```bash
-# Collect workflow run logs
-gh run view <run-id> --log
-
-# Review audit logs
-gh api repos/owner/repo/events
-
-# Check secret access patterns
-gh api repos/owner/repo/actions/secrets
-```
-
-**Impact Assessment:**
-- Determine scope of compromise
-- Identify affected systems
-- Assess data exposure risk
-- Evaluate timeline and actors
 
 ## Security Compliance
 
@@ -549,14 +515,14 @@ gh api repos/owner/repo/actions/secrets
 ## Security Contact Information
 
 **For Security Incidents:**
-- **Internal**: #security-incidents Slack channel
+- **Internal**: #security Slack channel
 - **External**: security@dotcms.com
 - **Emergency**: Follow incident response procedures
 
 **For Security Questions:**
-- **Internal**: #guild-dev-pipeline Slack channel
+- **Internal**: #security Slack channel
 - **External**: GitHub Issues with security label
-- **Architecture**: #architecture-guild Slack channel
+- **Architecture**: #guild-dev-pipeline Slack channel
 
 ## Security Resources
 

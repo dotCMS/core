@@ -2,7 +2,11 @@
 
 ## Overview
 
-This document provides specific AI workflow guidance for Claude Code when working with GitHub Actions in this repository. For comprehensive documentation on workflows, architecture, and procedures, see:
+This document provides specific AI workflow guidance for Claude Code when working with GitHub Actions in this repository. 
+
+**For general development practices, security guidelines, and git workflow standards, see the main [CLAUDE.md](../CLAUDE.md) file.**
+
+For comprehensive documentation on workflows, architecture, and procedures, see:
 
 - **[README.md](./README.md)** - Overview and navigation hub
 - **[Getting Started](./docs/getting-started.md)** - Developer guide to GitHub Actions and modular architecture
@@ -15,12 +19,23 @@ This document provides specific AI workflow guidance for Claude Code when workin
 
 ### 🎯 Pre-Development Analysis
 
-**Before making any changes, AI should:**
+**Before making any changes, AI must:**
 
 1. **Understand the Goal**: What specific outcome is the user requesting?
 2. **Identify Scope**: Which workflows/components need modification?
 3. **Check Security**: Will this change affect security boundaries?
 4. **Plan Testing**: What testing approach is needed for the changes?
+
+### 📋 Development Process Requirements
+
+**AI must follow these development practices:**
+
+1. **Follow General Standards**: Use git workflow and development practices from [CLAUDE.md](../CLAUDE.md)
+2. **Documentation Updates**: Update relevant documentation files when making changes to:
+   - Workflow behavior or architecture
+   - Security procedures or guidelines
+   - Testing strategies or new test types
+   - Troubleshooting procedures or known issues
 
 ### 🎯 Quick AI Decision Tree
 
@@ -50,7 +65,9 @@ This document provides specific AI workflow guidance for Claude Code when workin
     └── Tool: Initialization phase outputs
 ```
 
-## AI Security Guidelines
+## AI Security Guidelines for GitHub Actions
+
+**See [CLAUDE.md](../CLAUDE.md) for general security guidelines. This section covers GitHub Actions-specific security rules.**
 
 ### Critical Security Rules for AI
 
@@ -155,7 +172,7 @@ backend: &backend
   - **Reason**: Changes only take effect after merge
   - **Testing**: Use core-workflow-test repository for validation
 
-### ❌ AI Should NEVER Modify These Files
+### ❌ AI Must NEVER Modify These Files
 - **`legacy-*.yml`** - Legacy workflows
   - **Reason**: Requires dedicated modernization task with extensive testing
   - **Exception**: Only for critical security fixes with minimal changes
@@ -205,7 +222,7 @@ AI assistants cannot:
 ## AI Error Response Patterns
 
 ### When Workflows Fail
-**AI should check these in order:**
+**AI must check these in order:**
 1. **Syntax Issues**: YAML validation, missing required fields
 2. **Conditional Logic**: Job dependencies, if conditions
 3. **Change Detection**: Files match filters.yaml patterns
@@ -234,6 +251,7 @@ AI assistants cannot:
 When AI generates workflow code, follow the main codebase standards from [CLAUDE.md](../CLAUDE.md):
 - Follow dotCMS logging patterns where applicable
 - Use proper error handling patterns
+- Apply security guidelines from the main CLAUDE.md file
 
 ## AI Support Resources
 
