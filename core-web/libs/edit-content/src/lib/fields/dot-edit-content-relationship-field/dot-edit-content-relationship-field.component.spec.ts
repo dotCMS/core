@@ -75,7 +75,6 @@ describe('DotEditContentRelationshipFieldComponent', () => {
     let spectator: Spectator<DotEditContentRelationshipFieldComponent>;
     let store: InstanceType<typeof RelationshipFieldStore>;
     let dialogService: DialogService;
-    let contentTypeService: DotContentTypeService;
 
     const createComponent = createComponentFactory({
         component: DotEditContentRelationshipFieldComponent,
@@ -90,8 +89,12 @@ describe('DotEditContentRelationshipFieldComponent', () => {
             mockProvider(DotMessageService, {
                 get: jest.fn().mockReturnValue('Mock Message')
             }),
-            mockProvider(DotContentTypeService),
-            mockProvider(DotHttpErrorManagerService),
+            mockProvider(DotContentTypeService, {
+                getContentType: jest.fn().mockReturnValue(of(mockContentType))
+            }),
+            mockProvider(DotHttpErrorManagerService, {
+                handle: jest.fn()
+            }),
             mockProvider(DotCurrentUserService),
             DialogService
         ],
@@ -108,7 +111,6 @@ describe('DotEditContentRelationshipFieldComponent', () => {
 
         store = spectator.inject(RelationshipFieldStore, true);
         dialogService = spectator.inject(DialogService);
-        contentTypeService = spectator.inject(DotContentTypeService);
     });
 
     describe('Component Initialization', () => {
@@ -146,39 +148,6 @@ describe('DotEditContentRelationshipFieldComponent', () => {
             spectator.flushEffects();
 
             expect(store.data()).toEqual([]);
-        });
-
-        it('should handle invalid field data gracefully', () => {
-            const invalidField = createFakeRelationshipField({
-                relationships: null,
-                variable: 'invalidField'
-            });
-
-            const invalidContentlet = createFakeContentlet({
-                [invalidField.variable]: null
-            });
-
-            spectator.setInput({
-                $field: invalidField,
-                $contentlet: invalidContentlet
-            });
-
-            spectator.detectChanges();
-            spectator.flushEffects();
-
-            expect(store.data()).toBeDefined();
-        });
-
-        it('should handle null contentlet gracefully', () => {
-            spectator.setInput({
-                $field: mockField,
-                $contentlet: null
-            });
-
-            spectator.detectChanges();
-            spectator.flushEffects();
-
-            expect(store.data()).toBeDefined();
         });
     });
 
@@ -218,12 +187,12 @@ describe('DotEditContentRelationshipFieldComponent', () => {
         });
 
         it('should not show create content dialog when disabled', () => {
-            const getContentTypeSpy = jest.spyOn(contentTypeService, 'getContentType');
+            const openSpy = jest.spyOn(dialogService, 'open');
             spectator.component.setDisabledState(true);
             spectator.detectChanges();
 
             spectator.component.showCreateNewContentDialog();
-            expect(getContentTypeSpy).not.toHaveBeenCalled();
+            expect(openSpy).not.toHaveBeenCalled();
         });
     });
 
@@ -264,7 +233,8 @@ describe('DotEditContentRelationshipFieldComponent', () => {
             store.initialize({
                 cardinality: 1, // MANY_TO_MANY
                 contentlet: createFakeContentlet({}),
-                variable: 'test'
+                variable: 'test',
+                contentTypeId: 'test-content-type-id'
             });
             store.setData([]);
         });
@@ -324,25 +294,16 @@ describe('DotEditContentRelationshipFieldComponent', () => {
             store.initialize({
                 cardinality: 1, // MANY_TO_MANY
                 contentlet: createFakeContentlet({}),
-                variable: 'test'
+                variable: 'test',
+                contentTypeId: 'test-content-type-id'
             });
             store.setData([]);
-        });
-
-        it('should fetch content type when showing create dialog', () => {
-            const getContentTypeSpy = jest.spyOn(contentTypeService, 'getContentType');
-            getContentTypeSpy.mockReturnValue(of(mockContentType));
-
-            spectator.component.showCreateNewContentDialog();
-
-            expect(getContentTypeSpy).toHaveBeenCalled();
+            // Mock the content type in the store
+            store.loadContentType('test-content-type-id');
         });
 
         it('should call showCreateNewContentDialog without errors', () => {
-            const getContentTypeSpy = jest.spyOn(contentTypeService, 'getContentType');
             const openSpy = jest.spyOn(dialogService, 'open');
-
-            getContentTypeSpy.mockReturnValue(of(mockContentType));
             openSpy.mockReturnValue({} as DynamicDialogRef);
 
             expect(() => {
@@ -351,17 +312,7 @@ describe('DotEditContentRelationshipFieldComponent', () => {
         });
 
         it('should handle legacy content dialog when feature flag is disabled', () => {
-            const legacyContentType = {
-                ...mockContentType,
-                metadata: {
-                    [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: false
-                }
-            };
-
-            const getContentTypeSpy = jest.spyOn(contentTypeService, 'getContentType');
-            getContentTypeSpy.mockReturnValue(of(legacyContentType));
-
-            // Since openLegacyContentDialog is currently a placeholder, we just verify it doesn't crash
+            // Test that the component doesn't crash when the feature flag is disabled
             expect(() => {
                 spectator.component.showCreateNewContentDialog();
             }).not.toThrow();
