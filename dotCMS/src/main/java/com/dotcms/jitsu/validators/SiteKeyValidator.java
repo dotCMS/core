@@ -20,7 +20,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.Map;
 import java.util.Optional;
 
-import static com.dotcms.jitsu.validators.ValidationErrorCode.INVALID_FIELD_VALUE;
+import static com.dotcms.jitsu.validators.ValidationErrorCode.INVALID_SITE_KEY;
 import static com.dotcms.jitsu.validators.ValidationErrorCode.REQUIRED_FIELD_MISSING;
 import static com.dotmarketing.util.Constants.DONT_RESPECT_FRONT_END_ROLES;
 import static com.liferay.util.StringPool.BLANK;
@@ -63,10 +63,10 @@ public class SiteKeyValidator implements AnalyticsValidator {
             final String errorMsg = String.format("Site Key for Site '%s' could not be verified: %s",
                     null != currentSite ? currentSite.getHostname() : BLANK, ExceptionUtil.getErrorMessage(e));
             Logger.warnAndDebug(ContentAnalyticsUtil.class, errorMsg, e);
-            throw new AnalyticsValidationException(errorMsg, INVALID_FIELD_VALUE);
+            throw new AnalyticsValidationException(errorMsg, INVALID_SITE_KEY);
         }
         if (!isKeyValid) {
-            throw new AnalyticsValidationException("Invalid Site Key", INVALID_FIELD_VALUE);
+            throw new AnalyticsValidationException("Invalid Site Key", INVALID_SITE_KEY);
         }
     }
 
@@ -89,7 +89,7 @@ public class SiteKeyValidator implements AnalyticsValidator {
             if (null == currentSite) {
                 currentSite = hostAPI.findByAlias(siteFromRequestOpt.get(), APILocator.systemUser(), DONT_RESPECT_FRONT_END_ROLES);
                 if (null == currentSite) {
-                    throw new AnalyticsValidationException(String.format("Site with name/alias '%s' was not found", siteFromRequestOpt.get()), INVALID_FIELD_VALUE);
+                    throw new AnalyticsValidationException(String.format("Site with name/alias '%s' was not found", siteFromRequestOpt.get()), REQUIRED_FIELD_MISSING);
                 }
             }
             return currentSite;
@@ -97,7 +97,7 @@ public class SiteKeyValidator implements AnalyticsValidator {
             final String errorMsg = String.format("Site with name/alias '%s' could not be found: %s",
                     siteFromRequestOpt.get(), ExceptionUtil.getErrorMessage(e));
             Logger.error(ContentAnalyticsUtil.class, errorMsg, e);
-            throw new AnalyticsValidationException(errorMsg, INVALID_FIELD_VALUE);
+            throw new AnalyticsValidationException(errorMsg, INVALID_SITE_KEY);
         }
     }
 
