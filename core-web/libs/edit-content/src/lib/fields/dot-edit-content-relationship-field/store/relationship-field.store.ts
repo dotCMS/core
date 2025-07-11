@@ -86,105 +86,105 @@ export const RelationshipFieldStore = signalStore(
             store,
             dotContentTypeService = inject(DotContentTypeService),
             dotHttpErrorManagerService = inject(DotHttpErrorManagerService)
-        ) => {
-            return {
-                /**
-                 * Sets the data in the state.
-                 * @param {RelationshipFieldItem[]} data - The data to be set.
-                 */
-                setData(data: DotCMSContentlet[]) {
-                    patchState(store, { data: [...data] });
-                },
-                /**
-                 * Sets the cardinality of the relationship field.
-                 * @param {number} cardinality - The cardinality of the relationship field.
-                 */
-                initialize(params: {
-                    cardinality: number;
-                    contentlet: DotCMSContentlet;
-                    variable: string;
-                    contentTypeId: string;
-                }) {
-                    const { cardinality, contentlet, variable, contentTypeId } = params;
+        ) => ({
+            /**
+             * Sets the data in the state.
+             * @param {RelationshipFieldItem[]} data - The data to be set.
+             */
+            setData(data: DotCMSContentlet[]) {
+                patchState(store, { data: [...data] });
+            },
+            /**
+             * Initializes the relationship field with the provided parameters.
+             * @param {object} params - The initialization parameters.
+             * @param {number} params.cardinality - The cardinality of the relationship field.
+             * @param {DotCMSContentlet} params.contentlet - The contentlet containing the relationship data.
+             * @param {string} params.variable - The variable name for the relationship field.
+             * @param {string} params.contentTypeId - The ID of the content type to load.
+             */
+            initialize: rxMethod<{
+                cardinality: number;
+                contentlet: DotCMSContentlet;
+                variable: string;
+                contentTypeId: string;
+            }>((params$) =>
+                params$.pipe(
+                    switchMap((params) => {
+                        const { cardinality, contentlet, variable, contentTypeId } = params;
 
-                    const data = getRelationshipFromContentlet({ contentlet, variable });
-                    const selectionMode = getSelectionModeByCardinality(cardinality);
+                        // Validate and set initial data
+                        const data = getRelationshipFromContentlet({ contentlet, variable });
+                        const selectionMode = getSelectionModeByCardinality(cardinality);
 
-                    patchState(store, {
-                        selectionMode,
-                        data,
-                        status: ComponentStatus.LOADING
-                    });
+                        // Reset state first
+                        patchState(store, {
+                            status: ComponentStatus.LOADING,
+                            contentType: null, // Reset contentType to prevent stale state
+                            isNewEditorEnabled: false, // Reset isNewEditorEnabled to prevent stale state
+                            selectionMode,
+                            data
+                        });
 
-                    // Load the content type as part of initialization
-                    this.loadContentType(contentTypeId);
-                },
-                /**
-                 * Deletes an item from the store at the specified index.
-                 * @param index - The index of the item to delete.
-                 */
-                deleteItem(inode: string) {
-                    patchState(store, {
-                        data: store.data().filter((item) => item.inode !== inode)
-                    });
-                },
-                /**
-                 * Loads the content type and checks for the CONTENT_EDITOR2_ENABLED flag.
-                 * @param contentTypeId - The ID of the content type to load.
-                 */
-                loadContentType: rxMethod<string>((contentTypeId$) =>
-                    contentTypeId$.pipe(
-                        switchMap((contentTypeId) =>
-                            dotContentTypeService.getContentType(contentTypeId).pipe(
-                                tap((contentType) => {
-                                    const isNewEditorEnabled =
-                                        contentType.metadata?.[
-                                            FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED
-                                        ] === true;
+                        // Continue with content type loading
+                        return dotContentTypeService.getContentType(contentTypeId).pipe(
+                            tap((contentType) => {
+                                const isNewEditorEnabled =
+                                    contentType.metadata?.[
+                                        FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED
+                                    ] === true;
 
-                                    patchState(store, {
-                                        contentType,
-                                        isNewEditorEnabled,
-                                        status: ComponentStatus.LOADED
-                                    });
-                                }),
-                                catchError((error) => {
-                                    dotHttpErrorManagerService.handle(error);
-                                    patchState(store, {
-                                        status: ComponentStatus.ERROR
-                                    });
+                                patchState(store, {
+                                    contentType,
+                                    isNewEditorEnabled,
+                                    status: ComponentStatus.LOADED
+                                });
+                            })
+                        );
+                    }),
+                    catchError((error) => {
+                        // Handle all errors (validation and async) here
+                        dotHttpErrorManagerService.handle(error);
+                        patchState(store, {
+                            status: ComponentStatus.ERROR
+                        });
 
-                                    return EMPTY;
-                                })
-                            )
-                        )
-                    )
-                ),
-                /**
-                 * Advances the pagination to the next page and updates the state accordingly.
-                 */
-                nextPage: () => {
-                    patchState(store, {
-                        pagination: {
-                            ...store.pagination(),
-                            offset: store.pagination().offset + store.pagination().rowsPerPage,
-                            currentPage: store.pagination().currentPage + 1
-                        }
-                    });
-                },
-                /**
-                 * Moves the pagination to the previous page and updates the state accordingly.
-                 */
-                previousPage: () => {
-                    patchState(store, {
-                        pagination: {
-                            ...store.pagination(),
-                            offset: store.pagination().offset - store.pagination().rowsPerPage,
-                            currentPage: store.pagination().currentPage - 1
-                        }
-                    });
-                }
-            };
-        }
+                        return EMPTY;
+                    })
+                )
+            ),
+            /**
+             * Deletes an item from the store at the specified index.
+             * @param index - The index of the item to delete.
+             */
+            deleteItem(inode: string) {
+                patchState(store, {
+                    data: store.data().filter((item) => item.inode !== inode)
+                });
+            },
+            /**
+             * Advances the pagination to the next page and updates the state accordingly.
+             */
+            nextPage: () => {
+                patchState(store, {
+                    pagination: {
+                        ...store.pagination(),
+                        offset: store.pagination().offset + store.pagination().rowsPerPage,
+                        currentPage: store.pagination().currentPage + 1
+                    }
+                });
+            },
+            /**
+             * Moves the pagination to the previous page and updates the state accordingly.
+             */
+            previousPage: () => {
+                patchState(store, {
+                    pagination: {
+                        ...store.pagination(),
+                        offset: store.pagination().offset - store.pagination().rowsPerPage,
+                        currentPage: store.pagination().currentPage - 1
+                    }
+                });
+            }
+        })
     )
 );

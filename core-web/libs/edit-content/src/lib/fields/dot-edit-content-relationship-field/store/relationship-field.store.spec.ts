@@ -334,15 +334,22 @@ describe('RelationshipFieldStore', () => {
                 expect(store.data().length).toBe(0);
             });
 
-            it('should handle extreme cardinality values', () => {
-                expect(() => {
-                    store.initialize({
-                        cardinality: 999,
-                        contentlet: mockContentlet,
-                        variable: 'relationship_field',
-                        contentTypeId: 'test-content-type'
-                    });
-                }).toThrowError();
+            it('should handle extreme cardinality values', async () => {
+                const dotHttpErrorManagerService = spectator.inject(DotHttpErrorManagerService);
+                const handleErrorSpy = jest.spyOn(dotHttpErrorManagerService, 'handle');
+
+                store.initialize({
+                    cardinality: 999,
+                    contentlet: mockContentlet,
+                    variable: 'relationship_field',
+                    contentTypeId: 'test-content-type'
+                });
+
+                // Wait for async operation to complete
+                await new Promise((resolve) => setTimeout(resolve, 10));
+
+                expect(handleErrorSpy).toHaveBeenCalled();
+                expect(store.status()).toBe(ComponentStatus.ERROR);
             });
         });
 

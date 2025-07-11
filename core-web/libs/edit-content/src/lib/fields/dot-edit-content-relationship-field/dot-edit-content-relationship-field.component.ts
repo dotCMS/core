@@ -22,7 +22,7 @@ import { TableRowReorderEvent, TableModule } from 'primeng/table';
 import { filter } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotCMSContentlet, DotCMSContentType, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { ContentletStatusPipe } from '@dotcms/edit-content/pipes/contentlet-status.pipe';
 import { LanguagePipe } from '@dotcms/edit-content/pipes/language.pipe';
 import { DotMessagePipe } from '@dotcms/ui';
@@ -52,7 +52,6 @@ import { EditContentDialogData } from '../../models/dot-edit-content-dialog.inte
     ],
     providers: [
         RelationshipFieldStore,
-        DialogService,
         {
             multi: true,
             provide: NG_VALUE_ACCESSOR,
@@ -271,6 +270,14 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
             return;
         }
 
+        const attributes = this.$attributes();
+        const contentTypeId = attributes.contentTypeId;
+
+        // Don't open dialog if contentTypeId is null (invalid field data)
+        if (!contentTypeId) {
+            return;
+        }
+
         this.#dialogRef = this.#dialogService.open(DotSelectExistingContentComponent, {
             appendTo: 'body',
             closeOnEscape: false,
@@ -284,7 +291,7 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
             maskStyleClass: 'p-dialog-mask-dynamic p-dialog-relationship-field',
             style: { 'max-width': '1040px', 'max-height': '800px' },
             data: {
-                contentTypeId: this.$attributes().contentTypeId,
+                contentTypeId: contentTypeId,
                 selectionMode: this.store.selectionMode(),
                 currentItemsIds: this.store.data().map((item) => item.inode)
             },
@@ -305,23 +312,6 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
     }
 
     /**
-     * Shows the create new content dialog for creating content using the Angular editor.
-     * This method now uses the content type stored in the store instead of fetching it again.
-     */
-    showCreateNewContentDialog() {
-        if (this.$isDisabled() || !this.store.isNewEditorEnabled()) {
-            return;
-        }
-
-        const contentType = this.store.contentType();
-        if (!contentType) {
-            return;
-        }
-
-        this.openNewContentDialog(contentType);
-    }
-
-    /**
      * Reorders the data in the store.
      * @param {TableRowReorderEvent} event - The event containing the drag and drop indices.
      */
@@ -335,11 +325,13 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
 
     /**
      * Opens the new content dialog for creating content using the Angular editor
-     *
-     * @private
-     * @param {DotCMSContentType} contentType - The content type to create content for
      */
-    private openNewContentDialog(contentType: DotCMSContentType): void {
+    showCreateNewContentDialog(): void {
+        const contentType = this.store.contentType();
+        if (this.$isDisabled() || !contentType) {
+            return;
+        }
+
         const dialogData: EditContentDialogData = {
             mode: 'new',
             contentTypeId: contentType.id,
