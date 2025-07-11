@@ -62,7 +62,7 @@ public class SiteKeyValidator implements AnalyticsValidator {
                     }
                 }
             } else {
-                Logger.warn(ContentAnalyticsUtil.class, "HTTP Request object could not be retrieved");
+                Logger.warn(this, "HTTP Request object could not be retrieved");
             }
         } catch (final DotDataException | DotSecurityException e) {
             final String errorMsg = String.format("Site Key for Site '%s' could not be verified: %s",
