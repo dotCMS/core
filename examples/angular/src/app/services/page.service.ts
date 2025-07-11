@@ -28,6 +28,7 @@ export class PageService {
         url: string,
         params: DotCMSPageRequestParams
     ): Observable<DotCMSComposedPageResponse<T>> {
+        console.log('getPageAsset', url, params);
 
         return from(
             this.client.page.get<T>(url, {
