@@ -4,5 +4,10 @@
     "lib": {
         "entryFile": "src/public_api.ts"
     },
-    "allowedNonPeerDependencies": ["@dotcms/uve", "@dotcms/types", "@tinymce/tinymce-angular"]
+    "allowedNonPeerDependencies": [
+        "@dotcms/uve",
+        "@dotcms/client",
+        "@dotcms/types",
+        "@tinymce/tinymce-angular"
+    ]
 }
