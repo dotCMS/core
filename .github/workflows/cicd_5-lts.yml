@@ -39,7 +39,7 @@ jobs:
     with:
       core-build: true
       run-pr-checks: false
-      version: '25.07.10'
+      version: '25.07.10-1'
     permissions:
       contents: read
       packages: write
