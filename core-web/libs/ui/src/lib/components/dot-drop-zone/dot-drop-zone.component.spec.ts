@@ -46,13 +46,18 @@ describe('DotDropZoneComponent', () => {
     });
 
     beforeEach(async () => {
-        spectator = createHost(`
-            <dot-drop-zone>
+        spectator = createHost(
+            `<dot-drop-zone [disabled]="disabled">
                 <div id="dot-drop-zone__content" class="dot-drop-zone__content">
                     Content
                 </div>
-            </dot-drop-zone>
-        `);
+            </dot-drop-zone>`,
+            {
+                hostProps: {
+                    disabled: false
+                }
+            }
+        );
 
         spectator.detectChanges();
     });
@@ -282,6 +287,95 @@ describe('DotDropZoneComponent', () => {
 
             expect(spyEventPrevent).toHaveBeenCalled();
             expect(spyEventStop).toHaveBeenCalled();
+        });
+    });
+
+    describe('when disabled', () => {
+        beforeEach(() => {
+            spectator.setHostInput('disabled', true);
+            spectator.detectChanges();
+        });
+
+        it('should add disabled class to host element', () => {
+            expect(spectator.element).toHaveClass('disabled');
+        });
+
+        it('should not emit events when onDrop is called while disabled', () => {
+            const spy = jest.spyOn(spectator.component.fileDropped, 'emit');
+            const dataTransfer = createMockDataTransfer([mockFile]);
+
+            const dropEvent = {
+                preventDefault: jest.fn(),
+                stopPropagation: jest.fn(),
+                dataTransfer
+            };
+
+            spectator.component.onDrop(dropEvent as any);
+
+            expect(spy).not.toHaveBeenCalled();
+        });
+
+        it('should not emit events when onDragEnter is called while disabled', () => {
+            const spy = jest.spyOn(spectator.component.fileDragEnter, 'emit');
+            const event = new DragEvent('dragenter');
+
+            spectator.component.onDragEnter(event);
+
+            expect(spy).not.toHaveBeenCalled();
+        });
+
+        it('should not emit events when onDragOver is called while disabled', () => {
+            const spy = jest.spyOn(spectator.component.fileDragOver, 'emit');
+            const event = new DragEvent('dragover');
+
+            spectator.component.onDragOver(event);
+
+            expect(spy).not.toHaveBeenCalled();
+        });
+
+        it('should not emit events when onDragLeave is called while disabled', () => {
+            const spy = jest.spyOn(spectator.component.fileDragLeave, 'emit');
+            const event = new DragEvent('dragleave');
+
+            spectator.component.onDragLeave(event);
+
+            expect(spy).not.toHaveBeenCalled();
+        });
+
+        it('should return early from onDrop without processing files when disabled', () => {
+            const preventDefaultSpy = jest.fn();
+            const stopPropagationSpy = jest.fn();
+            const dataTransfer = createMockDataTransfer([mockFile]);
+
+            const dropEvent = {
+                preventDefault: preventDefaultSpy,
+                stopPropagation: stopPropagationSpy,
+                dataTransfer
+            };
+
+            spectator.component.onDrop(dropEvent as any);
+
+            // Event methods should not be called since function returns early
+            expect(preventDefaultSpy).not.toHaveBeenCalled();
+            expect(stopPropagationSpy).not.toHaveBeenCalled();
+        });
+
+        it('should return early from drag events without calling event methods when disabled', () => {
+            const preventDefaultSpy = jest.fn();
+            const stopPropagationSpy = jest.fn();
+
+            const dragEvent = {
+                preventDefault: preventDefaultSpy,
+                stopPropagation: stopPropagationSpy
+            };
+
+            spectator.component.onDragEnter(dragEvent as any);
+            spectator.component.onDragOver(dragEvent as any);
+            spectator.component.onDragLeave(dragEvent as any);
+
+            // Event methods should not be called since functions return early
+            expect(preventDefaultSpy).not.toHaveBeenCalled();
+            expect(stopPropagationSpy).not.toHaveBeenCalled();
         });
     });
 });
