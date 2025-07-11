@@ -63,8 +63,6 @@ import static com.dotmarketing.util.Constants.DONT_RESPECT_FRONT_END_ROLES;
         description = "This REST Endpoint exposes information related to how dotCMS content is accessed and interacted with by users.")
 public class ContentAnalyticsResource {
 
-    private final Lazy<Boolean> ANALYTICS_EVENTS_REQUIRE_AUTHENTICATION = Lazy.of(() -> Config.getBooleanProperty("ANALYTICS_EVENTS_REQUIRE_AUTHENTICATION", true));
-
     private final WebResource webResource;
     private final ContentAnalyticsAPI contentAnalyticsAPI;
 
@@ -320,17 +318,12 @@ public class ContentAnalyticsResource {
     public Response fireUserCustomEvent(@Context final HttpServletRequest request,
                                                 @Context final HttpServletResponse response,
                                                 final Map<String, Serializable> userEventPayload) throws DotSecurityException {
-
         checkNotNull(userEventPayload, IllegalArgumentException.class, "The 'userEventPayload' JSON cannot be null");
-        final User user = new WebResource.InitBuilder(this.webResource)
+        new WebResource.InitBuilder(this.webResource)
                 .requestAndResponse(request, response)
                 .requiredAnonAccess(AnonymousAccess.READ)
                 .rejectWhenNoUser(false)
-                .init().getUser();
-        if (ANALYTICS_EVENTS_REQUIRE_AUTHENTICATION.get() && user.isAnonymousUser()) {
-                throw new DotSecurityException("Anonymous user is not allowed to fire an event");
-            }
-
+                .init();
         Logger.debug(this,  ()->"Creating an user custom event with the payload: " + userEventPayload);
 
         final AnalyticsEventsResult analyticsEventsResult =

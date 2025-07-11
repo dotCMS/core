@@ -15,13 +15,13 @@ import com.dotmarketing.util.URLUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONObject;
 import com.liferay.util.HttpHeaders;
+import io.vavr.control.Try;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.Map;
 import java.util.Optional;
 
 import static com.dotcms.jitsu.validators.ValidationErrorCode.INVALID_SITE_KEY;
-import static com.dotcms.jitsu.validators.ValidationErrorCode.REQUIRED_FIELD_MISSING;
 import static com.dotmarketing.util.Constants.DONT_RESPECT_FRONT_END_ROLES;
 import static com.liferay.util.StringPool.BLANK;
 
@@ -43,26 +43,31 @@ public class SiteKeyValidator implements AnalyticsValidator {
 
     @Override
     public void validate(final Object fieldValue) throws AnalyticsValidationException {
-        boolean isKeyValid = true;
-        final String siteKey = fieldValue.toString();
+        boolean isKeyValid = false;
+        final String siteKey = Try.of(fieldValue::toString).getOrElse(BLANK);
         final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
         Host currentSite = new Host();
         try {
-            currentSite = this.getSiteFromRequest(request);
-            final Optional<AppSecrets> secretsOpt = APILocator.getAppsAPI().getSecrets(ContentAnalyticsUtil.CONTENT_ANALYTICS_APP_KEY, false, currentSite, APILocator.systemUser());
-            if (secretsOpt.isPresent()) {
-                final Map<String, Secret> secretsMap = secretsOpt.get().getSecrets();
-                if (null != secretsMap.get("siteKey")) {
-                    final String siteKeyFromApp = secretsMap.get("siteKey").getString();
-                    if (!siteKeyFromApp.equals(siteKey)) {
-                        isKeyValid = false;
+            if (null != request) {
+                currentSite = this.getSiteFromRequest(request);
+                final Optional<AppSecrets> secretsOpt =
+                        APILocator.getAppsAPI().getSecrets(ContentAnalyticsUtil.CONTENT_ANALYTICS_APP_KEY, false, currentSite, APILocator.systemUser());
+                if (secretsOpt.isPresent()) {
+                    final Map<String, Secret> secretsMap = secretsOpt.get().getSecrets();
+                    if (null != secretsMap.get("siteKey")) {
+                        final String siteKeyFromApp = secretsMap.get("siteKey").getString();
+                        if (UtilMethods.isSet(siteKeyFromApp) && siteKeyFromApp.equals(siteKey)) {
+                            isKeyValid = true;
+                        }
                     }
                 }
+            } else {
+                Logger.warn(ContentAnalyticsUtil.class, "HTTP Request object could not be retrieved");
             }
         } catch (final DotDataException | DotSecurityException e) {
             final String errorMsg = String.format("Site Key for Site '%s' could not be verified: %s",
                     null != currentSite ? currentSite.getHostname() : BLANK, ExceptionUtil.getErrorMessage(e));
-            Logger.warnAndDebug(ContentAnalyticsUtil.class, errorMsg, e);
+            Logger.warnAndDebug(SiteKeyValidator.class, errorMsg, e);
             throw new AnalyticsValidationException(errorMsg, INVALID_SITE_KEY);
         }
         if (!isKeyValid) {
@@ -79,9 +84,10 @@ public class SiteKeyValidator implements AnalyticsValidator {
      * @return The Site that the Event is being sent to.
      */
     private Host getSiteFromRequest(final HttpServletRequest request) throws AnalyticsValidationException {
-        final Optional<String> siteFromRequestOpt = this.getSiteAliasFromRequest(request);
+        final Optional<String> siteFromRequestOpt = this.getSiteNameOrAlias(request);
         if (siteFromRequestOpt.isEmpty()) {
-            throw new AnalyticsValidationException("Site could not be retrieved from Origin or Referer HTTP Headers", REQUIRED_FIELD_MISSING);
+            throw new AnalyticsValidationException("Site could not be retrieved from Origin or Referer HTTP Headers",
+                    INVALID_SITE_KEY);
         }
         final HostAPI hostAPI = APILocator.getHostAPI();
         try {
@@ -89,14 +95,15 @@ public class SiteKeyValidator implements AnalyticsValidator {
             if (null == currentSite) {
                 currentSite = hostAPI.findByAlias(siteFromRequestOpt.get(), APILocator.systemUser(), DONT_RESPECT_FRONT_END_ROLES);
                 if (null == currentSite) {
-                    throw new AnalyticsValidationException(String.format("Site with name/alias '%s' was not found", siteFromRequestOpt.get()), REQUIRED_FIELD_MISSING);
+                    throw new AnalyticsValidationException(String.format("Site with name/alias '%s' was not found",
+                            siteFromRequestOpt.get()), INVALID_SITE_KEY);
                 }
             }
             return currentSite;
         } catch (final DotDataException | DotSecurityException e) {
-            final String errorMsg = String.format("Site with name/alias '%s' could not be found: %s",
+            final String errorMsg = String.format("Failed to retrieve Site with name/alias '%s': %s",
                     siteFromRequestOpt.get(), ExceptionUtil.getErrorMessage(e));
-            Logger.error(ContentAnalyticsUtil.class, errorMsg, e);
+            Logger.error(this, errorMsg, e);
             throw new AnalyticsValidationException(errorMsg, INVALID_SITE_KEY);
         }
     }
@@ -109,7 +116,7 @@ public class SiteKeyValidator implements AnalyticsValidator {
      * @param request The HTTP request to extract the site alias from
      * @return The extracted site alias (domain) or null if not found
      */
-    private Optional<String> getSiteAliasFromRequest(final HttpServletRequest request) {
+    private Optional<String> getSiteNameOrAlias(final HttpServletRequest request) {
         String siteUrl = request.getHeader(HttpHeaders.ORIGIN);
         if (UtilMethods.isNotSet(siteUrl)) {
             siteUrl = request.getHeader(HttpHeaders.REFERER);
@@ -121,8 +128,9 @@ public class SiteKeyValidator implements AnalyticsValidator {
                 if (parsedUrl != null && UtilMethods.isSet(parsedUrl.getHost())) {
                     return Optional.of(parsedUrl.getHost());
                 }
+                Logger.debug(this, String.format("Site Name or Alias could not be retrieved from '%s'", siteUrl));
             } catch (final IllegalArgumentException e) {
-                Logger.warn(ContentAnalyticsUtil.class, String.format("Site Alias could not be retrieved from HTTP Request: " +
+                Logger.warn(this, String.format("Site Alias could not be retrieved from HTTP Request: " +
                         "%s", ExceptionUtil.getErrorMessage(e)));
             }
         }
