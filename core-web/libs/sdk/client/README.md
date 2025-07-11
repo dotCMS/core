@@ -89,7 +89,7 @@ For detailed instructions, please refer to the [dotCMS API Documentation - Read-
 Install the SDK and required dependencies:
 
 ```bash
-npm install @dotcms/client@next @dotcms/types@next
+npm install @dotcms/client@latest @dotcms/types@latest
 ```
 
 > [!TIP]
@@ -100,7 +100,7 @@ npm install @dotcms/client@next @dotcms/types@next
 Here's a basic setup of the dotCMS Client SDK to help you get started:
 
 ```typescript
-import { createDotCMSClient } from '@dotcms/client/next';
+import { createDotCMSClient } from '@dotcms/client';
 
 // Create a client instance
 const client = createDotCMSClient({
@@ -173,7 +173,7 @@ The `createDotCMSClient` function is the first step in using the dotCMS Client S
 #### Initialization Example
 
 ```typescript
-import { createDotCMSClient } from '@dotcms/client/next';
+import { createDotCMSClient } from '@dotcms/client';
 
 const client = createDotCMSClient({
     dotcmsUrl: 'https://your-dotcms-instance.com',
@@ -477,7 +477,7 @@ getCollection<T = DotCMSBasicContentlet>(
 
 ## Using the SDK with TypeScript
 
-As mentioned earlier, dotCMS provides a rich set of types provided by the `@dotcms/types@next` package. These types can be leveraged to ensure proper typing for your page and content data, enhancing type safety and developer experience.
+As mentioned earlier, dotCMS provides a rich set of types provided by the `@dotcms/types@latest` package. These types can be leveraged to ensure proper typing for your page and content data, enhancing type safety and developer experience.
 
 ### Defining Page Response Types
 

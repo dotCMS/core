@@ -10,14 +10,16 @@ import {
 } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
+import { LazyLoadEvent, SortEvent } from 'primeng/api';
+
 import { catchError, take } from 'rxjs/operators';
 
 import { DotContentSearchService, DotSiteService } from '@dotcms/data-access';
 import { ESContent } from '@dotcms/dotcms-models';
 import { DotFolderListViewComponent } from '@dotcms/portlets/content-drive/ui';
 
-import { SYSTEM_HOST } from '../shared/constants';
-import { DotContentDriveStatus } from '../shared/models';
+import { SORT_ORDER, SYSTEM_HOST } from '../shared/constants';
+import { DotContentDriveSortOrder, DotContentDriveStatus } from '../shared/models';
 import { DotContentDriveStore } from '../store/dot-content-drive.store';
 import { decodeFilters } from '../utils/functions';
 
@@ -40,35 +42,48 @@ export class DotContentDriveShellComponent implements OnInit {
     readonly #route = inject(ActivatedRoute);
 
     readonly $items = this.#store.items;
+    readonly $totalItems = this.#store.totalItems;
+    readonly $status = this.#store.status;
 
-    readonly itemsEffect = effect(() => {
-        const currentSite = untracked(() => this.#store.currentSite());
-        const query = this.#store.$query();
+    readonly DOT_CONTENT_DRIVE_STATUS = DotContentDriveStatus;
 
-        // If the current site is the system host, we don't need to search for content
-        // It initializes the store with the system host and the path
-        if (currentSite?.identifier === SYSTEM_HOST.identifier) {
-            return;
-        }
+    readonly itemsEffect = effect(
+        () => {
+            const currentSite = untracked(() => this.#store.currentSite());
+            const query = this.#store.$query();
+            const { limit, offset } = this.#store.pagination();
+            const { field, order } = this.#store.sort();
 
-        this.#contentSearchService
-            .get<ESContent>({
-                query,
-                limit: 40,
-                offset: 0
-            })
-            .pipe(
-                take(1),
-                catchError(() => {
-                    this.#store.setStatus(DotContentDriveStatus.ERROR);
+            // If the current site is the system host, we don't need to search for content
+            // It initializes the store with the system host and the path
 
-                    return EMPTY;
+            if (currentSite?.identifier === SYSTEM_HOST.identifier) {
+                return;
+            }
+
+            this.#store.setStatus(DotContentDriveStatus.LOADING);
+
+            this.#contentSearchService
+                .get<ESContent>({
+                    query,
+                    limit,
+                    offset,
+                    sort: `score,${field} ${order}`
                 })
-            )
-            .subscribe((response) => {
-                this.#store.setItems(response.jsonObjectView.contentlets);
-            });
-    });
+                .pipe(
+                    take(1),
+                    catchError(() => {
+                        this.#store.setStatus(DotContentDriveStatus.ERROR);
+
+                        return EMPTY;
+                    })
+                )
+                .subscribe((response) => {
+                    this.#store.setItems(response.jsonObjectView.contentlets, response.resultsSize);
+                });
+        },
+        { allowSignalWrites: true }
+    );
 
     ngOnInit(): void {
         this.#siteService
@@ -91,5 +106,29 @@ export class DotContentDriveShellComponent implements OnInit {
                     filters
                 });
             });
+    }
+
+    onPaginate(event: LazyLoadEvent) {
+        // Explicit check because it can potentially be 0
+        if (event.rows === undefined || event.first === undefined) {
+            return;
+        }
+
+        this.#store.setPagination({
+            limit: event.rows,
+            offset: event.first
+        });
+    }
+
+    onSort(event: SortEvent) {
+        // Explicit check because it can potentially be 0
+        if (event.order === undefined || !event.field) {
+            return;
+        }
+
+        this.#store.setSort({
+            field: event.field,
+            order: SORT_ORDER[event.order] ?? DotContentDriveSortOrder.ASC
+        });
     }
 }

@@ -3,7 +3,7 @@ import { provideRouter } from '@angular/router';
 
 import { routes } from './app.routes';
 import { environment } from '../environments/environment';
-import { DotCMSEditablePageService, provideDotCMSClient, provideDotCMSImageLoader } from '@dotcms/angular/next';
+import { DotCMSEditablePageService, provideDotCMSClient, provideDotCMSImageLoader } from '@dotcms/angular';
 
 export const appConfig: ApplicationConfig = {
     providers: [

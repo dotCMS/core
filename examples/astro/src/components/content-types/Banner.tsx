@@ -1,4 +1,4 @@
-import { DotCMSEditableText } from "@dotcms/react/next";
+import { DotCMSEditableText } from "@dotcms/react";
 import type { DotCMSBasicContentlet } from "@dotcms/types";
 
 interface BannerProps extends DotCMSBasicContentlet {

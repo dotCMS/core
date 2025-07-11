@@ -348,31 +348,30 @@ public class ContentAnalyticsResource {
     }
 
     @Operation(
-            operationId = "getSiteConfig",
-            summary = "Site Configuration",
-            description = "Returns the expected JS configuration object that must be used for " +
-                    "client-side JS code to send custom Events",
+            operationId = "generateSiteKey",
+            summary = "Generate Site Key",
+            description = "Generates and returns a Site Key that must be used by the client-side JS " +
+                    "code to send custom Content Analytics Events",
             tags = {"Content Analytics"},
             responses = {
-                    @ApiResponse(responseCode = "200", description = "The Site configuration was " +
+                    @ApiResponse(responseCode = "200", description = "The Site key was generated and " +
                             "returned successfully"),
                     @ApiResponse(responseCode = "400", description = "Bad Request"),
-                    @ApiResponse(responseCode = "403", description = "Forbidden"),
-                    @ApiResponse(responseCode = "415", description = "Unsupported Media Type"),
-                    @ApiResponse(responseCode = "404", description = "Site ID in path is not " +
-                            "present"),
+                    @ApiResponse(responseCode = "401", description = "Unauthorized"),
+                    @ApiResponse(responseCode = "404", description = "Site ID in path is not found or " +
+                            "incorrect path"),
+                    @ApiResponse(responseCode = "405", description = "Method Not Allowed"),
                     @ApiResponse(responseCode = "500", description = "Internal Server Error")
             }
     )
     @GET
-    @Path("/siteconfig/{siteId}")
+    @Path("/sitekey/generate/{siteId}")
     @JSONP
     @NoCache
-    @Consumes(MediaType.TEXT_PLAIN)
     @Produces({MediaType.TEXT_PLAIN, "text/plain"})
-    public Response getSiteConfig(@PathParam("siteId") final String siteId,
-                                  @Context final HttpServletRequest request,
-                                  @Context final HttpServletResponse response) throws DotDataException, DotSecurityException {
+    public Response generateSiteKey(@PathParam("siteId") final String siteId,
+                                    @Context final HttpServletRequest request,
+                                    @Context final HttpServletResponse response) throws DotDataException, DotSecurityException {
         final InitDataObject initDataObject = new WebResource.InitBuilder(this.webResource)
                 .requestAndResponse(request, response)
                 .requiredBackendUser(true)
@@ -381,7 +380,7 @@ public class ContentAnalyticsResource {
         final User user = initDataObject.getUser();
         final Host site = APILocator.getHostAPI().find(siteId, user, DONT_RESPECT_FRONT_END_ROLES);
         Objects.requireNonNull(site, String.format("Site with ID '%s' was not found", siteId));
-        return Response.ok().entity(ContentAnalyticsUtil.getSiteJSConfig(site)).build();
+        return Response.ok().entity(ContentAnalyticsUtil.generateInternalSiteKey(site.getIdentifier())).build();
     }
 
     private int getResponseStatus(final AnalyticsEventsResult analyticsEventsResult) {
