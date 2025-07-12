@@ -16,6 +16,10 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.rules.actionlet.RuleActionlet;
 import com.liferay.portal.model.User;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import javax.servlet.http.HttpServletRequest;
@@ -52,6 +56,21 @@ public class ActionletsResource {
      * <p>
      * Usage: /ruleactionlets/
      */
+    @Operation(
+        summary = "List actionlets",
+        description = "Retrieves all available actionlets for the rules engine"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Actionlets retrieved successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @Path("/actionlets")
     @Produces(MediaType.APPLICATION_JSON)

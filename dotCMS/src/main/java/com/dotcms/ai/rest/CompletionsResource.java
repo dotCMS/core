@@ -22,6 +22,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import javax.ws.rs.Consumes;
 import org.apache.commons.lang3.StringUtils;
 import org.glassfish.jersey.server.JSONP;
 
@@ -47,7 +48,7 @@ import java.util.function.Supplier;
  * It includes methods for generating completions based on a given prompt.
  */
 @Path("/v1/ai/completions")
-@Tag(name = "AI", description = "AI-powered content generation and analysis endpoints")
+@Tag(name = "AI")
 public class CompletionsResource {
 
     /**
@@ -60,7 +61,8 @@ public class CompletionsResource {
      */
     @POST
     @JSONP
-    @Produces({MediaType.APPLICATION_OCTET_STREAM, MediaType.APPLICATION_JSON})
+    @Produces({MediaType.APPLICATION_JSON})
+    @Consumes(MediaType.APPLICATION_JSON)
     @Operation(
         operationId = "summarizeFromContent",
         summary = "Generate AI completions from content",
@@ -69,7 +71,7 @@ public class CompletionsResource {
         responses = {
             @ApiResponse(responseCode = "200", description = "Completion generated successfully",
                 content = @Content(mediaType = "application/json",
-                    schema = @Schema(implementation = Object.class))),
+                    schema = @Schema(type = "object", description = "AI completion response containing generated text and metadata"))),
             @ApiResponse(responseCode = "400", description = "Bad request - Missing or invalid prompt"),
             @ApiResponse(responseCode = "401", description = "Unauthorized - User not authenticated"),
             @ApiResponse(responseCode = "500", description = "Internal server error")
@@ -102,7 +104,8 @@ public class CompletionsResource {
     @Path("/rawPrompt")
     @POST
     @JSONP
-    @Produces({MediaType.APPLICATION_OCTET_STREAM, MediaType.APPLICATION_JSON})
+    @Produces({MediaType.APPLICATION_JSON})
+    @Consumes(MediaType.APPLICATION_JSON)
     @Operation(
         operationId = "rawPrompt",
         summary = "Generate AI completions from raw prompt",
@@ -111,7 +114,7 @@ public class CompletionsResource {
         responses = {
             @ApiResponse(responseCode = "200", description = "Raw completion generated successfully",
                 content = @Content(mediaType = "application/json",
-                    schema = @Schema(implementation = Object.class))),
+                    schema = @Schema(type = "object", description = "AI completion response containing generated text and metadata"))),
             @ApiResponse(responseCode = "400", description = "Bad request - Missing or invalid prompt"),
             @ApiResponse(responseCode = "401", description = "Unauthorized - User not authenticated"),
             @ApiResponse(responseCode = "500", description = "Internal server error")
@@ -143,7 +146,7 @@ public class CompletionsResource {
     @GET
     @JSONP
     @Path("/config")
-    @Produces({MediaType.APPLICATION_OCTET_STREAM, MediaType.APPLICATION_JSON})
+    @Produces({MediaType.APPLICATION_JSON})
     @Operation(
         operationId = "getAiConfig",
         summary = "Get AI service configuration",
@@ -152,7 +155,7 @@ public class CompletionsResource {
         responses = {
             @ApiResponse(responseCode = "200", description = "Configuration retrieved successfully",
                 content = @Content(mediaType = "application/json",
-                    schema = @Schema(implementation = Map.class))),
+                    schema = @Schema(type = "object", description = "AI service configuration with available models and settings"))),
             @ApiResponse(responseCode = "401", description = "Unauthorized - User not authenticated"),
             @ApiResponse(responseCode = "500", description = "Internal server error")
         }

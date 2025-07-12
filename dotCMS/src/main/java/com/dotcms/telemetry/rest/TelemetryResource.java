@@ -35,8 +35,9 @@ public class TelemetryResource {
     @GET
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON})
+    @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Retrieves dotCMS usage data",
+            description = "Collects and returns telemetry metrics about dotCMS usage, system performance, and configuration. Requires CMS Administrator role.",
             responses = {
                     @ApiResponse(
                             responseCode = "200",

@@ -21,15 +21,19 @@ import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.model.User;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.glassfish.jersey.server.JSONP;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -49,7 +53,7 @@ import java.util.Set;
 
 /**
  * Endpoint for managing PP endpoints
- @author jsanca
+ * @author jsanca
  */
 @Tag(name = "Environment")
 @Path("/v1/environments/endpoints")
@@ -66,15 +70,25 @@ public class EndpointResource {
 	 * @throws JSONException
 	 *
 	 */
-	@Operation(summary = "Returns the endpoints",
-			responses = {
-					@ApiResponse(
-							responseCode = "200",
-							content = @Content(mediaType = "application/json",
-									schema = @Schema(implementation =
-											ResponseEntityEndpointsView.class)),
-							description = "Collection of environments.")
-			})
+	@Operation(
+		summary = "Get all endpoints",
+		description = "Returns all publishing endpoints available to the current user. Admin users see all endpoints, while regular users only see endpoints they have access to."
+	)
+	@ApiResponses(value = {
+			@ApiResponse(
+					responseCode = "200",
+					description = "Endpoints retrieved successfully",
+					content = @Content(mediaType = "application/json",
+							schema = @Schema(implementation = ResponseEntityEndpointsView.class))),
+			@ApiResponse(
+					responseCode = "401",
+					description = "Unauthorized - backend user required",
+					content = @Content(mediaType = "application/json")),
+			@ApiResponse(
+					responseCode = "500",
+					description = "Internal server error",
+					content = @Content(mediaType = "application/json"))
+	})
 	@GET
 	@Produces("application/json")
 	@NoCache
@@ -103,22 +117,32 @@ public class EndpointResource {
 	 * @throws JSONException
 	 *
 	 */
-	@Operation(summary = "Returns the endpoints",
-			responses = {
-					@ApiResponse(
-							responseCode = "200",
-							content = @Content(mediaType = "application/json",
-									schema = @Schema(implementation =
-											ResponseEntityEndpointsView.class)),
-							description = "Collection of environments.")
-			})
+	@Operation(
+		summary = "Get endpoints by environment",
+		description = "Returns all publishing endpoints for a specific environment identified by environmentId."
+	)
+	@ApiResponses(value = {
+			@ApiResponse(
+					responseCode = "200",
+					description = "Endpoints retrieved successfully",
+					content = @Content(mediaType = "application/json",
+							schema = @Schema(implementation = ResponseEntityEndpointsView.class))),
+			@ApiResponse(
+					responseCode = "401",
+					description = "Unauthorized - backend user required",
+					content = @Content(mediaType = "application/json")),
+			@ApiResponse(
+					responseCode = "500",
+					description = "Internal server error",
+					content = @Content(mediaType = "application/json"))
+	})
 	@GET
 	@Path("/environment/{environmentId}")
 	@Produces("application/json")
 	@NoCache
 	public ResponseEntityEndpointsView getEndpointsByEnvironmentId(@Context HttpServletRequest request,
 																   @Context final HttpServletResponse response,
-																   @PathParam("environmentId") String environmentId)
+																   @Parameter(description = "Environment identifier", required = true) @PathParam("environmentId") String environmentId)
 			throws DotDataException, JSONException, DotSecurityException {
 
 		final InitDataObject initData = new WebResource.InitBuilder(webResource)
@@ -140,21 +164,35 @@ public class EndpointResource {
     /**
 	 * Get an endpoint by id
 	 */
-	@Operation(summary = "Returns the endpoint by id",
-			responses = {
-					@ApiResponse(
-							responseCode = "200",
-							content = @Content(mediaType = "application/json",
-									schema = @Schema(implementation =
-											ResponseEntityEndpointView.class)),
-							description = "Collection of environments.")
-			})
+	@Operation(
+		summary = "Get endpoint by ID",
+		description = "Returns a specific publishing endpoint identified by its unique ID."
+	)
+	@ApiResponses(value = {
+			@ApiResponse(
+					responseCode = "200",
+					description = "Endpoint retrieved successfully",
+					content = @Content(mediaType = "application/json",
+							schema = @Schema(implementation = ResponseEntityEndpointView.class))),
+			@ApiResponse(
+					responseCode = "401",
+					description = "Unauthorized - backend user required",
+					content = @Content(mediaType = "application/json")),
+			@ApiResponse(
+					responseCode = "404",
+					description = "Endpoint not found",
+					content = @Content(mediaType = "application/json")),
+			@ApiResponse(
+					responseCode = "500",
+					description = "Internal server error",
+					content = @Content(mediaType = "application/json"))
+	})
 	@GET
 	@Path("/{endpointId}")
 	@Produces("application/json")
 	public ResponseEntityEndpointView getEndpoint(@Context HttpServletRequest request,
 												  @Context final HttpServletResponse response,
-									 			@PathParam("endpointId") String endpointId)
+									 			@Parameter(description = "Endpoint identifier", required = true) @PathParam("endpointId") String endpointId)
 			throws DotDataException, JSONException {
 
 		final InitDataObject initData = new WebResource.InitBuilder(webResource)
@@ -180,8 +218,11 @@ public class EndpointResource {
 	 * @param httpServletRequest
 	 * @throws Exception
 	 */
-	@Operation(summary = "Creates an endpoint",
-			responses = {
+	@Operation(
+		summary = "Create endpoint",
+		description = "Creates a new publishing endpoint with the provided configuration data. Only admin users or users with configuration portlet access can create endpoints."
+	)
+	@ApiResponses(value = {
 					@ApiResponse(
 							responseCode = "200",
 							content = @Content(mediaType = "application/json",
@@ -204,10 +245,15 @@ public class EndpointResource {
 	@POST
 	@JSONP
 	@NoCache
-	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces({MediaType.APPLICATION_JSON})
 	public final ResponseEntityEndpointView create(@Context final HttpServletRequest httpServletRequest,
 								 @Context final HttpServletResponse httpServletResponse,
-								 final EndpointForm endpointForm) throws DotDataException, DotSecurityException, PublishingEndPointValidationException {
+								 @RequestBody(
+								     description = "Endpoint configuration data", 
+								     required = true,
+								     content = @Content(schema = @Schema(implementation = EndpointForm.class))
+								 ) final EndpointForm endpointForm) throws DotDataException, DotSecurityException, PublishingEndPointValidationException {
 
 		final User modUser = new WebResource.InitBuilder(webResource)
 				.requiredBackendUser(true)
@@ -266,8 +312,11 @@ public class EndpointResource {
 	 * @param httpServletRequest
 	 * @throws Exception
 	 */
-	@Operation(summary = "Updates an endpoint",
-			responses = {
+	@Operation(
+		summary = "Update endpoint",
+		description = "Updates an existing publishing endpoint with the provided configuration data. Only admin users or users with configuration portlet access can update endpoints."
+	)
+	@ApiResponses(value = {
 					@ApiResponse(
 							responseCode = "200",
 							content = @Content(mediaType = "application/json",
@@ -291,11 +340,16 @@ public class EndpointResource {
 	@Path("/{id}")
 	@JSONP
 	@NoCache
-	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces({MediaType.APPLICATION_JSON})
 	public final ResponseEntityEndpointView update(@Context final HttpServletRequest httpServletRequest,
 													  @Context final HttpServletResponse httpServletResponse,
-													  @PathParam("id") final String id,
-													  final EndpointForm endpointForm) throws DotDataException, DotSecurityException, PublishingEndPointValidationException {
+													  @Parameter(description = "Endpoint identifier", required = true) @PathParam("id") final String id,
+													  @RequestBody(
+													      description = "Updated endpoint configuration data", 
+													      required = true,
+													      content = @Content(schema = @Schema(implementation = EndpointForm.class))
+													  ) final EndpointForm endpointForm) throws DotDataException, DotSecurityException, PublishingEndPointValidationException {
 
 		final User modUser = new WebResource.InitBuilder(webResource)
 				.requiredBackendUser(true)
@@ -384,8 +438,11 @@ public class EndpointResource {
 	 * @param httpServletRequest
 	 * @throws Exception
 	 */
-	@Operation(summary = "Deletes an endpoint",
-			responses = {
+	@Operation(
+		summary = "Delete endpoint",
+		description = "Deletes an existing publishing endpoint by its ID. Only admin users or users with configuration portlet access can delete endpoints."
+	)
+	@ApiResponses(value = {
 					@ApiResponse(
 							responseCode = "200",
 							content = @Content(mediaType = "application/json",
@@ -409,10 +466,10 @@ public class EndpointResource {
 	@Path("/{id}")
 	@JSONP
 	@NoCache
-	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+	@Produces({MediaType.APPLICATION_JSON})
 	public final ResponseEntityBooleanView delete(@Context final HttpServletRequest httpServletRequest,
 													  @Context final HttpServletResponse httpServletResponse,
-													  @PathParam("id") final String id) throws DotDataException {
+													  @Parameter(description = "Endpoint identifier", required = true) @PathParam("id") final String id) throws DotDataException {
 
 		final User modUser = new WebResource.InitBuilder(webResource)
 				.requiredBackendUser(true)

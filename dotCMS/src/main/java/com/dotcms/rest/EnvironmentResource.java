@@ -19,16 +19,20 @@ import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.model.User;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.vavr.control.Try;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.glassfish.jersey.server.JSONP;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -51,7 +55,7 @@ import java.util.Set;
 
 /**
  * Endpoint for managing environments
- @author jsanca
+ * @author jsanca
  */
 @Path("/environment")
 @Tag(name = "Environment")
@@ -68,6 +72,7 @@ public class EnvironmentResource {
 	 *
 	 */
 	@Operation(summary = "Returns the environments",
+			description = "Retrieves a list of all available publishing environments with their configurations and associated servers.",
 			responses = {
 					@ApiResponse(
 							responseCode = "200",
@@ -121,11 +126,30 @@ public class EnvironmentResource {
 	 * @throws JSONException
 	 *
 	 */
-
+	@Operation(
+		summary = "Load environments for role",
+		description = "Returns a JSON representation of the environments (with servers) that a specific role can push to. Each environment node contains ID and name information."
+	)
+	@ApiResponses(value = {
+		@ApiResponse(responseCode = "200", 
+					description = "Environments loaded successfully",
+					content = @Content(mediaType = "application/json",
+									  schema = @Schema(type = "object", description = "JSON array of environment objects with id and name properties"))),
+		@ApiResponse(responseCode = "401", 
+					description = "Unauthorized - backend user authentication required",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "403", 
+					description = "Forbidden - insufficient permissions or security error",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "500", 
+					description = "Internal server error loading environments",
+					content = @Content(mediaType = "application/json"))
+	})
 	@GET
 	@Path("/loadenvironments/{params:.*}")
 	@Produces("application/json")
-	public Response loadEnvironments(@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam("params") String params)
+	public Response loadEnvironments(@Context HttpServletRequest request, @Context final HttpServletResponse response, 
+		@Parameter(description = "URL parameters including roleid to load environments for", required = true) @PathParam("params") String params)
 			throws DotDataException, JSONException {
 
 		final InitDataObject initData = new WebResource.InitBuilder(webResource)
@@ -199,6 +223,7 @@ public class EnvironmentResource {
 	 * @throws Exception
 	 */
 	@Operation(summary = "Creates an environment",
+			description = "Creates a new publishing environment with the specified configuration. The environment can be used for content publishing to target servers.",
 			responses = {
 					@ApiResponse(
 							responseCode = "200",
@@ -222,9 +247,12 @@ public class EnvironmentResource {
 	@POST
 	@JSONP
 	@NoCache
-	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
 	public final ResponseEntityEnvironmentView create(@Context final HttpServletRequest httpServletRequest,
 								 @Context final HttpServletResponse httpServletResponse,
+								 @RequestBody(description = "Environment configuration data", required = true,
+								 			content = @Content(schema = @Schema(implementation = EnvironmentForm.class)))
 								 final EnvironmentForm environmentForm) throws DotDataException, DotSecurityException {
 
 		final User modUser = new WebResource.InitBuilder(webResource)
@@ -283,6 +311,7 @@ public class EnvironmentResource {
 	 * @throws Exception
 	 */
 	@Operation(summary = "Updates an environment",
+			description = "Updates the configuration of an existing publishing environment. This allows modification of environment settings and server configurations.",
 			responses = {
 					@ApiResponse(
 							responseCode = "200",
@@ -307,10 +336,15 @@ public class EnvironmentResource {
 	@Path("/{id}")
 	@JSONP
 	@NoCache
-	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+	@Produces(MediaType.APPLICATION_JSON)
+	@Consumes(MediaType.APPLICATION_JSON)
 	public final ResponseEntityEnvironmentView update(@Context final HttpServletRequest httpServletRequest,
 													  @Context final HttpServletResponse httpServletResponse,
-													  @PathParam("id") final String id,
+													  @Parameter(description = "Environment identifier") @PathParam("id") final String id,
+													  @io.swagger.v3.oas.annotations.parameters.RequestBody(
+														  description = "Environment configuration data to update", 
+														  required = true,
+														  content = @Content(schema = @Schema(implementation = EnvironmentForm.class)))
 													  final EnvironmentForm environmentForm) throws DotDataException, DotSecurityException {
 
 		final User modUser = new WebResource.InitBuilder(webResource)
@@ -411,6 +445,7 @@ public class EnvironmentResource {
 	 * @throws Exception
 	 */
 	@Operation(summary = "Deletes an environment",
+			description = "Deletes a publishing environment and all its associated configurations. This action cannot be undone.",
 			responses = {
 					@ApiResponse(
 							responseCode = "200",
@@ -435,10 +470,10 @@ public class EnvironmentResource {
 	@Path("/{id}")
 	@JSONP
 	@NoCache
-	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+	@Produces(MediaType.APPLICATION_JSON)
 	public final ResponseEntityBooleanView delete(@Context final HttpServletRequest httpServletRequest,
 													  @Context final HttpServletResponse httpServletResponse,
-													  @PathParam("id") final String id) throws DotDataException {
+													  @Parameter(description = "Environment identifier") @PathParam("id") final String id) throws DotDataException {
 
 		final User modUser = new WebResource.InitBuilder(webResource)
 				.requiredBackendUser(true)

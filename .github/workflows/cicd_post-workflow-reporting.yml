@@ -90,6 +90,35 @@ jobs:
           fail-on-error: true
           list-tests: 'failed'
 
+      # Extract REST annotation validation results
+      - name: Extract REST Annotation Results
+        id: rest-annotation-data
+        run: |
+          REST_ANNOTATION_STATUS="Not Run"
+          REST_ANNOTATION_VIOLATIONS=0
+          REST_ANNOTATION_CLASSES=0
+          
+          # Look for REST annotation reports in build artifacts
+          if find /tmp/build-reports-test -name "rest-annotation-report.json" 2>/dev/null | head -1 | read report_file; then
+            echo "Found REST annotation report: $report_file"
+            
+            if [ -f "$report_file" ]; then
+              REST_ANNOTATION_STATUS=$(jq -r '.status // "Unknown"' "$report_file")
+              REST_ANNOTATION_VIOLATIONS=$(jq -r '.totalViolations // 0' "$report_file")
+              REST_ANNOTATION_CLASSES=$(jq -r '.affectedClasses // 0' "$report_file")
+              
+              echo "REST Annotation Status: $REST_ANNOTATION_STATUS"
+              echo "Total Violations: $REST_ANNOTATION_VIOLATIONS"
+              echo "Affected Classes: $REST_ANNOTATION_CLASSES"
+            fi
+          else
+            echo "No REST annotation report found"
+          fi
+          
+          echo "rest_annotation_status=$REST_ANNOTATION_STATUS" >> $GITHUB_OUTPUT
+          echo "rest_annotation_violations=$REST_ANNOTATION_VIOLATIONS" >> $GITHUB_OUTPUT
+          echo "rest_annotation_classes=$REST_ANNOTATION_CLASSES" >> $GITHUB_OUTPUT
+
       # Process workflow data
       - name: Get Workflow Data
         id: workflow-data
@@ -255,6 +284,16 @@ jobs:
                   "text": {
                     "type": "mrkdwn",
                     "text": "🔍 <${{ steps.workflow-data.outputs.test_results_url }} | View Test Results>"
+                  }
+                },
+                {
+                  "type": "divider"
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "📋 *REST API Annotations:* ${{ steps.rest-annotation-data.outputs.rest_annotation_status == 'PASSED' && '✅' || steps.rest-annotation-data.outputs.rest_annotation_status == 'FAILED' && '❌' || '⚪' }} ${{ steps.rest-annotation-data.outputs.rest_annotation_status }} \n*Violations:* ${{ steps.rest-annotation-data.outputs.rest_annotation_violations }} \n*Classes Affected:* ${{ steps.rest-annotation-data.outputs.rest_annotation_classes }}"
                   }
                 }
               ]

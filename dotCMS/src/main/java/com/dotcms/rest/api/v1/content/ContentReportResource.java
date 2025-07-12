@@ -13,6 +13,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -91,9 +92,10 @@ public class ContentReportResource {
     @Path("/site/{site}")
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    @Operation(summary = "Generates a report of the different Content Types living under a Site, " +
-            "and the number of content items for each type",
+    @Produces({MediaType.APPLICATION_JSON})
+    @Operation(
+        summary = "Generate site content report",
+        description = "Generates a detailed report of the different Content Types living under a Site and the number of content items for each type. Useful for data analysis and deletion planning.",
             responses = {
                     @ApiResponse(
                             responseCode = "200",
@@ -106,7 +108,7 @@ public class ContentReportResource {
             })
     public Response getSiteContentReport(@Context final HttpServletRequest httpServletRequest,
                                          @Context final HttpServletResponse httpServletResponse,
-                                         @PathParam(ContentReportPaginator.SITE_PARAM) final String site,
+                                         @Parameter(description = "Site ID or key to generate the report for", required = true) @PathParam(ContentReportPaginator.SITE_PARAM) final String site,
                                          @QueryParam(PaginationUtil.PAGE) final int page,
                                          @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
                                          @DefaultValue("upper(name)") @QueryParam(PaginationUtil.ORDER_BY) final String orderBy,
@@ -154,9 +156,10 @@ public class ContentReportResource {
     @Path("/folder/{folder: .*}")
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    @Operation(summary = "Generates a report of the different Content Types living under a " +
-            "Folder, and the number of content items for each type",
+    @Produces({MediaType.APPLICATION_JSON})
+    @Operation(
+        summary = "Generate folder content report",
+        description = "Generates a detailed report of the different Content Types living under a Folder and the number of content items for each type. Supports both folder ID and folder path (requires site parameter).",
             responses = {
                     @ApiResponse(
                             responseCode = "200",
@@ -168,7 +171,7 @@ public class ContentReportResource {
             })
     public Response getFolderContentReport(@Context final HttpServletRequest httpServletRequest,
                                            @Context final HttpServletResponse httpServletResponse,
-                                           @PathParam(ContentReportPaginator.FOLDER_PARAM) final String folder,
+                                           @Parameter(description = "Folder ID or path to generate the report for", required = true) @PathParam(ContentReportPaginator.FOLDER_PARAM) final String folder,
                                            @QueryParam(ContentReportPaginator.SITE_PARAM) final String site,
                                            @QueryParam(PaginationUtil.PAGE) final int page,
                                            @QueryParam(PaginationUtil.PER_PAGE) final int perPage,

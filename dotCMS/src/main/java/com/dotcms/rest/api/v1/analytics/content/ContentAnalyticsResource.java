@@ -21,9 +21,13 @@ import com.dotmarketing.util.Logger;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vavr.Lazy;
 import org.glassfish.jersey.server.JSONP;
@@ -59,8 +63,7 @@ import static com.dotmarketing.util.Constants.DONT_RESPECT_FRONT_END_ROLES;
  * @since Sep 13th, 2024
  */
 @Path("/v1/analytics/content")
-@Tag(name = "Content Analytics",
-        description = "This REST Endpoint exposes information related to how dotCMS content is accessed and interacted with by users.")
+@Tag(name = "Content Analytics")
 public class ContentAnalyticsResource {
 
     private final WebResource webResource;
@@ -96,6 +99,7 @@ public class ContentAnalyticsResource {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Content Analytics data being queried",
                             content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ReportResponseEntityView.class),
                                     examples = {
                                             @ExampleObject(
                                                     value = "{\n" +
@@ -118,7 +122,8 @@ public class ContentAnalyticsResource {
                                     }
                             )
                     ),
-                    @ApiResponse(responseCode = "400", description = "Bad Request"),
+                    @ApiResponse(responseCode = "400", description = "Bad Request",
+                            content = @Content(mediaType = "application/json")),
                     @ApiResponse(responseCode = "403", description = "Forbidden"),
                     @ApiResponse(responseCode = "415", description = "Unsupported Media Type"),
                     @ApiResponse(responseCode = "500", description = "Internal Server Error")
@@ -129,9 +134,11 @@ public class ContentAnalyticsResource {
     @JSONP
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces({MediaType.APPLICATION_JSON})
     public ReportResponseEntityView query(@Context final HttpServletRequest request,
                                           @Context final HttpServletResponse response,
+                                          @RequestBody(description = "Query form with analytics parameters", required = true,
+                                                      content = @Content(schema = @Schema(implementation = QueryForm.class)))
                                           final QueryForm queryForm) {
 
         final InitDataObject initDataObject = new WebResource.InitBuilder(this.webResource)
@@ -157,8 +164,8 @@ public class ContentAnalyticsResource {
      * @return the report response entity view.
      */
     @Operation(
-            operationId = "postContentAnalyticsQuery",
-            summary = "Retrieve Content Analytics data",
+            operationId = "postContentAnalyticsCubeQuery",
+            summary = "Retrieve Content Analytics data with CubeJS query",
             description = "Returns information of specific dotCMS objects whose health and " +
                     "engagement data is tracked, using a CubeJS JSON query.",
             tags = {"Content Analytics"},
@@ -166,6 +173,7 @@ public class ContentAnalyticsResource {
                     @ApiResponse(responseCode = "200", description = "Content Analytics data " +
                             "being queried",
                             content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ReportResponseEntityView.class),
                                     examples = {
                                             @ExampleObject(
                                                     value = "{\n" +
@@ -178,7 +186,8 @@ public class ContentAnalyticsResource {
                                     }
                             )
                     ),
-                    @ApiResponse(responseCode = "400", description = "Bad Request"),
+                    @ApiResponse(responseCode = "400", description = "Bad Request",
+                            content = @Content(mediaType = "application/json")),
                     @ApiResponse(responseCode = "401", description = "Unauthorized"),
                     @ApiResponse(responseCode = "415", description = "Unsupported Media Type"),
                     @ApiResponse(responseCode = "500", description = "Internal Server Error")
@@ -189,9 +198,11 @@ public class ContentAnalyticsResource {
     @JSONP
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces({MediaType.APPLICATION_JSON})
     public ReportResponseEntityView queryCubeJs(@Context final HttpServletRequest request,
                                           @Context final HttpServletResponse response,
+                                          @RequestBody(description = "CubeJS query JSON string", required = true,
+                                                      content = @Content(schema = @Schema(type = "string", description = "CubeJS query in JSON format")))
                                           final String cubeJsQueryJson) {
 
         final InitDataObject initDataObject = new WebResource.InitBuilder(this.webResource)
@@ -234,6 +245,7 @@ public class ContentAnalyticsResource {
                     @ApiResponse(responseCode = "200", description = "Content Analytics data " +
                             "being queried",
                             content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ReportResponseEntityView.class),
                                     examples = {
                                             @ExampleObject(
                                                     value = "{\n" +
@@ -249,7 +261,8 @@ public class ContentAnalyticsResource {
                                     }
                             )
                     ),
-                    @ApiResponse(responseCode = "400", description = "Bad Request"),
+                    @ApiResponse(responseCode = "400", description = "Bad Request",
+                            content = @Content(mediaType = "application/json")),
                     @ApiResponse(responseCode = "401", description = "Unauthorized"),
                     @ApiResponse(responseCode = "415", description = "Unsupported Media Type"),
                     @ApiResponse(responseCode = "500", description = "Internal Server Error")
@@ -259,9 +272,11 @@ public class ContentAnalyticsResource {
     @JSONP
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces({MediaType.APPLICATION_JSON})
     public ReportResponseEntityView query(@Context final HttpServletRequest request,
                                           @Context final HttpServletResponse response,
+                                          @RequestBody(description = "Form parameters for simplified query", required = true,
+                                                      content = @Content(schema = @Schema(type = "object", description = "Map of query parameters")))
                                           final Map<String, Object> form) {
         final InitDataObject initDataObject = new WebResource.InitBuilder(this.webResource)
                 .requestAndResponse(request, response)
@@ -296,6 +311,7 @@ public class ContentAnalyticsResource {
             responses = {
                     @ApiResponse(responseCode = "200", description = "If the event was created successfully",
                             content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = AnalyticsEventsResult.class),
                                     examples = {
                                             @ExampleObject(
                                                     value = "TBD"
@@ -303,7 +319,8 @@ public class ContentAnalyticsResource {
                                     }
                             )
                     ),
-                    @ApiResponse(responseCode = "400", description = "Bad Request"),
+                    @ApiResponse(responseCode = "400", description = "Bad Request",
+                            content = @Content(mediaType = "application/json")),
                     @ApiResponse(responseCode = "403", description = "Forbidden"),
                     @ApiResponse(responseCode = "415", description = "Unsupported Media Type"),
                     @ApiResponse(responseCode = "500", description = "Internal Server Error")
@@ -314,9 +331,11 @@ public class ContentAnalyticsResource {
     @JSONP
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces({MediaType.APPLICATION_JSON})
     public Response fireUserCustomEvent(@Context final HttpServletRequest request,
                                                 @Context final HttpServletResponse response,
+                                                @RequestBody(description = "User event payload", required = true,
+                                                           content = @Content(schema = @Schema(type = "object", description = "Event payload map")))
                                                 final Map<String, Serializable> userEventPayload) throws DotSecurityException {
         checkNotNull(userEventPayload, IllegalArgumentException.class, "The 'userEventPayload' JSON cannot be null");
         new WebResource.InitBuilder(this.webResource)
@@ -340,21 +359,30 @@ public class ContentAnalyticsResource {
             tags = {"Content Analytics"},
             responses = {
                     @ApiResponse(responseCode = "200", description = "The Site key was generated and " +
-                            "returned successfully"),
-                    @ApiResponse(responseCode = "400", description = "Bad Request"),
-                    @ApiResponse(responseCode = "401", description = "Unauthorized"),
+                            "returned successfully",
+                            content = @Content(mediaType = "application/json",
+                                              schema = @Schema(type = "string", 
+                                                             description = "Site key for analytics events"))),
+                    @ApiResponse(responseCode = "400", description = "Bad Request",
+                            content = @Content(mediaType = "application/json")),
+                    @ApiResponse(responseCode = "401", description = "Unauthorized",
+                            content = @Content(mediaType = "application/json")),
+                    @ApiResponse(responseCode = "403", description = "Forbidden",
+                            content = @Content(mediaType = "application/json")),
                     @ApiResponse(responseCode = "404", description = "Site ID in path is not found or " +
-                            "incorrect path"),
-                    @ApiResponse(responseCode = "405", description = "Method Not Allowed"),
-                    @ApiResponse(responseCode = "500", description = "Internal Server Error")
+                            "incorrect path",
+                            content = @Content(mediaType = "application/json")),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error",
+                            content = @Content(mediaType = "application/json"))
             }
     )
     @GET
     @Path("/sitekey/generate/{siteId}")
     @JSONP
     @NoCache
-    @Produces({MediaType.TEXT_PLAIN, "text/plain"})
-    public Response generateSiteKey(@PathParam("siteId") final String siteId,
+    @Produces({MediaType.APPLICATION_JSON})
+    public Response generateSiteKey(@Parameter(description = "Site identifier", required = true)
+                                    @PathParam("siteId") final String siteId,
                                     @Context final HttpServletRequest request,
                                     @Context final HttpServletResponse response) throws DotDataException, DotSecurityException {
         final InitDataObject initDataObject = new WebResource.InitBuilder(this.webResource)

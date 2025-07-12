@@ -2,6 +2,7 @@ package com.dotcms.rest.api.v1.authentication;
 
 import com.dotcms.cms.login.LoginServiceAPI;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.rest.ResponseEntityStringView;
 import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -28,6 +29,11 @@ import org.apache.commons.logging.LogFactory;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.Serializable;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 /**
@@ -36,7 +42,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
  * @author jsanca
  */
 @Path("/v1/logout")
-@Tag(name = "Authentication", description = "User authentication and session management")
+@Tag(name = "Authentication")
 public class LogoutResource implements Serializable {
 
     private final LoginServiceAPI loginService;
@@ -59,11 +65,27 @@ public class LogoutResource implements Serializable {
     }
 
 
+    @Operation(
+        summary = "Logout user",
+        description = "Logs out the current user, invalidating their session and optionally providing a redirect URL"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "User logged out successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityStringView.class))),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - security exception during logout",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     // todo: add the https annotation
     @GET
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces(MediaType.APPLICATION_JSON)
     public final Response logout(@Context final HttpServletRequest request,
                                  @Context final HttpServletResponse response) {
 
@@ -84,10 +106,10 @@ public class LogoutResource implements Serializable {
             url = Config.getStringProperty("logout.url", StringPool.BLANK);
 
             res = UtilMethods.isSet(url)?
-                    Response.ok(new ResponseEntityView("Logout successfully"))
+                    Response.ok(new ResponseEntityView<>("Logout successfully"))
                     .header("url", Config.getStringProperty("logout.url", StringPool.BLANK))
                     .build(): // 200
-                    Response.ok(new ResponseEntityView("Logout successfully"))
+                    Response.ok(new ResponseEntityView<>("Logout successfully"))
                     .build();
 
         } catch (DotSecurityException e) {
