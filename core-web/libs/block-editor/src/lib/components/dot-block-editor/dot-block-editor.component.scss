@@ -23,9 +23,21 @@
         height: 100%;
     }
 
+    .editor-wrapper--disabled {
+        opacity: $field-disabled-opacity;
+        background-color: $color-palette-gray-100;
+        cursor: not-allowed;
+        pointer-events: none;
+    }
+
     // If a child is focused, set this style to the parent
     &:focus-within {
         outline-color: $color-palette-primary;
+    }
+
+    // Disabled state - prevent focus styling when disabled
+    &.editor-disabled:focus-within {
+        outline-color: $color-palette-gray-300;
     }
 
     tiptap-editor ::ng-deep {
@@ -208,7 +220,30 @@
                 color: #666;
                 background: #ffffff;
             }
+        }
 
+        // Disabled state styling for ProseMirror content
+        &.editor-disabled .ProseMirror {
+            color: $color-palette-gray-600;
+            background-color: $color-palette-gray-100;
+            cursor: not-allowed;
+            user-select: none;
+            pointer-events: none;
+
+            // Disabled placeholder styling
+            .is-empty::before {
+                color: $color-palette-gray-400;
+            }
+
+            // Disabled button styling
+            .add-button {
+                cursor: not-allowed;
+                opacity: $field-disabled-opacity;
+                pointer-events: none;
+            }
+        }
+
+        .ProseMirror {
             table {
                 border-collapse: collapse;
                 margin: 0;
