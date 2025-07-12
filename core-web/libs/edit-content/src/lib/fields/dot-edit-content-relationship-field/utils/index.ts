@@ -60,15 +60,14 @@ export function getRelationshipFromContentlet({
  * Extracts the content type ID from a relationship field.
  *
  * @param field - The DotCMS content type field object containing the relationship data
- * @returns The content type ID
- * @throws An error if the content type ID is not found
+ * @returns The content type ID, or null if not found
  */
-export function getContentTypeIdFromRelationship(field: DotCMSContentTypeField): string {
+export function getContentTypeIdFromRelationship(field: DotCMSContentTypeField): string | null {
     if (!field?.relationships?.velocityVar) {
-        throw new Error('Content type ID not found in relationship field');
+        return null;
     }
 
     const [contentTypeId] = field.relationships.velocityVar.split('.');
 
-    return contentTypeId;
+    return contentTypeId || null;
 }
