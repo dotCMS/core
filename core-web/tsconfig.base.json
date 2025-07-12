@@ -46,8 +46,8 @@
             "@dotcms/portlets/content-drive/ui": [
                 "libs/portlets/dot-content-drive/ui/src/index.ts"
             ],
-            "@dotcms/portlets/dot-analytics-search/portlet": [
-                "libs/portlets/dot-analytics-search/portlet/src/index.ts"
+            "@dotcms/portlets/dot-analytics/portlet": [
+                "libs/portlets/dot-analytics/portlet/src/index.ts"
             ],
             "@dotcms/portlets/dot-ema": ["libs/portlets/edit-ema/portlet/src/index.ts"],
             "@dotcms/portlets/dot-ema/ui": ["libs/portlets/edit-ema/ui/src/index.ts"],

@@ -1,5 +1,7 @@
-@if (store.wallEmptyConfig()) {
-    <dot-empty-container [configuration]="store.wallEmptyConfig()" [hideContactUsLink]="true" />
+@let wallEmptyConfig = store.wallEmptyConfig();
+
+@if (wallEmptyConfig) {
+    <dot-empty-container [configuration]="wallEmptyConfig" [hideContactUsLink]="true" />
 } @else {
     <p-splitter [panelSizes]="[35, 65]" styleClass="mb-5">
         <ng-template pTemplate>
@@ -36,15 +38,18 @@
         </ng-template>
         <ng-template pTemplate>
             @if (!store.results()) {
-                <dot-empty-container
-                    [configuration]="store.emptyResultsConfig()"
-                    [hideContactUsLink]="true"></dot-empty-container>
+                @let emptyResultsConfig = store.emptyResultsConfig();
+                @if (emptyResultsConfig) {
+                    <dot-empty-container
+                        [configuration]="emptyResultsConfig"
+                        [hideContactUsLink]="true" />
+                }
             } @else {
                 <section class="content-analytics__results">
                     <ngx-monaco-editor
                         [ngModel]="store.results()"
                         [options]="ANALYTICS__RESULTS_MONACO_EDITOR_OPTIONS"
-                        data-testId="results-editor"></ngx-monaco-editor>
+                        data-testId="results-editor" />
                 </section>
             }
         </ng-template>

@@ -13,8 +13,8 @@ import { TooltipModule } from 'primeng/tooltip';
 import { DotAnalyticsSearchService } from '@dotcms/data-access';
 import { DotEmptyContainerComponent, DotMessagePipe } from '@dotcms/ui';
 
-import { DotAnalyticsSearchStore } from '../store/dot-analytics-search.store';
-import { ANALYTICS_MONACO_EDITOR_OPTIONS, ANALYTICS_RESULTS_MONACO_EDITOR_OPTIONS } from '../utils';
+import { DotAnalyticsSearchStore } from './store/dot-analytics-search.store';
+import { ANALYTICS_MONACO_EDITOR_OPTIONS, ANALYTICS_RESULTS_MONACO_EDITOR_OPTIONS } from './utils';
 
 @Component({
     selector: 'lib-dot-analytics-search',
@@ -35,7 +35,7 @@ import { ANALYTICS_MONACO_EDITOR_OPTIONS, ANALYTICS_RESULTS_MONACO_EDITOR_OPTION
     templateUrl: './dot-analytics-search.component.html',
     styleUrl: './dot-analytics-search.component.scss'
 })
-export class DotAnalyticsSearchComponent {
+export default class DotAnalyticsSearchComponent {
     ANALYTICS_MONACO_EDITOR_OPTIONS = ANALYTICS_MONACO_EDITOR_OPTIONS;
     ANALYTICS__RESULTS_MONACO_EDITOR_OPTIONS = ANALYTICS_RESULTS_MONACO_EDITOR_OPTIONS;
 
