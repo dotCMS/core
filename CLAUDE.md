@@ -547,6 +547,35 @@ The `dotCMS/src/main/webapp/WEB-INF/openapi/openapi.yaml` file is **automaticall
 ### Immutable Classes Compilation
 When creating new models with `@Value.Immutable`, the concrete classes are generated at compile time. **Always run `./mvnw compile`** after creating abstract immutable interfaces to generate the implementation classes.
 
+### Git Hooks Setup
+The project uses husky for pre-commit hooks. On first setup or after pulling changes, you may see:
+```
+core-web/.husky/pre-commit: line 24: core-web/.husky/_/husky.sh: No such file or directory
+```
+
+**Fix**: Run `just build` or `./mvnw clean install` to properly install husky and create the missing `_/husky.sh` file.
+
+### ENOBUFS Error Fix (macOS)
+If you encounter `spawnSync /bin/sh ENOBUFS` errors during pre-commit hooks:
+
+**🚀 Automatic Fix**: The pre-commit hook will automatically detect and fix ENOBUFS errors by resetting nx cache and reinstalling dependencies. No manual intervention required!
+
+**Manual Fix** (if auto-fix fails):
+```bash
+cd core-web
+yarn nx reset
+yarn install
+
+# For persistent issues, full cleanup:
+rm -rf node_modules
+yarn install
+yarn nx reset
+```
+
+**Why this happens**: Large codebases (127k+ files) can cause nx cache corruption and macOS buffer limits to be exceeded.
+
+**Prevention**: Run `yarn nx reset` periodically if builds feel slow or after major dependency updates.
+
 ### Health Check System
 For comprehensive health check documentation: **[Health Check System Documentation](dotCMS/src/main/java/com/dotcms/health/README.md)**
 
@@ -583,6 +612,169 @@ curl -H "Authorization: Basic $(echo -n 'admin@dotcms.com:admin' | base64)" \
 ```
 
 Valid log levels: `TRACE`, `DEBUG`, `INFO`, `WARN`, `ERROR`, `FATAL`, `OFF`
+
+## Git and Development Workflow
+
+### Git Workflow Standards
+- **Branch from Main**: Always create feature branches from the main branch
+- **Branch Naming Convention**: All branches for PRs must use `issue-{issue number}-` prefix for automatic issue linking:
+  ```bash
+  # Required format for issue linking
+  git checkout -b issue-123-add-new-feature
+  git checkout -b issue-456-fix-login-bug
+  git checkout -b issue-789-update-documentation
+  ```
+- **For Human Developers**: Use dotCMS utilities for streamlined workflow:
+  ```bash
+  # Create GitHub issue with proper labeling
+  git issue-create
+  
+  # Create branch from assigned issue (automatically uses correct naming)
+  git issue-branch
+  
+  # List your assigned issues
+  git issue-branch --list
+  ```
+- **For AI Agents**: Use standard GitHub tools:
+  ```bash
+  # Create issues using gh CLI
+  gh issue create --title "Issue title" --body "Description" --label "bug,enhancement"
+  
+  # Create branches with proper naming for issue linking
+  git checkout -b issue-123-descriptive-name
+  gh issue develop 123 --checkout
+  
+  # List issues
+  gh issue list --assignee @me
+  ```
+- **Conventional Commits**: Use conventional commit format for all changes:
+  ```
+  feat: add new workflow component
+  fix: resolve artifact dependency issue
+  docs: update workflow documentation
+  test: add integration test for build phase
+  refactor: improve change detection logic
+  ```
+
+### Pull Request Standards
+- **Draft PRs**: Create pull requests in draft status initially for review
+- **Documentation Updates**: Update relevant documentation files when making changes to:
+  - Application behavior or architecture
+  - Security procedures or guidelines
+  - Testing strategies or new test types
+  - Troubleshooting procedures or known issues
+
+## Security Guidelines
+
+### Critical Security Rules
+
+**🚨 NEVER do these in any code:**
+```java
+// ❌ NEVER: Direct input injection without validation
+System.out.println("User input: " + userInput);  // INJECTION RISK
+
+// ❌ NEVER: Hardcoded secrets or keys
+String apiKey = "sk-1234567890abcdef";  // SECURITY VIOLATION
+
+// ❌ NEVER: Exposing sensitive information in logs
+Logger.info(this, "Password: " + password);  // SECURITY VIOLATION
+```
+
+**✅ ALWAYS do these security practices:**
+```java
+// ✅ Validate and sanitize all user input
+if (UtilMethods.isSet(userInput) && userInput.matches("^[a-zA-Z0-9\\s\\-_]+$")) {
+    Logger.info(this, "Valid input received");
+    processInput(userInput);
+} else {
+    Logger.warn(this, "Invalid input rejected");
+    throw new DotSecurityException("Invalid input format");
+}
+
+// ✅ Use Config for sensitive properties
+String apiKey = Config.getStringProperty("external.api.key", "");
+if (!UtilMethods.isSet(apiKey)) {
+    throw new DotDataException("API key not configured");
+}
+
+// ✅ Never log sensitive information
+Logger.info(this, "Authentication successful for user: " + user.getUserId());
+```
+
+### Security Checklist
+
+**Before committing any code:**
+- [ ] No hardcoded secrets, passwords, or API keys
+- [ ] All user input is validated and sanitized
+- [ ] Sensitive information is never logged
+- [ ] Proper error handling without information leakage
+- [ ] Security boundaries are maintained
+
+## Development Patterns
+
+### Error Handling Pattern
+```java
+// Standard error handling with proper logging
+try {
+    performOperation();
+    Logger.info(this, "Operation completed successfully");
+} catch (DotDataException e) {
+    Logger.error(this, "Data operation failed: " + e.getMessage(), e);
+    throw new DotRuntimeException("Unable to complete operation", e);
+} catch (Exception e) {
+    Logger.error(this, "Unexpected error: " + e.getMessage(), e);
+    throw new DotRuntimeException("System error occurred", e);
+}
+```
+
+### Input Validation Pattern
+```java
+// Comprehensive input validation
+public void processUserInput(String input) {
+    // Null and empty validation
+    if (!UtilMethods.isSet(input)) {
+        throw new DotDataException("Input cannot be empty");
+    }
+    
+    // Format validation
+    if (!input.matches("^[a-zA-Z0-9\\s\\-_\\.]+$")) {
+        Logger.warn(this, "Invalid input format attempted");
+        throw new DotSecurityException("Invalid input format");
+    }
+    
+    // Length validation
+    if (input.length() > 255) {
+        throw new DotDataException("Input exceeds maximum length");
+    }
+    
+    // Business logic validation
+    if (isBlacklisted(input)) {
+        Logger.warn(this, "Blacklisted input attempted");
+        throw new DotSecurityException("Input not allowed");
+    }
+    
+    // Process validated input
+    processValidatedInput(input);
+}
+```
+
+### Debugging Pattern
+```java
+// Structured debugging information
+Logger.debug(this, () -> {
+    return String.format("Processing request - User: %s, Action: %s, Parameters: %s",
+        user.getUserId(), action, sanitizeForLogging(parameters));
+});
+
+// Performance monitoring
+long startTime = System.currentTimeMillis();
+try {
+    performOperation();
+} finally {
+    long duration = System.currentTimeMillis() - startTime;
+    Logger.info(this, "Operation completed in " + duration + "ms");
+}
+```
 
 ## Summary Checklist
 - ✅ Use `Config.getProperty()` and `Logger.info(this, ...)`
