@@ -731,7 +731,7 @@ public class LoginServiceAPIFactory implements Serializable {
             if (logInUser.isAdmin()) {
 
                 String msg = "Some API Tokens are about to expire. Please review them here " +
-                        "<a href=\"#/c/users\" target=\"_blank\">here</a>";
+                        "<a href=\"/api/v1/apitoken/expiring\" target=\"_blank\">here</a>";
                 message = new SystemMessageBuilder()
                         .setMessage(msg)
                         .setSeverity(MessageSeverity.WARNING)
