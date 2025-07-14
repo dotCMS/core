@@ -115,4 +115,59 @@ describe('DotEditContentHostFolderFieldComponent', () => {
             expect(spectator.component.$treeSelect().value.label).toBe(nodeSelected.label);
         }));
     });
+
+    describe('Disabled State Management', () => {
+        it('should sync disabled state from main form control to path control', fakeAsync(() => {
+            spectator.detectChanges();
+            tick(50);
+
+            // Initially both controls should be enabled
+            expect(spectator.component.formControl.disabled).toBe(false);
+            expect(spectator.component.pathControl.disabled).toBe(false);
+
+            // Disable the main form control
+            spectator.component.formControl.disable();
+            tick(50);
+
+            // Path control should be disabled automatically
+            expect(spectator.component.pathControl.disabled).toBe(true);
+        }));
+
+        it('should sync enabled state from main form control to path control', fakeAsync(() => {
+            spectator.detectChanges();
+            tick(50);
+
+            // Start with disabled controls
+            spectator.component.formControl.disable();
+            tick(50);
+            expect(spectator.component.pathControl.disabled).toBe(true);
+
+            // Enable the main form control
+            spectator.component.formControl.enable();
+            tick(50);
+
+            // Path control should be enabled automatically
+            expect(spectator.component.pathControl.disabled).toBe(false);
+        }));
+
+        it('should reflect disabled state in the TreeSelect through form control binding', fakeAsync(() => {
+            spectator.detectChanges();
+            tick(50);
+
+            // The TreeSelect is bound to pathControl via [formControl]="pathControl"
+            // When pathControl is disabled, the TreeSelect should be automatically disabled by Angular
+            // This is the same pattern used by the text field component
+
+            // Initially pathControl should be enabled
+            expect(spectator.component.pathControl.disabled).toBe(false);
+
+            // Disable the main form control
+            spectator.component.formControl.disable();
+            tick(50);
+            spectator.detectChanges();
+
+            // The pathControl should be disabled, which automatically disables the TreeSelect
+            expect(spectator.component.pathControl.disabled).toBe(true);
+        }));
+    });
 });

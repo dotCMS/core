@@ -1,5 +1,6 @@
 package com.dotcms;
 
+import com.dotcms.jitsu.validators.AnalyticsValidatorUtilTest;
 import com.dotcms.junit.MainBaseSuite;
 import com.dotcms.telemetry.collectors.experiment.CountPagesWithAllEndedExperimentsMetricTypeTest;
 import com.dotcms.telemetry.collectors.experiment.CountPagesWithArchivedExperimentsMetricTypeTest;
@@ -35,7 +36,8 @@ import org.junit.runners.Suite;
         CountVariantsInAllScheduledExperimentsMetricTypeTest.class,
         Task230630CreateRunningIdsExperimentFieldIntegrationTest.class,
         TotalSizeOfFilesPerThemeMetricTypeTest.class,
-        TimeMachineUtilTest.class
+        TimeMachineUtilTest.class,
+        AnalyticsValidatorUtilTest.class
 })
 public class MainSuite3a {
 }
