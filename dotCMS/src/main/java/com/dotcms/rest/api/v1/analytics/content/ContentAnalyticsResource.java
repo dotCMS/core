@@ -4,7 +4,6 @@ import com.dotcms.analytics.content.ContentAnalyticsAPI;
 import com.dotcms.analytics.content.ContentAnalyticsQuery;
 import com.dotcms.analytics.content.ReportResponse;
 import com.dotcms.analytics.model.ResultSetItem;
-import com.dotcms.analytics.track.collectors.Collector;
 import com.dotcms.experiments.business.ConfigExperimentUtil;
 import com.dotcms.rest.AnonymousAccess;
 import com.dotcms.rest.InitDataObject;
@@ -63,8 +62,6 @@ import static com.dotmarketing.util.Constants.DONT_RESPECT_FRONT_END_ROLES;
 @Tag(name = "Content Analytics",
         description = "This REST Endpoint exposes information related to how dotCMS content is accessed and interacted with by users.")
 public class ContentAnalyticsResource {
-
-    private final Lazy<Boolean> ANALYTICS_EVENTS_REQUIRE_AUTHENTICATION = Lazy.of(() -> Config.getBooleanProperty("ANALYTICS_EVENTS_REQUIRE_AUTHENTICATION", true));
 
     private final WebResource webResource;
     private final ContentAnalyticsAPI contentAnalyticsAPI;
@@ -321,28 +318,16 @@ public class ContentAnalyticsResource {
     public Response fireUserCustomEvent(@Context final HttpServletRequest request,
                                                 @Context final HttpServletResponse response,
                                                 final Map<String, Serializable> userEventPayload) throws DotSecurityException {
-
         checkNotNull(userEventPayload, IllegalArgumentException.class, "The 'userEventPayload' JSON cannot be null");
-        if (userEventPayload.containsKey(Collector.EVENT_SOURCE)) {
-            throw new IllegalArgumentException("The 'event_source' field is reserved and cannot be used");
-        }
-
-        final User user = new WebResource.InitBuilder(this.webResource)
+        new WebResource.InitBuilder(this.webResource)
                 .requestAndResponse(request, response)
                 .requiredAnonAccess(AnonymousAccess.READ)
                 .rejectWhenNoUser(false)
-                .init().getUser();
-        if (ANALYTICS_EVENTS_REQUIRE_AUTHENTICATION.get()) {
-
-            if (user.isAnonymousUser()) {
-                throw new DotSecurityException("Anonymous user is not allowed to fire an event");
-            }
-        } 
-
+                .init();
         Logger.debug(this,  ()->"Creating an user custom event with the payload: " + userEventPayload);
 
         final AnalyticsEventsResult analyticsEventsResult =
-                ContentAnalyticsUtil.registerContentAnalyticsRestEvent(request, response, userEventPayload);
+                ContentAnalyticsUtil.registerContentAnalyticsRestEvent(request, userEventPayload);
 
         return Response.status(getResponseStatus(analyticsEventsResult)).entity(analyticsEventsResult).build();
     }

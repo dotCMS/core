@@ -1,5 +1,5 @@
 import { NgClass } from '@angular/common';
-import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, HostBinding, input, Input } from '@angular/core';
 
 import { UIMessage } from '@dotcms/edit-content/models/dot-edit-content-file.model';
 import { DotMessagePipe } from '@dotcms/ui';
@@ -19,4 +19,13 @@ export class DotFileFieldUiMessageComponent {
      * @memberof DotFileFieldPreviewComponent
      */
     $uiMessage = input.required<UIMessage>({ alias: 'uiMessage' });
+
+    /**
+     * Whether the component is disabled.
+     *
+     * @memberof DotBinaryFieldUiMessageComponent
+     */
+    @Input()
+    @HostBinding('class.disabled')
+    disabled = false;
 }

@@ -6,7 +6,8 @@
     "allowed_attributes": {
       "site_key": {
         "type": "string",
-        "required": true
+        "required": true,
+        "custom-validator": "SiteKeyValidator"
       },
       "session_id": {
         "type": "string",

@@ -1,11 +1,15 @@
 package com.dotcms.jitsu.validators;
 
 /**
- * Enum representing validation error codes for analytics data validation.
- * These codes are used to categorize different types of validation errors
- * that can occur during the validation process of analytics events.
+ * Enum representing validation error codes for analytics data validation. These codes are used to
+ * categorize different types of validation errors that can occur during the validation process of
+ * analytics events.
+ *
+ * @author Freddy Rodriguez
+ * @since Jun 23rd, 2025
  */
 public enum ValidationErrorCode {
+
     /**
      * Indicates that a required field is missing from the JSON payload.
      * This error occurs when a field marked as required in the validation configuration
@@ -41,5 +45,11 @@ public enum ValidationErrorCode {
      * Indicates that a field expected to be a date is not in the correct format.
      * This error occurs when validating fields that should contain date values in the format '2025-06-09T14:30:00+02:00'.
      */
-    INVALID_DATE_FORMAT;
+    INVALID_DATE_FORMAT,
+
+    /**
+     * Indicates that the provided Site Key is invalid, or does not match the expected format.
+     */
+    INVALID_SITE_KEY;
+
 }

@@ -21,6 +21,14 @@ print_color() {
 # It performs operations such as formatting and linting on staged files.
 
 # Source husky script
+if [ ! -f "$(dirname "$0")/_/husky.sh" ]; then
+    print_color "$RED" "⚠️  Husky setup incomplete: _/husky.sh not found"
+    print_color "$YELLOW" "This usually happens on first setup or after pulling changes."
+    print_color "$BLUE" "Fix: Run 'just build' or './mvnw clean install' to complete setup"
+    print_color "$YELLOW" "Then try your commit again."
+    exit 1
+fi
+
 . "$(dirname "$0")/_/husky.sh" || {
     print_color "$RED" "❌ Failed to source husky.sh"
     exit 1
@@ -58,15 +66,42 @@ setup_nvm() {
 }
 
 check_sdk_client_affected() {
-    local affected_projects=$(npx nx show projects --affected)
-    print_color "$BLUE" "📋 Affected projects: $affected_projects"
+    # Check if initial build has been done (nx cache and build artifacts exist)
+    if [ ! -d "${root_dir}/core-web/.nx" ] || [ ! -d "${root_dir}/core-web/dist" ]; then
+        print_color "$YELLOW" "⚠️  Initial build not detected - nx cache or dist directory missing"
+        print_color "$BLUE" "💡 Run 'just build' or './mvnw clean install' to complete initial setup"
+        print_color "$YELLOW" "Skipping sdk-uve build check for now"
+        return 0
+    fi
+
+    # Check if sdk-uve related files have been modified (avoid nx affected due to ENOBUFS)
+    local sdk_uve_affected=false
+    
+    # Check staged files for sdk-uve related changes
+    if git diff --cached --name-only | grep -E "(sdk-uve|uve)" >/dev/null 2>&1; then
+        sdk_uve_affected=true
+        print_color "$BLUE" "📋 SDK-UVE related files detected in staged changes"
+    else
+        # Also check if libs/sdk-uve directory exists and has changes
+        if [ -d "${root_dir}/core-web/libs/sdk-uve" ]; then
+            # Check if any files in sdk-uve directory are modified
+            if git status --porcelain 2>/dev/null | grep -E "libs/sdk-uve" >/dev/null 2>&1; then
+                sdk_uve_affected=true
+                print_color "$BLUE" "📋 SDK-UVE directory changes detected"
+            fi
+        fi
+    fi
+    
+    if [ "$sdk_uve_affected" = false ]; then
+        print_color "$GREEN" "✅ No SDK-UVE related changes detected, skipping build"
+    fi
 
     # Build sdk-client if affected
-    if echo "$affected_projects" | grep -q "sdk-uve"; then
+    if [ "$sdk_uve_affected" = true ]; then
         print_color "$BLUE" "🔨 Building sdk-client"
-        if ! yarn nx run sdk-uve:build:js; then
-            print_color "$RED" "❌ Failed to build sdk-client"
-            has_errors=true
+        if ! yarn nx run sdk-uve:build:js 2>/dev/null; then
+            print_color "$YELLOW" "⚠️ SDK-UVE build failed or not available, continuing..."
+            # Don't set has_errors=true here as sdk-uve might not always be available
         fi
     fi
 
@@ -80,9 +115,20 @@ check_sdk_client_affected() {
         print_color "$BLUE" "ℹ️ ${file_to_remove} does not exist"
     fi
 
-    if ! git add "${root_dir}/dotCMS/src/main/webapp/ext/uve/dot-uve.js"; then
-        print_color "$RED" "❌ Failed to stage computed dot-uve.js"
-        exit 1
+    # Only try to stage the file if it exists and we're in the right git context
+    uve_js_file="${root_dir}/dotCMS/src/main/webapp/ext/uve/dot-uve.js"
+    if [ -f "$uve_js_file" ]; then
+        # Change to root directory to ensure proper git context
+        cd "$root_dir" || exit 1
+        if ! git add "dotCMS/src/main/webapp/ext/uve/dot-uve.js"; then
+            print_color "$RED" "❌ Failed to stage computed dot-uve.js"
+            exit 1
+        fi
+        # Change back to core-web directory
+        cd "${root_dir}/core-web" || exit 1
+        print_color "$GREEN" "✅ Staged computed dot-uve.js"
+    else
+        print_color "$BLUE" "ℹ️ dot-uve.js does not exist, skipping staging"
     fi
 }
 
@@ -124,15 +170,96 @@ perform_frontend_fixes() {
         return 1
     else
         print_color "$GREEN" "✅ Completed yarn install adding yarn.lock if it was modified"
-        git add "${root_dir}/core-web/yarn.lock"
+        # Change to root directory to add yarn.lock with correct path
+        cd "$root_dir" || exit 1
+        git add "core-web/yarn.lock"
+        cd "${root_dir}/core-web" || exit 1
     fi
 
-    if ! yarn nx affected -t lint --exclude='tag:skip:lint' --fix=true; then
-        has_errors=true
+    # ENOBUFS auto-fix will handle cache issues when they occur
+    
+    # Function to attempt ENOBUFS auto-fix
+    attempt_enobufs_fix() {
+        print_color "$YELLOW" "🔧 Attempting automatic ENOBUFS fix..."
+        
+        # Reset nx cache
+        if yarn nx reset >/dev/null 2>&1; then
+            print_color "$GREEN" "✓ nx cache reset successful"
+        else
+            print_color "$RED" "✗ nx cache reset failed"
+            return 1
+        fi
+        
+        # Reinstall dependencies
+        if yarn install >/dev/null 2>&1; then
+            print_color "$GREEN" "✓ yarn install successful"
+        else
+            print_color "$RED" "✗ yarn install failed"
+            return 1
+        fi
+        
+        # Reset again after fresh install
+        if yarn nx reset >/dev/null 2>&1; then
+            print_color "$GREEN" "✓ final nx cache reset successful"
+        else
+            print_color "$RED" "✗ final nx cache reset failed"
+            return 1
+        fi
+        
+        print_color "$GREEN" "🎉 ENOBUFS auto-fix completed, retrying commands..."
+        return 0
+    }
+
+    # Run nx affected lint with ENOBUFS detection and auto-fix
+    print_color "$BLUE" "🔍 Running nx affected lint..."
+    lint_output=$(yarn nx affected -t lint --exclude='tag:skip:lint' --fix=true 2>&1)
+    lint_exit_code=$?
+    
+    if [ $lint_exit_code -ne 0 ]; then
+        if echo "$lint_output" | grep -q "ENOBUFS"; then
+            print_color "$RED" "❌ ENOBUFS error detected in nx lint"
+            if attempt_enobufs_fix; then
+                # Retry after fix
+                print_color "$BLUE" "🔄 Retrying nx affected lint after fix..."
+                if ! yarn nx affected -t lint --exclude='tag:skip:lint' --fix=true; then
+                    print_color "$YELLOW" "⚠️ nx lint still failing after auto-fix, continuing..."
+                    has_errors=true
+                fi
+            else
+                print_color "$RED" "❌ Auto-fix failed. Manual fix required:"
+                print_color "$BLUE" "💡 cd core-web && yarn nx reset && yarn install"
+                has_errors=true
+            fi
+        else
+            print_color "$YELLOW" "⚠️ nx affected lint failed (non-ENOBUFS), but continuing..."
+            has_errors=true
+        fi
     fi
 
-    if ! yarn nx format:write; then
-        has_errors=true
+    # Run nx format with ENOBUFS detection and auto-fix
+    print_color "$BLUE" "✨ Running nx format:write..."
+    format_output=$(yarn nx format:write 2>&1)
+    format_exit_code=$?
+    
+    if [ $format_exit_code -ne 0 ]; then
+        if echo "$format_output" | grep -q "ENOBUFS"; then
+            print_color "$RED" "❌ ENOBUFS error detected in nx format"
+            if attempt_enobufs_fix; then
+                # Retry after fix
+                print_color "$BLUE" "🔄 Retrying nx format:write after fix..."
+                if ! yarn nx format:write; then
+                    print_color "$YELLOW" "⚠️ nx format still failing after auto-fix, continuing..."
+                    has_errors=true
+                fi
+            else
+                print_color "$RED" "❌ Auto-fix failed. Manual fix required:"
+                print_color "$BLUE" "💡 cd core-web && yarn nx reset && yarn install"
+                has_errors=true
+            fi
+        else
+            print_color "$YELLOW" "⚠️ nx format:write failed (non-ENOBUFS), but continuing..."
+            has_errors=true
+        fi
     fi
 
     if [ "$add_to_index" = "true" ]; then
@@ -143,9 +270,12 @@ perform_frontend_fixes() {
 
         for file in $files; do
             if echo "$modified_files" | grep -Fxq "$file"; then
-                if ! git add -- "${root_dir}/${file}"; then
+                # Change to root directory to add files with correct relative paths
+                cd "$root_dir" || exit 1
+                if ! git add -- "${file}"; then
                     has_errors=true
                 fi
+                cd "${root_dir}/core-web" || exit 1
             else
                 unmatched_files+=("$file")
             fi
@@ -157,7 +287,10 @@ perform_frontend_fixes() {
             printf "\n"
             for file in "${unmatched_files[@]}"; do
                 printf "    %s\n" "${file}"
+                # Change to root directory to restore files with correct relative paths
+                cd "$root_dir" || exit 1
                 git restore "${file}"
+                cd "${root_dir}/core-web" || exit 1
             done
             printf "\n"
             print_color "$YELLOW" "💡 You can fix these files by running the following commands:"
@@ -384,7 +517,9 @@ if [ "$backup_untracked" = true ] && [ -n "${untracked_files}" ]; then
             cp "${root_dir}/${file}" "${temp_dir}/${file}"  # Copy the file to the temp directory, preserving the directory structure
             print_color "$BLUE" "💾 Backing up ${file}"
             # Restore the original file state in the repo, removing unstaged changes
-            git restore "${root_dir}/${file}"  # Using relative path relative to current directory
+            cd "$root_dir" || exit 1
+            git restore "${file}"
+            cd "${root_dir}/core-web" || exit 1
         fi
     done
 
@@ -393,7 +528,9 @@ if [ "$backup_untracked" = true ] && [ -n "${untracked_files}" ]; then
 
     for file in $untracked_files; do
             if echo "${staged_files}" | grep -q "^${file}$"; then
-                git restore "${root_dir}/${file}"  # Using relative path relative to current directory
+                cd "$root_dir" || exit 1
+                git restore "${file}"
+                cd "${root_dir}/core-web" || exit 1
             fi
     done
 

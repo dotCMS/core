@@ -102,6 +102,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
     public customBlocks = '';
     public content: Content = '';
     public contentletIdentifier: string;
+    public disabled = false;
     editor: Editor;
     subject = new Subject();
     freezeScroll = true;
@@ -162,6 +163,13 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
         this.setEditorContent(content);
     }
 
+    setDisabledState(isDisabled: boolean): void {
+        this.disabled = isDisabled;
+        if (this.editor) {
+            this.editor.setEditable(!isDisabled);
+        }
+    }
+
     async loadCustomBlocks(urls: string[]): Promise<PromiseSettledResult<AnyExtension>[]> {
         return Promise.allSettled(urls.map(async (url) => import(/* webpackIgnore: true */ url)));
     }
@@ -199,6 +207,9 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
     }
 
     onBlockEditorChange(value: JSONContent) {
+        if (this.disabled) {
+            return;
+        }
         this.valueChange.emit(value);
         this.onChange?.(JSON.stringify(value));
         this.onTouched?.();
