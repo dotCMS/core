@@ -175,7 +175,7 @@ public class ContentTypesPaginator implements PaginatorOrdered<Map<String, Objec
 
             if (systemActionMappings.containsKey(variable)) {
 
-                contentTypeEntry.put(SYSTEM_ACTION_MAPPINGS, workflowSchemes.get(variable));
+                contentTypeEntry.put(SYSTEM_ACTION_MAPPINGS, systemActionMappings.get(variable));
             }
         }
     }
