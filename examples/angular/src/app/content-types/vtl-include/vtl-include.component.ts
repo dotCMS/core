@@ -1,6 +1,6 @@
 import { Component, input } from '@angular/core';
 
-import { DotCMSShowWhenDirective } from '@dotcms/angular/next';
+import { DotCMSShowWhenDirective } from '@dotcms/angular';
 
 import { UVE_MODE } from '@dotcms/types';
 import { VTLIncludeWithVariations } from '../../shared/contentlet.model';

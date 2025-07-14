@@ -47,6 +47,119 @@ Install additional tools: `bash <(curl -fsSL https://raw.githubusercontent.com/d
 
 **Key Technologies:** Spring/CDI, OSGi plugins, immutable models (`@Value.Immutable`), PostgreSQL, Elasticsearch
 
+## Maven Build Structure (CRITICAL)
+
+dotCMS follows a structured Maven build hierarchy with centralized dependency and plugin management:
+
+### Dependency Management Pattern
+**⚠️ CRITICAL: All dependencies must follow this pattern:**
+
+1. **Define versions in BOM**: Add new dependency versions to `bom/application/pom.xml`
+2. **Reference without version in modules**: Use dependencies in `dotCMS/pom.xml` WITHOUT version numbers
+3. **Never override BOM versions**: Let the BOM control all dependency versions
+
+#### Example: Adding a New Dependency
+```xml
+<!-- 1. Add to bom/application/pom.xml -->
+<properties>
+    <new-library.version>1.2.3</new-library.version>
+</properties>
+
+<dependencyManagement>
+    <dependencies>
+        <dependency>
+            <groupId>com.example</groupId>
+            <artifactId>new-library</artifactId>
+            <version>${new-library.version}</version>
+        </dependency>
+    </dependencies>
+</dependencyManagement>
+
+<!-- 2. Use in dotCMS/pom.xml (NO version) -->
+<dependency>
+    <groupId>com.example</groupId>
+    <artifactId>new-library</artifactId>
+</dependency>
+```
+
+#### Existing Swagger/OpenAPI Dependencies
+```xml
+<!-- In bom/application/pom.xml -->
+<swagger.version>2.2.0</swagger.version>
+
+<dependency>
+    <groupId>io.swagger.core.v3</groupId>
+    <artifactId>swagger-jaxrs2</artifactId>
+    <version>${swagger.version}</version>
+</dependency>
+<dependency>
+    <groupId>io.swagger.core.v3</groupId>
+    <artifactId>swagger-jaxrs2-servlet-initializer</artifactId>
+    <version>${swagger.version}</version>
+</dependency>
+
+<!-- In dotCMS/pom.xml (versions inherited from BOM) -->
+<dependency>
+    <groupId>io.swagger.core.v3</groupId>
+    <artifactId>swagger-jaxrs2</artifactId>
+</dependency>
+<dependency>
+    <groupId>io.swagger.core.v3</groupId>
+    <artifactId>swagger-jaxrs2-servlet-initializer</artifactId>
+</dependency>
+```
+
+### Plugin Management Pattern
+**⚠️ CRITICAL: All plugins must follow this pattern:**
+
+1. **Define plugins in parent POM**: Add plugin versions to `parent/pom.xml` in `<pluginManagement>`
+2. **Reference without version in modules**: Use plugins in module POMs WITHOUT version numbers
+3. **Global properties**: All global properties are defined in `parent/pom.xml`
+
+#### Example: Adding a New Plugin
+```xml
+<!-- 1. Add to parent/pom.xml -->
+<pluginManagement>
+    <plugins>
+        <plugin>
+            <groupId>com.example</groupId>
+            <artifactId>example-maven-plugin</artifactId>
+            <version>1.0.0</version>
+            <configuration>
+                <!-- default configuration -->
+            </configuration>
+        </plugin>
+    </plugins>
+</pluginManagement>
+
+<!-- 2. Use in any module POM (NO version) -->
+<plugin>
+    <groupId>com.example</groupId>
+    <artifactId>example-maven-plugin</artifactId>
+    <executions>
+        <execution>
+            <goals>
+                <goal>generate</goal>
+            </goals>
+        </execution>
+    </executions>
+</plugin>
+```
+
+### Build Hierarchy Summary
+```
+parent/pom.xml              # Global properties, plugin management
+├── bom/application/pom.xml # Dependency management (versions)
+└── dotCMS/pom.xml         # Module dependencies (no versions)
+```
+
+**Key Rules:**
+- **NEVER** add version numbers to dependencies in `dotCMS/pom.xml`
+- **NEVER** add version numbers to plugins in module POMs
+- **ALWAYS** add new dependency versions to `bom/application/pom.xml`
+- **ALWAYS** add new plugin versions to `parent/pom.xml`
+- **ALWAYS** define global properties in `parent/pom.xml`
+
 ## Java Version & Coding Standards
 
 **Environment:** Java 21 runtime, **Java 11 syntax required** for core modules
@@ -411,8 +524,57 @@ ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI();   // Modern Cont
 
 **Key Point**: The Docker container runs the image, not your local compiled classes.
 
+### OpenAPI Specification Management
+The `dotCMS/src/main/webapp/WEB-INF/openapi/openapi.yaml` file is **automatically generated** during compilation. 
+
+**Handling Merge Conflicts:**
+- The file uses Git's "ours" merge strategy - always keeps your current branch version
+- **Never manually edit** the OpenAPI YAML file - changes will be overwritten
+- **Pre-commit hook** automatically regenerates the file when REST API changes are detected
+- **After merge**: The next commit with REST changes will update the OpenAPI spec correctly
+
+**Configuration for stable diffs:**
+```xml
+<prettyPrint>true</prettyPrint>
+<sortOutput>true</sortOutput>
+```
+
+**Workflow:**
+1. Merge branches normally - OpenAPI conflicts resolve automatically using "ours"
+2. Make REST API changes and commit - pre-commit hook regenerates OpenAPI spec
+3. OpenAPI file is always consistent with current branch's REST implementation
+
 ### Immutable Classes Compilation
 When creating new models with `@Value.Immutable`, the concrete classes are generated at compile time. **Always run `./mvnw compile`** after creating abstract immutable interfaces to generate the implementation classes.
+
+### Git Hooks Setup
+The project uses husky for pre-commit hooks. On first setup or after pulling changes, you may see:
+```
+core-web/.husky/pre-commit: line 24: core-web/.husky/_/husky.sh: No such file or directory
+```
+
+**Fix**: Run `just build` or `./mvnw clean install` to properly install husky and create the missing `_/husky.sh` file.
+
+### ENOBUFS Error Fix (macOS)
+If you encounter `spawnSync /bin/sh ENOBUFS` errors during pre-commit hooks:
+
+**🚀 Automatic Fix**: The pre-commit hook will automatically detect and fix ENOBUFS errors by resetting nx cache and reinstalling dependencies. No manual intervention required!
+
+**Manual Fix** (if auto-fix fails):
+```bash
+cd core-web
+yarn nx reset
+yarn install
+
+# For persistent issues, full cleanup:
+rm -rf node_modules
+yarn install
+yarn nx reset
+```
+
+**Why this happens**: Large codebases (127k+ files) can cause nx cache corruption and macOS buffer limits to be exceeded.
+
+**Prevention**: Run `yarn nx reset` periodically if builds feel slow or after major dependency updates.
 
 ### Health Check System
 For comprehensive health check documentation: **[Health Check System Documentation](dotCMS/src/main/java/com/dotcms/health/README.md)**
@@ -450,6 +612,169 @@ curl -H "Authorization: Basic $(echo -n 'admin@dotcms.com:admin' | base64)" \
 ```
 
 Valid log levels: `TRACE`, `DEBUG`, `INFO`, `WARN`, `ERROR`, `FATAL`, `OFF`
+
+## Git and Development Workflow
+
+### Git Workflow Standards
+- **Branch from Main**: Always create feature branches from the main branch
+- **Branch Naming Convention**: All branches for PRs must use `issue-{issue number}-` prefix for automatic issue linking:
+  ```bash
+  # Required format for issue linking
+  git checkout -b issue-123-add-new-feature
+  git checkout -b issue-456-fix-login-bug
+  git checkout -b issue-789-update-documentation
+  ```
+- **For Human Developers**: Use dotCMS utilities for streamlined workflow:
+  ```bash
+  # Create GitHub issue with proper labeling
+  git issue-create
+  
+  # Create branch from assigned issue (automatically uses correct naming)
+  git issue-branch
+  
+  # List your assigned issues
+  git issue-branch --list
+  ```
+- **For AI Agents**: Use standard GitHub tools:
+  ```bash
+  # Create issues using gh CLI
+  gh issue create --title "Issue title" --body "Description" --label "bug,enhancement"
+  
+  # Create branches with proper naming for issue linking
+  git checkout -b issue-123-descriptive-name
+  gh issue develop 123 --checkout
+  
+  # List issues
+  gh issue list --assignee @me
+  ```
+- **Conventional Commits**: Use conventional commit format for all changes:
+  ```
+  feat: add new workflow component
+  fix: resolve artifact dependency issue
+  docs: update workflow documentation
+  test: add integration test for build phase
+  refactor: improve change detection logic
+  ```
+
+### Pull Request Standards
+- **Draft PRs**: Create pull requests in draft status initially for review
+- **Documentation Updates**: Update relevant documentation files when making changes to:
+  - Application behavior or architecture
+  - Security procedures or guidelines
+  - Testing strategies or new test types
+  - Troubleshooting procedures or known issues
+
+## Security Guidelines
+
+### Critical Security Rules
+
+**🚨 NEVER do these in any code:**
+```java
+// ❌ NEVER: Direct input injection without validation
+System.out.println("User input: " + userInput);  // INJECTION RISK
+
+// ❌ NEVER: Hardcoded secrets or keys
+String apiKey = "sk-1234567890abcdef";  // SECURITY VIOLATION
+
+// ❌ NEVER: Exposing sensitive information in logs
+Logger.info(this, "Password: " + password);  // SECURITY VIOLATION
+```
+
+**✅ ALWAYS do these security practices:**
+```java
+// ✅ Validate and sanitize all user input
+if (UtilMethods.isSet(userInput) && userInput.matches("^[a-zA-Z0-9\\s\\-_]+$")) {
+    Logger.info(this, "Valid input received");
+    processInput(userInput);
+} else {
+    Logger.warn(this, "Invalid input rejected");
+    throw new DotSecurityException("Invalid input format");
+}
+
+// ✅ Use Config for sensitive properties
+String apiKey = Config.getStringProperty("external.api.key", "");
+if (!UtilMethods.isSet(apiKey)) {
+    throw new DotDataException("API key not configured");
+}
+
+// ✅ Never log sensitive information
+Logger.info(this, "Authentication successful for user: " + user.getUserId());
+```
+
+### Security Checklist
+
+**Before committing any code:**
+- [ ] No hardcoded secrets, passwords, or API keys
+- [ ] All user input is validated and sanitized
+- [ ] Sensitive information is never logged
+- [ ] Proper error handling without information leakage
+- [ ] Security boundaries are maintained
+
+## Development Patterns
+
+### Error Handling Pattern
+```java
+// Standard error handling with proper logging
+try {
+    performOperation();
+    Logger.info(this, "Operation completed successfully");
+} catch (DotDataException e) {
+    Logger.error(this, "Data operation failed: " + e.getMessage(), e);
+    throw new DotRuntimeException("Unable to complete operation", e);
+} catch (Exception e) {
+    Logger.error(this, "Unexpected error: " + e.getMessage(), e);
+    throw new DotRuntimeException("System error occurred", e);
+}
+```
+
+### Input Validation Pattern
+```java
+// Comprehensive input validation
+public void processUserInput(String input) {
+    // Null and empty validation
+    if (!UtilMethods.isSet(input)) {
+        throw new DotDataException("Input cannot be empty");
+    }
+    
+    // Format validation
+    if (!input.matches("^[a-zA-Z0-9\\s\\-_\\.]+$")) {
+        Logger.warn(this, "Invalid input format attempted");
+        throw new DotSecurityException("Invalid input format");
+    }
+    
+    // Length validation
+    if (input.length() > 255) {
+        throw new DotDataException("Input exceeds maximum length");
+    }
+    
+    // Business logic validation
+    if (isBlacklisted(input)) {
+        Logger.warn(this, "Blacklisted input attempted");
+        throw new DotSecurityException("Input not allowed");
+    }
+    
+    // Process validated input
+    processValidatedInput(input);
+}
+```
+
+### Debugging Pattern
+```java
+// Structured debugging information
+Logger.debug(this, () -> {
+    return String.format("Processing request - User: %s, Action: %s, Parameters: %s",
+        user.getUserId(), action, sanitizeForLogging(parameters));
+});
+
+// Performance monitoring
+long startTime = System.currentTimeMillis();
+try {
+    performOperation();
+} finally {
+    long duration = System.currentTimeMillis() - startTime;
+    Logger.info(this, "Operation completed in " + duration + "ms");
+}
+```
 
 ## Summary Checklist
 - ✅ Use `Config.getProperty()` and `Logger.info(this, ...)`

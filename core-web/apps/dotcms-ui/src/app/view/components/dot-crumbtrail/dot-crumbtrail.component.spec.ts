@@ -53,12 +53,6 @@ describe('DotCrumbtrailComponent', () => {
         expect(breadcrumbMenu).toBeTruthy();
     });
 
-    it('should have breadcrumb last item container', () => {
-        spectator.detectChanges();
-        const breadcrumbLast = spectator.query(byTestId('breadcrumb-title'));
-        expect(breadcrumbLast).toBeTruthy();
-    });
-
     it('should display collapsed breadcrumbs when multiple items are provided', () => {
         const crumbs = [
             { label: 'First', url: '/first' },
@@ -110,14 +104,14 @@ describe('DotCrumbtrailComponent', () => {
         expect(breadcrumbLast.textContent.trim()).toBe('Single Item');
     });
 
-    it('should display empty last breadcrumb when no items are provided', () => {
+    it('should not display breadcrumb title when no items are provided', () => {
         const crumbs: DotCrumb[] = [];
 
         mockService.trigger(crumbs);
         spectator.detectChanges();
 
         const breadcrumbLast = spectator.query(byTestId('breadcrumb-title'));
-        expect(breadcrumbLast.textContent.trim()).toBe('');
+        expect(breadcrumbLast).toBeFalsy();
     });
 
     it('should display empty collapsed breadcrumbs when no items are provided', () => {
@@ -144,6 +138,77 @@ describe('DotCrumbtrailComponent', () => {
         expect(breadcrumbMenu.$model()).toEqual([
             { label: 'First', target: '_self', url: '/first' },
             { label: 'Second', target: '_blank', url: '/second' }
+        ]);
+
+        const breadcrumbLast = spectator.query(byTestId('breadcrumb-title'));
+        expect(breadcrumbLast.textContent.trim()).toBe('Last');
+    });
+
+    it('should update collapsed breadcrumbs when service emits new data', () => {
+        const initialCrumbs = [
+            { label: 'First', url: '/first' },
+            { label: 'Second', url: '/second' }
+        ];
+
+        mockService.trigger(initialCrumbs);
+        spectator.detectChanges();
+
+        let breadcrumbMenu = spectator.query(DotCollapseBreadcrumbComponent);
+        expect(breadcrumbMenu.$model()).toEqual([{ label: 'First', url: '/first' }]);
+
+        const updatedCrumbs = [
+            { label: 'Home', url: '/home' },
+            { label: 'Section', url: '/section' },
+            { label: 'Page', url: '/page' }
+        ];
+
+        mockService.trigger(updatedCrumbs);
+        spectator.detectChanges();
+
+        breadcrumbMenu = spectator.query(DotCollapseBreadcrumbComponent);
+        expect(breadcrumbMenu.$model()).toEqual([
+            { label: 'Home', url: '/home' },
+            { label: 'Section', url: '/section' }
+        ]);
+
+        const breadcrumbLast = spectator.query(byTestId('breadcrumb-title'));
+        expect(breadcrumbLast.textContent.trim()).toBe('Page');
+    });
+
+    it('should handle breadcrumbs with empty label', () => {
+        const crumbs = [
+            { label: 'First', url: '/first' },
+            { label: '', url: '/empty' },
+            { label: 'Last', url: '/last' }
+        ];
+
+        mockService.trigger(crumbs);
+        spectator.detectChanges();
+
+        const breadcrumbMenu = spectator.query(DotCollapseBreadcrumbComponent);
+        expect(breadcrumbMenu.$model()).toEqual([
+            { label: 'First', url: '/first' },
+            { label: '', url: '/empty' }
+        ]);
+
+        const breadcrumbLast = spectator.query(byTestId('breadcrumb-title'));
+        expect(breadcrumbLast.textContent.trim()).toBe('Last');
+    });
+
+    it('should handle breadcrumbs with null label', () => {
+        const crumbs = [
+            { label: 'First', url: '/first' },
+            { label: null, url: '/null' },
+            { label: 'Last', url: '/last' }
+        ];
+
+        mockService.trigger(crumbs);
+        spectator.detectChanges();
+
+        const breadcrumbMenu = spectator.query(DotCollapseBreadcrumbComponent);
+        expect(breadcrumbMenu.$model()).toEqual([
+            { label: 'First', url: '/first' },
+            { label: null, url: '/null' }
         ]);
 
         const breadcrumbLast = spectator.query(byTestId('breadcrumb-title'));

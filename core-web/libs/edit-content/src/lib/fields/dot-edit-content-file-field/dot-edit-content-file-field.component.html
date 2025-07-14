@@ -2,28 +2,35 @@
     class="file-field__container"
     [class.file-field__container--empty]="store.isInit()"
     [class.file-field__container--preview]="store.isPreview()"
-    [class.file-field__container--uploading]="store.isUploading()">
+    [class.file-field__container--uploading]="store.isUploading()"
+    [class.file-field__container--disabled]="$disabled()">
     @switch (store.fileStatus()) {
         @case ('init') {
             <div
                 [class.file-field__drop-zone--active]="store.dropZoneActive()"
+                [class.file-field__drop-zone--disabled]="$disabled()"
                 class="file-field__drop-zone">
                 <input
                     #inputFile
                     [accept]="store.acceptedFiles().join(',')"
+                    [disabled]="$disabled()"
                     (change)="fileSelected(inputFile.files)"
                     data-testId="file-field__file-input"
                     type="file" />
                 <dot-drop-zone
                     [accept]="store.acceptedFiles()"
                     [maxFileSize]="store.maxFileSize()"
+                    [disabled]="$disabled()"
                     (fileDragLeave)="store.setDropZoneState(false)"
                     (fileDragOver)="store.setDropZoneState(true)"
                     (fileDropped)="handleFileDrop($event)"
                     data-testId="dropzone">
-                    <dot-file-field-ui-message [uiMessage]="store.uiMessage()">
+                    <dot-file-field-ui-message
+                        [uiMessage]="store.uiMessage()"
+                        [disabled]="$disabled()">
                         <button
                             (click)="inputFile.click()"
+                            [disabled]="$disabled()"
                             class="file-field__drop-zone-btn"
                             data-testId="choose-file-btn"
                             type="button">
@@ -37,6 +44,7 @@
                 @if (store.allowURLImport()) {
                     <p-button
                         (click)="showImportUrlDialog()"
+                        [disabled]="$disabled()"
                         [label]="'dot.file.field.action.import.from.url' | dm"
                         data-testId="action-import-from-url"
                         icon="pi pi-link"
@@ -45,6 +53,7 @@
                 @if (store.allowExistingFile()) {
                     <p-button
                         (click)="showSelectExistingFileDialog()"
+                        [disabled]="$disabled()"
                         [label]="'dot.file.field.action.select.existing.file' | dm"
                         data-testId="action-existing-file"
                         icon="pi pi-file"
@@ -53,6 +62,7 @@
                 @if (store.allowCreateFile()) {
                     <p-button
                         (click)="showFileEditorDialog()"
+                        [disabled]="$disabled()"
                         [label]="'dot.file.field.action.create.new.file' | dm"
                         data-testId="action-new-file"
                         icon="pi pi-code"
@@ -60,7 +70,7 @@
                 }
                 @if (store.allowGenerateImg()) {
                     <p-button
-                        [disabled]="!$isAIPluginInstalled()"
+                        [disabled]="$disabled() || !$isAIPluginInstalled()"
                         tooltipPosition="bottom"
                         [pTooltip]="$tooltipTextAIBtn()"
                         (click)="showAIImagePromptDialog()"
@@ -98,6 +108,7 @@
             @if (uploadedFile) {
                 <dot-file-field-preview
                     (removeFile)="store.removeFile()"
+                    [disabled]="$disabled()"
                     [previewFile]="uploadedFile" />
             }
         }

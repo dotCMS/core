@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { DotCMSEditableText } from "@dotcms/react/next";
+import { DotCMSEditableText } from "@dotcms/react";
 
 function Banner(contentlet) {
     const { title, caption, inode, image, link, buttonText } = contentlet;

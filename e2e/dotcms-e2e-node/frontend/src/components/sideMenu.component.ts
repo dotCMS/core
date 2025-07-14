@@ -1,6 +1,6 @@
 import { Page, expect } from "@playwright/test";
 
-export class SideMenuPage {
+export class SideMenuComponent {
   constructor(private page: Page) {}
 
   async openMenu() {

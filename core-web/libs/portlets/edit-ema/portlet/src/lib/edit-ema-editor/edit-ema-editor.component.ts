@@ -189,7 +189,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
         untracked(() => {
             this.uveStore.resetEditorProperties();
-            this.dialog?.resetDialog();
+            this.dialog?.resetActionPayload();
         });
 
         if (isTraditionalPage || !isClientReady) {
@@ -726,6 +726,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 }
 
                 this.uveStore.savePage(pageContainers);
+                this.dialog.resetDialog();
             },
             [NG_CUSTOM_EVENTS.SAVE_PAGE]: () => {
                 const { shouldReloadPage, contentletIdentifier } = detail.payload ?? {};
@@ -798,6 +799,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                             this.uveStore.setUveStatus(UVE_STATUS.LOADED);
                         } else {
                             this.uveStore.savePage(pageContainers);
+                            this.dialog.resetDialog();
                         }
                     });
             },
