@@ -34,6 +34,14 @@
         overflow-y: auto;
         width: 100%;
 
+        .dot-drag-handle {
+            cursor: grab;
+            color: $color-palette-primary-800;
+            transition:
+                opacity 250ms,
+                top 150ms;
+        }
+
         .ProseMirror {
             -moz-box-sizing: border-box;
             -webkit-box-sizing: border-box;

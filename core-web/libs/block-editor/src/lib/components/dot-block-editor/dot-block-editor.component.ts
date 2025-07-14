@@ -56,7 +56,6 @@ import {
     DotTableCellExtension,
     DotTableExtension,
     DotTableHeaderExtension,
-    DragHandler,
     FREEZE_SCROLL_KEY,
     FreezeScroll,
     IndentExtension
@@ -181,7 +180,8 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
                         ...this.getEditorMarks(),
                         ...this.getEditorNodes(),
                         ...extensions
-                    ]
+                    ],
+                    editable: true
                 });
 
                 this.dotMarketingConfigService.setProperty(
@@ -194,6 +194,10 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
     }
 
     ngOnDestroy() {
+        if (this.editor) {
+            this.editor.destroy();
+        }
+
         this.destroy$.next(true);
         this.destroy$.complete();
     }
@@ -445,7 +449,6 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
             ActionsMenu(this.viewContainerRef, this.getParsedCustomBlocks(), {
                 shouldShowAIExtensions: isAIPluginInstalled
             }),
-            DragHandler(this.viewContainerRef),
             BubbleFormExtension(this.viewContainerRef),
             DotFloatingButton(this.#injector, this.viewContainerRef),
             DotTableCellExtension(this.viewContainerRef),
