@@ -1,8 +1,7 @@
 /// <reference types="jest" />
 
-import { CollectionBuilder } from './collection';
+import { ClientOptions, CollectionBuilder } from './collection';
 
-import { ClientOptions } from '../../../../deprecated/sdk-js-client';
 import { CONTENT_API_URL } from '../../shared/const';
 import { SortBy } from '../../shared/types';
 import { Equals } from '../query/lucene-syntax';

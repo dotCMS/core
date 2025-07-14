@@ -40,7 +40,7 @@
         [title]="'message.template.empty.title' | dm"
         [content]="'message.template.empty.content' | dm"
         [buttonLabel]="'message.template.empty.button.label' | dm"
-        icon="web"></dot-empty-state>
+        icon="web" />
 
     <ng-template #rowTemplate let-rowData="rowData">
         <td [ngStyle]="{ 'text-align': tableColumns[0].textAlign }">
@@ -78,7 +78,7 @@
                     [attr.data-testid]="rowData.identifier"
                     [actions]="setTemplateActions(rowData)"
                     [item]="rowData"
-                    class="listing-datatable__action-button"></dot-action-menu-button>
+                    class="listing-datatable__action-button" />
             }
         </td>
     </ng-template>
@@ -87,5 +87,5 @@
 @if (addToBundleIdentifier) {
     <dot-add-to-bundle
         (cancel)="addToBundleIdentifier = null"
-        [assetIdentifier]="addToBundleIdentifier"></dot-add-to-bundle>
+        [assetIdentifier]="addToBundleIdentifier" />
 }

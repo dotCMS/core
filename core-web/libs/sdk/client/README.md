@@ -89,7 +89,7 @@ For detailed instructions, please refer to the [dotCMS API Documentation - Read-
 Install the SDK and required dependencies:
 
 ```bash
-npm install @dotcms/client@next @dotcms/types@next
+npm install @dotcms/client@latest @dotcms/types@latest
 ```
 
 > [!TIP]
@@ -100,7 +100,7 @@ npm install @dotcms/client@next @dotcms/types@next
 Here's a basic setup of the dotCMS Client SDK to help you get started:
 
 ```typescript
-import { createDotCMSClient } from '@dotcms/client/next';
+import { createDotCMSClient } from '@dotcms/client';
 
 // Create a client instance
 const client = createDotCMSClient({
@@ -173,7 +173,7 @@ The `createDotCMSClient` function is the first step in using the dotCMS Client S
 #### Initialization Example
 
 ```typescript
-import { createDotCMSClient } from '@dotcms/client/next';
+import { createDotCMSClient } from '@dotcms/client';
 
 const client = createDotCMSClient({
     dotcmsUrl: 'https://your-dotcms-instance.com',
@@ -264,8 +264,17 @@ The `page.get()` method accepts an optional second argument of type [`DotCMSPage
 | `languageId` | string \| number | Language version of the page                     |
 | `mode`       | string           | Rendering mode: `LIVE`, `PREVIEW_MODE`, etc.     |
 | `personaId`  | string           | Personalize content based on persona ID          |
-| `graphql`    | object           | Extend the response with additional content/data |
-| `fireRules`  | boolean          | Whether to trigger page rules                    |
+| `graphql`    | DotCMSGraphQLParams          | GraphQL options for extending the response       |
+| `fireRules`  | boolean         | Whether to trigger page rules                    |
+
+The `graphql` option allows you to customize the page and content data returned. It accepts:
+
+| Property    | Type     | Description                                           |
+| ----------- | -------- | ----------------------------------------------------- |
+| `page`      | string   | GraphQL partial query that will be automatically wrapped with the page context. (you don't need to include the `page(url:"/")` wrapper in your query)    |
+| `content`   | object   | Named queries to fetch additional content             |
+| `fragments` | string[] | GraphQL fragments that can be reused across queries   |
+| `variables` | object   | Variables to pass into the GraphQL queries            |
 
 > 💡 See [`DotCMSPageRequestParams`](https://github.com/dotCMS/core/blob/6e003eb697554ea9636a1fec59bc0fa020b84390/core-web/libs/sdk/types/src/lib/client/public.ts#L5-L54) for a full list of supported options.
 
@@ -363,6 +372,46 @@ const filtered = await client.content
     .sortBy([{ field: 'publishDate', direction: 'desc' }]);
 ```
 
+The table below outlines the builder pattern's methods:
+
+| QueryBuilder Method    | Type        | Result       | Explanation                                                                                                                                                                                                                                           |
+|------------------------|-------------|--------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `.field('foo')`        | Field       | `foo:{bar}`  | Defines a [field name](https://dev.dotcms.com/docs/field-properties#VariableNames) to query, awaiting a value to be supplied via the `.equals()` method. Multiple such assignments can be made if joined together via operator methods such as `or()`. |
+| `.excludeField('foo')` | Field       | `-foo:{bar}` | Defines a field name to exclude from the query, awaiting a value to be supplied via the `.equals()` method, or several combined through operators.                                                                                                    |
+| `.equals('bar')`       | Assignment  | `{foo:}bar`  | Supplies a value to a preceding field method. Multiple `.equals()` calls may be joined through operator methods.                                                                                                                                      |
+| `.raw('foo')`          | Raw         | `foo`        | Adds raw input as output to the query; requires use of Lucene syntax directly.                                                                                                                                                                        |
+| `.and()`               | Operator    | ` AND `      | Joins two query clauses — whether assignments or field/assignment pairs — such that results will be returned when both halves apply.                                                                                                                  |
+| `.or()`                | Operator    | ` OR `       | Joins two query clauses such that results will be returned when at least one half applies.                                                                                                                                                            |
+| `.not()`               | Operator    | ` NOT `      | Unary operator; query will return only results where the subsequent clause does not apply.                                                                                                                                                            |
+| `.build()`             | Constructor | *n/a*        | Outputs query string.                                                                                                                                                                                                                        |
+
+The following example displays all of the builder class's methods, generating a complex Lucene query:
+
+```js
+let queryBuilder = new QueryBuilder();
+const myQuery = queryBuilder
+            .field('contentType')
+            .equals('Blog')
+            .or()
+            .equals('Activity')
+            .excludeField('conhost')
+            .equals('my-super-cool-site')
+            .field('languageId')
+            .equals('2') // spanish
+            .and()
+            .field('deleted')
+            .equals('false')
+            .raw('+summary:Snowboard')
+            .not()
+            .equals('Swiss Alps')
+            .build();
+```
+
+The above `myQuery` variable will have the following value:
+> +contentType:Blog OR Activity -conhost:my-super-cool-site +languageId:2 AND +deleted:false +summary:Snowboard NOT "Swiss Alps"
+
+For additional examples, see the [specification page](src/lib/client/content/builders/query/query.spec.ts), or the examples below.
+
 #### Search and Paginate Product Results by Title and Price
 
 ```ts
@@ -428,7 +477,7 @@ getCollection<T = DotCMSBasicContentlet>(
 
 ## Using the SDK with TypeScript
 
-As mentioned earlier, dotCMS provides a rich set of types provided by the `@dotcms/types@next` package. These types can be leveraged to ensure proper typing for your page and content data, enhancing type safety and developer experience.
+As mentioned earlier, dotCMS provides a rich set of types provided by the `@dotcms/types@latest` package. These types can be leveraged to ensure proper typing for your page and content data, enhancing type safety and developer experience.
 
 ### Defining Page Response Types
 
@@ -552,7 +601,7 @@ By default, the `@dotcms/client` SDK is **read-only**. It's designed to fetch co
 
 To make your pages editable using the dotCMS **Universal Visual Editor (UVE)**, you'll need to pair this SDK with one of our supported front-end integrations.
 
-### Use an Official SDK: 
+### Use an Official SDK:
 
 If you're using a modern JavaScript framework like React or Angular, we strongly recommend starting with one of our official UVE integrations. These pair the `@dotcms/client` SDK with framework-specific tooling for the Universal Visual Editor:
 
@@ -576,9 +625,9 @@ These integrations come pre-wired with everything you need to:
 If you’re building with a framework we don’t yet support, you can build your own UVE integration using the low-level [`@dotcms/uve`](https://github.com/dotCMS/core/tree/main/core-web/libs/sdk/uve) package.
 
 > **This is not a recommended path.**
-> 
+>
 > Custom UVE implementations are complex, require a deep understanding of dotCMS internals, and are not actively supported.
-> 
+>
 > This route is intended only for advanced use cases, such as wiring up layout rendering, editable regions, and UVE behavior manually.
 
 That said, if you’re experienced and want to explore it, you can [review the `@dotcms/uve` source and docs here](https://github.com/dotCMS/core/tree/main/core-web/libs/sdk/uve).

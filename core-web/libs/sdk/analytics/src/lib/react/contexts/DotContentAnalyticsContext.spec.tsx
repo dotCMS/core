@@ -1,12 +1,11 @@
 import { jest } from '@jest/globals';
 import '@testing-library/jest-dom';
 import { renderHook } from '@testing-library/react-hooks';
-import * as React from 'react';
 import { ReactNode, useContext } from 'react';
 
 import DotContentAnalyticsContext from './DotContentAnalyticsContext';
 
-import { DotContentAnalytics } from '../../dotAnalytics/dot-content-analytics';
+import { DotAnalytics } from '../../dotAnalytics/shared/dot-content-analytics.model';
 
 jest.mock('../../dotAnalytics/dot-content-analytics', () => ({
     DotContentAnalytics: {
@@ -35,7 +34,7 @@ describe('useDotContentAnalyticsContext', () => {
     });
 
     it('returns the context value DotContentAnalytics', () => {
-        const mockContextValue = {} as DotContentAnalytics;
+        const mockContextValue = {} as DotAnalytics;
 
         const { result } = renderHook(() => useContext(DotContentAnalyticsContext), {
             wrapper: ({ children }: { children: ReactNode }) => (

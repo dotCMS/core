@@ -1,0 +1,27 @@
+{
+  "context": {
+    "type": "json_object",
+    "required": true,
+
+    "allowed_attributes": {
+      "site_key": {
+        "type": "string",
+        "required": true,
+        "custom-validator": "SiteKeyValidator"
+      },
+      "session_id": {
+        "type": "string",
+        "required": true
+      },
+      "user_id": {
+        "type": "string",
+        "required": true
+      }
+    }
+  },
+  "events": {
+    "type": "json_array",
+    "array_type": "json_object",
+    "required": true
+  }
+}

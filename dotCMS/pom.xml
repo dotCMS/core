@@ -1862,6 +1862,11 @@
                                     <SDKMAN_JAVA_VERSION>${runtime.docker.sdkman.java.version}</SDKMAN_JAVA_VERSION>
                                 </args>
                             </build>
+                            <run>
+                                <env combine.children="append">
+                                    <DOT_HEALTH_DETAILED_AUTHENTICATION_REQUIRED>false</DOT_HEALTH_DETAILED_AUTHENTICATION_REQUIRED>
+                                </env>
+                            </run>
                         </dotcms>
                     </imagesMap>
                 </configuration>
@@ -1960,6 +1965,39 @@
                                 </fileSet>
                             </fileSets>
                         </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            
+            <!-- OpenAPI/Swagger documentation generation -->
+            <plugin>
+                <groupId>io.swagger.core.v3</groupId>
+                <artifactId>swagger-maven-plugin</artifactId>
+                <configuration>
+                    <outputFileName>openapi</outputFileName>
+                    <!--<outputPath>${project.build.directory}/generated-resources/openapi</outputPath>-->
+                    <outputPath>${project.basedir}/src/main/webapp/WEB-INF/openapi</outputPath>
+                    <outputFormat>YAML</outputFormat>
+                    <prettyPrint>true</prettyPrint>
+                    <!-- Enable sorting for consistent output -->
+                    <sortOutput>true</sortOutput>
+                    <!-- Scan all dotCMS packages to extract @OpenAPIDefinition -->
+                    <resourcePackages>
+                        <package>com.dotcms.rest.config</package>
+                        <package>com.dotcms.rest</package>
+                        <package>com.dotcms.contenttype.model.field</package>
+                        <package>com.dotcms.rendering.js</package>
+                        <package>com.dotcms.ai.rest</package>
+                        <package>com.dotcms.health</package>
+                    </resourcePackages>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>generate-openapi</id>
+                        <goals>
+                            <goal>resolve</goal>
+                        </goals>
+                        <phase>compile</phase>
                     </execution>
                 </executions>
             </plugin>
@@ -2186,6 +2224,39 @@
                                 </dotcms>
                             </imagesMap>
                         </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>docker-stop-no-remove</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <build>
+                <defaultGoal>validate</defaultGoal>
+                <plugins>
+                    <plugin>
+                        <groupId>io.fabric8</groupId>
+                        <artifactId>docker-maven-plugin</artifactId>
+                        <configuration>
+                            <skip>false</skip>
+                            <removeVolumes>false</removeVolumes>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>docker-stop-no-remove</id>
+                                <goals>
+                                    <goal>stop</goal>
+                                </goals>
+                                <phase>validate</phase>
+                                <configuration>
+                                    <keepContainer>true</keepContainer>
+                                    <removeVolumes>false</removeVolumes>
+                                </configuration>
+                            </execution>
+                        </executions>
                     </plugin>
                 </plugins>
             </build>

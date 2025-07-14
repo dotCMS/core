@@ -1,5 +1,5 @@
 import { APIRequestContext, Page } from "@playwright/test";
-import { updateFeatureFlag } from "@utils/api";
+import { updateFeatureFlag } from "@requests/updateFeatureFlag";
 
 export class ListingContentTypesPage {
   constructor(
@@ -8,7 +8,15 @@ export class ListingContentTypesPage {
   ) {}
 
   async goToUrl() {
+    const responsePromise = this.page.waitForResponse((response) => {
+      return (
+        response.status() === 200 &&
+        response.url().includes("/api/v1/contenttype") &&
+        response.request().method() === "GET"
+      );
+    });
     await this.page.goto("/dotAdmin/#/content-types-angular");
+    await responsePromise;
   }
 
   async toggleNewContentEditor(boolean: boolean) {
@@ -29,20 +37,25 @@ export class ListingContentTypesPage {
 
   async addNewContentType(name: string) {
     await this.page.getByTestId("dot-action-button").click();
-    await this.page.getByLabel("Content").locator("a").click();
+    await this.page
+      .locator(".p-menu-overlay")
+      .getByLabel("Content")
+      .locator("a")
+      .click();
     await this.page
       .locator('[data-test-id="content-type__new-content-banner"] div')
       .nth(2)
       .click();
 
     await this.page.getByLabel("Content Name").fill(name);
-    await this.page.getByTestId("dotDialogAcceptAction").click();
-    await this.page.waitForResponse((response) => {
+    const responsePromise = this.page.waitForResponse((response) => {
       return (
         response.status() === 200 &&
         response.url().includes("/api/v1/contenttype")
       );
     });
+    await this.page.getByTestId("dotDialogAcceptAction").click();
+    await responsePromise;
   }
 
   async goToAddNewContentType(contentType: string) {

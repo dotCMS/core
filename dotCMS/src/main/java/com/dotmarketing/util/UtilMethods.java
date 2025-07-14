@@ -440,8 +440,12 @@ public class UtilMethods {
         return (x != null);
     }
 
-    public static final boolean isSet(Object x) {
+    public static boolean isSet(Object x) {
         return (x != null);
+    }
+
+    public static boolean isNotSet(Object x) {
+        return !isSet(x);
     }
 
     public static final boolean isSetCrumb(String x) {
@@ -537,6 +541,71 @@ public class UtilMethods {
         }
     }
 
+
+    /**
+     * Validates if a string follows dotCMS internal path notation: /folder/asset or /asset
+     * Rules:
+     * - Must start with /
+     * - Can have multiple folder levels separated by /
+     * - No empty segments (no //)
+     * - No trailing / unless it's root
+     * - Valid characters for folder/asset names
+     */
+    public static boolean isValidDotCMSPath(String path) {
+        if (path == null || path.isEmpty()) {
+            return false;
+        }
+
+        // Must start with /
+        if (!path.startsWith("/")) {
+            return false;
+        }
+
+        // Root path is valid
+        if (path.equals("/")) {
+            return true;
+        }
+
+        // Cannot end with / (except root)
+        if (path.endsWith("/")) {
+            return false;
+        }
+
+        // Cannot contain // (double slashes)
+        if (path.contains("//")) {
+            return false;
+        }
+
+        // Split and validate each segment
+        String[] segments = path.split("/");
+
+        // First segment is always empty (because of leading /)
+        for (int i = 1; i < segments.length; i++) {
+            String segment = segments[i];
+
+            // No empty segments
+            if (segment.isEmpty()) {
+                return false;
+            }
+
+            // Validate segment characters (adjust regex as needed for dotCMS rules)
+            if (!isValidPathSegment(segment)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Validates individual path segment (folder or asset name)
+     * Adjust this regex based on dotCMS naming rules
+     */
+    private static boolean isValidPathSegment(String segment) {
+        // Basic validation - adjust based on dotCMS requirements
+        // This allows alphanumeric, dots, dashes, underscores
+        return segment.matches("^[a-zA-Z0-9._-]+$");
+    }
 
     public static final boolean isValidEmail(Object email) {
         if (email == null) {

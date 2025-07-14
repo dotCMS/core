@@ -1,6 +1,6 @@
 "use client";
 
-import { DotCMSLayoutBody, useEditableDotCMSPage } from "@dotcms/react/next";
+import { DotCMSLayoutBody, useEditableDotCMSPage } from "@dotcms/react";
 
 import { pageComponents } from "@/components/content-types";
 import Footer from "@/components/footer/Footer";

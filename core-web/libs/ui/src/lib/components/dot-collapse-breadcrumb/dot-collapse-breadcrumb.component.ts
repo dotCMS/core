@@ -35,6 +35,12 @@ export class DotCollapseBreadcrumbComponent {
      */
     $maxItems = input<number>(MAX_ITEMS, { alias: 'maxItems' });
     /**
+     * Style class to apply to the component
+     *
+     * @memberof DotCollapseBreadcrumbComponent
+     */
+    $styleClass = input<string>('', { alias: 'styleClass' });
+    /**
      * Items to show
      *
      * @memberof DotCollapseBreadcrumbComponent

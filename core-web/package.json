@@ -66,6 +66,7 @@
         "@material/mwc-formfield": "^0.20.0",
         "@material/mwc-icon-button": "^0.20.0",
         "@material/mwc-menu": "^0.20.0",
+        "@modelcontextprotocol/sdk": "^1.13.1",
         "@ngrx/component-store": "^18.0.2",
         "@ngrx/operators": "^18.0.2",
         "@ngrx/signals": "^18.0.2",
@@ -82,6 +83,7 @@
         "@tiptap/extension-highlight": "^2.14.0",
         "@tiptap/extension-image": "^2.14.0",
         "@tiptap/extension-link": "^2.14.0",
+        "@tiptap/extension-placeholder": "^2.23.0",
         "@tiptap/extension-subscript": "^2.14.0",
         "@tiptap/extension-superscript": "^2.14.0",
         "@tiptap/extension-table": "^2.14.0",
@@ -129,6 +131,7 @@
         "tslib": "^2.3.0",
         "uuid": "^9.0.0",
         "webpack-dev-middleware": "^6.1.2",
+        "zod": "^3.25.67",
         "zone.js": "0.14.2"
     },
     "devDependencies": {

@@ -34,6 +34,7 @@ import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vavr.Tuple2;
 
 /**
@@ -43,6 +44,7 @@ import io.vavr.Tuple2;
  *         Date: 28/05/14
  */
 @Deprecated
+@Tag(name = "OSGi Plugins")
 @Path ("/osgi")
 public class OSGIResource  {
 

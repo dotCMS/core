@@ -181,7 +181,15 @@ describe('DotAppsService', () => {
         const mockResponse = {
             headers: {
                 get: (_header: string) => {
-                    return `attachment; filename=${fileName}`;
+                    if (_header === 'content-disposition') {
+                        return `attachment; filename=${fileName}`;
+                    }
+
+                    if (_header === 'error-message') {
+                        return null;
+                    }
+
+                    return null;
                 }
             },
             blob: () => {
