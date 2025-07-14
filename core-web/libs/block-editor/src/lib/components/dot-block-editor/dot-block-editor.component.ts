@@ -457,13 +457,15 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
             AssetUploader(this.#injector, this.viewContainerRef),
             IndentExtension,
             Placeholder.configure({
+                emptyEditorClass: 'is-editor-empty',
+                emptyNodeClass: 'is-empty',
                 placeholder: ({ node }) => {
                     if (node.type.name === 'bulletList' || node.type.name === 'orderedList') {
                         return this.#dotMessageService.get('block-editor.placeholder.list');
                     }
 
                     if (node.type.name === 'heading') {
-                        const level = node.attrs['level'];
+                        const level = node.attrs['level'] ?? '';
 
                         return this.#dotMessageService.get(
                             'block-editor.placeholder.heading',
