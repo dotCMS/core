@@ -703,53 +703,51 @@ public class LoginServiceAPIFactory implements Serializable {
     }
 
     /**
-     * This function notifies API Tokens that are about to expire within the next 7 days.
-     * If the user is an admin, it checks all users in the system, and notifies about all of them.
-     * If the user is not an admin, it checks and notifies only the logged in user.
+     * This function notifies API Tokens that are about to expire within the configured number of days.
+     * Uses EXPIRING_TOKEN_LOOKAHEAD_DAYS configuration (default: 7 days).
+     * Can be disabled using DISPLAY_EXPIRING_TOKEN_ALERTS configuration (default: true).
+     * If the user is an admin, shows all expiring tokens with link to REST API.
+     * If the user is not an admin, shows only their own tokens with notification to contact admin.
      */
-    private void messageTokensToExpire(User logInUser) throws DotDataException {
+    private void messageTokensToExpire(User logInUser) {
 
-        SystemMessageBuilder message = null;
-        ApiTokenAPI apiToken = APILocator.getApiTokenAPI();
-        if (logInUser.isAdmin()) {
-            List<User> users = APILocator.getUserAPI().findAllUsers();
-            List<String> usersWithTokensExpiring = users.stream()
-                    .filter(user -> {
-                        List<ApiToken> tokens = apiToken.findApiTokensByUserId(user.getUserId(), false, logInUser);
-                        return UtilMethods.isSet(tokens) && apiToken.hasAnyTokenExpiring(tokens);
-                    })
-                    .map(User::getFullName)
-                    .collect(Collectors.toList());
+        if (!Config.getBooleanProperty("DISPLAY_EXPIRING_TOKEN_ALERTS", true)) {
+            return;
+        }
 
-            if (!usersWithTokensExpiring.isEmpty()) {
-                String msg = "Some user's API token are about to expire: <br>" +
-                        " - " +
-                        usersWithTokensExpiring.stream().limit(3).collect(Collectors.joining("<br> - ")) +
-                        "<br>" +
-                        (usersWithTokensExpiring.size() > 3 ? "And " + (usersWithTokensExpiring.size() - 3) + " more." + "<br>" : "") +
-                        "Go to <a href=\"#/c/users\">Users</a> to renovate them";
+        final int daysLookahead = Config.getIntProperty("EXPIRING_TOKEN_LOOKAHEAD_DAYS", 7);
+
+        if (daysLookahead < 0) {
+            Logger.error(this, "Invalid EXPIRING_TOKEN_LOOKAHEAD_DAYS configuration: " + daysLookahead);
+            return;
+        }
+
+        ApiTokenAPI apiTokenAPI = APILocator.getApiTokenAPI();
+        List<ApiToken> expiringTokens = apiTokenAPI.findExpiringTokens(daysLookahead, logInUser);
+
+        if (!expiringTokens.isEmpty()) {
+            SystemMessageBuilder message;
+
+            if (logInUser.isAdmin()) {
+
+                String msg = "Some API Tokens are about to expire. Please review them here " +
+                        "<a href=\"#/c/users\" target=\"_blank\">here</a>";
                 message = new SystemMessageBuilder()
                         .setMessage(msg)
                         .setSeverity(MessageSeverity.WARNING)
                         .setType(MessageType.SIMPLE_MESSAGE)
                         .setLife(86400000);
-                sendMessageDelayed(message, logInUser);
-            }
-        } else {
-            List<ApiToken> tokens = apiToken.findApiTokensByUserId(logInUser.getUserId(), false, logInUser);
-            if (UtilMethods.isSet(tokens)) {
+            } else {
 
-                if (apiToken.hasAnyTokenExpiring(tokens)) {
-                     message = new SystemMessageBuilder()
-                            .setMessage("You have API Tokens that are about to expire. Please let your Administrator know about this.")
-                            .setSeverity(MessageSeverity.WARNING)
-                            .setType(MessageType.SIMPLE_MESSAGE)
-                            .setLife(86400000);
-                    sendMessageDelayed(message, logInUser);
-                }
+                message = new SystemMessageBuilder()
+                        .setMessage("You have API Tokens that are about to expire. Please let your Administrator know about this.")
+                        .setSeverity(MessageSeverity.WARNING)
+                        .setType(MessageType.SIMPLE_MESSAGE)
+                        .setLife(86400000);
             }
+
+            sendMessageDelayed(message, logInUser);
         }
-
     }
 
     private void sendMessageDelayed(SystemMessageBuilder message, User user) {
