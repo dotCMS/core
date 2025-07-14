@@ -69,6 +69,14 @@ export class DotFileFieldPreviewComponent implements OnInit {
      * @memberof DotFileFieldPreviewComponent
      */
     $previewFile = input.required<UploadedFile>({ alias: 'previewFile' });
+
+    /**
+     * Whether the component is disabled
+     *
+     * @memberof DotFileFieldPreviewComponent
+     */
+    $disabled = input<boolean>(false, { alias: 'disabled' });
+
     /**
      * Remove file
      *
@@ -142,6 +150,10 @@ export class DotFileFieldPreviewComponent implements OnInit {
      * @memberof DotFileFieldPreviewComponent
      */
     toggleShowDialog() {
+        if (this.$disabled()) {
+            return;
+        }
+
         this.$showDialog.update((value) => !value);
     }
 
@@ -153,6 +165,10 @@ export class DotFileFieldPreviewComponent implements OnInit {
      * @memberof DotFileFieldPreviewComponent
      */
     downloadAsset(link: string): void {
+        if (this.$disabled()) {
+            return;
+        }
+
         window.open(link, '_self');
     }
 

@@ -152,6 +152,17 @@ a.p-button.p-button-text {
     }
 }
 
+// Disabled button child element styles
+.p-button:disabled.p-button-outlined:not(
+        .p-splitbutton-defaultbutton,
+        .p-splitbutton-menubutton
+    ).p-button-secondary {
+    .pi,
+    .p-button-label {
+        color: inherit;
+    }
+}
+
 // Icon Only Sizes
 .p-button-icon-only:not(.p-splitbutton-menubutton) {
     height: $field-height-md;

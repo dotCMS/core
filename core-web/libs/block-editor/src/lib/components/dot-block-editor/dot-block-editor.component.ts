@@ -101,6 +101,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
     public customBlocks = '';
     public content: Content = '';
     public contentletIdentifier: string;
+    public disabled = false;
     editor: Editor;
     subject = new Subject();
     freezeScroll = true;
@@ -161,6 +162,13 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
         this.setEditorContent(content);
     }
 
+    setDisabledState(isDisabled: boolean): void {
+        this.disabled = isDisabled;
+        if (this.editor) {
+            this.editor.setEditable(!isDisabled);
+        }
+    }
+
     async loadCustomBlocks(urls: string[]): Promise<PromiseSettledResult<AnyExtension>[]> {
         return Promise.allSettled(urls.map(async (url) => import(/* webpackIgnore: true */ url)));
     }
@@ -203,6 +211,9 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
     }
 
     onBlockEditorChange(value: JSONContent) {
+        if (this.disabled) {
+            return;
+        }
         this.valueChange.emit(value);
         this.onChange?.(JSON.stringify(value));
         this.onTouched?.();
@@ -460,9 +471,32 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
             AssetUploader(this.#injector, this.viewContainerRef),
             IndentExtension,
             Placeholder.configure({
-                placeholder: 'Start writing or type / to choose a block',
                 emptyEditorClass: 'is-editor-empty',
-                emptyNodeClass: 'is-empty'
+                emptyNodeClass: 'is-empty',
+                placeholder: ({ node }) => {
+                    if (node.type.name === 'bulletList' || node.type.name === 'orderedList') {
+                        return this.#dotMessageService.get('block-editor.placeholder.list');
+                    }
+
+                    if (node.type.name === 'heading') {
+                        const level = node.attrs['level'] ?? '';
+
+                        return this.#dotMessageService.get(
+                            'block-editor.placeholder.heading',
+                            level
+                        );
+                    }
+
+                    if (node.type.name === 'codeBlock') {
+                        return this.#dotMessageService.get('block-editor.placeholder.code');
+                    }
+
+                    if (node.type.name === 'blockquote') {
+                        return this.#dotMessageService.get('block-editor.placeholder.quote');
+                    }
+
+                    return this.#dotMessageService.get('block-editor.placeholder.paragraph');
+                }
             }),
             DotCMSPlusButton.configure({
                 showOnlyWhenEditable: true,
