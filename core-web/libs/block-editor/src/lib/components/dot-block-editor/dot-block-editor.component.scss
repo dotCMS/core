@@ -192,8 +192,14 @@
                 color: $color-palette-gray-500;
                 content: attr(data-placeholder);
                 float: left;
-                height: 0;
+                position: absolute;
                 pointer-events: none;
+            }
+
+            blockquote.is-empty::before,
+            ol.is-empty::before,
+            ul.is-empty::before {
+                margin-top: $spacing-1;
             }
 
             .add-button {
