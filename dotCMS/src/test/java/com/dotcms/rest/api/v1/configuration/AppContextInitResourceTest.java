@@ -55,7 +55,7 @@ public class AppContextInitResourceTest extends UnitTestBase {
 		ConfigurationHelper configurationHelper = mock(ConfigurationHelper.class);
 
 		when(menuResource.getMenus( mockHttpRequest, httpServletResponse )).thenReturn(
-				Response.ok(new ResponseEntityView(menuData)).build() );
+				Response.ok(new ResponseEntityView<>(menuData)).build() );
 
 		when(configurationHelper.getConfigProperties( mockHttpRequest )).thenReturn(configData);
 
