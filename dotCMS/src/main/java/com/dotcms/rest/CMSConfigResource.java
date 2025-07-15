@@ -8,6 +8,7 @@ import com.dotcms.publisher.endpoint.business.PublishingEndPointAPI;
 import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.publisher.environment.business.EnvironmentAPI;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
+import com.dotcms.rest.annotation.SwaggerCompliant;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.rest.api.v1.system.ConfigurationHelper;
 import com.dotmarketing.business.APILocator;
@@ -25,6 +26,12 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.io.File;
 import java.io.IOException;
@@ -48,6 +55,7 @@ import org.glassfish.jersey.media.multipart.FormDataParam;
  * @author Jonathan Gamba
  *         Date: 7/22/13
  */
+@SwaggerCompliant(value = "System administration and configuration APIs", batch = 4)
 @Path ("/config")
 @Tag(name = "System Configuration")
 public class CMSConfigResource {
@@ -73,23 +81,45 @@ public class CMSConfigResource {
      * @throws IOException
      * @throws JSONException
      */
+    @Operation(
+        summary = "Save company basic information",
+        description = "Updates basic company information including URLs, email settings, colors, and logos. This endpoint is called from the CMS Config portlet to configure company branding and settings."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Company basic information saved successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(type = "object", description = "Simple response object with success status and message"))),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - missing or invalid required parameters",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - backend user authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions to access configuration portlet",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error saving company information",
+                    content = @Content(mediaType = "application/json"))
+    })
     @POST
     @Path("/saveCompanyBasicInfo")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public Response saveCompanyBasicInfo(@Context HttpServletRequest request,
             @Context final HttpServletResponse response,
-            @FormParam("user") final String user,
-            @FormParam("password") final String password,
-            @FormParam("portalURL") final String portalURL,
-            @FormParam("mx") final String mx,
-            @FormParam("emailAddress") final String emailAddress,
-            @FormParam("size") final String backgroundColor,
-            @FormParam("type") final String primaryColor,
-            @FormParam("street") final String secondaryColor,
-            @FormParam("homeURL") final String homeURL,
-            @FormParam("city") final String loginLogo,
-            @FormParam("state") String navLogo) throws IOException, JSONException {
+            @Parameter(description = "Username for authentication", required = true) @FormParam("user") final String user,
+            @Parameter(description = "Password for authentication", required = true) @FormParam("password") final String password,
+            @Parameter(description = "Portal URL for the company", required = true) @FormParam("portalURL") final String portalURL,
+            @Parameter(description = "Mail exchange server", required = false) @FormParam("mx") final String mx,
+            @Parameter(description = "Company email address", required = true) @FormParam("emailAddress") final String emailAddress,
+            @Parameter(description = "Background color for the company theme", required = true) @FormParam("size") final String backgroundColor,
+            @Parameter(description = "Primary color for the company theme", required = true) @FormParam("type") final String primaryColor,
+            @Parameter(description = "Secondary color for the company theme", required = true) @FormParam("street") final String secondaryColor,
+            @Parameter(description = "Home URL for the company", required = false) @FormParam("homeURL") final String homeURL,
+            @Parameter(description = "Login logo asset path", required = false) @FormParam("city") final String loginLogo,
+            @Parameter(description = "Navigation bar logo asset path (Enterprise only)", required = false) @FormParam("state") String navLogo) throws IOException, JSONException {
 
         InitDataObject initData = webResource.init( "user/" + user + "/password/" + password, request, response, true, PortletID.CONFIGURATION.toString() );
 
@@ -178,15 +208,38 @@ public class CMSConfigResource {
      * @throws IOException
      * @throws JSONException
      */
+    @Operation(
+        summary = "Save company locale information",
+        description = "Updates company locale settings including language and timezone information. This affects the default locale settings for users in the system."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Company locale information saved successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(type = "object", description = "Simple response object with success status and message"))),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - missing or invalid timezone/language parameters",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - backend user authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions to access configuration portlet",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error saving locale information",
+                    content = @Content(mediaType = "application/json"))
+    })
     @POST
     @Path ("/saveCompanyLocaleInfo")
     @Produces (MediaType.APPLICATION_JSON)
     @Consumes (MediaType.APPLICATION_FORM_URLENCODED)
     public Response saveCompanyLocaleInfo ( @Context HttpServletRequest request,
                                             @Context final HttpServletResponse response,
-                                            @FormParam ("user") String user, @FormParam ("password") String password,
-                                            @FormParam ("languageId") String languageId,
-                                            @FormParam ("timeZoneId") String timeZoneId ) throws IOException, JSONException {
+                                            @Parameter(description = "Username for authentication", required = true) @FormParam ("user") String user, 
+                                            @Parameter(description = "Password for authentication", required = true) @FormParam ("password") String password,
+                                            @Parameter(description = "Language ID for the company locale", required = true) @FormParam ("languageId") String languageId,
+                                            @Parameter(description = "Timezone ID for the company locale", required = true) @FormParam ("timeZoneId") String timeZoneId ) throws IOException, JSONException {
 
         InitDataObject initData = webResource.init( "user/" + user + "/password/" + password, request, response, true, PortletID.CONFIGURATION.toString() );
 
@@ -245,14 +298,37 @@ public class CMSConfigResource {
      * @throws IOException
      * @throws JSONException
      */
+    @Operation(
+        summary = "Save company authentication type",
+        description = "Updates the authentication type for the company. This controls how users authenticate to the system (e.g., local authentication, LDAP, etc.)."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Company authentication type saved successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(type = "object", description = "Simple response object with success status and message"))),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - missing or invalid authentication type parameter",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - backend user authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions to access configuration portlet",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error saving authentication type",
+                    content = @Content(mediaType = "application/json"))
+    })
     @POST
     @Path ("/saveCompanyAuthTypeInfo")
     @Produces (MediaType.APPLICATION_JSON)
     @Consumes (MediaType.APPLICATION_FORM_URLENCODED)
     public Response saveCompanyAuthTypeInfo ( @Context HttpServletRequest request,
                                               @Context final HttpServletResponse response,
-                                              @FormParam ("user") String user, @FormParam ("password") String password,
-                                              @FormParam ("authType") String authType ) throws IOException, JSONException {
+                                              @Parameter(description = "Username for authentication", required = true) @FormParam ("user") String user, 
+                                              @Parameter(description = "Password for authentication", required = true) @FormParam ("password") String password,
+                                              @Parameter(description = "Authentication type for the company (e.g., 'id', 'emailAddress')", required = true) @FormParam ("authType") String authType ) throws IOException, JSONException {
 
         InitDataObject initData = webResource.init( "user/" + user + "/password/" + password, request, response, true, PortletID.CONFIGURATION.toString() );
 
@@ -313,6 +389,28 @@ public class CMSConfigResource {
      * @throws IOException
      * @throws JSONException
      */
+    @Operation(
+        summary = "Save company logo (deprecated)",
+        description = "Updates the company logo. This endpoint is deprecated - use saveCompanyBasicInfo instead for logo management.",
+        deprecated = true
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Company logo saved successfully",
+                    content = @Content(mediaType = "text/html")),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - missing logo file",
+                    content = @Content(mediaType = "text/html")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - backend user authentication required",
+                    content = @Content(mediaType = "text/html")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions to access configuration portlet",
+                    content = @Content(mediaType = "text/html")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error saving company logo",
+                    content = @Content(mediaType = "text/html"))
+    })
     @Deprecated
     @POST
     @Path ("/saveCompanyLogo")
@@ -320,8 +418,9 @@ public class CMSConfigResource {
     @Consumes (MediaType.MULTIPART_FORM_DATA)
     public Response saveCompanyLogo ( @Context HttpServletRequest request,
                                       @Context final HttpServletResponse response,
-                                      @FormDataParam("user") String user, @FormDataParam ("password") String password,
-                                      @FormDataParam ("logoFile") File logoFile,
+                                      @Parameter(description = "Username for authentication", required = true) @FormDataParam("user") String user, 
+                                      @Parameter(description = "Password for authentication", required = true) @FormDataParam ("password") String password,
+                                      @Parameter(description = "Logo file to upload", required = true) @FormDataParam ("logoFile") File logoFile,
                                       @FormDataParam ("logoFile") FormDataContentDisposition logoDetail ) throws IOException, JSONException {
 
         InitDataObject initData = webResource.init( "user/" + user + "/password/" + password, request, response, true , PortletID.CONFIGURATION.toString());
@@ -374,16 +473,38 @@ public class CMSConfigResource {
      * @throws JSONException
      * @throws IOException
      */
+    @Operation(
+        summary = "Delete environment",
+        description = "Deletes a publishing environment and removes it from the user session if it was selected. This operation permanently removes the environment from the system."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Environment deleted successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - missing environment parameter",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - backend user authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions to access configuration portlet",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error deleting environment",
+                    content = @Content(mediaType = "application/json"))
+    })
     @POST
     @Path ("/deleteEnvironment")
     @Produces (MediaType.APPLICATION_JSON)
     @Consumes (MediaType.APPLICATION_FORM_URLENCODED)
     public Response deleteEnvironment ( @Context HttpServletRequest request,
                                         @Context final HttpServletResponse response,
-                                        @FormParam ("user") String user, @FormParam ("password") String password,
-                                        @FormParam ("environment") String environment,
-                                        @FormParam ("type") String type,
-                                        @FormParam ("callback") String callback ) throws JSONException, IOException {
+                                        @Parameter(description = "Username for authentication", required = true) @FormParam ("user") String user, 
+                                        @Parameter(description = "Password for authentication", required = true) @FormParam ("password") String password,
+                                        @Parameter(description = "Environment ID to delete", required = true) @FormParam ("environment") String environment,
+                                        @Parameter(description = "Type parameter for the operation", required = false) @FormParam ("type") String type,
+                                        @Parameter(description = "Callback parameter for the operation", required = false) @FormParam ("callback") String callback ) throws JSONException, IOException {
 
         InitDataObject initData = webResource.init( "user/" + user + "/password/" + password, request, response, true, PortletID.CONFIGURATION.toString() );
 
@@ -455,6 +576,28 @@ public class CMSConfigResource {
      * @throws JSONException
      * @throws IOException
      */
+    @Operation(
+        summary = "Delete endpoint (deprecated)",
+        description = "Deletes a publishing endpoint. This endpoint is deprecated - use EndpointResource.delete instead.",
+        deprecated = true
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Endpoint deleted successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - missing endpoint parameter",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - backend user authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions to access configuration portlet",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error deleting endpoint",
+                    content = @Content(mediaType = "application/json"))
+    })
     @Deprecated
     @POST
     @Path ("/deleteEndpoint")
@@ -462,10 +605,11 @@ public class CMSConfigResource {
     @Consumes (MediaType.APPLICATION_FORM_URLENCODED)
     public Response deleteEndpoint ( @Context HttpServletRequest request,
                                      @Context final HttpServletResponse response,
-                                     @FormParam ("user") String user, @FormParam ("password") String password,
-                                     @FormParam ("endPoint") String endPoint,
-                                     @FormParam ("type") String type,
-                                     @FormParam ("callback") String callback ) throws JSONException, IOException {
+                                     @Parameter(description = "Username for authentication", required = true) @FormParam ("user") String user, 
+                                     @Parameter(description = "Password for authentication", required = true) @FormParam ("password") String password,
+                                     @Parameter(description = "Endpoint ID to delete", required = true) @FormParam ("endPoint") String endPoint,
+                                     @Parameter(description = "Type parameter for the operation", required = false) @FormParam ("type") String type,
+                                     @Parameter(description = "Callback parameter for the operation", required = false) @FormParam ("callback") String callback ) throws JSONException, IOException {
 
         InitDataObject initData = webResource.init( "user/" + user + "/password/" + password, request, response, true , PortletID.CONFIGURATION.toString());
 
@@ -532,10 +676,24 @@ public class CMSConfigResource {
         return responseResource.response( responseMessage.toString() );
     }
 
+    @Operation(
+        summary = "Regenerate company key",
+        description = "Regenerates the company's key digest. This creates a new security key for the company and returns the new key digest."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Company key regenerated successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - backend user authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error regenerating key",
+                    content = @Content(mediaType = "application/json"))
+    })
     @POST
     @Path ("/regenerateKey")
     @Produces (MediaType.APPLICATION_JSON)
-    @Consumes (MediaType.APPLICATION_FORM_URLENCODED)
     public Response regenerateKey ( @Context final HttpServletRequest request,
             @Context final HttpServletResponse response) throws JSONException, IOException {
         try {
@@ -550,7 +708,7 @@ public class CMSConfigResource {
             final CompanyAPI companyAPI = APILocator.getCompanyAPI();
             final Company defaultCompany = companyAPI.getDefaultCompany();
             final Company updatedCompany = companyAPI.regenerateKey(defaultCompany, user);
-            return Response.ok(new ResponseEntityView(updatedCompany.getKeyDigest())).build(); // 200
+            return Response.ok(new ResponseEntityView<>(updatedCompany.getKeyDigest())).build(); // 200
         } catch (Exception e) {
             Logger.error(this.getClass(), "Exception calling regenerateKey." , e);
             return ResponseUtil.mapExceptionResponse(e);

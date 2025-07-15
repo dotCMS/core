@@ -4,6 +4,7 @@ import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
+import com.dotcms.rest.annotation.SwaggerCompliant;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -12,10 +13,17 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 import org.glassfish.jersey.server.JSONP;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -33,8 +41,9 @@ import java.util.stream.Collectors;
  * Endpoint to interact with the Loggers, can see the level and set it too.
  * @author jsanca
  */
+@SwaggerCompliant(value = "System administration and configuration APIs", batch = 4)
 @Path("/v1/logger")
-@Tag(name = "System Logging", description = "System logging configuration and management")
+@Tag(name = "System Logging")
 public class LoggerResource {
 
     /**
@@ -45,12 +54,32 @@ public class LoggerResource {
      * @param loggerName  {@link String}
      * @return Response
      */
+    @Operation(
+        summary = "Get logger",
+        description = "Get the logger for a specific class. User must be Admin."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Logger retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityLoggerView.class))),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - admin required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - admin access required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "Logger not found",
+                    content = @Content(mediaType = "application/json"))
+    })
     @Path("/{loggerName}")
     @GET
     @JSONP
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces({MediaType.APPLICATION_JSON})
     public Response getLogger(@Context final HttpServletRequest request,
                               @Context final HttpServletResponse response,
+                              @Parameter(description = "Logger class name", required = true)
                               @PathParam("loggerName") final String loggerName) throws DotSecurityException {
 
         if (!new WebResource.InitBuilder()
@@ -65,7 +94,7 @@ public class LoggerResource {
         final Object loggerClass = Logger.getLogger(loggerName);
         if (null != loggerClass) {
 
-            return Response.ok(new ResponseEntityView(this.toView(loggerClass))).build();
+            return Response.ok(new ResponseEntityView<>(this.toView(loggerClass))).build();
         }
 
         throw new DoesNotExistException("Logger: " + loggerName + " does not exists");
@@ -78,9 +107,25 @@ public class LoggerResource {
      * @param response    {@link HttpServletResponse}
      * @return Response
      */
+    @Operation(
+        summary = "Get all loggers",
+        description = "Get all system loggers. User must be Admin."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Loggers retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityLoggerListView.class))),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - admin required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - admin access required",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @JSONP
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces({MediaType.APPLICATION_JSON})
     public Response getLoggers(@Context final HttpServletRequest request,
                               @Context final HttpServletResponse response) throws DotSecurityException {
 
@@ -107,11 +152,39 @@ public class LoggerResource {
      * @return                  Response
      * @throws DotSecurityException
      */
+    @Operation(
+        summary = "Change logger level",
+        description = "Change the log level for one or more loggers. User must be Admin."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Logger level changed successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityLoggerListView.class))),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid log level",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - admin required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - admin access required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "Logger not found",
+                    content = @Content(mediaType = "application/json"))
+    })
     @PUT
     @JSONP
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON})
     public Response changeLoggerLevel(@Context final HttpServletRequest request,
                                 @Context final HttpServletResponse response,
+                                @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                                    description = "Logger configuration data", 
+                                    required = true,
+                                    content = @Content(schema = @Schema(implementation = ChangeLoggerForm.class))
+                                )
                                 final ChangeLoggerForm changeLoggerForm) throws DotSecurityException {
 
         if (!new WebResource.InitBuilder()

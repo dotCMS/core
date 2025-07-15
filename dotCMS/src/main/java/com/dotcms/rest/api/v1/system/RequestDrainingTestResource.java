@@ -1,10 +1,19 @@
 package com.dotcms.rest.api.v1.system;
 
 import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.ResponseEntityMapView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.annotation.SwaggerCompliant;
 import com.dotcms.shutdown.ShutdownCoordinator;
 import com.dotmarketing.util.Logger;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -31,7 +40,9 @@ import java.util.Map;
  * 
  * WARNING: This is for testing purposes only and should not be used in production.
  */
+@SwaggerCompliant(value = "System administration and configuration APIs", batch = 4)
 @Path("/v1/system/request-draining-test")
+@Tag(name = "Testing")
 public class RequestDrainingTestResource {
     
     private final WebResource webResource = new WebResource();
@@ -42,6 +53,19 @@ public class RequestDrainingTestResource {
      * @param duration Duration in milliseconds (default: 5000ms)
      * @return Response with timing information
      */
+    @Operation(
+        summary = "Simulate long-running request for shutdown testing",
+        description = "Creates a long-running request to test graceful shutdown behavior. The request will sleep for the specified duration while monitoring for shutdown signals. This is for testing purposes only and should not be used in production."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Request completed with timing information",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityMapView.class))),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @Path("/long-request")
     @Produces(MediaType.APPLICATION_JSON)
@@ -49,6 +73,7 @@ public class RequestDrainingTestResource {
     public ResponseEntityView<Map<String, Object>> longRunningRequest(
             @Context HttpServletRequest request,
             @Context HttpServletResponse response,
+            @Parameter(description = "Duration in milliseconds for the long-running request", required = false)
             @QueryParam("duration") @DefaultValue("5000") long duration) {
         
         // Initialize the web resource (authentication, etc.)
@@ -105,6 +130,19 @@ public class RequestDrainingTestResource {
      * 
      * @return Current shutdown status information
      */
+    @Operation(
+        summary = "Get shutdown status",
+        description = "Retrieves the current shutdown status including active request counts and shutdown progress information. Used for monitoring system shutdown behavior."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Shutdown status retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityMapView.class))),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @Path("/status")
     @Produces(MediaType.APPLICATION_JSON)
@@ -134,6 +172,19 @@ public class RequestDrainingTestResource {
      * @param count Number of requests to simulate (default: 1)
      * @return Current active request count
      */
+    @Operation(
+        summary = "Simulate active requests for testing",
+        description = "Manually increments the active request counter to simulate having active requests without actually creating them. This allows testing of shutdown behavior under different load conditions."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Active requests simulated successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityMapView.class))),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @Path("/simulate-active-requests")
     @Produces(MediaType.APPLICATION_JSON)
@@ -141,6 +192,7 @@ public class RequestDrainingTestResource {
     public ResponseEntityView<Map<String, Object>> simulateActiveRequests(
             @Context HttpServletRequest request,
             @Context HttpServletResponse response,
+            @Parameter(description = "Number of active requests to simulate", required = false)
             @QueryParam("count") @DefaultValue("1") int count) {
         
         webResource.init(request, response, true);
