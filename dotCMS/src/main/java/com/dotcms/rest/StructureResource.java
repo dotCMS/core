@@ -24,19 +24,45 @@ import java.util.List;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import com.dotcms.rest.annotation.SwaggerCompliant;
 
+@SwaggerCompliant(value = "Legacy and utility APIs", batch = 8)
 @Path("/structure")
-@Tag(name = "Content Type", description = "Content type definitions and schema management")
+@Tag(name = "Content Type")
 public class StructureResource {
 
+	@Operation(
+		summary = "Get structures with WYSIWYG fields (deprecated)",
+		description = "Retrieves content structures that contain WYSIWYG fields. Supports filtering by inode, name, and range-based pagination. This endpoint is deprecated - use modern ContentType API instead.",
+		deprecated = true
+	)
+	@ApiResponses(value = {
+		@ApiResponse(responseCode = "200", 
+					description = "Structures retrieved successfully",
+					content = @Content(mediaType = "application/json",
+									  schema = @Schema(type = "object", description = "JSON response containing structure list with id and name properties, or individual structure object for specific inode requests"))),
+		@ApiResponse(responseCode = "403", 
+					description = "Forbidden - insufficient permissions",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "500", 
+					description = "Internal server error",
+					content = @Content(mediaType = "application/json"))
+	})
 	@GET
 	@Path("/{path:.*}")
 	@Produces("application/json")
 	public Response getStructuresWithWYSIWYGFields(@Context HttpServletRequest request, @Context HttpServletResponse response,
-                                                   @PathParam("path") String path, @QueryParam("name") String name,
-                                                   @PathParam ("type") String type,
-                                                   @PathParam ("callback") String callback)
+                                                   @Parameter(description = "URL path for structure filtering (optional)", required = false) @PathParam("path") String path, 
+                                                   @Parameter(description = "Name filter for structures (supports wildcard with *)", required = false) @QueryParam("name") String name,
+                                                   @Parameter(description = "Type parameter for response formatting", required = false) @PathParam ("type") String type,
+                                                   @Parameter(description = "Callback function name for JSONP", required = false) @PathParam ("callback") String callback)
 											throws DotDataException, JSONException {
 
         Map<String, String> paramsMap = new HashMap<>();

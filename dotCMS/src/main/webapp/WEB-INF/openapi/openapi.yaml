@@ -6,10 +6,6 @@ servers:
 - description: dotCMS Server
   url: /
 tags:
-- description: Content type definitions and schema management
-  name: Content Type
-- description: Content tagging and labeling
-  name: Tags
 - externalDocs:
     description: Additional Authentication API information
     url: https://www.dotcms.com/docs/latest/rest-api-authentication
@@ -49,6 +45,11 @@ tags:
   name: Content Delivery
 - description: Content reporting and analytics
   name: Content Report
+- description: Content type definitions and schema management
+  externalDocs:
+    description: Additional Content Type API information
+    url: https://www.dotcms.com/docs/latest/content-type-api
+  name: Content Type
 - description: Content type field definitions and configuration
   name: Content Type Field
 - description: Data integrity checking and conflict resolution
@@ -124,6 +125,8 @@ tags:
   name: System Storage
 - description: Server log file monitoring and real-time viewing
   name: TailLog
+- description: Content tagging and labeling
+  name: Tags
 - description: Template design and management
   name: Templates
 - description: Temporary file upload and management operations
@@ -1761,53 +1764,108 @@ paths:
       - Environment
   /es/layout/{params}:
     get:
+      description: Renders the Elasticsearch portlet layout component for the dotCMS
+        backend interface. Used for displaying the Elasticsearch administration UI
+        within the admin interface.
       operationId: getLayout_3
       parameters:
-      - in: path
+      - description: Layout parameters (portletId/jspName)
+        in: path
         name: params
         required: true
         schema:
           type: string
           pattern: .*
       responses:
-        default:
+        "200":
           content:
             text/html: {}
-          description: default response
+          description: Elasticsearch layout loaded successfully
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - user authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions to access Elasticsearch
+            admin
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error loading layout
+      summary: Load Elasticsearch layout component
       tags:
       - Search
   /es/raw:
     get:
+      description: Executes a raw Elasticsearch query via GET method and returns the
+        raw Elasticsearch response without dotCMS processing or transformation.
       operationId: searchRawGet
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Raw Elasticsearch query response as JSON object
+          description: Raw search executed successfully
+        "401":
           content:
             application/json: {}
-          description: default response
+          description: Unauthorized - authentication required
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error during raw search execution
+      summary: Execute raw Elasticsearch query (GET)
       tags:
       - Search
     post:
+      description: Executes a raw Elasticsearch query via POST method. Accepts the
+        query from the request input stream and returns the raw Elasticsearch response
+        without dotCMS processing or transformation.
       operationId: searchRaw
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Raw Elasticsearch query response as JSON object
+          description: Raw search executed successfully
+        "401":
           content:
             application/json: {}
-          description: default response
+          description: Unauthorized - authentication required
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error during raw search execution
+      summary: Execute raw Elasticsearch query (POST)
       tags:
       - Search
   /es/search:
     get:
+      description: Executes a content search using Elasticsearch query syntax. Returns
+        contentlets with optional relationship depth and category information. Supports
+        both anonymous and authenticated access with appropriate permission filtering.
       operationId: search_2
       parameters:
-      - in: query
+      - description: "Relationship depth (0-3): 0=identifiers only, 1=related content,\
+          \ 2=nested identifiers, 3=nested content, null=no relationships"
+        in: query
         name: depth
         schema:
           type: string
-      - in: query
+      - description: Whether to return only live content
+        in: query
         name: live
         schema:
           type: boolean
-      - in: query
+      - description: "Whether to return all category fields (name, key, description)\
+          \ or just names"
+        in: query
         name: allCategoriesInfo
         schema:
           type: boolean
@@ -1816,25 +1874,52 @@ paths:
           '*/*':
             schema:
               type: string
+        description: Elasticsearch query string in JSON format
+        required: true
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Search results containing contentlets array and elasticsearch
+                  response metadata
+          description: Search executed successfully
+        "400":
           content:
             application/json: {}
-          description: default response
+          description: Bad request - invalid Elasticsearch query or depth parameter
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error during search execution
+      summary: Search content using Elasticsearch
       tags:
       - Search
     post:
+      description: Executes a content search using Elasticsearch query syntax via
+        POST method. Accepts JSON query in request body. Returns contentlets with
+        optional relationship depth and category information.
       operationId: searchPost
       parameters:
-      - in: query
+      - description: "Relationship depth (0-3): 0=identifiers only, 1=related content,\
+          \ 2=nested identifiers, 3=nested content, null=no relationships"
+        in: query
         name: depth
         schema:
           type: string
-      - in: query
+      - description: Whether to return only live content
+        in: query
         name: live
         schema:
           type: boolean
-      - in: query
+      - description: "Whether to return all category fields (name, key, description)\
+          \ or just names"
+        in: query
         name: allCategoriesInfo
         schema:
           type: boolean
@@ -1843,11 +1928,30 @@ paths:
           application/json:
             schema:
               type: string
+        description: Elasticsearch query in JSON format
+        required: true
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Search results containing contentlets array and elasticsearch
+                  response metadata
+          description: Search executed successfully
+        "400":
           content:
             application/json: {}
-          description: default response
+          description: Bad request - invalid Elasticsearch query or depth parameter
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error during search execution
+      summary: Search content using Elasticsearch (POST)
       tags:
       - Search
   /integrity/_fixconflictsfromremote:
@@ -2986,131 +3090,274 @@ paths:
       - JavaScript
   /license/all/{params}:
     get:
+      description: "Retrieves all licenses from the license repository with details\
+        \ including server ID, expiration, license level, and ping status."
       operationId: getAll
       parameters:
-      - in: path
+      - description: URL parameters for the request
+        in: path
         name: params
         required: true
         schema:
           type: string
           pattern: .*
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                description: "Array of license objects containing license details\
+                  \ including serverId, serial, level, dates, and ping status"
+          description: Licenses retrieved successfully
+        "401":
           content:
             application/json: {}
-          description: default response
+          description: Unauthorized - backend user authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions to access configuration
+            portlet
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error retrieving licenses
+      summary: Get all licenses
       tags:
       - License
   /license/applyLicense:
     post:
+      description: Applies a license from provided license text. Validates and installs
+        the license text obtained from the licensing system.
       operationId: applyLicense
       parameters:
-      - in: path
+      - description: URL parameters for the license application
+        in: path
         name: params
         required: true
         schema:
           type: string
-      - in: query
+      - description: License text to apply to the system
+        in: query
         name: licenseText
+        required: true
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            '*/*': {}
-          description: default response
+            application/json: {}
+          description: License applied successfully or license validation error message
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - missing license text parameter
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - backend user authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions to access configuration
+            portlet
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error during license application
+      summary: Apply license text
       tags:
       - License
   /license/delete/{params}:
     delete:
+      description: Deletes a specific license from the license repository by ID. This
+        operation permanently removes the license entry from the repository.
       operationId: delete_5
       parameters:
-      - in: path
+      - description: URL parameters including the license ID to delete
+        in: path
         name: params
         required: true
         schema:
           type: string
           pattern: .*
       responses:
-        default:
+        "200":
+          description: License deleted successfully (no body)
+        "400":
           content:
-            '*/*': {}
-          description: default response
+            text/plain: {}
+          description: Bad request - no license ID provided
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - backend user authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions to access configuration
+            portlet
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error during license deletion
+      summary: Delete license from repository
       tags:
       - License
   /license/free/{params}:
     post:
+      description: Releases a license from a specific server in the cluster. Can target
+        remote servers via server actions or free the local server license. Supports
+        cluster-wide license management.
       operationId: freeLicense
       parameters:
-      - in: path
+      - description: URL parameters including optional serverid and serial for remote
+          license freeing
+        in: path
         name: params
         required: true
         schema:
           type: string
           pattern: .*
       responses:
-        default:
+        "200":
+          description: License freed successfully (no body)
+        "401":
           content:
-            '*/*': {}
-          description: default response
+            application/json: {}
+          description: Unauthorized - backend user authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions to access configuration
+            portlet
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error during license freeing or timeout
+      summary: Free license from server
       tags:
       - License
   /license/pick/{params}:
     post:
+      description: Selects and activates a specific license from the repository by
+        serial number. This operation switches the current active license if the user
+        has appropriate permissions.
       operationId: pickLicense
       parameters:
-      - in: path
+      - description: URL parameters including the license serial number to pick
+        in: path
         name: params
         required: true
         schema:
           type: string
           pattern: .*
       responses:
-        default:
+        "200":
+          description: License picked successfully (no body)
+        "304":
           content:
-            '*/*': {}
-          description: default response
+            application/json: {}
+          description: Not modified - license already selected or community level
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - backend user authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions to access configuration
+            portlet
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error during license selection
+      summary: Pick license from repository
       tags:
       - License
   /license/requestCode/{params}:
     post:
+      description: Generates a request code for obtaining a new license. Requires
+        license type (trial/dev/prod) and license level parameters. Used in the license
+        acquisition workflow.
       operationId: requestLicense
       parameters:
-      - in: path
+      - description: URL parameters for the license request
+        in: path
         name: params
         required: true
         schema:
           type: string
           pattern: .*
       responses:
-        default:
+        "200":
           content:
-            '*/*': {}
-          description: default response
+            application/json: {}
+          description: License request code generated successfully
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - missing required parameters (licenseType or licenseLevel)
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - backend user authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions to access configuration
+            portlet
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error during license request processing
+      summary: Request license code
       tags:
       - License
   /license/resetLicense/{params}:
     post:
+      description: Resets the current license back to community level. This operation
+        frees the current license and reverts to the default community license.
       operationId: resetLicense
       parameters:
-      - in: path
+      - description: URL parameters for the license reset operation
+        in: path
         name: params
         required: true
         schema:
           type: string
           pattern: .*
       responses:
-        default:
+        "200":
           content:
-            '*/*': {}
-          description: default response
+            application/json: {}
+          description: License reset to community successfully
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - backend user authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions to access configuration
+            portlet
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error during license reset
+      summary: Reset license to community
       tags:
       - License
   /license/upload/{params}:
     post:
+      description: Uploads a license repository ZIP file to the server. The uploaded
+        file is processed and added to the license repository for distribution across
+        cluster nodes.
       operationId: putZipFile
       parameters:
-      - in: path
+      - description: URL parameters for the request
+        in: path
         name: params
         required: true
         schema:
@@ -3127,10 +3374,26 @@ paths:
                 return:
                   type: string
       responses:
-        default:
+        "200":
+          description: License file uploaded successfully (no body)
+        "400":
           content:
-            '*/*': {}
-          description: default response
+            text/plain: {}
+          description: Bad request - no file provided or invalid file format
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - backend user authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions to access configuration
+            portlet
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error during license upload
+      summary: Upload license repository file
       tags:
       - License
   /osgi:
@@ -3248,128 +3511,246 @@ paths:
       - OSGi Plugins
   /personas/layout/{params}:
     get:
+      description: Renders the Personas portlet layout component for the dotCMS backend
+        interface. Used for displaying the persona management UI within the admin
+        interface.
       operationId: getLayout_4
       parameters:
-      - in: path
+      - description: Layout parameters (portletId/jspName)
+        in: path
         name: params
         required: true
         schema:
           type: string
           pattern: .*
       responses:
-        default:
+        "200":
           content:
             text/html: {}
-          description: default response
+          description: Personas layout loaded successfully
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - user authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions to access Personas
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error loading layout
+      summary: Load Personas layout component
       tags:
       - Personalization
   /personas/sites/{id}:
     get:
+      description: Returns a JSON object containing all personas configured for the
+        specified site/host. Personas are used for content personalization and targeting.
       operationId: list_15
       parameters:
-      - in: path
+      - description: Site ID to get personas for
+        in: path
         name: id
         required: true
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript:
-              schema:
-                type: object
-                additionalProperties:
-                  $ref: "#/components/schemas/Persona"
             application/json:
               schema:
                 type: object
-                additionalProperties:
-                  $ref: "#/components/schemas/Persona"
-          description: default response
+                description: Map of persona objects keyed by identifier
+          description: Personas retrieved successfully (not implemented)
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - invalid site ID
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "404":
+          content:
+            application/json: {}
+          description: Site not found
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error retrieving personas
+      summary: List personas by site
       tags:
       - Personalization
   /portlet/layout/{params}:
     get:
+      description: Renders the JSP portlet layout component for the dotCMS backend
+        interface. This is the standard layout endpoint that follows the BaseRestPortlet
+        pattern.
       operationId: getLayout
       parameters:
-      - in: path
+      - description: Layout parameters (portletId/jspName)
+        in: path
         name: params
         required: true
         schema:
           type: string
           pattern: .*
       responses:
-        default:
+        "200":
           content:
             text/html: {}
-          description: default response
+          description: JSP layout loaded successfully
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - user authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions to access JSP portlet
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error loading layout
+      summary: Load JSP portlet layout component
       tags:
       - Portlets
   /portlet/{params}:
     get:
+      description: "Renders a JSP portlet layout using GET method. Looks for render.jsp\
+        \ under /WEB-INF/jsp/{portlet-id}/ directory. This is a legacy portlet rendering\
+        \ mechanism."
       operationId: layoutGet
       parameters:
-      - in: path
+      - description: Portlet parameters and path information
+        in: path
         name: params
         required: true
         schema:
           type: string
           pattern: .*
       responses:
-        default:
+        "200":
           content:
             text/html: {}
-          description: default response
+          description: Portlet layout rendered successfully
+        "401":
+          content:
+            text/html: {}
+          description: Unauthorized access
+        "403":
+          content:
+            text/html: {}
+          description: Forbidden - insufficient permissions
+        "404":
+          content:
+            text/html: {}
+          description: Portlet JSP not found
+        "500":
+          content:
+            text/html: {}
+          description: Internal server error during portlet rendering
+      summary: Render portlet layout (GET)
       tags:
       - Portlets
     post:
+      description: "Renders a JSP portlet layout using POST method. Handles form submissions\
+        \ and looks for render.jsp under /WEB-INF/jsp/{portlet-id}/ directory. This\
+        \ is a legacy portlet rendering mechanism."
       operationId: layoutPost
       parameters:
-      - in: path
+      - description: Portlet parameters and path information
+        in: path
         name: params
         required: true
         schema:
           type: string
           pattern: .*
       responses:
-        default:
+        "200":
           content:
             text/html: {}
-          description: default response
+          description: Portlet layout rendered successfully
+        "401":
+          content:
+            text/html: {}
+          description: Unauthorized access
+        "403":
+          content:
+            text/html: {}
+          description: Forbidden - insufficient permissions
+        "404":
+          content:
+            text/html: {}
+          description: Portlet JSP not found
+        "500":
+          content:
+            text/html: {}
+          description: Internal server error during portlet rendering
+      summary: Render portlet layout (POST)
       tags:
       - Portlets
   /restexample/layout/{params}:
     get:
+      description: Renders the RestExample portlet layout component for the dotCMS
+        backend interface. This is the standard layout endpoint for the example REST
+        portlet.
       operationId: getLayout_1
       parameters:
-      - in: path
+      - description: Layout parameters (portletId/jspName)
+        in: path
         name: params
         required: true
         schema:
           type: string
           pattern: .*
       responses:
-        default:
+        "200":
           content:
             text/html: {}
-          description: default response
+          description: RestExample layout loaded successfully
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - user authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions to access RestExample
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error loading layout
+      summary: Load RestExample layout component
       tags:
       - Administration
   /restexample/test/{params}:
     get:
+      description: Returns a simple test JSON response. This is an example endpoint
+        for testing REST functionality.
       operationId: loadJson
       parameters:
-      - in: path
+      - description: URL parameters for the test request
+        in: path
         name: params
         required: true
         schema:
           type: string
           pattern: .*
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Test JSON object with a simple test property
+          description: Test JSON returned successfully
+        "500":
           content:
             application/json: {}
-          description: default response
+          description: Internal server error
+      summary: Load test JSON
       tags:
       - Administration
   /role/loadbyid/{params}:
@@ -3483,50 +3864,89 @@ paths:
       - Roles
   /rulesengine/layout/{params}:
     get:
+      description: Renders the Rules Engine portlet layout component for the dotCMS
+        backend interface. Used for displaying the rules management UI within the
+        admin interface.
       operationId: getLayout_2
       parameters:
-      - in: path
+      - description: Layout parameters (portletId/jspName)
+        in: path
         name: params
         required: true
         schema:
           type: string
           pattern: .*
       responses:
-        default:
+        "200":
           content:
             text/html: {}
-          description: default response
+          description: Rules Engine layout loaded successfully
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - user authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions to access Rules Engine
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error loading layout
+      summary: Load Rules Engine layout component
       tags:
       - Rules Engine
   /structure/{path}:
     get:
+      deprecated: true
+      description: "Retrieves content structures that contain WYSIWYG fields. Supports\
+        \ filtering by inode, name, and range-based pagination. This endpoint is deprecated\
+        \ - use modern ContentType API instead."
       operationId: getStructuresWithWYSIWYGFields
       parameters:
-      - in: path
+      - description: URL path for structure filtering (optional)
+        in: path
         name: path
         required: true
         schema:
           type: string
           pattern: .*
-      - in: query
+      - description: Name filter for structures (supports wildcard with *)
+        in: query
         name: name
         schema:
           type: string
-      - in: path
+      - description: Type parameter for response formatting
+        in: path
         name: type
         required: true
         schema:
           type: string
-      - in: path
+      - description: Callback function name for JSONP
+        in: path
         name: callback
         required: true
         schema:
           type: string
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                description: "JSON response containing structure list with id and\
+                  \ name properties, or individual structure object for specific inode\
+                  \ requests"
+          description: Structures retrieved successfully
+        "403":
           content:
             application/json: {}
-          description: default response
+          description: Forbidden - insufficient permissions
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Get structures with WYSIWYG fields (deprecated)
       tags:
       - Content Type
   /testResource/testGet/{params}:
@@ -3664,19 +4084,32 @@ paths:
       - Users
   /util/encodeQueryParamValue/{params}:
     get:
+      description: "Returns a JSON representation of the currently logged in user\
+        \ including userId, firstName, lastName, and roleId. Returns empty object\
+        \ if no user is logged in."
       operationId: getLoggedInUser_1
       parameters:
-      - in: path
+      - description: URL parameters for the request
+        in: path
         name: params
         required: true
         schema:
           type: string
           pattern: .*
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                description: "User information object with userId, firstName, lastName,\
+                  \ and roleId properties"
+          description: User information retrieved successfully
+        "500":
           content:
             application/json: {}
-          description: default response
+          description: Internal server error
+      summary: Get logged in user
       tags:
       - Administration
   /v1/achecker/_validate:
@@ -15397,166 +15830,372 @@ paths:
       - Personas
   /v1/portlet/_actionurl/{contentTypeVariable}:
     get:
+      description: Returns the action URL to fire the create content modal for the
+        specified content type. Handles special cases like calendar events.
       operationId: getCreateContentURL
       parameters:
-      - in: path
+      - description: Content type variable name
+        in: path
         name: contentTypeVariable
         required: true
         schema:
           type: string
-      - in: query
+      - description: "Language ID (optional, defaults to user's language)"
+        in: query
         name: language_id
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityStringView"
+          description: Content creation URL retrieved successfully
+        "400":
+          content:
             application/json: {}
-          description: default response
+          description: Bad request - invalid content type variable
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "404":
+          content:
+            application/json: {}
+          description: Content type not found
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Get content creation URL
       tags:
       - Portlets
   /v1/portlet/custom:
     post:
+      description: Creates a custom dotCMS Portlet for a given Base Type or Content
+        Type. Requires roles permission.
       operationId: saveNew_1
       requestBody:
         content:
           application/json:
             schema:
               $ref: "#/components/schemas/CustomPortletForm"
+        description: Custom portlet form data
+        required: true
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityMapView"
+          description: Custom portlet created successfully
+        "400":
+          content:
             application/json: {}
-          description: default response
+          description: Bad request - invalid portlet data or portlet already exists
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "409":
+          content:
+            application/json: {}
+          description: Conflict - portlet with this ID already exists
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Create custom portlet
       tags:
       - Portlets
     put:
+      description: Saves a new working version of an existing custom portlet. The
+        formData must contain the identifier of the portlet. Requires roles permission.
       operationId: updatePortlet
       requestBody:
         content:
           application/json:
             schema:
               $ref: "#/components/schemas/CustomPortletForm"
+        description: Custom portlet form data with identifier
+        required: true
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityMapView"
+          description: Custom portlet updated successfully
+        "400":
+          content:
             application/json: {}
-          description: default response
+          description: Bad request - invalid portlet data
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "404":
+          content:
+            application/json: {}
+          description: Portlet not found
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Update custom portlet
       tags:
       - Portlets
   /v1/portlet/custom/{portletId}:
     delete:
+      description: Deletes a custom portlet by its ID. Requires roles permission.
       operationId: deleteCustomPortlet
       parameters:
-      - in: path
+      - description: Custom portlet ID to delete
+        in: path
         name: portletId
         required: true
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityMapView"
+          description: Custom portlet deleted successfully
+        "401":
+          content:
             application/json: {}
-          description: default response
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "404":
+          content:
+            application/json: {}
+          description: Portlet not found
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Delete custom portlet
       tags:
       - Portlets
   /v1/portlet/custom/{portletId}/_addtolayout/{layoutId}:
     put:
+      description: "Links a layout with a portlet. Security is enforced - the user\
+        \ must have roles on the layout, otherwise an unauthorized response is returned."
       operationId: addContentPortletToLayout
       parameters:
-      - in: path
+      - description: Portlet ID to add to layout
+        in: path
         name: portletId
         required: true
         schema:
           type: string
-      - in: path
+      - description: Layout ID to add portlet to
+        in: path
         name: layoutId
         required: true
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityMapView"
+          description: Portlet added to layout successfully
+        "400":
+          content:
             application/json: {}
-          description: default response
+          description: Bad request - layout already contains portlet
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - insufficient permissions or restricted portlet
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - user lacks layout permissions
+        "404":
+          content:
+            application/json: {}
+          description: Portlet or layout not found
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Add portlet to layout
       tags:
       - Portlets
   /v1/portlet/portletId/{portletId}:
     delete:
+      description: Deletes a personal portlet for the current user. Requires roles
+        permission.
       operationId: deletePersonalPortlet
       parameters:
-      - in: path
+      - description: Personal portlet ID to delete
+        in: path
         name: portletId
         required: true
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityMapView"
+          description: Personal portlet deleted successfully
+        "401":
+          content:
             application/json: {}
-          description: default response
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "404":
+          content:
+            application/json: {}
+          description: Portlet not found
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Delete personal portlet
       tags:
       - Portlets
   /v1/portlet/portletId/{portletId}/roleId/{roleId}:
     delete:
+      description: Removes a portlet from a specific role. Automatically removes layouts
+        if they become empty. Requires roles permission and user must be admin or
+        own the role.
       operationId: deletePortletForRole
       parameters:
-      - in: path
+      - description: Portlet ID to remove from role
+        in: path
         name: portletId
         required: true
         schema:
           type: string
-      - in: path
+      - description: Role ID to remove portlet from
+        in: path
         name: roleId
         required: true
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityMapView"
+          description: Portlet removed from role successfully
+        "401":
+          content:
             application/json: {}
-          description: default response
+          description: Unauthorized - authentication required or insufficient permissions
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "404":
+          content:
+            application/json: {}
+          description: Portlet or role not found
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Delete portlet for role
       tags:
       - Portlets
   /v1/portlet/{portletId}:
     get:
+      description: Returns detailed information about a specific portlet by its ID.
+        Requires appropriate permissions.
       operationId: findPortlet
       parameters:
-      - in: path
+      - description: Portlet ID to retrieve
+        in: path
         name: portletId
         required: true
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityMapView"
+          description: Portlet details retrieved successfully
+        "401":
+          content:
             application/json: {}
-          description: default response
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "404":
+          content:
+            application/json: {}
+          description: Portlet not found
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Get portlet details
       tags:
       - Portlets
   /v1/portlet/{portletId}/_doesuserhaveaccess:
     get:
+      description: Checks if the current user has access to the specified portlet.
+        Returns a boolean result.
       operationId: doesUserHaveAccessToPortlet
       parameters:
-      - in: path
+      - description: Portlet ID to check access for
+        in: path
         name: portletId
         required: true
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityMapView"
+          description: Access check completed successfully
+        "401":
+          content:
             application/json: {}
-          description: default response
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Check portlet access
       tags:
       - Portlets
   /v1/publishqueue:
@@ -18773,190 +19412,410 @@ paths:
   /v1/tags:
     get:
       deprecated: true
+      description: "Lists all tags or searches by name. If name is provided, performs\
+        \ search-by-name operation that can be delimited by site ID. If no matches\
+        \ found against site ID, searches global tags. This endpoint is deprecated\
+        \ - use v2 instead."
       operationId: list
       parameters:
-      - in: query
+      - description: Name of the tag to search for (optional)
+        in: query
         name: name
         schema:
           type: string
-      - in: query
+      - description: ID of the site where the tag lives (optional)
+        in: query
         name: siteId
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript:
-              schema:
-                type: object
-                additionalProperties:
-                  $ref: "#/components/schemas/RestTag"
             application/json:
               schema:
                 type: object
-                additionalProperties:
-                  $ref: "#/components/schemas/RestTag"
-          description: default response
+                description: Map of tag identifiers to RestTag objects containing
+                  tag metadata and properties
+          description: Tags retrieved successfully
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: List tags (deprecated)
       tags:
       - Tags
     post:
       deprecated: true
+      description: Creates new tags and optionally links them to an owner/user. Handles
+        multiple tags and provides error reporting for failed saves. This endpoint
+        is deprecated - use v2 instead.
       operationId: addTag
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: "#/components/schemas/TagForm"
+        description: Tag form containing tags to create with optional owner assignment
+        required: true
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityTagOperationView"
+          description: Tags created successfully (may include error details)
+        "401":
+          content:
             application/json: {}
-          description: default response
+          description: Unauthorized - backend user authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions to access tags portlet
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Create tags (deprecated)
       tags:
       - Tags
     put:
       deprecated: true
+      description: "Updates an existing tag's information. Requires tag ID, site ID,\
+        \ and new tag name. This endpoint is deprecated - use v2 instead."
       operationId: updateTag
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: "#/components/schemas/UpdateTagForm"
+        description: "Update tag form containing tag ID, site ID, and new tag name"
+        required: true
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityTagsView"
+          description: Tag updated successfully
+        "400":
+          content:
             application/json: {}
-          description: default response
+          description: Bad request - invalid or incomplete tag data
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - backend user authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions to access tags portlet
+        "404":
+          content:
+            application/json: {}
+          description: Tag not found
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Update tag (deprecated)
       tags:
       - Tags
   /v1/tags/import:
     post:
       deprecated: true
+      description: Imports tags from a CSV file. The CSV file should contain tag data
+        in the expected format for bulk tag creation. This endpoint is deprecated
+        - use v2 instead.
       operationId: importTags
       requestBody:
         content:
           multipart/form-data:
             schema:
               $ref: "#/components/schemas/FormDataMultiPart"
+        description: CSV file containing tag data for import
+        required: true
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityStringView"
+          description: Tags imported successfully
+        "400":
           content:
             application/json: {}
-          description: default response
+          description: Bad request - failure importing tags file
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - backend user authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions to access tags portlet
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Import tags from CSV (deprecated)
       tags:
       - Tags
   /v1/tags/inode/{inode}:
     delete:
       deprecated: true
+      description: Breaks the link between an inode and all its associated tags. Removes
+        all tag associations for the specified content but does not delete the tags
+        themselves. This endpoint is deprecated - use v2 instead.
       operationId: deleteTagInodesByInode
       parameters:
-      - in: path
+      - description: Inode to remove tag associations from
+        in: path
         name: inode
         required: true
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityStringView"
+          description: Tag-inode associations deleted successfully
+        "400":
+          content:
             application/json: {}
-          description: default response
+          description: Bad request - error occurred during deletion
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - backend user authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions to access tags portlet
+        "404":
+          content:
+            application/json: {}
+          description: No tag associations found for the specified inode
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Delete tag-inode associations (deprecated)
       tags:
       - Tags
     get:
       deprecated: true
+      description: Retrieves all tags associated with a given inode. Returns tag-inode
+        relationships for the specified content. This endpoint is deprecated - use
+        v2 instead.
       operationId: findTagsByInode
       parameters:
-      - in: path
+      - description: Inode to retrieve tags for
+        in: path
         name: inode
         required: true
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityTagInodesView"
+          description: Tags retrieved successfully
+        "401":
+          content:
             application/json: {}
-          description: default response
+          description: Unauthorized - backend user authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions to access tags portlet
+        "404":
+          content:
+            application/json: {}
+          description: No tags found for the specified inode
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Get tags by inode (deprecated)
       tags:
       - Tags
   /v1/tags/tag/{nameOrId}/inode/{inode}:
     put:
       deprecated: true
+      description: "Binds tags with a given inode. Lookup can be done via tag name\
+        \ or ID. If tag name matches multiple tags, all matching tags will be bound.\
+        \ Use tag ID for specific binding. This endpoint is deprecated - use v2 instead."
       operationId: linkTagsAndInode
       parameters:
-      - in: path
+      - description: Name or UUID of the tag to link
+        in: path
         name: nameOrId
         required: true
         schema:
           type: string
-      - in: path
+      - description: Inode to link the tag(s) to
+        in: path
         name: inode
         required: true
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityTagInodeOperationView"
+          description: Tags linked to inode successfully (may include error details)
+        "401":
+          content:
             application/json: {}
-          description: default response
+          description: Unauthorized - backend user authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions to access tags portlet
+        "404":
+          content:
+            application/json: {}
+          description: Tag not found by the specified name or ID
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Link tags to inode (deprecated)
       tags:
       - Tags
   /v1/tags/user/{userId}:
     get:
       deprecated: true
+      description: Retrieves all tags owned by a specific user. Returns tags that
+        were explicitly linked to the user during creation. This endpoint is deprecated
+        - use v2 instead.
       operationId: getTagsByUserId
       parameters:
-      - in: path
+      - description: User ID to retrieve tags for
+        in: path
         name: userId
         required: true
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityTagsView"
+          description: User tags retrieved successfully
+        "401":
+          content:
             application/json: {}
-          description: default response
+          description: Unauthorized - backend user authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions to access tags portlet
+        "404":
+          content:
+            application/json: {}
+          description: No tags found for the specified user
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Get tags by user ID (deprecated)
       tags:
       - Tags
   /v1/tags/{nameOrId}:
     get:
       deprecated: true
+      description: "Retrieves tags by name or ID. If the provided value is a valid\
+        \ UUID, performs search-by-ID and returns a single result. Otherwise, searches\
+        \ by name and returns all matching tags. This endpoint is deprecated - use\
+        \ v2 instead."
       operationId: getTagsByNameOrId
       parameters:
-      - in: path
+      - description: Name or UUID of the tag to search for
+        in: path
         name: nameOrId
         required: true
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityTagsView"
+          description: Tags retrieved successfully
+        "401":
+          content:
             application/json: {}
-          description: default response
+          description: Unauthorized - backend user authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions to access tags portlet
+        "404":
+          content:
+            application/json: {}
+          description: No tags found by the specified name or ID
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Get tags by name or ID (deprecated)
       tags:
       - Tags
   /v1/tags/{tagId}:
     delete:
       deprecated: true
+      description: Deletes a tag based on its ID. The tag must exist and the user
+        must have appropriate permissions. This endpoint is deprecated - use v2 instead.
       operationId: delete_6
       parameters:
-      - in: path
+      - description: ID of the tag to delete
+        in: path
         name: tagId
         required: true
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityStringView"
+          description: Tag deleted successfully
+        "400":
+          content:
             application/json: {}
-          description: default response
+          description: Bad request - error occurred during deletion
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - backend user authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions to access tags portlet
+        "404":
+          content:
+            application/json: {}
+          description: Tag not found
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Delete tag (deprecated)
       tags:
       - Tags
   /v1/temp:
@@ -19707,67 +20566,150 @@ paths:
       - Themes
   /v1/toolgroups/{layoutId}/_addtouser:
     put:
+      description: "Adds a toolgroup to the specified user using the layout ID as\
+        \ key. If the layoutId is 'gettingStarted' it will add the getting started\
+        \ layout. If no user ID is provided, the operation is performed on the current\
+        \ user."
       operationId: addToolGroupToUser
       parameters:
-      - in: path
+      - description: Layout ID or 'gettingStarted' for getting started layout
+        in: path
         name: layoutId
         required: true
         schema:
           type: string
-      - in: query
+      - description: "User ID (optional, defaults to current user)"
+        in: query
         name: userid
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityMapStringObjectView"
+          description: Toolgroup added to user successfully
+        "400":
+          content:
             application/json: {}
-          description: default response
+          description: Bad request - invalid layout ID
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "404":
+          content:
+            application/json: {}
+          description: Layout or user not found
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Add toolgroup to user
       tags:
-      - Administration
+      - Tool Groups
   /v1/toolgroups/{layoutId}/_removefromuser:
     put:
+      description: "Removes a toolgroup from the specified user using the layout ID\
+        \ as key. If the layoutId is 'gettingStarted' it will remove the getting started\
+        \ layout. If no user ID is provided, the operation is performed on the current\
+        \ user."
       operationId: deleteToolGroupFromUser
       parameters:
-      - in: path
+      - description: Layout ID or 'gettingStarted' for getting started layout
+        in: path
         name: layoutId
         required: true
         schema:
           type: string
-      - in: query
+      - description: "User ID (optional, defaults to current user)"
+        in: query
         name: userid
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityMapStringObjectView"
+          description: Toolgroup removed from user successfully
+        "400":
+          content:
             application/json: {}
-          description: default response
+          description: Bad request - invalid layout ID
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "404":
+          content:
+            application/json: {}
+          description: Layout or user not found
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Remove toolgroup from user
       tags:
-      - Administration
+      - Tool Groups
   /v1/toolgroups/{layoutId}/_userHasLayout:
     get:
+      description: "Returns a boolean indicating if the user's role has the specified\
+        \ layout associated. If no user ID is provided, the operation is performed\
+        \ on the current user."
       operationId: userHasLayout
       parameters:
-      - in: path
+      - description: Layout ID or 'gettingStarted' for getting started layout
+        in: path
         name: layoutId
         required: true
         schema:
           type: string
-      - in: query
+      - description: "User ID (optional, defaults to current user)"
+        in: query
         name: userid
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityMapStringObjectView"
+          description: Layout check completed successfully
+        "400":
+          content:
             application/json: {}
-          description: default response
+          description: Bad request - invalid layout ID
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "404":
+          content:
+            application/json: {}
+          description: Layout or user not found
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Check if user has layout
       tags:
-      - Administration
+      - Tool Groups
   /v1/upgradetask:
     post:
       description: Run an upgrade task. Must be logged in as backend admin user.
@@ -25730,19 +26672,40 @@ paths:
       - VTL
   /widget/{params}:
     get:
+      description: Renders a custom widget by processing its Velocity templates. Supports
+        widget lookup by ID or inode with language and live/working version options.
+        Executes widget pre-execute code and main widget code.
       operationId: getWidget
       parameters:
-      - in: path
+      - description: "URL parameters including id, inode, language, and live options"
+        in: path
         name: params
         required: true
         schema:
           type: string
           pattern: .*
       responses:
-        default:
+        "200":
           content:
-            text/plain; charset=UTF-8: {}
-          description: default response
+            text/plain: {}
+          description: Widget rendered successfully
+        "400":
+          content:
+            text/plain: {}
+          description: Bad request - missing required ID or inode parameter
+        "401":
+          content:
+            text/plain: {}
+          description: Unauthorized - authentication may be required for working version
+        "404":
+          content:
+            text/plain: {}
+          description: Widget not found
+        "500":
+          content:
+            text/plain: {}
+          description: Internal server error during widget processing
+      summary: Render widget
       tags:
       - Widgets
   /ws/v1/system/events:
@@ -34239,6 +35202,31 @@ components:
           type: array
           items:
             type: string
+    ResponseEntityTagInodeOperationView:
+      type: object
+      properties:
+        entity:
+          type: array
+          items:
+            $ref: "#/components/schemas/TagInode"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
     ResponseEntityTagInodesMapView:
       type: object
       properties:
@@ -34264,7 +35252,82 @@ components:
           type: array
           items:
             type: string
+    ResponseEntityTagInodesView:
+      type: object
+      properties:
+        entity:
+          type: array
+          items:
+            $ref: "#/components/schemas/TagInode"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
     ResponseEntityTagMapView:
+      type: object
+      properties:
+        entity:
+          type: object
+          additionalProperties:
+            $ref: "#/components/schemas/RestTag"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityTagOperationView:
+      type: object
+      properties:
+        entity:
+          type: object
+          additionalProperties:
+            type: object
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityTagsView:
       type: object
       properties:
         entity:

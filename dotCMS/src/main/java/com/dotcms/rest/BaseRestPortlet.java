@@ -8,6 +8,7 @@ import com.dotcms.repackage.javax.portlet.PortletException;
 import com.dotcms.repackage.javax.portlet.RenderRequest;
 import com.dotcms.repackage.javax.portlet.RenderResponse;
 import javax.ws.rs.GET;
+import io.swagger.v3.oas.annotations.Hidden;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -135,6 +136,7 @@ public abstract class BaseRestPortlet implements Portlet, Cloneable {
 
 	}
 
+	@Hidden
 	@GET
 	@Path("/layout/{params:.*}")
 	@Produces("text/html")

@@ -13,6 +13,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import com.dotcms.rest.annotation.SwaggerCompliant;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -27,6 +28,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+@SwaggerCompliant(value = "Legacy and utility APIs", batch = 8)
 @Tag(name = "Administration")
 @Path("/v1/telemetry")
 public class TelemetryResource {
@@ -35,8 +37,9 @@ public class TelemetryResource {
     @GET
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON})
+    @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Retrieves dotCMS usage data",
+            description = "Collects and returns telemetry metrics about dotCMS usage, system performance, and configuration. Requires CMS Administrator role.",
             responses = {
                     @ApiResponse(
                             responseCode = "200",
