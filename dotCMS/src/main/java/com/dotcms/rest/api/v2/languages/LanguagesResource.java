@@ -12,6 +12,7 @@ import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.InitRequestRequired;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.annotation.SwaggerCompliant;
 import com.dotcms.rest.api.v1.I18NForm;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.I18NUtil;
@@ -35,7 +36,14 @@ import com.liferay.portal.model.User;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import org.apache.commons.beanutils.BeanUtils;
 import org.glassfish.jersey.server.JSONP;
 
@@ -43,6 +51,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.BeanParam;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
@@ -75,6 +84,7 @@ import static com.dotmarketing.util.WebKeys.LANGUAGE_SEARCHED;
 /**
  * Language endpoint for the v2 API
  */
+@SwaggerCompliant(value = "Site architecture and template management APIs", batch = 3)
 @Path("/v2/languages")
 @Tag(name = "Internationalization")
 public class LanguagesResource {
@@ -104,21 +114,33 @@ public class LanguagesResource {
         this.oldLanguagesResource = new com.dotcms.rest.api.v1.languages.LanguagesResource(languageAPI, webResource, I18NUtil.INSTANCE);
     }
 
-    /**
-     * Get a language by Id
-     * @param request {@link HttpServletRequest}
-     * @param response {@link HttpServletResponse}
-     * @param languageId {@link Long}
-     * @return Response
-     */
+    @Operation(
+        summary = "Get language by ID",
+        description = "Retrieves a specific language by its ID. Returns language details including whether it's the default language."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Language retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = LanguageView.class))),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "Language not found",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @Path("/id/{languageid}")
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces(MediaType.APPLICATION_JSON)
     public Response get(@Context HttpServletRequest request,
                         @Context final HttpServletResponse response,
-                        @PathParam("languageid") final long languageId) {
+                        @Parameter(description = "Language ID to retrieve", required = true) @PathParam("languageid") final long languageId) {
 
         webResource.init(request, response, true);
 
@@ -128,19 +150,35 @@ public class LanguagesResource {
             throw new DoesNotExistException("The language id = " + languageId + " does not exists");
         }
 
-        return Response.ok(new ResponseEntityView<>(new LanguageView(language, ()->isDefault(language)))).build();
+        return Response.ok(new ResponseEntityLanguageView(new LanguageView(language, ()->isDefault(language)))).build();
     }
 
+    @Operation(
+        summary = "List all languages",
+        description = "Returns an array with all available languages. Can optionally filter by content inode to show only languages available for specific content, and include language variable counts."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Languages retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityLanguageListView.class))),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON})
-    /**
-     * return an array with all the languages
-     */
+    @Produces(MediaType.APPLICATION_JSON)
     public Response list(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
-            @QueryParam("contentInode") final String contentInode,
-             @QueryParam("countLangVars") final boolean countLangVars
+            @Parameter(description = "Content inode to filter languages by (optional)") @QueryParam("contentInode") final String contentInode,
+             @Parameter(description = "Whether to include language variable counts (default: false)") @QueryParam("countLangVars") final boolean countLangVars
     )
             throws DotDataException, DotSecurityException {
 
@@ -156,13 +194,13 @@ public class LanguagesResource {
             //We calculate the total number of language variables once as this value is the same for all languages
             final int total = languageVariableAPI.countVariablesByKey();
             return Response.ok(
-                    new ResponseEntityView<>(languages.stream()
+                    new ResponseEntityLanguageListView(languages.stream()
                             .map(language -> withLangVarCounts(language, total))
                             .collect(Collectors.toList())))
                     .build();
         }
         return Response.ok(
-                new ResponseEntityView<>(languages.stream()
+                new ResponseEntityLanguageListView(languages.stream()
                         .map(instanceLanguageView())
                         .collect(Collectors.toList())))
                 .build();
@@ -213,13 +251,40 @@ public class LanguagesResource {
      *  <li>{@code country}
      *  </ul>
      */
+    @Operation(
+        summary = "Create language",
+        description = "Creates a new language in the system. Returns language details including ID, language code, country code, language name, and country name."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Language created successfully or already exists",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityLanguageView.class))),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid language data",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions to access languages portlet",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @POST
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
     public final Response saveLanguage(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
-            final LanguageForm languageForm) throws AlreadyExistException {
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                description = "Language form containing language details to create", 
+                required = true,
+                content = @Content(schema = @Schema(implementation = LanguageForm.class))
+            ) final LanguageForm languageForm) throws AlreadyExistException {
         this.webResource.init(null, request, response,
                 true, PortletID.LANGUAGES.toString());
         DotPreconditions.notNull(languageForm,"Expected Request body was empty.");
@@ -228,20 +293,42 @@ public class LanguagesResource {
             return Response.ok(new ResponseEntityView<>(language, List.of(new MessageEntity("Language already exists.")))).build(); // 200
         }
         final Language savedOrUpdateLanguage = saveOrUpdateLanguage(null, languageForm);
-        return Response.ok(new ResponseEntityView<>(
+        return Response.ok(new ResponseEntityLanguageView(
                 new LanguageView(savedOrUpdateLanguage,()->isDefault(savedOrUpdateLanguage) )
         )).build(); // 200
     }
 
+    @Operation(
+        summary = "Create language from language tag",
+        description = "Creates a new language from a language tag (locale). The language tag can be in valid Locale format or custom format depending on strict parameter."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Language created successfully or already exists",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityLanguageView.class))),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid language tag",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions to access languages portlet",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @POST
     @JSONP
     @NoCache
     @Path("/{languageTag}")
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces(MediaType.APPLICATION_JSON)
     public final Response saveFromLanguageTag(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
-            @PathParam("languageTag") final String languageTag,
-            @DefaultValue("false") @QueryParam("strict") final boolean strict) throws AlreadyExistException {
+            @Parameter(description = "Language tag (locale) to create language from", required = true) @PathParam("languageTag") final String languageTag,
+            @Parameter(description = "Whether to enforce strict Locale validation (default: false)") @DefaultValue("false") @QueryParam("strict") final boolean strict) throws AlreadyExistException {
         DotPreconditions.notNull(languageTag, "Expected languageTag Param path was empty.");
         this.webResource.init(null, request, response,
                 true, PortletID.LANGUAGES.toString());
@@ -253,7 +340,7 @@ public class LanguagesResource {
            return Response.ok(new ResponseEntityView<>(language, List.of(new MessageEntity("Language already exists.")))).build(); // 200
         }
         final Language saveOrUpdateLanguage = saveOrUpdateLanguage(null, languageForm);
-        return Response.ok(new ResponseEntityView<>(
+        return Response.ok(new ResponseEntityLanguageView(
                 new LanguageView(saveOrUpdateLanguage,()->isDefault(saveOrUpdateLanguage))
         )).build(); // 200
     }
@@ -295,16 +382,32 @@ public class LanguagesResource {
     }
 
 
+    @Operation(
+        summary = "Get language by language tag",
+        description = "Retrieves a language by its language tag (locale). The language tag can be validated strictly or flexibly depending on the strict parameter."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Language retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityLanguageView.class))),
+        @ApiResponse(responseCode = "404", 
+                    description = "Language not found",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @Path("/{languageTag}")
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces(MediaType.APPLICATION_JSON)
     public Response getFromLanguageTag (
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
-            @PathParam("languageTag") final String languageTag,
-            @DefaultValue("false") @QueryParam("strict") final boolean strict) {
+            @Parameter(description = "Language tag (locale) to retrieve", required = true) @PathParam("languageTag") final String languageTag,
+            @Parameter(description = "Whether to enforce strict Locale validation (default: false)") @DefaultValue("false") @QueryParam("strict") final boolean strict) {
         final LanguageForm languageForm = this.getLanguageData(languageTag, strict);
         DotPreconditions.notNull(languageTag, "Expected languageTag Param path was empty.");
         final Language language = getLanguage(languageForm);
@@ -312,7 +415,7 @@ public class LanguagesResource {
            return Response.status(Status.NOT_FOUND).build();
         }
 
-        return Response.ok(new ResponseEntityView<>(new LanguageView(language,()->isDefault(language) ))).build();
+        return Response.ok(new ResponseEntityLanguageView(new LanguageView(language,()->isDefault(language) ))).build();
     }
 
     private Locale validateLanguageTag(final String languageTag)throws DoesNotExistException {
@@ -334,22 +437,52 @@ public class LanguagesResource {
      *  <li>{@code country}
      *  </ul>
      */
+    @Operation(
+        summary = "Update language",
+        description = "Updates an existing language's information. Requires language ID and updated language form data."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Language updated successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityLanguageView.class))),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid language data or ID",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions to access languages portlet",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "Language not found",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @PUT
     @Path("/{languageId}")
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON})
     public final Response updateLanguage(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
-            @PathParam("languageId") final String languageId,
-            final LanguageForm languageForm) throws AlreadyExistException {
+            @Parameter(description = "ID of the language to update", required = true) @PathParam("languageId") final String languageId,
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                description = "Language form containing updated language details", 
+                required = true,
+                content = @Content(schema = @Schema(implementation = LanguageForm.class))
+            ) final LanguageForm languageForm) throws AlreadyExistException {
         this.webResource.init(null, request, response,
                 true, PortletID.LANGUAGES.toString());
         DotPreconditions.checkArgument(UtilMethods.isSet(languageId),"Language Id is required.");
         DotPreconditions.isTrue(doesLanguageExist(languageId), DoesNotExistException.class, ()->"Language not found");
         DotPreconditions.notNull(languageForm,"Expected Request body was empty.");
         final Language language = saveOrUpdateLanguage(languageId, languageForm);
-        return Response.ok(new ResponseEntityView<>(
+        return Response.ok(new ResponseEntityLanguageView(
                 new LanguageView(language, ()->isDefault(language))
         )).build(); // 200
     }
@@ -361,31 +494,80 @@ public class LanguagesResource {
      * @param languageId languageId
      * @return 200 response with "Ok" message
      */
+    @Operation(
+        summary = "Delete language",
+        description = "Deletes an existing language from the system. The language must exist and the user must have appropriate permissions."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Language deleted successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityLanguageOperationView.class))),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid language ID",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions to access languages portlet",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "Language not found",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @DELETE
     @Path("/{languageId}")
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces({MediaType.APPLICATION_JSON})
     public final Response deleteLanguage(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
-            @PathParam("languageId") final String languageId) {
+            @Parameter(description = "ID of the language to delete", required = true) @PathParam("languageId") final String languageId) {
         this.webResource.init(null, request, response,
                 true, PortletID.LANGUAGES.toString());
         DotPreconditions.checkArgument(UtilMethods.isSet(languageId),"Language Id is required.");
         DotPreconditions.isTrue(doesLanguageExist(languageId), DoesNotExistException.class, ()->"Language not found");
         final Language language = languageAPI.getLanguage(languageId);
         languageAPI.deleteLanguage(language);
-        return Response.ok(new ResponseEntityView<>(OK)).build(); // 200
+        return Response.ok(new ResponseEntityLanguageOperationView(OK)).build(); // 200
     }
 
+    @Operation(
+        summary = "Get internationalization messages",
+        description = "Retrieves internationalization messages. This method delegates to the v1 LanguagesResource."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Messages retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityLanguageMessagesView.class))),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid form data",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @POST
     @JSONP
     @NoCache
     @Path("/i18n")
     @InitRequestRequired
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON})
     public Response getMessages(@Context HttpServletRequest request,
-                                final I18NForm i18NForm) {
+                                @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                                    description = "Internationalization form with language, country, and message keys", 
+                                    required = true,
+                                    content = @Content(schema = @Schema(implementation = I18NForm.class))
+                                ) final I18NForm i18NForm) {
         return oldLanguagesResource.getMessages(request, i18NForm);
     }
 
@@ -431,15 +613,31 @@ public class LanguagesResource {
      * @param language languageCode e.g en, it or languageCode_CountryCode e.g en_us, it_it
      * @return all the messages of the language
      */
+    @Operation(
+        summary = "Get all language messages",
+        description = "Gets all messages from the specified language including properties file messages, language keys, and language variables. Supports both language codes (en, it) and language_country codes (en_us, it_it)."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Language messages retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityLanguageMessagesView.class))),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid language code",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @Path("{language}/keys")
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces({MediaType.APPLICATION_JSON})
     public Response getAllMessages (
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
-            @PathParam("language") final String language) throws DotDataException {
+            @Parameter(description = "Language code (e.g., 'en', 'it') or language_country code (e.g., 'en_us', 'it_it')", required = true) @PathParam("language") final String language) throws DotDataException {
 
         final InitDataObject initData = new WebResource.InitBuilder(request, response)
                 .requiredAnonAccess(AnonymousAccess.READ)
@@ -492,7 +690,7 @@ public class LanguagesResource {
         }
 
 
-        return Response.ok(new ResponseEntityView<>(result)).build();
+        return Response.ok(new ResponseEntityLanguageMessagesView(result)).build();
     }
 
     /**
@@ -504,15 +702,34 @@ public class LanguagesResource {
      * @return all the messages of the language
      * @throws DotDataException if an error occurs
      */
+    @Operation(
+        summary = "Get language variables",
+        description = "Gets all language variables in the system organized by key. Supports pagination and optional null value rendering."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Language variables retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityLanguageVariablePageView.class))),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions to access languages portlet",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @Path("/variables")
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces({MediaType.APPLICATION_JSON})
     public Response getVariables(
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
-            @QueryParam("renderNulls") @DefaultValue("true") final boolean renderNulls,
+            @Parameter(description = "Whether to render null values in the response (default: true)") @QueryParam("renderNulls") @DefaultValue("true") final boolean renderNulls,
             @BeanParam final PaginationContext paginationContext) throws DotDataException {
 
                 new WebResource.InitBuilder(webResource)
@@ -525,7 +742,7 @@ public class LanguagesResource {
 
         final LanguageVariablePageView view = new LanguageVariablesHelper()
                 .view(paginationContext, renderNulls);
-        return Response.ok(new ResponseEntityView<>(view)).build();
+        return Response.ok(new ResponseEntityLanguageVariablePageView(view)).build();
     }
 
 
@@ -577,15 +794,45 @@ public class LanguagesResource {
         return this.languageAPI.getLanguage(languageCode, countryCode);
     }
 
+    @Operation(
+        summary = "Make language default",
+        description = "Sets the specified language as the default language for the system. Optionally triggers a job to transfer assets from the old default language."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Default language changed successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityLanguageView.class))),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid language ID",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions to access languages portlet",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "Language not found",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @PUT
     @Path("/{language}/_makedefault")
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON})
     public Response makeDefault(@Context final HttpServletRequest httpServletRequest,
             @Context final HttpServletResponse httpServletResponse,
-            @PathParam("language") final Long languageId,
-            final MakeDefaultLangForm makeDefaultLangForm
+            @Parameter(description = "ID of the language to make default", required = true) @PathParam("language") final Long languageId,
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                description = "Form specifying whether to fire transfer assets job", 
+                required = true,
+                content = @Content(schema = @Schema(implementation = MakeDefaultLangForm.class))
+            ) final MakeDefaultLangForm makeDefaultLangForm
     ) throws DotDataException, DotSecurityException {
 
         final User user = new WebResource.InitBuilder(this.webResource)
@@ -608,16 +855,29 @@ public class LanguagesResource {
         httpServletRequest.getSession().removeAttribute(LANGUAGE_SEARCHED);
         httpServletRequest.getSession().removeAttribute(HTMLPAGE_LANGUAGE);
         httpServletRequest.getSession().removeAttribute(CONTENT_SELECTED_LANGUAGE);
-        return Response.ok(new ResponseEntityView<>(
+        return Response.ok(new ResponseEntityLanguageView(
                 new LanguageView(newDefault, ()->isDefault(newDefault))
         )).build(); // 200
     }
 
+    @Operation(
+        summary = "Get ISO languages and countries",
+        description = "Returns lists of all ISO standard languages and countries with their codes and display names, sorted alphabetically by name."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "ISO languages and countries retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityIsoLanguagesCountriesView.class))),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @Path("/iso")
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces({MediaType.APPLICATION_JSON})
     public Response getIsoLanguagesAndCountries (
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response)  {
@@ -632,7 +892,7 @@ public class LanguagesResource {
                 .sorted(Comparator.comparing(o -> o.get("name")))
                 .collect(Collectors.toList());
 
-        return Response.ok(new ResponseEntityView<>(Map.of(
+        return Response.ok(new ResponseEntityIsoLanguagesCountriesView(Map.of(
                  "languages", languages,
                  "countries", countries)
                )
@@ -650,15 +910,28 @@ public class LanguagesResource {
      *
      * @throws DotDataException An error occurred when retrieving the default {@link Language}.
      */
+    @Operation(
+        summary = "Get default language",
+        description = "Returns the current default language in the dotCMS instance."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Default language retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityLanguageObjectView.class))),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @Path("/_getdefault")
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public ResponseEntityView<Language> getDefaultLanguage(@Context final HttpServletRequest request,
+    @Produces({MediaType.APPLICATION_JSON})
+    public ResponseEntityLanguageObjectView getDefaultLanguage(@Context final HttpServletRequest request,
                                        @Context final HttpServletResponse response) throws DotDataException {
         Logger.debug(this, () -> "Retrieving the current default Language");
-        return new ResponseEntityView<>(this.languageAPI.getDefaultLanguage());
+        return new ResponseEntityLanguageObjectView(this.languageAPI.getDefaultLanguage());
     }
 
 }
