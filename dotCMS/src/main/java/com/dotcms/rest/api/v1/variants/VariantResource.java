@@ -3,6 +3,7 @@ package com.dotcms.rest.api.v1.variants;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.WebResource;
+import com.dotcms.rest.annotation.SwaggerCompliant;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.v1.experiments.AddVariantForm;
 import com.dotcms.rest.api.v1.experiments.ResponseEntitySingleExperimentView;
@@ -38,8 +39,9 @@ import org.glassfish.jersey.server.JSONP;
 /**
  * REST API for {@link com.dotcms.variant.model.Variant}
  */
+@SwaggerCompliant(value = "Publishing and content distribution APIs", batch = 5)
 @Path("/v1/variants")
-@Tag(name = "Variants", description = "Endpoints for managing content variants")
+@Tag(name = "Variants")
 public class VariantResource {
 
     private final WebResource webResource;
@@ -52,7 +54,7 @@ public class VariantResource {
     @Path("/{variantName}/_promote")
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces({MediaType.APPLICATION_JSON})
     @Operation(
             operationId = "promoteVariant",
             summary = "Promotes a variant to become the default",
@@ -60,7 +62,7 @@ public class VariantResource {
                     "This action makes the variant content live for all users.",
             tags = {"Variants"},
             responses = {
-                    @ApiResponse(responseCode = "200", description = "Variant promoted successfully"),
+                    @ApiResponse(responseCode = "200", description = "Variant promoted successfully (no body)"),
                     @ApiResponse(responseCode = "400", description = "Bad request - Invalid variant name"),
                     @ApiResponse(responseCode = "401", description = "Unauthorized - User not authenticated"),
                     @ApiResponse(responseCode = "403", description = "Forbidden - User lacks required permissions"),
@@ -91,7 +93,7 @@ public class VariantResource {
     @JSONP
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces({MediaType.APPLICATION_JSON})
     @Operation(
             operationId = "addVariant",
             summary = "Creates a new content variant",
