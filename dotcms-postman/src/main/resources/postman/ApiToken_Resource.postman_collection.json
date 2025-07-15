@@ -1052,7 +1052,7 @@
 									"var jsonData = pm.response.json();",
 									"",
 									"pm.test(\"There should be 2 tokens about to expire\", function () {",
-									"    pm.expect(jsonData.entity.tokens.size === 2);",
+									"    pm.expect(jsonData.entity.tokens.length === 2);",
 									"});",
 									"",
 									"pm.test(\"One token should be from admin user \", function () {",
@@ -1089,12 +1089,10 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "http://localhost:8082/api/v1/apitoken/expiring",
-							"protocol": "http",
+							"raw": "{{serverURL}}/api/v1/apitoken/expiring",
 							"host": [
-								"localhost"
+								"{{serverURL}}"
 							],
-							"port": "8082",
 							"path": [
 								"api",
 								"v1",
@@ -1698,6 +1696,10 @@
 		{
 			"key": "remoteTokenPort",
 			"value": "8080"
+		},
+		{
+			"key": "tokenIDs",
+			"value": ""
 		}
 	]
 }
