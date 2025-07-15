@@ -123,6 +123,10 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
     readonly #dialogService = inject(DialogService);
     readonly #dotMessageService = inject(DotMessageService);
 
+    readonly dotDragHandleOptions = {
+        duration: 250
+    };
+
     constructor(
         private readonly viewContainerRef: ViewContainerRef,
         private readonly dotMarketingConfigService: DotMarketingConfigService,

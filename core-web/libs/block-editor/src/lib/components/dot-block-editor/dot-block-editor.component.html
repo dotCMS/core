@@ -18,7 +18,13 @@
     </div>
 
     <dot-bubble-menu [editor]="editor" />
-    <i class="material-icons dot-drag-handle" dotDragHandle [editor]="editor">drag_indicator</i>
+    <i
+        class="material-icons dot-drag-handle"
+        dotDragHandle
+        [editor]="editor"
+        [tippyOptions]="dotDragHandleOptions">
+        drag_indicator
+    </i>
 
     @if (showCharData) {
         <dot-editor-count-bar

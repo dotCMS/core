@@ -49,9 +49,6 @@
         .dot-drag-handle {
             cursor: grab;
             color: $color-palette-primary-800;
-            transition:
-                transform 250ms,
-                visibility 250ms;
         }
 
         .ProseMirror {
