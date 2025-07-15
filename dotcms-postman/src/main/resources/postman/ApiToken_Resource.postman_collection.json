@@ -833,7 +833,7 @@
 									"",
 									"var jsonData = pm.response.json();",
 									"",
-									"pm.test(\"User Id should be dotcms.org.1\", function () {",
+									"pm.test(\"User Id should be dotcms.org.2795\", function () {",
 									"    pm.expect(jsonData.entity.token.userId).to.eql('dotcms.org.2795');",
 									"});",
 									"",
@@ -908,7 +908,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n\t\"userId\":\"dotcms.org.2795\",\n\t\"tokenId\":\"123\",\n\t\"expirationSeconds\":\"100000\"\n}",
+							"raw": "{\n\t\"userId\":\"dotcms.org.2795\",\n\t\"tokenId\":\"1234\",\n\t\"expirationSeconds\":\"500000\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
