@@ -1,4 +1,5 @@
 import { Observable, Subject } from 'rxjs';
+import { Placement } from 'tippy.js';
 
 import { HttpClient } from '@angular/common/http';
 import {
@@ -101,7 +102,7 @@ export class DotLinkEditorPopoverComponent implements OnDestroy {
         onShow: this.initializeExistingLinkData.bind(this),
         onShown: this.focusSearchInput.bind(this),
         onHide: this.clearEditorHighlight.bind(this),
-        placement: 'bottom'
+        placement: 'bottom' as Placement
     };
 
     /**
@@ -246,6 +247,8 @@ export class DotLinkEditorPopoverComponent implements OnDestroy {
             .chain()
             .setLink({ href: this.existingLinkUrl(), target: newTargetValue })
             .run();
+
+        this.linkTargetAttribute.set(newTargetValue);
         this.popover.hide();
     }
 
