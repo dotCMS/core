@@ -34,7 +34,7 @@ public class ErrorResponseHelper implements Serializable {
         try {
 
             return Response.status(status).entity
-                    (new ResponseEntityView
+                    (new ResponseEntityView<>
                             (Arrays.asList(new ErrorEntity(messageKey,
                                     LanguageUtil.get(locale,
                                             messageKey, arguments))))).build();
