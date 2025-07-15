@@ -17,25 +17,14 @@ tags:
 - description: Endpoints that perform operations related to validating accessibility
     in content.
   name: Accessibility Checker
-- description: This REST Endpoint exposes information related to how dotCMS content
-    is accessed and interacted with by users.
-  name: Content Analytics
 - description: System announcements and notifications
   name: Announcements
-- description: Third-party application integration and configuration
-  name: Apps
 - externalDocs:
     description: Additional Authentication API information
     url: https://www.dotcms.com/docs/latest/rest-api-authentication
   name: Authentication
-- description: Form management and processing
-  name: Forms
 - description: Elasticsearch index management and operations
   name: Search Index
-- description: Endpoints for managing background jobs and job queues
-  name: Job Queue
-- description: Content relationship management
-  name: Relationships
 - description: Template design and management
   name: Templates
 - description: Content type field definitions and configuration
@@ -47,6 +36,8 @@ tags:
     description: Additional API token information
     url: https://www.dotcms.com/docs/latest/rest-api-authentication#APIToken
   name: API Token
+- description: Third-party application integration and configuration
+  name: Apps
 - description: File and folder browser tree operations
   name: Browser Tree
 - description: Content bundle management and deployment
@@ -61,6 +52,8 @@ tags:
   name: Containers
 - description: Endpoints for managing content and contentlets
   name: Content
+- description: Content performance analytics and reporting
+  name: Content Analytics
 - description: Content delivery and rendering
   name: Content Delivery
 - description: Content reporting and analytics
@@ -75,10 +68,14 @@ tags:
   name: File Assets
 - description: Folder structure and organization
   name: Folders
+- description: Form management and processing
+  name: Forms
 - description: System health monitoring and diagnostics
   name: Health
 - description: Language management and localization
   name: Internationalization
+- description: Background job management and monitoring
+  name: Job Queue
 - description: License management and validation
   name: License
 - description: System maintenance and administration operations
@@ -106,6 +103,8 @@ tags:
   name: Publishing
 - description: Remote content publishing and synchronization
   name: Push Publishing
+- description: Content relationship management
+  name: Relationships
 - description: User role and permission management
   name: Roles
 - description: Business rules and conditional logic management
@@ -2763,54 +2762,114 @@ paths:
   /osgi:
     post:
       deprecated: true
+      description: Uploads multiple JAR files to the OSGi environment. Files are validated
+        and copied to the Felix upload folder. This endpoint is deprecated - use v1
+        OSGIResource instead.
       operationId: updateBundles
       requestBody:
         content:
           multipart/form-data:
             schema:
               $ref: "#/components/schemas/FormDataMultiPart"
+        description: Multipart form data containing JAR files to upload
+        required: true
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntitySetStringView"
+          description: Bundles uploaded successfully
+        "401":
+          content:
             application/json: {}
-          description: default response
+          description: Unauthorized - backend user authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - cannot access upload folder or insufficient permissions
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error during upload
+      summary: Upload OSGi bundles (deprecated)
       tags:
       - OSGi Plugins
   /osgi/_processExports/{bundle}:
     get:
       deprecated: true
+      description: Processes exports for a specific OSGi bundle. This endpoint is
+        deprecated - use v1 OSGIResource instead.
       operationId: processBundle
       parameters:
-      - in: path
+      - description: Bundle identifier or name to process exports for
+        in: path
         name: bundle
         required: true
         schema:
           type: string
           pattern: .*
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Bundle export processing result with operation status
+          description: Bundle exports processed successfully
+        "401":
           content:
             application/json: {}
-          description: default response
+          description: Unauthorized - backend user authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions to access dynamic-plugins
+            portlet
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error during bundle processing
+      summary: Process bundle exports (deprecated)
       tags:
       - OSGi Plugins
   /osgi/getInstalledBundles/{params}:
     get:
       deprecated: true
+      description: Returns a list of all bundles installed in the OSGi environment.
+        Supports filtering to exclude system bundles. This endpoint is deprecated
+        - use v1 OSGIResource instead.
       operationId: getInstalledBundles
       parameters:
-      - in: path
+      - description: URL parameters including ignoresystembundles=true/false
+        in: path
         name: params
         required: true
         schema:
           type: string
           pattern: .*
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Collection of OSGi bundles with metadata and status information
+          description: Installed bundles retrieved successfully
+        "401":
           content:
             application/json: {}
-          description: default response
+          description: Unauthorized - backend user authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions to access dynamic-plugins
+            portlet
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Get installed OSGi bundles (deprecated)
       tags:
       - OSGi Plugins
   /personas/layout/{params}:
@@ -3812,8 +3871,9 @@ paths:
           application/json:
             schema:
               type: object
-              additionalProperties:
-                type: object
+              description: Map of query parameters
+        description: Form parameters for simplified query
+        required: true
       responses:
         "200":
           content:
@@ -3826,8 +3886,12 @@ paths:
                 order: request.count asc:request.createdAt asc
                 limit: 15
                 offset: 0
+              schema:
+                $ref: "#/components/schemas/ReportResponseEntityView"
           description: Content Analytics data being queried
         "400":
+          content:
+            application/json: {}
           description: Bad Request
         "401":
           description: Unauthorized
@@ -3849,6 +3913,8 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/QueryForm"
+        description: Query form with analytics parameters
+        required: true
       responses:
         "200":
           content:
@@ -3865,8 +3931,12 @@ paths:
                   filters: "request.whatAmI = ['PAGE']"
                   limit: 100
                   offset: 1
+              schema:
+                $ref: "#/components/schemas/ReportResponseEntityView"
           description: Content Analytics data being queried
         "400":
+          content:
+            application/json: {}
           description: Bad Request
         "403":
           description: Forbidden
@@ -3881,12 +3951,15 @@ paths:
     post:
       description: "Returns information of specific dotCMS objects whose health and\
         \ engagement data is tracked, using a CubeJS JSON query."
-      operationId: postContentAnalyticsQuery_1
+      operationId: postContentAnalyticsCubeQuery
       requestBody:
         content:
           application/json:
             schema:
               type: string
+              description: CubeJS query in JSON format
+        description: CubeJS query JSON string
+        required: true
       responses:
         "200":
           content:
@@ -3895,8 +3968,12 @@ paths:
                 dimensions:
                 - Events.experiment
                 - Events.variant
+              schema:
+                $ref: "#/components/schemas/ReportResponseEntityView"
           description: Content Analytics data being queried
         "400":
+          content:
+            application/json: {}
           description: Bad Request
         "401":
           description: Unauthorized
@@ -3904,7 +3981,7 @@ paths:
           description: Unsupported Media Type
         "500":
           description: Internal Server Error
-      summary: Retrieve Content Analytics data
+      summary: Retrieve Content Analytics data with CubeJS query
       tags:
       - Content Analytics
   /v1/analytics/content/event:
@@ -3916,15 +3993,20 @@ paths:
           application/json:
             schema:
               type: object
-              additionalProperties:
-                type: object
+              description: Event payload map
+        description: User event payload
+        required: true
       responses:
         "200":
           content:
             application/json:
               example: TBD
+              schema:
+                $ref: "#/components/schemas/AnalyticsEventsResult"
           description: If the event was created successfully
         "400":
+          content:
+            application/json: {}
           description: Bad Request
         "403":
           description: Forbidden
@@ -3941,23 +4023,39 @@ paths:
         JS code to send custom Content Analytics Events
       operationId: generateSiteKey
       parameters:
-      - in: path
+      - description: Site identifier
+        in: path
         name: siteId
         required: true
         schema:
           type: string
       responses:
         "200":
+          content:
+            application/json:
+              schema:
+                type: string
+                description: Site key for analytics events
           description: The Site key was generated and returned successfully
         "400":
+          content:
+            application/json: {}
           description: Bad Request
         "401":
+          content:
+            application/json: {}
           description: Unauthorized
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden
         "404":
+          content:
+            application/json: {}
           description: Site ID in path is not found or incorrect path
-        "405":
-          description: Method Not Allowed
         "500":
+          content:
+            application/json: {}
           description: Internal Server Error
       summary: Generate Site Key
       tags:
@@ -4403,211 +4501,394 @@ paths:
       - System Configuration
   /v1/apps:
     delete:
+      description: Deletes specific secret values from an app configuration. Removes
+        individual secret keys while preserving other app configurations and secrets.
       operationId: deleteIndividualAppSecret
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: "#/components/schemas/DeleteSecretForm"
+        description: Delete secret form specifying which secrets to remove
+        required: true
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
-            application/json: {}
-          description: default response
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityStringView"
+          description: App secret deleted successfully
+        "400":
+          description: Bad request - invalid delete secret form data
+        "401":
+          description: Unauthorized - backend user authentication required
+        "403":
+          description: Forbidden - insufficient permissions to delete app secrets
+        "404":
+          description: App or secret not found
+        "500":
+          description: Internal server error deleting app secret
+      summary: Delete individual app secret
       tags:
       - Apps
     get:
+      description: Retrieves a list of all third-party applications available for
+        integration with the system. Supports optional filtering to search for specific
+        apps.
       operationId: listAvailableApps
       parameters:
-      - in: query
+      - description: Filter text to search apps by name or description
+        in: query
         name: filter
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
-            application/json: {}
-          description: default response
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityAppListView"
+          description: Apps retrieved successfully
+        "401":
+          description: Unauthorized - backend user authentication required
+        "403":
+          description: Forbidden - insufficient permissions to list apps
+        "500":
+          description: Internal server error retrieving apps
+      summary: List available apps
       tags:
       - Apps
     post:
+      description: Creates a new third-party application integration by uploading
+        the app configuration and metadata. Accepts multipart form data containing
+        the app descriptor and resources.
       operationId: createApp
       requestBody:
         content:
           multipart/form-data:
             schema:
               $ref: "#/components/schemas/FormDataMultiPart"
+        description: Multipart form data containing app configuration files and metadata
+        required: true
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
-            application/json: {}
-          description: default response
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityAppListView"
+          description: App created successfully
+        "400":
+          description: Bad request - invalid app configuration or missing required
+            fields
+        "401":
+          description: Unauthorized - backend user authentication required
+        "403":
+          description: Forbidden - insufficient permissions to create apps
+        "409":
+          description: Conflict - app with same key already exists
+        "500":
+          description: Internal server error creating app
+      summary: Create new app
       tags:
       - Apps
   /v1/apps/export:
     post:
+      description: Exports app secret configurations to a downloadable file. Allows
+        backup and migration of app configurations between environments. Returns a
+        binary export file.
       operationId: exportSecrets
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: "#/components/schemas/ExportSecretForm"
+        description: Export configuration specifying which secrets to export
+        required: true
       responses:
-        default:
+        "200":
+          content:
+            application/octet-stream: {}
+          description: Secrets exported successfully as file download (binary stream
+            - no JSON schema)
+        "400":
           content:
             application/json: {}
-            application/octet-stream: {}
-          description: default response
+          description: Bad request - invalid export form data
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - backend user authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions to export secrets
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error exporting secrets
+      summary: Export app secrets
       tags:
       - Apps
   /v1/apps/import:
     post:
+      description: Imports app secret configurations from an uploaded export file.
+        Allows restoration and migration of app configurations from other environments.
+        Accepts multipart form data with the export file.
       operationId: importSecrets
       requestBody:
         content:
           multipart/form-data:
             schema:
               $ref: "#/components/schemas/FormDataMultiPart"
+        description: Multipart form data containing the secrets export file to import
+        required: true
       responses:
-        default:
+        "200":
           content:
-            application/json: {}
-          description: default response
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityStringView"
+          description: Secrets imported successfully
+        "400":
+          description: Bad request - invalid import file or missing form data
+        "401":
+          description: Unauthorized - backend user authentication required
+        "403":
+          description: Forbidden - insufficient permissions to import secrets
+        "409":
+          description: Conflict - import would overwrite existing configurations
+        "500":
+          description: Internal server error importing secrets
+      summary: Import app secrets
       tags:
       - Apps
   /v1/apps/{key}:
     delete:
+      description: "Removes an entire app integration including all configurations,\
+        \ secrets, and optionally the app descriptor. This is a destructive operation\
+        \ that removes all app-related data across all sites."
       operationId: deleteApp
       parameters:
-      - in: path
+      - description: Unique identifier of the app to delete
+        in: path
         name: key
         required: true
         schema:
           type: string
-      - in: query
+      - description: Whether to also remove the app descriptor definition
+        in: query
         name: removeDescriptor
         schema:
           type: boolean
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
-            application/json: {}
-          description: default response
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityStringView"
+          description: App deleted successfully
+        "401":
+          description: Unauthorized - backend user authentication required
+        "403":
+          description: Forbidden - insufficient permissions to delete apps
+        "404":
+          description: App not found
+        "500":
+          description: Internal server error deleting app
+      summary: Delete app completely
       tags:
       - Apps
     get:
+      description: Retrieves detailed information about a specific app identified
+        by its unique key. Includes configuration settings and site-specific settings
+        with pagination support.
       operationId: getAppByKey
       parameters:
-      - in: path
+      - description: Unique identifier of the app to retrieve
+        in: path
         name: key
         required: true
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
-            application/json: {}
-          description: default response
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityAppView"
+          description: App details retrieved successfully
+        "401":
+          description: Unauthorized - backend user authentication required
+        "403":
+          description: Forbidden - insufficient permissions to access app
+        "404":
+          description: App not found
+        "500":
+          description: Internal server error retrieving app details
+      summary: Get app by key
       tags:
       - Apps
   /v1/apps/{key}/{siteId}:
     delete:
+      description: Removes all secret configurations for a specific app and site combination.
+        This clears all stored secrets while preserving the app definition and site
+        configuration structure.
       operationId: deleteAllAppSecrets
       parameters:
-      - in: path
+      - description: Unique identifier of the app
+        in: path
         name: key
         required: true
         schema:
           type: string
-      - in: path
+      - description: Site identifier where secrets are stored
+        in: path
         name: siteId
         required: true
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
-            application/json: {}
-          description: default response
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityStringView"
+          description: All app secrets deleted successfully
+        "401":
+          description: Unauthorized - backend user authentication required
+        "403":
+          description: Forbidden - insufficient permissions to delete app secrets
+        "404":
+          description: App or site not found
+        "500":
+          description: Internal server error deleting app secrets
+      summary: Delete all app secrets
       tags:
       - Apps
     get:
+      description: Retrieves detailed configuration and settings for a specific app
+        within a particular site. Returns site-specific app configurations and secret
+        values.
       operationId: getAppDetail
       parameters:
-      - in: path
+      - description: Unique identifier of the app
+        in: path
         name: key
         required: true
         schema:
           type: string
-      - in: path
+      - description: Site identifier to get app details for
+        in: path
         name: siteId
         required: true
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
-            application/json: {}
-          description: default response
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityAppView"
+          description: App detail retrieved successfully
+        "401":
+          description: Unauthorized - backend user authentication required
+        "403":
+          description: Forbidden - insufficient permissions to access app details
+        "404":
+          description: App or site not found
+        "500":
+          description: Internal server error retrieving app details
+      summary: Get app detail for specific site
       tags:
       - Apps
     post:
+      description: Creates or updates secret values for a specific app configuration
+        within a site. Secrets are encrypted values used for secure integration with
+        third-party services.
       operationId: createAppSecrets
       parameters:
-      - in: path
+      - description: Unique identifier of the app
+        in: path
         name: key
         required: true
         schema:
           type: string
-      - in: path
+      - description: Site identifier where secrets will be stored
+        in: path
         name: siteId
         required: true
         schema:
           type: string
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: "#/components/schemas/SecretForm"
+        description: Secret form containing key-value pairs for app configuration
+        required: true
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
-            application/json: {}
-          description: default response
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityStringView"
+          description: App secrets created successfully
+        "400":
+          description: Bad request - invalid secret form data
+        "401":
+          description: Unauthorized - backend user authentication required
+        "403":
+          description: Forbidden - insufficient permissions to manage app secrets
+        "404":
+          description: App or site not found
+        "500":
+          description: Internal server error creating app secrets
+      summary: Create app secrets
       tags:
       - Apps
     put:
+      description: Updates specific secret values for an app configuration within
+        a site. Allows for partial updates of existing secret configurations without
+        affecting other secrets.
       operationId: updateAppIndividualSecret
       parameters:
-      - in: path
+      - description: Unique identifier of the app
+        in: path
         name: key
         required: true
         schema:
           type: string
-      - in: path
+      - description: Site identifier where secret is stored
+        in: path
         name: siteId
         required: true
         schema:
           type: string
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: "#/components/schemas/SecretForm"
+        description: Secret form containing updated key-value pairs
+        required: true
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
-            application/json: {}
-          description: default response
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityStringView"
+          description: App secret updated successfully
+        "400":
+          description: Bad request - invalid secret form data
+        "401":
+          description: Unauthorized - backend user authentication required
+        "403":
+          description: Forbidden - insufficient permissions to update app secrets
+        "404":
+          description: "App, site, or secret not found"
+        "500":
+          description: Internal server error updating app secret
+      summary: Update individual app secret
       tags:
       - Apps
   /v1/assets:
@@ -10123,17 +10404,22 @@ paths:
       - Search Index
   /v1/experiments:
     get:
+      description: "Retrieves a list of experiments with optional filtering by page\
+        \ ID, name, or status. Returns all experiments if no filters are provided."
       operationId: list_1
       parameters:
-      - in: query
+      - description: Filter experiments by page ID
+        in: query
         name: pageId
         schema:
           type: string
-      - in: query
+      - description: Filter experiments by name
+        in: query
         name: name
         schema:
           type: string
-      - in: query
+      - description: "Filter experiments by status (DRAFT, RUNNING, ENDED, etc.)"
+        in: query
         name: status
         schema:
           type: array
@@ -10147,250 +10433,491 @@ paths:
             - ARCHIVED
           uniqueItems: true
       responses:
-        default:
+        "200":
           content:
-            application/javascript:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityExperimentView"
             application/json:
               schema:
                 $ref: "#/components/schemas/ResponseEntityExperimentView"
-          description: default response
+          description: Experiments list retrieved successfully
+        "400":
+          content:
+            application/json: {}
+          description: Invalid filter parameters
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - backend user authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions to list experiments
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: List experiments with optional filtering
       tags:
-      - Experiment
+      - Experiments
     post:
+      description: "Creates a new A/B test experiment with the provided configuration.\
+        \ An experiment can be created with minimal information such as name and description,\
+        \ and additional settings can be configured later."
       operationId: create_2
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: "#/components/schemas/ExperimentForm"
+        description: "Experiment configuration form with name, description, and optional\
+          \ settings"
+        required: true
       responses:
-        default:
+        "200":
           content:
-            application/javascript:
-              schema:
-                $ref: "#/components/schemas/ResponseEntitySingleExperimentView"
             application/json:
               schema:
                 $ref: "#/components/schemas/ResponseEntitySingleExperimentView"
-          description: default response
+          description: Experiment created successfully
+        "400":
+          content:
+            application/json: {}
+          description: Invalid experiment data or missing required fields
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - backend user authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions to create experiments
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Create a new experiment
       tags:
-      - Experiment
+      - Experiments
   /v1/experiments/health:
     get:
+      description: Performs a health check of the experiments and analytics configuration
+        to verify that the system is properly configured and can send test events.
       operationId: healthcheck
       responses:
-        default:
+        "200":
           content:
-            application/javascript:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityView"
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityView"
-          description: default response
+                $ref: "#/components/schemas/ResponseEntityExperimentHealthView"
+          description: Health check completed - see response body for status
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - backend user authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions to check system health
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Check experiments system health
       tags:
-      - Experiment
+      - Experiments
   /v1/experiments/isUserIncluded:
     post:
+      description: "Determines if the current user should be included in any running\
+        \ experiments based on targeting conditions, traffic allocation, and variant\
+        \ weighting. Supports excluding specific experiments from consideration."
       operationId: isUserIncluded
       requestBody:
         content:
           application/json:
             schema:
               $ref: "#/components/schemas/ExcludedExperimentListForm"
+        description: Optional form containing list of experiment IDs to exclude from
+          consideration
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ResponseEntityExperimentSelectedView"
-          description: default response
+          description: User inclusion status determined successfully
+        "400":
+          content:
+            application/json: {}
+          description: Invalid request parameters or exclusion list
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Check if user should be included in experiment
       tags:
-      - Experiment
+      - Experiments
   /v1/experiments/scheduled/{experimentId}/_cancel:
     post:
+      description: Cancels an experiment that is either scheduled for future execution
+        or currently running. The experiment must be in SCHEDULED or RUNNING status
+        to be cancelled.
       operationId: cancel
       parameters:
-      - in: path
+      - description: Unique identifier of the experiment to cancel
+        in: path
         name: experimentId
         required: true
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript:
-              schema:
-                $ref: "#/components/schemas/ResponseEntitySingleExperimentView"
             application/json:
               schema:
                 $ref: "#/components/schemas/ResponseEntitySingleExperimentView"
-          description: default response
+          description: Experiment cancelled successfully
+        "400":
+          content:
+            application/json: {}
+          description: Experiment cannot be cancelled (not in SCHEDULED or RUNNING
+            status)
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - backend user authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions to cancel experiment
+        "404":
+          content:
+            application/json: {}
+          description: Experiment not found
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Cancel a scheduled or running experiment
       tags:
-      - Experiment
+      - Experiments
   /v1/experiments/{experimentId}:
     delete:
+      description: Permanently deletes an experiment. This operation can only be performed
+        on experiments in DRAFT status. Use archive instead if you want to preserve
+        experiment data.
       operationId: delete_9
       parameters:
-      - in: path
+      - description: Unique identifier of the experiment to delete
+        in: path
         name: experimentId
         required: true
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityViewString"
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityViewString"
-          description: default response
+                $ref: "#/components/schemas/ResponseEntityExperimentOperationView"
+          description: Experiment deleted successfully
+        "400":
+          content:
+            application/json: {}
+          description: Experiment cannot be deleted (not in DRAFT status)
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - backend user authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions to delete experiment
+        "404":
+          content:
+            application/json: {}
+          description: Experiment not found
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Delete an experiment
       tags:
-      - Experiment
+      - Experiments
     patch:
+      description: "Performs partial updates (PATCH) on an existing experiment. Only\
+        \ the provided fields will be updated, while other experiment properties remain\
+        \ unchanged."
       operationId: update_2
       parameters:
-      - in: path
+      - description: Unique identifier of the experiment to update
+        in: path
         name: experimentId
         required: true
         schema:
           type: string
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: "#/components/schemas/ExperimentForm"
+        description: Partial experiment update form with fields to modify
+        required: true
       responses:
-        default:
+        "200":
           content:
-            application/javascript:
-              schema:
-                $ref: "#/components/schemas/ResponseEntitySingleExperimentView"
             application/json:
               schema:
                 $ref: "#/components/schemas/ResponseEntitySingleExperimentView"
-          description: default response
+          description: Experiment updated successfully
+        "400":
+          content:
+            application/json: {}
+          description: Invalid experiment data or update parameters
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - backend user authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions to update experiment
+        "404":
+          content:
+            application/json: {}
+          description: Experiment not found
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Update an experiment
       tags:
-      - Experiment
+      - Experiments
   /v1/experiments/{experimentId}/_archive:
     put:
+      description: Archives an experiment to preserve collected data while removing
+        it from active use. Ideal for experiments with valuable historical data that
+        should not be deleted.
       operationId: archive_1
       parameters:
-      - in: path
+      - description: Unique identifier of the experiment to archive
+        in: path
         name: experimentId
         required: true
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityExperimentView"
             application/json:
               schema:
                 $ref: "#/components/schemas/ResponseEntityExperimentView"
-          description: default response
+          description: Experiment archived successfully
+        "400":
+          content:
+            application/json: {}
+          description: Invalid experiment ID or experiment cannot be archived
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - backend user authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions to archive experiment
+        "404":
+          content:
+            application/json: {}
+          description: Experiment not found
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Archive an experiment
       tags:
-      - Experiment
+      - Experiments
   /v1/experiments/{experimentId}/_end:
     post:
+      description: Ends a currently running experiment and changes its status to ENDED.
+        The experiment must be in RUNNING status to be ended.
       operationId: end
       parameters:
-      - in: path
+      - description: Unique identifier of the experiment to end
+        in: path
         name: experimentId
         required: true
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript:
-              schema:
-                $ref: "#/components/schemas/ResponseEntitySingleExperimentView"
             application/json:
               schema:
                 $ref: "#/components/schemas/ResponseEntitySingleExperimentView"
-          description: default response
+          description: Experiment ended successfully
+        "400":
+          content:
+            application/json: {}
+          description: Experiment cannot be ended (not in RUNNING status)
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - backend user authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions to end experiment
+        "404":
+          content:
+            application/json: {}
+          description: Experiment not found
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: End a running experiment
       tags:
-      - Experiment
+      - Experiments
   /v1/experiments/{experimentId}/_start:
     post:
+      description: "Starts an experiment and changes its status to RUNNING. The experiment\
+        \ must be in DRAFT status, have at least one variant, and have a primary goal\
+        \ configured. Scheduling dates will be set automatically if not provided."
       operationId: start
       parameters:
-      - in: path
+      - description: Unique identifier of the experiment to start
+        in: path
         name: experimentId
         required: true
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript:
-              schema:
-                $ref: "#/components/schemas/ResponseEntitySingleExperimentView"
             application/json:
               schema:
                 $ref: "#/components/schemas/ResponseEntitySingleExperimentView"
-          description: default response
+          description: Experiment started successfully
+        "400":
+          content:
+            application/json: {}
+          description: Experiment cannot be started (missing requirements or invalid
+            scheduling)
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - backend user authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions to start experiment
+        "404":
+          content:
+            application/json: {}
+          description: Experiment not found
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Start an experiment
       tags:
-      - Experiment
+      - Experiments
   /v1/experiments/{experimentId}/goals/primary:
     delete:
+      description: Removes the primary goal from an experiment. This will clear the
+        goal configuration but preserve other experiment settings.
       operationId: deleteGoal
       parameters:
-      - in: path
+      - description: Unique identifier of the experiment to remove goal from
+        in: path
         name: experimentId
         required: true
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript:
-              schema:
-                $ref: "#/components/schemas/ResponseEntitySingleExperimentView"
             application/json:
               schema:
                 $ref: "#/components/schemas/ResponseEntitySingleExperimentView"
-          description: default response
+          description: Primary goal deleted successfully
+        "400":
+          content:
+            application/json: {}
+          description: Invalid experiment ID or goal cannot be deleted
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - backend user authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions to modify experiment
+        "404":
+          content:
+            application/json: {}
+          description: Experiment not found
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Delete experiment primary goal
       tags:
-      - Experiment
+      - Experiments
   /v1/experiments/{experimentId}/targetingConditions/{id}:
     delete:
+      description: Removes a targeting condition from an experiment. Targeting conditions
+        define which users should be included in the experiment.
       operationId: deleteTargetingCondition
       parameters:
-      - in: path
+      - description: Unique identifier of the experiment
+        in: path
         name: experimentId
         required: true
         schema:
           type: string
-      - in: path
+      - description: Unique identifier of the targeting condition to delete
+        in: path
         name: id
         required: true
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript:
-              schema:
-                $ref: "#/components/schemas/ResponseEntitySingleExperimentView"
             application/json:
               schema:
                 $ref: "#/components/schemas/ResponseEntitySingleExperimentView"
-          description: default response
+          description: Targeting condition deleted successfully
+        "400":
+          content:
+            application/json: {}
+          description: Invalid targeting condition ID or condition cannot be deleted
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - backend user authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions to modify experiment
+        "404":
+          content:
+            application/json: {}
+          description: Experiment or targeting condition not found
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Delete targeting condition
       tags:
-      - Experiment
+      - Experiments
   /v1/experiments/{experimentId}/variants:
     post:
+      description: Adds a new variant to an existing experiment. Variants represent
+        different versions of content to be tested against each other.
       operationId: addVariant
       parameters:
-      - in: path
+      - description: Unique identifier of the experiment to add variant to
+        in: path
         name: experimentId
         required: true
         schema:
@@ -10400,153 +10927,271 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/AddVariantForm"
+        description: Variant configuration form with description and settings
+        required: true
       responses:
-        default:
+        "200":
           content:
-            application/javascript:
-              schema:
-                $ref: "#/components/schemas/ResponseEntitySingleExperimentView"
             application/json:
               schema:
                 $ref: "#/components/schemas/ResponseEntitySingleExperimentView"
-          description: default response
+          description: Variant added successfully
+        "400":
+          content:
+            application/json: {}
+          description: Invalid variant data or experiment cannot accept new variants
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - backend user authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions to modify experiment
+        "404":
+          content:
+            application/json: {}
+          description: Experiment not found
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Add variant to experiment
       tags:
-      - Experiment
+      - Experiments
   /v1/experiments/{experimentId}/variants/{name}:
     delete:
+      description: Removes a variant from an experiment. This will permanently delete
+        the variant and any associated data.
       operationId: deleteVariant
       parameters:
-      - in: path
+      - description: Unique identifier of the experiment
+        in: path
         name: experimentId
         required: true
         schema:
           type: string
-      - in: path
+      - description: Name of the variant to delete
+        in: path
         name: name
         required: true
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript:
-              schema:
-                $ref: "#/components/schemas/ResponseEntitySingleExperimentView"
             application/json:
               schema:
                 $ref: "#/components/schemas/ResponseEntitySingleExperimentView"
-          description: default response
+          description: Variant deleted successfully
+        "400":
+          content:
+            application/json: {}
+          description: Variant cannot be deleted or does not exist
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - backend user authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions to modify experiment
+        "404":
+          content:
+            application/json: {}
+          description: Experiment or variant not found
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Delete variant from experiment
       tags:
-      - Experiment
+      - Experiments
     put:
+      description: Updates the properties of an existing variant within an experiment.
+        Supports partial updates - only provided fields will be modified.
       operationId: updateVariant
       parameters:
-      - in: path
+      - description: Unique identifier of the experiment
+        in: path
         name: experimentId
         required: true
         schema:
           type: string
-      - in: path
+      - description: Name of the variant to update
+        in: path
         name: name
         required: true
         schema:
           type: string
       requestBody:
         content:
-          application/javascript:
-            schema:
-              $ref: "#/components/schemas/ExperimentVariantForm"
           application/json:
             schema:
               $ref: "#/components/schemas/ExperimentVariantForm"
+        description: Variant update form with properties to modify
+        required: true
       responses:
-        default:
+        "200":
           content:
-            application/javascript:
-              schema:
-                $ref: "#/components/schemas/ResponseEntitySingleExperimentView"
             application/json:
               schema:
                 $ref: "#/components/schemas/ResponseEntitySingleExperimentView"
-          description: default response
+          description: Variant updated successfully
+        "400":
+          content:
+            application/json: {}
+          description: Invalid variant data or update parameters
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - backend user authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions to modify experiment
+        "404":
+          content:
+            application/json: {}
+          description: Experiment or variant not found
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Update experiment variant
       tags:
-      - Experiment
+      - Experiments
   /v1/experiments/{experimentId}/variants/{name}/_promote:
     put:
+      description: Promotes a variant to become the default variant of the page. This
+        makes the selected variant the primary version that will be used going forward.
       operationId: promoteVariant
       parameters:
-      - in: path
+      - description: Unique identifier of the experiment
+        in: path
         name: experimentId
         required: true
         schema:
           type: string
-      - in: path
+      - description: Name of the variant to promote to default
+        in: path
         name: name
         required: true
         schema:
           type: string
       requestBody:
         content:
-          application/javascript:
-            schema:
-              $ref: "#/components/schemas/ExperimentVariantForm"
           application/json:
             schema:
               $ref: "#/components/schemas/ExperimentVariantForm"
+        description: Variant promotion form with additional configuration
+        required: true
       responses:
-        default:
+        "200":
           content:
-            application/javascript:
-              schema:
-                $ref: "#/components/schemas/ResponseEntitySingleExperimentView"
             application/json:
               schema:
                 $ref: "#/components/schemas/ResponseEntitySingleExperimentView"
-          description: default response
+          description: Variant promoted successfully
+        "400":
+          content:
+            application/json: {}
+          description: Variant cannot be promoted or invalid promotion data
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - backend user authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions to promote variant
+        "404":
+          content:
+            application/json: {}
+          description: Experiment or variant not found
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Promote variant to default
       tags:
-      - Experiment
+      - Experiments
   /v1/experiments/{id}:
     get:
+      description: "Retrieves a specific experiment by its unique identifier, including\
+        \ all configuration details, variants, and current status."
       operationId: get_3
       parameters:
-      - in: path
+      - description: Unique identifier of the experiment to retrieve
+        in: path
         name: id
         required: true
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript:
-              schema:
-                $ref: "#/components/schemas/ResponseEntitySingleExperimentView"
             application/json:
               schema:
                 $ref: "#/components/schemas/ResponseEntitySingleExperimentView"
-          description: default response
+          description: Experiment retrieved successfully
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - backend user authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions to view experiment
+        "404":
+          content:
+            application/json: {}
+          description: Experiment not found
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Get experiment by ID
       tags:
-      - Experiment
+      - Experiments
   /v1/experiments/{id}/results:
     get:
+      description: "Retrieves the analytical results of an experiment, including performance\
+        \ metrics, conversion rates, and statistical significance data for all variants."
       operationId: getResult
       parameters:
-      - in: path
+      - description: Unique identifier of the experiment to get results for
+        in: path
         name: id
         required: true
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityExperimentResults"
             application/json:
               schema:
                 $ref: "#/components/schemas/ResponseEntityExperimentResults"
-          description: default response
+          description: Experiment results retrieved successfully
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - backend user authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions to view experiment results
+        "404":
+          content:
+            application/json: {}
+          description: Experiment not found
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Get experiment results
       tags:
-      - Experiment
+      - Experiments
   /v1/fieldTypes:
     get:
       description: Retrieves all available field types in dotCMS for content type
@@ -10907,18 +11552,43 @@ paths:
       - Authentication
   /v1/form/{idOrVar}/successCallback:
     get:
+      description: Generates a JavaScript callback function for a form based on its
+        formSuccessCallback field value. The function name includes the content type
+        ID with dashes removed. Returns executable JavaScript code.
       operationId: getSuccessCallbackFunction
       parameters:
-      - in: path
+      - description: Form ID or variable name
+        in: path
         name: idOrVar
         required: true
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
             application/javascript: {}
-          description: default response
+          description: Success callback function generated successfully
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - formSuccessCallback field not found in form
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "404":
+          content:
+            application/json: {}
+          description: Form not found or not a form content type
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Get form success callback function
       tags:
       - Forms
   /v1/health:
@@ -11098,152 +11768,276 @@ paths:
       - Health
   /v1/jobs:
     get:
+      description: Returns paginated list of all jobs across all queues regardless
+        of status.
       operationId: listJobs
       parameters:
-      - in: query
+      - description: "Page number for pagination (default: 1)"
+        in: query
         name: page
         schema:
           type: integer
           format: int32
           default: 1
-      - in: query
+      - description: "Number of jobs per page (default: 20)"
+        in: query
         name: pageSize
         schema:
           type: integer
           format: int32
           default: 20
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityViewJobPaginatedResult"
-          description: default response
+                $ref: "#/components/schemas/ResponseEntityJobPaginatedResultView"
+          description: Jobs retrieved successfully
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - invalid pagination parameters
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: List all jobs
       tags:
       - Job Queue
   /v1/jobs/abandoned:
     get:
+      description: Returns paginated list of jobs that have been abandoned (no longer
+        tracked or monitored).
       operationId: abandonedJobs
       parameters:
-      - in: query
+      - description: "Page number for pagination (default: 1)"
+        in: query
         name: page
         schema:
           type: integer
           format: int32
           default: 1
-      - in: query
+      - description: "Number of jobs per page (default: 20)"
+        in: query
         name: pageSize
         schema:
           type: integer
           format: int32
           default: 20
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityViewJobPaginatedResult"
-          description: default response
+                $ref: "#/components/schemas/ResponseEntityJobPaginatedResultView"
+          description: Abandoned jobs retrieved successfully
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - invalid pagination parameters
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Get abandoned jobs
       tags:
       - Job Queue
   /v1/jobs/active:
     get:
+      description: Returns paginated list of currently active/running jobs across
+        all queues.
       operationId: activeJobs
       parameters:
-      - in: query
+      - description: "Page number for pagination (default: 1)"
+        in: query
         name: page
         schema:
           type: integer
           format: int32
           default: 1
-      - in: query
+      - description: "Number of jobs per page (default: 20)"
+        in: query
         name: pageSize
         schema:
           type: integer
           format: int32
           default: 20
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityViewJobPaginatedResult"
-          description: default response
+                $ref: "#/components/schemas/ResponseEntityJobPaginatedResultView"
+          description: Active jobs retrieved successfully
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - invalid pagination parameters
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Get all active jobs
       tags:
       - Job Queue
   /v1/jobs/canceled:
     get:
+      description: Returns paginated list of jobs that have been canceled before completion.
       operationId: canceledJobs
       parameters:
-      - in: query
+      - description: "Page number for pagination (default: 1)"
+        in: query
         name: page
         schema:
           type: integer
           format: int32
           default: 1
-      - in: query
+      - description: "Number of jobs per page (default: 20)"
+        in: query
         name: pageSize
         schema:
           type: integer
           format: int32
           default: 20
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityViewJobPaginatedResult"
-          description: default response
+                $ref: "#/components/schemas/ResponseEntityJobPaginatedResultView"
+          description: Canceled jobs retrieved successfully
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - invalid pagination parameters
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Get canceled jobs
       tags:
       - Job Queue
   /v1/jobs/completed:
     get:
+      description: Returns paginated list of jobs that have completed successfully.
       operationId: completedJobs
       parameters:
-      - in: query
+      - description: "Page number for pagination (default: 1)"
+        in: query
         name: page
         schema:
           type: integer
           format: int32
           default: 1
-      - in: query
+      - description: "Number of jobs per page (default: 20)"
+        in: query
         name: pageSize
         schema:
           type: integer
           format: int32
           default: 20
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityViewJobPaginatedResult"
-          description: default response
+                $ref: "#/components/schemas/ResponseEntityJobPaginatedResultView"
+          description: Completed jobs retrieved successfully
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - invalid pagination parameters
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Get completed jobs
       tags:
       - Job Queue
   /v1/jobs/failed:
     get:
+      description: Returns paginated list of jobs that have failed due to errors during
+        execution.
       operationId: failedJobs
       parameters:
-      - in: query
+      - description: "Page number for pagination (default: 1)"
+        in: query
         name: page
         schema:
           type: integer
           format: int32
           default: 1
-      - in: query
+      - description: "Number of jobs per page (default: 20)"
+        in: query
         name: pageSize
         schema:
           type: integer
           format: int32
           default: 20
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityViewJobPaginatedResult"
-          description: default response
+                $ref: "#/components/schemas/ResponseEntityJobPaginatedResultView"
+          description: Failed jobs retrieved successfully
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - invalid pagination parameters
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Get failed jobs
       tags:
       - Job Queue
   /v1/jobs/queues:
@@ -11256,7 +12050,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityView"
+                $ref: "#/components/schemas/ResponseEntitySetStringView"
           description: Queues retrieved successfully
         "401":
           description: Unauthorized - User not authenticated
@@ -11269,63 +12063,130 @@ paths:
       - Job Queue
   /v1/jobs/successful:
     get:
+      description: Returns paginated list of jobs that have completed successfully
+        without errors.
       operationId: successfulJobs
       parameters:
-      - in: query
+      - description: "Page number for pagination (default: 1)"
+        in: query
         name: page
         schema:
           type: integer
           format: int32
           default: 1
-      - in: query
+      - description: "Number of jobs per page (default: 20)"
+        in: query
         name: pageSize
         schema:
           type: integer
           format: int32
           default: 20
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityViewJobPaginatedResult"
-          description: default response
+                $ref: "#/components/schemas/ResponseEntityJobPaginatedResultView"
+          description: Successful jobs retrieved successfully
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - invalid pagination parameters
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Get successful jobs
       tags:
       - Job Queue
   /v1/jobs/{jobId}/cancel:
     post:
+      description: Sends a cancellation request to the specified job. The job may
+        not immediately stop if it's currently running.
       operationId: cancelJob
       parameters:
-      - in: path
+      - description: Unique identifier of the job to cancel
+        in: path
         name: jobId
         required: true
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityViewString"
-          description: default response
+                $ref: "#/components/schemas/ResponseEntityStringView"
+          description: Cancellation request sent successfully
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - invalid job ID
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "404":
+          content:
+            application/json: {}
+          description: Job not found
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Cancel job
       tags:
       - Job Queue
   /v1/jobs/{jobId}/monitor:
     get:
+      description: Establishes a Server-Sent Events (SSE) connection to monitor real-time
+        progress of a specific job. Returns continuous updates until job completion.
       operationId: monitorJob
       parameters:
-      - in: path
+      - description: Unique identifier of the job to monitor
+        in: path
         name: jobId
         required: true
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            text/event-stream:
-              schema:
-                $ref: "#/components/schemas/EventOutput"
-          description: default response
+            text/event-stream: {}
+          description: SSE connection established for job monitoring
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - invalid job ID
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "404":
+          content:
+            application/json: {}
+          description: Job not found
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Monitor job progress
       tags:
       - Job Queue
   /v1/jobs/{jobId}/status:
@@ -11345,7 +12206,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityView"
+                $ref: "#/components/schemas/ResponseEntityJobView"
           description: Job status retrieved successfully
         "400":
           description: Bad request - Invalid job ID
@@ -11378,6 +12239,7 @@ paths:
             schema:
               type: object
               additionalProperties: true
+              description: JSON object containing job parameters as key-value pairs
         description: Job parameters as JSON key-value pairs
         required: true
       responses:
@@ -11400,32 +12262,54 @@ paths:
       - Job Queue
   /v1/jobs/{queueName}/active:
     get:
+      description: Returns paginated list of currently active/running jobs in the
+        specified queue.
       operationId: activeJobs_1
       parameters:
-      - in: path
+      - description: Name of the job queue to filter by
+        in: path
         name: queueName
         required: true
         schema:
           type: string
-      - in: query
+      - description: "Page number for pagination (default: 1)"
+        in: query
         name: page
         schema:
           type: integer
           format: int32
           default: 1
-      - in: query
+      - description: "Number of jobs per page (default: 20)"
+        in: query
         name: pageSize
         schema:
           type: integer
           format: int32
           default: 20
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityViewJobPaginatedResult"
-          description: default response
+                $ref: "#/components/schemas/ResponseEntityJobPaginatedResultView"
+          description: Active jobs retrieved successfully
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - invalid queue name or pagination parameters
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Get active jobs by queue
       tags:
       - Job Queue
   /v1/jvm:
@@ -12098,6 +12982,8 @@ paths:
       - Notifications
   /v1/osgi:
     get:
+      description: Returns a list of all bundles installed in the OSGi environment.
+        Optionally exclude system bundles from the results.
       operationId: getInstalledBundles_1
       parameters:
       - in: query
@@ -12110,16 +12996,29 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ResponseEntityBundleListView"
-      summary: Returns a list of all bundles installed
+          description: Bundles retrieved successfully
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - backend user required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - dynamic-plugins portlet access required
+      summary: Get all installed bundles
       tags:
       - OSGi Plugins
     post:
+      description: Uploads one or more JAR files to the OSGi upload folder for deployment.
+        Only JAR files are accepted and will be processed by the OSGi framework.
       operationId: uploadBundles
       requestBody:
         content:
           multipart/form-data:
             schema:
               $ref: "#/components/schemas/FormDataMultiPart"
+        description: Multipart form data containing OSGI bundle files
+        required: true
       responses:
         "200":
           content:
@@ -12133,9 +13032,12 @@ paths:
       - OSGi Plugins
   /v1/osgi/_processExports/{bundle}:
     get:
+      description: Processes the export packages for a specific OSGi bundle. This
+        updates the bundle's export declarations for package sharing.
       operationId: processBundle_1
       parameters:
-      - in: path
+      - description: Bundle name to process
+        in: path
         name: bundle
         required: true
         schema:
@@ -12152,6 +13054,8 @@ paths:
       - OSGi Plugins
   /v1/osgi/_restart:
     put:
+      description: "Restarts the entire OSGi framework, which will reload all bundles.\
+        \ This is a system-level operation that affects all deployed plugins."
       operationId: restart
       responses:
         "200":
@@ -12164,18 +13068,22 @@ paths:
       - OSGi Plugins
   /v1/osgi/available-plugins:
     get:
+      description: Returns a list of JAR files available for deployment from the undeployed
+        folder. These are plugins that have been uploaded but are not currently active.
       operationId: getAvailablePlugis
       responses:
         "200":
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityListView"
-      summary: get available plugins
+                $ref: "#/components/schemas/ResponseEntityListStringView"
+      summary: Get available plugins
       tags:
       - OSGi Plugins
   /v1/osgi/dotsystem:
     get:
+      description: Returns the dot system list of all bundles installed in the OSGi
+        environment. Optionally exclude system bundles from the results.
       operationId: getSystemInstalledBundles
       parameters:
       - in: query
@@ -12188,11 +13096,22 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ResponseEntityBundleListView"
-      summary: Returns the dot system list of all bundles installed
+          description: Bundles retrieved successfully
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - backend user required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - dynamic-plugins portlet access required
+      summary: Get dot system installed bundles
       tags:
       - OSGi Plugins
   /v1/osgi/extra-packages:
     get:
+      description: Returns the packages listed in the osgi-extra.conf file. These
+        packages are exported to OSGi bundles as system packages.
       operationId: getExtraPackages
       responses:
         "200":
@@ -12200,30 +13119,37 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ResponseEntityStringView"
-      summary: get extra packages
+      summary: Get extra packages
       tags:
       - OSGi Plugins
     put:
+      description: Updates the content of the osgi-extra.conf file with new package
+        definitions. These packages will be available to OSGi bundles as system packages.
       operationId: modifyExtraPackages
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: "#/components/schemas/ExtraPackagesForm"
+        description: Extra packages configuration to update
+        required: true
       responses:
         "200":
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ResponseEntityStringView"
-      summary: modify extra packages
+      summary: Modify extra packages
       tags:
       - OSGi Plugins
   /v1/osgi/jar/{jar}:
     delete:
+      description: Undeploys an OSGi bundle by moving it from the load folder to the
+        undeployed folder. This will stop and uninstall the bundle.
       operationId: undeploy
       parameters:
-      - in: path
+      - description: JAR file name to undeploy
+        in: path
         name: jar
         required: true
         schema:
@@ -12243,9 +13169,12 @@ paths:
       - OSGi Plugins
   /v1/osgi/jar/{jar}/_deploy:
     put:
+      description: Deploys an OSGi bundle from its JAR file. This will load and activate
+        the bundle from the load folder.
       operationId: deploy
       parameters:
-      - in: path
+      - description: JAR file name to deploy
+        in: path
         name: jar
         required: true
         schema:
@@ -12265,9 +13194,12 @@ paths:
       - OSGi Plugins
   /v1/osgi/jar/{jar}/_start:
     put:
+      description: Starts a specific OSGi bundle by jar name. System bundles cannot
+        be started manually.
       operationId: start_1
       parameters:
-      - in: path
+      - description: Name of the jar file containing the OSGi bundle
+        in: path
         name: jar
         required: true
         schema:
@@ -12278,18 +13210,34 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ResponseEntityStringView"
+          description: Bundle started successfully
         "400":
-          description: Can not stop system bundle
+          content:
+            application/json: {}
+          description: Cannot start system bundle
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - backend user required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - dynamic-plugins portlet access required
         "404":
+          content:
+            application/json: {}
           description: Bundle not found
-      summary: starts bundle
+      summary: Start OSGi bundle
       tags:
       - OSGi Plugins
   /v1/osgi/jar/{jar}/_stop:
     put:
+      description: Stops an OSGi bundle by its JAR file name. This will deactivate
+        the bundle but not uninstall it.
       operationId: stop
       parameters:
-      - in: path
+      - description: JAR file name to stop
+        in: path
         name: jar
         required: true
         schema:
@@ -14078,40 +15026,72 @@ paths:
       - System
   /v1/relationships:
     get:
+      description: Returns orphan relationships (those defined in the parent or children
+        but not in both) for a given content type
       operationId: getOneSidedRelationships
       parameters:
-      - in: query
+      - description: Content type identifier
+        in: query
         name: contentTypeId
+        required: true
         schema:
           type: string
-      - in: query
+      - description: Page number for pagination
+        in: query
         name: page
         schema:
           type: integer
           format: int32
-      - in: query
+      - description: Number of items per page
+        in: query
         name: per_page
         schema:
           type: integer
           format: int32
           default: 0
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityRelationshipPaginationView"
+          description: One-sided relationships retrieved successfully
+        "401":
+          content:
             application/json: {}
-          description: default response
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "404":
+          content:
+            application/json: {}
+          description: Content type not found
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Get one-sided relationships
       tags:
       - Relationships
   /v1/relationships/cardinalities:
     get:
+      description: Returns all available relationship cardinality types with their
+        labels and IDs
       operationId: getCardinality
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityListMapView"
+          description: Cardinalities retrieved successfully
+        "500":
+          content:
             application/json: {}
-          description: default response
+          description: Internal server error
+      summary: Get relationship cardinalities
       tags:
       - Relationships
   /v1/roles:
@@ -15229,9 +16209,11 @@ paths:
       - Sites
   /v1/sites/{siteId}/ruleengine/actions:
     post:
+      description: Creates a new rule action for the specified site
       operationId: add_1
       parameters:
-      - in: path
+      - description: Site identifier
+        in: path
         name: siteId
         required: true
         schema:
@@ -15241,68 +16223,127 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/RestRuleAction"
+        description: Rule action data
+        required: true
       responses:
-        default:
+        "200":
           content:
             application/json: {}
-          description: default response
+          description: Rule action created successfully
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - invalid site ID or rule action data
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "404":
+          content:
+            application/json: {}
+          description: Site not found
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Create rule action
       tags:
       - Rules Engine
   /v1/sites/{siteId}/ruleengine/actions/{actionId}:
     delete:
+      description: Removes a rule action from the system
       operationId: remove_1
       parameters:
-      - in: path
+      - description: Site identifier
+        in: path
         name: siteId
         required: true
         schema:
           type: string
-      - in: path
+      - description: Rule action identifier
+        in: path
         name: actionId
         required: true
         schema:
           type: string
       responses:
-        default:
+        "204":
+          description: Rule action deleted successfully
+        "400":
           content:
             application/json: {}
-          description: default response
+          description: Bad request - invalid site ID or action ID
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "404":
+          content:
+            application/json: {}
+          description: Site or rule action not found
+      summary: Delete rule action
       tags:
       - Rules Engine
     get:
+      description: Retrieves a specific rule action by its identifier
       operationId: self_2
       parameters:
-      - in: path
+      - description: Site identifier
+        in: path
         name: siteId
         required: true
         schema:
           type: string
-      - in: path
+      - description: Rule action identifier
+        in: path
         name: actionId
         required: true
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript:
-              schema:
-                $ref: "#/components/schemas/RestRuleAction"
-            application/json:
-              schema:
-                $ref: "#/components/schemas/RestRuleAction"
-          description: default response
+            application/json: {}
+          description: Rule action retrieved successfully
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - invalid site ID or action ID
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "404":
+          content:
+            application/json: {}
+          description: Site or rule action not found
+      summary: Get rule action by ID
       tags:
       - Rules Engine
     put:
+      description: Updates an existing rule action
       operationId: update_4
       parameters:
-      - in: path
+      - description: Site identifier
+        in: path
         name: siteId
         required: true
         schema:
           type: string
-      - in: path
+      - description: Rule action identifier
+        in: path
         name: actionId
         required: true
         schema:
@@ -15312,20 +16353,39 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/RestRuleAction"
+        description: Updated rule action data
+        required: true
       responses:
-        default:
+        "200":
           content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/RestRuleAction"
-          description: default response
+            application/json: {}
+          description: Rule action updated successfully
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - invalid parameters or rule action data
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "404":
+          content:
+            application/json: {}
+          description: Site or rule action not found
+      summary: Update rule action
       tags:
       - Rules Engine
   /v1/sites/{siteId}/ruleengine/conditions:
     post:
+      description: Creates a new rule condition for the specified site
       operationId: add_3
       parameters:
-      - in: path
+      - description: Site identifier
+        in: path
         name: siteId
         required: true
         schema:
@@ -15335,63 +16395,133 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/RestCondition"
+        description: Rule condition data
+        required: true
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                description: "JSON object containing the created condition ID in format:\
+                  \ { 'id': 'condition-uuid' }"
+          description: Condition created successfully
+        "400":
           content:
             application/json: {}
-          description: default response
+          description: Bad request - invalid site ID or condition data
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "404":
+          content:
+            application/json: {}
+          description: Site not found
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Create rule condition
       tags:
       - Rules Engine
   /v1/sites/{siteId}/ruleengine/conditions/{conditionId}:
     delete:
+      description: Removes a rule condition from the system
       operationId: remove_3
       parameters:
-      - in: path
+      - description: Site identifier
+        in: path
         name: siteId
         required: true
         schema:
           type: string
-      - in: path
+      - description: Condition identifier
+        in: path
         name: conditionId
         required: true
         schema:
           type: string
       responses:
-        default:
+        "204":
+          description: Condition deleted successfully
+        "400":
           content:
-            '*/*': {}
-          description: default response
+            application/json: {}
+          description: Bad request - invalid site ID or condition ID
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "404":
+          content:
+            application/json: {}
+          description: Site or condition not found
+      summary: Delete rule condition
       tags:
       - Rules Engine
     get:
+      description: Retrieves a specific rule condition by its identifier
       operationId: self_4
       parameters:
-      - in: path
+      - description: Site identifier
+        in: path
         name: siteId
         required: true
         schema:
           type: string
-      - in: path
+      - description: Condition identifier
+        in: path
         name: conditionId
         required: true
         schema:
           type: string
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RestCondition"
+          description: Condition retrieved successfully
+        "400":
           content:
             application/json: {}
-          description: default response
+          description: Bad request - invalid site ID or condition ID
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "404":
+          content:
+            application/json: {}
+          description: Site or condition not found
+      summary: Get condition by ID
       tags:
       - Rules Engine
     put:
+      description: Updates an existing rule condition
       operationId: update_6
       parameters:
-      - in: path
+      - description: Site identifier
+        in: path
         name: siteId
         required: true
         schema:
           type: string
-      - in: path
+      - description: Condition identifier
+        in: path
         name: conditionId
         required: true
         schema:
@@ -15401,45 +16531,90 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/RestCondition"
+        description: Updated rule condition data
+        required: true
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/RestCondition"
-          description: default response
+          description: Condition updated successfully
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - invalid parameters or condition data
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "404":
+          content:
+            application/json: {}
+          description: Site or condition not found
+      summary: Update rule condition
       tags:
       - Rules Engine
   /v1/sites/{siteId}/ruleengine/conditions/{conditionId}/conditionValues:
     get:
+      description: Retrieves all condition values for a specific condition within
+        a rule
       operationId: list_6
       parameters:
-      - in: path
+      - description: Site identifier
+        in: path
         name: siteId
         required: true
         schema:
           type: string
-      - in: path
+      - description: Condition identifier
+        in: path
         name: conditionId
         required: true
         schema:
           type: string
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MapStringRestConditionValueView"
+          description: Condition values retrieved successfully
+        "400":
           content:
             application/json: {}
-          description: default response
+          description: Bad request - invalid site ID or condition ID
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "404":
+          content:
+            application/json: {}
+          description: Site or condition not found
+      summary: List condition values
       tags:
       - Rules Engine
     post:
+      description: Creates a new condition value for a specific condition
       operationId: add_4
       parameters:
-      - in: path
+      - description: Site identifier
+        in: path
         name: siteId
         required: true
         schema:
           type: string
-      - in: path
+      - description: Condition identifier
+        in: path
         name: conditionId
         required: true
         schema:
@@ -15449,78 +16624,152 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/RestConditionValue"
+        description: Condition value data
+        required: true
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Response containing the created condition value ID
+                example:
+                  id: "12345"
+          description: Condition value created successfully
+        "400":
           content:
             application/json: {}
-          description: default response
+          description: Bad request - invalid parameters or condition value data
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "404":
+          content:
+            application/json: {}
+          description: Site or condition not found
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Create condition value
       tags:
       - Rules Engine
   /v1/sites/{siteId}/ruleengine/conditions/{conditionId}/conditionValues/{valueId}:
     delete:
+      description: Removes a condition value from a condition
       operationId: remove_4
       parameters:
-      - in: path
+      - description: Site identifier
+        in: path
         name: siteId
         required: true
         schema:
           type: string
-      - in: path
+      - description: Condition identifier
+        in: path
         name: conditionId
         required: true
         schema:
           type: string
-      - in: path
+      - description: Condition value identifier
+        in: path
         name: valueId
         required: true
         schema:
           type: string
       responses:
-        default:
+        "204":
+          description: Condition value deleted successfully
+        "400":
           content:
-            '*/*': {}
-          description: default response
+            application/json: {}
+          description: Bad request - invalid parameters
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "404":
+          content:
+            application/json: {}
+          description: "Site, condition, or value not found"
+      summary: Delete condition value
       tags:
       - Rules Engine
     get:
+      description: Retrieves a specific condition value by its identifier
       operationId: self_5
       parameters:
-      - in: path
+      - description: Site identifier
+        in: path
         name: siteId
         required: true
         schema:
           type: string
-      - in: path
+      - description: Condition identifier
+        in: path
         name: conditionId
         required: true
         schema:
           type: string
-      - in: path
+      - description: Condition value identifier
+        in: path
         name: valueId
         required: true
         schema:
           type: string
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RestConditionValue"
+          description: Condition value retrieved successfully
+        "400":
           content:
             application/json: {}
-          description: default response
+          description: Bad request - invalid parameters
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "404":
+          content:
+            application/json: {}
+          description: "Site, condition, or value not found"
+      summary: Get condition value by ID
       tags:
       - Rules Engine
     put:
+      description: Updates an existing condition value
       operationId: update_7
       parameters:
-      - in: path
+      - description: Site identifier
+        in: path
         name: siteId
         required: true
         schema:
           type: string
-      - in: path
+      - description: Condition identifier
+        in: path
         name: conditionId
         required: true
         schema:
           type: string
-      - in: path
+      - description: Condition value identifier
+        in: path
         name: valueId
         required: true
         schema:
@@ -15530,44 +16779,75 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/RestConditionValue"
+        description: Updated condition value data
+        required: true
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/RestConditionValue"
-          description: default response
+          description: Condition value updated successfully
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - invalid parameters or condition value data
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "404":
+          content:
+            application/json: {}
+          description: "Site, condition, or value not found"
+      summary: Update condition value
       tags:
       - Rules Engine
   /v1/sites/{siteId}/ruleengine/rules:
     get:
+      description: Returns all rules defined for the specified site
       operationId: list_4
       parameters:
-      - in: path
+      - description: Site identifier
+        in: path
         name: siteId
         required: true
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript:
-              schema:
-                type: object
-                additionalProperties:
-                  $ref: "#/components/schemas/RestRule"
             application/json:
               schema:
                 type: object
-                additionalProperties:
-                  $ref: "#/components/schemas/RestRule"
-          description: default response
+                description: Map of rule keys to RestRule objects containing all rules
+                  for the site
+          description: Rules retrieved successfully
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - invalid site ID
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+      summary: List rules
       tags:
       - Rules Engine
     post:
+      description: Creates a new rule for the specified site
       operationId: add
       parameters:
-      - in: path
+      - description: Site identifier
+        in: path
         name: siteId
         required: true
         schema:
@@ -15577,69 +16857,129 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/RestRule"
+        description: Rule data
+        required: true
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                type: object
+                description: "JSON object containing the created rule ID in format:\
+                  \ { 'id': 'rule-uuid' }"
+          description: Rule created successfully
+        "400":
+          content:
             application/json: {}
-          description: default response
+          description: Bad request - invalid site ID or rule data
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Create rule
       tags:
       - Rules Engine
   /v1/sites/{siteId}/ruleengine/rules/{ruleId}:
     delete:
+      description: Removes a rule from the system
       operationId: remove
       parameters:
-      - in: path
+      - description: Site identifier
+        in: path
         name: siteId
         required: true
         schema:
           type: string
-      - in: path
+      - description: Rule identifier
+        in: path
         name: ruleId
         required: true
         schema:
           type: string
       responses:
-        default:
+        "204":
+          description: Rule deleted successfully
+        "400":
           content:
-            '*/*': {}
-          description: default response
+            application/json: {}
+          description: Bad request - invalid site ID or rule ID
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "404":
+          content:
+            application/json: {}
+          description: Rule not found
+      summary: Delete rule
       tags:
       - Rules Engine
     get:
+      description: Retrieves a specific rule by its identifier
       operationId: self_1
       parameters:
-      - in: path
+      - description: Site identifier
+        in: path
         name: siteId
         required: true
         schema:
           type: string
-      - in: path
+      - description: Rule identifier
+        in: path
         name: ruleId
         required: true
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript:
-              schema:
-                $ref: "#/components/schemas/RestRule"
             application/json:
               schema:
                 $ref: "#/components/schemas/RestRule"
-          description: default response
+          description: Rule retrieved successfully
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - invalid site ID or rule ID
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "404":
+          content:
+            application/json: {}
+          description: Rule not found
+      summary: Get rule by ID
       tags:
       - Rules Engine
     put:
+      description: Updates an existing rule
       operationId: update_3
       parameters:
-      - in: path
+      - description: Site identifier
+        in: path
         name: siteId
         required: true
         schema:
           type: string
-      - in: path
+      - description: Rule identifier
+        in: path
         name: ruleId
         required: true
         schema:
@@ -15649,48 +16989,89 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/RestRule"
+        description: Updated rule data
+        required: true
       responses:
-        default:
+        "200":
           content:
-            application/javascript:
-              schema:
-                $ref: "#/components/schemas/RestRule"
             application/json:
               schema:
                 $ref: "#/components/schemas/RestRule"
-          description: default response
+          description: Rule updated successfully
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - invalid parameters or rule data
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "404":
+          content:
+            application/json: {}
+          description: Rule not found
+      summary: Update rule
       tags:
       - Rules Engine
   /v1/sites/{siteId}/ruleengine/rules/{ruleId}/conditionGroups:
     get:
+      description: Retrieves all condition groups for a specific rule
       operationId: list_5
       parameters:
-      - in: path
+      - description: Site identifier
+        in: path
         name: siteId
         required: true
         schema:
           type: string
-      - in: path
+      - description: Rule identifier
+        in: path
         name: ruleId
         required: true
         schema:
           type: string
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MapStringRestConditionGroupView"
+          description: Condition groups retrieved successfully
+        "400":
           content:
             application/json: {}
-          description: default response
+          description: Bad request - invalid site ID or rule ID
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "404":
+          content:
+            application/json: {}
+          description: Site or rule not found
+      summary: List condition groups
       tags:
       - Rules Engine
     post:
+      description: Creates a new condition group for a specific rule
       operationId: add_2
       parameters:
-      - in: path
+      - description: Site identifier
+        in: path
         name: siteId
         required: true
         schema:
           type: string
-      - in: path
+      - description: Rule identifier
+        in: path
         name: ruleId
         required: true
         schema:
@@ -15700,81 +17081,151 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/RestConditionGroup"
+        description: Condition group data
+        required: true
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Response containing the created condition group ID
+          description: Condition group created successfully
+        "400":
           content:
             application/json: {}
-          description: default response
+          description: Bad request - invalid parameters or condition group data
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "404":
+          content:
+            application/json: {}
+          description: Site or rule not found
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Create condition group
       tags:
       - Rules Engine
   /v1/sites/{siteId}/ruleengine/rules/{ruleId}/conditionGroups/{conditionGroupId}:
     delete:
+      description: Deletes a condition group and all its child conditions
       operationId: remove_2
       parameters:
-      - in: path
+      - description: Site identifier
+        in: path
         name: siteId
         required: true
         schema:
           type: string
-      - in: path
+      - description: Rule identifier
+        in: path
         name: ruleId
         required: true
         schema:
           type: string
-      - in: path
+      - description: Condition group identifier
+        in: path
         name: conditionGroupId
         required: true
         schema:
           type: string
       responses:
-        default:
+        "204":
+          description: Condition group deleted successfully
+        "400":
           content:
-            '*/*': {}
-          description: default response
+            application/json: {}
+          description: Bad request - invalid parameters
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "404":
+          content:
+            application/json: {}
+          description: "Site, rule, or condition group not found"
+      summary: Delete condition group
       tags:
       - Rules Engine
   /v1/sites/{siteId}/ruleengine/rules/{ruleId}/conditionGroups/{groupId}:
     get:
+      description: Retrieves a specific condition group by its identifier
       operationId: self_3
       parameters:
-      - in: path
+      - description: Site identifier
+        in: path
         name: siteId
         required: true
         schema:
           type: string
-      - in: path
+      - description: Rule identifier
+        in: path
         name: ruleId
         required: true
         schema:
           type: string
-      - in: path
+      - description: Condition group identifier
+        in: path
         name: groupId
         required: true
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/RestConditionGroup"
-          description: default response
+          description: Condition group retrieved successfully
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - invalid parameters
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "404":
+          content:
+            application/json: {}
+          description: "Site, rule, or condition group not found"
+      summary: Get condition group by ID
       tags:
       - Rules Engine
     put:
+      description: Updates an existing condition group
       operationId: update_5
       parameters:
-      - in: path
+      - description: Site identifier
+        in: path
         name: siteId
         required: true
         schema:
           type: string
-      - in: path
+      - description: Rule identifier
+        in: path
         name: ruleId
         required: true
         schema:
           type: string
-      - in: path
+      - description: Condition group identifier
+        in: path
         name: groupId
         required: true
         schema:
@@ -15784,13 +17235,32 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/RestConditionGroup"
+        description: Updated condition group data
+        required: true
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/RestConditionGroup"
-          description: default response
+          description: Condition group updated successfully
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - invalid parameters or condition group data
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "404":
+          content:
+            application/json: {}
+          description: "Site, rule, or condition group not found"
+      summary: Update condition group
       tags:
       - Rules Engine
   /v1/storages/chain/_replicate/{from}/to/{to}:
@@ -16199,22 +17669,42 @@ paths:
       - Testing
   /v1/system/ruleengine/actionlets:
     get:
+      description: Retrieves all available actionlets for the rules engine
       operationId: list_10
       responses:
-        default:
+        "200":
           content:
             application/json: {}
-          description: default response
+          description: Actionlets retrieved successfully
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+      summary: List actionlets
       tags:
       - Rules Engine
   /v1/system/ruleengine/conditionlets:
     get:
+      description: Retrieves all available conditionlets for the rules engine
       operationId: list_11
       responses:
-        default:
+        "200":
           content:
             application/json: {}
-          description: default response
+          description: Conditionlets retrieved successfully
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+      summary: List conditionlets
       tags:
       - Rules Engine
   /v1/tags:
@@ -22650,6 +24140,25 @@ components:
           $ref: "#/components/schemas/PushPublishBean"
         pushPublishBean:
           $ref: "#/components/schemas/PushPublishBean"
+    AnalyticsEventsResult:
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/Error"
+        failed:
+          type: integer
+          format: int64
+        status:
+          type: string
+          enum:
+          - SUCCESS
+          - PARTIAL_SUCCESS
+          - ERROR
+        success:
+          type: integer
+          format: int64
     AnalyticsQuery:
       type: object
       properties:
@@ -22718,6 +24227,29 @@ components:
           type: boolean
         userId:
           type: string
+    AppView:
+      type: object
+      properties:
+        allowExtraParams:
+          type: boolean
+        configurationsCount:
+          type: integer
+          format: int64
+        description:
+          type: string
+        iconUrl:
+          type: string
+        key:
+          type: string
+        name:
+          type: string
+        sites:
+          type: array
+          items:
+            $ref: "#/components/schemas/SiteView"
+        sitesWithWarnings:
+          type: integer
+          format: int32
     AssetInfoRequestForm:
       type: object
       properties:
@@ -24558,6 +26090,26 @@ components:
           type: array
           items:
             type: string
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          enum:
+          - REQUIRED_FIELD_MISSING
+          - INVALID_STRING_TYPE
+          - INVALID_JSON_OBJECT_TYPE
+          - INVALID_JSON_ARRAY_TYPE
+          - UNKNOWN_FIELD
+          - INVALID_DATE_FORMAT
+          - INVALID_SITE_KEY
+        eventIndex:
+          type: integer
+          format: int32
+        field:
+          type: string
+        message:
+          type: string
     ErrorDetail:
       type: object
       properties:
@@ -26988,6 +28540,20 @@ components:
       properties:
         fireTransferAssetsJob:
           type: boolean
+    MapStringRestConditionGroupView:
+      type: object
+      additionalProperties:
+        $ref: "#/components/schemas/RestConditionGroup"
+      properties:
+        empty:
+          type: boolean
+    MapStringRestConditionValueView:
+      type: object
+      additionalProperties:
+        $ref: "#/components/schemas/RestConditionValue"
+      properties:
+        empty:
+          type: boolean
     MapStringRestLanguageView:
       type: object
       additionalProperties:
@@ -27403,6 +28969,37 @@ components:
         totalEntries:
           type: integer
           format: int64
+    PaginatorOrdered:
+      type: object
+    ParamDescriptor:
+      type: object
+      properties:
+        buttonEndpoint:
+          type: string
+        buttonLabel:
+          type: string
+        envshow:
+          type: boolean
+        envvar:
+          type: string
+        hidden:
+          type: boolean
+        hint:
+          type: string
+        label:
+          type: string
+        required:
+          type: boolean
+        type:
+          type: string
+          enum:
+          - STRING
+          - BOOL
+          - SELECT
+          - BUTTON
+          - GENERATED_STRING
+        value:
+          type: object
     ParameterModel:
       type: object
       properties:
@@ -28099,6 +29696,54 @@ components:
           type: array
           items:
             type: string
+    ResponseEntityAppListView:
+      type: object
+      properties:
+        entity:
+          type: array
+          items:
+            $ref: "#/components/schemas/AppView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityAppView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/AppView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
     ResponseEntityBaseContentTypesView:
       type: object
       properties:
@@ -28615,6 +30260,54 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Environment"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityExperimentHealthView:
+      type: object
+      properties:
+        entity:
+          type: object
+          additionalProperties:
+            type: object
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityExperimentOperationView:
+      type: object
+      properties:
+        entity:
+          type: string
         errors:
           type: array
           items:
@@ -29407,56 +31100,6 @@ components:
           type: array
           items:
             type: string
-    ResponseEntityListView:
-      type: object
-      properties:
-        entity:
-          type: array
-          items:
-            type: object
-        errors:
-          type: array
-          items:
-            $ref: "#/components/schemas/ErrorEntity"
-        i18nMessagesMap:
-          type: object
-          additionalProperties:
-            type: string
-        messages:
-          type: array
-          items:
-            $ref: "#/components/schemas/MessageEntity"
-        pagination:
-          $ref: "#/components/schemas/Pagination"
-        permissions:
-          type: array
-          items:
-            type: string
-    ResponseEntityListViewString:
-      type: object
-      properties:
-        entity:
-          type: array
-          items:
-            type: string
-        errors:
-          type: array
-          items:
-            $ref: "#/components/schemas/ErrorEntity"
-        i18nMessagesMap:
-          type: object
-          additionalProperties:
-            type: string
-        messages:
-          type: array
-          items:
-            $ref: "#/components/schemas/MessageEntity"
-        pagination:
-          $ref: "#/components/schemas/Pagination"
-        permissions:
-          type: array
-          items:
-            type: string
     ResponseEntityLoggerListView:
       type: object
       properties:
@@ -29982,6 +31625,29 @@ components:
           type: array
           items:
             type: object
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityRelationshipPaginationView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/PaginatorOrdered"
         errors:
           type: array
           items:
@@ -30555,29 +32221,6 @@ components:
       properties:
         entity:
           $ref: "#/components/schemas/VersionableView"
-        errors:
-          type: array
-          items:
-            $ref: "#/components/schemas/ErrorEntity"
-        i18nMessagesMap:
-          type: object
-          additionalProperties:
-            type: string
-        messages:
-          type: array
-          items:
-            $ref: "#/components/schemas/MessageEntity"
-        pagination:
-          $ref: "#/components/schemas/Pagination"
-        permissions:
-          type: array
-          items:
-            type: string
-    ResponseEntityView:
-      type: object
-      properties:
-        entity:
-          type: object
         errors:
           type: array
           items:
@@ -31610,8 +33253,44 @@ components:
         resultsSize:
           type: integer
           format: int64
+    Secret:
+      type: object
+      properties:
+        envshow:
+          type: boolean
+        envvar:
+          type: string
+        hidden:
+          type: boolean
+        type:
+          type: string
+          enum:
+          - STRING
+          - BOOL
+          - SELECT
+          - BUTTON
+          - GENERATED_STRING
+        value:
+          type: array
+          items:
+            type: string
     SecretForm:
       type: object
+    SecretView:
+      type: object
+      properties:
+        dynamic:
+          type: boolean
+        name:
+          type: string
+        paramDescriptor:
+          $ref: "#/components/schemas/ParamDescriptor"
+        secret:
+          $ref: "#/components/schemas/Secret"
+        warnings:
+          type: array
+          items:
+            type: string
     SelectField:
       type: object
       allOf:
@@ -31914,6 +33593,22 @@ components:
           type: string
         value:
           type: string
+    SiteView:
+      type: object
+      properties:
+        configured:
+          type: boolean
+        id:
+          type: string
+        name:
+          type: string
+        secrets:
+          type: array
+          items:
+            $ref: "#/components/schemas/SecretView"
+        secretsWithWarnings:
+          type: integer
+          format: int32
     SmallRoleView:
       type: object
       properties:

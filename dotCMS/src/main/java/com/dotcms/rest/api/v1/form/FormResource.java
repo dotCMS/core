@@ -31,13 +31,21 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import org.glassfish.jersey.server.JSONP;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import com.dotcms.rest.annotation.SwaggerCompliant;
 
 /**
  * Provides method to access information about form
  */
+@SwaggerCompliant(value = "Rules engine and business logic APIs", batch = 6)
 @Path("/v1/form")
-@Tag(name = "Forms", description = "Form management and processing")
+@Tag(name = "Forms")
 public class FormResource {
 
     private String SUCCESS_CALLBACK_FUNCTION_TEMPLATE = "const formSuccessCallback_%s = function(contentlet){%s};";
@@ -47,50 +55,37 @@ public class FormResource {
         this.webResource = new WebResource();
     }
 
-    /**
-     * Response with the <b>successCallback function</b> for a FORM with the ID or variable name equals to
-     * <code>idOrVar</code>.
-     *
-     * The <b>successCallback function</b> has the follow sintax:
-     * <code>
-     *     const formSuccessCallback_[Content Type ID] = function(contentlet){
-     *         [Content Type formSuccessCallback field value]
-     *     };
-     * </code>
-     *
-     * If we have a form with the follow value in the formSuccessCallback field:
-     *
-     * <code>
-     *     window.location='/contact-us/thank-you?id=' + contentlet.identifier
-     * </code>
-     *
-     * ... and with id equals to:  897cf4a9171a4204accbc1b498c813fe
-     * Then this end point is going to response with the follow code:
-     *
-     * <code>
-     *     const formSuccessCallback_897cf4a9171a4204accbc1b498c813fe = function(contentlet){
-     *         window.location='/contact-us/thank-you?id=' + contentlet.identifier
-     *     };
-     * </code>
-     *
-     * If the Content type's id include '-' character like: 897cf4a9-171a-4204-accb-c1b498c813fe, then
-     * the '-' are remove for the <b>successCallback function</b> name.
-     *
-     *
-     * @param req
-     * @param res
-     * @param idOrVar form's Id or variable name
-     * @return
-     * @throws DotDataException
-     * @throws DotSecurityException
-     */
+    @Operation(
+        summary = "Get form success callback function",
+        description = "Generates a JavaScript callback function for a form based on its formSuccessCallback field value. The function name includes the content type ID with dashes removed. Returns executable JavaScript code."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Success callback function generated successfully",
+                    content = @Content(mediaType = "application/javascript")),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - formSuccessCallback field not found in form",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "Form not found or not a form content type",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @Path("/{idOrVar}/successCallback")
     @NoCache
     @Produces({"application/javascript"})
     public final Response getSuccessCallbackFunction(@Context final HttpServletRequest req,
             @Context final HttpServletResponse res,
-            @PathParam("idOrVar") final String idOrVar)
+            @Parameter(description = "Form ID or variable name", required = true) @PathParam("idOrVar") final String idOrVar)
             throws DotDataException, DotSecurityException {
 
         final ContentType contentType = APILocator.getContentTypeAPI(APILocator.systemUser())

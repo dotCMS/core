@@ -22,6 +22,12 @@ import com.dotmarketing.portlets.rules.actionlet.RuleActionlet;
 import com.dotmarketing.portlets.rules.exception.InvalidActionInstanceException;
 import com.dotmarketing.portlets.rules.model.RuleAction;
 import com.liferay.portal.model.User;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -39,7 +45,9 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import org.glassfish.jersey.server.JSONP;
+import com.dotcms.rest.annotation.SwaggerCompliant;
 
+@SwaggerCompliant(value = "Rules engine and business logic APIs", batch = 6)
 @Path("/v1/sites/{siteId}/ruleengine")
 @Tag(name = "Rules Engine")
 public class ActionResource {
@@ -64,20 +72,36 @@ public class ActionResource {
         this.webResource = webResource;
     }
 
-    /**
-     * <p>Returns a JSON representation of the Rule with the given ruleId
-     * <p/>
-     * Usage: GET api/rules-engine/sites/sites/{siteId}/rules/{ruleId}
-     */
+    @Operation(
+        summary = "Get rule action by ID",
+        description = "Retrieves a specific rule action by its identifier"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Rule action retrieved successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid site ID or action ID",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "Site or rule action not found",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @NoCache
     @JSONP
     @Path("/actions/{actionId}")
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces(MediaType.APPLICATION_JSON)
     public RestRuleAction self(@Context HttpServletRequest request,
                          @Context final HttpServletResponse response,
-                         @PathParam("siteId") String siteId,
-                         @PathParam("actionId") String actionId) {
+                         @Parameter(description = "Site identifier", required = true) @PathParam("siteId") String siteId,
+                         @Parameter(description = "Rule action identifier", required = true) @PathParam("actionId") String actionId) {
 
         siteId = checkNotEmpty(siteId, BadRequestException.class, "Site Id is required.");
         User user = getUser(request, response);
@@ -86,21 +110,42 @@ public class ActionResource {
     }
 
 
-    /**
-     * <p>Saves a Rule Action
-     * <br>
-     * <p/>
-     * Usage: /rules/
-     */
-
+    @Operation(
+        summary = "Create rule action",
+        description = "Creates a new rule action for the specified site"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Rule action created successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid site ID or rule action data",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "Site not found",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @POST
     @Path("/actions/")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     public Response add(@Context HttpServletRequest request,
                         @Context final HttpServletResponse response,
-                                   @PathParam("siteId") String siteId,
-                                   RestRuleAction ruleAction) throws JSONException {
+                                   @Parameter(description = "Site identifier", required = true) @PathParam("siteId") String siteId,
+                                   @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                                       description = "Rule action data", 
+                                       required = true,
+                                       content = @Content(schema = @Schema(implementation = RestRuleAction.class))
+                                   ) RestRuleAction ruleAction) throws JSONException {
         siteId = checkNotEmpty(siteId, BadRequestException.class, "Site id is required.");
         User user = getUser(request, response);
         getHost(siteId, user);
@@ -113,22 +158,40 @@ public class ActionResource {
         return Response.ok().type(MediaType.APPLICATION_JSON_TYPE).entity("{ \"id\": \"" + newId + "\" }").build();
     }
 
-    /**
-     * <p>Updates the Rule Action with the given id
-     * <br>
-     * <p/>
-     * Usage: /rules/
-     */
-
+    @Operation(
+        summary = "Update rule action",
+        description = "Updates an existing rule action"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Rule action updated successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid parameters or rule action data",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "Site or rule action not found",
+                    content = @Content(mediaType = "application/json"))
+    })
     @PUT
     @Path("/actions/{actionId}")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     public RestRuleAction update(@Context HttpServletRequest request,
                                  @Context final HttpServletResponse response,
-                                           @PathParam("siteId") String siteId,
-                                           @PathParam("actionId") String actionId,
-                                           RestRuleAction ruleAction) throws JSONException {
+                                           @Parameter(description = "Site identifier", required = true) @PathParam("siteId") String siteId,
+                                           @Parameter(description = "Rule action identifier", required = true) @PathParam("actionId") String actionId,
+                                           @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                                               description = "Updated rule action data", 
+                                               required = true,
+                                               content = @Content(schema = @Schema(implementation = RestRuleAction.class))
+                                           ) RestRuleAction ruleAction) throws JSONException {
         User user = getUser(request, response);
         getHost(siteId, user); // forces check that host exists. This should be handled by rulesAPI?
 
@@ -137,20 +200,33 @@ public class ActionResource {
         return ruleAction;
     }
 
-    /**
-     * <p>Deletes the RuleAction with the given ruleActionId
-     * <br>
-     * <p/>
-     * Usage: DELETE api/rules-engine/rules/ruleActions/{ruleActionId}
-     */
+    @Operation(
+        summary = "Delete rule action",
+        description = "Removes a rule action from the system"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "204", 
+                    description = "Rule action deleted successfully"),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid site ID or action ID",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "Site or rule action not found",
+                    content = @Content(mediaType = "application/json"))
+    })
     @DELETE
     @Path("/actions/{actionId}")
     @Produces(MediaType.APPLICATION_JSON)
-    @Consumes(MediaType.APPLICATION_JSON)
     public Response remove(@Context HttpServletRequest request,
                            @Context final HttpServletResponse response,
-                                     @PathParam("siteId") String siteId,
-                                     @PathParam("actionId") String actionId) throws JSONException {
+                                     @Parameter(description = "Site identifier", required = true) @PathParam("siteId") String siteId,
+                                     @Parameter(description = "Rule action identifier", required = true) @PathParam("actionId") String actionId) throws JSONException {
         User user = getUser(request, response);
 
         try {

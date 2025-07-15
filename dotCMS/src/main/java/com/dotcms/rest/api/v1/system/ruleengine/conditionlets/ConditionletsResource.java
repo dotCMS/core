@@ -10,6 +10,10 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.rules.conditionlet.Conditionlet;
 import com.liferay.portal.model.User;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import java.util.Map;
@@ -23,7 +27,9 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import com.dotcms.rest.annotation.SwaggerCompliant;
 
+@SwaggerCompliant(value = "Rules engine and business logic APIs", batch = 6)
 @Path("/v1/system/ruleengine")
 @Tag(name = "Rules Engine")
 public class ConditionletsResource {
@@ -51,6 +57,21 @@ public class ConditionletsResource {
      * <p>
      * Usage: /conditionlets/
      */
+    @Operation(
+        summary = "List conditionlets",
+        description = "Retrieves all available conditionlets for the rules engine"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Conditionlets retrieved successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @Path("/conditionlets")
     @Produces(MediaType.APPLICATION_JSON)

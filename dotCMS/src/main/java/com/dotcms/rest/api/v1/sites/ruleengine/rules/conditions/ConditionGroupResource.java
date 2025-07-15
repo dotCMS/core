@@ -21,6 +21,12 @@ import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.rules.model.ConditionGroup;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.liferay.portal.model.User;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -41,7 +47,9 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import com.dotcms.rest.annotation.SwaggerCompliant;
 
+@SwaggerCompliant(value = "Rules engine and business logic APIs", batch = 6)
 @Path("/v1/sites/{siteId}/ruleengine")
 @Tag(name = "Rules Engine")
 public class ConditionGroupResource  {
@@ -67,13 +75,36 @@ public class ConditionGroupResource  {
         this.webResource = webResource;
     }
 
+    @Operation(
+        summary = "List condition groups",
+        description = "Retrieves all condition groups for a specific rule"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Condition groups retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = MapStringRestConditionGroupView.class))),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid site ID or rule ID",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "Site or rule not found",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @NoCache
     @Path("/rules/{ruleId}/conditionGroups")
     @Produces(MediaType.APPLICATION_JSON)
     public Response list(@Context HttpServletRequest request,
                          @Context final HttpServletResponse response,
-                         @PathParam("siteId") String siteId, @PathParam("ruleId") String ruleId)
+                         @Parameter(description = "Site identifier", required = true) @PathParam("siteId") String siteId, 
+                         @Parameter(description = "Rule identifier", required = true) @PathParam("ruleId") String ruleId)
             throws JSONException {
 
         siteId = checkNotEmpty(siteId, BadRequestException.class, "Site Id is required.");
@@ -88,15 +119,37 @@ public class ConditionGroupResource  {
         return Response.ok(hash).build();
     }
 
+    @Operation(
+        summary = "Get condition group by ID",
+        description = "Retrieves a specific condition group by its identifier"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Condition group retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = RestConditionGroup.class))),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid parameters",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "Site, rule, or condition group not found",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @NoCache
     @Path("/rules/{ruleId}/conditionGroups/{groupId}")
     @Produces(MediaType.APPLICATION_JSON)
     public RestConditionGroup self(@Context HttpServletRequest request,
                                    @Context final HttpServletResponse response,
-                                      @PathParam("siteId") String siteId,
-                                      @PathParam("ruleId") String ruleId,
-                                      @PathParam("groupId") String groupId) throws JSONException {
+                                      @Parameter(description = "Site identifier", required = true) @PathParam("siteId") String siteId,
+                                      @Parameter(description = "Rule identifier", required = true) @PathParam("ruleId") String ruleId,
+                                      @Parameter(description = "Condition group identifier", required = true) @PathParam("groupId") String groupId) throws JSONException {
         siteId = checkNotEmpty(siteId, BadRequestException.class, "Site Id is required.");
         ruleId = checkNotEmpty(ruleId, BadRequestException.class, "Rule Id is required.");
         User user = getUser(request, response);
@@ -106,21 +159,44 @@ public class ConditionGroupResource  {
         return getGroupInternal(groupId, user);
     }
 
-    /**
-     * <p>Saves a Condition Group
-     * <br>
-     * <p/>
-     * Usage: /rules/
-     */
+    @Operation(
+        summary = "Create condition group",
+        description = "Creates a new condition group for a specific rule"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Condition group created successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(type = "object", description = "Response containing the created condition group ID"))),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid parameters or condition group data",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "Site or rule not found",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @POST
     @Path("/rules/{ruleId}/conditionGroups")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     public Response add(@Context HttpServletRequest request,
                         @Context final HttpServletResponse response,
-                                       @PathParam("siteId") String siteId,
-                                       @PathParam("ruleId") String ruleId,
-                                       RestConditionGroup conditionGroup) throws JSONException {
+                                       @Parameter(description = "Site identifier", required = true) @PathParam("siteId") String siteId,
+                                       @Parameter(description = "Rule identifier", required = true) @PathParam("ruleId") String ruleId,
+                                       @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                                           description = "Condition group data", 
+                                           required = true,
+                                           content = @Content(schema = @Schema(implementation = RestConditionGroup.class))
+                                       ) RestConditionGroup conditionGroup) throws JSONException {
         siteId = checkNotEmpty(siteId, BadRequestException.class, "Site id is required.");
         ruleId = checkNotEmpty(ruleId, BadRequestException.class, "Rule id is required.");
         User user = getUser(request, response);
@@ -137,22 +213,42 @@ public class ConditionGroupResource  {
         }
     }
 
-    /**
-     * <p>Updates a Condition Group
-     * <br>
-     * <p/>
-     * Usage: /rules/
-     */
+    @Operation(
+        summary = "Update condition group",
+        description = "Updates an existing condition group"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Condition group updated successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = RestConditionGroup.class))),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid parameters or condition group data",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "Site, rule, or condition group not found",
+                    content = @Content(mediaType = "application/json"))
+    })
     @PUT
     @Path("/rules/{ruleId}/conditionGroups/{groupId}")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     public RestConditionGroup update(@Context final HttpServletRequest request,
                                      @Context final HttpServletResponse response,
-                                                @PathParam("siteId") String siteId,
-                                                @PathParam("ruleId") String ruleId,
-                                                @PathParam("groupId") String groupId,
-                                                RestConditionGroup conditionGroup) throws JSONException {
+                                                @Parameter(description = "Site identifier", required = true) @PathParam("siteId") String siteId,
+                                                @Parameter(description = "Rule identifier", required = true) @PathParam("ruleId") String ruleId,
+                                                @Parameter(description = "Condition group identifier", required = true) @PathParam("groupId") String groupId,
+                                                @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                                                    description = "Updated condition group data", 
+                                                    required = true,
+                                                    content = @Content(schema = @Schema(implementation = RestConditionGroup.class))
+                                                ) RestConditionGroup conditionGroup) throws JSONException {
         siteId = checkNotEmpty(siteId, BadRequestException.class, "Site Id is required.");
         ruleId = checkNotEmpty(ruleId, BadRequestException.class, "Rule Id is required.");
         User user = getUser(request, response);
@@ -164,20 +260,34 @@ public class ConditionGroupResource  {
         return conditionGroup;
     }
 
-    /**
-     * <p>Deletes a Condition Group and all its child Conditions
-     * <br>
-     * <p/>
-     * Usage: DELETE api/rules-engine/conditionGroups
-     */
-
+    @Operation(
+        summary = "Delete condition group",
+        description = "Deletes a condition group and all its child conditions"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "204", 
+                    description = "Condition group deleted successfully"),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid parameters",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "Site, rule, or condition group not found",
+                    content = @Content(mediaType = "application/json"))
+    })
     @DELETE
     @Path("/rules/{ruleId}/conditionGroups/{conditionGroupId}")
+    @Produces(MediaType.APPLICATION_JSON)
     public Response remove(@Context HttpServletRequest request,
                            @Context final HttpServletResponse response,
-                                         @PathParam("siteId") String siteId,
-                                         @PathParam("ruleId") String ruleId,
-                                         @PathParam("conditionGroupId") String groupId) throws JSONException {
+                                         @Parameter(description = "Site identifier", required = true) @PathParam("siteId") String siteId,
+                                         @Parameter(description = "Rule identifier", required = true) @PathParam("ruleId") String ruleId,
+                                         @Parameter(description = "Condition group identifier", required = true) @PathParam("conditionGroupId") String groupId) throws JSONException {
         User user = getUser(request, response);
 
         try {

@@ -22,6 +22,12 @@ import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -42,7 +48,9 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import org.glassfish.jersey.server.JSONP;
+import com.dotcms.rest.annotation.SwaggerCompliant;
 
+@SwaggerCompliant(value = "Rules engine and business logic APIs", batch = 6)
 @Path("/v1/sites/{siteId}/ruleengine")
 @Tag(name = "Rules Engine")
 public class RuleResource {
@@ -66,20 +74,34 @@ public class RuleResource {
         this.webResource = webResource;
     }
 
-    /**
-     * <p>Returns a JSON representation of the rules defined in the given Host or Folder
-     * <p/>
-     * Usage: /rules/{hostOrFolderIdentifier}
-     */
+    @Operation(
+        summary = "List rules",
+        description = "Returns all rules defined for the specified site"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Rules retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(type = "object", description = "Map of rule keys to RestRule objects containing all rules for the site"))),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid site ID",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @JSONP
     @Path("/rules")
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces(MediaType.APPLICATION_JSON)
     public Map<String, RestRule> list(
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
-            @PathParam("siteId") String parentId) throws DotSecurityException, DotDataException {
+            @Parameter(description = "Site identifier", required = true) @PathParam("siteId") String parentId) throws DotSecurityException, DotDataException {
 
         parentId = checkNotEmpty(parentId, BadRequestException.class, "Site Id is required.");
         User user = getUser(request, response);
@@ -92,35 +114,76 @@ public class RuleResource {
         return hash;
     }
 
-    /**
-     * <p>Returns a JSON representation of the Rule with the given ruleId
-     * <p/>
-     * Usage: GET api/rules-engine/sites/{siteId}/rules/{ruleId}
-     */
+    @Operation(
+        summary = "Get rule by ID",
+        description = "Retrieves a specific rule by its identifier"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Rule retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = RestRule.class))),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid site ID or rule ID",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "Rule not found",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @JSONP
     @Path("/rules/{ruleId}")
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public RestRule self(@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam("siteId") String siteId, @PathParam("ruleId") String ruleId) {
+    @Produces(MediaType.APPLICATION_JSON)
+    public RestRule self(@Context HttpServletRequest request, @Context final HttpServletResponse response, 
+                        @Parameter(description = "Site identifier", required = true) @PathParam("siteId") String siteId, 
+                        @Parameter(description = "Rule identifier", required = true) @PathParam("ruleId") String ruleId) {
         siteId = checkNotEmpty(siteId, BadRequestException.class, "Site Id is required.");
         User user = getUser(request, response);
         ruleId = checkNotEmpty(ruleId, BadRequestException.class, "Rule Id is required.");
         return getRuleInternal(ruleId, user);
     }
 
-    /**
-     * <p>Saves a new Rule
-     * <br>
-     * <p/>
-     * Usage: /rules/
-     */
+    @Operation(
+        summary = "Create rule",
+        description = "Creates a new rule for the specified site"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Rule created successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(type = "object", description = "JSON object containing the created rule ID in format: { 'id': 'rule-uuid' }"))),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid site ID or rule data",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @POST
     @JSONP
     @Path("/rules")
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response add(@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam("siteId") String siteId, RestRule restRule) {
+    public Response add(@Context HttpServletRequest request, @Context final HttpServletResponse response, 
+                       @Parameter(description = "Site identifier", required = true) @PathParam("siteId") String siteId, 
+                       @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                           description = "Rule data", 
+                           required = true,
+                           content = @Content(schema = @Schema(implementation = RestRule.class))
+                       ) RestRule restRule) {
         siteId = checkNotEmpty(siteId, BadRequestException.class, "Site id is required.");
         User user = getUser(request, response);
         Ruleable proxy =  getParent(siteId, user);
@@ -135,18 +198,41 @@ public class RuleResource {
         }
     }
 
-    /**
-     * <p>Updates a new Rule
-     * <br>
-     * <p/>
-     * Usage: /rules/
-     */
+    @Operation(
+        summary = "Update rule",
+        description = "Updates an existing rule"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Rule updated successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = RestRule.class))),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid parameters or rule data",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "Rule not found",
+                    content = @Content(mediaType = "application/json"))
+    })
     @PUT
     @JSONP
     @Path("/rules/{ruleId}")
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    public RestRule update(@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam("siteId") String siteId, @PathParam("ruleId") String ruleId, RestRule restRule) {
+    public RestRule update(@Context HttpServletRequest request, @Context final HttpServletResponse response, 
+                          @Parameter(description = "Site identifier", required = true) @PathParam("siteId") String siteId, 
+                          @Parameter(description = "Rule identifier", required = true) @PathParam("ruleId") String ruleId, 
+                          @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                              description = "Updated rule data", 
+                              required = true,
+                              content = @Content(schema = @Schema(implementation = RestRule.class))
+                          ) RestRule restRule) {
         siteId = checkNotEmpty(siteId, BadRequestException.class, "Site Id is required.");
         ruleId = checkNotEmpty(ruleId, BadRequestException.class, "Rule Id is required.");
         User user = getUser(request, response);
@@ -156,15 +242,32 @@ public class RuleResource {
         return restRule;
     }
 
-    /**
-     * <p>Deletes a Rule
-     * <br>
-     * <p/>
-     * Usage: DELETE api/rules-engine/rules/{ruleId}
-     */
+    @Operation(
+        summary = "Delete rule",
+        description = "Removes a rule from the system"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "204", 
+                    description = "Rule deleted successfully"),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid site ID or rule ID",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "Rule not found",
+                    content = @Content(mediaType = "application/json"))
+    })
     @DELETE
     @Path("/rules/{ruleId}")
-    public Response remove(@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam("siteId") String siteId, @PathParam("ruleId") String ruleId) {
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response remove(@Context HttpServletRequest request, @Context final HttpServletResponse response, 
+                          @Parameter(description = "Site identifier", required = true) @PathParam("siteId") String siteId, 
+                          @Parameter(description = "Rule identifier", required = true) @PathParam("ruleId") String ruleId) {
         User user = getUser(request, response);
 
         try {
