@@ -2848,11 +2848,11 @@ paths:
       summary: Fire an user custom event.
       tags:
       - Content Analytics
-  /v1/analytics/content/sitekey/generate/{siteId}:
+  /v1/analytics/content/siteconfig/{siteId}:
     get:
-      description: Generates and returns a Site Key that must be used by the client-side
-        JS code to send custom Content Analytics Events
-      operationId: generateSiteKey
+      description: Returns the expected JS configuration object that must be used
+        for client-side JS code to send custom Events
+      operationId: getSiteConfig
       parameters:
       - in: path
         name: siteId
@@ -2861,18 +2861,18 @@ paths:
           type: string
       responses:
         "200":
-          description: The Site key was generated and returned successfully
+          description: The Site configuration was returned successfully
         "400":
           description: Bad Request
-        "401":
-          description: Unauthorized
+        "403":
+          description: Forbidden
         "404":
-          description: Site ID in path is not found or incorrect path
-        "405":
-          description: Method Not Allowed
+          description: Site ID in path is not present
+        "415":
+          description: Unsupported Media Type
         "500":
           description: Internal Server Error
-      summary: Generate Site Key
+      summary: Site Configuration
       tags:
       - Content Analytics
   /v1/announcements:
@@ -6461,6 +6461,121 @@ paths:
         "500":
           description: Internal Server Error
       summary: Updates a content type
+      tags:
+      - Content Type
+  /v1/contenttype/page:
+    get:
+      description: Returns a list of content type objects based on the filtering criteria.
+      operationId: getPagesContentTypes
+      parameters:
+      - description: The URL or Identifier of the page to filter content types for
+          the palette
+        in: query
+        name: pagePathOrId
+        schema:
+          type: string
+      - description: Optional Language id
+        in: query
+        name: language
+        schema:
+          type: string
+          default: "-1"
+      - description: String to filter/search for specific content types; leave blank
+          to return all.
+        in: query
+        name: filter
+        schema:
+          type: string
+      - description: |-
+          Page number in response pagination.
+
+          Default: `1`
+        in: query
+        name: page
+        schema:
+          type: integer
+          format: int64
+          default: 1
+      - description: |-
+          Number of results per page for pagination.
+
+          Default: `10`
+        in: query
+        name: per_page
+        schema:
+          type: integer
+          format: int64
+          default: 10
+      - description: |-
+          Column(s) to sort the results. Multiple columns can be combined in a comma-separated list. Column names can also be set within a SQL string function, such as `upper()`.
+
+          Some possible values:
+
+          `name`, `velocity_var_name`, `mod_date`, `sort_order`
+
+          `description`, `structuretype`, `category`, `inode`
+        in: query
+        name: orderby
+        schema:
+          type: string
+          default: usage
+      - description: "Sort direction: choose between ascending or descending."
+        in: query
+        name: direction
+        schema:
+          type: string
+          default: ASC
+          enum:
+          - ASC
+          - DESC
+      - description: Filter by site identifier.
+        in: query
+        name: host
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              example:
+                entity:
+                - baseType: string
+                  clazz: string
+                  defaultType: true
+                  description: string
+                  fixed: true
+                  folder: string
+                  folderPath: string
+                  host: string
+                  iDate: 0
+                  icon: string
+                  id: string
+                  layout: []
+                  metadata: {}
+                  modDate: 0
+                  multilingualable: true
+                  nEntries: 0
+                  name: string
+                  siteName: string
+                  sortOrder: 0
+                  system: true
+                  variable: string
+                  versionable: true
+                  workflows: []
+                errors: []
+                i18nMessagesMap: {}
+                messages: []
+                pagination:
+                  currentPage: 0
+                  perPage: 0
+                  totalEntries: 0
+                permissions: []
+          description: Content types retrieved successfully
+        "403":
+          description: Forbidden
+        "500":
+          description: Internal Server Error
+      summary: Retrieves a list of content types for a page
       tags:
       - Content Type
   /v1/contenttype/{baseVariableName}/_copy:
