@@ -50,8 +50,8 @@
             cursor: grab;
             color: $color-palette-primary-800;
             transition:
-                opacity 250ms,
-                top 150ms;
+                transform 250ms,
+                visibility 250ms;
         }
 
         .ProseMirror {
