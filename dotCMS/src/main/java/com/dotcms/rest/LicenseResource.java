@@ -24,7 +24,15 @@ import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import com.dotcms.rest.annotation.SwaggerCompliant;
 import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -48,6 +56,7 @@ import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataParam;
 
 
+@SwaggerCompliant(value = "Legacy and utility APIs", batch = 8)
 @Path("/license")
 @Tag(name = "License")
 public class LicenseResource {
@@ -55,12 +64,32 @@ public class LicenseResource {
     private final WebResource webResource = new WebResource();
     private static final String SERVER_ID = "serverid";
 
+    @Operation(
+        summary = "Get all licenses",
+        description = "Retrieves all licenses from the license repository with details including server ID, expiration, license level, and ping status."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Licenses retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(type = "array", description = "Array of license objects containing license details including serverId, serial, level, dates, and ping status"))),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - backend user authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions to access configuration portlet",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error retrieving licenses",
+                    content = @Content(mediaType = "application/json"))
+    })
     @NoCache
     @GET
     @Path("/all/{params:.*}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getAll(@Context HttpServletRequest request,
-            @Context final HttpServletResponse response, @PathParam("params") String params) {
+            @Context final HttpServletResponse response, 
+            @Parameter(description = "URL parameters for the request", required = true) @PathParam("params") String params) {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
@@ -118,13 +147,35 @@ public class LicenseResource {
 
     }
 
+    @Operation(
+        summary = "Upload license repository file",
+        description = "Uploads a license repository ZIP file to the server. The uploaded file is processed and added to the license repository for distribution across cluster nodes."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "License file uploaded successfully (no body)"),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - no file provided or invalid file format",
+                    content = @Content(mediaType = "text/plain")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - backend user authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions to access configuration portlet",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error during license upload",
+                    content = @Content(mediaType = "application/json"))
+    })
     @NoCache
     @POST
     @Path("/upload/{params:.*}")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
+    @Produces(MediaType.APPLICATION_JSON)
     public Response putZipFile(@Context HttpServletRequest request,
-            @Context final HttpServletResponse response, @PathParam("params") String params,
-            @FormDataParam("file") InputStream inputFile,
+            @Context final HttpServletResponse response, 
+            @Parameter(description = "URL parameters for the request", required = true) @PathParam("params") String params,
+            @RequestBody(description = "License repository ZIP file", required = true) @FormDataParam("file") InputStream inputFile,
             @FormDataParam("file") FormDataContentDisposition inputFileDetail,
             @FormDataParam("return") String ret) {
 
@@ -159,11 +210,33 @@ public class LicenseResource {
     }
 
 
+    @Operation(
+        summary = "Delete license from repository",
+        description = "Deletes a specific license from the license repository by ID. This operation permanently removes the license entry from the repository."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "License deleted successfully (no body)"),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - no license ID provided",
+                    content = @Content(mediaType = "text/plain")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - backend user authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions to access configuration portlet",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error during license deletion",
+                    content = @Content(mediaType = "application/json"))
+    })
     @NoCache
     @DELETE
     @Path("/delete/{params:.*}")
+    @Produces(MediaType.APPLICATION_JSON)
     public Response delete(@Context HttpServletRequest request,
-            @Context final HttpServletResponse response, @PathParam("params") String params) {
+            @Context final HttpServletResponse response, 
+            @Parameter(description = "URL parameters including the license ID to delete", required = true) @PathParam("params") String params) {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
@@ -198,11 +271,33 @@ public class LicenseResource {
         }
     }
 
+    @Operation(
+        summary = "Pick license from repository",
+        description = "Selects and activates a specific license from the repository by serial number. This operation switches the current active license if the user has appropriate permissions."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "License picked successfully (no body)"),
+        @ApiResponse(responseCode = "304", 
+                    description = "Not modified - license already selected or community level",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - backend user authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions to access configuration portlet",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error during license selection",
+                    content = @Content(mediaType = "application/json"))
+    })
     @NoCache
     @POST
     @Path("/pick/{params:.*}")
+    @Produces(MediaType.APPLICATION_JSON)
     public Response pickLicense(@Context HttpServletRequest request,
-            @Context final HttpServletResponse response, @PathParam("params") String params) {
+            @Context final HttpServletResponse response, 
+            @Parameter(description = "URL parameters including the license serial number to pick", required = true) @PathParam("params") String params) {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
@@ -251,11 +346,30 @@ public class LicenseResource {
         }
     }
 
+    @Operation(
+        summary = "Free license from server",
+        description = "Releases a license from a specific server in the cluster. Can target remote servers via server actions or free the local server license. Supports cluster-wide license management."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "License freed successfully (no body)"),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - backend user authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions to access configuration portlet",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error during license freeing or timeout",
+                    content = @Content(mediaType = "application/json"))
+    })
     @NoCache
     @POST
     @Path("/free/{params:.*}")
+    @Produces(MediaType.APPLICATION_JSON)
     public Response freeLicense(@Context HttpServletRequest request,
-            @Context final HttpServletResponse response, @PathParam("params") String params) {
+            @Context final HttpServletResponse response, 
+            @Parameter(description = "URL parameters including optional serverid and serial for remote license freeing", required = true) @PathParam("params") String params) {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
@@ -360,12 +474,33 @@ public class LicenseResource {
         return Response.ok().build();
     }
 
+    @Operation(
+        summary = "Request license code",
+        description = "Generates a request code for obtaining a new license. Requires license type (trial/dev/prod) and license level parameters. Used in the license acquisition workflow."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "License request code generated successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - missing required parameters (licenseType or licenseLevel)",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - backend user authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions to access configuration portlet",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error during license request processing",
+                    content = @Content(mediaType = "application/json"))
+    })
     @POST
     @Path("/requestCode/{params:.*}")
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Produces(MediaType.APPLICATION_JSON)
     public Response requestLicense(
             @Context HttpServletRequest request, @Context final HttpServletResponse response,
-            @PathParam("params") String params
+            @Parameter(description = "URL parameters for the license request", required = true) @PathParam("params") String params
     ) {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
@@ -430,14 +565,35 @@ public class LicenseResource {
 
     }
 
+    @Operation(
+        summary = "Apply license text",
+        description = "Applies a license from provided license text. Validates and installs the license text obtained from the licensing system."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "License applied successfully or license validation error message",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - missing license text parameter",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - backend user authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions to access configuration portlet",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error during license application",
+                    content = @Content(mediaType = "application/json"))
+    })
     @NoCache
     @POST
     @Path("/applyLicense")
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Produces(MediaType.APPLICATION_JSON)
     public Response applyLicense(
             @Context HttpServletRequest request, @Context final HttpServletResponse response,
-            @PathParam("params") String params,
-            @QueryParam("licenseText") String licenseText
+            @Parameter(description = "URL parameters for the license application", required = false) @PathParam("params") String params,
+            @Parameter(description = "License text to apply to the system", required = true) @QueryParam("licenseText") String licenseText
     ) {
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
@@ -481,12 +637,31 @@ public class LicenseResource {
 
     }
 
+    @Operation(
+        summary = "Reset license to community",
+        description = "Resets the current license back to community level. This operation frees the current license and reverts to the default community license."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "License reset to community successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - backend user authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions to access configuration portlet",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error during license reset",
+                    content = @Content(mediaType = "application/json"))
+    })
     @NoCache
     @POST
     @Path("/resetLicense/{params:.*}")
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Produces(MediaType.APPLICATION_JSON)
     public Response resetLicense(@Context HttpServletRequest request,
-            @Context final HttpServletResponse response, @PathParam("params") String params) {
+            @Context final HttpServletResponse response, 
+            @Parameter(description = "URL parameters for the license reset operation", required = true) @PathParam("params") String params) {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
