@@ -214,6 +214,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
         if (this.disabled) {
             return;
         }
+
         this.valueChange.emit(value);
         this.onChange?.(JSON.stringify(value));
         this.onTouched?.();

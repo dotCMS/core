@@ -63,7 +63,7 @@ export class DotLinkEditorPopoverComponent implements OnDestroy {
     @ViewChild('input', { read: ElementRef }) private searchInput?: ElementRef<HTMLInputElement>;
     @ViewChild('resultListbox') private searchResultsListbox?: Listbox;
 
-    protected readonly editor = input.required<Editor>();
+    readonly editor = input.required<Editor>();
     private readonly httpClient = inject(HttpClient);
 
     protected readonly searchQuery = signal<string>('');
