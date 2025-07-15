@@ -113,13 +113,17 @@ public class RestEndpointAnnotationComplianceTest extends UnitTestBase {
     /**
      * Test REST resource classes marked with @SwaggerCompliant to validate annotation compliance.
      * This test dynamically finds all classes annotated with @SwaggerCompliant and validates them.
+     * 
+     * IMPORTANT: This test ONLY validates classes that have @SwaggerCompliant annotations.
+     * Classes without this annotation are part of the progressive rollout and should be skipped.
      */
     @Test
     public void testSwaggerCompliantResourceAnnotationCompliance() {
         List<Class<?>> swaggerCompliantClasses = findSwaggerCompliantClasses();
         
         if (swaggerCompliantClasses.isEmpty()) {
-            System.out.println("⚠️  No @SwaggerCompliant classes found. Apply @SwaggerCompliant annotation to fixed resource classes.");
+            System.out.println("✅ No @SwaggerCompliant classes found - this is expected during progressive rollout.");
+            System.out.println("   Classes without @SwaggerCompliant annotation are not yet ready for validation.");
             return;
         }
         
