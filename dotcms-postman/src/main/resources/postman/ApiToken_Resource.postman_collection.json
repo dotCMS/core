@@ -908,7 +908,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n\t\"userId\":\"dotcms.org.2795\",\n\t\"tokenId\":\"1234\",\n\t\"expirationSeconds\":\"500000\"\n}",
+							"raw": "{\n\t\"userId\":\"dotcms.org.2795\",\n\t\"tokenId\":\"12345\",\n\t\"expirationSeconds\":\"500000\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
