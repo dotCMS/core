@@ -712,6 +712,74 @@
 			"name": "Expiring Token",
 			"item": [
 				{
+					"name": "Create Limited User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"User FE creation sucessfully\", function () {    ",
+									"    console.log(jsonData);",
+									"    pm.expect(jsonData.entity.user[\"emailAddress\"]).to.eql(\"test@dotcms.com\");",
+									"});",
+									"",
+									"",
+									"pm.collectionVariables.set(\"userId\", jsonData.entity.user[\"id\"]);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"userId\":\"userid-apiToken-12345678\",\n    \"active\":true,\n    \"firstName\":\"test\",\n    \"middleName\":\"S\",\n    \"lastName\":\"test\",\n    \"nickName\":\"test\",\n    \"email\":\"test@dotcms.com\",\n    \"male\":true,\n    \"password\":[\"1\",\"2\",\"3\",\"4\",\"5\",\"6\",\"7\",\"8\"],\n    \"roles\":[\"DOTCMS_BACK_END_USER\"]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/users",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"users"
+							]
+						},
+						"description": "### Create User\n\nThis endpoint allows you to create a new user.\n\n#### Request Body\n\n- `userId` (string, optional): The unique identifier for the user.\n- `active` (boolean, required): Indicates if the user is active.\n- `firstName` (string, optional): The first name of the user.\n- `middleName` (string, optional): The middle name of the user.\n- `lastName` (string, optional): The last name of the user.\n- `nickName` (string, optional): The nickname of the user.\n- `email` (string, optional): The email address of the user.\n- `male` (boolean, required): Indicates the gender of the user.\n- `languageId` (string, optional): The language identifier for the user.\n- `password` (array, required): The password for the user.\n- `roles` (array, required): The roles assigned to the user.\n    \n\n#### Response Body (JSON Schema)\n\n``` json\n{\n  \"type\": \"object\",\n  \"properties\": {\n    \"entity\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"user\": {\n          \"type\": \"object\",\n          \"properties\": {\n            \"active\": { \"type\": \"boolean\" },\n            \"actualCompanyId\": { \"type\": \"string\" },\n            \"additionalInfo\": { \"type\": \"null\" },\n            \"admin\": { \"type\": \"boolean\" },\n            \"backendUser\": { \"type\": \"boolean\" },\n            \"birthday\": { \"type\": \"null\" },\n            \"comments\": { \"type\": \"null\" },\n            \"companyId\": { \"type\": \"string\" },\n            \"createDate\": { \"type\": \"number\" },\n            \"deleteDate\": { \"type\": \"null\" },\n            \"deleteInProgress\": { \"type\": \"boolean\" },\n            \"emailAddress\": { \"type\": \"string\" },\n            \"emailaddress\": { \"type\": \"string\" },\n            \"failedLoginAttempts\": { \"type\": \"number\" },\n            \"female\": { \"type\": \"boolean\" },\n            \"firstName\": { \"type\": \"string\" },\n            \"frontendUser\": { \"type\": \"boolean\" },\n            \"fullName\": { \"type\": \"string\" },\n            \"gravitar\": { \"type\": \"string\" },\n            \"hasConsoleAccess\": { \"type\": \"boolean\" },\n            \"id\": { \"type\": \"string\" },\n            \"languageId\": { \"type\": \"string\" },\n            \"lastLoginDate\": { \"type\": \"null\" },\n            \"lastLoginIP\": { \"type\": \"null\" },\n            \"lastName\": { \"type\": \"string\" },\n            \"male\": { \"type\": \"boolean\" },\n            \"middleName\": { \"type\": \"string\" },\n            \"modificationDate\": { \"type\": \"number\" },\n            \"name\": { \"type\": \"string\" },\n            \"nickname\": { \"type\": \"string\" },\n            \"passwordExpirationDate\": { \"type\": \"null\" },\n            \"passwordExpired\": { \"type\": \"boolean\" },\n            \"passwordReset\": { \"type\": \"boolean\" },\n            \"timeZoneId\": { \"type\": \"string\" },\n            \"type\": { \"type\": \"string\" },\n            \"userId\": { \"type\": \"string\" }\n          }\n        },\n        \"userID\": { \"type\": \"string\" }\n      }\n    },\n    \"errors\": { \"type\": \"array\" },\n    \"i18nMessagesMap\": { \"type\": \"object\" },\n    \"messages\": { \"type\": \"array\" },\n    \"pagination\": { \"type\": \"null\" },\n    \"permissions\": { \"type\": \"array\" }\n  }\n}\n\n ```"
+					},
+					"response": []
+				},
+				{
 					"name": "createToken expiring in 7 days",
 					"event": [
 						{
@@ -833,8 +901,10 @@
 									"",
 									"var jsonData = pm.response.json();",
 									"",
+									"var userId = pm.collectionVariables.get(\"userId\");",
+									"",
 									"pm.test(\"User Id should be dotcms.org.2795\", function () {",
-									"    pm.expect(jsonData.entity.token.userId).to.eql('dotcms.org.2795');",
+									"    pm.expect(jsonData.entity.token.userId).to.eql(userId);",
 									"});",
 									"",
 									"pm.collectionVariables.set(\"tokenid\", jsonData.entity.token.id);",
@@ -908,7 +978,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n\t\"userId\":\"dotcms.org.2795\",\n\t\"tokenId\":\"12345\",\n\t\"expirationSeconds\":\"500000\"\n}",
+							"raw": "{\n\t\"userId\":\"{{userId}}\",\n\t\"tokenId\":\"12345\",\n\t\"expirationSeconds\":\"500000\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -1104,7 +1174,7 @@
 					"response": []
 				}
 			],
-			"description": "1 - Create a token to admin user and expiring in less than 7 days\n\n2 - Create a token to another user and expiring in less than 7 days\n\n3 - Create a token to admin user expiring in more than 7 days\n\n4 - Get the tokens and verify functionality is working fine"
+			"description": "1 - Create a limited user\n\n2 - Create a token to admin user and expiring in less than 7 days\n\n3 - Create a token to the step 1 user and expiring in less than 7 days\n\n4 - Create a token to admin user expiring in more than 7 days\n\n5 - Get the tokens and verify functionality is working fine"
 		},
 		{
 			"name": "createToken",
@@ -1699,6 +1769,10 @@
 		},
 		{
 			"key": "tokenIDs",
+			"value": ""
+		},
+		{
+			"key": "userId",
 			"value": ""
 		}
 	]
