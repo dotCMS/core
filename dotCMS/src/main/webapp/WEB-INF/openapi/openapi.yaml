@@ -10,10 +10,6 @@ tags:
   name: AI
 - description: JavaScript execution and server-side scripting
   name: JavaScript
-- description: Content bundle management and deployment
-  name: Bundle
-- description: Data integrity checking and conflict resolution
-  name: Data Integrity
 - description: Content type definitions and schema management
   name: Content Type
 - description: Content tagging and labeling
@@ -38,12 +34,8 @@ tags:
   name: Search Index
 - description: Endpoints for managing background jobs and job queues
   name: Job Queue
-- description: System maintenance and administration operations
-  name: Maintenance
 - description: Content relationship management
   name: Relationships
-- description: Endpoints for managing content variants
-  name: Variants
 - description: Template design and management
   name: Templates
 - description: Content type field definitions and configuration
@@ -57,6 +49,8 @@ tags:
   name: API Token
 - description: File and folder browser tree operations
   name: Browser Tree
+- description: Content bundle management and deployment
+  name: Bundle
 - description: Cache provider management and operations
   name: Cache Management
 - description: Content categorization and taxonomy
@@ -71,6 +65,8 @@ tags:
   name: Content Delivery
 - description: Content reporting and analytics
   name: Content Report
+- description: Data integrity checking and conflict resolution
+  name: Data Integrity
 - description: Publishing environment management and configuration
   name: Environment
 - description: A/B testing and experimentation management
@@ -85,6 +81,8 @@ tags:
   name: Internationalization
 - description: License management and validation
   name: License
+- description: System maintenance and administration operations
+  name: Maintenance
 - description: Site navigation and menu management
   name: Navigation
 - description: User notifications and alerts management
@@ -140,6 +138,8 @@ tags:
   name: Tool Groups
 - description: User account management and administration
   name: Users
+- description: Content variant management and personalization
+  name: Variants
 - description: Version control and content archiving
   name: Versionables
 - description: Velocity Template Language execution and rendering
@@ -156,279 +156,537 @@ tags:
 paths:
   /auditPublishing/get/{bundleId}:
     get:
+      description: Retrieves the publishing audit status for a specific bundle by
+        its ID. Returns the serialized status information in XML format.
       operationId: get_2
       parameters:
-      - in: path
+      - description: Bundle ID to get audit status for
+        in: path
         name: bundleId
         required: true
         schema:
           type: string
           pattern: .*
       responses:
-        default:
+        "200":
           content:
             text/xml: {}
-          description: default response
+          description: Publish audit status retrieved successfully
+        "404":
+          content:
+            text/xml: {}
+          description: Bundle not found or no audit status available
+        "500":
+          content:
+            text/xml: {}
+          description: Internal server error retrieving audit status
+      summary: Get publish audit status
       tags:
       - Publishing
   /bundle:
     post:
+      description: Uploads and processes a bundle file asynchronously
       operationId: uploadBundleAsync
       requestBody:
         content:
           multipart/form-data:
             schema:
               $ref: "#/components/schemas/FormDataMultiPart"
+        description: Bundle file to upload
+        required: true
       responses:
-        default:
+        "200":
+          description: Bundle upload started successfully (no body)
+        "400":
           content:
             application/json: {}
-            application/xml: {}
-            text/plain: {}
-          description: default response
+          description: Invalid file format or upload error
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized access
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Upload bundle asynchronously
       tags:
       - Bundle
   /bundle/_download/{bundleId}:
     get:
+      description: Downloads a generated bundle file as a tar.gz archive
       operationId: downloadBundle
       parameters:
-      - in: path
+      - description: Bundle identifier
+        in: path
         name: bundleId
         required: true
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
             application/octet-stream: {}
-          description: default response
+          description: Bundle downloaded successfully
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized access
+        "404":
+          content:
+            application/json: {}
+          description: Bundle not found or not generated
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Download bundle
       tags:
       - Bundle
   /bundle/_generate:
     post:
+      description: Generates a bundle file asynchronously for the specified bundle
+        ID and operation
       operationId: generateBundle
       requestBody:
         content:
           application/json:
             schema:
               $ref: "#/components/schemas/GenerateBundleForm"
+        description: Bundle generation parameters
+        required: true
       responses:
-        default:
+        "200":
           content:
             application/octet-stream: {}
-          description: default response
+          description: Bundle generation started successfully
+        "400":
+          content:
+            application/json: {}
+          description: Invalid request parameters
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized access
+        "404":
+          content:
+            application/json: {}
+          description: Bundle not found
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Generate bundle
       tags:
       - Bundle
   /bundle/all:
     delete:
+      description: Deletes all failed and succeeded bundles. The response will be
+        notified by socket message.
       operationId: deleteAll
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityStringView"
+          description: Bundle deletion process started successfully
+        "401":
           content:
             application/json: {}
-          description: default response
+          description: Unauthorized access
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Delete all bundles
       tags:
       - Bundle
   /bundle/all/fail:
     delete:
+      description: Deletes all failed bundles. The response will be notified by socket
+        message.
       operationId: deleteAllFail
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityStringView"
+          description: Failed bundle deletion process started successfully
+        "401":
           content:
             application/json: {}
-          description: default response
+          description: Unauthorized access
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Delete all failed bundles
       tags:
       - Bundle
   /bundle/all/success:
     delete:
+      description: Deletes all successful bundles. The response will be notified by
+        socket message.
       operationId: deleteAllSuccess
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityStringView"
+          description: Successful bundle deletion process started successfully
+        "401":
           content:
             application/json: {}
-          description: default response
+          description: Unauthorized access
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Delete all successful bundles
       tags:
       - Bundle
   /bundle/deleteenvironmentpushhistory/{params}:
     get:
+      description: Deletes push history for a specific environment
       operationId: deleteEnvironmentPushHistory
       parameters:
-      - in: path
+      - description: URL parameters containing environmentid
+        in: path
         name: params
         required: true
         schema:
           type: string
           pattern: .*
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityStringView"
+          description: Environment push history deleted successfully
+        "400":
           content:
             application/json: {}
-          description: default response
+          description: Invalid environment ID
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized access
+      summary: Delete environment push history
       tags:
       - Bundle
   /bundle/deletepushhistory/{params}:
     get:
+      description: Deletes push history for a specific asset
       operationId: deletePushHistory
       parameters:
-      - in: path
+      - description: URL parameters containing assetid
+        in: path
         name: params
         required: true
         schema:
           type: string
           pattern: .*
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityStringView"
+          description: Push history deleted successfully
+        "400":
           content:
             application/json: {}
-          description: default response
+          description: Invalid asset ID
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized access
+      summary: Delete push history
       tags:
       - Bundle
   /bundle/getunsendbundles/{params}:
     get:
+      description: "Returns a list of bundles that haven't been sent to any environment,\
+        \ filtered by owner and name"
       operationId: getUnsendBundles
       parameters:
-      - in: path
+      - description: "URL parameters containing userid, name, start, and count filters"
+        in: path
         name: params
         required: true
         schema:
           type: string
           pattern: .*
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                description: JSON object containing bundle information and pagination
+                  data
+          description: Unsent bundles retrieved successfully
+        "400":
           content:
             application/json: {}
-          description: default response
+          description: Invalid request parameters
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized access
+      summary: Get unsent bundles
       tags:
       - Bundle
   /bundle/ids:
     delete:
+      description: Deletes multiple bundles by their identifiers. The response will
+        be notified by socket message.
       operationId: deleteBundlesByIdentifiers
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: "#/components/schemas/DeleteBundlesByIdentifierForm"
+        description: Bundle identifiers to delete
+        required: true
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityStringView"
+          description: Bundle deletion process started successfully
+        "400":
           content:
             application/json: {}
-          description: default response
+          description: Invalid request body or bundle identifiers
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized access
+      summary: Delete bundles by identifiers
       tags:
       - Bundle
   /bundle/olderthan/{olderThan}:
     delete:
+      description: Deletes bundles older than a specified date. Unsent bundles will
+        not be deleted. The response will be notified by socket message.
       operationId: deleteBundlesOlderThan
       parameters:
-      - in: path
+      - description: ISO date string - bundles older than this date will be deleted
+        in: path
         name: olderThan
         required: true
         schema:
           type: string
           format: date-time
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityStringView"
+          description: Bundle deletion process started successfully
+        "400":
           content:
             application/json: {}
-          description: default response
+          description: Invalid date format or date is in the future
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized access
+      summary: Delete bundles older than date
       tags:
       - Bundle
   /bundle/sync:
     post:
+      description: Uploads and processes a bundle file synchronously
       operationId: uploadBundleSync
       requestBody:
         content:
           multipart/form-data:
             schema:
               $ref: "#/components/schemas/FormDataMultiPart"
+        description: Bundle file to upload
+        required: true
       responses:
-        default:
+        "200":
+          description: Bundle uploaded and processed successfully (no body)
+        "400":
           content:
             application/json: {}
-            application/xml: {}
-            text/plain: {}
-          description: default response
+          description: Invalid file format or upload error
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized access
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Upload bundle synchronously
       tags:
       - Bundle
   /bundle/updatebundle/{params}:
     get:
+      description: Updates the name of an existing bundle
       operationId: updateBundle
       parameters:
-      - in: path
+      - description: URL parameters containing bundleid and bundleName
+        in: path
         name: params
         required: true
         schema:
           type: string
           pattern: .*
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityStringView"
+          description: Bundle updated successfully
+        "400":
           content:
             application/json: {}
-          description: default response
+          description: Invalid bundle ID or parameters
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized access
+        "404":
+          content:
+            application/json: {}
+          description: Bundle not found
+      summary: Update bundle
       tags:
       - Bundle
   /bundle/{bundleId}/assets:
     get:
+      description: Retrieves all assets (publish queue elements) associated with a
+        specific bundle
       operationId: getPublishQueueElements
       parameters:
-      - in: path
+      - description: Bundle identifier
+        in: path
         name: bundleId
         required: true
         schema:
           type: string
-      - in: query
+      - description: Maximum number of assets to return
+        in: query
         name: limit
         schema:
           type: integer
           format: int32
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: string
+          description: Assets retrieved successfully
+        "400":
           content:
             application/json: {}
-          description: default response
+          description: Invalid bundle ID or request parameters
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized access
+        "404":
+          content:
+            application/json: {}
+          description: Bundle not found
+      summary: Get bundle assets
       tags:
       - Bundle
   /bundle/{bundleId}/manifest:
     get:
+      description: Downloads the manifest file for a specific bundle as a CSV file
       operationId: downloadManifest
       parameters:
-      - in: path
+      - description: Bundle identifier
+        in: path
         name: bundleId
         required: true
         schema:
           type: string
       responses:
-        default:
+        "200":
+          content:
+            application/octet-stream: {}
+          description: Manifest downloaded successfully
+        "401":
           content:
             application/json: {}
-            application/octet-stream: {}
-          description: default response
+          description: Unauthorized access
+        "404":
+          content:
+            application/json: {}
+          description: Bundle or manifest not found
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Download bundle manifest
       tags:
       - Bundle
   /bundlePublisher/publish:
     post:
+      description: Receives a content bundle from another dotCMS instance and publishes
+        it. Validates authentication tokens and adds the bundle to the publish thread
+        for processing. Requires Enterprise license.
       operationId: publish
       parameters:
-      - in: query
+      - description: Response type for the operation
+        in: query
         name: type
         schema:
           type: string
-      - in: query
+      - description: Response callback for the operation
+        in: query
         name: callback
         schema:
           type: string
-      - in: query
+      - description: Whether to force push everything regardless of filters
+        in: query
         name: FORCE_PUSH
         schema:
           type: boolean
-      - in: query
+      - description: ID of the Push Publishing Filter used to generate the bundle
+        in: query
         name: filterkey
         schema:
           type: string
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Bundle"
+          description: Bundle published successfully
+        "400":
           content:
             application/json: {}
-          description: default response
+          description: Bad request - bundle expected in request body
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - invalid or missing authentication token
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - community license or insufficient permissions
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error during bundle publishing
+      summary: Publish content bundle
       tags:
       - Bundle
   /cluster/getESConfigProperties/{params}:
@@ -1343,6 +1601,8 @@ paths:
       - Content Delivery
   /environment:
     get:
+      description: Retrieves a list of all available publishing environments with
+        their configurations and associated servers.
       operationId: loadAllEnvironments
       responses:
         "200":
@@ -1355,12 +1615,16 @@ paths:
       tags:
       - Environment
     post:
+      description: Creates a new publishing environment with the specified configuration.
+        The environment can be used for content publishing to target servers.
       operationId: create_1
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: "#/components/schemas/EnvironmentForm"
+        description: Environment configuration data
+        required: true
       responses:
         "200":
           content:
@@ -1386,26 +1650,49 @@ paths:
       - Environment
   /environment/loadenvironments/{params}:
     get:
+      description: Returns a JSON representation of the environments (with servers)
+        that a specific role can push to. Each environment node contains ID and name
+        information.
       operationId: loadEnvironments
       parameters:
-      - in: path
+      - description: URL parameters including roleid to load environments for
+        in: path
         name: params
         required: true
         schema:
           type: string
           pattern: .*
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                description: JSON array of environment objects with id and name properties
+          description: Environments loaded successfully
+        "401":
           content:
             application/json: {}
-          description: default response
+          description: Unauthorized - backend user authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions or security error
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error loading environments
+      summary: Load environments for role
       tags:
       - Environment
   /environment/{id}:
     delete:
+      description: Deletes a publishing environment and all its associated configurations.
+        This action cannot be undone.
       operationId: delete_4
       parameters:
-      - in: path
+      - description: Environment identifier
+        in: path
         name: id
         required: true
         schema:
@@ -1434,18 +1721,23 @@ paths:
       tags:
       - Environment
     put:
+      description: Updates the configuration of an existing publishing environment.
+        This allows modification of environment settings and server configurations.
       operationId: update_1
       parameters:
-      - in: path
+      - description: Environment identifier
+        in: path
         name: id
         required: true
         schema:
           type: string
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: "#/components/schemas/EnvironmentForm"
+        description: Environment configuration data to update
+        required: true
       responses:
         "200":
           content:
@@ -1562,6 +1854,9 @@ paths:
       - Search
   /integrity/_fixconflictsfromremote:
     post:
+      description: Processes conflict resolution data received from a remote endpoint.
+        This endpoint receives multipart data containing the conflicts to fix and
+        the type of objects being processed.
       operationId: fixConflictsFromRemote
       requestBody:
         content:
@@ -1573,122 +1868,298 @@ paths:
                   type: object
                 TYPE:
                   type: string
+                  description: "Type of integrity conflicts to fix (e.g., HTMLPAGES,\
+                    \ CONTENTLETS)"
+              required:
+              - TYPE
       responses:
-        default:
+        "200":
+          content:
+            text/plain:
+              schema:
+                type: string
+          description: Conflicts fixed successfully in remote endpoint
+        "401":
           content:
             text/plain: {}
-          description: default response
+          description: Unauthorized - invalid or missing authentication token
+        "403":
+          content:
+            text/plain: {}
+          description: Forbidden - community license or insufficient permissions
+        "500":
+          content:
+            text/plain: {}
+          description: Internal server error fixing conflicts from remote
+      summary: Fix conflicts from remote endpoint
       tags:
       - Data Integrity
   /integrity/_generateintegritydata:
     post:
+      description: Generates integrity data for checking content conflicts between
+        servers. This endpoint triggers the IntegrityDataGenerationJob to create verification
+        data that can be used for integrity checking.
       operationId: generateIntegrityData
       responses:
-        default:
+        "200":
+          content:
+            text/plain:
+              schema:
+                type: string
+          description: Integrity data generation started successfully
+        "401":
           content:
             text/plain: {}
-          description: default response
+          description: Unauthorized - invalid or missing authentication token
+        "403":
+          content:
+            text/plain: {}
+          description: Forbidden - community license or insufficient permissions
+        "409":
+          content:
+            text/plain: {}
+          description: Conflict - integrity job already running
+        "500":
+          content:
+            text/plain: {}
+          description: Internal server error during data generation
+      summary: Generate integrity data
       tags:
       - Data Integrity
   /integrity/checkIntegrityProcessStatus/{params}:
     get:
+      description: "Verifies the status of an integrity check process for a given\
+        \ endpoint. Returns current status: processing, finished, no conflicts, or\
+        \ error."
       operationId: checkIntegrityProcessStatus
       parameters:
-      - in: path
+      - description: URL parameters including the endpoint ID to check status for
+        in: path
         name: params
         required: true
         schema:
           type: string
           pattern: .*
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                description: "JSON response containing process status (processing,\
+                  \ finished, noConflicts, error) and relevant messages"
+          description: Process status retrieved successfully
+        "400":
           content:
             application/json: {}
-          description: default response
+          description: Bad request - missing required endpoint parameter
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - backend user authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions or security error
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error checking process status
+      summary: Check integrity process status
       tags:
       - Data Integrity
   /integrity/checkintegrity/{params}:
     get:
+      description: Initiates an integrity check process between local and remote servers
+        to identify data conflicts. This is the main entry point for the Integrity
+        Checker process that compares local data with selected endpoint data.
       operationId: checkIntegrity
       parameters:
-      - in: path
+      - description: URL parameters including the endpoint ID for integrity checking
+        in: path
         name: params
         required: true
         schema:
           type: string
           pattern: .*
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                description: JSON response with success status and initialization
+                  message
+          description: Integrity check process initiated successfully
+        "400":
+          content:
+            text/plain: {}
+          description: Bad request - missing required endpoint parameter
+        "401":
           content:
             application/json: {}
-          description: default response
+          description: Unauthorized - backend user authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions or security error
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error during integrity check initialization
+      summary: Check data integrity
       tags:
       - Data Integrity
   /integrity/discardconflicts/{params}:
     get:
+      description: Discards the conflicts between local node and given endpoint for
+        a specific object type. This clears the temporary conflict data without making
+        any changes to the actual content.
       operationId: discardConflicts
       parameters:
-      - in: path
+      - description: URL parameters including endpoint ID and type of conflicts to
+          discard
+        in: path
         name: params
         required: true
         schema:
           type: string
           pattern: .*
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                description: JSON response confirming successful discard of conflicts
+                  for the specified type
+          description: Conflicts discarded successfully
+        "400":
           content:
             application/json: {}
-          description: default response
+          description: Bad request - missing required endpoint or type parameters
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions or security error
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error discarding conflicts
+      summary: Discard integrity conflicts
       tags:
       - Data Integrity
   /integrity/fixconflicts/{params}:
     get:
+      description: Fixes data conflicts between local and remote servers. Can fix
+        conflicts either locally or remotely based on the whereToFix parameter. This
+        resolves integrity conflicts by replacing conflicting data.
       operationId: fixConflicts
       parameters:
-      - in: path
+      - description: "URL parameters including endpoint ID, type, and whereToFix (local/remote)"
+        in: path
         name: params
         required: true
         schema:
           type: string
           pattern: .*
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                description: JSON response with success status and message indicating
+                  conflicts were fixed locally or remotely
+          description: Conflicts fixed successfully
+        "400":
           content:
             application/json: {}
-          description: default response
+          description: "Bad request - missing required parameters (endpoint, type,\
+            \ or whereToFix)"
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions or security error
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error fixing conflicts
+      summary: Fix data conflicts
       tags:
       - Data Integrity
   /integrity/getIntegrityResult/{params}:
     get:
+      description: "Generates and returns the detailed integrity check results for\
+        \ a given endpoint, grouped by object type (HTML Pages, Content Types, etc.)."
       operationId: getIntegrityResult
       parameters:
-      - in: path
+      - description: URL parameters including the endpoint ID to get results for
+        in: path
         name: params
         required: true
         schema:
           type: string
           pattern: .*
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                description: "JSON response containing integrity conflict results\
+                  \ grouped by object type (htmlpages, contentlets, folders, etc.)\
+                  \ with detailed conflict information"
+          description: Integrity results retrieved successfully
+        "400":
           content:
             application/json: {}
-          description: default response
+          description: Bad request - missing required endpoint parameter
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions or security error
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error generating integrity results
+      summary: Get integrity check results
       tags:
       - Data Integrity
   /integrity/{requestId}/integrityData:
     get:
+      description: "Retrieves the generated integrity data as a ZIP file if the generation\
+        \ process is complete. Returns status codes to indicate if the process is\
+        \ still running, complete, or has encountered errors."
       operationId: getIntegrityData
       parameters:
-      - in: path
+      - description: Request ID returned from the integrity data generation process
+        in: path
         name: requestId
         required: true
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/zip: {}
-          description: default response
+            application/zip:
+              schema:
+                type: string
+                format: binary
+          description: Integrity data ZIP file ready for download
+        "202":
+          content:
+            application/json: {}
+          description: Accepted - integrity data generation still processing
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - invalid authentication or request ID mismatch
+        "500":
+          content:
+            text/plain: {}
+          description: Internal server error during integrity data generation
+      summary: Get integrity data file
       tags:
       - Data Integrity
   /js/dynamic:
@@ -9168,6 +9639,9 @@ paths:
       - Apps
   /v1/environments/endpoints:
     get:
+      description: "Returns all publishing endpoints available to the current user.\
+        \ Admin users see all endpoints, while regular users only see endpoints they\
+        \ have access to."
       operationId: getEndpoints
       responses:
         "200":
@@ -9175,17 +9649,30 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ResponseEntityEndpointsView"
-          description: Collection of environments.
-      summary: Returns the endpoints
+          description: Endpoints retrieved successfully
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - backend user required
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Get all endpoints
       tags:
       - Environment
     post:
+      description: Creates a new publishing endpoint with the provided configuration
+        data. Only admin users or users with configuration portlet access can create
+        endpoints.
       operationId: create
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: "#/components/schemas/EndpointForm"
+        description: Endpoint configuration data
+        required: true
       responses:
         "200":
           content:
@@ -9206,14 +9693,17 @@ paths:
                 $ref: "#/components/schemas/ForbiddenException"
           description: "If the user is not an admin or access to the configuration\
             \ layout or does have permission, it will return a 403."
-      summary: Creates an endpoint
+      summary: Create endpoint
       tags:
       - Environment
   /v1/environments/endpoints/environment/{environmentId}:
     get:
+      description: Returns all publishing endpoints for a specific environment identified
+        by environmentId.
       operationId: getEndpointsByEnvironmentId
       parameters:
-      - in: path
+      - description: Environment identifier
+        in: path
         name: environmentId
         required: true
         schema:
@@ -9224,15 +9714,26 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ResponseEntityEndpointsView"
-          description: Collection of environments.
-      summary: Returns the endpoints
+          description: Endpoints retrieved successfully
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - backend user required
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Get endpoints by environment
       tags:
       - Environment
   /v1/environments/endpoints/{endpointId}:
     get:
+      description: Returns a specific publishing endpoint identified by its unique
+        ID.
       operationId: getEndpoint
       parameters:
-      - in: path
+      - description: Endpoint identifier
+        in: path
         name: endpointId
         required: true
         schema:
@@ -9243,15 +9744,30 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ResponseEntityEndpointView"
-          description: Collection of environments.
-      summary: Returns the endpoint by id
+          description: Endpoint retrieved successfully
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - backend user required
+        "404":
+          content:
+            application/json: {}
+          description: Endpoint not found
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Get endpoint by ID
       tags:
       - Environment
   /v1/environments/endpoints/{id}:
     delete:
+      description: Deletes an existing publishing endpoint by its ID. Only admin users
+        or users with configuration portlet access can delete endpoints.
       operationId: delete_3
       parameters:
-      - in: path
+      - description: Endpoint identifier
+        in: path
         name: id
         required: true
         schema:
@@ -9276,22 +9792,28 @@ paths:
               schema:
                 $ref: "#/components/schemas/DoesNotExistException"
           description: If the endpoint does not exits
-      summary: Deletes an endpoint
+      summary: Delete endpoint
       tags:
       - Environment
     put:
+      description: Updates an existing publishing endpoint with the provided configuration
+        data. Only admin users or users with configuration portlet access can update
+        endpoints.
       operationId: update
       parameters:
-      - in: path
+      - description: Endpoint identifier
+        in: path
         name: id
         required: true
         schema:
           type: string
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: "#/components/schemas/EndpointForm"
+        description: Updated endpoint configuration data
+        required: true
       responses:
         "200":
           content:
@@ -9312,7 +9834,7 @@ paths:
                 $ref: "#/components/schemas/ForbiddenException"
           description: "If the user is not an admin or access to the configuration\
             \ layout or does have permission, it will return a 403."
-      summary: Updates an endpoint
+      summary: Update endpoint
       tags:
       - Environment
   /v1/esindex:
@@ -10908,13 +11430,32 @@ paths:
       - Job Queue
   /v1/jvm:
     get:
+      description: "Returns comprehensive system information including JVM details,\
+        \ host information, environment variables, configuration overrides, and system\
+        \ properties. Sensitive values are automatically obfuscated."
       operationId: getJvmInfo
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                description: "Comprehensive system information including release,\
+                  \ host, JVM, environment, configOverrides, and system properties"
+          description: JVM information retrieved successfully
+        "401":
           content:
             application/json: {}
-            application/octet-stream: {}
-          description: default response
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Get JVM information
       tags:
       - Administration
   /v1/languages:
@@ -11147,127 +11688,257 @@ paths:
       - TailLog
   /v1/maintenance/_downloadAssets:
     get:
+      description: Generates and downloads a compressed ZIP file containing all assets
+        from the current dotCMS instance. Can include all asset versions and has configurable
+        size limits.
       operationId: downloadAssets
       parameters:
-      - in: query
+      - description: "Include all versions of assets (default: true)"
+        in: query
         name: oldAssets
         schema:
           type: boolean
           default: true
-      - in: query
+      - description: "Maximum size limit for assets to include (e.g., '100MB', '1GB')"
+        in: query
         name: maxSize
         schema:
           type: string
       responses:
-        default:
+        "200":
+          content:
+            application/octet-stream: {}
+          description: Assets backup downloaded successfully
+        "401":
           content:
             application/json: {}
-            application/octet-stream: {}
-          description: default response
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error or asset export failed
+      summary: Download assets backup
       tags:
       - Maintenance
   /v1/maintenance/_downloadDb:
     get:
+      description: Generates and downloads a compressed SQL dump of the current database.
+        File is named with hostname and timestamp for identification.
       operationId: downloadDb
       responses:
-        default:
+        "200":
+          content:
+            application/octet-stream: {}
+          description: Database backup downloaded successfully
+        "401":
           content:
             application/json: {}
-            application/octet-stream: {}
-          description: default response
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error or database export failed
+      summary: Download database backup
       tags:
       - Maintenance
   /v1/maintenance/_downloadLog/{fileName}:
     get:
+      description: Downloads a specific log file from the dotCMS logs directory as
+        an octet stream. Requires backend admin access.
       operationId: downloadLogFile
       parameters:
-      - in: path
+      - description: Name of the log file to download
+        in: path
         name: fileName
         required: true
         schema:
           type: string
       responses:
-        default:
+        "200":
+          content:
+            application/octet-stream: {}
+          description: Log file downloaded successfully
+        "401":
           content:
             application/json: {}
-            application/octet-stream: {}
-          description: default response
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "404":
+          content:
+            application/json: {}
+          description: Log file not found
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Download log file
       tags:
       - Maintenance
   /v1/maintenance/_downloadStarter:
     get:
+      description: "Downloads a ZIP file containing only the starter data structures\
+        \ and records required to create a Starter Site in dotCMS, without assets."
       operationId: downloadStarter
       parameters:
-      - in: query
+      - description: "Maximum size limit for assets to include (e.g., '100MB', '1GB')"
+        in: query
         name: maxSize
         schema:
           type: string
       responses:
-        default:
+        "200":
+          content:
+            application/octet-stream: {}
+          description: Starter data downloaded successfully
+        "401":
           content:
             application/json: {}
-            application/octet-stream: {}
-          description: default response
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error or starter export failed
+      summary: Download starter data
       tags:
       - Maintenance
   /v1/maintenance/_downloadStarterWithAssets:
     get:
+      description: Downloads a ZIP file containing starter data structures plus all
+        assets. Supports including all asset versions and configurable size limits.
       operationId: downloadStarterWithAssets
       parameters:
-      - in: query
+      - description: "Include all versions of assets (default: true)"
+        in: query
         name: oldAssets
         schema:
           type: boolean
           default: true
-      - in: query
+      - description: "Maximum size limit for assets to include (e.g., '100MB', '1GB')"
+        in: query
         name: maxSize
         schema:
           type: string
       responses:
-        default:
+        "200":
+          content:
+            application/octet-stream: {}
+          description: Starter with assets downloaded successfully
+        "401":
           content:
             application/json: {}
-            application/octet-stream: {}
-          description: default response
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error or starter+assets export failed
+      summary: Download starter with assets
       tags:
       - Maintenance
   /v1/maintenance/_pgDumpAvailable:
     get:
+      description: Returns a boolean indicating whether the pg_dump binary is available
+        and callable on the system. Used for database export functionality.
       operationId: isPgDumpAvailable
       responses:
-        default:
+        "200":
           content:
             text/plain: {}
-          description: default response
+          description: pg_dump availability checked successfully
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Check pg_dump availability
       tags:
       - Maintenance
   /v1/maintenance/_shutdown:
     delete:
+      description: Shuts down the current DotCMS instance. Control is passed to catalina.sh
+        (Tomcat) script to handle the exit code. Requires CMS Administrator role.
       operationId: shutdown
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityStringView"
+          description: Shutdown initiated successfully
+        "401":
+          content:
             application/json: {}
-          description: default response
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions or shutdown not allowed
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Shutdown DotCMS instance
       tags:
       - Maintenance
   /v1/maintenance/_shutdownCluster:
     delete:
+      description: Shuts down the entire DotCMS cluster with a configurable rolling
+        delay between nodes. Requires CMS Administrator role.
       operationId: shutdownCluster
       parameters:
-      - in: query
+      - description: "Delay in seconds between shutting down cluster nodes (default:\
+          \ 60)"
+        in: query
         name: rollingDelay
         schema:
           type: integer
           format: int32
           default: 60
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityStringView"
+          description: Cluster shutdown initiated successfully
+        "401":
+          content:
             application/json: {}
-          description: default response
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions or shutdown not allowed
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Shutdown DotCMS cluster
       tags:
       - Maintenance
   /v1/menu:
@@ -12879,93 +13550,232 @@ paths:
       - Portlets
   /v1/publishqueue:
     delete:
+      description: Removes specified elements from the Push Publish Queue by their
+        identifiers. Requires backend user authentication and publishing-queue portlet
+        access.
       operationId: deleteAssetsByIdentifiers
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: "#/components/schemas/DeletePPQueueElementsByIdentifierForm"
+        description: Form containing identifiers of publish queue elements to delete
+        required: true
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityStringView"
+          description: Elements removed from publish queue successfully
+        "400":
           content:
             application/json: {}
-          description: default response
+          description: Bad request - invalid identifiers or form data
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - backend user authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions to access publishing-queue
+            portlet
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error or publisher exception
+      summary: Delete assets from publish queue
       tags:
       - Publishing
   /v1/pushpublish/filters:
     get:
+      description: "Lists all Push Publishing filter descriptors that the user has\
+        \ access to, sorted alphabetically"
       operationId: getFilters
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityFilterDescriptorsView"
+          description: Filters retrieved successfully
+        "401":
+          content:
             application/json: {}
-          description: default response
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Get push publishing filters
       tags:
-      - Publishing
+      - Push Publishing
     post:
+      description: Creates a new Push Publishing filter based on form data. Requires
+        CMS Administrator role.
       operationId: saveFromForm
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: "#/components/schemas/FilterDescriptorForm"
+        description: Push Publishing filter form data
+        required: true
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityListStringView"
+          description: Filter created successfully
+        "400":
+          content:
             application/json: {}
-          description: default response
+          description: Bad request - invalid filter data or filter already exists
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - CMS Administrator role required
+        "409":
+          content:
+            application/json: {}
+          description: Conflict - filter with this key already exists
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Create push publishing filter from form
       tags:
-      - Publishing
+      - Push Publishing
     put:
+      description: Updates an existing Push Publishing filter based on form data.
+        Requires CMS Administrator role.
       operationId: updateFromForm
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: "#/components/schemas/FilterDescriptorForm"
+        description: Push Publishing filter form data with updates
+        required: true
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityListStringView"
+          description: Filter updated successfully
+        "400":
+          content:
             application/json: {}
-          description: default response
+          description: Bad request - invalid filter data
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - CMS Administrator role required
+        "404":
+          content:
+            application/json: {}
+          description: Filter not found
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Update push publishing filter from form
       tags:
-      - Publishing
+      - Push Publishing
   /v1/pushpublish/filters/{filterKey}:
     delete:
+      description: Deletes a Push Publishing filter by its unique key. Requires CMS
+        Administrator role.
       operationId: deleteFilter
       parameters:
-      - in: path
+      - description: Push Publishing filter key to delete
+        in: path
         name: filterKey
         required: true
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityListStringView"
+          description: Filter deleted successfully
+        "401":
+          content:
             application/json: {}
-          description: default response
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - CMS Administrator role required
+        "404":
+          content:
+            application/json: {}
+          description: Filter not found
+        "417":
+          content:
+            application/json: {}
+          description: Expectation failed - filter cannot be deleted
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Delete push publishing filter
       tags:
-      - Publishing
+      - Push Publishing
     get:
+      description: Returns a specific Push Publishing filter descriptor by its key
+        (if the user has access to it)
       operationId: getFilter
       parameters:
-      - in: path
+      - description: Push Publishing filter key
+        in: path
         name: filterKey
         required: true
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityFilterDescriptorView"
+          description: Filter retrieved successfully
+        "401":
+          content:
             application/json: {}
-          description: default response
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions to access this filter
+        "404":
+          content:
+            application/json: {}
+          description: Filter not found
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Get push publishing filter by key
       tags:
-      - Publishing
+      - Push Publishing
   /v1/redis:
     put:
       description: Sets a key-value pair in Redis
@@ -16896,7 +17706,7 @@ paths:
           type: string
       responses:
         "200":
-          description: Variant promoted successfully
+          description: Variant promoted successfully (no body)
         "400":
           description: Bad request - Invalid variant name
         "401":
@@ -16912,55 +17722,122 @@ paths:
       - Variants
   /v1/versionables/{versionableInodeOrIdentifier}:
     get:
+      description: "Finds versionable asset by UUID. If UUID is an inode, returns\
+        \ specific version; if identifier, returns all versions"
       operationId: findVersionable
       parameters:
-      - in: path
+      - description: Versionable asset inode or identifier
+        in: path
         name: versionableInodeOrIdentifier
         required: true
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityVersionableView"
+          description: Versionable found successfully
+        "401":
+          content:
             application/json: {}
-          description: default response
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "404":
+          content:
+            application/json: {}
+          description: Versionable not found
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Find versionable
       tags:
-      - Variants
+      - Versionables
   /v1/versionables/{versionableInode}:
     delete:
+      description: "Deletes a specific version of a versionable asset. The version\
+        \ cannot be working or live, and user needs edit permissions"
       operationId: deleteVersion
       parameters:
-      - in: path
+      - description: Versionable asset inode
+        in: path
         name: versionableInode
         required: true
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityVersionableOperationView"
+          description: Version deleted successfully
+        "400":
+          content:
             application/json: {}
-          description: default response
+          description: Bad request - version is working or live
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "404":
+          content:
+            application/json: {}
+          description: Version not found
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Delete version
       tags:
-      - Variants
+      - Versionables
   /v1/versionables/{versionableInode}/_bringback:
     put:
+      description: Restores a specific version as the working version. User needs
+        edit permissions
       operationId: bringBack
       parameters:
-      - in: path
+      - description: Versionable asset inode to restore
+        in: path
         name: versionableInode
         required: true
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityVersionableView"
+          description: Version restored successfully
+        "401":
+          content:
             application/json: {}
-          description: default response
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "404":
+          content:
+            application/json: {}
+          description: Version not found
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Bring back version
       tags:
-      - Variants
+      - Versionables
   /v1/workflow/actionlets:
     get:
       description: "Returns a list of all workflow actionlets — a.k.a. [workflow sub-actions](https://www.dotcms.com/docs/latest/workflow-sub-actions).\
@@ -22141,6 +23018,28 @@ components:
             $ref: "#/components/schemas/CountWorkflowAction"
         step:
           $ref: "#/components/schemas/CountWorkflowStep"
+    Bundle:
+      type: object
+      properties:
+        expireDate:
+          type: string
+          format: date-time
+        filterKey:
+          type: string
+        forcePush:
+          type: boolean
+        id:
+          type: string
+        name:
+          type: string
+        operation:
+          type: integer
+          format: int32
+        owner:
+          type: string
+        publishDate:
+          type: string
+          format: date-time
     BundleMap:
       type: object
       properties:
@@ -24059,6 +24958,26 @@ components:
         status:
           type: boolean
           writeOnly: true
+    FilterDescriptor:
+      type: object
+      properties:
+        default:
+          type: boolean
+          writeOnly: true
+        defaultFilter:
+          type: boolean
+        filters:
+          type: object
+          additionalProperties:
+            type: object
+        key:
+          type: string
+        roles:
+          type: string
+        sort:
+          type: string
+        title:
+          type: string
     FilterDescriptorForm:
       type: object
       properties:
@@ -27859,6 +28778,54 @@ components:
           type: array
           items:
             type: string
+    ResponseEntityFilterDescriptorView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/FilterDescriptor"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityFilterDescriptorsView:
+      type: object
+      properties:
+        entity:
+          type: array
+          items:
+            $ref: "#/components/schemas/FilterDescriptor"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
     ResponseEntityFolderSearchResultView:
       type: object
       properties:
@@ -29589,6 +30556,52 @@ components:
       properties:
         entity:
           $ref: "#/components/schemas/Variant"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityVersionableOperationView:
+      type: object
+      properties:
+        entity:
+          type: string
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityVersionableView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/VersionableView"
         errors:
           type: array
           items:
@@ -32562,6 +33575,32 @@ components:
           type: string
         version:
           type: string
+    VersionableView:
+      type: object
+      properties:
+        archived:
+          type: boolean
+        inode:
+          type: string
+        language:
+          $ref: "#/components/schemas/Language"
+        live:
+          type: boolean
+        locked:
+          type: boolean
+        modDate:
+          type: string
+          format: date-time
+        modUser:
+          type: string
+        title:
+          type: string
+        versionId:
+          type: string
+        versionType:
+          type: string
+        working:
+          type: boolean
     ViewAsPageStatus:
       type: object
       properties:

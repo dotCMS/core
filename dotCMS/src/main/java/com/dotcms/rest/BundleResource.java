@@ -27,7 +27,9 @@ import com.dotcms.publishing.manifest.ManifestUtil;
 import com.dotcms.publishing.output.TarGzipBundleOutput;
 import org.apache.commons.io.IOUtils;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.annotation.SwaggerCompliant;
 import com.dotcms.rest.exception.BadRequestException;
+import com.dotcms.rest.ResponseEntityListMapView;
 import com.dotcms.rest.exception.NotFoundException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.rest.param.ISODateParam;
@@ -49,6 +51,13 @@ import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.LocaleUtil;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
@@ -94,6 +103,7 @@ import static com.dotcms.publisher.business.PublishAuditStatus.Status.FAILED_TO_
 import static com.dotcms.publisher.business.PublishAuditStatus.Status.SUCCESS;
 import static com.dotcms.publisher.business.PublishAuditStatus.Status.SUCCESS_WITH_WARNINGS;
 
+@SwaggerCompliant(value = "Publishing and content distribution APIs", batch = 5)
 @Path("/bundle")
 @Tag(name = "Bundle")
 public class BundleResource {
@@ -106,18 +116,32 @@ public class BundleResource {
     private final PublishQueueElementTransformer publishQueueElementTransformer =
             new PublishQueueElementTransformer();
 
-    /**
-     * Return the assets from a bundleId
-     *
-     * @param bundleId
-     * @param request
-     * @param response
-     * @return
-     */
+    @Operation(
+        summary = "Get bundle assets",
+        description = "Retrieves all assets (publish queue elements) associated with a specific bundle"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Assets retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ListMapView.class))),
+        @ApiResponse(responseCode = "400", 
+                    description = "Invalid bundle ID or request parameters",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized access",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "Bundle not found",
+                    content = @Content(mediaType = "application/json"))
+    })
     @Path("/{bundleId}/assets")
     @GET
-    @Produces({MediaType.APPLICATION_JSON})
-    public Response getPublishQueueElements(@PathParam("bundleId") final String bundleId,
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getPublishQueueElements(
+            @Parameter(description = "Bundle identifier", required = true)
+            @PathParam("bundleId") final String bundleId,
+            @Parameter(description = "Maximum number of assets to return", required = false)
             @QueryParam("limit") final Integer limitParam,
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response) throws DotDataException {
@@ -162,26 +186,36 @@ public class BundleResource {
                 }
             }
 
-            return Response.ok(detailedAssets).build();
+            return Response.ok(new ListMapView(detailedAssets)).build();
         } catch (DotPublisherException e) {
             throw new BadRequestException(e, bundleId, e.getMessage());
         }
     }
 
-    /**
-     * Returns a list of un-send bundles (haven't been sent to any Environment) filtered by owner and name
-     *
-     * @param request
-     * @param params
-     * @return
-     * @throws DotStateException
-     * @throws DotDataException
-     * @throws JSONException
-     */
+    @Operation(
+        summary = "Get unsent bundles",
+        description = "Returns a list of bundles that haven't been sent to any environment, filtered by owner and name"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Unsent bundles retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(type = "object", description = "JSON object containing bundle information and pagination data"))),
+        @ApiResponse(responseCode = "400", 
+                    description = "Invalid request parameters",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized access",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @Path ("/getunsendbundles/{params:.*}")
     @Produces ("application/json")
-    public Response getUnsendBundles (@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam ("params") String params )
+    public Response getUnsendBundles (
+            @Context HttpServletRequest request, 
+            @Context final HttpServletResponse response, 
+            @Parameter(description = "URL parameters containing userid, name, start, and count filters", required = true)
+            @PathParam ("params") String params )
             throws DotDataException, JSONException {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
@@ -251,10 +285,33 @@ public class BundleResource {
         return Response.ok(jsonResponse.toString()).cacheControl(nocache).build();
     }
 
+	@Operation(
+        summary = "Update bundle",
+        description = "Updates the name of an existing bundle"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Bundle updated successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityStringView.class))),
+        @ApiResponse(responseCode = "400", 
+                    description = "Invalid bundle ID or parameters",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized access",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "Bundle not found",
+                    content = @Content(mediaType = "application/json"))
+    })
 	@GET
 	@Path("/updatebundle/{params:.*}")
 	@Produces("application/json")
-	public Response updateBundle(@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam("params") String params) throws IOException {
+	public Response updateBundle(
+            @Context HttpServletRequest request, 
+            @Context final HttpServletResponse response, 
+            @Parameter(description = "URL parameters containing bundleid and bundleName", required = true)
+            @PathParam("params") String params) throws IOException {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
@@ -288,10 +345,30 @@ public class BundleResource {
 	    return responseResource.response("true");
 	}
 
+	@Operation(
+        summary = "Delete push history",
+        description = "Deletes push history for a specific asset"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Push history deleted successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityStringView.class))),
+        @ApiResponse(responseCode = "400", 
+                    description = "Invalid asset ID",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized access",
+                    content = @Content(mediaType = "application/json"))
+    })
 	@GET
 	@Path("/deletepushhistory/{params:.*}")
 	@Produces("application/json")
-	public Response deletePushHistory(@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam("params") String params) {
+	public Response deletePushHistory(
+            @Context HttpServletRequest request, 
+            @Context final HttpServletResponse response, 
+            @Parameter(description = "URL parameters containing assetid", required = true)
+            @PathParam("params") String params) {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
@@ -322,10 +399,30 @@ public class BundleResource {
         return responseResource.response( "true" );
 	}
 
+	@Operation(
+        summary = "Delete environment push history",
+        description = "Deletes push history for a specific environment"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Environment push history deleted successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityStringView.class))),
+        @ApiResponse(responseCode = "400", 
+                    description = "Invalid environment ID",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized access",
+                    content = @Content(mediaType = "application/json"))
+    })
 	@GET
 	@Path("/deleteenvironmentpushhistory/{params:.*}")
 	@Produces("application/json")
-	public Response deleteEnvironmentPushHistory(@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam("params") String params) {
+	public Response deleteEnvironmentPushHistory(
+            @Context HttpServletRequest request, 
+            @Context final HttpServletResponse response, 
+            @Parameter(description = "URL parameters containing environmentid", required = true)
+            @PathParam("params") String params) {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
@@ -356,19 +453,32 @@ public class BundleResource {
         return responseResource.response( "true" );
 	}
 
-    /**
-     * Deletes all bundles by identifier
-     * Note: the response will be notified by socket message
-     * @param request   {@link HttpServletRequest}
-     * @param response  {@link HttpServletResponse}
-     * @param deleteBundlesByIdentifierForm {@link DeleteBundlesByIdentifierForm} contains the set of bundle ids to delete.
-     */
+    @Operation(
+        summary = "Delete bundles by identifiers",
+        description = "Deletes multiple bundles by their identifiers. The response will be notified by socket message."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Bundle deletion process started successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityStringView.class))),
+        @ApiResponse(responseCode = "400", 
+                    description = "Invalid request body or bundle identifiers",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized access",
+                    content = @Content(mediaType = "application/json"))
+    })
 	@DELETE
     @Path("/ids")
     @Produces("application/json")
-    public Response deleteBundlesByIdentifiers(@Context   final HttpServletRequest request,
-                                               @Context   final HttpServletResponse response,
-                                               final DeleteBundlesByIdentifierForm  deleteBundlesByIdentifierForm) throws DotDataException {
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response deleteBundlesByIdentifiers(
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @RequestBody(description = "Bundle identifiers to delete", required = true,
+                       content = @Content(schema = @Schema(implementation = DeleteBundlesByIdentifierForm.class)))
+            final DeleteBundlesByIdentifierForm deleteBundlesByIdentifierForm) throws DotDataException {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
@@ -450,7 +560,7 @@ public class BundleResource {
             );
         }
 
-        return Response.ok(new ResponseEntityView(message)).build();
+        return Response.ok(new ResponseEntityView<>(message)).build();
     }
 
     private void sendErrorDeleteBundleMessage(final InitDataObject initData,
@@ -537,19 +647,30 @@ public class BundleResource {
         return Tuple.of(successCount, fails);
     }
 
-    /**
-     * Deletes bundles older than a date. (unsent are not going to be deleted)
-     * Note: the response will be notified by socket message
-     * @param request   {@link HttpServletRequest}
-     * @param response  {@link HttpServletResponse}
-     * @param olderThan {@link ISODateParam} an ISO date, should be before now to be valid
-     */
+    @Operation(
+        summary = "Delete bundles older than date",
+        description = "Deletes bundles older than a specified date. Unsent bundles will not be deleted. The response will be notified by socket message."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Bundle deletion process started successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityStringView.class))),
+        @ApiResponse(responseCode = "400", 
+                    description = "Invalid date format or date is in the future",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized access",
+                    content = @Content(mediaType = "application/json"))
+    })
     @DELETE
     @Path("/olderthan/{olderThan}")
     @Produces("application/json")
-    public Response deleteBundlesOlderThan(@Context   final HttpServletRequest request,
-                                       @Context   final HttpServletResponse response,
-                                       @PathParam("olderThan") final ISODateParam olderThan) {
+    public Response deleteBundlesOlderThan(
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @Parameter(description = "ISO date string - bundles older than this date will be deleted", required = true)
+            @PathParam("olderThan") final ISODateParam olderThan) {
 
         if(olderThan.after(new Date())) {
 
@@ -588,21 +709,32 @@ public class BundleResource {
             }
         });
 
-        return Response.ok(new ResponseEntityView(
+        return Response.ok(new ResponseEntityView<>(
                 "Removing bundles in a separated process, the result of the operation will be notified")).build();
     } // deleteBundlesOlderThan.
 
-    /**
-     * Deletes all failed and succeed bundles
-     * Note: the response will be notified by socket message
-     * @param request   {@link HttpServletRequest}
-     * @param response  {@link HttpServletResponse}
-     */
+    @Operation(
+        summary = "Delete all bundles",
+        description = "Deletes all failed and succeeded bundles. The response will be notified by socket message."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Bundle deletion process started successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityStringView.class))),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized access",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @DELETE
     @Path("/all")
     @Produces("application/json")
-    public Response deleteAll(@Context   final HttpServletRequest request,
-                              @Context   final HttpServletResponse response) {
+    public Response deleteAll(
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response) {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
@@ -635,21 +767,32 @@ public class BundleResource {
             }
         });
 
-        return Response.ok(new ResponseEntityView(
+        return Response.ok(new ResponseEntityView<>(
                 "Removing bundles in a separated process, the result of the operation will be notified")).build();
     } // deleteAll.
 
-    /**
-     * Deletes all failed  bundles
-     * Note: the response will be notified by socket message
-     * @param request   {@link HttpServletRequest}
-     * @param response  {@link HttpServletResponse}
-     */
+    @Operation(
+        summary = "Delete all failed bundles",
+        description = "Deletes all failed bundles. The response will be notified by socket message."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Failed bundle deletion process started successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityStringView.class))),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized access",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @DELETE
     @Path("/all/fail")
     @Produces("application/json")
-    public Response deleteAllFail(@Context   final HttpServletRequest request,
-                              @Context   final HttpServletResponse response) {
+    public Response deleteAllFail(
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response) {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
@@ -682,7 +825,7 @@ public class BundleResource {
             }
         });
 
-        return Response.ok(new ResponseEntityView(
+        return Response.ok(new ResponseEntityView<>(
                 "Removing bundles in a separated process, the result of the operation will be notified")).build();
     } // deleteAllFail.
 
@@ -699,17 +842,28 @@ public class BundleResource {
         }
     }
 
-    /**
-     * Deletes all success bundles
-     * Note: the response will be notified by socket message
-     * @param request   {@link HttpServletRequest}
-     * @param response  {@link HttpServletResponse}
-     */
+    @Operation(
+        summary = "Delete all successful bundles",
+        description = "Deletes all successful bundles. The response will be notified by socket message."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Successful bundle deletion process started successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityStringView.class))),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized access",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @DELETE
     @Path("/all/success")
     @Produces("application/json")
-    public Response deleteAllSuccess(@Context final HttpServletRequest request,
-                                      @Context final HttpServletResponse response) {
+    public Response deleteAllSuccess(
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response) {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
@@ -741,18 +895,38 @@ public class BundleResource {
             }
         });
 
-        return Response.ok(new ResponseEntityView(
+        return Response.ok(new ResponseEntityView<>(
                 "Removing bundles in a separated process, the result of the operation will be notified")).build();
     } // deleteAllSuccess.
 
 
+    @Operation(
+        summary = "Download bundle",
+        description = "Downloads a generated bundle file as a tar.gz archive"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Bundle downloaded successfully",
+                    content = @Content(mediaType = "application/octet-stream")),
+        @ApiResponse(responseCode = "404", 
+                    description = "Bundle not found or not generated",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized access",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @Path("/_download/{bundleId}")
     @GET
     @JSONP
     @NoCache
-    @Produces(MediaType.APPLICATION_OCTET_STREAM)
-    public final Response downloadBundle(@Context final HttpServletRequest request,
+    @Produces({MediaType.APPLICATION_OCTET_STREAM,MediaType.APPLICATION_JSON})
+    public final Response downloadBundle(
+            @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
+            @Parameter(description = "Bundle identifier", required = true)
             @PathParam("bundleId") final String bundleId) {
 
         final InitDataObject initData =
@@ -786,16 +960,40 @@ public class BundleResource {
         }
     }
     
+    @Operation(
+        summary = "Generate bundle",
+        description = "Generates a bundle file asynchronously for the specified bundle ID and operation"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Bundle generation started successfully",
+                    content = @Content(mediaType = "application/octet-stream")),
+        @ApiResponse(responseCode = "404", 
+                    description = "Bundle not found",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "400", 
+                    description = "Invalid request parameters",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized access",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @Path("/_generate")
     @POST
     @JSONP
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(MediaType.APPLICATION_OCTET_STREAM)
-    public final void generateBundle(@Context final HttpServletRequest request,
-                                       @Context final HttpServletResponse response,
-                                        @Suspended final AsyncResponse asyncResponse,
-                                       final GenerateBundleForm form) {
+    @Produces({MediaType.APPLICATION_OCTET_STREAM,MediaType.APPLICATION_JSON})
+    public final void generateBundle(
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @Suspended final AsyncResponse asyncResponse,
+            @RequestBody(description = "Bundle generation parameters", required = true,
+                       content = @Content(schema = @Schema(implementation = GenerateBundleForm.class)))
+            final GenerateBundleForm form) {
 
 
         final InitDataObject initData =
@@ -883,15 +1081,35 @@ public class BundleResource {
         }
     }
     
+    @Operation(
+        summary = "Upload bundle synchronously",
+        description = "Uploads and processes a bundle file synchronously"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Bundle uploaded and processed successfully (no body)"),
+        @ApiResponse(responseCode = "400", 
+                    description = "Invalid file format or upload error",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized access",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @Path("/sync")
     @POST
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
     @Consumes(MediaType.MULTIPART_FORM_DATA)
-    public final Response uploadBundleSync(@Context final HttpServletRequest request,
-                                       @Context final HttpServletResponse response,
-                                       FormDataMultiPart multipart) throws DotPublisherException {
+    public final Response uploadBundleSync(
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @RequestBody(description = "Bundle file to upload", required = true,
+                       content = @Content(mediaType = "multipart/form-data"))
+            FormDataMultiPart multipart) throws DotPublisherException {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
@@ -943,14 +1161,35 @@ public class BundleResource {
         return Response.ok().build();
     } // uploadBundleSync.
 
+    @Operation(
+        summary = "Upload bundle asynchronously",
+        description = "Uploads and processes a bundle file asynchronously"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Bundle upload started successfully (no body)"),
+        @ApiResponse(responseCode = "400", 
+                    description = "Invalid file format or upload error",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized access",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @POST
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
     @Consumes(MediaType.MULTIPART_FORM_DATA)
-    public final void uploadBundleAsync(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
-                                       @Suspended final AsyncResponse asyncResponse,
-                                        FormDataMultiPart multipart) throws DotPublisherException {
+    public final void uploadBundleAsync(
+            @Context final HttpServletRequest request, 
+            @Context final HttpServletResponse response,
+            @Suspended final AsyncResponse asyncResponse,
+            @RequestBody(description = "Bundle file to upload", required = true,
+                       content = @Content(mediaType = "multipart/form-data"))
+            FormDataMultiPart multipart) throws DotPublisherException {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
@@ -1018,10 +1257,30 @@ public class BundleResource {
         );
     } // uploadBundleAsync.
 
+    @Operation(
+        summary = "Download bundle manifest",
+        description = "Downloads the manifest file for a specific bundle as a CSV file"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Manifest downloaded successfully",
+                    content = @Content(mediaType = "application/octet-stream")),
+        @ApiResponse(responseCode = "404", 
+                    description = "Bundle or manifest not found",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized access",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @Path("/{bundleId}/manifest")
     @GET
-    @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_OCTET_STREAM})
-    public Response downloadManifest(@PathParam("bundleId") final String bundleId,
+    @Produces({MediaType.APPLICATION_OCTET_STREAM,MediaType.APPLICATION_JSON})
+    public Response downloadManifest(
+            @Parameter(description = "Bundle identifier", required = true)
+            @PathParam("bundleId") final String bundleId,
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response)
             throws DotDataException, IOException {
