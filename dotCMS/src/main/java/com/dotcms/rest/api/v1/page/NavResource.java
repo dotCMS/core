@@ -6,8 +6,10 @@ import com.dotcms.rendering.velocity.viewtools.navigation.NavTool;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.ResponseEntityMapView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.annotation.SwaggerCompliant;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -21,6 +23,12 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -39,6 +47,7 @@ import javax.ws.rs.core.Response;
 import org.apache.velocity.tools.view.context.ChainedContext;
 import org.apache.velocity.tools.view.context.ViewContext;
 
+@SwaggerCompliant(value = "Site architecture and template management APIs", batch = 3)
 @Path("/v1/nav")
 @Tag(name = "Navigation")
 public class NavResource {
@@ -62,29 +71,42 @@ public class NavResource {
 
     }
 
-    /**
-     * Returns navigation metadata in JSON format for objects that have been marked show on menu
-     *
-     * <pre>
-     * Format:
-     * http://localhost:8080/api/v1/nav/{start-url}?depth={}&languageId={}
-     * <br/>
-     * Example - will send the navigation under the /about-us folder, 2 levels deep in english version.
-     * http://localhost:8080/api/v1/nav/about-us?depth=2&languageId=1
-     * </pre>
-     *
-     * @param request The {@link HttpServletRequest} object.
-     * @param response The {@link HttpServletResponse} object.
-     * @param uri The path to the HTML Page whose information will be retrieved.
-     * @param depth - an int for how many levels to include
-     * @return a json representation of the navigation
-     */
+    @Operation(
+        summary = "Get navigation hierarchy",
+        description = "Returns navigation metadata in JSON format for objects that have been marked to show on menu. " +
+                     "Retrieves hierarchical navigation structure starting from the specified URI path."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Navigation retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityMapView.class))),
+        @ApiResponse(responseCode = "400", 
+                    description = "Invalid depth or languageId parameters",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized access",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Insufficient permissions to access the host",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "Navigation path not found",
+                    content = @Content(mediaType = "application/json"))
+    })
     @NoCache
     @GET
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces(MediaType.APPLICATION_JSON)
     @Path("/{uri: .*}")
-    public final Response loadJson(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
-            @PathParam("uri") final String uri, @QueryParam("depth") final String depth, @QueryParam("languageId") final String languageId) {
+    public final Response loadJson(
+            @Context final HttpServletRequest request, 
+            @Context final HttpServletResponse response,
+            @Parameter(description = "Path to the HTML page or folder to retrieve navigation from", required = true)
+            @PathParam("uri") final String uri, 
+            @Parameter(description = "Number of navigation levels to include (default: 1)", required = false)
+            @QueryParam("depth") final String depth, 
+            @Parameter(description = "Language ID for navigation items (default: request language)", required = false)
+            @QueryParam("languageId") final String languageId) {
 
         final InitDataObject auth = webResource.init(request, response, true);
         final User user = auth.getUser();
@@ -133,7 +155,7 @@ public class NavResource {
 
 
 
-            return Response.ok(new ResponseEntityView<>(navMap)).build(); // 200
+            return Response.ok(new ResponseEntityMapView(navMap)).build(); // 200
         } catch (Exception e) {
             Logger.error(this.getClass(),
                     "Exception on NavResource exception message: " + e.getMessage(), e);

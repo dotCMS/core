@@ -16,6 +16,7 @@ import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.AccessControlAllowOrigin;
 import com.dotcms.rest.annotation.InitRequestRequired;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.annotation.SwaggerCompliant;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.business.*;
@@ -24,6 +25,11 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.commons.lang.StringEscapeUtils;
 
@@ -40,6 +46,7 @@ import java.util.List;
  * @author freddyrodriguez
  * @author jsanca
  */
+@SwaggerCompliant(value = "Site architecture and template management APIs", batch = 3)
 @Tag(name = "Navigation")
 @Path("/v1/menu")
 public class MenuResource implements Serializable {
@@ -67,22 +74,31 @@ public class MenuResource implements Serializable {
 		this.webResource = webResource;
 	}
 
-	/**
-	 * Get the layout menus and sub-menus that the logged in a user have access
-	 *
-	 * @return a collection of menu portlet
-	 * @throws NoSuchUserException    If the user doesn't exist
-	 * @throws DotDataException       If there is a data inconsistency
-	 * @throws DotSecurityException
-	 * @throws LanguageException
-	 * @throws ClassNotFoundException If the portet class is not assignable to PortletController or BaseRestPortlet
-	 */
+	@Operation(
+		summary = "Get navigation menus",
+		description = "Returns the layout menus and sub-menus that the logged-in user has access to. Handles language translations and user impersonation scenarios."
+	)
+	@ApiResponses(value = {
+		@ApiResponse(responseCode = "200", 
+					description = "Navigation menus retrieved successfully",
+					content = @Content(mediaType = "application/json",
+									  schema = @Schema(implementation = ResponseEntityMenuView.class))),
+		@ApiResponse(responseCode = "401", 
+					description = "Unauthorized - authentication required",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "403", 
+					description = "Forbidden - insufficient permissions",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "500", 
+					description = "Internal server error",
+					content = @Content(mediaType = "application/json"))
+	})
 	@GET
 	@JSONP
 	@NoCache
 	@AccessControlAllowOrigin
 	@InitRequestRequired
-	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+	@Produces(MediaType.APPLICATION_JSON)
 	public Response getMenus(@Context final HttpServletRequest httpServletRequest,
 							 @Context final HttpServletResponse httpServletResponse) {
 
@@ -127,7 +143,7 @@ public class MenuResource implements Serializable {
 				}
 			}
 
-			res = Response.ok(new ResponseEntityView(menus)).build(); // 200
+			res = Response.ok(new ResponseEntityView<>(menus)).build(); // 200
 	    } catch (DotDataException | NoSuchUserException e) {
 
 			res = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
