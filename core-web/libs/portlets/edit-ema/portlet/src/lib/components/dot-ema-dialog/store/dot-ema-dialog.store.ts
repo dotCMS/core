@@ -282,6 +282,13 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
         };
     });
 
+    readonly resetActionPayload = this.updater((state) => {
+        return {
+            ...state,
+            actionPayload: undefined
+        };
+    });
+
     /**
      * This method sets the loading property
      *

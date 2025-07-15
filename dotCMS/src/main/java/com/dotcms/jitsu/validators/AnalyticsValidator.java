@@ -16,12 +16,18 @@ import com.dotmarketing.util.json.JSONObject;
 public interface AnalyticsValidator {
 
     /**
+     * This attribute allows you to specify an additional custom validator that will check the value
+     * of a given property.
+     */
+    String CUSTOM_VALIDATOR_ATTRIBUTE = "custom-validator";
+
+    /**
      * Tests whether this validator should be applied based on the validator configuration.
      * 
      * @param jsonValidatorBody The JSON configuration for this validator
      * @return true if this validator should be applied, false otherwise
      */
-    boolean test(JSONObject jsonValidatorBody);
+    boolean test(final JSONObject jsonValidatorBody);
 
     /**
      * Validates the given field value according to this validator's rules.
@@ -62,4 +68,5 @@ public interface AnalyticsValidator {
             return code;
         }
     }
+
 }

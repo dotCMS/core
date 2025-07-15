@@ -1,0 +1,59 @@
+{
+    "name": "@dotcms/mcp-server",
+    "version": "0.0.9",
+    "description": "Model Context Protocol (MCP) server for dotCMS - enables AI agents to interact with dotCMS content management capabilities",
+    "main": "main.js",
+    "type": "module",
+    "bin": {
+        "dotcms-mcp-server": "./main.js"
+    },
+    "files": [
+        "main.js",
+        "tools/**/*",
+        "services/**/*",
+        "types/**/*",
+        "utils/**/*",
+        "README.md"
+    ],
+    "scripts": {
+        "start": "node main.js"
+    },
+    "keywords": [
+        "dotcms",
+        "mcp",
+        "model-context-protocol",
+        "ai",
+        "claude",
+        "content-management",
+        "cms",
+        "artificial-intelligence",
+        "automation",
+        "workflow",
+        "headless-cms"
+    ],
+    "author": {
+        "name": "Freddy Montes",
+        "email": "freddy@dotcms.com",
+        "url": "https://www.dotcms.com"
+    },
+    "license": "GPL-3.0",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/dotCMS/core.git",
+        "directory": "apps/mcp-server"
+    },
+    "bugs": {
+        "url": "https://github.com/dotCMS/core/issues"
+    },
+    "homepage": "https://github.com/dotCMS/core/tree/main/core-web/apps/mcp-server",
+    "engines": {
+        "node": ">=18.0.0"
+    },
+    "dependencies": {
+        "@modelcontextprotocol/sdk": "^1.13.1",
+        "zod": "^3.25.67"
+    },
+    "publishConfig": {
+        "access": "public"
+    }
+}

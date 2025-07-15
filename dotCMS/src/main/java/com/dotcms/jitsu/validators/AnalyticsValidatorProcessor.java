@@ -37,7 +37,8 @@ import java.util.Map;
  *   "context": {
  *     "site_key": {
  *       "type": "string",
- *       "required": true
+ *       "required": true,
+ *       "custom-validator": "SiteKeyValidator"
  *     },
  *     "session_id": {
  *       "type": "string",
@@ -81,7 +82,8 @@ public class AnalyticsValidatorProcessor {
         new StringTypeValidator(),
         new JsonObjectTypeValidator(),
         new JsonArrayTypeValidator(),
-        new DateValidator()
+        new DateValidator(),
+        new SiteKeyValidator()
     );
 
     public Validators getGlobalValidators(){
@@ -141,16 +143,17 @@ public class AnalyticsValidatorProcessor {
     }
 
     /**
-     * Recursively processes the JSON validators and populates the result map.
-     * 
-     * @param jsonValidationConfig The JSON validation file context
-     * @param path The current path
-     * @param jsonPathValidatorsList
+     * Recursively processes the JSON validators and populates the result map based on the JSON
+     * object that was sent by the client.
+     *
+     * @param jsonValidationConfig   The JSON validation file context
+     * @param path                   The current path
+     * @param jsonPathValidatorsList The list of JSON path validators.
      */
     private void processValidatorsRecursive(final JSONObject jsonValidationConfig,
                                             final String path,
                                             final List<Validators.JSONPathValidators> jsonPathValidatorsList) {
-        for (Object keyObj : jsonValidationConfig.keySet()) {
+        for (final Object keyObj : jsonValidationConfig.keySet()) {
             final String key = keyObj.toString();
             final Object value = jsonValidationConfig.get(key);
             final String currentPath = path.isEmpty() ? key : path + "." + key;
@@ -186,34 +189,32 @@ public class AnalyticsValidatorProcessor {
      * @param fieldConfig The field configuration
      * @return The list of validator classes
      */
-    private List<AnalyticsValidator> getValidatorsForField(JSONObject fieldConfig) {
-        List<AnalyticsValidator> validators = new ArrayList<>();
+    private List<AnalyticsValidator> getValidatorsForField(final JSONObject fieldConfig) {
+        final List<AnalyticsValidator> validators = new ArrayList<>();
 
         // Use the test method of each validator to determine if it should be applied
         for (AnalyticsValidator validator : ALL_VALIDATORS) {
             if (validator.test(fieldConfig)) {
                 try {
                     validators.add(validator.getClass().getDeclaredConstructor().newInstance());
-                } catch (InstantiationException |
+                } catch (final InstantiationException |
                         IllegalAccessException |
                         InvocationTargetException |
                         NoSuchMethodException e) {
-                    final String message = String.format("the validator %s could not be instantiated, " +
-                            "it must has a default constructor", validator.getClass().getName());
-
-                    throw new RuntimeException(message);
+                    final String message = String.format("Validator '%s' could not be instantiated. " +
+                            "It must have a default constructor", validator.getClass().getName());
+                    throw new DotRuntimeException(message);
                 }
-
             }
         }
-
         return validators;
     }
 
-    private  enum ValidatorType {
+    private enum ValidatorType {
         JSON_OBJECT,
         JSON_ARRAY,
         STRING,
         DATE;
     }
+
 }

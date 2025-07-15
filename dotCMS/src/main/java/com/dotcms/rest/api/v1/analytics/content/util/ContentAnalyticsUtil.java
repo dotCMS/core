@@ -7,11 +7,7 @@ import com.dotcms.jitsu.EventLogSubmitter;
 import com.dotcms.jitsu.ValidAnalyticsEventPayload;
 import com.dotcms.jitsu.ValidAnalyticsEventPayloadAttributes;
 import com.dotcms.jitsu.validators.AnalyticsValidatorUtil;
-import com.dotcms.security.apps.AppSecrets;
-import com.dotcms.security.apps.AppsAPI;
-import com.dotcms.security.apps.Secret;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -25,14 +21,11 @@ import com.liferay.portal.SystemException;
 import io.vavr.Lazy;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.dotcms.jitsu.ValidAnalyticsEventPayloadAttributes.REFERER_ATTRIBUTE_NAME;
@@ -40,6 +33,7 @@ import static com.dotcms.jitsu.ValidAnalyticsEventPayloadAttributes.URL_ATTRIBUT
 import static com.dotcms.jitsu.ValidAnalyticsEventPayloadAttributes.USER_AGENT_ATTRIBUTE_NAME;
 
 /**
+ * This utility class provides different methods for interacting with Content Analytics features.
  *
  * @author Jonathan Sanchez
  * @since Mar 12th, 2025
@@ -47,10 +41,6 @@ import static com.dotcms.jitsu.ValidAnalyticsEventPayloadAttributes.USER_AGENT_A
 public class ContentAnalyticsUtil {
 
     private static final Lazy<String> SITE_KEY_FORMAT = Lazy.of(() -> Config.getStringProperty("CONTENT_ANALYTICS_SITE_KEY_FORMAT", "DOT.%s.%s"));
-    private static final String SAMPLE_CA_JS_CONFIG = "const analyticsConfig = {\n" +
-                "\tsiteKey: '%s',\n" +
-                "\tserver: '%s'\n" +
-            "}";
 
     private static final AnalyticsValidatorUtil analyticsValidatorUtil =  AnalyticsValidatorUtil.INSTANCE;
 
@@ -58,9 +48,20 @@ public class ContentAnalyticsUtil {
 
     public static final String CONTENT_ANALYTICS_APP_KEY = "dotContentAnalytics-config";
 
+    /**
+     * Persists a user-defined event to the Content Analytics system. Several validation criteria
+     * can be applied to the event payload before it is persisted. The
+     * {@link com.dotcms.jitsu.validators.AnalyticsValidatorProcessor} allows developers to create
+     * both global validators, and event-specific validators.
+     *
+     * @param request          The current instance of the {@link HttpServletRequest}.
+     * @param userEventPayload The map containing event payload data.
+     *
+     * @return The {@link AnalyticsEventsResult} containing the result of the operation.
+     */
+    @SuppressWarnings("unchecked")
     public static AnalyticsEventsResult registerContentAnalyticsRestEvent(
             final HttpServletRequest request,
-            final HttpServletResponse response,
             final Map<String, Serializable> userEventPayload) {
 
         final String requestId = Objects.nonNull(request.getAttribute("requestId")) ?
@@ -90,12 +91,11 @@ public class ContentAnalyticsUtil {
 
         final JSONArray jsonEvents = new JSONArray(payloadEvents);
         final List<AnalyticsValidatorUtil.Error> eventsErrors = analyticsValidatorUtil.validateEvents(jsonEvents);
-
-        removeUnValidPayloads(payloadEvents, eventsErrors);
+        removeInvalidEventsFromPayload(payloadEvents, eventsErrors);
 
         if (!payloadEvents.isEmpty()) {
-            includeAutomaticallyFields(userEventPayload, request);
-            sendEvents(request, userEventPayload, eventsErrors);
+            includeInternalFields(userEventPayload, request);
+            sendEvents(request, userEventPayload);
         }
 
         return new AnalyticsEventsResult.Builder()
@@ -104,7 +104,15 @@ public class ContentAnalyticsUtil {
                 .build();
     }
 
-    private static void includeAutomaticallyFields(final Map<String, Serializable> userEventPayload,
+    /**
+     * Includes several internal dotCMS-specific attributes to the JSON Payload. These type of
+     * attributes are either not exposed to the customer, or must be handled internally for
+     * consistency reasons.
+     *
+     * @param userEventPayload The payload containing the attributes sent by the client.
+     * @param request          The current instance of the {@link HttpServletRequest}.
+     */
+    private static void includeInternalFields(final Map<String, Serializable> userEventPayload,
                                                    final HttpServletRequest request) {
 
         final String requestId = request.getAttribute("requestId").toString();
@@ -128,14 +136,15 @@ public class ContentAnalyticsUtil {
         userEventPayload.put("isTargetPage", false);
     }
 
-
     /**
-     * Validates events in the provided JSONArray and removes invalid events from the payload list.
+     * Validates the events in the provided JSONArray and removes invalid events from the payload
+     * list.
      *
-     * @param payloadEvents The list of event payloads that will be modified by removing invalid events
-     * @param eventsError
+     * @param payloadEvents The list of event payloads that will be modified by removing invalid
+     *                      events
+     * @param eventsError   The list of validation errors that occurred during event validation.
      */
-    private static void removeUnValidPayloads(
+    private static void removeInvalidEventsFromPayload(
             final List<Map<String, Object>> payloadEvents,
             final List<AnalyticsValidatorUtil.Error> eventsError) {
 
@@ -159,13 +168,12 @@ public class ContentAnalyticsUtil {
      * 
      * @param request The HTTP servlet request containing host information
      * @param userEventPayload The map containing event payload data to be logged
-     * @param eventsErrors The list of validation errors that occurred during event validation
      * @throws RuntimeException If there is an error retrieving the host or logging the event
      */
+    @SuppressWarnings("unchecked")
     private static void sendEvents(
             final HttpServletRequest request,
-            final Map<?, ?> userEventPayload,
-            final List<AnalyticsValidatorUtil.Error> eventsErrors) {
+            final Map<?, ?> userEventPayload) {
         try {
             final Host host = WebAPILocator.getHostWebAPI().getCurrentHost(request);
             SUBMITTER.logEvent(host, new ValidAnalyticsEventPayload((Map<String, Object>) userEventPayload));
@@ -175,68 +183,20 @@ public class ContentAnalyticsUtil {
     }
 
     /**
-     * Exposes a sample basic JavaScript configuration object that customers can copy and paste to
-     * configure their code to send Analytics Events to our infrastructure.
-     *
-     * @param site The {@link Host} that the configuration belongs to.
-     *
-     * @return The sample JavaScript configuration.
-     */
-    public static String getSiteJSConfig(final Host site) throws DotDataException, DotSecurityException {
-        final String siteKey = getSiteKey(site);
-        return String.format(SAMPLE_CA_JS_CONFIG, siteKey, "https://" + site.getHostname());
-    }
-
-    /**
-     * Returns the authentication key for a specific Site. If the user has NOT provided a custom
-     * key, then dotCMS will generate one for them.
-     *
-     * @param site The {@link Host} that the configuration belongs to.
-     *
-     * @return The Site Key.
-     *
-     * @throws DotDataException     An error occurred when updating the App's secrets.
-     * @throws DotSecurityException A permission error occurred when reading/saving App data.
-     */
-    public static String getSiteKey(final Host site) throws DotDataException, DotSecurityException {
-        final AppsAPI appsAPI = APILocator.getAppsAPI();
-        final Optional<AppSecrets> optionalAppSecrets = appsAPI.getSecrets(CONTENT_ANALYTICS_APP_KEY, false, site, APILocator.systemUser());
-        if (optionalAppSecrets.isPresent()) {
-            final Set<Map.Entry<String, Secret>> appParams = optionalAppSecrets.get().getSecrets().entrySet();
-            final Optional<String> optSiteKey = appParams.stream()
-                    .filter(entry -> "siteKey".equals(entry.getKey()))
-                    .map(entry -> entry.getValue().getString())
-                    .findFirst();
-            if (optSiteKey.isPresent() && !optSiteKey.get().isEmpty()) {
-                return optSiteKey.get();
-            }
-        }
-        // The App config or Site Key doesn't exist, let's create it
-        final String siteKey = generateInternalSiteKey(site.getIdentifier());
-        final AppSecrets.Builder builder = new AppSecrets.Builder();
-        builder.withKey(CONTENT_ANALYTICS_APP_KEY);
-        optionalAppSecrets
-                .map(appSecrets -> appSecrets.getSecrets().entrySet())
-                .orElse(Set.of())
-                .forEach(entry -> builder.withSecret(entry.getKey(), entry.getValue()));
-        builder.withSecret("siteKey", siteKey);
-        final AppSecrets secrets = builder.build();
-        appsAPI.saveSecrets(secrets, site, APILocator.systemUser());
-        return siteKey;
-    }
-
-    /**
      * Generates the encrypted site key that will be used by JavaScript code in HTML Pages to send
      * Analytics Events to our infrastructure. This allows us to provide customers with a secure
      * token that must be passed down to our REST Endpoint in order to varify that the request is
      * coming from a valid source.
+     * <p>The {@code DOT_CONTENT_ANALYTICS_SITE_KEY_FORMAT} environment variable allows you to
+     * customize the format of the generated site key, if required.By default, it requires both the
+     * Site ID, and the generated random Site Key.</p>
      *
      * @param siteId The Identifier of the Site that the Content Analytics configuration belongs
      *               to.
      *
-     * @return The Encrypted Site Key
+     * @return The secure random Site Key.
      */
-    private static String generateInternalSiteKey(final String siteId) {
+    public static String generateInternalSiteKey(final String siteId) {
         return String.format(SITE_KEY_FORMAT.get(), siteId, KeyGenerator.generateSiteKey());
     }
 

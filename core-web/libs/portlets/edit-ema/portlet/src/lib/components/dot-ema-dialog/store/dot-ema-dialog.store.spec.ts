@@ -373,6 +373,24 @@ describe('DotEmaDialogStoreService', () => {
         });
     });
 
+    it('should reset action payload', (done) => {
+        // First set an action payload
+        spectator.service.addContentlet({
+            containerId: '1234',
+            acceptTypes: 'test',
+            language_id: '1',
+            actionPayload: PAYLOAD_MOCK
+        });
+
+        // Then reset it
+        spectator.service.resetActionPayload();
+
+        spectator.service.dialogState$.subscribe((state) => {
+            expect(state.actionPayload).toBeUndefined();
+            done();
+        });
+    });
+
     describe('Dialog for translation', () => {
         it('should update the state to show dialog for a translation', () => {
             spectator.service.translatePage({
