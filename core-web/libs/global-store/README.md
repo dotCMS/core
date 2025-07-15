@@ -22,7 +22,7 @@ The `GlobalStore` is automatically provided at the root level and can be injecte
 
 ```typescript
 import { Component, inject } from '@angular/core';
-import { GlobalStore } from '@dotcms/global-store';
+import { GlobalStore } from '@dotcms/store';
 
 @Component({
   selector: 'app-user-profile',
