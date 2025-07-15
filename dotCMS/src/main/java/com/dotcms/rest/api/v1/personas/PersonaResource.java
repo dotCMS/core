@@ -7,6 +7,7 @@ import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.com.google.common.collect.Maps;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.annotation.SwaggerCompliant;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotmarketing.beans.Host;
@@ -18,6 +19,12 @@ import com.dotmarketing.portlets.personas.business.PersonaAPI;
 import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import java.util.Map;
@@ -32,7 +39,8 @@ import javax.ws.rs.core.MediaType;
 import org.glassfish.jersey.server.JSONP;
 
 @Path("/v1/personas")
-@Tag(name = "Personalization")
+@SwaggerCompliant(value = "Core authentication and user management APIs", batch = 1)
+@Tag(name = "Personas")
 public class PersonaResource {
 
     private final PersonaAPI personaAPI;
@@ -49,10 +57,32 @@ public class PersonaResource {
         this.webResource = webResource;
     }
 
+    @Operation(
+        summary = "List personas",
+        description = "Returns all personas for the current site. Site can be determined from session or header."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Personas retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = MapStringRestPersonaView.class))),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - site ID required or invalid",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces(MediaType.APPLICATION_JSON)
     public Map<String, RestPersona> list(@Context HttpServletRequest request, @Context final HttpServletResponse response) {
         Host host = (Host)request.getSession().getAttribute(WebKeys.CURRENT_HOST);
         if(host == null){
@@ -72,14 +102,40 @@ public class PersonaResource {
         return hash;
     }
 
+    @Operation(
+        summary = "Get persona by ID",
+        description = "Returns a specific persona by its identifier"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Persona retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = RestPersona.class))),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - persona ID or site ID required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "Persona not found",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @JSONP
     @Path("{id}")
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces(MediaType.APPLICATION_JSON)
     public RestPersona self(@Context HttpServletRequest request,
                             @Context final HttpServletResponse response,
-                            @PathParam("siteId") String siteId, @PathParam("id") String personaId) {
+                            @Parameter(description = "Site identifier", required = true) @PathParam("siteId") String siteId, 
+                            @Parameter(description = "Persona identifier", required = true) @PathParam("id") String personaId) {
         checkNotEmpty(siteId, BadRequestException.class, "Site Id is required.");
         User user = getUser(request, response);
         personaId = checkNotEmpty(personaId, BadRequestException.class, "Persona Id is required.");

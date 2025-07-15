@@ -3,6 +3,7 @@ package com.dotcms.rest;
 import com.dotcms.UnitTestBase;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.annotation.SwaggerCompliant;
+import com.dotcms.rest.annotation.ConsumesRequestBodyDirectly;
 import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.OpenAPIDefinition;
 import io.swagger.v3.oas.annotations.Operation;
@@ -523,9 +524,12 @@ public class RestEndpointAnnotationValidationTest extends UnitTestBase {
                         }
                     }
                     
-                    // Don't require @RequestBody if method uses @FormParam, is form-urlencoded, multipart form data, or async (@Suspended)
-                    // These methods access request data through JAX-RS form parameters, HttpServletRequest.getParameter(), or async response
-                    if (!hasRequestBodyAnnotation && !hasFormParams && !isFormUrlEncoded && !isMultipartFormData && !hasSuspendedParam) {
+                    // Check if method consumes request body directly (e.g., streaming endpoints)
+                    boolean consumesDirectly = method.isAnnotationPresent(ConsumesRequestBodyDirectly.class);
+                    
+                    // Don't require @RequestBody if method uses @FormParam, is form-urlencoded, multipart form data, async (@Suspended), or consumes directly
+                    // These methods access request data through JAX-RS form parameters, HttpServletRequest.getParameter(), async response, or direct stream access
+                    if (!hasRequestBodyAnnotation && !hasFormParams && !isFormUrlEncoded && !isMultipartFormData && !hasSuspendedParam && !consumesDirectly) {
                         String methodName = resourceClass.getSimpleName() + "." + method.getName();
                         violatingMethods.add(methodName);
                         addViolation(resourceClass.getName(), "Method " + method.getName() + 
@@ -614,12 +618,16 @@ public class RestEndpointAnnotationValidationTest extends UnitTestBase {
                     
                     // Skip validation for async methods with @Suspended
                     if (!hasSuspended) {
+                        // Check for VTL GET methods with request bodies (legacy exception)
+                        boolean isVtlGetWithBody = isVtlGetMethodWithRequestBody(resourceClass, method);
+                        
                         if (hasRequestBody && consumesAnnotation == null) {
                             String methodName = resourceClass.getSimpleName() + "." + method.getName();
                             violatingMethods.add(methodName);
                             addViolation(resourceClass.getName(), "Method " + method.getName() + 
                                        " has request body but missing @Consumes annotation");
-                        } else if (!hasRequestBody && consumesAnnotation != null) {
+                        } else if (!hasRequestBody && consumesAnnotation != null && !isVtlGetWithBody) {
+                            // Allow @Consumes on VTL GET methods with request bodies (legacy pattern)
                             String methodName = resourceClass.getSimpleName() + "." + method.getName();
                             violatingMethods.add(methodName);
                             addViolation(resourceClass.getName(), "Method " + method.getName() + 
@@ -1009,10 +1017,16 @@ public class RestEndpointAnnotationValidationTest extends UnitTestBase {
             }
         }
         
+        // Check if method is marked as consuming request body directly (for streaming, async, etc.)
+        if (method.isAnnotationPresent(ConsumesRequestBodyDirectly.class)) {
+            return true;
+        }
+        
         // Check if method has @RequestBody in @Operation annotation
         Operation operationAnnotation = method.getAnnotation(Operation.class);
-        if (operationAnnotation != null && operationAnnotation.requestBody() != null) {
-            // If there's a requestBody in the Operation, method has request body
+        if (operationAnnotation != null && operationAnnotation.requestBody() != null && 
+            !operationAnnotation.requestBody().description().isEmpty()) {
+            // If there's a non-empty requestBody in the Operation, method has request body
             return true;
         }
         
@@ -1023,11 +1037,19 @@ public class RestEndpointAnnotationValidationTest extends UnitTestBase {
             }
             
             // @BeanParam can aggregate both query params (GET) and form params (POST/PUT)
-            // Only consider it a request body for non-GET methods
+            // Only consider it a request body for non-GET methods with @Consumes
             if (parameter.isAnnotationPresent(javax.ws.rs.BeanParam.class)) {
                 // For GET methods, @BeanParam aggregates query parameters, not request body
                 if (!method.isAnnotationPresent(GET.class)) {
-                    return true;
+                    Consumes consumesAnnotation = method.getAnnotation(Consumes.class);
+                    if (consumesAnnotation != null) {
+                        for (String mediaType : consumesAnnotation.value()) {
+                            if (mediaType.contains("json") || mediaType.contains("xml") || 
+                                mediaType.contains("form-urlencoded") || mediaType.contains("multipart")) {
+                                return true;
+                            }
+                        }
+                    }
                 }
             }
             
@@ -1056,8 +1078,22 @@ public class RestEndpointAnnotationValidationTest extends UnitTestBase {
                                        method.isAnnotationPresent(PUT.class) || 
                                        method.isAnnotationPresent(javax.ws.rs.PATCH.class);
         
+        // Special case: VTL GET methods with request bodies (legacy pattern)
+        if (method.isAnnotationPresent(GET.class)) {
+            // VTLResource GET methods are legacy exceptions that accept request bodies
+            Class<?> declaringClass = method.getDeclaringClass();
+            if (declaringClass != null && declaringClass.getSimpleName().equals("VTLResource")) {
+                // Check if this is one of the specific GET methods that accepts request bodies
+                String methodName = method.getName();
+                if ((methodName.equals("get") || methodName.equals("dynamicGet")) && hasNonJaxRsParameters(method)) {
+                    return true; // VTL GET methods with body parameters
+                }
+            }
+            return false; // Regular GET methods don't have request bodies
+        }
+        
         if (!isPotentialBodyMethod) {
-            return false; // GET, DELETE, HEAD, OPTIONS don't have request bodies
+            return false; // DELETE, HEAD, OPTIONS don't have request bodies
         }
         
         // Check @Consumes annotation - if a POST/PUT/PATCH method has @Consumes for JSON/XML it likely consumes request body  
@@ -1071,21 +1107,87 @@ public class RestEndpointAnnotationValidationTest extends UnitTestBase {
             }
         }
         
-        // For POST/PUT/PATCH methods without @Consumes, check if they have non-context parameters
-        // that could be request body parameters
+        // For POST/PUT/PATCH methods, be more conservative about detecting request body parameters
+        // Only consider it a request body if there are parameters that are NOT JAX-RS standard annotations
+        // AND the method has @Consumes or other strong indicators
+        return hasNonJaxRsParameters(method) && consumesAnnotation != null;
+    }
+    
+    /**
+     * Check if method has non-JAX-RS parameters (extracted for reuse)
+     */
+    private boolean hasNonJaxRsParameters(Method method) {
         for (java.lang.reflect.Parameter parameter : method.getParameters()) {
-            // Skip JAX-RS context parameters and standard annotations that don't indicate request body
-            if (parameter.isAnnotationPresent(javax.ws.rs.core.Context.class) ||
-                parameter.isAnnotationPresent(javax.ws.rs.PathParam.class) ||
-                parameter.isAnnotationPresent(javax.ws.rs.QueryParam.class) ||
-                parameter.isAnnotationPresent(javax.ws.rs.HeaderParam.class) ||
-                parameter.isAnnotationPresent(javax.ws.rs.CookieParam.class) ||
-                parameter.isAnnotationPresent(javax.ws.rs.DefaultValue.class) ||
-                parameter.isAnnotationPresent(io.swagger.v3.oas.annotations.Parameter.class)) {
+            // Skip all JAX-RS standard annotations and dotCMS context parameters
+            if (isJaxRsOrContextParameter(parameter)) {
                 continue; // These don't indicate request body consumption
             }
             
-            // If we find a parameter that looks like request body data, method needs @RequestBody
+            // If we reach here, this parameter is not a standard JAX-RS/context parameter
+            return true;
+        }
+        return false;
+    }
+    
+    /**
+     * Check if this is a VTL GET method that accepts request bodies (legacy pattern)
+     */
+    private boolean isVtlGetMethodWithRequestBody(Class<?> resourceClass, Method method) {
+        if (!method.isAnnotationPresent(GET.class)) {
+            return false;
+        }
+        
+        if (!resourceClass.getSimpleName().equals("VTLResource")) {
+            return false;
+        }
+        
+        String methodName = method.getName();
+        if (!(methodName.equals("get") || methodName.equals("dynamicGet"))) {
+            return false;
+        }
+        
+        // Check if method has request body parameters (like Map<String, Object> bodyMap or String bodyMapString)
+        for (java.lang.reflect.Parameter parameter : method.getParameters()) {
+            if (isJaxRsOrContextParameter(parameter)) {
+                continue;
+            }
+            
+            // VTL methods have Map<String, Object> or String parameters for request body
+            Class<?> paramType = parameter.getType();
+            String paramTypeName = paramType.getSimpleName();
+            if (paramType == java.util.Map.class || paramTypeName.equals("String")) {
+                return true; // This is a VTL GET method with request body parameter
+            }
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Checks if a parameter is a standard JAX-RS or dotCMS context parameter that should not be considered a request body
+     */
+    private boolean isJaxRsOrContextParameter(java.lang.reflect.Parameter parameter) {
+        // Standard JAX-RS parameter annotations
+        if (parameter.isAnnotationPresent(javax.ws.rs.core.Context.class) ||
+            parameter.isAnnotationPresent(javax.ws.rs.PathParam.class) ||
+            parameter.isAnnotationPresent(javax.ws.rs.QueryParam.class) ||
+            parameter.isAnnotationPresent(javax.ws.rs.HeaderParam.class) ||
+            parameter.isAnnotationPresent(javax.ws.rs.CookieParam.class) ||
+            parameter.isAnnotationPresent(javax.ws.rs.MatrixParam.class) ||
+            parameter.isAnnotationPresent(javax.ws.rs.DefaultValue.class) ||
+            parameter.isAnnotationPresent(io.swagger.v3.oas.annotations.Parameter.class)) {
+            return true;
+        }
+        
+        // Check parameter type - common context types
+        Class<?> paramType = parameter.getType();
+        if (paramType == javax.servlet.http.HttpServletRequest.class ||
+            paramType == javax.servlet.http.HttpServletResponse.class ||
+            paramType == javax.servlet.http.HttpSession.class ||
+            paramType == javax.ws.rs.core.SecurityContext.class ||
+            paramType == javax.ws.rs.core.UriInfo.class ||
+            paramType == javax.ws.rs.core.Request.class ||
+            paramType == javax.ws.rs.core.Response.class) {
             return true;
         }
         
