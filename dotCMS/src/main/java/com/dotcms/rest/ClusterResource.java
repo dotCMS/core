@@ -13,6 +13,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import com.dotcms.cluster.bean.Server;
 import com.dotcms.cluster.bean.ServerPort;
@@ -34,9 +35,17 @@ import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
+import com.dotcms.rest.annotation.SwaggerCompliant;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 
+@SwaggerCompliant(value = "System administration and configuration APIs", batch = 4)
 @Path("/cluster")
 @Tag(name = "Cluster Management")
 public class ClusterResource {
@@ -55,10 +64,30 @@ public class ClusterResource {
      * @throws DotCacheException 
      * @throws DotSecurityException 
      */
+    @Operation(
+        summary = "Get cluster nodes status",
+        description = "Returns a map of cache cluster nodes status including server health information and cluster state. Validates cache transport across all cluster members."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Cluster nodes status retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityMapView.class))),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - backend user authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions to access configuration portlet",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error retrieving cluster status",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @Path ("/getNodesStatus/{params:.*}")
     @Produces ("application/json")
-    public Response getNodesInfo (@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam ("params") String params )
+    public Response getNodesInfo (@Context HttpServletRequest request, @Context final HttpServletResponse response, 
+        @Parameter(description = "URL parameters for the cluster status request", required = true) @PathParam ("params") String params )
 			throws DotDataException, JSONException, DotStateException, DotSecurityException, DotCacheException {
 
 		new WebResource.InitBuilder(webResource)
@@ -112,10 +141,30 @@ public class ClusterResource {
      * @throws DotDataException
      * @throws JSONException
      */
+    @Operation(
+        summary = "Get Elasticsearch configuration properties",
+        description = "Returns Elasticsearch cluster configuration properties including bind address, cache port, and Elasticsearch transport TCP port for the current server."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Elasticsearch configuration properties retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityStringView.class))),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - backend user authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions to access configuration portlet",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error retrieving ES configuration",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @Path ("/getESConfigProperties/{params:.*}")
     @Produces ("application/json")
-    public Response getESConfigProperties ( @Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam ("params") String params )
+    public Response getESConfigProperties ( @Context HttpServletRequest request, @Context final HttpServletResponse response, 
+        @Parameter(description = "URL parameters for the ES configuration request", required = true) @PathParam ("params") String params )
 			throws DotDataException, JSONException {
 
         InitDataObject initData = webResource.init( params, request, response, false, PortletID.CONFIGURATION.toString() );
@@ -137,12 +186,28 @@ public class ClusterResource {
 
     }
 
+    @Operation(
+        summary = "Get license repository status",
+        description = "Returns the current status of the license repository including total licenses and available license count."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "License repository status retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityStringView.class))),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - backend user authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error retrieving license repository status",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @Path("/licenseRepoStatus")
     @Produces("application/json")
     public Response getLicenseRepoStatus(@Context HttpServletRequest request,
 										 @Context final HttpServletResponse response,
-										 @PathParam ("params") String params) throws DotDataException, JSONException {
+										 @Parameter(description = "URL parameters for the license repository status request", required = false) @PathParam ("params") String params) throws DotDataException, JSONException {
         webResource.init(params, request, response,true, null);
 
         JSONObject json=new JSONObject();
@@ -157,9 +222,29 @@ public class ClusterResource {
      * @param params
      * @return
      */
+    @Operation(
+        summary = "Remove server from cluster",
+        description = "Removes a specified server from the cluster table. This operation permanently removes the server from the cluster configuration."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Server removed from cluster successfully (no content)"),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - backend user authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions to access configuration portlet",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error removing server from cluster",
+                    content = @Content(mediaType = "application/json"))
+    })
     @POST
     @Path("/remove/{params:.*}")
-    public Response removeFromCluster(@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam("params") String params) {
+    @Produces(MediaType.APPLICATION_JSON)
+    // TODO: Consider changing to @DELETE for better REST semantics, but this would be a breaking change
+    public Response removeFromCluster(@Context HttpServletRequest request, @Context final HttpServletResponse response, 
+        @Parameter(description = "URL parameters including serverid to remove from cluster", required = true) @PathParam("params") String params) {
         InitDataObject initData = webResource.init(params, request, response, true, PortletID.CONFIGURATION.toString());
         String serverId = initData.getParamsMap().get("serverid");
         try {
@@ -191,8 +276,23 @@ public class ClusterResource {
      * @param response
      * @return
      */
+    @Operation(
+        summary = "Test cluster connectivity",
+        description = "Sends a cluster ping that is recorded in the logs to test cluster connectivity and validate that all cluster nodes are communicating properly."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Cluster test completed successfully (no content)"),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - backend user authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions to access configuration portlet",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @Path("/test")
+    @Produces(MediaType.APPLICATION_JSON)
     public Response testCluster(@Context HttpServletRequest request, @Context final HttpServletResponse response) {
 
 

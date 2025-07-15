@@ -1,6 +1,8 @@
 package com.dotcms.rest.api.v1.system;
 
 import static com.dotcms.rest.ResponseEntityView.OK;
+import com.dotcms.rest.ResponseEntityStringView;
+import com.dotcms.rest.ResponseEntityMapView;
 
 import com.dotcms.featureflag.FeatureFlagName;
 import com.dotcms.rest.InitDataObject;
@@ -36,8 +38,15 @@ import com.dotmarketing.util.Config;
 import io.vavr.control.Try;
 import org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.ResponseEntityView;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.annotation.SwaggerCompliant;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.liferay.util.LocaleUtil;
 
@@ -56,8 +65,9 @@ import com.liferay.util.LocaleUtil;
  * @since Jul 22, 2016
  *
  */
+@SwaggerCompliant(value = "System administration and configuration APIs", batch = 4)
 @Path("/v1/configuration")
-@Tag(name = "System Configuration", description = "System configuration and company settings")
+@Tag(name = "System Configuration")
 @SuppressWarnings("serial")
 public class ConfigurationResource implements Serializable {
 
@@ -92,13 +102,30 @@ public class ConfigurationResource implements Serializable {
 	 * @return
 	 * @throws IOException
 	 */
+	@Operation(
+		summary = "Get configuration variables",
+		description = "Retrieve specific configuration keys from dotCMS (allowed on WHITE_LIST and not restricted by BLACK_LIST)"
+	)
+	@ApiResponses(value = {
+		@ApiResponse(responseCode = "200", 
+					description = "Configuration variables retrieved successfully",
+					content = @Content(mediaType = "application/json",
+									  schema = @Schema(implementation = ResponseEntityMapView.class))),
+		@ApiResponse(responseCode = "401", 
+					description = "Unauthorized - authentication required",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "403", 
+					description = "Forbidden - backend user required",
+					content = @Content(mediaType = "application/json"))
+	})
 	@Path("/config")
 	@GET
 	@JSONP
 	@NoCache
-	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+	@Produces(MediaType.APPLICATION_JSON)
 	public final Response getConfigVariables(@Context final HttpServletRequest request,
 											 @Context final HttpServletResponse response,
+											 @Parameter(description = "Comma-separated list of configuration keys to retrieve", required = false)
 											 @QueryParam("keys") final String keysQuery)
 			throws IOException {
 
@@ -122,7 +149,7 @@ public class ConfigurationResource implements Serializable {
 			}
 		}
 
-		return Response.ok(new ResponseEntityView(resultMap)).build();
+		return Response.ok(new ResponseEntityView<>(resultMap)).build();
 	}
 
 	private String removePrefix (final String key) {
@@ -157,16 +184,29 @@ public class ConfigurationResource implements Serializable {
 	 *            - The {@link HttpServletRequest} object.
 	 * @return The JSON representation of configuration parameters.
 	 */
+	@Operation(
+		summary = "List configuration properties",
+		description = "Returns the list of system properties that are set through the dotCMS configuration files"
+	)
+	@ApiResponses(value = {
+		@ApiResponse(responseCode = "200", 
+					description = "Configuration properties retrieved successfully",
+					content = @Content(mediaType = "application/json",
+									  schema = @Schema(implementation = ResponseEntityMapView.class))),
+		@ApiResponse(responseCode = "500", 
+					description = "Internal server error",
+					content = @Content(mediaType = "application/json"))
+	})
 	@GET
 	@JSONP
 	@NoCache
-	@Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
+	@Produces({ MediaType.APPLICATION_JSON })
 	public Response list(@Context final HttpServletRequest request) {
 		try {
 
 			final Locale locale = LocaleUtil.getLocale(request);
 			final Map<String, Object> configPropsMap = helper.getConfigProperties(request, locale);
-			return Response.ok(new ResponseEntityView(configPropsMap)).build();
+			return Response.ok(new ResponseEntityView<>(configPropsMap)).build();
 		} catch (Exception e) {
 			// In case of unknown error, so we report it as a 500
 			return ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
@@ -179,13 +219,33 @@ public class ConfigurationResource implements Serializable {
 	 * @param request
 	 * @return
 	 */
+	@Operation(
+		summary = "Set configuration properties",
+		description = "Set values to configuration properties at runtime"
+	)
+	@ApiResponses(value = {
+		@ApiResponse(responseCode = "200", 
+					description = "Configuration properties set successfully (no body)"),
+		@ApiResponse(responseCode = "401", 
+					description = "Unauthorized - authentication required",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "403", 
+					description = "Forbidden - CMS Administrator role and maintenance portlet access required",
+					content = @Content(mediaType = "application/json"))
+	})
 	@PUT
 	@JSONP
 	@NoCache
 	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
 	public Response set(
 			@Context final HttpServletRequest request,
 			@Context final HttpServletResponse response,
+			@io.swagger.v3.oas.annotations.parameters.RequestBody(
+				description = "Map of configuration properties to set", 
+				required = true,
+				content = @Content(schema = @Schema(type = "object"))
+			)
 			Map<String, String> properties) {
 
 		new WebResource
@@ -202,14 +262,39 @@ public class ConfigurationResource implements Serializable {
 		return Response.ok().build();
 	}
 
+	@Operation(
+		summary = "Validate company email",
+		description = "Send a validation email to verify the company email configuration"
+	)
+	@ApiResponses(value = {
+		@ApiResponse(responseCode = "200", 
+					description = "Validation email sent successfully",
+					content = @Content(mediaType = "application/json",
+									  schema = @Schema(implementation = ResponseEntityStringView.class))),
+		@ApiResponse(responseCode = "401", 
+					description = "Unauthorized - authentication required",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "403", 
+					description = "Forbidden - CMS Administrator role and maintenance portlet access required",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "500", 
+					description = "Internal server error",
+					content = @Content(mediaType = "application/json"))
+	})
 	@POST
 	@Path("/_validateCompanyEmail")
 	@JSONP
 	@NoCache
-	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
 	public Response validateEmail(
 			@Context final HttpServletRequest request,
 			@Context final HttpServletResponse response,
+			@io.swagger.v3.oas.annotations.parameters.RequestBody(
+				description = "Company email form data", 
+				required = true,
+				content = @Content(schema = @Schema(implementation = CompanyEmailForm.class))
+			)
 			final CompanyEmailForm form) throws ExecutionException, InterruptedException {
 
 		final InitDataObject dataObject = new InitBuilder(request, response)
@@ -220,7 +305,7 @@ public class ConfigurationResource implements Serializable {
 
 		final Tuple2<String, String> mailAndSender = helper.parseMailAndSender(form.getSenderAndEmail());
 		helper.sendValidationEmail(mailAndSender._1, mailAndSender._2, dataObject.getUser());
-		return Response.ok(new ResponseEntityView(OK)).build();
+		return Response.ok(new ResponseEntityView<>(OK)).build();
 	}
 
 }

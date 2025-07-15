@@ -34,8 +34,6 @@ tags:
   name: Authentication
 - description: Form management and processing
   name: Forms
-- description: Health management and monitoring endpoints for administrative dashboards
-  name: Health
 - description: Elasticsearch index management and operations
   name: Search Index
 - description: Endpoints for managing background jobs and job queues
@@ -44,14 +42,6 @@ tags:
   name: Maintenance
 - description: Content relationship management
   name: Relationships
-- description: System configuration and company settings
-  name: System Configuration
-- description: Cache provider management and operations
-  name: Cache Management
-- description: System logging configuration and management
-  name: System Logging
-- description: System monitoring and health checks
-  name: System Monitoring
 - description: Endpoints for managing content variants
   name: Variants
 - description: Template design and management
@@ -67,6 +57,8 @@ tags:
   name: API Token
 - description: File and folder browser tree operations
   name: Browser Tree
+- description: Cache provider management and operations
+  name: Cache Management
 - description: Content categorization and taxonomy
   name: Categories
 - description: Cluster nodes and distributed system management
@@ -87,6 +79,8 @@ tags:
   name: File Assets
 - description: Folder structure and organization
   name: Folders
+- description: System health monitoring and diagnostics
+  name: Health
 - description: Language management and localization
   name: Internationalization
 - description: License management and validation
@@ -126,6 +120,12 @@ tags:
   name: Sites
 - description: System-level operations and Redis management
   name: System
+- description: System configuration and company settings
+  name: System Configuration
+- description: System logging configuration and management
+  name: System Logging
+- description: System monitoring and health checks
+  name: System Monitoring
 - description: Storage providers and data replication management
   name: System Storage
 - description: Server log file monitoring and real-time viewing
@@ -433,84 +433,165 @@ paths:
       - Bundle
   /cluster/getESConfigProperties/{params}:
     get:
+      description: "Returns Elasticsearch cluster configuration properties including\
+        \ bind address, cache port, and Elasticsearch transport TCP port for the current\
+        \ server."
       operationId: getESConfigProperties
       parameters:
-      - in: path
+      - description: URL parameters for the ES configuration request
+        in: path
         name: params
         required: true
         schema:
           type: string
           pattern: .*
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityStringView"
+          description: Elasticsearch configuration properties retrieved successfully
+        "401":
           content:
             application/json: {}
-          description: default response
+          description: Unauthorized - backend user authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions to access configuration
+            portlet
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error retrieving ES configuration
+      summary: Get Elasticsearch configuration properties
       tags:
       - Cluster Management
   /cluster/getNodesStatus/{params}:
     get:
+      description: Returns a map of cache cluster nodes status including server health
+        information and cluster state. Validates cache transport across all cluster
+        members.
       operationId: getNodesInfo
       parameters:
-      - in: path
+      - description: URL parameters for the cluster status request
+        in: path
         name: params
         required: true
         schema:
           type: string
           pattern: .*
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityMapView"
+          description: Cluster nodes status retrieved successfully
+        "401":
           content:
             application/json: {}
-          description: default response
+          description: Unauthorized - backend user authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions to access configuration
+            portlet
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error retrieving cluster status
+      summary: Get cluster nodes status
       tags:
       - Cluster Management
   /cluster/licenseRepoStatus:
     get:
+      description: Returns the current status of the license repository including
+        total licenses and available license count.
       operationId: getLicenseRepoStatus
       parameters:
-      - in: path
+      - description: URL parameters for the license repository status request
+        in: path
         name: params
         required: true
         schema:
           type: string
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityStringView"
+          description: License repository status retrieved successfully
+        "401":
           content:
             application/json: {}
-          description: default response
+          description: Unauthorized - backend user authentication required
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error retrieving license repository status
+      summary: Get license repository status
       tags:
       - Cluster Management
   /cluster/remove/{params}:
     post:
+      description: Removes a specified server from the cluster table. This operation
+        permanently removes the server from the cluster configuration.
       operationId: removeFromCluster
       parameters:
-      - in: path
+      - description: URL parameters including serverid to remove from cluster
+        in: path
         name: params
         required: true
         schema:
           type: string
           pattern: .*
       responses:
-        default:
+        "200":
+          description: Server removed from cluster successfully (no content)
+        "401":
           content:
-            '*/*': {}
-          description: default response
+            application/json: {}
+          description: Unauthorized - backend user authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions to access configuration
+            portlet
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error removing server from cluster
+      summary: Remove server from cluster
       tags:
       - Cluster Management
   /cluster/test:
     get:
+      description: Sends a cluster ping that is recorded in the logs to test cluster
+        connectivity and validate that all cluster nodes are communicating properly.
       operationId: testCluster
       responses:
-        default:
+        "200":
+          description: Cluster test completed successfully (no content)
+        "401":
           content:
-            '*/*': {}
-          description: default response
+            application/json: {}
+          description: Unauthorized - backend user authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions to access configuration
+            portlet
+      summary: Test cluster connectivity
       tags:
       - Cluster Management
   /config/deleteEndpoint:
     post:
       deprecated: true
+      description: Deletes a publishing endpoint. This endpoint is deprecated - use
+        EndpointResource.delete instead.
       operationId: deleteEndpoint
       requestBody:
         content:
@@ -520,23 +601,53 @@ paths:
               properties:
                 callback:
                   type: string
+                  description: Callback parameter for the operation
                 endPoint:
                   type: string
+                  description: Endpoint ID to delete
                 password:
                   type: string
+                  description: Password for authentication
                 type:
                   type: string
+                  description: Type parameter for the operation
                 user:
                   type: string
+                  description: Username for authentication
+              required:
+              - endPoint
+              - password
+              - user
       responses:
-        default:
+        "200":
           content:
             application/json: {}
-          description: default response
+          description: Endpoint deleted successfully
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - missing endpoint parameter
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - backend user authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions to access configuration
+            portlet
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error deleting endpoint
+      summary: Delete endpoint (deprecated)
       tags:
       - System Configuration
   /config/deleteEnvironment:
     post:
+      description: Deletes a publishing environment and removes it from the user session
+        if it was selected. This operation permanently removes the environment from
+        the system.
       operationId: deleteEnvironment
       requestBody:
         content:
@@ -546,33 +657,74 @@ paths:
               properties:
                 callback:
                   type: string
+                  description: Callback parameter for the operation
                 environment:
                   type: string
+                  description: Environment ID to delete
                 password:
                   type: string
+                  description: Password for authentication
                 type:
                   type: string
+                  description: Type parameter for the operation
                 user:
                   type: string
+                  description: Username for authentication
+              required:
+              - environment
+              - password
+              - user
       responses:
-        default:
+        "200":
           content:
             application/json: {}
-          description: default response
+          description: Environment deleted successfully
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - missing environment parameter
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - backend user authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions to access configuration
+            portlet
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error deleting environment
+      summary: Delete environment
       tags:
       - System Configuration
   /config/regenerateKey:
     post:
+      description: Regenerates the company's key digest. This creates a new security
+        key for the company and returns the new key digest.
       operationId: regenerateKey
       responses:
-        default:
+        "200":
           content:
             application/json: {}
-          description: default response
+          description: Company key regenerated successfully
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - backend user authentication required
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error regenerating key
+      summary: Regenerate company key
       tags:
       - System Configuration
   /config/saveCompanyAuthTypeInfo:
     post:
+      description: "Updates the authentication type for the company. This controls\
+        \ how users authenticate to the system (e.g., local authentication, LDAP,\
+        \ etc.)."
       operationId: saveCompanyAuthTypeInfo
       requestBody:
         content:
@@ -582,19 +734,50 @@ paths:
               properties:
                 authType:
                   type: string
+                  description: "Authentication type for the company (e.g., 'id', 'emailAddress')"
                 password:
                   type: string
+                  description: Password for authentication
                 user:
                   type: string
+                  description: Username for authentication
+              required:
+              - authType
+              - password
+              - user
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Simple response object with success status and message
+          description: Company authentication type saved successfully
+        "400":
           content:
             application/json: {}
-          description: default response
+          description: Bad request - missing or invalid authentication type parameter
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - backend user authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions to access configuration
+            portlet
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error saving authentication type
+      summary: Save company authentication type
       tags:
       - System Configuration
   /config/saveCompanyBasicInfo:
     post:
+      description: "Updates basic company information including URLs, email settings,\
+        \ colors, and logos. This endpoint is called from the CMS Config portlet to\
+        \ configure company branding and settings."
       operationId: saveCompanyBasicInfo
       requestBody:
         content:
@@ -604,35 +787,77 @@ paths:
               properties:
                 city:
                   type: string
+                  description: Login logo asset path
                 emailAddress:
                   type: string
+                  description: Company email address
                 homeURL:
                   type: string
+                  description: Home URL for the company
                 mx:
                   type: string
+                  description: Mail exchange server
                 password:
                   type: string
+                  description: Password for authentication
                 portalURL:
                   type: string
+                  description: Portal URL for the company
                 size:
                   type: string
+                  description: Background color for the company theme
                 state:
                   type: string
+                  description: Navigation bar logo asset path (Enterprise only)
                 street:
                   type: string
+                  description: Secondary color for the company theme
                 type:
                   type: string
+                  description: Primary color for the company theme
                 user:
                   type: string
+                  description: Username for authentication
+              required:
+              - emailAddress
+              - password
+              - portalURL
+              - size
+              - street
+              - type
+              - user
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Simple response object with success status and message
+          description: Company basic information saved successfully
+        "400":
           content:
             application/json: {}
-          description: default response
+          description: Bad request - missing or invalid required parameters
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - backend user authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions to access configuration
+            portlet
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error saving company information
+      summary: Save company basic information
       tags:
       - System Configuration
   /config/saveCompanyLocaleInfo:
     post:
+      description: Updates company locale settings including language and timezone
+        information. This affects the default locale settings for users in the system.
       operationId: saveCompanyLocaleInfo
       requestBody:
         content:
@@ -642,22 +867,54 @@ paths:
               properties:
                 languageId:
                   type: string
+                  description: Language ID for the company locale
                 password:
                   type: string
+                  description: Password for authentication
                 timeZoneId:
                   type: string
+                  description: Timezone ID for the company locale
                 user:
                   type: string
+                  description: Username for authentication
+              required:
+              - languageId
+              - password
+              - timeZoneId
+              - user
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Simple response object with success status and message
+          description: Company locale information saved successfully
+        "400":
           content:
             application/json: {}
-          description: default response
+          description: Bad request - missing or invalid timezone/language parameters
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - backend user authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions to access configuration
+            portlet
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error saving locale information
+      summary: Save company locale information
       tags:
       - System Configuration
   /config/saveCompanyLogo:
     post:
       deprecated: true
+      description: Updates the company logo. This endpoint is deprecated - use saveCompanyBasicInfo
+        instead for logo management.
       operationId: saveCompanyLogo
       requestBody:
         content:
@@ -669,13 +926,37 @@ paths:
                   $ref: "#/components/schemas/FormDataContentDisposition"
                 password:
                   type: string
+                  description: Password for authentication
                 user:
                   type: string
+                  description: Username for authentication
+              required:
+              - logoFile
+              - password
+              - user
       responses:
-        default:
+        "200":
           content:
             text/html: {}
-          description: default response
+          description: Company logo saved successfully
+        "400":
+          content:
+            text/html: {}
+          description: Bad request - missing logo file
+        "401":
+          content:
+            text/html: {}
+          description: Unauthorized - backend user authentication required
+        "403":
+          content:
+            text/html: {}
+          description: Forbidden - insufficient permissions to access configuration
+            portlet
+        "500":
+          content:
+            text/html: {}
+          description: Internal server error saving company logo
+      summary: Save company logo (deprecated)
       tags:
       - System Configuration
   /content/_search:
@@ -2346,21 +2627,48 @@ paths:
       - Content Type
   /testResource/testGet/{params}:
     get:
+      description: "Example method that handles a GET operation for testing purposes.\
+        \ Supports JSON, XML, and JSONP response formats. This endpoint is disabled\
+        \ in production."
       operationId: getDocumentCount
       parameters:
-      - in: path
+      - description: URL parameters including user/password/param1/param2 and optional
+          type/callback
+        in: path
         name: params
         required: true
         schema:
           type: string
           pattern: .*
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                description: "Test response containing success status, message, and\
+                  \ echoed parameters (param1, param2)"
+          description: Test operation completed successfully
+        "400":
           content:
             application/json: {}
-          description: default response
+          description: "Bad request - missing required parameters (param1, param2)"
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - user authentication required
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error during test operation
+      summary: Test GET operation
+      tags:
+      - Testing
   /testResource/testPost:
     post:
+      description: "Example method that handles a POST operation for testing purposes.\
+        \ Supports JSON, XML, and JSONP response formats. This endpoint is disabled\
+        \ in production."
       operationId: saveTest
       requestBody:
         content:
@@ -2370,21 +2678,51 @@ paths:
               properties:
                 callback:
                   type: string
+                  description: Callback function name for JSONP
                 param1:
                   type: string
+                  description: First test parameter
                 param2:
                   type: string
+                  description: Second test parameter
                 password:
                   type: string
+                  description: Password for authentication
                 type:
                   type: string
+                  description: "Response type (json, xml, jsonp)"
                 user:
                   type: string
+                  description: Username for authentication
+              required:
+              - param1
+              - param2
+              - password
+              - user
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                description: "Test POST response containing success status, message,\
+                  \ and echoed parameters (param1, param2)"
+          description: Test POST operation completed successfully
+        "400":
           content:
             application/json: {}
-          description: default response
+          description: "Bad request - missing required parameters (param1, param2)"
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - user authentication required
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error during test operation
+      summary: Test POST operation
+      tags:
+      - Testing
   /user/getloggedinuser/{params}:
     get:
       deprecated: true
@@ -3575,13 +3913,21 @@ paths:
       - API Token
   /v1/appconfiguration:
     get:
+      description: "Returns system properties that are useful to the dotCMS Angular\
+        \ UI, including configuration parameters and menu items for logged in users"
       operationId: list_7
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityMapView"
+          description: Configuration data retrieved successfully (no body if k8s probe)
+        "500":
+          content:
             application/json: {}
-          description: default response
+          description: Internal server error
+      summary: Get application configuration
       tags:
       - System Configuration
   /v1/apps:
@@ -4301,194 +4647,299 @@ paths:
       - Browser Tree
   /v1/caches/provider/{provider}/flush:
     delete:
+      description: Deletes all objects for a provider (will clean all groups and generate
+        a new key)
       operationId: flushAll
       parameters:
-      - in: path
+      - description: Cache provider name
+        in: path
         name: provider
         required: true
         schema:
           type: string
           pattern: .*
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityStringView"
+          description: All cache for provider flushed successfully
+        "401":
+          content:
             application/json: {}
-          description: default response
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - maintenance portlet access required
+      summary: Flush all cache for provider
       tags:
       - Cache Management
   /v1/caches/provider/{provider}/flush/{group}:
     delete:
+      description: Flush all objects for a provider and group
       operationId: flushGroup
       parameters:
-      - in: path
+      - description: Cache provider name
+        in: path
         name: provider
         required: true
         schema:
           type: string
           pattern: .*
-      - in: path
+      - description: Cache group
+        in: path
         name: group
         required: true
         schema:
           type: string
           pattern: .*
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityStringView"
+          description: Cache group flushed successfully
+        "401":
+          content:
             application/json: {}
-          description: default response
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - maintenance portlet access required
+      summary: Flush cache group
       tags:
       - Cache Management
   /v1/caches/provider/{provider}/flush/{group}/{id}:
     delete:
+      description: Deletes a specific object for a provider and group
       operationId: flushObject
       parameters:
-      - in: path
+      - description: Cache provider name
+        in: path
         name: provider
         required: true
         schema:
           type: string
           pattern: .*
-      - in: path
+      - description: Cache group
+        in: path
         name: group
         required: true
         schema:
           type: string
           pattern: .*
-      - in: path
+      - description: Object ID
+        in: path
         name: id
         required: true
         schema:
           type: string
           pattern: .*
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityStringView"
+          description: Cache object flushed successfully
+        "401":
+          content:
             application/json: {}
-          description: default response
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - maintenance portlet access required
+      summary: Flush cache object
       tags:
       - Cache Management
   /v1/caches/provider/{provider}/keys/{group}:
     get:
+      description: Get keys for a provider and group
       operationId: getKeys
       parameters:
-      - in: path
+      - description: Cache provider name
+        in: path
         name: provider
         required: true
         schema:
           type: string
           pattern: .*
-      - in: path
+      - description: Cache group
+        in: path
         name: group
         required: true
         schema:
           type: string
           pattern: .*
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntitySetStringView"
+          description: Cache keys retrieved successfully
+        "401":
+          content:
             application/json: {}
-          description: default response
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - maintenance portlet access required
+      summary: Get cache keys
       tags:
       - Cache Management
   /v1/caches/provider/{provider}/object/{group}/{id}:
     get:
+      description: Shows a specific object by id in cache provider and group
       operationId: showObject
       parameters:
-      - in: path
+      - description: Cache provider name
+        in: path
         name: provider
         required: true
         schema:
           type: string
           pattern: .*
-      - in: path
+      - description: Cache group
+        in: path
         name: group
         required: true
         schema:
           type: string
           pattern: .*
-      - in: path
+      - description: Object ID
+        in: path
         name: id
         required: true
         schema:
           type: string
           pattern: .*
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityCacheObjectView"
+          description: Cache object retrieved successfully
+        "401":
+          content:
             application/json: {}
-          description: default response
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - maintenance portlet access required
+      summary: Show cache object
       tags:
       - Cache Management
   /v1/caches/provider/{provider}/objects/{group}:
     get:
+      description: Show all objects for a provider and group
       operationId: showObjects
       parameters:
-      - in: path
+      - description: Cache provider name
+        in: path
         name: provider
         required: true
         schema:
           type: string
           pattern: .*
-      - in: path
+      - description: Cache group
+        in: path
         name: group
         required: true
         schema:
           type: string
           pattern: .*
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityMapStringObjectView"
+          description: Cache objects retrieved successfully
+        "401":
+          content:
             application/json: {}
-          description: default response
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - maintenance portlet access required
+      summary: Show all cache objects
       tags:
       - Cache Management
   /v1/caches/provider/{provider}/{group}:
     get:
+      description: Returns the provider associated to a group
       operationId: showProviders_1
       parameters:
-      - in: path
+      - description: Cache provider name
+        in: path
         name: provider
         required: true
         schema:
           type: string
           pattern: .*
-      - in: path
+      - description: Cache group
+        in: path
         name: group
         required: true
         schema:
           type: string
           pattern: .*
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityCacheProviderView"
+          description: Cache provider retrieved successfully
+        "401":
+          content:
             application/json: {}
-          description: default response
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - maintenance portlet access required
+      summary: Show specific cache provider
       tags:
       - Cache Management
   /v1/caches/providers/{group}:
     get:
+      description: Returns the providers associated to a group
       operationId: showProviders
       parameters:
-      - in: path
+      - description: Cache group
+        in: path
         name: group
         required: true
         schema:
           type: string
           pattern: .*
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityListCacheProviderView"
+          description: Cache providers retrieved successfully
+        "401":
+          content:
             application/json: {}
-          description: default response
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - maintenance portlet access required
+      summary: Show cache providers for group
       tags:
       - Cache Management
   /v1/categories:
@@ -4906,61 +5357,109 @@ paths:
       - Authentication
   /v1/configuration:
     get:
+      description: Returns the list of system properties that are set through the
+        dotCMS configuration files
       operationId: list_8
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityMapView"
+          description: Configuration properties retrieved successfully
+        "500":
+          content:
             application/json: {}
-          description: default response
+          description: Internal server error
+      summary: List configuration properties
       tags:
       - System Configuration
     put:
+      description: Set values to configuration properties at runtime
       operationId: set
       requestBody:
         content:
           application/json:
             schema:
               type: object
-              additionalProperties:
-                type: string
+        description: Map of configuration properties to set
+        required: true
       responses:
-        default:
+        "200":
+          description: Configuration properties set successfully (no body)
+        "401":
           content:
-            '*/*': {}
-          description: default response
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - CMS Administrator role and maintenance portlet
+            access required
+      summary: Set configuration properties
       tags:
       - System Configuration
   /v1/configuration/_validateCompanyEmail:
     post:
+      description: Send a validation email to verify the company email configuration
       operationId: validateEmail
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: "#/components/schemas/CompanyEmailForm"
+        description: Company email form data
+        required: true
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityStringView"
+          description: Validation email sent successfully
+        "401":
+          content:
             application/json: {}
-          description: default response
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - CMS Administrator role and maintenance portlet
+            access required
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Validate company email
       tags:
       - System Configuration
   /v1/configuration/config:
     get:
+      description: Retrieve specific configuration keys from dotCMS (allowed on WHITE_LIST
+        and not restricted by BLACK_LIST)
       operationId: getConfigVariables
       parameters:
-      - in: query
+      - description: Comma-separated list of configuration keys to retrieve
+        in: query
         name: keys
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityMapView"
+          description: Configuration variables retrieved successfully
+        "401":
+          content:
             application/json: {}
-          description: default response
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - backend user required
+      summary: Get configuration variables
       tags:
       - System Configuration
   /v1/containers:
@@ -9911,7 +10410,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityView"
+                $ref: "#/components/schemas/ResponseEntityHealthResponseView"
           description: Successfully retrieved overall health status
         "403":
           description: Forbidden - Authentication required
@@ -9937,7 +10436,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityView"
+                $ref: "#/components/schemas/ResponseEntityHealthCheckResultView"
           description: Successfully retrieved health check result
         "403":
           description: Forbidden - Authentication required
@@ -9958,7 +10457,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityView"
+                $ref: "#/components/schemas/ResponseEntityListStringView"
           description: Successfully retrieved health check names
         "403":
           description: Forbidden - Authentication required
@@ -9978,7 +10477,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityView"
+                $ref: "#/components/schemas/ResponseEntityHealthResponseView"
           description: Successfully retrieved liveness health status
         "403":
           description: Forbidden - Authentication required
@@ -9999,7 +10498,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityView"
+                $ref: "#/components/schemas/ResponseEntityHealthResponseView"
           description: Successfully retrieved readiness health status
         "500":
           description: Internal Server Error
@@ -10017,7 +10516,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityView"
+                $ref: "#/components/schemas/ResponseEntityMapView"
           description: Successfully triggered health checks refresh
         "403":
           description: Forbidden - Authentication required
@@ -10044,7 +10543,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityView"
+                $ref: "#/components/schemas/ResponseEntityMapView"
           description: Successfully refreshed the health check
         "403":
           description: Forbidden - Authentication required
@@ -10066,7 +10565,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityView"
+                $ref: "#/components/schemas/ResponseEntityMapView"
           description: Successfully retrieved system status summary
         "403":
           description: Forbidden - Authentication required
@@ -10481,45 +10980,93 @@ paths:
       - Internationalization
   /v1/logger:
     get:
+      description: Get all system loggers. User must be Admin.
       operationId: getLoggers
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityLoggerListView"
+          description: Loggers retrieved successfully
+        "401":
+          content:
             application/json: {}
-          description: default response
+          description: Unauthorized - admin required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - admin access required
+      summary: Get all loggers
       tags:
       - System Logging
     put:
+      description: Change the log level for one or more loggers. User must be Admin.
       operationId: changeLoggerLevel
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: "#/components/schemas/ChangeLoggerForm"
+        description: Logger configuration data
+        required: true
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityLoggerListView"
+          description: Logger level changed successfully
+        "400":
+          content:
             application/json: {}
-          description: default response
+          description: Bad request - invalid log level
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - admin required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - admin access required
+        "404":
+          content:
+            application/json: {}
+          description: Logger not found
+      summary: Change logger level
       tags:
       - System Logging
   /v1/logger/{loggerName}:
     get:
+      description: Get the logger for a specific class. User must be Admin.
       operationId: getLogger
       parameters:
-      - in: path
+      - description: Logger class name
+        in: path
         name: loggerName
         required: true
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityLoggerView"
+          description: Logger retrieved successfully
+        "401":
+          content:
             application/json: {}
-          description: default response
+          description: Unauthorized - admin required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - admin access required
+        "404":
+          content:
+            application/json: {}
+          description: Logger not found
+      summary: Get logger
       tags:
       - System Logging
   /v1/loginform:
@@ -12421,161 +12968,302 @@ paths:
       - Publishing
   /v1/redis:
     put:
+      description: Sets a key-value pair in Redis
       operationId: set_1
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: "#/components/schemas/SetForm"
+        description: Key-value data to set
+        required: true
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityStringView"
+          description: Key-value set successfully
+        "400":
+          content:
             application/json: {}
-          description: default response
+          description: Bad request - invalid data
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - maintenance role required
+      summary: Set Redis key-value
       tags:
       - System
   /v1/redis/echo/{message}:
     get:
+      description: Tests Redis functionality by echoing a message back
       operationId: echo
       parameters:
-      - in: path
+      - description: Message to echo
+        in: path
         name: message
         required: true
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityStringView"
+          description: Message echoed successfully
+        "401":
+          content:
             application/json: {}
-          description: default response
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - maintenance role required
+      summary: Redis echo
       tags:
       - System
   /v1/redis/hash:
     put:
+      description: Sets hash fields in Redis
       operationId: setHash
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: "#/components/schemas/SetHashForm"
+        description: Hash data to set
+        required: true
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityStringView"
+          description: Hash set successfully
+        "400":
+          content:
             application/json: {}
-          description: default response
+          description: Bad request - invalid hash data
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - maintenance role required
+      summary: Set Redis hash
       tags:
       - System
   /v1/redis/hash/{key}:
     delete:
+      description: Deletes all fields of a hash stored at key
       operationId: deleteHash
       parameters:
-      - in: path
+      - description: Redis hash key to delete
+        in: path
         name: key
         required: true
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityMapStringObjectView"
+          description: Hash deleted successfully
+        "401":
+          content:
             application/json: {}
-          description: default response
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - maintenance role required
+      summary: Delete Redis hash
       tags:
       - System
     get:
+      description: Retrieves all fields and values of a hash stored at key
       operationId: getHash
       parameters:
-      - in: path
+      - description: Redis hash key
+        in: path
         name: key
         required: true
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityMapStringObjectView"
+          description: Hash retrieved successfully
+        "401":
+          content:
             application/json: {}
-          description: default response
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - maintenance role required
+        "404":
+          content:
+            application/json: {}
+          description: Hash key not found
+      summary: Get Redis hash
       tags:
       - System
   /v1/redis/incr/{key}:
     get:
+      description: Retrieves the current increment value for a key
       operationId: getIncrement
       parameters:
-      - in: path
+      - description: Redis increment key
+        in: path
         name: key
         required: true
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityStringView"
+          description: Increment value retrieved successfully
+        "401":
+          content:
             application/json: {}
-          description: default response
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - maintenance role required
+        "404":
+          content:
+            application/json: {}
+          description: Key not found
+      summary: Get Redis increment value
       tags:
       - System
     put:
+      description: Asynchronously increments the value of a key by 1
       operationId: incrementAsync
       parameters:
-      - in: path
+      - description: Redis key to increment
+        in: path
         name: key
         required: true
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityStringView"
+          description: Key incremented successfully
+        "401":
+          content:
             application/json: {}
-          description: default response
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - maintenance role required
+      summary: Increment Redis key (async)
       tags:
       - System
   /v1/redis/ping:
     get:
+      description: Tests Redis connectivity by sending a ping command
       operationId: ping
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityStringView"
+          description: Redis ping successful
+        "401":
+          content:
             application/json: {}
-          description: default response
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - maintenance role required
+      summary: Redis ping
       tags:
       - System
   /v1/redis/{key}:
     delete:
+      description: Deletes a key and its value from Redis
       operationId: delete_13
       parameters:
-      - in: path
+      - description: Redis key to delete
+        in: path
         name: key
         required: true
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityStringView"
+          description: Key deleted successfully
+        "401":
+          content:
             application/json: {}
-          description: default response
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - maintenance role required
+      summary: Delete Redis key
       tags:
       - System
     get:
+      description: Retrieves a value from Redis by its key
       operationId: get_5
       parameters:
-      - in: path
+      - description: Redis key
+        in: path
         name: key
         required: true
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityStringView"
+          description: Value retrieved successfully
+        "401":
+          content:
             application/json: {}
-          description: default response
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - maintenance role required
+        "404":
+          content:
+            application/json: {}
+          description: Key not found
+      summary: Get Redis value by key
       tags:
       - System
   /v1/relationships:
@@ -14297,9 +14985,12 @@ paths:
       - Rules Engine
   /v1/storages/chain/_replicate/{from}/to/{to}:
     get:
+      description: Initiates data replication from one storage provider to one or
+        more target storage providers
       operationId: replicateStorages
       parameters:
-      - in: path
+      - description: Source storage type
+        in: path
         name: from
         required: true
         schema:
@@ -14313,7 +15004,8 @@ paths:
           - CHAIN1
           - CHAIN2
           - CHAIN3
-      - in: path
+      - description: Target storage types (comma-separated path)
+        in: path
         name: to
         required: true
         schema:
@@ -14330,207 +15022,371 @@ paths:
               path:
                 type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityBooleanView"
+          description: Storage replication initiated successfully
+        "400":
+          content:
             application/json: {}
-          description: default response
+          description: Bad request - invalid storage type parameters
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - administrator role required
+      summary: Replicate storage data
       tags:
       - System Storage
   /v1/storages/hello:
     get:
+      description: Simple test endpoint to verify the storage API is operational
       operationId: hello
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityStorageStatusView"
+          description: Storage API is operational
+        "401":
+          content:
             application/json: {}
-          description: default response
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - administrator role required
+      summary: Storage system health check
       tags:
       - System Storage
   /v1/system-table:
     get:
+      description: Returns all entries in the system table (filtered by whitelist/blacklist)
       operationId: getAll_1
       responses:
-        default:
+        "200":
           content:
-            application/javascript:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityViewMapStringString"
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityViewMapStringString"
-          description: default response
+                $ref: "#/components/schemas/ResponseEntityMapStringStringView"
+          description: System table entries retrieved successfully
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - CMS Administrator role required
+      summary: Get all system table entries
       tags:
       - System Configuration
     post:
+      description: Saves or updates the value of a given key to the system table
       operationId: save_2
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: "#/components/schemas/KeyValueForm"
+        description: Key-value form data
+        required: true
       responses:
-        default:
+        "200":
           content:
-            application/javascript:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityStringView"
             application/json:
               schema:
                 $ref: "#/components/schemas/ResponseEntityStringView"
-          description: default response
+          description: System table value saved successfully
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - key is blacklisted or form is invalid
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - CMS Administrator role required
+      summary: Save system table key-value
       tags:
       - System Configuration
     put:
+      description: "Updates a value in the System Table, returns 404 if the key doesn't\
+        \ exist"
       operationId: update_8
       requestBody:
         content:
           application/json:
             schema:
               $ref: "#/components/schemas/KeyValueForm"
+        description: Key-value form data
+        required: true
       responses:
-        default:
+        "200":
           content:
-            application/javascript:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityStringView"
             application/json:
               schema:
                 $ref: "#/components/schemas/ResponseEntityStringView"
-          description: default response
+          description: System table value updated successfully
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - key is blacklisted or form is invalid
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - CMS Administrator role required
+        "404":
+          content:
+            application/json: {}
+          description: Key not found
+      summary: Update system table key-value
       tags:
       - System Configuration
   /v1/system-table/_delete:
     delete:
+      description: "Deletes a value from the System Table using key in request body,\
+        \ returns 404 if the key doesn't exist"
       operationId: deleteWithKey
       requestBody:
         content:
           application/json:
             schema:
               type: object
-              additionalProperties:
-                type: string
+        description: Map containing the key to delete
+        required: true
       responses:
-        default:
+        "200":
           content:
-            application/javascript:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityStringView"
             application/json:
               schema:
                 $ref: "#/components/schemas/ResponseEntityStringView"
-          description: default response
+          description: System table key deleted successfully
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - key is blacklisted or invalid
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - CMS Administrator role required
+        "404":
+          content:
+            application/json: {}
+          description: Key not found
+      summary: Delete system table key with request body
       tags:
       - System Configuration
   /v1/system-table/{key}:
     delete:
+      description: "Deletes a value from the System Table, returns 404 if the key\
+        \ doesn't exist"
       operationId: delete_12
       parameters:
-      - in: path
+      - description: System table key to delete
+        in: path
         name: key
         required: true
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityStringView"
             application/json:
               schema:
                 $ref: "#/components/schemas/ResponseEntityStringView"
-          description: default response
+          description: System table key deleted successfully
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - key is blacklisted or invalid
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - CMS Administrator role required
+        "404":
+          content:
+            application/json: {}
+          description: Key not found
+      summary: Delete system table key
       tags:
       - System Configuration
     get:
+      description: Returns the value of a key in the System Table
       operationId: get_4
       parameters:
-      - in: path
+      - description: System table key
+        in: path
         name: key
         required: true
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityStringView"
             application/json:
               schema:
                 $ref: "#/components/schemas/ResponseEntityStringView"
-          description: default response
+          description: System table value retrieved successfully
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - key is blacklisted or invalid
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - CMS Administrator role required
+        "404":
+          content:
+            application/json: {}
+          description: Key not found
+      summary: Get system table value by key
       tags:
       - System Configuration
   /v1/system/i18n/{lang}/{rsrc}:
     get:
+      description: Retrieves localized messages for a specific language and resource
+        key
       operationId: list_9
       parameters:
-      - in: path
+      - description: "Language code (e.g., 'en', 'es', 'en-US')"
+        in: path
         name: lang
         required: true
         schema:
           type: string
           pattern: "[\\w]{2,3}(?:-?[\\w]{2})?"
-      - in: path
+      - description: "Resource key path (e.g., 'messages/login')"
+        in: path
         name: rsrc
         required: true
         schema:
           type: string
           pattern: .*
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Localized message strings as key-value pairs
+          description: Localized messages retrieved successfully
+        "400":
           content:
             application/json: {}
-          description: default response
+          description: Bad request - invalid language or resource key
+        "404":
+          content:
+            application/json: {}
+          description: No resource messages found
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Get localized messages
       tags:
       - Internationalization
   /v1/system/request-draining-test/long-request:
     get:
+      description: Creates a long-running request to test graceful shutdown behavior.
+        The request will sleep for the specified duration while monitoring for shutdown
+        signals. This is for testing purposes only and should not be used in production.
       operationId: longRunningRequest
       parameters:
-      - in: query
+      - description: Duration in milliseconds for the long-running request
+        in: query
         name: duration
         schema:
           type: integer
           format: int64
           default: 5000
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityViewMapStringObject"
-          description: default response
+                $ref: "#/components/schemas/ResponseEntityMapView"
+          description: Request completed with timing information
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+      summary: Simulate long-running request for shutdown testing
+      tags:
+      - Testing
   /v1/system/request-draining-test/simulate-active-requests:
     get:
+      description: Manually increments the active request counter to simulate having
+        active requests without actually creating them. This allows testing of shutdown
+        behavior under different load conditions.
       operationId: simulateActiveRequests
       parameters:
-      - in: query
+      - description: Number of active requests to simulate
+        in: query
         name: count
         schema:
           type: integer
           format: int32
           default: 1
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityViewMapStringObject"
-          description: default response
+                $ref: "#/components/schemas/ResponseEntityMapView"
+          description: Active requests simulated successfully
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+      summary: Simulate active requests for testing
+      tags:
+      - Testing
   /v1/system/request-draining-test/status:
     get:
+      description: Retrieves the current shutdown status including active request
+        counts and shutdown progress information. Used for monitoring system shutdown
+        behavior.
       operationId: getShutdownStatus
       responses:
-        default:
+        "200":
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityViewMapStringObject"
-          description: default response
+                $ref: "#/components/schemas/ResponseEntityMapView"
+          description: Shutdown status retrieved successfully
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+      summary: Get shutdown status
+      tags:
+      - Testing
   /v1/system/ruleengine/actionlets:
     get:
       operationId: list_10
@@ -15506,18 +16362,43 @@ paths:
       - Administration
   /v1/upgradetask:
     post:
+      description: Run an upgrade task. Must be logged in as backend admin user.
       operationId: upgrade
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: "#/components/schemas/UpgradeTaskForm"
+        description: Upgrade task configuration
+        required: true
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityStringView"
+          description: Upgrade task ran successfully
+        "304":
+          content:
             application/json: {}
-          description: default response
+          description: Not modified - upgrade task does not need to be executed
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - admin access required
+        "404":
+          content:
+            application/json: {}
+          description: Upgrade task class not found
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Run upgrade task
       tags:
       - Maintenance
   /v1/users:
@@ -19045,22 +19926,47 @@ paths:
       - Workflow
   /v1/{a}:
     get:
+      description: Comprehensive health check for dotCMS startup and subsystems status
       operationId: heavyCheck
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityMonitorStatsView"
+          description: System is healthy
+        "403":
           content:
             application/json: {}
-          description: default response
+          description: Forbidden - access not granted
+        "503":
+          content:
+            application/json: {}
+          description: Service unavailable - system not healthy
+      summary: Heavy system check
       tags:
       - System Monitoring
   /v1/{a}/{a}:
     get:
+      description: Checks if the system is ready to serve traffic (alias for heavy
+        check)
       operationId: ready
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityMonitorStatsView"
+          description: System is ready
+        "403":
           content:
             application/json: {}
-          description: default response
+          description: Forbidden - access not granted
+        "503":
+          content:
+            application/json: {}
+          description: Service unavailable - system not ready
+      summary: System ready check
       tags:
       - System Monitoring
   /v2/contenttype/{typeIdOrVarName}/fields:
@@ -21253,6 +22159,45 @@ components:
           type: boolean
         version:
           type: string
+    CacheProvider:
+      type: object
+      properties:
+        distributed:
+          type: boolean
+        groups:
+          type: array
+          items:
+            type: string
+          uniqueItems: true
+        initialized:
+          type: boolean
+        key:
+          type: string
+        name:
+          type: string
+        stats:
+          $ref: "#/components/schemas/CacheProviderStats"
+    CacheProviderStats:
+      type: object
+      properties:
+        providerName:
+          type: string
+        statColumns:
+          type: array
+          items:
+            type: string
+        stats:
+          type: array
+          items:
+            $ref: "#/components/schemas/CacheStats"
+    CacheStats:
+      type: object
+      properties:
+        statColumns:
+          type: array
+          items:
+            type: string
+          uniqueItems: true
     CategoryEditForm:
       type: object
       properties:
@@ -23986,6 +24931,41 @@ components:
           type: string
         working:
           type: boolean
+    HealthCheckResult:
+      type: object
+      properties:
+        data:
+          type: object
+          additionalProperties:
+            type: object
+        durationMs:
+          type: integer
+          format: int64
+        error:
+          type: string
+        lastChecked:
+          type: string
+          format: date-time
+        message:
+          type: string
+        monitorModeApplied:
+          type: boolean
+        name:
+          type: string
+        status:
+          type: string
+          enum:
+          - UP
+          - DEGRADED
+          - DOWN
+          - UNKNOWN
+    HealthResponse:
+      type: object
+      properties:
+        releaseId:
+          type: string
+        serviceId:
+          type: string
     HiddenField:
       type: object
       allOf:
@@ -25035,6 +26015,13 @@ components:
             type: string
           variable:
             type: string
+    LoggerView:
+      type: object
+      properties:
+        level:
+          type: string
+        name:
+          type: string
     LoginAsForm:
       type: object
       properties:
@@ -25157,6 +26144,11 @@ components:
           - EXIT_RATE
           - BOUNCE_RATE
           - URL_PARAMETER
+    MonitorStats:
+      type: object
+      properties:
+        contentAnalytics:
+          type: string
     MoveFieldsForm:
       type: object
     MulitreeView:
@@ -26330,6 +27322,52 @@ components:
           type: array
           items:
             type: string
+    ResponseEntityCacheObjectView:
+      type: object
+      properties:
+        entity:
+          type: object
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityCacheProviderView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/CacheProvider"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
     ResponseEntityCategoryView:
       type: object
       properties:
@@ -26868,6 +27906,52 @@ components:
           type: array
           items:
             type: string
+    ResponseEntityHealthCheckResultView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/HealthCheckResult"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityHealthResponseView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/HealthResponse"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
     ResponseEntityIsoLanguagesCountriesView:
       type: object
       properties:
@@ -27179,6 +28263,31 @@ components:
           type: array
           items:
             type: string
+    ResponseEntityListCacheProviderView:
+      type: object
+      properties:
+        entity:
+          type: array
+          items:
+            $ref: "#/components/schemas/CacheProvider"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
     ResponseEntityListContentTypeView:
       type: object
       properties:
@@ -27381,6 +28490,54 @@ components:
           type: array
           items:
             type: string
+    ResponseEntityLoggerListView:
+      type: object
+      properties:
+        entity:
+          type: array
+          items:
+            $ref: "#/components/schemas/LoggerView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityLoggerView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/LoggerView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
     ResponseEntityLoginAsView:
       type: object
       properties:
@@ -27538,6 +28695,29 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Menu"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityMonitorStatsView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/MonitorStats"
         errors:
           type: array
           items:
@@ -27974,6 +29154,32 @@ components:
           type: array
           items:
             type: string
+    ResponseEntitySetStringView:
+      type: object
+      properties:
+        entity:
+          type: array
+          items:
+            type: string
+          uniqueItems: true
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
     ResponseEntitySingleContainerView:
       type: object
       properties:
@@ -28121,6 +29327,29 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/SmallRoleView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityStorageStatusView:
+      type: object
+      properties:
+        entity:
+          type: string
         errors:
           type: array
           items:

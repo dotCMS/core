@@ -4,9 +4,12 @@ import com.dotcms.health.api.HealthService;
 import com.dotcms.health.model.HealthCheckResult;
 import com.dotcms.health.model.HealthResponse;
 import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.ResponseEntityListStringView;
+import com.dotcms.rest.ResponseEntityMapView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.annotation.SwaggerCompliant;
 import com.dotcms.rest.exception.SecurityException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.business.APILocator;
@@ -50,7 +53,8 @@ import java.util.Optional;
  * 
  * @author dotCMS
  */
-@Tag(name = "Health", description = "Health management and monitoring endpoints for administrative dashboards")
+@SwaggerCompliant(value = "System administration and configuration APIs", batch = 4)
+@Tag(name = "Health")
 @Path("/v1/health")
 @RequestScoped
 public class HealthResource {
@@ -108,7 +112,7 @@ public class HealthResource {
                             description = "Successfully retrieved overall health status",
                             content = @Content(
                                     mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseEntityView.class)
+                                    schema = @Schema(implementation = ResponseEntityHealthResponseView.class)
                             )
                     ),
                     @ApiResponse(responseCode = "403", description = "Forbidden - Authentication required"),
@@ -129,7 +133,7 @@ public class HealthResource {
             }
             
             HealthResponse health = healthService.getOverallHealth();
-            return Response.ok(new ResponseEntityView<>(health)).build();
+            return Response.ok(new ResponseEntityHealthResponseView(health)).build();
             
         } catch (DotDataException e) {
             Logger.error(this, "Error retrieving overall health status", e);
@@ -161,7 +165,7 @@ public class HealthResource {
                             description = "Successfully retrieved liveness health status",
                             content = @Content(
                                     mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseEntityView.class)
+                                    schema = @Schema(implementation = ResponseEntityHealthResponseView.class)
                             )
                     ),
                     @ApiResponse(responseCode = "403", description = "Forbidden - Authentication required"),
@@ -183,7 +187,7 @@ public class HealthResource {
             }
             
             HealthResponse health = healthService.getLivenessHealth();
-            return Response.ok(new ResponseEntityView<>(health)).build();
+            return Response.ok(new ResponseEntityHealthResponseView(health)).build();
             
         } catch (Exception e) {
             Logger.error(this, "Error retrieving liveness health status", e);
@@ -212,7 +216,7 @@ public class HealthResource {
                             description = "Successfully retrieved readiness health status",
                             content = @Content(
                                     mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseEntityView.class)
+                                    schema = @Schema(implementation = ResponseEntityHealthResponseView.class)
                             )
                     ),
                     @ApiResponse(responseCode = "500", description = "Internal Server Error")
@@ -233,7 +237,7 @@ public class HealthResource {
             }
 
             HealthResponse health = healthService.getReadinessHealth();
-            return Response.ok(new ResponseEntityView<>(health)).build();
+            return Response.ok(new ResponseEntityHealthResponseView(health)).build();
             
         } catch (Exception e) {
             Logger.error(this, "Error retrieving readiness health status", e);
@@ -261,7 +265,7 @@ public class HealthResource {
                             description = "Successfully retrieved health check result",
                             content = @Content(
                                     mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseEntityView.class)
+                                    schema = @Schema(implementation = ResponseEntityHealthCheckResultView.class)
                             )
                     ),
                     @ApiResponse(responseCode = "403", description = "Forbidden - Authentication required"),
@@ -290,7 +294,7 @@ public class HealthResource {
             
             Optional<HealthCheckResult> result = healthService.getHealthCheck(checkName);
             if (result.isPresent()) {
-                return Response.ok(new ResponseEntityView<>(result.get())).build();
+                return Response.ok(new ResponseEntityHealthCheckResultView(result.get())).build();
             } else {
                 return ExceptionMapperUtil.createResponse("", "Health check not found: " + checkName, Response.Status.NOT_FOUND);
             }
@@ -323,7 +327,7 @@ public class HealthResource {
                             description = "Successfully retrieved health check names",
                             content = @Content(
                                     mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseEntityView.class)
+                                    schema = @Schema(implementation = ResponseEntityListStringView.class)
                             )
                     ),
                     @ApiResponse(responseCode = "403", description = "Forbidden - Authentication required"),
@@ -345,7 +349,7 @@ public class HealthResource {
             }
             
             List<String> checkNames = healthService.getHealthCheckNames();
-            return Response.ok(new ResponseEntityView<>(checkNames)).build();
+            return Response.ok(new ResponseEntityListStringView(checkNames)).build();
             
         } catch (DotDataException e) {
             Logger.error(this, "Error retrieving health check names", e);
@@ -375,7 +379,7 @@ public class HealthResource {
                             description = "Successfully retrieved system status summary",
                             content = @Content(
                                     mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseEntityView.class)
+                                    schema = @Schema(implementation = ResponseEntityMapView.class)
                             )
                     ),
                     @ApiResponse(responseCode = "403", description = "Forbidden - Authentication required"),
@@ -396,11 +400,11 @@ public class HealthResource {
                 return ExceptionMapperUtil.createResponse("", "Forbidden", Response.Status.FORBIDDEN);
             }
             
-            Map<String, Boolean> status = Map.of(
+            Map<String, Object> status = Map.of(
                 "alive", healthService.isAlive(),
                 "ready", healthService.isReady()
             );
-            return Response.ok(new ResponseEntityView<>(status)).build();
+            return Response.ok(new ResponseEntityMapView(status)).build();
             
         } catch (DotDataException e) {
             Logger.error(this, "Error retrieving system status", e);
@@ -431,7 +435,7 @@ public class HealthResource {
                             description = "Successfully triggered health checks refresh",
                             content = @Content(
                                     mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseEntityView.class)
+                                    schema = @Schema(implementation = ResponseEntityMapView.class)
                             )
                     ),
                     @ApiResponse(responseCode = "403", description = "Forbidden - Authentication required"),
@@ -453,8 +457,8 @@ public class HealthResource {
             }
             
             healthService.refreshHealthChecks();
-            Map<String, String> result = Map.of("message", "Health checks refresh triggered");
-            return Response.ok(new ResponseEntityView<>(result)).build();
+            Map<String, Object> result = Map.of("message", "Health checks refresh triggered");
+            return Response.ok(new ResponseEntityMapView(result)).build();
             
         } catch (DotDataException e) {
             Logger.error(this, "Error refreshing health checks", e);
@@ -486,7 +490,7 @@ public class HealthResource {
                             description = "Successfully refreshed the health check",
                             content = @Content(
                                     mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseEntityView.class)
+                                    schema = @Schema(implementation = ResponseEntityMapView.class)
                             )
                     ),
                     @ApiResponse(responseCode = "403", description = "Forbidden - Authentication required"),
@@ -515,8 +519,8 @@ public class HealthResource {
             
             boolean success = healthService.refreshHealthCheck(checkName);
             if (success) {
-                Map<String, String> result = Map.of("message", "Health check refreshed: " + checkName);
-                return Response.ok(new ResponseEntityView<>(result)).build();
+                Map<String, Object> result = Map.of("message", "Health check refreshed: " + checkName);
+                return Response.ok(new ResponseEntityMapView(result)).build();
             } else {
                 return ExceptionMapperUtil.createResponse("", "Health check not found: " + checkName, Response.Status.NOT_FOUND);
             }
