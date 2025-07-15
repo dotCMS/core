@@ -77,12 +77,15 @@ public class VTLResource {
      * using the velocity engine.
      *
      * "get.vtl" code determines whether the response is a JSON object or anything else (XML, text-plain).
+     * 
+     * @deprecated This GET method accepts a request body, which is not standard HTTP practice.
+     * Consider using POST for operations that require request bodies.
      */
     @GET
     @Path("/{folder}/{pathParam:.*}")
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
-    @Consumes({MediaType.APPLICATION_JSON})
+    @Consumes(MediaType.APPLICATION_JSON)
     public Response get(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
                         @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
                         @PathParam("pathParam") final String pathParam, final Map<String, Object> bodyMap) {
@@ -90,11 +93,15 @@ public class VTLResource {
         return processRequest(request, response, uriInfo, folderName, pathParam, HTTPMethod.GET, bodyMap);
     }
 
+    /**
+     * @deprecated This GET method accepts a request body, which is not standard HTTP practice.
+     * Consider using POST for operations that require request bodies.
+     */
     @GET
     @Path("/{folder}")
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
-    @Consumes({MediaType.APPLICATION_JSON})
+    @Consumes(MediaType.APPLICATION_JSON)
     public Response get(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
                         @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
                         final Map<String, Object> bodyMap) {
@@ -331,6 +338,9 @@ public class VTLResource {
     /**
      * Same as {@link #get} but supporting sending the velocity to be rendered embedded (properly escaped) in the JSON
      * in a "velocity" property
+     * 
+     * @deprecated This GET method accepts a request body, which is not standard HTTP practice.
+     * Consider using POST for operations that require request bodies.
      */
     @GET
     @Path("/dynamic/{pathParam:.*}")
@@ -346,6 +356,10 @@ public class VTLResource {
         return processRequest(request, response, uriInfo, null, pathParam, HTTPMethod.GET, bodyMap);
     }
 
+    /**
+     * @deprecated This GET method accepts a request body, which is not standard HTTP practice.
+     * Consider using POST for operations that require request bodies.
+     */
     @GET
     @Path("/dynamic")
     @NoCache
