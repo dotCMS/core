@@ -11,8 +11,10 @@ import com.dotcms.rendering.util.ScriptingUtil;
 import com.dotcms.rendering.velocity.viewtools.exception.DotToolException;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.PATCH;
+import com.dotcms.rest.ResponseEntityMapView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.annotation.SwaggerCompliant;
 import com.dotcms.rest.api.MultiPartUtils;
 import com.dotcms.rest.api.v1.HTTPMethod;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
@@ -54,14 +56,22 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 /**
  * Implements a rest endpoints the allows to run javascript code (js).
  * @author jsanca
  */
+@SwaggerCompliant(value = "Modern APIs and specialized services", batch = 7)
 @Path("/js")
-@Tag(name = "JavaScript", description = "JavaScript execution and server-side scripting")
+@Tag(name = "JavaScript")
 public class JsResource {
 
     public static final String IDENTIFIER = "identifier";
@@ -87,26 +97,72 @@ public class JsResource {
      *
      * "get.js" code determines whether the response is a JSON object or anything else (XML, text-plain).
      */
+    @Operation(
+        summary = "Execute GET JavaScript by folder and path",
+        description = "Executes a convention-based 'get.js' file located under the specified folder with additional path parameters. The JavaScript code determines the response format (JSON, XML, or plain text)."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "JavaScript executed successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid JavaScript or parameters",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "JavaScript file not found",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error during JavaScript execution",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @Path("/{folder}/{pathParam:.*}")
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
-    @Consumes({MediaType.APPLICATION_JSON})
+    @Consumes(MediaType.APPLICATION_JSON)
     public Response get(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
-                        @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
-                        @PathParam("pathParam") final String pathParam, final Map<String, Object> bodyMap) {
+                        @Context UriInfo uriInfo, 
+                        @Parameter(description = "Folder name containing the get.js file", required = true) @PathParam("folder") final String folderName,
+                        @Parameter(description = "Additional path parameters for the JavaScript execution", required = true) @PathParam("pathParam") final String pathParam, 
+                        @RequestBody(description = "JSON data to pass to the JavaScript execution", required = false) final Map<String, Object> bodyMap) {
 
         return processRequest(new RequestParams(request, response, uriInfo, folderName, pathParam, HTTPMethod.GET, bodyMap));
     }
 
+    @Operation(
+        summary = "Execute GET JavaScript by folder",
+        description = "Executes a convention-based 'get.js' file located under the specified folder without additional path parameters."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "JavaScript executed successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityMapView.class))),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid JavaScript or parameters",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "JavaScript file not found",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error during JavaScript execution",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @Path("/{folder}")
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
-    @Consumes({MediaType.APPLICATION_JSON})
+    @Consumes(MediaType.APPLICATION_JSON)
     public Response get(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
-                        @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
-                        final Map<String, Object> bodyMap) {
+                        @Context UriInfo uriInfo, 
+                        @Parameter(description = "Folder name containing the get.js file", required = true) @PathParam("folder") final String folderName,
+                        @RequestBody(description = "JSON data to pass to the JavaScript execution", required = false) final Map<String, Object> bodyMap) {
 
         return processRequest(new RequestParams(request, response, uriInfo, folderName, null, HTTPMethod.GET, bodyMap));
     }
@@ -117,29 +173,75 @@ public class JsResource {
      *
      * "post.js" code determines whether the response is a JSON object or anything else (XML, text-plain).
      */
+    @Operation(
+        summary = "Execute POST JavaScript by folder and path",
+        description = "Executes a convention-based 'post.js' file located under the specified folder with additional path parameters. The JavaScript code processes the request body and determines the response format."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "JavaScript executed successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityMapView.class))),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid JavaScript or request body",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "JavaScript file not found",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error during JavaScript execution",
+                    content = @Content(mediaType = "application/json"))
+    })
     @POST
     @Path("/{folder}/{pathParam: .*}")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
-    @Consumes({MediaType.APPLICATION_JSON})
+    @Consumes(MediaType.APPLICATION_JSON)
     public final Response post(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
-                               @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
-                               @PathParam("pathParam") final String pathParam,
-                               final Map<String, Object> bodyMap) {
+                               @Context UriInfo uriInfo, 
+                               @Parameter(description = "Folder name containing the post.js file", required = true) @PathParam("folder") final String folderName,
+                               @Parameter(description = "Additional path parameters for the JavaScript execution", required = true) @PathParam("pathParam") final String pathParam,
+                               @RequestBody(description = "JSON data to pass to the JavaScript execution", required = true) final Map<String, Object> bodyMap) {
 
         return processRequest(new RequestParams(request, response, uriInfo, folderName, pathParam, HTTPMethod.POST, bodyMap));
     }
 
+    @Operation(
+        summary = "Execute POST JavaScript by folder",
+        description = "Executes a convention-based 'post.js' file located under the specified folder without additional path parameters."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "JavaScript executed successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityMapView.class))),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid JavaScript or request body",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "JavaScript file not found",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error during JavaScript execution",
+                    content = @Content(mediaType = "application/json"))
+    })
     @POST
     @Path("/{folder}")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
-    @Consumes({MediaType.APPLICATION_JSON})
+    @Consumes(MediaType.APPLICATION_JSON)
     public final Response post(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
-                               @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
-                               final Map<String, Object> bodyMap) {
+                               @Context UriInfo uriInfo, 
+                               @Parameter(description = "Folder name containing the post.js file", required = true) @PathParam("folder") final String folderName,
+                               @RequestBody(description = "JSON data to pass to the JavaScript execution", required = true) final Map<String, Object> bodyMap) {
 
         return processRequest(new RequestParams(request, response, uriInfo, folderName, null, HTTPMethod.POST, bodyMap));
     }
@@ -150,29 +252,75 @@ public class JsResource {
      *
      * "put.js" code determines whether the response is a JSON object or anything else (XML, text-plain).
      */
+    @Operation(
+        summary = "Execute PUT JavaScript by folder and path",
+        description = "Executes a convention-based 'put.js' file located under the specified folder with additional path parameters. The JavaScript code processes the request body and determines the response format."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "JavaScript executed successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityMapView.class))),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid JavaScript or request body",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "JavaScript file not found",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error during JavaScript execution",
+                    content = @Content(mediaType = "application/json"))
+    })
     @PUT
     @Path("/{folder}/{pathParam: .*}")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
-    @Consumes({MediaType.APPLICATION_JSON})
+    @Consumes(MediaType.APPLICATION_JSON)
     public final Response put(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
-                              @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
-                              @PathParam("pathParam") final String pathParam,
-                              final Map<String, Object> bodyMap) {
+                              @Context UriInfo uriInfo, 
+                              @Parameter(description = "Folder name containing the put.js file", required = true) @PathParam("folder") final String folderName,
+                              @Parameter(description = "Additional path parameters for the JavaScript execution", required = true) @PathParam("pathParam") final String pathParam,
+                              @RequestBody(description = "JSON data to pass to the JavaScript execution", required = true) final Map<String, Object> bodyMap) {
 
         return processRequest(new RequestParams(request, response, uriInfo, folderName, pathParam, HTTPMethod.PUT, bodyMap));
     }
 
+    @Operation(
+        summary = "Execute PUT JavaScript by folder",
+        description = "Executes a convention-based 'put.js' file located under the specified folder without additional path parameters."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "JavaScript executed successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityMapView.class))),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid JavaScript or request body",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "JavaScript file not found",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error during JavaScript execution",
+                    content = @Content(mediaType = "application/json"))
+    })
     @PUT
     @Path("/{folder}")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
-    @Consumes({MediaType.APPLICATION_JSON})
+    @Consumes(MediaType.APPLICATION_JSON)
     public final Response put(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
-                              @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
-                              final Map<String, Object> bodyMap) {
+                              @Context UriInfo uriInfo, 
+                              @Parameter(description = "Folder name containing the put.js file", required = true) @PathParam("folder") final String folderName,
+                              @RequestBody(description = "JSON data to pass to the JavaScript execution", required = true) final Map<String, Object> bodyMap) {
 
         return processRequest(new RequestParams(request, response, uriInfo, folderName, null, HTTPMethod.PUT, bodyMap));
     }
@@ -183,29 +331,75 @@ public class JsResource {
      *
      * "patch.js" code determines whether the response is a JSON object or anything else (XML, text-plain).
      */
+    @Operation(
+        summary = "Execute PATCH JavaScript by folder and path",
+        description = "Executes a convention-based 'patch.js' file located under the specified folder with additional path parameters. The JavaScript code processes the request body and determines the response format."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "JavaScript executed successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityMapView.class))),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid JavaScript or request body",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "JavaScript file not found",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error during JavaScript execution",
+                    content = @Content(mediaType = "application/json"))
+    })
     @PATCH
     @Path("/{folder}/{pathParam: .*}")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
-    @Consumes({MediaType.APPLICATION_JSON})
+    @Consumes(MediaType.APPLICATION_JSON)
     public final Response patch(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
-                                @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
-                                @PathParam("pathParam") final String pathParam,
-                                final Map<String, Object> bodyMap) {
+                                @Context UriInfo uriInfo, 
+                                @Parameter(description = "Folder name containing the patch.js file", required = true) @PathParam("folder") final String folderName,
+                                @Parameter(description = "Additional path parameters for the JavaScript execution", required = true) @PathParam("pathParam") final String pathParam,
+                                @RequestBody(description = "JSON data to pass to the JavaScript execution", required = true) final Map<String, Object> bodyMap) {
 
         return processRequest(new RequestParams(request, response, uriInfo, folderName, pathParam, HTTPMethod.PATCH, bodyMap));
     }
 
+    @Operation(
+        summary = "Execute PATCH JavaScript by folder",
+        description = "Executes a convention-based 'patch.js' file located under the specified folder without additional path parameters."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "JavaScript executed successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityMapView.class))),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid JavaScript or request body",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "JavaScript file not found",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error during JavaScript execution",
+                    content = @Content(mediaType = "application/json"))
+    })
     @PATCH
     @Path("/{folder}")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
-    @Consumes({MediaType.APPLICATION_JSON})
+    @Consumes(MediaType.APPLICATION_JSON)
     public final Response patch(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
-                                @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
-                                final Map<String, Object> bodyMap) {
+                                @Context UriInfo uriInfo, 
+                                @Parameter(description = "Folder name containing the patch.js file", required = true) @PathParam("folder") final String folderName,
+                                @RequestBody(description = "JSON data to pass to the JavaScript execution", required = true) final Map<String, Object> bodyMap) {
 
         return processRequest(new RequestParams(request, response, uriInfo, folderName, null, HTTPMethod.PATCH, bodyMap));
     }
@@ -216,29 +410,75 @@ public class JsResource {
      *
      * "delete.js" code determines whether the response is a JSON object or anything else (XML, text-plain).
      */
+    @Operation(
+        summary = "Execute DELETE JavaScript by folder and path",
+        description = "Executes a convention-based 'delete.js' file located under the specified folder with additional path parameters. The JavaScript code processes the request body and determines the response format."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "JavaScript executed successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityMapView.class))),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid JavaScript or request body",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "JavaScript file not found",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error during JavaScript execution",
+                    content = @Content(mediaType = "application/json"))
+    })
     @DELETE
     @Path("/{folder}/{pathParam: .*}")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
-    @Consumes({MediaType.APPLICATION_JSON})
+    @Consumes(MediaType.APPLICATION_JSON)
     public final Response delete(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
-                                 @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
-                                 @PathParam("pathParam") final String pathParam,
-                                 final Map<String, Object> requestJSONMap) {
+                                 @Context UriInfo uriInfo, 
+                                 @Parameter(description = "Folder name containing the delete.js file", required = true) @PathParam("folder") final String folderName,
+                                 @Parameter(description = "Additional path parameters for the JavaScript execution", required = true) @PathParam("pathParam") final String pathParam,
+                                 @RequestBody(description = "JSON data to pass to the JavaScript execution", required = true) final Map<String, Object> requestJSONMap) {
 
         return processRequest(new RequestParams(request, response, uriInfo, folderName, pathParam, HTTPMethod.DELETE, requestJSONMap));
     }
 
+    @Operation(
+        summary = "Execute DELETE JavaScript by folder",
+        description = "Executes a convention-based 'delete.js' file located under the specified folder without additional path parameters."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "JavaScript executed successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityMapView.class))),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid JavaScript or request body",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "JavaScript file not found",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error during JavaScript execution",
+                    content = @Content(mediaType = "application/json"))
+    })
     @DELETE
     @Path("/{folder}")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
-    @Consumes({MediaType.APPLICATION_JSON})
+    @Consumes(MediaType.APPLICATION_JSON)
     public final Response delete(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
-                                 @Context UriInfo uriInfo, @PathParam("folder") final String folderName,
-                                 final Map<String, Object> requestJSONMap) {
+                                 @Context UriInfo uriInfo, 
+                                 @Parameter(description = "Folder name containing the delete.js file", required = true) @PathParam("folder") final String folderName,
+                                 @RequestBody(description = "JSON data to pass to the JavaScript execution", required = true) final Map<String, Object> requestJSONMap) {
 
         return processRequest(new RequestParams(request, response, uriInfo, folderName, null, HTTPMethod.DELETE, requestJSONMap));
     }
@@ -246,6 +486,28 @@ public class JsResource {
     /**
      * Same as {@link #post} but supporting a multipart request
      */
+    @Operation(
+        summary = "Execute POST JavaScript with multipart data by folder and path",
+        description = "Executes a convention-based 'post.js' file with multipart form data support, located under the specified folder with additional path parameters. Supports file uploads and form data."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "JavaScript executed successfully with multipart data",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityMapView.class))),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid JavaScript or multipart data",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "JavaScript file not found",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error during JavaScript execution",
+                    content = @Content(mediaType = "application/json"))
+    })
     @POST
     @Path("/{folder}/{pathParam: .*}")
     @JSONP
@@ -254,14 +516,36 @@ public class JsResource {
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     public final Response postMultipart(@Context final HttpServletRequest request,
                                         @Context final HttpServletResponse response,
-                                        final FormDataMultiPart multipart,
-                                        @PathParam("pathParam") final String pathParam,
+                                        @RequestBody(description = "Multipart form data including files and form fields", required = true, content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA)) final FormDataMultiPart multipart,
+                                        @Parameter(description = "Additional path parameters for the JavaScript execution", required = true) @PathParam("pathParam") final String pathParam,
                                         @Context final UriInfo uriInfo,
-                                        @PathParam("folder") final String folderName) {
+                                        @Parameter(description = "Folder name containing the post.js file", required = true) @PathParam("folder") final String folderName) {
 
         return processMultiPartRequest(request, response, uriInfo, folderName, pathParam, HTTPMethod.POST, multipart);
     }
 
+    @Operation(
+        summary = "Execute POST JavaScript with multipart data by folder",
+        description = "Executes a convention-based 'post.js' file with multipart form data support, located under the specified folder without additional path parameters."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "JavaScript executed successfully with multipart data",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityMapView.class))),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid JavaScript or multipart data",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "JavaScript file not found",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error during JavaScript execution",
+                    content = @Content(mediaType = "application/json"))
+    })
     @POST
     @Path("/{folder}")
     @JSONP
@@ -270,9 +554,9 @@ public class JsResource {
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     public final Response postMultipart(@Context final HttpServletRequest request,
                                         @Context final HttpServletResponse response,
-                                        final FormDataMultiPart multipart,
+                                        @RequestBody(description = "Multipart form data including files and form fields", required = true, content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA)) final FormDataMultiPart multipart,
                                         @Context final UriInfo uriInfo,
-                                        @PathParam("folder") final String folderName) {
+                                        @Parameter(description = "Folder name containing the post.js file", required = true) @PathParam("folder") final String folderName) {
 
         return processMultiPartRequest(request, response, uriInfo, folderName, null, HTTPMethod.POST, multipart);
 
@@ -281,6 +565,28 @@ public class JsResource {
     /**
      * Same as {@link #put} but supporting a multipart request
      */
+    @Operation(
+        summary = "Execute PUT JavaScript with multipart data by folder and path",
+        description = "Executes a convention-based 'put.js' file with multipart form data support, located under the specified folder with additional path parameters. Supports file uploads and form data."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "JavaScript executed successfully with multipart data",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityMapView.class))),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid JavaScript or multipart data",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "JavaScript file not found",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error during JavaScript execution",
+                    content = @Content(mediaType = "application/json"))
+    })
     @PUT
     @Path("/{folder}/{pathParam: .*}")
     @JSONP
@@ -289,15 +595,37 @@ public class JsResource {
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     public final Response putMultipart(@Context final HttpServletRequest request,
                                        @Context final HttpServletResponse response,
-                                       final FormDataMultiPart multipart,
-                                       @PathParam("pathParam") final String pathParam,
+                                       @RequestBody(description = "Multipart form data including files and form fields", required = true) final FormDataMultiPart multipart,
+                                       @Parameter(description = "Additional path parameters for the JavaScript execution", required = true) @PathParam("pathParam") final String pathParam,
                                        @Context final UriInfo uriInfo,
-                                       @PathParam("folder") final String folderName) {
+                                       @Parameter(description = "Folder name containing the put.js file", required = true) @PathParam("folder") final String folderName) {
 
         return processMultiPartRequest(request, response, uriInfo, folderName, pathParam, HTTPMethod.PUT, multipart);
 
     }
 
+    @Operation(
+        summary = "Execute PUT JavaScript with multipart data by folder",
+        description = "Executes a convention-based 'put.js' file with multipart form data support, located under the specified folder without additional path parameters."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "JavaScript executed successfully with multipart data",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityMapView.class))),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid JavaScript or multipart data",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "JavaScript file not found",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error during JavaScript execution",
+                    content = @Content(mediaType = "application/json"))
+    })
     @PUT
     @Path("/{folder}")
     @JSONP
@@ -306,9 +634,9 @@ public class JsResource {
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     public final Response putMultipart(@Context final HttpServletRequest request,
                                        @Context final HttpServletResponse response,
-                                       final FormDataMultiPart multipart,
+                                       @RequestBody(description = "Multipart form data including files and form fields", required = true) final FormDataMultiPart multipart,
                                        @Context final UriInfo uriInfo,
-                                       @PathParam("folder") final String folderName) {
+                                       @Parameter(description = "Folder name containing the put.js file", required = true) @PathParam("folder") final String folderName) {
 
         return processMultiPartRequest(request, response, uriInfo, folderName, null, HTTPMethod.PUT, multipart);
     }
@@ -316,6 +644,28 @@ public class JsResource {
     /**
      * Same as {@link #patch} but supporting a multipart request
      */
+    @Operation(
+        summary = "Execute PATCH JavaScript with multipart data by folder and path",
+        description = "Executes a convention-based 'patch.js' file with multipart form data support, located under the specified folder with additional path parameters. Supports file uploads and form data."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "JavaScript executed successfully with multipart data",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityMapView.class))),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid JavaScript or multipart data",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "JavaScript file not found",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error during JavaScript execution",
+                    content = @Content(mediaType = "application/json"))
+    })
     @PATCH
     @Path("/{folder}/{pathParam: .*}")
     @JSONP
@@ -324,15 +674,37 @@ public class JsResource {
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     public final Response patchMultipart(@Context final HttpServletRequest request,
                                          @Context final HttpServletResponse response,
-                                         final FormDataMultiPart multipart,
-                                         @PathParam("pathParam") final String pathParam,
+                                         @RequestBody(description = "Multipart form data including files and form fields", required = true, content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA)) final FormDataMultiPart multipart,
+                                         @Parameter(description = "Additional path parameters for the JavaScript execution", required = true) @PathParam("pathParam") final String pathParam,
                                          @Context final UriInfo uriInfo,
-                                         @PathParam("folder") final String folderName) {
+                                         @Parameter(description = "Folder name containing the patch.js file", required = true) @PathParam("folder") final String folderName) {
 
         return processMultiPartRequest(request, response, uriInfo, folderName, pathParam, HTTPMethod.PATCH, multipart);
 
     }
 
+    @Operation(
+        summary = "Execute PATCH JavaScript with multipart data by folder",
+        description = "Executes a convention-based 'patch.js' file with multipart form data support, located under the specified folder without additional path parameters."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "JavaScript executed successfully with multipart data",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityMapView.class))),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid JavaScript or multipart data",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "JavaScript file not found",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error during JavaScript execution",
+                    content = @Content(mediaType = "application/json"))
+    })
     @PATCH
     @Path("/{folder}")
     @JSONP
@@ -341,9 +713,9 @@ public class JsResource {
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     public final Response patchMultipart(@Context final HttpServletRequest request,
                                          @Context final HttpServletResponse response,
-                                         final FormDataMultiPart multipart,
+                                         @RequestBody(description = "Multipart form data including files and form fields", required = true, content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA)) final FormDataMultiPart multipart,
                                          @Context final UriInfo uriInfo,
-                                         @PathParam("folder") final String folderName) {
+                                         @Parameter(description = "Folder name containing the patch.js file", required = true) @PathParam("folder") final String folderName) {
 
         return processMultiPartRequest(request, response, uriInfo, folderName, null, HTTPMethod.PATCH, multipart);
     }
@@ -352,14 +724,34 @@ public class JsResource {
      * Same as {@link #get} but supporting sending the velocity to be rendered embedded (properly escaped) in the JSON
      * in a "javascript" property
      */
+    @Operation(
+        summary = "Execute dynamic GET JavaScript with inline code",
+        description = "Executes JavaScript code sent inline in the request body under the 'javascript' property. This allows for dynamic JavaScript execution without requiring pre-deployed script files."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Dynamic JavaScript executed successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityMapView.class))),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid JavaScript code or parameters",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error during JavaScript execution",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @Path("/dynamic/{pathParam:.*}")
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
     @Consumes({MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN})
     public Response dynamicGet(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
-                               @Context UriInfo uriInfo, @PathParam("pathParam") final String pathParam,
-                               final String bodyMapString) {
+                               @Context UriInfo uriInfo, 
+                               @Parameter(description = "Path parameters for the dynamic JavaScript execution", required = true) @PathParam("pathParam") final String pathParam,
+                               @RequestBody(description = "JSON string containing JavaScript code in 'javascript' property", required = true) final String bodyMapString) {
 
         final Map<String, Object> bodyMap = parseBodyMap(bodyMapString);
 
@@ -367,6 +759,25 @@ public class JsResource {
 
     }
 
+    @Operation(
+        summary = "Execute dynamic GET JavaScript with inline code (no path)",
+        description = "Executes JavaScript code sent inline in the request body under the 'javascript' property without additional path parameters."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Dynamic JavaScript executed successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityMapView.class))),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid JavaScript code",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error during JavaScript execution",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @Path("/dynamic")
     @NoCache
@@ -374,7 +785,7 @@ public class JsResource {
     @Consumes({MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN})
     public Response dynamicGet(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
                                @Context UriInfo uriInfo,
-                               final String bodyMapStr) {
+                               @RequestBody(description = "JSON string containing JavaScript code in 'javascript' property", required = true) final String bodyMapStr) {
 
         return dynamicGet(request, response, uriInfo, null,bodyMapStr);
     }
@@ -383,6 +794,25 @@ public class JsResource {
      * Same as {@link #post} but supporting sending the velocity to be rendered embedded (properly escaped) in the JSON
      * in a "javascript" property
      */
+    @Operation(
+        summary = "Execute dynamic POST JavaScript with inline code",
+        description = "Executes JavaScript code sent inline in the request body under the 'javascript' property via POST method. Allows for dynamic JavaScript execution with data modification capabilities."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Dynamic JavaScript executed successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityMapView.class))),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid JavaScript code or parameters",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error during JavaScript execution",
+                    content = @Content(mediaType = "application/json"))
+    })
     @POST
     @Path("/dynamic/{pathParam:.*}")
     @NoCache
@@ -391,14 +821,33 @@ public class JsResource {
     public Response dynamicPost(@Context final HttpServletRequest request,
                                 @Context final HttpServletResponse response,
                                 @Context final UriInfo uriInfo,
-                                @PathParam("pathParam") final String pathParam,
-                                final String bodyMapString) {
+                                @Parameter(description = "Path parameters for the dynamic JavaScript execution", required = true) @PathParam("pathParam") final String pathParam,
+                                @RequestBody(description = "JSON string containing JavaScript code in 'javascript' property", required = true) final String bodyMapString) {
 
         final Map<String, Object> bodyMap = parseBodyMap(bodyMapString);
 
         return processRequest(new RequestParams(request, response, uriInfo, null, pathParam, HTTPMethod.POST, bodyMap));
     }
 
+    @Operation(
+        summary = "Execute dynamic POST JavaScript with inline code (no path)",
+        description = "Executes JavaScript code sent inline in the request body under the 'javascript' property via POST method without additional path parameters."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Dynamic JavaScript executed successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityMapView.class))),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid JavaScript code",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error during JavaScript execution",
+                    content = @Content(mediaType = "application/json"))
+    })
     @POST
     @Path("/dynamic")
     @NoCache
@@ -406,7 +855,7 @@ public class JsResource {
     @Consumes({MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN})
     public Response dynamicPost(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
                                 @Context UriInfo uriInfo,
-                                final String bodyMapString) {
+                                @RequestBody(description = "JSON string containing JavaScript code in 'javascript' property", required = true) final String bodyMapString) {
 
         return dynamicPost(request, response, uriInfo, null, bodyMapString);
     }
@@ -415,20 +864,59 @@ public class JsResource {
      * Same as {@link #put} but supporting sending the velocity to be rendered embedded (properly escaped) in the JSON
      * in a "javascript" property
      */
+    @Operation(
+        summary = "Execute dynamic PUT JavaScript with inline code",
+        description = "Executes JavaScript code sent inline in the request body under the 'javascript' property via PUT method. Allows for dynamic JavaScript execution with data update capabilities."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Dynamic JavaScript executed successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityMapView.class))),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid JavaScript code or parameters",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error during JavaScript execution",
+                    content = @Content(mediaType = "application/json"))
+    })
     @PUT
     @Path("/dynamic/{pathParam:.*}")
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
     @Consumes({MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN})
     public Response dynamicPut(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
-                               @Context UriInfo uriInfo, @PathParam("pathParam") final String pathParam,
-                               final String bodyMapString) {
+                               @Context UriInfo uriInfo, 
+                               @Parameter(description = "Path parameters for the dynamic JavaScript execution", required = true) @PathParam("pathParam") final String pathParam,
+                               @RequestBody(description = "JSON string containing JavaScript code in 'javascript' property", required = true) final String bodyMapString) {
 
         final Map<String, Object> bodyMap = parseBodyMap(bodyMapString);
 
         return processRequest(new RequestParams(request, response, uriInfo, null, pathParam, HTTPMethod.PUT, bodyMap));
     }
 
+    @Operation(
+        summary = "Execute dynamic PUT JavaScript with inline code (no path)",
+        description = "Executes JavaScript code sent inline in the request body under the 'javascript' property via PUT method without additional path parameters."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Dynamic JavaScript executed successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityMapView.class))),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid JavaScript code",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error during JavaScript execution",
+                    content = @Content(mediaType = "application/json"))
+    })
     @PUT
     @Path("/dynamic")
     @NoCache
@@ -436,7 +924,7 @@ public class JsResource {
     @Consumes({MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN})
     public Response dynamicPut(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
                                @Context final UriInfo uriInfo,
-                               final String bodyMapString) {
+                               @RequestBody(description = "JSON string containing JavaScript code in 'javascript' property", required = true) final String bodyMapString) {
 
         return dynamicPut(request, response, uriInfo, null, bodyMapString);
     }
@@ -445,14 +933,34 @@ public class JsResource {
      * Same as {@link #patch} but supporting sending the javascript to be rendered embedded (properly escaped) in the JSON
      * in a "javascript" property
      */
+    @Operation(
+        summary = "Execute dynamic PATCH JavaScript with inline code",
+        description = "Executes JavaScript code sent inline in the request body under the 'javascript' property via PATCH method. Allows for dynamic JavaScript execution with partial data update capabilities."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Dynamic JavaScript executed successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityMapView.class))),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid JavaScript code or parameters",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error during JavaScript execution",
+                    content = @Content(mediaType = "application/json"))
+    })
     @PATCH
     @Path("/dynamic/{pathParam:.*}")
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
     @Consumes({MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN})
     public Response dynamicPatch(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
-                                 @Context UriInfo uriInfo, @PathParam("pathParam") final String pathParam,
-                                 final String bodyMapString) {
+                                 @Context UriInfo uriInfo, 
+                                 @Parameter(description = "Path parameters for the dynamic JavaScript execution", required = true) @PathParam("pathParam") final String pathParam,
+                                 @RequestBody(description = "JSON string containing JavaScript code in 'javascript' property", required = true) final String bodyMapString) {
 
         final Map<String, Object> bodyMap = parseBodyMap(bodyMapString);
 
@@ -464,14 +972,34 @@ public class JsResource {
      * Same as {@link #delete} but supporting sending the velocity to be rendered embedded (properly escaped) in the JSON
      * in a "javascript" property
      */
+    @Operation(
+        summary = "Execute dynamic DELETE JavaScript with inline code",
+        description = "Executes JavaScript code sent inline in the request body under the 'javascript' property via DELETE method. Allows for dynamic JavaScript execution with data deletion capabilities."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Dynamic JavaScript executed successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityMapView.class))),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid JavaScript code or parameters",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error during JavaScript execution",
+                    content = @Content(mediaType = "application/json"))
+    })
     @DELETE
     @Path("/dynamic/{pathParam:.*}")
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
     @Consumes({MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN})
     public Response dynamicDelete(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
-                                  final @Context UriInfo uriInfo, @PathParam("pathParam") final String pathParam,
-                                  final String bodyMapString) {
+                                  final @Context UriInfo uriInfo, 
+                                  @Parameter(description = "Path parameters for the dynamic JavaScript execution", required = true) @PathParam("pathParam") final String pathParam,
+                                  @RequestBody(description = "JSON string containing JavaScript code in 'javascript' property", required = true) final String bodyMapString) {
 
         final Map<String, Object> bodyMap = parseBodyMap(bodyMapString);
 

@@ -7,8 +7,10 @@ import com.dotcms.mock.request.DotCMSMockRequestWithSession;
 import com.dotcms.rest.AnonymousAccess;
 import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.ResponseEntityMapView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.annotation.SwaggerCompliant;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.rest.api.v1.authentication.RequestUtil;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
@@ -31,6 +33,12 @@ import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.util.HttpHeaders;
 import com.liferay.util.StringPool;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vavr.control.Try;
 import org.apache.commons.lang.time.StopWatch;
@@ -60,6 +68,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.Future;
 
+@SwaggerCompliant(value = "Modern APIs and specialized services", batch = 7)
 @Tag(name = "Temporary Files")
 @Path("/v1/temp")
 public class TempFileResource {
@@ -80,6 +89,27 @@ public class TempFileResource {
         this.tempApi = tempApi;
     }
 
+    @Operation(
+        summary = "Upload temporary files",
+        description = "Uploads multiple files as temporary resources. Supports anonymous access based on configuration"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Files uploaded successfully",
+                    content = @Content(mediaType = "application/octet-stream")),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid referer or request data",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required when anonymous access disabled",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "Temp resource not enabled",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @POST
     @JSONP
     @NoCache
@@ -87,8 +117,12 @@ public class TempFileResource {
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     public final Response uploadTempResourceMulti(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response, 
-            @DefaultValue("-1") @QueryParam(MAX_FILE_LENGTH_PARAM) final String maxFileLengthString, // this is being used later
-            final FormDataMultiPart body) {
+            @Parameter(description = "Maximum file length allowed") @DefaultValue("-1") @QueryParam(MAX_FILE_LENGTH_PARAM) final String maxFileLengthString,
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                description = "Multipart form data containing files to upload", 
+                required = true,
+                content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA)
+            ) final FormDataMultiPart body) {
 
         verifyTempResourceEnabled();
 
@@ -232,14 +266,40 @@ public class TempFileResource {
 
 
 
+    @Operation(
+        summary = "Copy temp file from URL",
+        description = "Creates a temporary file by downloading content from a remote URL"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "File copied from URL successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityMapView.class))),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid URL, referer, or missing URL parameter",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required when anonymous access disabled",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "Temp resource not enabled",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @POST
     @Path("/byUrl")
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    @Consumes({MediaType.APPLICATION_JSON, MediaType.APPLICATION_JSON})
+    @Produces({MediaType.APPLICATION_JSON})
+    @Consumes(MediaType.APPLICATION_JSON)
     public final Response copyTempFromUrl(@Context final HttpServletRequest request,@Context final HttpServletResponse response,
-            final RemoteUrlForm form) {
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                description = "Remote URL configuration", 
+                required = true,
+                content = @Content(schema = @Schema(implementation = RemoteUrlForm.class))
+            ) final RemoteUrlForm form) {
 
         try {
 

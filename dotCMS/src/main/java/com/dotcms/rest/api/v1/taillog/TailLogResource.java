@@ -4,6 +4,7 @@ import com.dotcms.rest.EmptyHttpResponse;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.annotation.SwaggerCompliant;
 import com.dotcms.util.CloseUtils;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.servlets.taillog.Tailer;
@@ -13,6 +14,11 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.ThreadUtils;
 import com.dotmarketing.util.UtilMethods;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.commons.io.input.TailerListenerAdapter;
 import org.glassfish.jersey.media.sse.EventOutput;
@@ -38,6 +44,7 @@ import java.util.regex.Pattern;
  * This resource provides the endpoint used by the LogViewer functionality to display backend server logs
  * @author nollymarlonga
  */
+@SwaggerCompliant(value = "Modern APIs and specialized services", batch = 7)
 @Path("/v1/logs")
 @Tag(name = "TailLog")
 public class TailLogResource {
@@ -47,13 +54,40 @@ public class TailLogResource {
     //This is in secodns
     public static final int KEEP_ALIVE_EVENT_INTERVAL = Config.getIntProperty("KEEP_ALIVE_EVENT_INTERVAL",20);
 
+    @Operation(
+        summary = "Tail log file with real-time streaming",
+        description = "Provides real-time log file tailing using Server-Sent Events (SSE). Streams log content as it's written to the file, with configurable history lines. Requires backend user authentication."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Log streaming started successfully",
+                    content = @Content(mediaType = "text/event-stream")),
+        @ApiResponse(responseCode = "400", 
+                    description = "Invalid file name or file does not match allowed patterns",
+                    content = @Content(mediaType = "text/event-stream")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - backend user authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - file access denied or outside allowed directory",
+                    content = @Content(mediaType = "text/event-stream")),
+        @ApiResponse(responseCode = "404", 
+                    description = "Log file not found",
+                    content = @Content(mediaType = "text/event-stream")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error or too many active tail threads",
+                    content = @Content(mediaType = "text/event-stream"))
+    })
     @GET
     @Path("/{fileName}/_tail")
     @JSONP
     @NoCache
     @Produces(SseFeature.SERVER_SENT_EVENTS)
     public final EventOutput getLogs(@Context final HttpServletRequest request,
-            @PathParam("fileName") final String fileName, @QueryParam("linesBack") final int linesBack) throws IOException {
+            @Parameter(description = "Name of the log file to tail (must match configured pattern)", required = true)
+            @PathParam("fileName") final String fileName, 
+            @Parameter(description = "Number of lines to read from the end of the file initially (default: 5000)", required = false)
+            @QueryParam("linesBack") final int linesBack) throws IOException {
 
         final InitDataObject initData =
                 new WebResource.InitBuilder(new WebResource())

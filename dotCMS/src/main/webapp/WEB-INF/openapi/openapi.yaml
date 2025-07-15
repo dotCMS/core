@@ -6,31 +6,22 @@ servers:
 - description: dotCMS Server
   url: /
 tags:
-- description: AI-powered content generation and analysis endpoints
-  name: AI
-- description: JavaScript execution and server-side scripting
-  name: JavaScript
 - description: Content type definitions and schema management
   name: Content Type
 - description: Content tagging and labeling
   name: Tags
-- description: Endpoints that perform operations related to validating accessibility
-    in content.
-  name: Accessibility Checker
-- description: System announcements and notifications
-  name: Announcements
 - externalDocs:
     description: Additional Authentication API information
     url: https://www.dotcms.com/docs/latest/rest-api-authentication
   name: Authentication
-- description: Elasticsearch index management and operations
-  name: Search Index
-- description: Template design and management
-  name: Templates
-- description: Content type field definitions and configuration
-  name: Content Type Field
+- description: Web accessibility checking and compliance
+  name: Accessibility Checker
 - description: System administration and management tools
   name: Administration
+- description: AI-powered content generation and analysis endpoints
+  name: AI
+- description: System announcements and notifications
+  name: Announcements
 - description: API token management and authentication
   externalDocs:
     description: Additional API token information
@@ -58,6 +49,8 @@ tags:
   name: Content Delivery
 - description: Content reporting and analytics
   name: Content Report
+- description: Content type field definitions and configuration
+  name: Content Type Field
 - description: Data integrity checking and conflict resolution
   name: Data Integrity
 - description: Publishing environment management and configuration
@@ -74,6 +67,8 @@ tags:
   name: Health
 - description: Language management and localization
   name: Internationalization
+- description: JavaScript execution and server-side scripting
+  name: JavaScript
 - description: Background job management and monitoring
   name: Job Queue
 - description: License management and validation
@@ -113,6 +108,8 @@ tags:
   name: SAML Authentication
 - description: Content search and query operations
   name: Search
+- description: Search index management and operations
+  name: Search Index
 - description: Multi-site management and configuration
   name: Sites
 - description: System-level operations and Redis management
@@ -127,6 +124,8 @@ tags:
   name: System Storage
 - description: Server log file monitoring and real-time viewing
   name: TailLog
+- description: Template design and management
+  name: Templates
 - description: Temporary file upload and management operations
   name: Temporary Files
 - description: Testing utilities and development endpoints
@@ -2163,6 +2162,8 @@ paths:
       - Data Integrity
   /js/dynamic:
     get:
+      description: Executes JavaScript code sent inline in the request body under
+        the 'javascript' property without additional path parameters.
       operationId: dynamicGet
       requestBody:
         content:
@@ -2172,16 +2173,33 @@ paths:
           text/plain:
             schema:
               type: string
+        description: JSON string containing JavaScript code in 'javascript' property
+        required: true
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityMapView"
+          description: Dynamic JavaScript executed successfully
+        "400":
           content:
             application/json: {}
-            application/xml: {}
-            text/plain: {}
-          description: default response
+          description: Bad request - invalid JavaScript code
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error during JavaScript execution
+      summary: Execute dynamic GET JavaScript with inline code (no path)
       tags:
       - JavaScript
     post:
+      description: Executes JavaScript code sent inline in the request body under
+        the 'javascript' property via POST method without additional path parameters.
       operationId: dynamicPost
       requestBody:
         content:
@@ -2191,16 +2209,33 @@ paths:
           text/plain:
             schema:
               type: string
+        description: JSON string containing JavaScript code in 'javascript' property
+        required: true
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityMapView"
+          description: Dynamic JavaScript executed successfully
+        "400":
           content:
             application/json: {}
-            application/xml: {}
-            text/plain: {}
-          description: default response
+          description: Bad request - invalid JavaScript code
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error during JavaScript execution
+      summary: Execute dynamic POST JavaScript with inline code (no path)
       tags:
       - JavaScript
     put:
+      description: Executes JavaScript code sent inline in the request body under
+        the 'javascript' property via PUT method without additional path parameters.
       operationId: dynamicPut
       requestBody:
         content:
@@ -2210,20 +2245,39 @@ paths:
           text/plain:
             schema:
               type: string
+        description: JSON string containing JavaScript code in 'javascript' property
+        required: true
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityMapView"
+          description: Dynamic JavaScript executed successfully
+        "400":
           content:
             application/json: {}
-            application/xml: {}
-            text/plain: {}
-          description: default response
+          description: Bad request - invalid JavaScript code
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error during JavaScript execution
+      summary: Execute dynamic PUT JavaScript with inline code (no path)
       tags:
       - JavaScript
   /js/dynamic/{pathParam}:
     delete:
+      description: Executes JavaScript code sent inline in the request body under
+        the 'javascript' property via DELETE method. Allows for dynamic JavaScript
+        execution with data deletion capabilities.
       operationId: dynamicDelete
       parameters:
-      - in: path
+      - description: Path parameters for the dynamic JavaScript execution
+        in: path
         name: pathParam
         required: true
         schema:
@@ -2237,19 +2291,38 @@ paths:
           text/plain:
             schema:
               type: string
+        description: JSON string containing JavaScript code in 'javascript' property
+        required: true
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityMapView"
+          description: Dynamic JavaScript executed successfully
+        "400":
           content:
             application/json: {}
-            application/xml: {}
-            text/plain: {}
-          description: default response
+          description: Bad request - invalid JavaScript code or parameters
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error during JavaScript execution
+      summary: Execute dynamic DELETE JavaScript with inline code
       tags:
       - JavaScript
     get:
+      description: Executes JavaScript code sent inline in the request body under
+        the 'javascript' property. This allows for dynamic JavaScript execution without
+        requiring pre-deployed script files.
       operationId: dynamicGet_1
       parameters:
-      - in: path
+      - description: Path parameters for the dynamic JavaScript execution
+        in: path
         name: pathParam
         required: true
         schema:
@@ -2263,19 +2336,38 @@ paths:
           text/plain:
             schema:
               type: string
+        description: JSON string containing JavaScript code in 'javascript' property
+        required: true
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityMapView"
+          description: Dynamic JavaScript executed successfully
+        "400":
           content:
             application/json: {}
-            application/xml: {}
-            text/plain: {}
-          description: default response
+          description: Bad request - invalid JavaScript code or parameters
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error during JavaScript execution
+      summary: Execute dynamic GET JavaScript with inline code
       tags:
       - JavaScript
     patch:
+      description: Executes JavaScript code sent inline in the request body under
+        the 'javascript' property via PATCH method. Allows for dynamic JavaScript
+        execution with partial data update capabilities.
       operationId: dynamicPatch
       parameters:
-      - in: path
+      - description: Path parameters for the dynamic JavaScript execution
+        in: path
         name: pathParam
         required: true
         schema:
@@ -2289,19 +2381,38 @@ paths:
           text/plain:
             schema:
               type: string
+        description: JSON string containing JavaScript code in 'javascript' property
+        required: true
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityMapView"
+          description: Dynamic JavaScript executed successfully
+        "400":
           content:
             application/json: {}
-            application/xml: {}
-            text/plain: {}
-          description: default response
+          description: Bad request - invalid JavaScript code or parameters
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error during JavaScript execution
+      summary: Execute dynamic PATCH JavaScript with inline code
       tags:
       - JavaScript
     post:
+      description: Executes JavaScript code sent inline in the request body under
+        the 'javascript' property via POST method. Allows for dynamic JavaScript execution
+        with data modification capabilities.
       operationId: dynamicPost_1
       parameters:
-      - in: path
+      - description: Path parameters for the dynamic JavaScript execution
+        in: path
         name: pathParam
         required: true
         schema:
@@ -2315,19 +2426,38 @@ paths:
           text/plain:
             schema:
               type: string
+        description: JSON string containing JavaScript code in 'javascript' property
+        required: true
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityMapView"
+          description: Dynamic JavaScript executed successfully
+        "400":
           content:
             application/json: {}
-            application/xml: {}
-            text/plain: {}
-          description: default response
+          description: Bad request - invalid JavaScript code or parameters
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error during JavaScript execution
+      summary: Execute dynamic POST JavaScript with inline code
       tags:
       - JavaScript
     put:
+      description: Executes JavaScript code sent inline in the request body under
+        the 'javascript' property via PUT method. Allows for dynamic JavaScript execution
+        with data update capabilities.
       operationId: dynamicPut_1
       parameters:
-      - in: path
+      - description: Path parameters for the dynamic JavaScript execution
+        in: path
         name: pathParam
         required: true
         schema:
@@ -2341,20 +2471,38 @@ paths:
           text/plain:
             schema:
               type: string
+        description: JSON string containing JavaScript code in 'javascript' property
+        required: true
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityMapView"
+          description: Dynamic JavaScript executed successfully
+        "400":
           content:
             application/json: {}
-            application/xml: {}
-            text/plain: {}
-          description: default response
+          description: Bad request - invalid JavaScript code or parameters
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error during JavaScript execution
+      summary: Execute dynamic PUT JavaScript with inline code
       tags:
       - JavaScript
   /js/{folder}:
     delete:
+      description: Executes a convention-based 'delete.js' file located under the
+        specified folder without additional path parameters.
       operationId: delete_1
       parameters:
-      - in: path
+      - description: Folder name containing the delete.js file
+        in: path
         name: folder
         required: true
         schema:
@@ -2366,19 +2514,41 @@ paths:
               type: object
               additionalProperties:
                 type: object
+        description: JSON data to pass to the JavaScript execution
+        required: true
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityMapView"
+          description: JavaScript executed successfully
+        "400":
           content:
             application/json: {}
-            application/xml: {}
-            text/plain: {}
-          description: default response
+          description: Bad request - invalid JavaScript or request body
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "404":
+          content:
+            application/json: {}
+          description: JavaScript file not found
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error during JavaScript execution
+      summary: Execute DELETE JavaScript by folder
       tags:
       - JavaScript
     get:
+      description: Executes a convention-based 'get.js' file located under the specified
+        folder without additional path parameters.
       operationId: get
       parameters:
-      - in: path
+      - description: Folder name containing the get.js file
+        in: path
         name: folder
         required: true
         schema:
@@ -2390,19 +2560,41 @@ paths:
               type: object
               additionalProperties:
                 type: object
+        description: JSON data to pass to the JavaScript execution
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityMapView"
+          description: JavaScript executed successfully
+        "400":
           content:
             application/json: {}
-            application/xml: {}
-            text/plain: {}
-          description: default response
+          description: Bad request - invalid JavaScript or parameters
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "404":
+          content:
+            application/json: {}
+          description: JavaScript file not found
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error during JavaScript execution
+      summary: Execute GET JavaScript by folder
       tags:
       - JavaScript
     patch:
+      description: "Executes a convention-based 'patch.js' file with multipart form\
+        \ data support, located under the specified folder without additional path\
+        \ parameters."
       operationId: patchMultipart
       parameters:
-      - in: path
+      - description: Folder name containing the patch.js file
+        in: path
         name: folder
         required: true
         schema:
@@ -2412,19 +2604,42 @@ paths:
           multipart/form-data:
             schema:
               $ref: "#/components/schemas/FormDataMultiPart"
+        description: Multipart form data including files and form fields
+        required: true
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityMapView"
+          description: JavaScript executed successfully with multipart data
+        "400":
           content:
             application/json: {}
-            application/xml: {}
-            text/plain: {}
-          description: default response
+          description: Bad request - invalid JavaScript or multipart data
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "404":
+          content:
+            application/json: {}
+          description: JavaScript file not found
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error during JavaScript execution
+      summary: Execute PATCH JavaScript with multipart data by folder
       tags:
       - JavaScript
     post:
+      description: "Executes a convention-based 'post.js' file with multipart form\
+        \ data support, located under the specified folder without additional path\
+        \ parameters."
       operationId: postMultipart
       parameters:
-      - in: path
+      - description: Folder name containing the post.js file
+        in: path
         name: folder
         required: true
         schema:
@@ -2434,19 +2649,42 @@ paths:
           multipart/form-data:
             schema:
               $ref: "#/components/schemas/FormDataMultiPart"
+        description: Multipart form data including files and form fields
+        required: true
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityMapView"
+          description: JavaScript executed successfully with multipart data
+        "400":
           content:
             application/json: {}
-            application/xml: {}
-            text/plain: {}
-          description: default response
+          description: Bad request - invalid JavaScript or multipart data
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "404":
+          content:
+            application/json: {}
+          description: JavaScript file not found
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error during JavaScript execution
+      summary: Execute POST JavaScript with multipart data by folder
       tags:
       - JavaScript
     put:
+      description: "Executes a convention-based 'put.js' file with multipart form\
+        \ data support, located under the specified folder without additional path\
+        \ parameters."
       operationId: putMultipart
       parameters:
-      - in: path
+      - description: Folder name containing the put.js file
+        in: path
         name: folder
         required: true
         schema:
@@ -2456,25 +2694,49 @@ paths:
           multipart/form-data:
             schema:
               $ref: "#/components/schemas/FormDataMultiPart"
+        description: Multipart form data including files and form fields
+        required: true
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityMapView"
+          description: JavaScript executed successfully with multipart data
+        "400":
           content:
             application/json: {}
-            application/xml: {}
-            text/plain: {}
-          description: default response
+          description: Bad request - invalid JavaScript or multipart data
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "404":
+          content:
+            application/json: {}
+          description: JavaScript file not found
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error during JavaScript execution
+      summary: Execute PUT JavaScript with multipart data by folder
       tags:
       - JavaScript
   /js/{folder}/{pathParam}:
     delete:
+      description: Executes a convention-based 'delete.js' file located under the
+        specified folder with additional path parameters. The JavaScript code processes
+        the request body and determines the response format.
       operationId: delete_2
       parameters:
-      - in: path
+      - description: Folder name containing the delete.js file
+        in: path
         name: folder
         required: true
         schema:
           type: string
-      - in: path
+      - description: Additional path parameters for the JavaScript execution
+        in: path
         name: pathParam
         required: true
         schema:
@@ -2487,24 +2749,48 @@ paths:
               type: object
               additionalProperties:
                 type: object
+        description: JSON data to pass to the JavaScript execution
+        required: true
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityMapView"
+          description: JavaScript executed successfully
+        "400":
           content:
             application/json: {}
-            application/xml: {}
-            text/plain: {}
-          description: default response
+          description: Bad request - invalid JavaScript or request body
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "404":
+          content:
+            application/json: {}
+          description: JavaScript file not found
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error during JavaScript execution
+      summary: Execute DELETE JavaScript by folder and path
       tags:
       - JavaScript
     get:
+      description: "Executes a convention-based 'get.js' file located under the specified\
+        \ folder with additional path parameters. The JavaScript code determines the\
+        \ response format (JSON, XML, or plain text)."
       operationId: get_1
       parameters:
-      - in: path
+      - description: Folder name containing the get.js file
+        in: path
         name: folder
         required: true
         schema:
           type: string
-      - in: path
+      - description: Additional path parameters for the JavaScript execution
+        in: path
         name: pathParam
         required: true
         schema:
@@ -2517,25 +2803,46 @@ paths:
               type: object
               additionalProperties:
                 type: object
+        description: JSON data to pass to the JavaScript execution
       responses:
-        default:
+        "200":
           content:
             application/json: {}
-            application/xml: {}
-            text/plain: {}
-          description: default response
+          description: JavaScript executed successfully
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - invalid JavaScript or parameters
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "404":
+          content:
+            application/json: {}
+          description: JavaScript file not found
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error during JavaScript execution
+      summary: Execute GET JavaScript by folder and path
       tags:
       - JavaScript
     patch:
+      description: "Executes a convention-based 'patch.js' file with multipart form\
+        \ data support, located under the specified folder with additional path parameters.\
+        \ Supports file uploads and form data."
       operationId: patchMultipart_1
       parameters:
-      - in: path
+      - description: Additional path parameters for the JavaScript execution
+        in: path
         name: pathParam
         required: true
         schema:
           type: string
           pattern: .*
-      - in: path
+      - description: Folder name containing the patch.js file
+        in: path
         name: folder
         required: true
         schema:
@@ -2545,25 +2852,49 @@ paths:
           multipart/form-data:
             schema:
               $ref: "#/components/schemas/FormDataMultiPart"
+        description: Multipart form data including files and form fields
+        required: true
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityMapView"
+          description: JavaScript executed successfully with multipart data
+        "400":
           content:
             application/json: {}
-            application/xml: {}
-            text/plain: {}
-          description: default response
+          description: Bad request - invalid JavaScript or multipart data
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "404":
+          content:
+            application/json: {}
+          description: JavaScript file not found
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error during JavaScript execution
+      summary: Execute PATCH JavaScript with multipart data by folder and path
       tags:
       - JavaScript
     post:
+      description: "Executes a convention-based 'post.js' file with multipart form\
+        \ data support, located under the specified folder with additional path parameters.\
+        \ Supports file uploads and form data."
       operationId: postMultipart_1
       parameters:
-      - in: path
+      - description: Additional path parameters for the JavaScript execution
+        in: path
         name: pathParam
         required: true
         schema:
           type: string
           pattern: .*
-      - in: path
+      - description: Folder name containing the post.js file
+        in: path
         name: folder
         required: true
         schema:
@@ -2573,25 +2904,49 @@ paths:
           multipart/form-data:
             schema:
               $ref: "#/components/schemas/FormDataMultiPart"
+        description: Multipart form data including files and form fields
+        required: true
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityMapView"
+          description: JavaScript executed successfully with multipart data
+        "400":
           content:
             application/json: {}
-            application/xml: {}
-            text/plain: {}
-          description: default response
+          description: Bad request - invalid JavaScript or multipart data
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "404":
+          content:
+            application/json: {}
+          description: JavaScript file not found
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error during JavaScript execution
+      summary: Execute POST JavaScript with multipart data by folder and path
       tags:
       - JavaScript
     put:
+      description: "Executes a convention-based 'put.js' file with multipart form\
+        \ data support, located under the specified folder with additional path parameters.\
+        \ Supports file uploads and form data."
       operationId: putMultipart_1
       parameters:
-      - in: path
+      - description: Additional path parameters for the JavaScript execution
+        in: path
         name: pathParam
         required: true
         schema:
           type: string
           pattern: .*
-      - in: path
+      - description: Folder name containing the put.js file
+        in: path
         name: folder
         required: true
         schema:
@@ -2601,13 +2956,32 @@ paths:
           multipart/form-data:
             schema:
               $ref: "#/components/schemas/FormDataMultiPart"
+        description: Multipart form data including files and form fields
+        required: true
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityMapView"
+          description: JavaScript executed successfully with multipart data
+        "400":
           content:
             application/json: {}
-            application/xml: {}
-            text/plain: {}
-          description: default response
+          description: Bad request - invalid JavaScript or multipart data
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "404":
+          content:
+            application/json: {}
+          description: JavaScript file not found
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error during JavaScript execution
+      summary: Execute PUT JavaScript with multipart data by folder and path
       tags:
       - JavaScript
   /license/all/{params}:
@@ -3314,12 +3688,8 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties:
-                type: string
-              properties:
-                empty:
-                  type: boolean
+              $ref: "#/components/schemas/AccessibilityForm"
+        description: Accessibility validation form containing content and guidelines
         required: true
       responses:
         "200":
@@ -3412,6 +3782,8 @@ paths:
                     "pagination": null,
                     "permissions": []
                 }
+              schema:
+                $ref: "#/components/schemas/ResponseACheckerEntityView"
           description: Content validated successfully
         "400":
           description: Bad Request
@@ -3430,7 +3802,9 @@ paths:
       responses:
         "200":
           content:
-            application/json: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityAccessibilityGuidelinesView"
           description: Guideline list retrieved successfully
         "500":
           description: Internal Server Error
@@ -3444,7 +3818,7 @@ paths:
       operationId: summarizeFromContent
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: "#/components/schemas/CompletionsForm"
         description: Completion form with prompt and configuration
@@ -3454,6 +3828,8 @@ paths:
             application/json:
               schema:
                 type: object
+                description: AI completion response containing generated text and
+                  metadata
           description: Completion generated successfully
         "400":
           description: Bad request - Missing or invalid prompt
@@ -3474,7 +3850,8 @@ paths:
           content:
             application/json:
               schema:
-                type: string
+                type: object
+                description: AI service configuration with available models and settings
           description: Configuration retrieved successfully
         "401":
           description: Unauthorized - User not authenticated
@@ -3490,7 +3867,7 @@ paths:
       operationId: rawPrompt
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: "#/components/schemas/CompletionsForm"
         description: Completion form with raw prompt and configuration
@@ -3500,6 +3877,8 @@ paths:
             application/json:
               schema:
                 type: object
+                description: AI completion response containing generated text and
+                  metadata
           description: Raw completion generated successfully
         "400":
           description: Bad request - Missing or invalid prompt
@@ -3512,351 +3891,618 @@ paths:
       - AI
   /v1/ai/embeddings:
     delete:
+      description: "Deletes embeddings based on provided criteria such as query, identifier,\
+        \ inode, or content type"
       operationId: delete
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               type: object
-              additionalProperties:
-                type: object
-              properties:
-                asMap:
-                  type: object
-                  additionalProperties:
-                    type: object
-                empty:
-                  type: boolean
+              description: "Deletion criteria including query, identifier, inode,\
+                \ or content type"
+        description: "JSON object containing deletion criteria such as query, identifier,\
+          \ inode, or content type"
+        required: true
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Deletion result containing count of deleted items
+          description: Embeddings deleted successfully
+        "401":
           content:
             application/json: {}
-          description: default response
+          description: Unauthorized - backend user authentication required
+      summary: Delete AI embeddings
       tags:
       - AI
     post:
+      description: "Creates embeddings for content based on the provided form data,\
+        \ processing up to 10,000 content items"
       operationId: embed
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: "#/components/schemas/EmbeddingsForm"
+        description: "Embeddings form containing query, limit, offset, indexName,\
+          \ model, velocityTemplate, and fields"
+        required: true
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Embeddings operation result containing timing and count
+                  information
+          description: Embeddings created successfully
+        "401":
           content:
             application/json: {}
-          description: default response
+          description: Unauthorized - backend user authentication required
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error during embeddings creation
+      summary: Create AI embeddings
       tags:
       - AI
   /v1/ai/embeddings/count:
     get:
+      description: "Counts embeddings based on provided query parameters such as site,\
+        \ content type, index name, etc."
       operationId: count_1
       parameters:
-      - in: query
+      - description: Site identifier
+        in: query
         name: site
         schema:
           type: string
-      - in: query
+      - description: Content type
+        in: query
         name: contentType
         schema:
           type: string
-      - in: query
+      - description: Index name
+        in: query
         name: indexName
         schema:
           type: string
-      - in: query
+      - description: Language identifier
+        in: query
         name: language
         schema:
           type: string
-      - in: query
+      - description: Content identifier
+        in: query
         name: identifier
         schema:
           type: string
-      - in: query
+      - description: Content inode
+        in: query
         name: inode
         schema:
           type: string
-      - in: query
+      - description: Field variable name
+        in: query
         name: fieldVar
         schema:
           type: string
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Count results containing embedding statistics
+          description: JSON object containing embeddingsCount key
+        "401":
           content:
             application/json: {}
-          description: default response
+          description: Unauthorized - backend user authentication required
+      summary: Count embeddings (GET)
       tags:
       - AI
     post:
+      description: Counts embeddings based on provided form data containing search
+        criteria
       operationId: count
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: "#/components/schemas/CompletionsForm"
+        description: Completion form containing search criteria for counting embeddings
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Count results containing embedding statistics
+          description: JSON object containing embeddingsCount key
+        "401":
           content:
             application/json: {}
-          description: default response
+          description: Unauthorized - backend user authentication required
+      summary: Count embeddings (POST)
       tags:
       - AI
   /v1/ai/embeddings/db:
     delete:
+      description: Drops and recreates the embeddings database tables. Requires CMS
+        Administrator role.
       operationId: dropAndRecreateTables
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               type: object
-              additionalProperties:
-                type: object
-              properties:
-                asMap:
-                  type: object
-                  additionalProperties:
-                    type: object
-                empty:
-                  type: boolean
+              description: Empty JSON object for triggering table recreation
+        description: Empty JSON object to trigger table recreation
+        required: true
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Table creation result status
+          description: Tables dropped and recreated successfully
+        "401":
           content:
             application/json: {}
-          description: default response
+          description: Unauthorized - backend user authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - CMS Administrator role required
+      summary: Drop and recreate embeddings tables
       tags:
       - AI
   /v1/ai/embeddings/indexCount:
     get:
+      description: Returns count of embeddings grouped by index name. Requires CMS
+        Administrator role.
       operationId: indexCount
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Count results containing index statistics grouped by
+                  index name
+          description: JSON Object containing indexCount key
+        "401":
           content:
             application/json: {}
-          description: default response
+          description: Unauthorized - backend user authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - CMS Administrator role required
+      summary: Count embeddings by index
       tags:
       - AI
   /v1/ai/embeddings/test:
     get:
+      description: Returns a test response to verify the AI embeddings service is
+        operational
       operationId: textResource
       responses:
-        default:
+        "200":
           content:
-            application/json: {}
-          description: default response
+            application/json:
+              schema:
+                type: object
+                description: Simple key-value map indicating embeddings service type
+          description: Test response returned successfully
+      summary: Test AI embeddings service
       tags:
       - AI
   /v1/ai/image/generate:
     get:
+      description: Generates AI-powered images based on the provided prompt using
+        GET request with query parameter
       operationId: indexByInode_1
       parameters:
-      - in: query
+      - description: The prompt to generate images from
+        in: query
         name: prompt
+        required: true
         schema:
           type: string
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                description: AI image generation response containing image URLs and
+                  metadata
+          description: Images generated successfully
+        "400":
           content:
             application/json: {}
-          description: default response
+          description: Bad request - prompt is required
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error - app config missing or AI service error
+      summary: Generate images using AI
       tags:
       - AI
     post:
+      description: Generates AI-powered images based on the provided AIImageRequestDTO
+        with detailed configuration options
       operationId: handleImageRequest
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
-              $ref: "#/components/schemas/AIImageRequestDTO"
+              type: object
+              description: "JSON object with image generation form data including\
+                \ prompt, size, and style parameters"
+        description: Image generation request containing prompt and configuration
+          options
+        required: true
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                description: AI image generation response containing image URLs and
+                  metadata
+          description: Images generated successfully
+        "400":
           content:
             application/json: {}
-          description: default response
+          description: Bad request - prompt is required
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error - app config missing or AI service error
+      summary: Generate images using AI (POST)
       tags:
       - AI
   /v1/ai/image/test:
     get:
+      description: Returns a test response to verify the AI image service is operational
       operationId: indexByInode
       responses:
-        default:
+        "200":
           content:
-            application/json: {}
-          description: default response
+            application/json:
+              schema:
+                type: object
+                description: Simple key-value map indicating image service type
+          description: Test response returned successfully
+      summary: Test AI image service
       tags:
       - AI
   /v1/ai/search:
     get:
+      description: Searches content using AI-powered semantic search with various
+        filtering and configuration options
       operationId: searchByGet
       parameters:
-      - in: query
+      - description: Search query text
+        in: query
         name: query
+        required: true
         schema:
           type: string
-      - in: query
+      - description: Maximum number of search results to return
+        example: 1000
+        in: query
         name: searchLimit
         schema:
           type: integer
           format: int32
           default: 1000
-      - in: query
+      - description: Number of results to skip for pagination
+        example: 0
+        in: query
         name: searchOffset
         schema:
           type: integer
           format: int32
           default: 0
-      - in: query
+      - description: Site identifier to limit search scope
+        in: query
         name: site
         schema:
           type: string
-      - in: query
+      - description: Content type to filter search results
+        in: query
         name: contentType
         schema:
           type: string
-      - in: query
+      - description: Name of the search index to use
+        example: default
+        in: query
         name: indexName
         schema:
           type: string
           default: default
-      - in: query
+      - description: Similarity threshold for search results
+        example: 0.5
+        in: query
         name: threshold
         schema:
           type: number
           format: float
           default: 0.5
-      - in: query
+      - description: Whether to stream the response
+        example: false
+        in: query
         name: stream
         schema:
           type: boolean
           default: false
-      - in: query
+      - description: Maximum length of response in tokens
+        example: 1024
+        in: query
         name: responseLength
         schema:
           type: integer
           format: int32
           default: 1024
-      - in: query
+      - description: Search operator to use
+        example: <=>
+        in: query
         name: operator
         schema:
           type: string
           default: <=>
-      - in: query
+      - description: Language identifier for search
+        in: query
         name: language
         schema:
           type: string
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                description: AI search results containing matching contentlets and
+                  text fragments
+          description: Search results returned successfully
+        "401":
           content:
             application/json: {}
-            application/octet-stream: {}
-          description: default response
+          description: Unauthorized - authentication required
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Search content using AI
       tags:
       - AI
     post:
+      description: Searches content using AI-powered semantic search with form data
+        containing search parameters
       operationId: searchByPost
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: "#/components/schemas/CompletionsForm"
+        description: Form data containing search query and configuration options
+        required: true
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                description: AI search results containing matching contentlets and
+                  text fragments
+          description: Search results returned successfully
+        "401":
           content:
             application/json: {}
-          description: default response
+          description: Unauthorized - authentication required
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Search content using AI (POST)
       tags:
       - AI
   /v1/ai/search/related:
     get:
+      description: Finds content related to a specific content item using AI-powered
+        semantic similarity
       operationId: relatedByGet
       parameters:
-      - in: query
+      - description: Language ID for content lookup
+        in: query
         name: language
+        required: true
         schema:
           type: integer
           format: int64
-      - in: query
+      - description: Content identifier
+        in: query
         name: identifier
         schema:
           type: string
-      - in: query
+      - description: Content inode
+        in: query
         name: inode
         schema:
           type: string
-      - in: query
+      - description: Index name to search in
+        in: query
         name: indexName
         schema:
           type: string
-      - in: query
+      - description: Field variable name to use for content extraction
+        in: query
         name: fieldVar
         schema:
           type: string
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Related content results containing array of content items
+                  with similarity scores and matching text fragments
+          description: Related content found successfully
+        "401":
           content:
             application/json: {}
-          description: default response
+          description: Unauthorized - authentication required
+        "404":
+          content:
+            application/json: {}
+          description: Content not found
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Find related content using AI
       tags:
       - AI
     post:
+      description: Finds content related to a specific content item using AI-powered
+        semantic similarity with JSON data
       operationId: relatedByPost
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               type: object
-              additionalProperties:
-                type: object
-              properties:
-                asMap:
-                  type: object
-                  additionalProperties:
-                    type: object
-                empty:
-                  type: boolean
+              description: "JSON object containing content identifier, inode, language,\
+                \ indexName, and fieldVar for finding related content"
+        description: "JSON object containing content identifier, inode, language,\
+          \ indexName, and fieldVar"
+        required: true
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Simple key-value map indicating search service type
+          description: Related content found successfully
+        "401":
           content:
             application/json: {}
-          description: default response
+          description: Unauthorized - authentication required
+        "404":
+          content:
+            application/json: {}
+          description: Content not found
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Find related content using AI (POST)
       tags:
       - AI
   /v1/ai/search/test:
     get:
+      description: Returns a test response to verify the AI search service is operational
       operationId: testResponse
       responses:
-        default:
+        "200":
           content:
-            application/json: {}
-          description: default response
+            application/json:
+              schema:
+                type: object
+                description: Simple key-value map indicating search service type
+          description: Test response returned successfully
+      summary: Test AI search service
       tags:
       - AI
   /v1/ai/text/generate:
     get:
+      description: Generates AI-powered text content based on the provided prompt
+        using GET request with query parameter
       operationId: doGet
       parameters:
-      - in: query
+      - description: The text prompt to generate AI content from
+        in: query
         name: prompt
+        required: true
         schema:
           type: string
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                description: AI text generation response with generated content and
+                  metadata
+          description: Text generated successfully
+        "400":
           content:
             application/json: {}
-          description: default response
+          description: Bad request - prompt is required
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Generate text using AI
       tags:
       - AI
     post:
+      description: Generates AI-powered text content based on the provided prompt
+        and configuration using POST request with form data
       operationId: doPost
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: "#/components/schemas/CompletionsForm"
+        description: Form data containing the prompt and AI configuration options
+        required: true
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                description: AI text generation response with generated content and
+                  metadata
+          description: Text generated successfully
+        "400":
           content:
             application/json: {}
-          description: default response
+          description: Bad request - prompt is required
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Generate text using AI (POST)
       tags:
       - AI
   /v1/analytics/content:
@@ -4062,27 +4708,43 @@ paths:
       - Content Analytics
   /v1/announcements:
     get:
+      description: Retrieves system announcements from the remote dotCMS instance.
+        Acts as a proxy to the announcement service with optional cache refresh and
+        result limiting.
       operationId: announcements
       parameters:
-      - in: query
+      - description: "Whether to refresh the cache before retrieving announcements\
+          \ (default: false)"
+        in: query
         name: refreshCache
         schema:
           type: boolean
-      - in: query
+      - description: "Maximum number of announcements to return (default: no limit)"
+        in: query
         name: limit
         schema:
           type: integer
           format: int32
       responses:
-        default:
+        "200":
           content:
-            application/javascript:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityViewListAnnouncement"
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityViewListAnnouncement"
-          description: default response
+                $ref: "#/components/schemas/ResponseEntityAnnouncementListView"
+          description: Announcements retrieved successfully
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Get system announcements
       tags:
       - Announcements
   /v1/apitoken:
@@ -9909,13 +10571,34 @@ paths:
       - Content Type Field
   /v1/ema:
     get:
+      description: Returns the Enterprise Mobile Application (EMA) configuration for
+        the current site. Retrieves app secrets and configuration from the dotema-config-v2
+        app.
       operationId: getDetails
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityEmaConfigurationView"
+          description: EMA configuration retrieved successfully
+        "401":
+          content:
             application/json: {}
-          description: default response
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "404":
+          content:
+            application/json: {}
+          description: EMA configuration not found for current site
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Get EMA configuration details
       tags:
       - Apps
   /v1/environments/endpoints:
@@ -10120,20 +10803,42 @@ paths:
       - Environment
   /v1/esindex:
     get:
+      description: "Retrieves the status information for all Elasticsearch indices\
+        \ including their state, document count, and health information. Requires\
+        \ CMS Administrator role."
       operationId: getIndexStatus
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityListMapView"
+          description: Index status retrieved successfully
+        "401":
           content:
             application/json: {}
-          description: default response
+          description: Unauthorized - CMS Administrator role required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error retrieving index status
+      summary: Get Elasticsearch index status
       tags:
       - Search Index
   /v1/esindex/activate/{params}:
     put:
       deprecated: true
+      description: "Activates an Elasticsearch index by name. This endpoint is deprecated\
+        \ - use PUT /api/v1/esindex/{indexName}?action=activate instead. Requires\
+        \ CMS Administrator role."
       operationId: activateIndex
       parameters:
-      - in: path
+      - description: Index activation parameters
+        in: path
         name: params
         required: true
         schema:
@@ -10142,16 +10847,21 @@ paths:
       responses:
         default:
           content:
-            '*/*': {}
+            application/json: {}
           description: default response
+      summary: Activate index (deprecated)
       tags:
       - Search Index
   /v1/esindex/active/{params}:
     get:
       deprecated: true
+      description: Retrieves the name of the active Elasticsearch index for a given
+        type. This endpoint is deprecated - use the modern index status endpoints
+        instead. Requires CMS Administrator role.
       operationId: getActive
       parameters:
-      - in: path
+      - description: Active index query parameters
+        in: path
         name: params
         required: true
         schema:
@@ -10162,70 +10872,121 @@ paths:
           content:
             text/plain: {}
           description: default response
+      summary: Get active index (deprecated)
       tags:
       - Search Index
   /v1/esindex/cache:
     delete:
+      description: Flushes the cache for all dotCMS Elasticsearch indices to ensure
+        data consistency. Returns the number of successful and failed shard operations.
+        Requires CMS Administrator role.
       operationId: flushIndiciesCache
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityIndexOperationView"
+          description: Index cache flushed successfully
+        "401":
           content:
             application/json: {}
-          description: default response
+          description: Unauthorized - CMS Administrator role required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error during cache flush
+      summary: Flush Elasticsearch indices cache
       tags:
       - Search Index
   /v1/esindex/clear/{params}:
     put:
       deprecated: true
+      description: "Clears an Elasticsearch index by name. This endpoint is deprecated\
+        \ - use PUT /api/v1/esindex/{indexName}?action=clear instead. Requires CMS\
+        \ Administrator role."
       operationId: clearIndex
       parameters:
-      - in: path
+      - description: Index clearing parameters
+        in: path
         name: params
         required: true
         schema:
           type: string
           pattern: .*
-      responses:
-        default:
-          content:
-            '*/*': {}
-          description: default response
-      tags:
-      - Search Index
-  /v1/esindex/close/{params}:
-    put:
-      deprecated: true
-      operationId: closeIndex
-      parameters:
-      - in: path
-        name: params
-        required: true
-        schema:
-          type: string
-          pattern: .*
-      responses:
-        default:
-          content:
-            '*/*': {}
-          description: default response
-      tags:
-      - Search Index
-  /v1/esindex/cluster:
-    get:
-      operationId: getClusterStats
       responses:
         default:
           content:
             application/json: {}
           description: default response
+      summary: Clear index (deprecated)
+      tags:
+      - Search Index
+  /v1/esindex/close/{params}:
+    put:
+      deprecated: true
+      description: "Closes an Elasticsearch index by name. This endpoint is deprecated\
+        \ - use PUT /api/v1/esindex/{indexName}?action=close instead. Requires CMS\
+        \ Administrator role."
+      operationId: closeIndex
+      parameters:
+      - description: Index closing parameters
+        in: path
+        name: params
+        required: true
+        schema:
+          type: string
+          pattern: .*
+      responses:
+        default:
+          content:
+            application/json: {}
+          description: default response
+      summary: Close index (deprecated)
+      tags:
+      - Search Index
+  /v1/esindex/cluster:
+    get:
+      description: "Retrieves comprehensive statistics about the Elasticsearch cluster\
+        \ including cluster name, node information, and performance metrics. Requires\
+        \ CMS Administrator role."
+      operationId: getClusterStats
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityMapView"
+          description: Cluster statistics retrieved successfully
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - CMS Administrator role required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error retrieving cluster statistics
+      summary: Get Elasticsearch cluster statistics
       tags:
       - Search Index
   /v1/esindex/create/{params}:
     put:
       deprecated: true
+      description: Creates a new Elasticsearch index with specified parameters. This
+        endpoint is deprecated - use the modern reindexing endpoints instead. Requires
+        CMS Administrator role.
       operationId: createIndex
       parameters:
-      - in: path
+      - description: Index creation parameters
+        in: path
         name: params
         required: true
         schema:
@@ -10236,14 +10997,19 @@ paths:
           content:
             text/plain: {}
           description: default response
+      summary: Create index (deprecated)
       tags:
       - Search Index
   /v1/esindex/deactivate/{params}:
     put:
       deprecated: true
+      description: "Deactivates an Elasticsearch index by name. This endpoint is deprecated\
+        \ - use PUT /api/v1/esindex/{indexName}?action=deactivate instead. Requires\
+        \ CMS Administrator role."
       operationId: deactivateIndex
       parameters:
-      - in: path
+      - description: Index deactivation parameters
+        in: path
         name: params
         required: true
         schema:
@@ -10252,34 +11018,72 @@ paths:
       responses:
         default:
           content:
-            '*/*': {}
+            application/json: {}
           description: default response
+      summary: Deactivate index (deprecated)
       tags:
       - Search Index
   /v1/esindex/failed:
     delete:
+      description: Deletes all failed reindex records from the reindex queue. This
+        clears the list of content items that previously failed to reindex. Requires
+        CMS Administrator role.
       operationId: deleteFailedRecords
       responses:
-        default:
+        "200":
           content:
             application/json: {}
-          description: default response
+          description: Failed reindex records deleted successfully
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - CMS Administrator role required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error deleting failed records
+      summary: Delete failed reindex records
       tags:
       - Search Index
     get:
+      description: "Retrieves a list of failed reindex records in JSON format. Each\
+        \ record includes identifier, server ID, failure reason, and priority information.\
+        \ Requires CMS Administrator role."
       operationId: downloadRemainingRecordsAsCsv
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityListMapView"
+          description: Failed reindex records retrieved successfully
+        "401":
           content:
             application/json: {}
-          description: default response
+          description: Unauthorized - CMS Administrator role required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error retrieving failed records
+      summary: Download failed reindex records
       tags:
       - Search Index
   /v1/esindex/indexlist/{params}:
     get:
+      description: Retrieves a list of all dotCMS Elasticsearch indices. Requires
+        CMS Administrator role.
       operationId: indexList
       parameters:
-      - in: path
+      - description: Index list query parameters
+        in: path
         name: params
         required: true
         schema:
@@ -10290,14 +11094,19 @@ paths:
           content:
             application/json: {}
           description: default response
+      summary: List Elasticsearch indices
       tags:
       - Search Index
   /v1/esindex/open/{params}:
     put:
       deprecated: true
+      description: "Opens an Elasticsearch index by name. This endpoint is deprecated\
+        \ - use PUT /api/v1/esindex/{indexName}?action=open instead. Requires CMS\
+        \ Administrator role."
       operationId: openIndex
       parameters:
-      - in: path
+      - description: Index opening parameters
+        in: path
         name: params
         required: true
         schema:
@@ -10306,100 +11115,231 @@ paths:
       responses:
         default:
           content:
-            '*/*': {}
+            application/json: {}
           description: default response
+      summary: Open index (deprecated)
       tags:
       - Search Index
   /v1/esindex/optimize:
     post:
+      description: Optimizes all Elasticsearch indices to improve search performance
+        by reducing the number of segments and freeing up disk space. This operation
+        can be resource-intensive. Requires CMS Administrator role.
       operationId: optimizeIndices
       responses:
-        default:
+        "200":
+          description: Index optimization completed successfully (no body)
+        "401":
           content:
             application/json: {}
-          description: default response
+          description: Unauthorized - CMS Administrator role required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error during index optimization
+      summary: Optimize Elasticsearch indices
       tags:
       - Search Index
   /v1/esindex/reindex:
     delete:
+      description: Stops the currently running content reindexation process. Optionally
+        performs a switchover to activate the new index after stopping. Requires CMS
+        Administrator role.
       operationId: stopReindexation
       parameters:
-      - in: query
+      - description: Whether to perform switchover to activate new index after stopping
+          (defaults to true)
+        in: query
         name: switch
         schema:
           type: boolean
           default: true
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityIndexOperationView"
+          description: Reindexation stopped successfully
+        "401":
           content:
             application/json: {}
-          description: default response
+          description: Unauthorized - CMS Administrator role required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error stopping reindexation
+      summary: Stop content reindexation
       tags:
       - Search Index
     get:
+      description: "Retrieves the current progress status of content reindexation\
+        \ process including percentage completed, records processed, and estimated\
+        \ time remaining. Requires CMS Administrator role."
       operationId: getReindexationProgress
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityIndexOperationView"
+          description: Reindexation progress retrieved successfully
+        "401":
           content:
             application/json: {}
-          description: default response
+          description: Unauthorized - CMS Administrator role required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error retrieving reindexation progress
+      summary: Get reindexation progress
       tags:
       - Search Index
     post:
+      description: Initiates a content reindexation process for all content or a specific
+        content type. Optionally allows configuration of the number of Elasticsearch
+        shards. This is a resource-intensive operation that rebuilds the search index.
+        Requires CMS Administrator role.
       operationId: startReindex
       parameters:
-      - in: query
+      - description: Number of Elasticsearch shards (defaults to configuration value
+          if 0 or negative)
+        in: query
         name: shards
         schema:
           type: integer
           format: int32
-      - in: query
+      - description: Content type to reindex (defaults to 'DOTALL' for all content)
+        in: query
         name: contentType
         schema:
           type: string
           default: DOTALL
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityIndexOperationView"
+          description: Reindexation started successfully
+        "400":
           content:
             application/json: {}
-          description: default response
+          description: Bad request - invalid content type or shard count
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - CMS Administrator role required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error starting reindexation
+      summary: Start content reindexation
       tags:
       - Search Index
   /v1/esindex/{indexName}:
     delete:
+      description: Deletes a specific Elasticsearch index by name. This is a destructive
+        operation that permanently removes the index and all its data. Requires CMS
+        Administrator role.
       operationId: deleteIndex
       parameters:
-      - in: path
+      - description: Name of the Elasticsearch index to delete
+        in: path
         name: indexName
         required: true
         schema:
           type: string
           pattern: .*
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityIndexOperationView"
+          description: Index deleted successfully
+        "401":
           content:
             application/json: {}
-          description: default response
+          description: Unauthorized - CMS Administrator role required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "404":
+          content:
+            application/json: {}
+          description: Index not found
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error deleting index
+      summary: Delete specific Elasticsearch index
       tags:
       - Search Index
     put:
+      description: "Performs various operations on a specific Elasticsearch index\
+        \ including activate, deactivate, clear, open, and close actions. This replaces\
+        \ several deprecated endpoints. Requires CMS Administrator role."
       operationId: modIndex
       parameters:
-      - in: path
+      - description: Name of the Elasticsearch index to modify
+        in: path
         name: indexName
         required: true
         schema:
           type: string
           pattern: .*
-      - in: query
+      - description: "Action to perform: ACTIVATE, DEACTIVATE, CLEAR, OPEN, CLOSE"
+        in: query
         name: action
+        required: true
         schema:
           type: string
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityIndexOperationView"
+          description: Index operation completed successfully
+        "400":
           content:
             application/json: {}
-          description: default response
+          description: Bad request - invalid action parameter
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - CMS Administrator role required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "404":
+          content:
+            application/json: {}
+          description: Index not found
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error during index operation
+      summary: Modify Elasticsearch index
       tags:
       - Search Index
   /v1/experiments:
@@ -12549,25 +13489,50 @@ paths:
       - Authentication
   /v1/logs/{fileName}/_tail:
     get:
+      description: "Provides real-time log file tailing using Server-Sent Events (SSE).\
+        \ Streams log content as it's written to the file, with configurable history\
+        \ lines. Requires backend user authentication."
       operationId: getLogs
       parameters:
-      - in: path
+      - description: Name of the log file to tail (must match configured pattern)
+        in: path
         name: fileName
         required: true
         schema:
           type: string
-      - in: query
+      - description: "Number of lines to read from the end of the file initially (default:\
+          \ 5000)"
+        in: query
         name: linesBack
         schema:
           type: integer
           format: int32
       responses:
-        default:
+        "200":
           content:
-            text/event-stream:
-              schema:
-                $ref: "#/components/schemas/EventOutput"
-          description: default response
+            text/event-stream: {}
+          description: Log streaming started successfully
+        "400":
+          content:
+            text/event-stream: {}
+          description: Invalid file name or file does not match allowed patterns
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - backend user authentication required
+        "403":
+          content:
+            text/event-stream: {}
+          description: Forbidden - file access denied or outside allowed directory
+        "404":
+          content:
+            text/event-stream: {}
+          description: Log file not found
+        "500":
+          content:
+            text/event-stream: {}
+          description: Internal server error or too many active tail threads
+      summary: Tail log file with real-time streaming
       tags:
       - TailLog
   /v1/maintenance/_downloadAssets:
@@ -12904,80 +13869,178 @@ paths:
       - Navigation
   /v1/notification/delete:
     put:
+      description: Deletes multiple notifications for the current user. Uses PUT instead
+        of DELETE to support request body with JSON data.
       operationId: delete_10
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: "#/components/schemas/DeleteForm"
+        description: Form data containing list of notification IDs to delete
+        required: true
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityBooleanView"
+          description: Notifications deleted successfully
+        "400":
           content:
             application/json: {}
-          description: default response
+          description: Bad request - invalid notification IDs
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Delete multiple notifications
       tags:
       - Notifications
   /v1/notification/getNewNotificationsCount:
     get:
+      description: Returns the count of new/unread notifications for the current user
+        or all users if allUsers parameter is true.
       operationId: getNewNotificationsCount
       parameters:
-      - in: path
-        name: params
-        required: true
+      - description: Filter to include all users' notifications
+        in: query
+        name: allUsers
         schema:
-          type: string
+          type: boolean
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityNotificationCountView"
+          description: Notification count retrieved successfully
+        "401":
           content:
             application/json: {}
-          description: default response
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Get new notifications count
       tags:
       - Notifications
   /v1/notification/getNotifications/{params}:
     get:
+      description: Returns a JSON array with notifications for the given user. Supports
+        pagination with offset/limit and can retrieve notifications for all users
+        with allUsers=true parameter. Supports Range header for pagination.
       operationId: getNotifications
       parameters:
-      - in: path
+      - description: "URL parameters for pagination and filtering (e.g., offset/0/limit/5\
+          \ or allUsers/true)"
+        in: path
         name: params
         required: true
         schema:
           type: string
           pattern: .*
-      - in: header
+      - description: Range header for pagination (optional)
+        in: header
         name: Range
         schema:
           type: string
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityMapView"
+          description: Notifications retrieved successfully
+        "401":
           content:
             application/json: {}
-          description: default response
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Get notifications
       tags:
       - Notifications
   /v1/notification/id/{id}:
     delete:
+      description: Deletes a specific notification by its ID for the current user.
       operationId: delete_11
       parameters:
-      - in: path
+      - description: Notification ID to delete
+        in: path
         name: id
         required: true
         schema:
           type: string
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityBooleanView"
+          description: Notification deleted successfully
+        "401":
           content:
             application/json: {}
-          description: default response
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "404":
+          content:
+            application/json: {}
+          description: Notification not found
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Delete single notification
       tags:
       - Notifications
   /v1/notification/markAsRead:
     put:
+      description: Marks all notifications for the current user as read.
       operationId: markAsRead
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityBooleanView"
+          description: Notifications marked as read successfully
+        "401":
           content:
             application/json: {}
-          description: default response
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Mark notifications as read
       tags:
       - Notifications
   /v1/osgi:
@@ -17898,9 +18961,12 @@ paths:
       - Tags
   /v1/temp:
     post:
+      description: Uploads multiple files as temporary resources. Supports anonymous
+        access based on configuration
       operationId: uploadTempResourceMulti
       parameters:
-      - in: query
+      - description: Maximum file length allowed
+        in: query
         name: maxFileLength
         schema:
           type: string
@@ -17910,27 +18976,69 @@ paths:
           multipart/form-data:
             schema:
               $ref: "#/components/schemas/FormDataMultiPart"
+        description: Multipart form data containing files to upload
+        required: true
       responses:
-        default:
+        "200":
           content:
             application/octet-stream: {}
-          description: default response
+          description: Files uploaded successfully
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - invalid referer or request data
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required when anonymous access
+            disabled
+        "404":
+          content:
+            application/json: {}
+          description: Temp resource not enabled
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Upload temporary files
       tags:
       - Temporary Files
   /v1/temp/byUrl:
     post:
+      description: Creates a temporary file by downloading content from a remote URL
       operationId: copyTempFromUrl
       requestBody:
         content:
           application/json:
             schema:
               $ref: "#/components/schemas/RemoteUrlForm"
+        description: Remote URL configuration
+        required: true
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityMapView"
+          description: File copied from URL successfully
+        "400":
+          content:
             application/json: {}
-          description: default response
+          description: "Bad request - invalid URL, referer, or missing URL parameter"
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required when anonymous access
+            disabled
+        "404":
+          content:
+            application/json: {}
+          description: Temp resource not enabled
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Copy temp file from URL
       tags:
       - Temporary Files
   /v1/templates:
@@ -22339,49 +23447,82 @@ paths:
   /v2/contenttype/{typeIdOrVarName}/fields:
     delete:
       deprecated: true
+      description: Deletes multiple fields from a content type by their field IDs.
+        This v2 endpoint is deprecated - use v3 API instead.
       operationId: deleteFields_1
       parameters:
-      - in: path
+      - description: Content type ID or variable name
+        in: path
         name: typeIdOrVarName
         required: true
         schema:
           type: string
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               type: array
               items:
                 type: string
+        description: Array of field IDs to delete
+        required: true
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
-            application/json: {}
-          description: default response
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityFieldOperationView"
+          description: Fields deleted successfully
+        "400":
+          description: Bad request - invalid field IDs
+        "401":
+          description: Unauthorized - authentication required
+        "403":
+          description: Forbidden - insufficient permissions
+        "404":
+          description: Content type or fields not found
+        "500":
+          description: Internal server error
+      summary: Delete multiple fields (deprecated v2)
       tags:
       - Content Type Field
     get:
       deprecated: true
+      description: Retrieves all fields for a specific content type. This v2 endpoint
+        is deprecated - use v3 API instead.
       operationId: getContentTypeFields_1
       parameters:
-      - in: path
+      - description: Content type ID or variable name
+        in: path
         name: typeIdOrVarName
         required: true
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
-            application/json: {}
-          description: default response
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityFieldListView"
+          description: Fields retrieved successfully
+        "401":
+          description: Unauthorized - authentication required
+        "403":
+          description: Forbidden - insufficient permissions
+        "404":
+          description: Content type not found
+        "500":
+          description: Internal server error
+      summary: Get content type fields (deprecated v2)
       tags:
       - Content Type Field
     post:
+      description: Creates a new field for a content type. The field definition is
+        provided as JSON in the request body.
       operationId: createContentTypeField_1
       parameters:
-      - in: path
+      - description: Content type ID or variable name
+        in: path
         name: typeIdOrVarName
         required: true
         schema:
@@ -22391,19 +23532,37 @@ paths:
           application/json:
             schema:
               type: string
+        description: Field JSON definition
+        required: true
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
-            application/json: {}
-          description: default response
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityFieldView"
+          description: Field created successfully
+        "400":
+          description: Bad request - invalid field data or field ID should not be
+            set
+        "401":
+          description: Unauthorized - authentication required
+        "403":
+          description: Forbidden - insufficient permissions
+        "404":
+          description: Content type not found
+        "500":
+          description: Internal server error
+      summary: Create content type field
       tags:
       - Content Type Field
     put:
       deprecated: true
+      description: Updates multiple fields for a content type. This v2 endpoint is
+        deprecated - use v3 API instead.
       operationId: updateFields_1
       parameters:
-      - in: path
+      - description: Content type ID or variable name
+        in: path
         name: typeIdOrVarName
         required: true
         schema:
@@ -22413,51 +23572,94 @@ paths:
           application/json:
             schema:
               type: string
+        description: Fields JSON data
+        required: true
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
-            application/json: {}
-          description: default response
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityFieldListView"
+          description: Fields updated successfully
+        "400":
+          description: Bad request - invalid field data
+        "401":
+          description: Unauthorized - authentication required
+        "403":
+          description: Forbidden - insufficient permissions
+        "404":
+          description: Content type not found
+        "500":
+          description: Internal server error
+      summary: Update content type fields (deprecated v2)
       tags:
       - Content Type Field
   /v2/contenttype/{typeIdOrVarName}/fields/id/{fieldId}:
     delete:
+      description: Deletes a specific field from a content type by its unique field
+        ID. This removes the field and all its data permanently.
       operationId: deleteContentTypeFieldById_1
       parameters:
-      - in: path
+      - description: Field ID to delete
+        in: path
         name: fieldId
         required: true
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
-            application/json: {}
-          description: default response
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityFieldDeletionView"
+          description: Field deleted successfully
+        "401":
+          description: Unauthorized - authentication required
+        "403":
+          description: Forbidden - insufficient permissions
+        "404":
+          description: Field not found
+        "500":
+          description: Internal server error
+      summary: Delete content type field by ID
       tags:
       - Content Type Field
     get:
+      description: Retrieves a specific field from a content type by its unique field
+        ID.
       operationId: getContentTypeFieldById_1
       parameters:
-      - in: path
+      - description: Field ID
+        in: path
         name: fieldId
         required: true
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
-            application/json: {}
-          description: default response
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityFieldView"
+          description: Field retrieved successfully
+        "401":
+          description: Unauthorized - authentication required
+        "403":
+          description: Forbidden - insufficient permissions
+        "404":
+          description: Field not found
+        "500":
+          description: Internal server error
+      summary: Get content type field by ID
       tags:
       - Content Type Field
     put:
+      description: Updates a specific field in a content type by its field ID. The
+        field must have an ID set in the JSON data.
       operationId: updateContentTypeFieldById_1
       parameters:
-      - in: path
+      - description: Field ID to update
+        in: path
         name: fieldId
         required: true
         schema:
@@ -22467,66 +23669,112 @@ paths:
           application/json:
             schema:
               type: string
+        description: Field JSON data with updates
+        required: true
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
-            application/json: {}
-          description: default response
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityFieldView"
+          description: Field updated successfully
+        "400":
+          description: Bad request - invalid field data or field ID not set
+        "401":
+          description: Unauthorized - authentication required
+        "403":
+          description: Forbidden - insufficient permissions
+        "404":
+          description: Field not found
+        "500":
+          description: Internal server error
+      summary: Update content type field by ID
       tags:
       - Content Type Field
   /v2/contenttype/{typeIdOrVarName}/fields/var/{fieldVar}:
     delete:
+      description: Deletes a specific field from a content type by its variable name.
+        This removes the field and all its data permanently.
       operationId: deleteContentTypeFieldByVar_1
       parameters:
-      - in: path
+      - description: Content type ID or variable name
+        in: path
         name: typeIdOrVarName
         required: true
         schema:
           type: string
-      - in: path
+      - description: Field variable name to delete
+        in: path
         name: fieldVar
         required: true
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
-            application/json: {}
-          description: default response
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityFieldDeletionView"
+          description: Field deleted successfully
+        "401":
+          description: Unauthorized - authentication required
+        "403":
+          description: Forbidden - insufficient permissions
+        "404":
+          description: Content type or field not found
+        "500":
+          description: Internal server error
+      summary: Delete content type field by variable name
       tags:
       - Content Type Field
     get:
+      description: Retrieves a specific field from a content type by its variable
+        name.
       operationId: getContentTypeFieldByVar_1
       parameters:
-      - in: path
+      - description: Content type ID or variable name
+        in: path
         name: typeIdOrVarName
         required: true
         schema:
           type: string
-      - in: path
+      - description: Field variable name
+        in: path
         name: fieldVar
         required: true
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
-            application/json: {}
-          description: default response
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityFieldView"
+          description: Field retrieved successfully
+        "401":
+          description: Unauthorized - authentication required
+        "403":
+          description: Forbidden - insufficient permissions
+        "404":
+          description: Content type or field not found
+        "500":
+          description: Internal server error
+      summary: Get content type field by variable name
       tags:
       - Content Type Field
     put:
+      description: Updates a specific field in a content type by its variable name.
+        The field definition is provided as JSON in the request body.
       operationId: updateContentTypeFieldByVar_1
       parameters:
-      - in: path
+      - description: Content type ID or variable name
+        in: path
         name: typeIdOrVarName
         required: true
         schema:
           type: string
-      - in: path
+      - description: Field variable name to update
+        in: path
         name: fieldVar
         required: true
         schema:
@@ -22536,12 +23784,26 @@ paths:
           application/json:
             schema:
               type: string
+        description: Field JSON data with updates
+        required: true
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
-            application/json: {}
-          description: default response
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityFieldView"
+          description: Field updated successfully
+        "400":
+          description: Bad request - invalid field data or field ID not set
+        "401":
+          description: Unauthorized - authentication required
+        "403":
+          description: Forbidden - insufficient permissions
+        "404":
+          description: Content type or field not found
+        "500":
+          description: Internal server error
+      summary: Update content type field by variable name
       tags:
       - Content Type Field
   /v2/languages:
@@ -23409,40 +24671,76 @@ paths:
       - Tags
   /v3/contenttype/{typeIdOrVarName}/fields:
     delete:
+      description: Deletes a set of fields from a content type and returns the new
+        layout. Prevents deletion of fields that are used as publish or expire date
+        fields at the content type level.
       operationId: deleteFields_2
       parameters:
-      - in: path
+      - description: Content type ID or variable name
+        in: path
         name: typeIdOrVarName
         required: true
         schema:
           type: string
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: "#/components/schemas/DeleteFieldsForm"
+        description: Delete fields form containing field IDs to delete
+        required: true
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
-            application/json: {}
-          description: default response
+            application/json:
+              schema:
+                type: object
+                description: Response containing updated layout and list of deleted
+                  field IDs
+          description: Fields deleted successfully and new layout returned
+        "400":
+          description: Bad request - invalid field IDs or field is used as publish/expire
+            field
+        "401":
+          description: Unauthorized - authentication required
+        "403":
+          description: Forbidden - insufficient permissions
+        "404":
+          description: Content type or fields not found
+        "500":
+          description: Internal server error
+      summary: Delete content type fields
       tags:
       - Content Type Field
     get:
+      description: "Returns the content type's field layout structure. If the content\
+        \ type has an invalid layout, it will be fixed before returning. This endpoint\
+        \ doesn't make any changes to the database."
       operationId: getContentTypeFields_2
       parameters:
-      - in: path
+      - description: Content type ID or variable name
+        in: path
         name: typeIdOrVarName
         required: true
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
-            application/json: {}
-          description: default response
+            application/json:
+              schema:
+                type: object
+                description: Content type field layout structure
+          description: Content type layout retrieved successfully
+        "401":
+          description: Unauthorized - authentication required
+        "403":
+          description: Forbidden - insufficient permissions
+        "404":
+          description: Content type not found
+        "500":
+          description: Internal server error
+      summary: Get content type field layout
       tags:
       - Content Type Field
   /v3/contenttype/{typeIdOrVarName}/fields/allfields:
@@ -23451,7 +24749,8 @@ paths:
         criteria.
       operationId: allfields
       parameters:
-      - in: path
+      - description: Content type ID or variable name
+        in: path
         name: typeIdOrVarName
         required: true
         schema:
@@ -23471,7 +24770,7 @@ paths:
           uniqueItems: true
       requestBody:
         content:
-          application/json:
+          '*/*':
             examples:
               filter:
                 description: filter
@@ -23526,9 +24825,14 @@ paths:
       - Content Type Field
   /v3/contenttype/{typeIdOrVarName}/fields/move:
     put:
+      description: "Moves fields within a content type layout and returns the new\
+        \ layout structure. Can also create new fields when included in the layout.\
+        \ The sortOrder attribute is ignored as array index determines order. If the\
+        \ content type has an invalid layout, it will be fixed first."
       operationId: moveFields
       parameters:
-      - in: path
+      - description: Content type ID or variable name
+        in: path
         name: typeIdOrVarName
         required: true
         schema:
@@ -23538,24 +24842,44 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/MoveFieldsForm"
+        description: Move fields form containing the new layout structure
+        required: true
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
-            application/json: {}
-          description: default response
+            application/json:
+              schema:
+                type: object
+                description: New content type layout with reorganized fields
+          description: Fields moved successfully and new layout returned
+        "400":
+          description: Bad request - invalid layout structure
+        "401":
+          description: Unauthorized - authentication required
+        "403":
+          description: Forbidden - insufficient permissions
+        "404":
+          description: Content type not found
+        "500":
+          description: Internal server error
+      summary: Move and reorganize fields
       tags:
       - Content Type Field
   /v3/contenttype/{typeIdOrVarName}/fields/{id}:
     put:
+      description: "Updates a field in a content type and returns the new content\
+        \ type layout. If the content type has an invalid layout, it will be fixed\
+        \ before the field update. The sortOrder attribute is ignored if sent."
       operationId: updateField
       parameters:
-      - in: path
+      - description: Content type ID or variable name
+        in: path
         name: typeIdOrVarName
         required: true
         schema:
           type: string
-      - in: path
+      - description: Field ID to update
+        in: path
         name: id
         required: true
         schema:
@@ -23565,16 +24889,34 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/UpdateFieldForm"
+        description: Update field form containing field attributes
+        required: true
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
-            application/json: {}
-          description: default response
+            application/json:
+              schema:
+                type: object
+                description: Updated content type layout with field changes
+          description: Field updated successfully and layout returned
+        "400":
+          description: Bad request - invalid field data
+        "401":
+          description: Unauthorized - authentication required
+        "403":
+          description: Forbidden - insufficient permissions
+        "404":
+          description: Content type or field not found
+        "500":
+          description: Internal server error
+      summary: Update content type field
       tags:
       - Content Type Field
   /vtl/dynamic:
     get:
+      description: Executes a dynamically provided Velocity template sent in the request
+        body. The template code is embedded in the request and processed on-demand
+        without requiring a file on the server.
       operationId: dynamicGet_2
       requestBody:
         content:
@@ -23584,16 +24926,31 @@ paths:
           text/plain:
             schema:
               type: string
+        description: JSON string or plain text containing embedded velocity template
       responses:
-        default:
+        "200":
           content:
             application/json: {}
-            application/xml: {}
-            text/plain: {}
-          description: default response
+          description: Dynamic VTL template processed successfully
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - invalid template syntax or parameters
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication may be required
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error during template processing
+      summary: Process dynamic VTL template
       tags:
-      - Templates
+      - VTL
     post:
+      description: Executes a dynamically provided Velocity template sent in the request
+        body via POST method. The template code is embedded in the request and processed
+        on-demand without requiring a file on the server.
       operationId: dynamicPost_2
       requestBody:
         content:
@@ -23603,16 +24960,31 @@ paths:
           text/plain:
             schema:
               type: string
+        description: JSON string or plain text containing embedded velocity template
       responses:
-        default:
+        "200":
           content:
             application/json: {}
-            application/xml: {}
-            text/plain: {}
-          description: default response
+          description: Dynamic VTL template processed successfully
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - invalid template syntax or parameters
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication may be required
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error during template processing
+      summary: Process dynamic VTL template via POST
       tags:
-      - Templates
+      - VTL
     put:
+      description: Executes a dynamically provided Velocity template sent in the request
+        body via PUT method. The template code is embedded in the request and processed
+        on-demand without requiring a file on the server.
       operationId: dynamicPut_2
       requestBody:
         content:
@@ -23622,20 +24994,36 @@ paths:
           text/plain:
             schema:
               type: string
+        description: JSON string or plain text containing embedded velocity template
       responses:
-        default:
+        "200":
           content:
             application/json: {}
-            application/xml: {}
-            text/plain: {}
-          description: default response
+          description: Dynamic VTL template processed successfully
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - invalid template syntax or parameters
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication may be required
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error during template processing
+      summary: Process dynamic VTL template via PUT
       tags:
-      - Templates
+      - VTL
   /vtl/dynamic/{pathParam}:
     delete:
+      description: Executes a dynamically provided Velocity template sent in the request
+        body via DELETE method. The template code is embedded in the request and processed
+        on-demand without requiring a file on the server.
       operationId: dynamicDelete_1
       parameters:
-      - in: path
+      - description: Additional path parameters for VTL template processing
+        in: path
         name: pathParam
         required: true
         schema:
@@ -23649,19 +25037,34 @@ paths:
           text/plain:
             schema:
               type: string
+        description: JSON string or plain text containing embedded velocity template
       responses:
-        default:
+        "200":
           content:
             application/json: {}
-            application/xml: {}
-            text/plain: {}
-          description: default response
+          description: Dynamic VTL template processed successfully
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - invalid template syntax or parameters
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication may be required
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error during template processing
+      summary: Process dynamic VTL template via DELETE with path parameters
       tags:
-      - Templates
+      - VTL
     get:
+      description: Same as regular GET but supporting sending the velocity to be rendered
+        embedded (properly escaped) in the JSON in a 'velocity' property
       operationId: dynamicGet_3
       parameters:
-      - in: path
+      - description: Additional path parameters
+        in: path
         name: pathParam
         required: true
         schema:
@@ -23675,19 +25078,35 @@ paths:
           text/plain:
             schema:
               type: string
+        description: JSON string or plain text containing embedded velocity template
       responses:
-        default:
+        "200":
           content:
             application/json: {}
-            application/xml: {}
-            text/plain: {}
-          description: default response
+          description: Dynamic VTL template processed successfully
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - invalid embedded velocity template
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication may be required
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error during template processing
+      summary: Process dynamic GET request with embedded VTL
       tags:
-      - Templates
+      - VTL
     patch:
+      description: Executes a dynamically provided Velocity template sent in the request
+        body via PATCH method. The template code is embedded in the request and processed
+        on-demand without requiring a file on the server.
       operationId: dynamicPatch_1
       parameters:
-      - in: path
+      - description: Additional path parameters for VTL template processing
+        in: path
         name: pathParam
         required: true
         schema:
@@ -23701,19 +25120,35 @@ paths:
           text/plain:
             schema:
               type: string
+        description: JSON string or plain text containing embedded velocity template
       responses:
-        default:
+        "200":
           content:
             application/json: {}
-            application/xml: {}
-            text/plain: {}
-          description: default response
+          description: Dynamic VTL template processed successfully
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - invalid template syntax or parameters
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication may be required
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error during template processing
+      summary: Process dynamic VTL template via PATCH with path parameters
       tags:
-      - Templates
+      - VTL
     post:
+      description: Executes a dynamically provided Velocity template sent in the request
+        body via POST method. The template code is embedded in the request and processed
+        on-demand without requiring a file on the server.
       operationId: dynamicPost_3
       parameters:
-      - in: path
+      - description: Additional path parameters for VTL template processing
+        in: path
         name: pathParam
         required: true
         schema:
@@ -23727,19 +25162,35 @@ paths:
           text/plain:
             schema:
               type: string
+        description: JSON string or plain text containing embedded velocity template
       responses:
-        default:
+        "200":
           content:
             application/json: {}
-            application/xml: {}
-            text/plain: {}
-          description: default response
+          description: Dynamic VTL template processed successfully
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - invalid template syntax or parameters
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication may be required
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error during template processing
+      summary: Process dynamic VTL template via POST with path parameters
       tags:
-      - Templates
+      - VTL
     put:
+      description: Executes a dynamically provided Velocity template sent in the request
+        body via PUT method. The template code is embedded in the request and processed
+        on-demand without requiring a file on the server.
       operationId: dynamicPut_3
       parameters:
-      - in: path
+      - description: Additional path parameters for VTL template processing
+        in: path
         name: pathParam
         required: true
         schema:
@@ -23753,20 +25204,35 @@ paths:
           text/plain:
             schema:
               type: string
+        description: JSON string or plain text containing embedded velocity template
       responses:
-        default:
+        "200":
           content:
             application/json: {}
-            application/xml: {}
-            text/plain: {}
-          description: default response
+          description: Dynamic VTL template processed successfully
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - invalid template syntax or parameters
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication may be required
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error during template processing
+      summary: Process dynamic VTL template via PUT with path parameters
       tags:
-      - Templates
+      - VTL
   /vtl/{folder}:
     delete:
+      description: "Returns the output of a convention based 'delete.vtl' file, located\
+        \ under the given folder after being evaluated using the velocity engine."
       operationId: delete_16
       parameters:
-      - in: path
+      - description: VTL template folder name
+        in: path
         name: folder
         required: true
         schema:
@@ -23776,21 +25242,43 @@ paths:
           application/json:
             schema:
               type: object
-              additionalProperties:
-                type: object
+              description: JSON object with parameters for VTL template processing
+        description: Request body parameters for template processing
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Dynamic content generated by VTL template processing
+                  - format determined by template logic
+          description: VTL template processed successfully
+        "400":
           content:
             application/json: {}
-            application/xml: {}
-            text/plain: {}
-          description: default response
+          description: Bad request - invalid template or parameters
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication may be required
+        "404":
+          content:
+            application/json: {}
+          description: VTL template not found
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error during template processing
+      summary: Process DELETE request with VTL template (folder only)
       tags:
-      - Templates
+      - VTL
     get:
+      description: "Returns the output of a convention based 'get.vtl' file, located\
+        \ under the given folder after being evaluated using the velocity engine."
       operationId: get_6
       parameters:
-      - in: path
+      - description: VTL template folder name
+        in: path
         name: folder
         required: true
         schema:
@@ -23800,21 +25288,44 @@ paths:
           application/json:
             schema:
               type: object
-              additionalProperties:
-                type: object
+              description: JSON object with parameters for VTL template processing
+        description: Request body parameters for template processing
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Dynamic content generated by VTL template processing
+                  - format determined by template logic
+          description: VTL template processed successfully
+        "400":
           content:
             application/json: {}
-            application/xml: {}
-            text/plain: {}
-          description: default response
+          description: Bad request - invalid template or parameters
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication may be required
+        "404":
+          content:
+            application/json: {}
+          description: VTL template not found
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error during template processing
+      summary: Process GET request with VTL template (folder only)
       tags:
-      - Templates
+      - VTL
     patch:
+      description: "Returns the output of a convention based 'patch.vtl' file, located\
+        \ under the given folder after being evaluated using the velocity engine.\
+        \ Supports multipart form data for file uploads and complex data submission."
       operationId: patchMultipart_2
       parameters:
-      - in: path
+      - description: VTL template folder name
+        in: path
         name: folder
         required: true
         schema:
@@ -23824,19 +25335,44 @@ paths:
           multipart/form-data:
             schema:
               $ref: "#/components/schemas/FormDataMultiPart"
+        description: Multipart form data containing files and form fields for VTL
+          template processing
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Dynamic content generated by VTL template processing
+                  - format determined by template logic
+          description: VTL template processed successfully
+        "400":
           content:
             application/json: {}
-            application/xml: {}
-            text/plain: {}
-          description: default response
+          description: "Bad request - invalid template, folder, or multipart data"
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication may be required
+        "404":
+          content:
+            application/json: {}
+          description: VTL template not found in the specified folder
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error during template processing
+      summary: Process VTL template via PATCH with multipart form data
       tags:
-      - Templates
+      - VTL
     post:
+      description: "Returns the output of a convention based 'post.vtl' file, located\
+        \ under the given folder after being evaluated using the velocity engine.\
+        \ Supports multipart form data for file uploads and complex data submission."
       operationId: postMultipart_2
       parameters:
-      - in: path
+      - description: VTL template folder name
+        in: path
         name: folder
         required: true
         schema:
@@ -23846,19 +25382,44 @@ paths:
           multipart/form-data:
             schema:
               $ref: "#/components/schemas/FormDataMultiPart"
+        description: Multipart form data containing files and form fields for VTL
+          template processing
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Dynamic content generated by VTL template processing
+                  - format determined by template logic
+          description: VTL template processed successfully
+        "400":
           content:
             application/json: {}
-            application/xml: {}
-            text/plain: {}
-          description: default response
+          description: "Bad request - invalid template, folder, or multipart data"
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication may be required
+        "404":
+          content:
+            application/json: {}
+          description: VTL template not found in the specified folder
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error during template processing
+      summary: Process VTL template via POST with multipart form data
       tags:
-      - Templates
+      - VTL
     put:
+      description: "Returns the output of a convention based 'put.vtl' file, located\
+        \ under the given folder after being evaluated using the velocity engine.\
+        \ Supports multipart form data for file uploads and complex data submission."
       operationId: putMultipart_2
       parameters:
-      - in: path
+      - description: VTL template folder name
+        in: path
         name: folder
         required: true
         schema:
@@ -23868,25 +25429,51 @@ paths:
           multipart/form-data:
             schema:
               $ref: "#/components/schemas/FormDataMultiPart"
+        description: Multipart form data containing files and form fields for VTL
+          template processing
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Dynamic content generated by VTL template processing
+                  - format determined by template logic
+          description: VTL template processed successfully
+        "400":
           content:
             application/json: {}
-            application/xml: {}
-            text/plain: {}
-          description: default response
+          description: "Bad request - invalid template, folder, or multipart data"
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication may be required
+        "404":
+          content:
+            application/json: {}
+          description: VTL template not found in the specified folder
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error during template processing
+      summary: Process VTL template via PUT with multipart form data
       tags:
-      - Templates
+      - VTL
   /vtl/{folder}/{pathParam}:
     delete:
+      description: "Returns the output of a convention based 'delete.vtl' file, located\
+        \ under the given folder after being evaluated using the velocity engine.\
+        \ The VTL code determines whether the response is JSON, XML, or plain text."
       operationId: delete_17
       parameters:
-      - in: path
+      - description: VTL template folder name
+        in: path
         name: folder
         required: true
         schema:
           type: string
-      - in: path
+      - description: Additional path parameters
+        in: path
         name: pathParam
         required: true
         schema:
@@ -23897,26 +25484,50 @@ paths:
           application/json:
             schema:
               type: object
-              additionalProperties:
-                type: object
+              description: JSON object with parameters for VTL template processing
+        description: Request body parameters for template processing
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Dynamic content generated by VTL template processing
+                  - format determined by template logic
+          description: VTL template processed successfully
+        "400":
           content:
             application/json: {}
-            application/xml: {}
-            text/plain: {}
-          description: default response
+          description: Bad request - invalid template or parameters
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication may be required
+        "404":
+          content:
+            application/json: {}
+          description: VTL template not found
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error during template processing
+      summary: Process DELETE request with VTL template
       tags:
-      - Templates
+      - VTL
     get:
+      description: "Returns the output of a convention based 'get.vtl' file, located\
+        \ under the given folder after being evaluated using the velocity engine.\
+        \ The VTL code determines whether the response is JSON, XML, or plain text."
       operationId: get_7
       parameters:
-      - in: path
+      - description: VTL template folder name
+        in: path
         name: folder
         required: true
         schema:
           type: string
-      - in: path
+      - description: Additional path parameters
+        in: path
         name: pathParam
         required: true
         schema:
@@ -23927,27 +25538,52 @@ paths:
           application/json:
             schema:
               type: object
-              additionalProperties:
-                type: object
+              description: JSON object with parameters for VTL template processing
+        description: Request body parameters for template processing
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Dynamic content generated by VTL template processing
+                  - format determined by template logic
+          description: VTL template processed successfully
+        "400":
           content:
             application/json: {}
-            application/xml: {}
-            text/plain: {}
-          description: default response
+          description: Bad request - invalid template or parameters
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication may be required
+        "404":
+          content:
+            application/json: {}
+          description: VTL template not found
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error during template processing
+      summary: Process GET request with VTL template
       tags:
-      - Templates
+      - VTL
     patch:
+      description: "Returns the output of a convention based 'patch.vtl' file, located\
+        \ under the given folder after being evaluated using the velocity engine.\
+        \ Supports multipart form data for file uploads and complex data submission\
+        \ with additional path parameters."
       operationId: patchMultipart_3
       parameters:
-      - in: path
+      - description: Additional path parameters for VTL template processing
+        in: path
         name: pathParam
         required: true
         schema:
           type: string
           pattern: .*
-      - in: path
+      - description: VTL template folder name
+        in: path
         name: folder
         required: true
         schema:
@@ -23957,25 +25593,51 @@ paths:
           multipart/form-data:
             schema:
               $ref: "#/components/schemas/FormDataMultiPart"
+        description: Multipart form data containing files and form fields for VTL
+          template processing
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Dynamic content generated by VTL template processing
+                  - format determined by template logic
+          description: VTL template processed successfully
+        "400":
           content:
             application/json: {}
-            application/xml: {}
-            text/plain: {}
-          description: default response
+          description: "Bad request - invalid template, folder, path parameters, or\
+            \ multipart data"
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication may be required
+        "404":
+          content:
+            application/json: {}
+          description: VTL template not found in the specified folder
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error during template processing
+      summary: Process VTL template via PATCH with multipart form data and path parameters
       tags:
-      - Templates
+      - VTL
     post:
+      description: Same as regular POST but supporting multipart request for file
+        uploads along with VTL template processing
       operationId: postMultipart_3
       parameters:
-      - in: path
+      - description: Additional path parameters
+        in: path
         name: pathParam
         required: true
         schema:
           type: string
           pattern: .*
-      - in: path
+      - description: VTL template folder name
+        in: path
         name: folder
         required: true
         schema:
@@ -23985,25 +25647,47 @@ paths:
           multipart/form-data:
             schema:
               $ref: "#/components/schemas/FormDataMultiPart"
+        description: Multipart form data for file uploads and parameters
       responses:
-        default:
+        "200":
           content:
             application/json: {}
-            application/xml: {}
-            text/plain: {}
-          description: default response
+          description: VTL template processed successfully with multipart data
+        "400":
+          content:
+            application/json: {}
+          description: "Bad request - invalid template, parameters, or multipart data"
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication may be required
+        "404":
+          content:
+            application/json: {}
+          description: VTL template not found
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error during template processing
+      summary: Process POST multipart request with VTL template
       tags:
-      - Templates
+      - VTL
     put:
+      description: "Returns the output of a convention based 'put.vtl' file, located\
+        \ under the given folder after being evaluated using the velocity engine.\
+        \ Supports multipart form data for file uploads and complex data submission\
+        \ with additional path parameters."
       operationId: putMultipart_3
       parameters:
-      - in: path
+      - description: Additional path parameters for VTL template processing
+        in: path
         name: pathParam
         required: true
         schema:
           type: string
           pattern: .*
-      - in: path
+      - description: VTL template folder name
+        in: path
         name: folder
         required: true
         schema:
@@ -24013,15 +25697,37 @@ paths:
           multipart/form-data:
             schema:
               $ref: "#/components/schemas/FormDataMultiPart"
+        description: Multipart form data containing files and form fields for VTL
+          template processing
       responses:
-        default:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Dynamic content generated by VTL template processing
+                  - format determined by template logic
+          description: VTL template processed successfully
+        "400":
           content:
             application/json: {}
-            application/xml: {}
-            text/plain: {}
-          description: default response
+          description: "Bad request - invalid template, folder, path parameters, or\
+            \ multipart data"
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication may be required
+        "404":
+          content:
+            application/json: {}
+          description: VTL template not found in the specified folder
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error during template processing
+      summary: Process VTL template via PUT with multipart form data and path parameters
       tags:
-      - Templates
+      - VTL
   /widget/{params}:
     get:
       operationId: getWidget
@@ -24041,40 +25747,93 @@ paths:
       - Widgets
   /ws/v1/system/events:
     get:
+      description: Establishes an asynchronous long polling connection to receive
+        system events. Connection will timeout after configured seconds (default 30s).
+        Uses suspended AsyncResponse for efficient resource utilization.
       operationId: getEvents
       parameters:
-      - in: query
+      - description: Timestamp of last callback to filter events (optional)
+        in: query
         name: lastcallback
         schema:
           type: integer
           format: int64
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntitySystemEventsView"
+          description: System events retrieved successfully via async response
+        "401":
+          content:
             application/json: {}
-          description: default response
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+        "503":
+          content:
+            application/json: {}
+          description: Service unavailable - operation timeout
+      summary: Get asynchronous system events
       tags:
       - Administration
   /ws/v1/system/syncevents:
     get:
+      description: Retrieves system events synchronously using long polling. Alternative
+        to WebSocket when WebSocket connection is not available. Returns immediately
+        with available events.
       operationId: getSyncEvents
       parameters:
-      - in: query
+      - description: Timestamp of last callback to filter events (optional)
+        in: query
         name: lastcallback
         schema:
           type: integer
           format: int64
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntitySystemEventsView"
+          description: System events retrieved successfully
+        "401":
+          content:
             application/json: {}
-          description: default response
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Get synchronous system events
       tags:
       - Administration
 components:
   schemas:
+    ACheckerResponse:
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/AccessibilityResult"
+        lang:
+          type: string
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/AccessibilityResult"
     AIImageRequestDTO:
       type: object
       properties:
@@ -24093,6 +25852,27 @@ components:
         type: string
       properties:
         empty:
+          type: boolean
+    AccessibilityResult:
+      type: object
+      properties:
+        check:
+          $ref: "#/components/schemas/CheckBean"
+        col_number:
+          type: integer
+          format: int32
+        cssCode:
+          type: string
+        htmlCode:
+          type: string
+        image:
+          type: string
+        imageAlt:
+          type: string
+        line_number:
+          type: integer
+          format: int32
+        success:
           type: boolean
     AccruedTag:
       type: object
@@ -24780,6 +26560,63 @@ components:
           type: string
         name:
           type: string
+    CheckBean:
+      type: object
+      properties:
+        check_id:
+          type: integer
+          format: int32
+        confidence:
+          type: integer
+          format: int32
+        confidenceEnum:
+          type: string
+          enum:
+          - KNOWN
+          - LIKELY
+          - POTENTIAL
+        decision_fail:
+          type: string
+        decision_pass:
+          type: string
+        description:
+          type: string
+        err:
+          type: string
+        func:
+          type: string
+        how_to_repair:
+          type: string
+        html_tag:
+          type: string
+        lang:
+          type: string
+        long_description:
+          type: string
+        name:
+          type: string
+        note:
+          type: string
+        open_to_public:
+          type: integer
+          format: int32
+        question:
+          type: string
+        rationale:
+          type: string
+        repair_example:
+          type: string
+        search_str:
+          type: string
+        test_expected_result:
+          type: string
+        test_failed_result:
+          type: string
+        test_procedure:
+          type: string
+        user_id:
+          type: integer
+          format: int32
     CheckboxField:
       type: object
       allOf:
@@ -27288,6 +29125,37 @@ components:
       properties:
         primary:
           $ref: "#/components/schemas/Goal"
+    GuideLineBean:
+      type: object
+      properties:
+        abbr:
+          type: string
+        defaultGuideLine:
+          type: boolean
+        earlid:
+          type: string
+        guideline_id:
+          type: integer
+          format: int32
+        long_name:
+          type: string
+        open_to_public:
+          type: integer
+          format: int32
+        preamble:
+          type: string
+        seal_icon_name:
+          type: string
+        status:
+          type: integer
+          format: int32
+        subset:
+          type: string
+        title:
+          type: string
+        user_id:
+          type: integer
+          format: int32
     HTMLPageAsset:
       type: object
       properties:
@@ -29023,6 +30891,28 @@ components:
             type: string
         value:
           type: string
+    Payload:
+      type: object
+      properties:
+        data:
+          type: object
+        type:
+          type: string
+        visibility:
+          type: string
+          enum:
+          - USER
+          - USER_SESSION
+          - USERS
+          - ROLE
+          - ROLES
+          - PERMISSION
+          - EXCLUDE_OWNER
+          - GLOBAL
+        visibilityType:
+          type: string
+        visibilityValue:
+          type: object
     Permission:
       type: object
       properties:
@@ -29648,11 +31538,84 @@ components:
           type: string
         token:
           type: string
+    ResponseACheckerEntityView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/ACheckerResponse"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
     ResponseContentletWorkflowStatusView:
       type: object
       properties:
         entity:
           $ref: "#/components/schemas/ContentletWorkflowStatusView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityAccessibilityGuidelinesView:
+      type: object
+      properties:
+        entity:
+          type: array
+          items:
+            $ref: "#/components/schemas/GuideLineBean"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityAnnouncementListView:
+      type: object
+      properties:
+        entity:
+          type: array
+          items:
+            $ref: "#/components/schemas/Announcement"
         errors:
           type: array
           items:
@@ -30182,6 +32145,38 @@ components:
           type: array
           items:
             type: string
+    ResponseEntityEmaConfigurationView:
+      type: object
+      properties:
+        entity:
+          type: object
+          additionalProperties:
+            type: object
+          properties:
+            asMap:
+              type: object
+              additionalProperties:
+                type: object
+            empty:
+              type: boolean
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
     ResponseEntityEndpointView:
       type: object
       properties:
@@ -30397,6 +32392,81 @@ components:
           type: array
           items:
             type: string
+    ResponseEntityFieldDeletionView:
+      type: object
+      properties:
+        entity:
+          type: string
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityFieldListView:
+      type: object
+      properties:
+        entity:
+          type: array
+          items:
+            type: object
+            additionalProperties:
+              type: object
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityFieldOperationView:
+      type: object
+      properties:
+        entity:
+          type: object
+          additionalProperties:
+            type: object
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
     ResponseEntityFieldTypeListView:
       type: object
       properties:
@@ -30406,6 +32476,31 @@ components:
             type: object
             additionalProperties:
               type: object
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityFieldView:
+      type: object
+      properties:
+        entity:
+          type: object
+          additionalProperties:
+            type: object
         errors:
           type: array
           items:
@@ -30594,6 +32689,29 @@ components:
       properties:
         entity:
           $ref: "#/components/schemas/HealthResponse"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityIndexOperationView:
+      type: object
+      properties:
+        entity:
+          type: object
         errors:
           type: array
           items:
@@ -31371,6 +33489,30 @@ components:
           type: array
           items:
             type: string
+    ResponseEntityNotificationCountView:
+      type: object
+      properties:
+        entity:
+          type: integer
+          format: int64
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
     ResponseEntityPageLivePreviewVersionView:
       type: object
       properties:
@@ -32072,6 +34214,31 @@ components:
           type: array
           items:
             type: string
+    ResponseEntitySystemEventsView:
+      type: object
+      properties:
+        entity:
+          type: array
+          items:
+            $ref: "#/components/schemas/SystemEvent"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
     ResponseEntityTagInodesMapView:
       type: object
       properties:
@@ -32313,31 +34480,6 @@ components:
       properties:
         entity:
           $ref: "#/components/schemas/JobViewPaginatedResult"
-        errors:
-          type: array
-          items:
-            $ref: "#/components/schemas/ErrorEntity"
-        i18nMessagesMap:
-          type: object
-          additionalProperties:
-            type: string
-        messages:
-          type: array
-          items:
-            $ref: "#/components/schemas/MessageEntity"
-        pagination:
-          $ref: "#/components/schemas/Pagination"
-        permissions:
-          type: array
-          items:
-            type: string
-    ResponseEntityViewListAnnouncement:
-      type: object
-      properties:
-        entity:
-          type: array
-          items:
-            $ref: "#/components/schemas/Announcement"
         errors:
           type: array
           items:
@@ -33708,6 +35850,79 @@ components:
           - DESTROY
         workflowAction:
           $ref: "#/components/schemas/WorkflowAction"
+    SystemEvent:
+      type: object
+      properties:
+        creationDate:
+          type: string
+          format: date-time
+        event:
+          type: string
+          enum:
+          - CLUSTER_WIDE_EVENT
+          - NOTIFICATION
+          - CREATED_SITE
+          - SAVE_SITE
+          - PUBLISH_SITE
+          - UPDATE_SITE
+          - ARCHIVE_SITE
+          - DELETE_SITE
+          - UN_ARCHIVE_SITE
+          - UPDATE_SITE_PERMISSIONS
+          - SWITCH_SITE
+          - SAVE_BASE_CONTENT_TYPE
+          - UPDATE_BASE_CONTENT_TYPE
+          - DELETE_BASE_CONTENT_TYPE
+          - SAVE_FOLDER
+          - UPDATE_FOLDER
+          - DELETE_FOLDER
+          - SAVE_PAGE_ASSET
+          - UPDATE_PAGE_ASSET
+          - ARCHIVE_PAGE_ASSET
+          - UN_ARCHIVE_PAGE_ASSET
+          - DELETE_PAGE_ASSET
+          - PUBLISH_PAGE_ASSET
+          - UN_PUBLISH_PAGE_ASSET
+          - SAVE_FILE_ASSET
+          - UPDATE_FILE_ASSET
+          - ARCHIVE_FILE_ASSET
+          - UN_ARCHIVE_FILE_ASSET
+          - DELETE_FILE_ASSET
+          - PUBLISH_FILE_ASSET
+          - UN_PUBLISH_FILE_ASSET
+          - SAVE_LINK
+          - UPDATE_LINK
+          - ARCHIVE_LINK
+          - UN_ARCHIVE_LINK
+          - MOVE_LINK
+          - COPY_LINK
+          - DELETE_LINK
+          - PUBLISH_LINK
+          - UN_PUBLISH_LINK
+          - MOVE_FOLDER
+          - COPY_FOLDER
+          - MOVE_FILE_ASSET
+          - COPY_FILE_ASSET
+          - MOVE_PAGE_ASSET
+          - COPY_PAGE_ASSET
+          - SESSION_CREATED
+          - SESSION_DESTROYED
+          - UPDATE_PORTLET_LAYOUTS
+          - DELETE_PORTLET_LAYOUTS
+          - MESSAGE
+          - LARGE_MESSAGE
+          - DELETE_BUNDLE
+          - OSGI_FRAMEWORK_RESTART
+          - OSGI_BUNDLES_LOADED
+          - SESSION_LOGOUT
+          - ANALYTICS_APP
+          - AI_CONTENT_PROMPT
+        id:
+          type: string
+        payload:
+          $ref: "#/components/schemas/Payload"
+        serverId:
+          type: string
     TabDividerField:
       type: object
       allOf:

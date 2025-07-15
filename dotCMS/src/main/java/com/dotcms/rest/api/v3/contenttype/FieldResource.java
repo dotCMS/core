@@ -8,6 +8,7 @@ import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.annotation.SwaggerCompliant;
 import com.dotcms.util.filtering.Specification;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -15,8 +16,10 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.glassfish.jersey.server.JSONP;
@@ -44,8 +47,9 @@ import java.util.stream.Collectors;
  *
  * @see FieldLayout
  */
+@SwaggerCompliant(value = "Modern APIs and specialized services", batch = 7)
 @Path("/v3/contenttype/{typeIdOrVarName}/fields")
-@Tag(name = "Content Type Field", description = "Content type field definitions and configuration")
+@Tag(name = "Content Type Field")
 public class FieldResource {
 
     private final WebResource webResource;
@@ -81,16 +85,28 @@ public class FieldResource {
      *
      * @see FieldLayout
      */
+    @Operation(
+        summary = "Update content type field",
+        description = "Updates a field in a content type and returns the new content type layout. If the content type has an invalid layout, it will be fixed before the field update. The sortOrder attribute is ignored if sent."
+    )
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Field updated successfully and layout returned",
+                content = @Content(mediaType = "application/json",
+                                  schema = @Schema(type = "object", description = "Updated content type layout with field changes")))
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Bad request - invalid field data")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Unauthorized - authentication required")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Content type or field not found")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "Internal server error")
     @PUT
     @JSONP
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
-    @Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
+    @Produces({ MediaType.APPLICATION_JSON })
     @Path("/{id}")
     public Response updateField(
-            @PathParam("typeIdOrVarName") final String typeIdOrVarName,
-            @PathParam("id") final String fieldId,
-            final UpdateFieldForm updateFieldForm,
+            @io.swagger.v3.oas.annotations.Parameter(description = "Content type ID or variable name", required = true) @PathParam("typeIdOrVarName") final String typeIdOrVarName,
+            @io.swagger.v3.oas.annotations.Parameter(description = "Field ID to update", required = true) @PathParam("id") final String fieldId,
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Update field form containing field attributes", required = true) final UpdateFieldForm updateFieldForm,
             @Context final HttpServletRequest req)
             throws DotDataException, DotSecurityException {
 
@@ -147,15 +163,27 @@ public class FieldResource {
      * @throws DotDataException
      * @throws DotSecurityException
      */
+    @Operation(
+        summary = "Move and reorganize fields",
+        description = "Moves fields within a content type layout and returns the new layout structure. Can also create new fields when included in the layout. The sortOrder attribute is ignored as array index determines order. If the content type has an invalid layout, it will be fixed first."
+    )
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Fields moved successfully and new layout returned",
+                content = @Content(mediaType = "application/json",
+                                  schema = @Schema(type = "object", description = "New content type layout with reorganized fields")))
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Bad request - invalid layout structure")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Unauthorized - authentication required")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Content type not found")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "Internal server error")
     @PUT
     @JSONP
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
-    @Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
+    @Produces({ MediaType.APPLICATION_JSON })
     @Path("/move")
     public Response moveFields(
-            @PathParam("typeIdOrVarName") final String typeIdOrVarName,
-            final MoveFieldsForm moveFieldsForm,
+            @io.swagger.v3.oas.annotations.Parameter(description = "Content type ID or variable name", required = true) @PathParam("typeIdOrVarName") final String typeIdOrVarName,
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Move fields form containing the new layout structure", required = true) final MoveFieldsForm moveFieldsForm,
             @Context final HttpServletRequest req)
             throws DotDataException, DotSecurityException {
 
@@ -180,12 +208,23 @@ public class FieldResource {
      * @throws DotDataException
      * @throws DotSecurityException
      */
+    @Operation(
+        summary = "Get content type field layout",
+        description = "Returns the content type's field layout structure. If the content type has an invalid layout, it will be fixed before returning. This endpoint doesn't make any changes to the database."
+    )
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Content type layout retrieved successfully",
+                content = @Content(mediaType = "application/json",
+                                  schema = @Schema(type = "object", description = "Content type field layout structure")))
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Unauthorized - authentication required")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Content type not found")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "Internal server error")
     @GET
     @JSONP
     @NoCache
-    @Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
+    @Produces({ MediaType.APPLICATION_JSON })
     public final Response getContentTypeFields(
-            @PathParam("typeIdOrVarName") final String typeIdOrVarName,
+            @io.swagger.v3.oas.annotations.Parameter(description = "Content type ID or variable name", required = true) @PathParam("typeIdOrVarName") final String typeIdOrVarName,
             @Context final HttpServletRequest req
     ) throws DotDataException, DotSecurityException {
 
@@ -207,13 +246,26 @@ public class FieldResource {
      * @throws DotDataException
      * @throws DotSecurityException
      */
+    @Operation(
+        summary = "Delete content type fields",
+        description = "Deletes a set of fields from a content type and returns the new layout. Prevents deletion of fields that are used as publish or expire date fields at the content type level."
+    )
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Fields deleted successfully and new layout returned",
+                content = @Content(mediaType = "application/json",
+                                  schema = @Schema(type = "object", description = "Response containing updated layout and list of deleted field IDs")))
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Bad request - invalid field IDs or field is used as publish/expire field")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Unauthorized - authentication required")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Content type or fields not found")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "Internal server error")
     @DELETE
     @JSONP
     @NoCache
-    @Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces({ MediaType.APPLICATION_JSON })
     public Response deleteFields(
-            @PathParam("typeIdOrVarName") final String typeIdOrVarName,
-            final DeleteFieldsForm deleteFieldsForm,
+            @io.swagger.v3.oas.annotations.Parameter(description = "Content type ID or variable name", required = true) @PathParam("typeIdOrVarName") final String typeIdOrVarName,
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Delete fields form containing field IDs to delete", required = true) final DeleteFieldsForm deleteFieldsForm,
             @Context final HttpServletRequest req
     )
             throws DotDataException, DotSecurityException {
@@ -238,7 +290,7 @@ public class FieldResource {
         final ContentTypeFieldLayoutAPI.DeleteFieldResult deleteFieldResult =
                 this.contentTypeFieldLayoutAPI.deleteField(contentType, fieldsID, user);
 
-        return Response.ok(new ResponseEntityView(
+        return Response.ok(new ResponseEntityView<>(
                 Map.of(
                    "fields", deleteFieldResult.getLayout().getRows(),
                         "deletedIds", deleteFieldResult.getFieldDeletedIds()
@@ -275,8 +327,7 @@ public class FieldResource {
     @Path("/allfields")
     @JSONP
     @NoCache
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces({MediaType.APPLICATION_JSON})
     @Operation(
             operationId = "allfields",
             summary = "Returns filtered Content Type fields",
@@ -346,7 +397,7 @@ public class FieldResource {
     )
     public FieldResponseView allFieldsBy(@Context final HttpServletRequest request,
                                          @Context final HttpServletResponse response,
-                                         @PathParam("typeIdOrVarName") final String typeIdOrVarName,
+                                         @Parameter(description = "Content type ID or variable name", required = true) @PathParam("typeIdOrVarName") final String typeIdOrVarName,
                                          @QueryParam("filter") final Set<FilteringCriteria> criteria) throws DotDataException, DotSecurityException {
         final InitDataObject initDataObject = new WebResource.InitBuilder(this.webResource)
                 .requestAndResponse(request, response)
