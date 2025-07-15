@@ -3,9 +3,11 @@ package com.dotcms.rest.api.v1.content;
 import static com.dotcms.rest.api.v1.authentication.ResponseUtil.getFormattedMessage;
 
 import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.ResponseEntityMapView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.annotation.SwaggerCompliant;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.uuid.shorty.ShortType;
@@ -49,10 +51,17 @@ import javax.ws.rs.core.Response;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.glassfish.jersey.server.JSONP;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
+@SwaggerCompliant(value = "Content management and workflow APIs", batch = 2)
 @Path("/v1/content/versions")
-@Tag(name = "Content", description = "Endpoints for managing content and contentlets")
+@Tag(name = "Content")
 public class ContentVersionResource {
 
     private static final String FIND_BY_ID_ERROR_MESSAGE_KEY = "Unable-to-find-contentlet-by-id";
@@ -94,6 +103,25 @@ public class ContentVersionResource {
      * @throws DotStateException
      * @throws DotSecurityException
      */
+    @Operation(
+        summary = "Find content versions",
+        description = "Retrieves all versions for content by identifier or inodes, with optional grouping by language"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Content versions retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityMapView.class))),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - missing identifier/inodes or invalid parameters",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "Not found - content not found",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @JSONP
     @NoCache
@@ -101,8 +129,14 @@ public class ContentVersionResource {
     @Produces(MediaType.APPLICATION_JSON + ";charset=UTF-8")
     public Response findVersions(@Context final HttpServletRequest request,
                                  @Context final HttpServletResponse response,
+                                 @Parameter(description = "Comma-separated list of content inodes")
                                  @QueryParam("inodes") final String inodes,
-            @QueryParam("identifier") final String identifier, @QueryParam("groupByLang")final String groupByLangParam, @QueryParam("limit") final int limit)
+            @Parameter(description = "Content identifier (takes precedence over inodes)")
+            @QueryParam("identifier") final String identifier, 
+            @Parameter(description = "Group results by language (true/1 or false/0)", example = "false")
+            @QueryParam("groupByLang")final String groupByLangParam, 
+            @Parameter(description = "Maximum number of results (min: 20, max: 100)", example = "20")
+            @QueryParam("limit") final int limit)
             throws DotDataException, DotStateException, DotSecurityException {
 
         final boolean groupByLang = "1".equals(groupByLangParam) || BooleanUtils.toBoolean(groupByLangParam);
@@ -123,12 +157,12 @@ public class ContentVersionResource {
                if(groupByLang){
                    final Map<String, List<Map<String, Object>>> versionsByLang = mapVersionsByLang(contentletAPI
                            .findAllVersions(identifierObj, user, respectFrontendRoles), showing);
-                   responseEntityView = new ResponseEntityView(ImmutableMap.of(VERSIONS, versionsByLang));
+                   responseEntityView = new ResponseEntityView<>(ImmutableMap.of(VERSIONS, versionsByLang));
                } else {
                    final List<Map<String, Object>> versions = mapVersions(contentletAPI
                             .findAllVersions(identifierObj, user, respectFrontendRoles), showing);
 
-                   responseEntityView = new ResponseEntityView(ImmutableMap.of(VERSIONS, versions));
+                   responseEntityView = new ResponseEntityView<>(ImmutableMap.of(VERSIONS, versions));
                }
            } else {
                final Set<String> inodesSet =
@@ -142,10 +176,10 @@ public class ContentVersionResource {
 
                    if(groupByLang){
                        final Map<String, List<Map<String, Object>>> versionsByLang = mapVersionsByLang(findByInodes(user, inodesSet, respectFrontendRoles), showing);
-                       responseEntityView = new ResponseEntityView(ImmutableMap.of(VERSIONS, versionsByLang));
+                       responseEntityView = new ResponseEntityView<>(ImmutableMap.of(VERSIONS, versionsByLang));
                    } else {
                        final Map<String,Map<String,Object>> versions = mapVersionsByInode(findByInodes(user, inodesSet, respectFrontendRoles), showing);
-                       responseEntityView = new ResponseEntityView(ImmutableMap.of(VERSIONS, versions));
+                       responseEntityView = new ResponseEntityView<>(ImmutableMap.of(VERSIONS, versions));
                    }
 
 
@@ -269,6 +303,25 @@ public class ContentVersionResource {
      * @return A ServletResponse
      * @throws DotStateException
      */
+    @Operation(
+        summary = "Find content by inode",
+        description = "Retrieves a specific content version by its inode"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Content found successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityMapView.class))),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid inode format",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "Not found - content with inode not found",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @JSONP
     @NoCache
@@ -276,6 +329,7 @@ public class ContentVersionResource {
     @Produces(MediaType.APPLICATION_JSON + ";charset=UTF-8")
     public Response findByInode(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
+            @Parameter(description = "Content inode", required = true)
             @PathParam("inode") final String inode)
             throws DotStateException {
         final boolean respectFrontendRoles = PageMode.get(request).respectAnonPerms;
@@ -301,7 +355,7 @@ public class ContentVersionResource {
                                 inode));
             }
             final Response.ResponseBuilder responseBuilder = Response.ok(
-                    new ResponseEntityView(contentletToMap(contentlet))
+                    new ResponseEntityView<>(contentletToMap(contentlet))
             );
             return responseBuilder.build();
         } catch (Exception ex) {
