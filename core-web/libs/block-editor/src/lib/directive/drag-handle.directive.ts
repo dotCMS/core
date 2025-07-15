@@ -1,4 +1,12 @@
-import { AfterViewInit, Directive, ElementRef, Input, OnDestroy } from '@angular/core';
+import {
+    AfterViewInit,
+    Directive,
+    ElementRef,
+    inject,
+    input,
+    OnDestroy,
+    signal
+} from '@angular/core';
 
 import { Editor } from '@tiptap/core';
 import {
@@ -7,7 +15,7 @@ import {
     DragHandlePluginProps
 } from '@tiptap/extension-drag-handle';
 import { Node } from '@tiptap/pm/model';
-import { Plugin } from '@tiptap/pm/state';
+import { Plugin, PluginKey } from '@tiptap/pm/state';
 
 /**
  * Directive that adds drag handle functionality to an element.
@@ -24,51 +32,65 @@ export class DragHandleDirective implements AfterViewInit, OnDestroy {
     /**
      * The Tiptap editor instance
      */
-    @Input({ required: true }) editor!: Editor;
+    editor = input.required<Editor>();
 
     /**
      * Optional plugin key for the drag handle
+     *
+     * @default dragHandlePluginDefaultKey
+     * @type {PluginKey<any>} - The plugin key for the drag handle, it's an any type because the plugin key is not typed
      */
-    @Input() pluginKey = dragHandlePluginDefaultKey;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    pluginKey = input<PluginKey<any>>(dragHandlePluginDefaultKey);
 
     /**
      * Optional callback when node changes
      */
-    @Input() onNodeChange?: (data: { node: Node | null; editor: Editor; pos: number }) => void;
+    onNodeChange = input<
+        ((data: { node: Node | null; editor: Editor; pos: number }) => void) | undefined
+    >(undefined);
 
     /**
      * Optional Tippy.js options for the drag handle tooltip
      */
-    @Input() tippyOptions?: DragHandlePluginProps['tippyOptions'];
+    tippyOptions = input<DragHandlePluginProps['tippyOptions']>(undefined);
 
-    private plugin: Plugin | null = null;
-
-    constructor(private elementRef: ElementRef<HTMLElement>) {}
+    private plugin = signal<Plugin | null>(null);
+    private elementRef = inject(ElementRef<HTMLElement>);
 
     ngAfterViewInit(): void {
-        if (!this.editor) {
+        const editor = this.editor();
+
+        if (!editor) {
             throw new Error('Required: Input `editor`');
         }
 
-        if (this.editor.isDestroyed) {
+        if (editor.isDestroyed) {
             return;
         }
 
-        this.plugin = DragHandlePlugin({
-            editor: this.editor,
-            element: this.elementRef.nativeElement,
-            pluginKey: this.pluginKey,
-            tippyOptions: this.tippyOptions,
-            onNodeChange: this.onNodeChange
-        });
+        this.plugin.set(
+            DragHandlePlugin({
+                editor: editor,
+                element: this.elementRef.nativeElement,
+                pluginKey: this.pluginKey(),
+                tippyOptions: this.tippyOptions(),
+                onNodeChange: this.onNodeChange()
+            })
+        );
 
-        this.editor.registerPlugin(this.plugin);
+        editor.registerPlugin(this.plugin());
+    }
+
+    private cleanupPlugin(): void {
+        const editor = this.editor();
+        if (editor && !editor.isDestroyed && this.plugin()) {
+            editor.unregisterPlugin(this.pluginKey());
+            this.plugin.set(null);
+        }
     }
 
     ngOnDestroy(): void {
-        if (this.editor && !this.editor.isDestroyed && this.plugin) {
-            this.editor.unregisterPlugin(this.pluginKey);
-            this.plugin = null;
-        }
+        this.cleanupPlugin();
     }
 }
