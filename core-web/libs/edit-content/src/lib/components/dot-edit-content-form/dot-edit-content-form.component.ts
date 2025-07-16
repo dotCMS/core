@@ -10,7 +10,7 @@ import {
     OnInit,
     output
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import {
     FormBuilder,
     FormGroup,
@@ -33,6 +33,7 @@ import {
     DotWizardService,
     DotWorkflowEventHandlerService
 } from '@dotcms/data-access';
+import { DotcmsConfigService, SystemTimezone } from '@dotcms/dotcms-js';
 import {
     DotCMSContentlet,
     DotCMSContentTypeField,
@@ -118,6 +119,9 @@ export class DotEditContentFormComponent implements OnInit {
     readonly #dotWorkflowEventHandlerService = inject(DotWorkflowEventHandlerService);
     readonly #dotWizardService = inject(DotWizardService);
     readonly #dotMessageService = inject(DotMessageService);
+    readonly #dotcmsConfigService = inject(DotcmsConfigService);
+    #globalSystemConfig = toSignal(this.#dotcmsConfigService.getConfig());
+
     /**
      * Output event emitter that informs when the form has changed.
      * Emits an object of type Record<string, string> containing the updated form values.
@@ -172,6 +176,11 @@ export class DotEditContentFormComponent implements OnInit {
      * @memberof DotEditContentFormComponent
      */
     $tabs = this.$store.tabs;
+
+    /**
+     * The system timezone.
+     */
+    $systemTimezone = computed(() => this.#globalSystemConfig()?.systemTimezone);
 
     ngOnInit(): void {
         if (this.$store.tabs().length) {
@@ -345,7 +354,7 @@ export class DotEditContentFormComponent implements OnInit {
      *
      * Handles special cases:
      * - Flattened fields: Joins array values with commas
-     * - Calendar fields: Formats dates to the required string format
+     * - Calendar fields: Formats dates with proper timezone handling
      * - Null/undefined values: Converts to empty string
      *
      * @private
@@ -372,14 +381,122 @@ export class DotEditContentFormComponent implements OnInit {
                     fieldValue instanceof Date &&
                     CALENDAR_FIELD_TYPES.includes(field.fieldType as FIELD_TYPES)
                 ) {
-                    fieldValue = fieldValue
-                        .toISOString()
-                        .replace(/T|\.\d{3}Z/g, (match) => (match === 'T' ? ' ' : ''));
+                    const systemTimezone = this.$systemTimezone();
+
+                    // Formatear según el tipo de campo con manejo de timezone
+                    fieldValue = this.formatDateForBackend(
+                        fieldValue,
+                        field.fieldType as FIELD_TYPES,
+                        systemTimezone
+                    );
                 }
 
                 return [key, fieldValue ?? ''];
             })
         );
+    }
+
+
+
+    /**
+     * Formatea fecha para envío al backend según el tipo de campo
+     * @param date - Fecha a formatear
+     * @param fieldType - Tipo del campo
+     * @param systemTimezone - Información del timezone del sistema
+     * @returns String formateado para el backend
+     */
+    private formatDateForBackend(
+        date: Date,
+        fieldType: FIELD_TYPES,
+        systemTimezone: SystemTimezone | null
+    ): string {
+        console.log('🔄 Formatting date for backend:');
+        console.log('Original date from form:', date);
+        console.log('Field type:', fieldType);
+        console.log('System timezone:', systemTimezone);
+
+        switch (fieldType) {
+            case FIELD_TYPES.DATE:
+                // Solo fecha: yyyy-MM-dd (sin timezone)
+                const dateResult = date.toISOString().split('T')[0];
+                console.log('DATE result:', dateResult);
+                return dateResult;
+
+            case FIELD_TYPES.TIME:
+                // Solo hora: HH:mm:ss (sin timezone)
+                const timeResult = date.toTimeString().split(' ')[0];
+                console.log('TIME result:', timeResult);
+                return timeResult;
+
+            case FIELD_TYPES.DATE_AND_TIME:
+                // Fecha y hora con offset del servidor
+                const dateTimeResult = this.formatDateTimeWithServerOffset(date, systemTimezone);
+                console.log('DATE_AND_TIME result:', dateTimeResult);
+                return dateTimeResult;
+
+            default:
+                const defaultResult = date.toISOString().replace(/T|\.\d{3}Z/g, (match) => (match === 'T' ? ' ' : ''));
+                console.log('Default result:', defaultResult);
+                return defaultResult;
+        }
+    }
+
+    /**
+     * Formatea fecha-hora con offset del servidor para DATE_AND_TIME
+     * @param date - Fecha a formatear
+     * @param systemTimezone - Información del timezone del sistema
+     * @returns String formateado con offset del servidor
+     */
+    private formatDateTimeWithServerOffset(date: Date, systemTimezone: SystemTimezone | null): string {
+        console.log('Formatting DATE_AND_TIME with server offset:');
+        console.log('Input date:', date);
+        console.log('System timezone:', systemTimezone);
+
+        if (!systemTimezone) {
+            // Sin timezone, usar formato ISO sin Z
+            const result = date.toISOString().replace('T', ' ').replace(/\.\d{3}Z$/, '');
+            console.log('No timezone, ISO format result:', result);
+            return result;
+        }
+
+        // En lugar de convertir el timestamp, usar las partes UTC de la fecha directamente
+        // La fecha que recibimos ya está ajustada para mostrar la hora del servidor
+        // Pero necesitamos revertir esa visualización para obtener la hora real a guardar
+
+        const serverOffsetSeconds = Number(systemTimezone.offset);
+        const browserOffsetMinutes = date.getTimezoneOffset();
+        const browserOffsetSeconds = browserOffsetMinutes * 60;
+
+        // Calcular qué hora era realmente antes del ajuste de visualización
+        const adjustmentSeconds = browserOffsetSeconds - serverOffsetSeconds;
+        const originalTimestamp = date.getTime() - (adjustmentSeconds * 1000);
+
+        // Crear una fecha con el timestamp original y extraer partes UTC
+        const originalDate = new Date(originalTimestamp);
+        console.log('Original timestamp date:', originalDate);
+
+        // Formatear usando las partes UTC de la fecha original
+        const year = originalDate.getUTCFullYear();
+        const month = String(originalDate.getUTCMonth() + 1).padStart(2, '0');
+        const day = String(originalDate.getUTCDate()).padStart(2, '0');
+        const hours = String(originalDate.getUTCHours()).padStart(2, '0');
+        const minutes = String(originalDate.getUTCMinutes()).padStart(2, '0');
+        const seconds = String(originalDate.getUTCSeconds()).padStart(2, '0');
+
+        // Calcular offset string para el servidor
+        const offsetHours = Math.floor(Math.abs(serverOffsetSeconds) / 3600);
+        const offsetMinutes = Math.floor((Math.abs(serverOffsetSeconds) % 3600) / 60);
+        const offsetSign = serverOffsetSeconds >= 0 ? '+' : '-';
+        const offsetString = `${offsetSign}${offsetHours.toString().padStart(2, '0')}${offsetMinutes.toString().padStart(2, '0')}`;
+
+        console.log('Extracted UTC parts:', { year, month, day, hours, minutes, seconds });
+        console.log('Calculated offset string:', offsetString);
+
+        // Formato: yyyy-MM-dd HH:mm:ss +HHMM
+        const result = `${year}-${month}-${day} ${hours}:${minutes}:${seconds} ${offsetString}`;
+
+        console.log('Final formatted string:', result);
+        return result;
     }
 
     /**
