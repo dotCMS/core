@@ -48,6 +48,9 @@ tags:
   name: Containers
 - description: Endpoints for managing content and contentlets
   name: Content
+- description: Returns the content types valid for a page based on the container/types
+    on the layout
+  name: getPagesContentTypes
 - description: Endpoints for managing folder structure and organization
   name: Folders
 - description: Form management and processing
@@ -2848,11 +2851,11 @@ paths:
       summary: Fire an user custom event.
       tags:
       - Content Analytics
-  /v1/analytics/content/siteconfig/{siteId}:
+  /v1/analytics/content/sitekey/generate/{siteId}:
     get:
-      description: Returns the expected JS configuration object that must be used
-        for client-side JS code to send custom Events
-      operationId: getSiteConfig
+      description: Generates and returns a Site Key that must be used by the client-side
+        JS code to send custom Content Analytics Events
+      operationId: generateSiteKey
       parameters:
       - in: path
         name: siteId
@@ -2861,18 +2864,18 @@ paths:
           type: string
       responses:
         "200":
-          description: The Site configuration was returned successfully
+          description: The Site key was generated and returned successfully
         "400":
           description: Bad Request
-        "403":
-          description: Forbidden
+        "401":
+          description: Unauthorized
         "404":
-          description: Site ID in path is not present
-        "415":
-          description: Unsupported Media Type
+          description: Site ID in path is not found or incorrect path
+        "405":
+          description: Method Not Allowed
         "500":
           description: Internal Server Error
-      summary: Site Configuration
+      summary: Generate Site Key
       tags:
       - Content Analytics
   /v1/announcements:
@@ -6577,6 +6580,7 @@ paths:
           description: Internal Server Error
       summary: Retrieves a list of content types for a page
       tags:
+      - getPagesContentTypes
       - Content Type
   /v1/contenttype/{baseVariableName}/_copy:
     post:

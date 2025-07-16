@@ -1573,15 +1573,14 @@ public class ContentTypeResource implements Serializable {
 	}
 
 	/**
-	 * Returns a list of {@link ContentType} objects based on the filtering criteria. This is how
-	 * you can call this endpoint:
+	 * Returns a list of {@link ContentType} objects based on the page containers/types on the layout
 	 * <pre>{@code
-	 * GET http://localhost:8080/api/v1/contenttype?sites=48190c8c-42c4-46af-8d1a-0cd5db894797,SYSTEM_HOST,&per_page=40&&orderby=variabledirection=DESC
+	 * GET http://localhost:8080/api/v1/contenttype/page?pagePathOrId=48190c8c-42c4-46af-8d1a-0cd5db894797
 	 * }</pre>
 	 * <p>If you want results composed of 10 items per page and you want the third page, and you
 	 * don't have the Site's Identifier, you can call this URL:</p>
 	 * <pre>{@code
-	 * GET http://localhost:8080/api/v1/contenttype?sites=demo.dotcms.com&page=3&per_page=10
+	 * GET http://localhost:8080/api/v1/contenttype/page?pagePathOrId=48190c8c-42c4-46af-8d1a-0cd5db894797
 	 * }</pre>
 	 *
 	 * @param httpRequest  The current instance of the {@link HttpServletRequest}.
@@ -1609,6 +1608,7 @@ public class ContentTypeResource implements Serializable {
 	@NoCache
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+	@Tag(name = "getPagesContentTypes", description = "Returns the content types valid for a page based on the container/types on the layout")
 	@Operation(
 			operationId = "getPagesContentTypes",
 			summary = "Retrieves a list of content types for a page",
