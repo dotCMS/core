@@ -1,5 +1,3 @@
-import { EMPTY } from 'rxjs';
-
 import {
     ChangeDetectionStrategy,
     Component,
@@ -21,19 +19,10 @@ import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { MenuModule } from 'primeng/menu';
 import { TableRowReorderEvent, TableModule } from 'primeng/table';
 
-import { catchError, filter } from 'rxjs/operators';
+import { filter } from 'rxjs/operators';
 
-import {
-    DotContentTypeService,
-    DotHttpErrorManagerService,
-    DotMessageService
-} from '@dotcms/data-access';
-import {
-    DotCMSContentlet,
-    DotCMSContentType,
-    DotCMSContentTypeField,
-    FeaturedFlags
-} from '@dotcms/dotcms-models';
+import { DotMessageService } from '@dotcms/data-access';
+import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { ContentletStatusPipe } from '@dotcms/edit-content/pipes/contentlet-status.pipe';
 import { LanguagePipe } from '@dotcms/edit-content/pipes/language.pipe';
 import { DotMessagePipe } from '@dotcms/ui';
@@ -63,7 +52,6 @@ import { EditContentDialogData } from '../../models/dot-edit-content-dialog.inte
     ],
     providers: [
         RelationshipFieldStore,
-        DialogService,
         {
             multi: true,
             provide: NG_VALUE_ACCESSOR,
@@ -80,6 +68,7 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
      * This store is used to manage the state and actions related to the relationship field.
      */
     readonly store = inject(RelationshipFieldStore);
+
     /**
      * A readonly private field that injects the DotMessageService.
      * This service is used for handling message-related functionalities within the component.
@@ -100,18 +89,6 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
     readonly #dialogService = inject(DialogService);
 
     /**
-     * A readonly private field that injects the DotContentTypeService.
-     * This service is used for retrieving content type information and metadata.
-     */
-    readonly #dotContentTypeService = inject(DotContentTypeService);
-
-    /**
-     * A readonly private field that injects the DotHttpErrorManagerService.
-     * This service is used for handling HTTP errors in a consistent manner.
-     */
-    readonly #dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
-
-    /**
      * Signal that tracks whether the component is disabled.
      * This is used to disable all interactive elements in the component.
      */
@@ -130,6 +107,7 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
      */
     $menuItems = computed<MenuItem[]>(() => {
         const isDisabledCreateNewContent = this.store.isDisabledCreateNewContent();
+        const isNewEditorEnabled = this.store.isNewEditorEnabled();
 
         return [
             {
@@ -143,7 +121,7 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
             },
             {
                 label: this.#dotMessageService.get('dot.file.relationship.field.table.new.content'),
-                disabled: isDisabledCreateNewContent || this.$isDisabled(),
+                disabled: isDisabledCreateNewContent || this.$isDisabled() || !isNewEditorEnabled,
                 command: () => {
                     this.showCreateNewContentDialog();
                 }
@@ -178,15 +156,17 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
                 const contentlet = this.$contentlet();
 
                 const cardinality = field?.relationships?.cardinality ?? null;
+                const contentTypeId = getContentTypeIdFromRelationship(field);
 
-                if (cardinality === null || !field?.variable) {
+                if (cardinality === null || !field?.variable || !contentTypeId) {
                     return;
                 }
 
                 this.store.initialize({
                     cardinality,
                     contentlet,
-                    variable: field?.variable
+                    variable: field?.variable,
+                    contentTypeId
                 });
             },
             {
@@ -290,6 +270,14 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
             return;
         }
 
+        const attributes = this.$attributes();
+        const contentTypeId = attributes.contentTypeId;
+
+        // Don't open dialog if contentTypeId is null (invalid field data)
+        if (!contentTypeId) {
+            return;
+        }
+
         this.#dialogRef = this.#dialogService.open(DotSelectExistingContentComponent, {
             appendTo: 'body',
             closeOnEscape: false,
@@ -303,7 +291,7 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
             maskStyleClass: 'p-dialog-mask-dynamic p-dialog-relationship-field',
             style: { 'max-width': '1040px', 'max-height': '800px' },
             data: {
-                contentTypeId: this.$attributes().contentTypeId,
+                contentTypeId: contentTypeId,
                 selectionMode: this.store.selectionMode(),
                 currentItemsIds: this.store.data().map((item) => item.inode)
             },
@@ -324,42 +312,6 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
     }
 
     /**
-     * Shows the create new content dialog based on the relationship content type.
-     * It checks the CONTENT_EDITOR2_ENABLED flag in the content type metadata to determine
-     * whether to use the new Angular-based content editor or the legacy iframe-based editor.
-     */
-    showCreateNewContentDialog() {
-        if (this.$isDisabled()) {
-            return;
-        }
-
-        const contentTypeId = this.$attributes().contentTypeId;
-
-        // Get content type information to check the CONTENT_EDITOR2_ENABLED flag
-        this.#dotContentTypeService
-            .getContentType(contentTypeId)
-            .pipe(
-                takeUntilDestroyed(this.#destroyRef),
-                catchError((error) => {
-                    this.#dotHttpErrorManagerService.handle(error);
-
-                    return EMPTY;
-                })
-            )
-            .subscribe((contentType) => {
-                const isNewEditorEnabled =
-                    contentType.metadata?.[FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED] ===
-                    true;
-
-                if (isNewEditorEnabled) {
-                    this.openNewContentDialog(contentType);
-                } else {
-                    this.openLegacyContentDialog(contentType);
-                }
-            });
-    }
-
-    /**
      * Reorders the data in the store.
      * @param {TableRowReorderEvent} event - The event containing the drag and drop indices.
      */
@@ -373,14 +325,16 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
 
     /**
      * Opens the new content dialog for creating content using the Angular editor
-     *
-     * @private
-     * @param {DotCMSContentType} _contentType - The content type to create content for
      */
-    private openNewContentDialog(_contentType: DotCMSContentType): void {
+    showCreateNewContentDialog(): void {
+        const contentType = this.store.contentType();
+        if (this.$isDisabled() || !contentType) {
+            return;
+        }
+
         const dialogData: EditContentDialogData = {
             mode: 'new',
-            contentTypeId: _contentType.id,
+            contentTypeId: contentType.id,
             relationshipInfo: {
                 parentContentletId: this.$contentlet()?.inode,
                 relationshipName: this.$field()?.variable,
@@ -406,21 +360,7 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
             maskStyleClass: 'p-dialog-mask-dynamic p-dialog-create-content',
             style: { 'max-width': '1400px', 'max-height': '900px' },
             data: dialogData,
-            header: `Create ${_contentType.name}`
+            header: `Create ${contentType.name}`
         });
-    }
-
-    /**
-     * Opens the legacy content dialog for creating content using the iframe editor
-     * This is a placeholder for the legacy implementation
-     *
-     * @private
-     * @param {DotCMSContentType} _contentType - The content type to create content for
-     */
-    private openLegacyContentDialog(_contentType: DotCMSContentType): void {
-        // TODO: Implement legacy dialog opening
-        // Legacy content creation not yet implemented for content type: contentType
-        // This would eventually open an iframe dialog with the legacy editor
-        // Similar to how it's done in the existing legacy JSP files
     }
 }
