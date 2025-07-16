@@ -142,8 +142,7 @@ pull_dotcms_backups () {
     if [ -n  "$DOTCMS_API_TOKEN"  ]; then
         echo "- Using Authorization: Bearer"
         export AUTH_HEADER="Authorization: Bearer $DOTCMS_API_TOKEN"
-    fi
-    if [ -n  "$DOTCMS_USERNAME_PASSWORD"  ]; then
+    elif [ -n  "$DOTCMS_USERNAME_PASSWORD"  ]; then
         echo "- Using Authorization: Basic"
         export AUTH_HEADER="Authorization: Basic $(echo -n $DOTCMS_USERNAME_PASSWORD | base64)"
     fi
