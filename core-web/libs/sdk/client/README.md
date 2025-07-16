@@ -31,6 +31,7 @@ The `@dotcms/client` is a powerful JavaScript/TypeScript SDK designed to simplif
 -   [API Reference](#api-reference)
     -   [Client Initialization](#client-initialization)
     -   [client.page.get(): Fetching Page Content](#clientpageget-fetching-page-content)
+    -   [Advanced GraphQL Querying](#advanced-graphql-querying)
     -   [client.navigation.get(): Fetching Navigation Structure](#clientnavigationget-fetching-navigation-structure)
     -   [client.content.getCollection(): Fetching Content Collections](#clientcontentgetcollection-fetching-content-collections)
 -   [Using the SDK with TypeScript](#using-the-sdk-with-typescript)
@@ -155,7 +156,7 @@ All in a single request using GraphQL.
 
 Only use `content.getCollection()` or `navigation.get()` if you have advanced needs, like real-time data fetching or building custom dynamic components.
 
-> 🔍 **For an example of how to bundle content and navigation in one `page.get()` call,** see the [advanced usage](#fetching-additional-content-with-graphql) section under `client.page.get()`.
+> 🔍 **For comprehensive examples of advanced GraphQL querying including relationships and custom fields,** see the [Advanced GraphQL Querying](#advanced-graphql-querying) section.
 
 ## API Reference
 
@@ -220,7 +221,7 @@ const { pageAsset } = await client.page.get('/about-us', {
 });
 ```
 
-#### Bundling Content and Navigation in One Request
+#### Fetching Additional Content with GraphQL
 
 You can also pull in related content, like blog posts or navigation menus, using the `graphql` option:
 
@@ -285,6 +286,86 @@ get<T extends DotCMSExtendedPageResponse = DotCMSPageResponse>(
   url: string,
   options?: DotCMSPageRequestParams
 ): Promise<DotCMSComposedPageResponse<T>>;
+```
+
+### Advanced GraphQL Querying
+
+The following examples demonstrate advanced GraphQL patterns that solve common use cases. These patterns would have helped customers solve complex querying scenarios independently.
+
+#### Fetching All Page Fields with `_map`
+
+Use `_map` to fetch all page fields, including custom fields you've added to your page content type:
+
+```ts
+const { pageAsset } = await client.page.get('/about-us', {
+    graphql: {
+        page: `
+            _map,
+        `
+    }
+});
+
+// Access all page fields including custom ones
+console.log(pageAsset.page.title);
+console.log(pageAsset.page.customField1);
+console.log(pageAsset.page.customField2);
+```
+
+> **💡 Pro Tip**: `_map` returns all fields for the page, including any custom fields you've added to your page content type. This is useful when you need access to fields like Meta Title, OG data, or other custom page properties.
+
+#### Querying Relationships Field in Contentlets
+
+Relationship fields return empty arrays by default. Use GraphQL fragments with `... on ContentType` syntax to fetch related content, no limit on the depth.
+
+```ts
+const { pageAsset } = await client.page.get('/blog-post', {
+    graphql: {
+        page: `
+            _map,
+            containers {
+                containerContentlets {
+                    contentlets {
+                        title
+                        contentType
+                        ... on Blog {
+                            author {
+                                title
+                                email
+                                bio
+                            }
+                            category {
+                                categoryName
+                                slug
+                            }
+                            tags {
+                                tagName
+                            }
+                        }
+                        ... on Product {
+                            manufacturer {
+                                companyName
+                                contactEmail
+                            }
+                            category {
+                                categoryName
+                            }
+                        }
+                        ... on News {
+                            author {
+                                title
+                                email
+                            }
+                            newsType {
+                                typeName
+                            }
+                        }
+                    }
+                }
+            }
+        `
+    }
+});
+
 ```
 
 ### client.navigation.get(): Fetching Navigation Structure
