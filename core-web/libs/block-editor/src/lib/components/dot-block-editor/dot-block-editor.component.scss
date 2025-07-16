@@ -48,7 +48,12 @@
 
         .dot-drag-handle {
             cursor: grab;
-            color: $color-palette-primary-800;
+            color: $color-palette-gray-500;
+            display: flex;
+
+            .pi:first-child {
+                margin-right: -$spacing-2;
+            }
         }
 
         .ProseMirror {
