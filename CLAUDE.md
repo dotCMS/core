@@ -1,15 +1,55 @@
-# CLAUDE.md
+# CLAUDE.md - dotCMS Development Guide
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+## 📚 Documentation Structure
 
-## Essential Commands
+### 🏗️ Core Principles
+- **Architecture**: [docs/core/ARCHITECTURE_OVERVIEW.md](docs/core/ARCHITECTURE_OVERVIEW.md)
+- **Code Structure**: [docs/core/CODE_STRUCTURE.md](docs/core/CODE_STRUCTURE.md)
+- **Security**: [docs/core/SECURITY_PRINCIPLES.md](docs/core/SECURITY_PRINCIPLES.md)
+- **Git Workflows**: [docs/core/GIT_WORKFLOWS.md](docs/core/GIT_WORKFLOWS.md)
+- **CI/CD Pipeline**: [docs/core/CICD_PIPELINE.md](docs/core/CICD_PIPELINE.md)
+- **GitHub Issue Management**: [docs/core/GITHUB_ISSUE_MANAGEMENT.md](docs/core/GITHUB_ISSUE_MANAGEMENT.md)
 
-### Build Commands
+### 🎯 Backend (Java/Maven)
+- **Java Standards**: [docs/backend/JAVA_STANDARDS.md](docs/backend/JAVA_STANDARDS.md)
+- **Maven Build**: [docs/backend/MAVEN_BUILD_SYSTEM.md](docs/backend/MAVEN_BUILD_SYSTEM.md)
+- **REST API Patterns**: [docs/backend/REST_API_PATTERNS.md](docs/backend/REST_API_PATTERNS.md)
+- **Database Patterns**: [docs/backend/DATABASE_PATTERNS.md](docs/backend/DATABASE_PATTERNS.md)
+- **Security Backend**: [docs/backend/SECURITY_BACKEND.md](docs/backend/SECURITY_BACKEND.md)
+
+### 🎨 Frontend (Angular/TypeScript)
+- **Angular Standards**: [docs/frontend/ANGULAR_STANDARDS.md](docs/frontend/ANGULAR_STANDARDS.md)
+- **Component Architecture**: [docs/frontend/COMPONENT_ARCHITECTURE.md](docs/frontend/COMPONENT_ARCHITECTURE.md)
+- **State Management**: [docs/frontend/STATE_MANAGEMENT.md](docs/frontend/STATE_MANAGEMENT.md)
+- **Styling**: [docs/frontend/STYLING_STANDARDS.md](docs/frontend/STYLING_STANDARDS.md)
+
+### 🖥️ CLI (Quarkus/Java 21)
+- **CLI Overview**: [docs/cli/CLI_OVERVIEW.md](docs/cli/CLI_OVERVIEW.md)
+- **CLI Build System**: [docs/cli/CLI_BUILD_SYSTEM.md](docs/cli/CLI_BUILD_SYSTEM.md)
+
+### 🧪 Testing
+- **Backend Unit Tests**: [docs/testing/BACKEND_UNIT_TESTS.md](docs/testing/BACKEND_UNIT_TESTS.md)
+- **Frontend Unit Tests**: [docs/testing/FRONTEND_UNIT_TESTS.md](docs/testing/FRONTEND_UNIT_TESTS.md)
+- **Integration Tests**: [docs/testing/INTEGRATION_TESTS.md](docs/testing/INTEGRATION_TESTS.md)
+- **API Testing**: [docs/testing/API_TESTING.md](docs/testing/API_TESTING.md)
+- **E2E Tests**: [docs/testing/E2E_TESTS.md](docs/testing/E2E_TESTS.md)
+- **Performance Tests**: [docs/testing/PERFORMANCE_TESTS.md](docs/testing/PERFORMANCE_TESTS.md)
+
+### 🔗 Integration
+- **API Contracts**: [docs/integration/API_CONTRACTS.md](docs/integration/API_CONTRACTS.md)
+- **Docker Build**: [docs/infrastructure/DOCKER_BUILD_PROCESS.md](docs/infrastructure/DOCKER_BUILD_PROCESS.md)
+
+### 🤖 AI Guidance
+- **Workflow Patterns**: [docs/claude/WORKFLOW_PATTERNS.md](docs/claude/WORKFLOW_PATTERNS.md)
+- **Documentation Maintenance**: [docs/claude/DOCUMENTATION_MAINTENANCE.md](docs/claude/DOCUMENTATION_MAINTENANCE.md)
+- **GitHub Automation**: [docs/claude/GITHUB_AUTOMATION.md](docs/claude/GITHUB_AUTOMATION.md)
+
+## ⚡ Quick Commands
+
+### Backend Development
 ```bash
-# Basic builds
-./mvnw clean install                    # Full build with Docker
-./mvnw clean install -DskipTests       # Fast build without tests
-./mvnw install -pl :dotcms-core -DskipTests  # Core module only
+# Fast build
+./mvnw install -pl :dotcms-core -DskipTests
 
 # Development with Docker
 ./mvnw -pl :dotcms-core -Pdocker-start -Dtomcat.port=8080        # Start
@@ -36,6 +76,32 @@ nx run dotcms-ui:test          # Run tests
 
 ### Development Utilities
 Install additional tools: `bash <(curl -fsSL https://raw.githubusercontent.com/dotcms/dotcms-utilities/main/install-dev-scripts.sh)`
+
+## GitHub Issue Management
+
+**📋 IMPORTANT: For comprehensive guidance on Issues, PRs, Epics, and Subtasks, see [GitHub Issue Management](docs/core/GITHUB_ISSUE_MANAGEMENT.md)**
+
+### Quick Reference
+- **Issue Creation**: Always use `issue-{number}-{description}` branch naming
+- **Epic Management**: Use GitHub sub-issues API for proper linking
+- **PR Standards**: Link to both Epic and specific Issue
+- **Project Integration**: Issues auto-added to "dotCMS - Product Planning V2"
+
+### Common Commands
+```bash
+# Create issue with dotCMS utilities (preferred)
+git issue-create "Task description" --team Platform --type Task --repo dotCMS/core --dry-run
+git issue-create "Task description" --team Platform --type Task --repo dotCMS/core --yes
+
+# Create branch matching issue number (creates automatically if doesn't exist)
+git smart-switch issue-{issue_number}-{descriptive-name}
+
+# Link subtask to epic (fallback when utilities don't support sub-issues)
+gh api -X POST /repos/:owner/:repo/issues/{epic_id}/sub_issues --field sub_issue_id={task_id}
+
+# Check epic progress
+gh api /repos/:owner/:repo/issues/{epic_id} --jq '.sub_issues_summary'
+```
 
 ## Architecture Overview
 
@@ -520,269 +586,121 @@ ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI();   // Modern Cont
 # When ready to test in Docker (REQUIRED for new servlets/endpoints):
 ./mvnw -DskipTests clean install  # Updates Docker image
 ./mvnw -pl :dotcms-core -Pdocker-start -Dtomcat.port=8080
+
+# Integration tests
+./mvnw -pl :dotcms-integration verify -Dcoreit.test.skip=false
 ```
 
-**Key Point**: The Docker container runs the image, not your local compiled classes.
-
-### OpenAPI Specification Management
-The `dotCMS/src/main/webapp/WEB-INF/openapi/openapi.yaml` file is **automatically generated** during compilation. 
-
-**Handling Merge Conflicts:**
-- The file uses Git's "ours" merge strategy - always keeps your current branch version
-- **Never manually edit** the OpenAPI YAML file - changes will be overwritten
-- **Pre-commit hook** automatically regenerates the file when REST API changes are detected
-- **After merge**: The next commit with REST changes will update the OpenAPI spec correctly
-
-**Configuration for stable diffs:**
-```xml
-<prettyPrint>true</prettyPrint>
-<sortOutput>true</sortOutput>
-```
-
-**Workflow:**
-1. Merge branches normally - OpenAPI conflicts resolve automatically using "ours"
-2. Make REST API changes and commit - pre-commit hook regenerates OpenAPI spec
-3. OpenAPI file is always consistent with current branch's REST implementation
-
-### Immutable Classes Compilation
-When creating new models with `@Value.Immutable`, the concrete classes are generated at compile time. **Always run `./mvnw compile`** after creating abstract immutable interfaces to generate the implementation classes.
-
-### Git Hooks Setup
-The project uses husky for pre-commit hooks. On first setup or after pulling changes, you may see:
-```
-core-web/.husky/pre-commit: line 24: core-web/.husky/_/husky.sh: No such file or directory
-```
-
-**Fix**: Run `just build` or `./mvnw clean install` to properly install husky and create the missing `_/husky.sh` file.
-
-### ENOBUFS Error Fix (macOS)
-If you encounter `spawnSync /bin/sh ENOBUFS` errors during pre-commit hooks:
-
-**🚀 Automatic Fix**: The pre-commit hook will automatically detect and fix ENOBUFS errors by resetting nx cache and reinstalling dependencies. No manual intervention required!
-
-**Manual Fix** (if auto-fix fails):
+### Frontend Development
 ```bash
-cd core-web
-yarn nx reset
-yarn install
+# Development server
+cd core-web && nx run dotcms-ui:serve
 
-# For persistent issues, full cleanup:
-rm -rf node_modules
-yarn install
-yarn nx reset
+# Run tests
+cd core-web && nx run dotcms-ui:test
+
+# Install dependencies
+cd core-web && yarn install
 ```
 
-**Why this happens**: Large codebases (127k+ files) can cause nx cache corruption and macOS buffer limits to be exceeded.
-
-**Prevention**: Run `yarn nx reset` periodically if builds feel slow or after major dependency updates.
-
-### Health Check System
-For comprehensive health check documentation: **[Health Check System Documentation](dotCMS/src/main/java/com/dotcms/health/README.md)**
-
-Key endpoints:
-- `/livez` - Kubernetes liveness probe (minimal text response)
-- `/readyz` - Kubernetes readiness probe (minimal text response)  
-- `/api/v1/health` - Detailed monitoring (JSON response, requires authentication)
-
-### Changing Log Levels on Running Server
-You can dynamically change log levels without restarting the server using the Logger REST API:
-
+### CLI Development
 ```bash
-# Change log level for a specific class (requires admin credentials)
-curl -X PUT \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Basic $(echo -n 'admin@dotcms.com:admin' | base64)" \
-  -d '{"name": "com.dotcms.health.servlet.HealthProbeServlet", "level": "DEBUG"}' \
-  "http://localhost:8080/api/v1/logger"
+# Development mode
+cd tools/dotcms-cli && ./mvnw quarkus:dev -pl cli
 
-# Change multiple loggers at once (comma-separated)
-curl -X PUT \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Basic $(echo -n 'admin@dotcms.com:admin' | base64)" \
-  -d '{"name": "com.dotcms.health,com.dotmarketing.util", "level": "INFO"}' \
-  "http://localhost:8080/api/v1/logger"
+# Build CLI
+cd tools/dotcms-cli && ./mvnw clean install
 
-# Get current logger levels
-curl -H "Authorization: Basic $(echo -n 'admin@dotcms.com:admin' | base64)" \
-  "http://localhost:8080/api/v1/logger/com.dotcms.health.servlet.HealthProbeServlet"
-
-# List all current loggers
-curl -H "Authorization: Basic $(echo -n 'admin@dotcms.com:admin' | base64)" \
-  "http://localhost:8080/api/v1/logger"
+# Run CLI
+java -jar tools/dotcms-cli/cli/target/quarkus-app/quarkus-run.jar --help
 ```
 
-Valid log levels: `TRACE`, `DEBUG`, `INFO`, `WARN`, `ERROR`, `FATAL`, `OFF`
+### Git & CI/CD Operations
+```bash
+# Create feature branch
+git checkout -b issue-{number}-{description}
 
-## Git and Development Workflow
+# Commit and push
+git add . && git commit -m "Implement feature"
+git push -u origin issue-{number}-{description}
 
-### Git Workflow Standards
-- **Branch from Main**: Always create feature branches from the main branch
-- **Branch Naming Convention**: All branches for PRs must use `issue-{issue number}-` prefix for automatic issue linking:
-  ```bash
-  # Required format for issue linking
-  git checkout -b issue-123-add-new-feature
-  git checkout -b issue-456-fix-login-bug
-  git checkout -b issue-789-update-documentation
-  ```
-- **For Human Developers**: Use dotCMS utilities for streamlined workflow:
-  ```bash
-  # Create GitHub issue with proper labeling
-  git issue-create
-  
-  # Create branch from assigned issue (automatically uses correct naming)
-  git issue-branch
-  
-  # List your assigned issues
-  git issue-branch --list
-  ```
-- **For AI Agents**: Use standard GitHub tools:
-  ```bash
-  # Create issues using gh CLI
-  gh issue create --title "Issue title" --body "Description" --label "bug,enhancement"
-  
-  # Create branches with proper naming for issue linking
-  git checkout -b issue-123-descriptive-name
-  gh issue develop 123 --checkout
-  
-  # List issues
-  gh issue list --assignee @me
-  ```
-- **Conventional Commits**: Use conventional commit format for all changes:
-  ```
-  feat: add new workflow component
-  fix: resolve artifact dependency issue
-  docs: update workflow documentation
-  test: add integration test for build phase
-  refactor: improve change detection logic
-  ```
+# Check dependency conflicts
+./mvnw dependency:tree -Dverbose
 
-### Pull Request Standards
-- **Draft PRs**: Create pull requests in draft status initially for review
-- **Documentation Updates**: Update relevant documentation files when making changes to:
-  - Application behavior or architecture
-  - Security procedures or guidelines
-  - Testing strategies or new test types
-  - Troubleshooting procedures or known issues
-
-## Security Guidelines
-
-### Critical Security Rules
-
-**🚨 NEVER do these in any code:**
-```java
-// ❌ NEVER: Direct input injection without validation
-System.out.println("User input: " + userInput);  // INJECTION RISK
-
-// ❌ NEVER: Hardcoded secrets or keys
-String apiKey = "sk-1234567890abcdef";  // SECURITY VIOLATION
-
-// ❌ NEVER: Exposing sensitive information in logs
-Logger.info(this, "Password: " + password);  // SECURITY VIOLATION
+# Debug CI/CD issues
+yamllint .github/workflows/workflow-name.yml
 ```
 
-**✅ ALWAYS do these security practices:**
-```java
-// ✅ Validate and sanitize all user input
-if (UtilMethods.isSet(userInput) && userInput.matches("^[a-zA-Z0-9\\s\\-_]+$")) {
-    Logger.info(this, "Valid input received");
-    processInput(userInput);
-} else {
-    Logger.warn(this, "Invalid input rejected");
-    throw new DotSecurityException("Invalid input format");
-}
+## 🎯 Task Context Detection
 
-// ✅ Use Config for sensitive properties
-String apiKey = Config.getStringProperty("external.api.key", "");
-if (!UtilMethods.isSet(apiKey)) {
-    throw new DotDataException("API key not configured");
-}
+### Backend Tasks → Read backend docs
+- `/dotCMS/` paths, `.java` files, `pom.xml` changes, Docker containers, database operations, REST APIs
 
-// ✅ Never log sensitive information
-Logger.info(this, "Authentication successful for user: " + user.getUserId());
-```
+### Frontend Tasks → Read frontend docs
+- `/core-web/` paths, `.ts/.html/.scss` files, `package.json` changes, Angular components
 
-### Security Checklist
+### CLI Tasks → Read CLI docs
+- `/tools/dotcms-cli/` paths, Quarkus applications, PicocLI commands, native image builds
 
-**Before committing any code:**
-- [ ] No hardcoded secrets, passwords, or API keys
-- [ ] All user input is validated and sanitized
-- [ ] Sensitive information is never logged
-- [ ] Proper error handling without information leakage
-- [ ] Security boundaries are maintained
+### Git & CI/CD Tasks → Read git/cicd docs
+- `.github/workflows/` paths, `.yml` files, GitHub Actions modifications, CI/CD pipeline issues
 
-## Development Patterns
+## 🔄 Development Workflow
 
-### Error Handling Pattern
-```java
-// Standard error handling with proper logging
-try {
-    performOperation();
-    Logger.info(this, "Operation completed successfully");
-} catch (DotDataException e) {
-    Logger.error(this, "Data operation failed: " + e.getMessage(), e);
-    throw new DotRuntimeException("Unable to complete operation", e);
-} catch (Exception e) {
-    Logger.error(this, "Unexpected error: " + e.getMessage(), e);
-    throw new DotRuntimeException("System error occurred", e);
-}
-```
+1. **Read Relevant Documentation** (use task context detection above)
+2. **Use TodoWrite for Multi-Step Tasks** (break complex tasks into manageable steps)
+3. **Follow Progressive Enhancement** - Always improve: add generics, use Logger, use Config
+4. **Update Documentation** - When you discover wrong assumptions, missing info, or new patterns
 
-### Input Validation Pattern
-```java
-// Comprehensive input validation
-public void processUserInput(String input) {
-    // Null and empty validation
-    if (!UtilMethods.isSet(input)) {
-        throw new DotDataException("Input cannot be empty");
-    }
-    
-    // Format validation
-    if (!input.matches("^[a-zA-Z0-9\\s\\-_\\.]+$")) {
-        Logger.warn(this, "Invalid input format attempted");
-        throw new DotSecurityException("Invalid input format");
-    }
-    
-    // Length validation
-    if (input.length() > 255) {
-        throw new DotDataException("Input exceeds maximum length");
-    }
-    
-    // Business logic validation
-    if (isBlacklisted(input)) {
-        Logger.warn(this, "Blacklisted input attempted");
-        throw new DotSecurityException("Input not allowed");
-    }
-    
-    // Process validated input
-    processValidatedInput(input);
-}
-```
+### 🤝 Proactive Workflow Assistance
 
-### Debugging Pattern
-```java
-// Structured debugging information
-Logger.debug(this, () -> {
-    return String.format("Processing request - User: %s, Action: %s, Parameters: %s",
-        user.getUserId(), action, sanitizeForLogging(parameters));
-});
+**When user mentions different work context:**
+- Suggest branch switching with `git smart-switch issue-{number}-{description}`
+- Help organize work by switching to appropriate branches
 
-// Performance monitoring
-long startTime = System.currentTimeMillis();
-try {
-    performOperation();
-} finally {
-    long duration = System.currentTimeMillis() - startTime;
-    Logger.info(this, "Operation completed in " + duration + "ms");
-}
-```
+**When discovering unrelated issues during development:**
+- Suggest creating quick issues with `git issue-create` to track problems
+- Offer to create issues for bugs/improvements found during current work
+- Help maintain clean separation between different problems
 
-## Summary Checklist
-- ✅ Use `Config.getProperty()` and `Logger.info(this, ...)`
-- ✅ Use `APILocator.getXXXAPI()` for services
-- ✅ Use `@Value.Immutable` for data objects
-- ✅ Use JAX-RS `@Path` for REST endpoints
-- ✅ Use `data-testid` for Angular testing
-- ✅ Use modern Java 21 syntax (Java 11 compatible)
-- ✅ Follow domain-driven package organization for new features
-- ❌ Avoid DWR, Struts, portlets, console logging, direct system properties
-- ❌ Avoid Java 21 runtime features in core modules
+**When work is complete:**
+- Suggest creating PR with `git issue-pr` for review
+- Help link work back to original issues and epics
+
+See: [Documentation Maintenance System](docs/claude/DOCUMENTATION_MAINTENANCE.md)
+
+## 🚨 Critical Reminders
+
+### Security (NEVER violate)
+- No hardcoded secrets or credentials
+- Validate all user input
+- Never log sensitive information
+- See: [Security Principles](docs/core/SECURITY_PRINCIPLES.md)
+
+### Build System (NEVER violate)
+- Add dependency versions to `bom/application/pom.xml`
+- Never add versions to `dotCMS/pom.xml`
+- Run `./mvnw compile` after `@Value.Immutable` changes
+- See: [Maven Build System](docs/backend/MAVEN_BUILD_SYSTEM.md)
+
+### Testing (ALWAYS required)
+- **Backend**: Integration tests for REST endpoints
+- **Frontend**: Spectator tests with `data-testid`
+- Run tests before completing tasks
+- **See**: [Testing Documentation](docs/testing/) for comprehensive test guides
+
+## 📝 Documentation Maintenance
+
+**Core Principle: Right Information in Right Place**
+- **Core docs**: Roadmap to locate information, not implementation details
+- **Domain docs**: Technology patterns, not class-specific details
+- **Code docs**: Class-specific details belong in the code itself
+- **Single source of truth**: Each piece of information exists in one place
+
+**When you discover incorrect or missing information:**
+1. Identify the right document and location (core/domain/code)
+2. Update with specific, actionable information
+3. Use cross-references instead of duplicating content
+4. Only include information relevant to current task context
+
+See: [Documentation Maintenance System](docs/claude/DOCUMENTATION_MAINTENANCE.md)
