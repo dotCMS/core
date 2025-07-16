@@ -327,7 +327,14 @@ public class LoginServiceAPIFactory implements Serializable {
                 if (Config.getBooleanProperty("show.lts.eol.message", false)) {
                     messageLTSVersionEOL(logInUser);
                 }
-                messageTokensToExpire(logInUser);
+                // Run token expiry check asynchronously to avoid blocking login
+                DotConcurrentFactory.getInstance().getSubmitter().submit(() -> {
+                    try {
+                        messageTokensToExpire(logInUser);
+                    } catch (LanguageException e) {
+                        Logger.error(this, "Error getting localized token expiry message: " + e.getMessage(), e);
+                    }
+                });
             }
 
             if (authResult != Authenticator.SUCCESS) {
@@ -709,7 +716,7 @@ public class LoginServiceAPIFactory implements Serializable {
      * If the user is an admin, shows all expiring tokens with link to REST API.
      * If the user is not an admin, shows only their own tokens with notification to contact admin.
      */
-    private void messageTokensToExpire(User logInUser) {
+    private void messageTokensToExpire(User logInUser) throws LanguageException {
 
         if (!Config.getBooleanProperty("DISPLAY_EXPIRING_TOKEN_ALERTS", true)) {
             return;
@@ -730,8 +737,7 @@ public class LoginServiceAPIFactory implements Serializable {
 
             if (logInUser.isAdmin()) {
 
-                String msg = "Some API Tokens are about to expire. Please review them here " +
-                        "<a href=\"/api/v1/apitoken/expiring\" target=\"_blank\">here</a>";
+                String msg = LanguageUtil.get(logInUser.getLocale(), "apitoken.expiry.admin.message");
                 message = new SystemMessageBuilder()
                         .setMessage(msg)
                         .setSeverity(MessageSeverity.WARNING)
@@ -739,8 +745,9 @@ public class LoginServiceAPIFactory implements Serializable {
                         .setLife(86400000);
             } else {
 
+                String msg = LanguageUtil.get(logInUser.getLocale(), "apitoken.expiry.user.message");
                 message = new SystemMessageBuilder()
-                        .setMessage("You have API Tokens that are about to expire. Please let your Administrator know about this.")
+                        .setMessage(msg)
                         .setSeverity(MessageSeverity.WARNING)
                         .setType(MessageType.SIMPLE_MESSAGE)
                         .setLife(86400000);
