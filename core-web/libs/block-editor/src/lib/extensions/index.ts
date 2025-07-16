@@ -17,8 +17,6 @@ export * from './dot-table/dot-table-cell.extension';
 export * from './dot-table/dot-table-cell.plugin';
 export * from './dot-table/dot-table-header.extension';
 export * from './dot-table/dot-table.extension';
-export * from './drag-handler/drag-handler.component';
-export * from './drag-handler/drag-handler.extension';
 export * from './floating-button/floating-button.component';
 export * from './floating-button/floating-button.extension';
 export * from './floating-button/plugin/floating-button.plugin';

@@ -56,7 +56,6 @@ import {
     DotTableCellExtension,
     DotTableExtension,
     DotTableHeaderExtension,
-    DragHandler,
     FREEZE_SCROLL_KEY,
     FreezeScroll,
     IndentExtension
@@ -124,6 +123,10 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
     readonly #dialogService = inject(DialogService);
     readonly #dotMessageService = inject(DotMessageService);
 
+    readonly dotDragHandleOptions = {
+        duration: 250
+    };
+
     constructor(
         private readonly viewContainerRef: ViewContainerRef,
         private readonly dotMarketingConfigService: DotMarketingConfigService,
@@ -189,7 +192,8 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
                         ...this.getEditorMarks(),
                         ...this.getEditorNodes(),
                         ...extensions
-                    ]
+                    ],
+                    editable: true
                 });
 
                 this.dotMarketingConfigService.setProperty(
@@ -202,6 +206,10 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
     }
 
     ngOnDestroy() {
+        if (this.editor) {
+            this.editor.destroy();
+        }
+
         this.destroy$.next(true);
         this.destroy$.complete();
     }
@@ -210,6 +218,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
         if (this.disabled) {
             return;
         }
+
         this.valueChange.emit(value);
         this.onChange?.(JSON.stringify(value));
         this.onTouched?.();
@@ -456,7 +465,6 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
             ActionsMenu(this.viewContainerRef, this.getParsedCustomBlocks(), {
                 shouldShowAIExtensions: isAIPluginInstalled
             }),
-            DragHandler(this.viewContainerRef),
             BubbleFormExtension(this.viewContainerRef),
             DotFloatingButton(this.#injector, this.viewContainerRef),
             DotTableCellExtension(this.viewContainerRef),
