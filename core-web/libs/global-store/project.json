@@ -4,7 +4,7 @@
     "sourceRoot": "libs/global-store/src",
     "prefix": "lib",
     "projectType": "library",
-    "tags": ["type:state", "scope:global"],
+    "tags": ["type:state", "scope:global", "app:dotcms-ui"],
     "targets": {
         "test": {
             "executor": "@nx/jest:jest",
