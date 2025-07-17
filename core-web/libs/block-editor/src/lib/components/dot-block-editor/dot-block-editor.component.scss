@@ -46,6 +46,16 @@
         overflow-y: auto;
         width: 100%;
 
+        .dot-drag-handle {
+            cursor: grab;
+            color: $color-palette-gray-500;
+            display: flex;
+
+            .pi:first-child {
+                margin-right: -$spacing-2;
+            }
+        }
+
         .ProseMirror {
             -moz-box-sizing: border-box;
             -webkit-box-sizing: border-box;
