@@ -17,8 +17,11 @@ The `@dotcms/client` is a powerful JavaScript/TypeScript SDK designed to simplif
 -   **Security First**: Handles authentication and requests securely
 -   **Developer Experience**: Rich autocompletion and documentation
 
+> **📋 Migrating from Alpha Version?** If you're upgrading from the alpha version of `@dotcms/client`, please see our [Migration Guide](./MIGRATION.md) for step-by-step instructions and troubleshooting tips.
+
 ## Table of Contents
 
+-   [Migration from Alpha Version](./MIGRATION.md)
 -   [Getting Started](#getting-started)
     -   [Prerequisites & Setup](#prerequisites--setup)
     -   [Installation](#installation)
