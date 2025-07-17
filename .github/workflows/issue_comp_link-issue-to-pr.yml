@@ -39,20 +39,95 @@ jobs:
         env:
           GITHUB_CONTEXT: ${{ toJson(github) }}
 
+      - name: Check if PR already has linked issues
+        id: check_existing_issues
+        run: |
+          pr_url="${{ inputs.pr_url }}"
+          pr_number=$(echo "$pr_url" | grep -o '[0-9]*$')
+          
+          # Get PR details
+          pr_details=$(curl -s \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ env.GH_TOKEN }}" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/${{ github.repository }}/pulls/$pr_number")
+          
+          # Check for issues linked via GitHub's Development section (timeline events)
+          timeline_events=$(curl -s \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ env.GH_TOKEN }}" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/${{ github.repository }}/issues/$pr_number/timeline")
+          
+          # Look for connected/disconnected events that indicate manual linking
+          connected_issue=$(echo "$timeline_events" | jq -r '.[] | select(.event == "connected") | .source.issue.number' | head -1)
+          
+          if [[ -n "$connected_issue" && "$connected_issue" != "null" ]]; then
+            echo "Found manually linked issue via Development section: $connected_issue"
+            echo "has_linked_issues=true" >> "$GITHUB_OUTPUT"
+            echo "linked_issue_number=$connected_issue" >> "$GITHUB_OUTPUT"
+            echo "link_method=development_section" >> "$GITHUB_OUTPUT"
+          else
+            # Check if PR body contains issue references (fixes #123, closes #456, etc.)
+            pr_body=$(echo "$pr_details" | jq -r '.body // ""')
+            
+            # Extract issue numbers from PR body using various keywords
+            linked_issues=$(echo "$pr_body" | grep -oiE '(fixes?|closes?|resolves?)\s+#([0-9]+)' | grep -oE '[0-9]+' | head -1)
+            
+            if [[ -n "$linked_issues" ]]; then
+              echo "Found linked issue in PR body: $linked_issues"
+              echo "has_linked_issues=true" >> "$GITHUB_OUTPUT"
+              echo "linked_issue_number=$linked_issues" >> "$GITHUB_OUTPUT"
+              echo "link_method=pr_body" >> "$GITHUB_OUTPUT"
+            else
+              echo "No linked issues found in Development section or PR body"
+              echo "has_linked_issues=false" >> "$GITHUB_OUTPUT"
+            fi
+          fi
+
       - name: Extract issue number from branch name
         id: extract_issue_number
         run: |
           branch_name="${{ inputs.pr_branch }}"
+          issue_number=""
+          
+          # Try multiple patterns to extract issue number (more flexible but specific)
           if [[ "$branch_name" =~ ^([0-9]+)- ]]; then
             issue_number="${BASH_REMATCH[1]}"
+            echo "Found issue number at start of branch: $issue_number"
           elif [[ "$branch_name" =~ ^issue-([0-9]+)- ]]; then
             issue_number="${BASH_REMATCH[1]}"
+            echo "Found issue number with 'issue-' prefix: $issue_number"
+          elif [[ "$branch_name" =~ issue-([0-9]+) ]]; then
+            issue_number="${BASH_REMATCH[1]}"
+            echo "Found issue number with 'issue-' anywhere in branch: $issue_number"
           else
-            echo "Branch name doesn't match the expected pattern"
-            exit 1
+            echo "No issue number found in branch name: $branch_name"
           fi
           
           echo "issue_number=$issue_number" >> "$GITHUB_OUTPUT"
+
+      - name: Determine final issue number
+        id: determine_issue
+        run: |
+          # Priority: 1) Manually linked issues (Development section or PR body), 2) Branch name extraction
+          if [[ "${{ steps.check_existing_issues.outputs.has_linked_issues }}" == "true" ]]; then
+            final_issue_number="${{ steps.check_existing_issues.outputs.linked_issue_number }}"
+            link_method="${{ steps.check_existing_issues.outputs.link_method }}"
+            echo "Using manually linked issue: $final_issue_number (via $link_method)"
+          elif [[ -n "${{ steps.extract_issue_number.outputs.issue_number }}" ]]; then
+            final_issue_number="${{ steps.extract_issue_number.outputs.issue_number }}"
+            echo "Using issue from branch name: $final_issue_number"
+          else
+            echo "::error::No issue number found in Development section, PR body, or branch name"
+            echo "::error::Please link an issue using one of these methods:"
+            echo "::error::1. Link via GitHub UI: Go to PR → Development section → Link issue"
+            echo "::error::2. Add 'fixes #123' (or closes/resolves) to PR body, or"
+            echo "::error::3. Use branch naming like 'issue-123-feature' or '123-feature'"
+            exit 1
+          fi
+          
+          echo "final_issue_number=$final_issue_number" >> "$GITHUB_OUTPUT"
 
       - name: Get existing issue comments
         id: get_comments
@@ -62,7 +137,7 @@ jobs:
               -H "Accept: application/vnd.github+json" \
               -H "Authorization: Bearer ${{ env.GH_TOKEN }}" \
               -H "X-GitHub-Api-Version: 2022-11-28" \
-              https://api.github.com/repos/${{ github.repository }}/issues/${{ steps.extract_issue_number.outputs.issue_number }}/comments \
+              https://api.github.com/repos/${{ github.repository }}/issues/${{ steps.determine_issue.outputs.final_issue_number }}/comments \
             | jq -c .
           )"
           
@@ -96,7 +171,7 @@ jobs:
         if: steps.check_comment.outputs.existing_comment_id == ''
         uses: peter-evans/create-or-update-comment@v4
         with:
-          issue-number: ${{ steps.extract_issue_number.outputs.issue_number }}
+          issue-number: ${{ steps.determine_issue.outputs.final_issue_number }}
           body: ${{ steps.check_comment.outputs.pr_list }}
 
       - name: Update existing comment
