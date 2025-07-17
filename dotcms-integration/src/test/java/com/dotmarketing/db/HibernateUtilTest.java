@@ -3,7 +3,7 @@ package com.dotmarketing.db;
 import static org.junit.Assert.assertEquals;
 
 import com.dotcms.datagen.SiteDataGen;
-import com.dotcms.repackage.net.sf.hibernate.Session;
+import org.hibernate.Session;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
