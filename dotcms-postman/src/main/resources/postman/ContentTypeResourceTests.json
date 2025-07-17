@@ -6741,7 +6741,7 @@
 													"    var jsonData = pm.response.json();",
 													"    pm.collectionVariables.set(\"contentTypeId\", jsonData.entity[0].id);",
 													"    pm.collectionVariables.set(\"contentTypeVariable\", jsonData.entity[0].variable);",
-													"    pm.collectionVariables.set(\"contentTypeField1Id\", jsonData.entity[0].fields[0].id);",
+													"    pm.collectionVariables.set(\"fields\", JSON.stringify(jsonData.entity[0].fields));",
 													"});"
 												],
 												"type": "text/javascript",
@@ -6841,11 +6841,21 @@
 										}
 									],
 									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "{{jwt}}",
+													"type": "string"
+												}
+											]
+										},
 										"method": "PUT",
 										"header": [],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n    \"description\": \"Test Content Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"Test Content Type\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n    \"icon\": \"inventory\",\n    \"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n            \"id\": \"{{contentTypeField1Id}}\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": true\n\t\t}\n\t]\n}",
+											"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n    \"description\": \"Test Content Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"Test Content Type\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n    \"icon\": \"inventory\",\n    \"fields\": {{fields}}\n}",
 											"options": {
 												"raw": {
 													"language": "json"
@@ -6896,11 +6906,21 @@
 										}
 									],
 									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "{{jwt}}",
+													"type": "string"
+												}
+											]
+										},
 										"method": "PUT",
 										"header": [],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n    \"description\": \"Test Content Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"Test Content Type\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n    \"icon\": \"inventory\",\n    \"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n            \"id\": \"{{contentTypeField1Id}}\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": true\n\t\t}\n\t]\n}",
+											"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n    \"description\": \"Test Content Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"Test Content Type\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n    \"icon\": \"inventory\",\n    \"fields\": {{fields}}\n}",
 											"options": {
 												"raw": {
 													"language": "json"
@@ -6941,11 +6961,21 @@
 										}
 									],
 									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "{{jwt}}",
+													"type": "string"
+												}
+											]
+										},
 										"method": "PUT",
 										"header": [],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n    \"description\": \"Test Content Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"Test Content Type\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n    \"icon\": \"inventory\",\n    \"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n            \"id\": \"{{contentTypeField1Id}}\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": true\n\t\t}\n\t]\n}",
+											"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n    \"description\": \"Test Content Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"Test Content Type\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n    \"icon\": \"inventory\",\n    \"fields\": {{fields}}\n}",
 											"options": {
 												"raw": {
 													"language": "json"
@@ -6996,11 +7026,21 @@
 										}
 									],
 									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "{{jwt}}",
+													"type": "string"
+												}
+											]
+										},
 										"method": "PUT",
 										"header": [],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n    \"id\": \"{{contentTypeId}}\",\n\t\"description\": \"Test Content Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"Test Content Type\",\n\t\"variable\": \"{{contentTypeVariable}}\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n    \"icon\": \"inventory\",\n    \"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n            \"id\": \"{{contentTypeField1Id}}\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": true\n\t\t}\n\t]\n}",
+											"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n    \"id\": \"{{contentTypeId}}\",\n\t\"description\": \"Test Content Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"Test Content Type\",\n\t\"variable\": \"{{contentTypeVariable}}\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n    \"icon\": \"inventory\",\n   \"fields\": {{fields}}\n}",
 											"options": {
 												"raw": {
 													"language": "json"
@@ -7051,11 +7091,21 @@
 										}
 									],
 									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "{{jwt}}",
+													"type": "string"
+												}
+											]
+										},
 										"method": "PUT",
 										"header": [],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n    \"id\": \"{{contentTypeId}}\",\n\t\"description\": \"Test Content Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"Test Content Type\",\n\t\"variable\": \"{{contentTypeVariable}}\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n    \"icon\": \"inventory\",\n    \"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n            \"id\": \"{{contentTypeField1Id}}\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": true\n\t\t}\n\t]\n}",
+											"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n    \"id\": \"{{contentTypeId}}\",\n\t\"description\": \"Test Content Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"Test Content Type\",\n\t\"variable\": \"{{contentTypeVariable}}\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n    \"icon\": \"inventory\",\n    \"fields\": {{fields}}\n}",
 											"options": {
 												"raw": {
 													"language": "json"
@@ -7106,11 +7156,21 @@
 										}
 									],
 									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "{{jwt}}",
+													"type": "string"
+												}
+											]
+										},
 										"method": "PUT",
 										"header": [],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n    \"id\": \"does-not-exist\",\n\t\"description\": \"Test Content Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"Test Content Type\",\n\t\"variable\": \"{{contentTypeVariable}}\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n    \"icon\": \"inventory\",\n    \"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n            \"id\": \"{{contentTypeField1Id}}\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": true\n\t\t}\n\t]\n}",
+											"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n    \"id\": \"does-not-exist\",\n\t\"description\": \"Test Content Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"Test Content Type\",\n\t\"variable\": \"{{contentTypeVariable}}\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n    \"icon\": \"inventory\",\n    \"fields\": {{fields}}\n}",
 											"options": {
 												"raw": {
 													"language": "json"
@@ -7161,11 +7221,21 @@
 										}
 									],
 									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "{{jwt}}",
+													"type": "string"
+												}
+											]
+										},
 										"method": "PUT",
 										"header": [],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n\t\"description\": \"Test Content Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"Test Content Type\",\n\t\"variable\": \"{{contentTypeVariable}}\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n    \"icon\": \"inventory\",\n    \"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n            \"id\": \"{{contentTypeField1Id}}\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": true\n\t\t}\n\t]\n}",
+											"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n\t\"description\": \"Test Content Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"Test Content Type\",\n\t\"variable\": \"{{contentTypeVariable}}\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n    \"icon\": \"inventory\",\n    \"fields\": {{fields}}\n}",
 											"options": {
 												"raw": {
 													"language": "json"
@@ -7216,11 +7286,21 @@
 										}
 									],
 									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "{{jwt}}",
+													"type": "string"
+												}
+											]
+										},
 										"method": "PUT",
 										"header": [],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n    \"id\": \"{{contentTypeId}}\",\n\t\"description\": \"Test Content Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"Test Content Type\",\n\t\"variable\": \"doesnotexist\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n    \"icon\": \"inventory\",\n    \"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n            \"id\": \"{{contentTypeField1Id}}\",\n            \"contentTypeId\": \"{{contentTypeId}}\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": true\n\t\t}\n\t]\n}",
+											"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n    \"id\": \"{{contentTypeId}}\",\n\t\"description\": \"Test Content Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"Test Content Type\",\n\t\"variable\": \"doesnotexist\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n    \"icon\": \"inventory\",\n    \"fields\": {{fields}}\n}",
 											"options": {
 												"raw": {
 													"language": "json"
@@ -7261,6 +7341,16 @@
 										}
 									],
 									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "{{jwt}}",
+													"type": "string"
+												}
+											]
+										},
 										"method": "PUT",
 										"header": [],
 										"body": {
@@ -7306,6 +7396,16 @@
 										}
 									],
 									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "{{jwt}}",
+													"type": "string"
+												}
+											]
+										},
 										"method": "DELETE",
 										"header": [],
 										"url": {
@@ -7326,7 +7426,79 @@
 									"response": []
 								}
 							],
-							"description": "On this set of tests we are going to test multiple updates permutations."
+							"description": "On this set of tests we are going to test multiple updates permutations.",
+							"auth": {
+								"type": "bearer",
+								"bearer": [
+									{
+										"key": "token",
+										"value": "{{jwt}}",
+										"type": "string"
+									}
+								]
+							},
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"type": "text/javascript",
+										"packages": {},
+										"exec": [
+											"if (!pm.environment.get('jwt')) {",
+											"    console.log(\"generating....\")",
+											"    const serverURL = pm.environment.get('serverURL'); // Get the server URL from the environment variable",
+											"    const apiUrl = `${serverURL}/api/v1/apitoken`; // Construct the full API URL",
+											"",
+											"    if (!pm.environment.get('jwt')) {",
+											"        const username = pm.environment.get(\"user\");",
+											"        const password = pm.environment.get(\"password\");",
+											"        const basicAuth = Buffer.from(`${username}:${password}`).toString('base64');",
+											"",
+											"        const requestOptions = {",
+											"            url: apiUrl,",
+											"            method: \"POST\",",
+											"            header: {",
+											"                \"accept\": \"*/*\",",
+											"                \"content-type\": \"application/json\",",
+											"                \"Authorization\": `Basic ${basicAuth}`",
+											"            },",
+											"            body: {",
+											"                mode: \"raw\",",
+											"                raw: JSON.stringify({",
+											"                    \"expirationSeconds\": 7200,",
+											"                    \"userId\": \"dotcms.org.1\",",
+											"                    \"network\": \"0.0.0.0/0\",",
+											"                    \"claims\": {\"label\": \"postman-tests\"}",
+											"                })",
+											"            }",
+											"        };",
+											"",
+											"        pm.sendRequest(requestOptions, function (err, response) {",
+											"            if (err) {",
+											"                console.log(err);",
+											"            } else {",
+											"                const jwt = response.json().entity.jwt;",
+											"                pm.environment.set('jwt', jwt);",
+											"                console.log(jwt);",
+											"            }",
+											"        });",
+											"    }",
+											"}",
+											""
+										]
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"packages": {},
+										"exec": [
+											""
+										]
+									}
+								}
+							]
 						}
 					],
 					"description": "In this folder we test different scenarios for handling the Content Type where we validate cases in order to not always rely on the Content Type ID."
