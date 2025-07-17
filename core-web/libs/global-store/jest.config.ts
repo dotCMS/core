@@ -1,28 +1,22 @@
 /* eslint-disable */
 export default {
-    displayName: 'edit-content',
+    displayName: 'global-store',
     preset: '../../jest.preset.js',
     setupFilesAfterEnv: ['<rootDir>/src/test-setup.ts'],
-    globals: {},
+    coverageDirectory: '../../coverage/libs/global-store',
     transform: {
         '^.+\\.(ts|mjs|js|html)$': [
             'jest-preset-angular',
             {
-                stringifyContentPathRegex: '\\.(html|svg)$',
-                tsconfig: '<rootDir>/tsconfig.spec.json'
+                tsconfig: '<rootDir>/tsconfig.spec.json',
+                stringifyContentPathRegex: '\\.(html|svg)$'
             }
         ]
     },
-    transformIgnorePatterns: [
-        'node_modules/(?!.*\\.mjs$|.*(y-protocols|lib0|y-prosemirror|@tiptap))'
-    ],
+    transformIgnorePatterns: ['node_modules/(?!.*\\.mjs$)'],
     snapshotSerializers: [
         'jest-preset-angular/build/serializers/no-ng-attributes',
         'jest-preset-angular/build/serializers/ng-snapshot',
         'jest-preset-angular/build/serializers/html-comment'
-    ],
-    coveragePathIgnorePatterns: [
-        'node_modules/',
-        'src/lib/custom-languages/.*-monaco-language.*\\.ts$'
     ]
 };
