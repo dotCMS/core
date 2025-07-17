@@ -1,6 +1,6 @@
 import { merge, Observable, Subject } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { filter, takeUntil } from 'rxjs/operators';
 
@@ -17,14 +17,15 @@ import { DotRouterService } from '../dot-router/dot-router.service';
  */
 @Injectable()
 export class DotMessageDisplayService {
+    private dotRouterService = inject(DotRouterService);
+
     private messages$: Observable<DotMessage>;
     private destroy$: Subject<boolean> = new Subject<boolean>();
     private localMessage$: Subject<DotMessage> = new Subject<DotMessage>();
 
-    constructor(
-        dotcmsEventsService: DotcmsEventsService,
-        private dotRouterService: DotRouterService
-    ) {
+    constructor() {
+        const dotcmsEventsService = inject(DotcmsEventsService);
+
         const webSocketMessage = (
             dotcmsEventsService.subscribeTo('MESSAGE') as Observable<DotMessage>
         ).pipe(
