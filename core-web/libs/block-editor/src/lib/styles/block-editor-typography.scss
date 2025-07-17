@@ -116,7 +116,6 @@ blockquote {
     padding: $spacing-2 0 $spacing-2 $spacing-4; // Top/bottom padding with left padding
     border-left: 3px solid $color-palette-gray-400;
     color: $color-palette-gray-700;
-    font-style: italic;
     background: transparent;
 }
 
@@ -154,6 +153,22 @@ img.dot-image {
     max-width: 50%;
     height: auto;
     border-radius: $spacing-0;
+
+    &:before {
+        content: "The image URL " attr(src) " seems to be broken, please double check the URL.";
+    }
+
+    &.dot-node-center {
+        margin: $spacing-4 auto;
+    }
+
+    &.dot-node-right {
+        margin-left: auto;
+    }
+
+    &.dot-node-left {
+        margin-right: auto;
+    }
 }
 
 // Image with links
