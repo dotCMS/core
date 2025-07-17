@@ -79,7 +79,7 @@
                     type="checkbox"
                     id="openInNewWindow"
                     [checked]="linkTargetAttribute() === '_blank'"
-                    (change)="toggleTarget($event)"
+                    (change)="updateLinkTargetAttribute($event)"
                     class="current-link-view__checkbox" />
                 <label for="openInNewWindow">Open link in new window</label>
             </div>

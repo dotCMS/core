@@ -5,12 +5,12 @@
     "rxjs": ">=7.0.0",
     "@angular/common": ">=17.0.0",
     "@angular/core": ">=17.0.0",
-    "@angular/router": ">=17.0.0",
-    "@dotcms/client": "latest",
-    "@dotcms/uve": "latest"
+    "@angular/router": ">=17.0.0"
   },
   "dependencies": {
-    "@tinymce/tinymce-angular": "8.0.0"
+    "@tinymce/tinymce-angular": "9.0.0",
+    "@dotcms/client": "latest",
+    "@dotcms/uve": "latest"
   },
   "devDependencies": {
     "@dotcms/types": "latest"

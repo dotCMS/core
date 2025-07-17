@@ -11,6 +11,8 @@ import { Provider, signal, Type } from '@angular/core';
 import { ControlContainer, FormGroupDirective, ReactiveFormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 
+import { DialogService } from 'primeng/dynamicdialog';
+
 import { BlockEditorModule, DotBlockEditorComponent } from '@dotcms/block-editor';
 import {
     DotHttpErrorManagerService,
@@ -82,7 +84,8 @@ const FIELD_TYPES_COMPONENTS: Record<FIELD_TYPES, Type<unknown> | DotEditFieldTe
     // We had to use unknown because components have different types.
     [FIELD_TYPES.TEXT]: DotEditContentTextFieldComponent,
     [FIELD_TYPES.RELATIONSHIP]: {
-        component: DotEditContentRelationshipFieldComponent
+        component: DotEditContentRelationshipFieldComponent,
+        providers: [mockProvider(DialogService)]
     },
     [FIELD_TYPES.FILE]: {
         component: DotEditContentFileFieldComponent,

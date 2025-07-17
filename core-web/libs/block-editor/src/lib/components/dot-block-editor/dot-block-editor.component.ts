@@ -56,7 +56,6 @@ import {
     DotTableCellExtension,
     DotTableExtension,
     DotTableHeaderExtension,
-    DragHandler,
     FREEZE_SCROLL_KEY,
     FreezeScroll,
     IndentExtension
@@ -102,6 +101,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
     public customBlocks = '';
     public content: Content = '';
     public contentletIdentifier: string;
+    public disabled = false;
     editor: Editor;
     subject = new Subject();
     freezeScroll = true;
@@ -122,6 +122,10 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
     private isAIPluginInstalled$: Observable<boolean>;
     readonly #dialogService = inject(DialogService);
     readonly #dotMessageService = inject(DotMessageService);
+
+    readonly dotDragHandleOptions = {
+        duration: 250
+    };
 
     constructor(
         private readonly viewContainerRef: ViewContainerRef,
@@ -162,6 +166,13 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
         this.setEditorContent(content);
     }
 
+    setDisabledState(isDisabled: boolean): void {
+        this.disabled = isDisabled;
+        if (this.editor) {
+            this.editor.setEditable(!isDisabled);
+        }
+    }
+
     async loadCustomBlocks(urls: string[]): Promise<PromiseSettledResult<AnyExtension>[]> {
         return Promise.allSettled(urls.map(async (url) => import(/* webpackIgnore: true */ url)));
     }
@@ -181,7 +192,8 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
                         ...this.getEditorMarks(),
                         ...this.getEditorNodes(),
                         ...extensions
-                    ]
+                    ],
+                    editable: true
                 });
 
                 this.dotMarketingConfigService.setProperty(
@@ -194,11 +206,19 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
     }
 
     ngOnDestroy() {
+        if (this.editor) {
+            this.editor.destroy();
+        }
+
         this.destroy$.next(true);
         this.destroy$.complete();
     }
 
     onBlockEditorChange(value: JSONContent) {
+        if (this.disabled) {
+            return;
+        }
+
         this.valueChange.emit(value);
         this.onChange?.(JSON.stringify(value));
         this.onTouched?.();
@@ -445,7 +465,6 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
             ActionsMenu(this.viewContainerRef, this.getParsedCustomBlocks(), {
                 shouldShowAIExtensions: isAIPluginInstalled
             }),
-            DragHandler(this.viewContainerRef),
             BubbleFormExtension(this.viewContainerRef),
             DotFloatingButton(this.#injector, this.viewContainerRef),
             DotTableCellExtension(this.viewContainerRef),
@@ -457,9 +476,32 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
             AssetUploader(this.#injector, this.viewContainerRef),
             IndentExtension,
             Placeholder.configure({
-                placeholder: 'Start writing or type / to choose a block',
                 emptyEditorClass: 'is-editor-empty',
-                emptyNodeClass: 'is-empty'
+                emptyNodeClass: 'is-empty',
+                placeholder: ({ node }) => {
+                    if (node.type.name === 'bulletList' || node.type.name === 'orderedList') {
+                        return this.#dotMessageService.get('block-editor.placeholder.list');
+                    }
+
+                    if (node.type.name === 'heading') {
+                        const level = node.attrs['level'] ?? '';
+
+                        return this.#dotMessageService.get(
+                            'block-editor.placeholder.heading',
+                            level
+                        );
+                    }
+
+                    if (node.type.name === 'codeBlock') {
+                        return this.#dotMessageService.get('block-editor.placeholder.code');
+                    }
+
+                    if (node.type.name === 'blockquote') {
+                        return this.#dotMessageService.get('block-editor.placeholder.quote');
+                    }
+
+                    return this.#dotMessageService.get('block-editor.placeholder.paragraph');
+                }
             }),
             DotCMSPlusButton.configure({
                 showOnlyWhenEditable: true,

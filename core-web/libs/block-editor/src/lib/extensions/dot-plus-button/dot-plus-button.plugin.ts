@@ -18,9 +18,11 @@ export enum PositionHeadings {
 const addPlusButton = (pos: number, node, editor: Editor) => {
     const button = document.createElement('button');
     button.classList.add('add-button');
+
     button.style.position = 'absolute';
     button.style.left = '-45px';
     button.style.top = '-2px';
+    button.style.zIndex = '10000';
     const div = document.createElement('div');
     div.style.position = 'relative';
     div.setAttribute('draggable', 'false');

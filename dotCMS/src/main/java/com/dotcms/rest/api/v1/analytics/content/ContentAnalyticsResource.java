@@ -4,7 +4,6 @@ import com.dotcms.analytics.content.ContentAnalyticsAPI;
 import com.dotcms.analytics.content.ContentAnalyticsQuery;
 import com.dotcms.analytics.content.ReportResponse;
 import com.dotcms.analytics.model.ResultSetItem;
-import com.dotcms.analytics.track.collectors.Collector;
 import com.dotcms.experiments.business.ConfigExperimentUtil;
 import com.dotcms.rest.AnonymousAccess;
 import com.dotcms.rest.InitDataObject;
@@ -63,8 +62,6 @@ import static com.dotmarketing.util.Constants.DONT_RESPECT_FRONT_END_ROLES;
 @Tag(name = "Content Analytics",
         description = "This REST Endpoint exposes information related to how dotCMS content is accessed and interacted with by users.")
 public class ContentAnalyticsResource {
-
-    private final Lazy<Boolean> ANALYTICS_EVENTS_REQUIRE_AUTHENTICATION = Lazy.of(() -> Config.getBooleanProperty("ANALYTICS_EVENTS_REQUIRE_AUTHENTICATION", true));
 
     private final WebResource webResource;
     private final ContentAnalyticsAPI contentAnalyticsAPI;
@@ -321,58 +318,45 @@ public class ContentAnalyticsResource {
     public Response fireUserCustomEvent(@Context final HttpServletRequest request,
                                                 @Context final HttpServletResponse response,
                                                 final Map<String, Serializable> userEventPayload) throws DotSecurityException {
-
         checkNotNull(userEventPayload, IllegalArgumentException.class, "The 'userEventPayload' JSON cannot be null");
-        if (userEventPayload.containsKey(Collector.EVENT_SOURCE)) {
-            throw new IllegalArgumentException("The 'event_source' field is reserved and cannot be used");
-        }
-
-        final User user = new WebResource.InitBuilder(this.webResource)
+        new WebResource.InitBuilder(this.webResource)
                 .requestAndResponse(request, response)
                 .requiredAnonAccess(AnonymousAccess.READ)
                 .rejectWhenNoUser(false)
-                .init().getUser();
-        if (ANALYTICS_EVENTS_REQUIRE_AUTHENTICATION.get()) {
-
-            if (user.isAnonymousUser()) {
-                throw new DotSecurityException("Anonymous user is not allowed to fire an event");
-            }
-        } 
-
+                .init();
         Logger.debug(this,  ()->"Creating an user custom event with the payload: " + userEventPayload);
 
         final AnalyticsEventsResult analyticsEventsResult =
-                ContentAnalyticsUtil.registerContentAnalyticsRestEvent(request, response, userEventPayload);
+                ContentAnalyticsUtil.registerContentAnalyticsRestEvent(request, userEventPayload);
 
         return Response.status(getResponseStatus(analyticsEventsResult)).entity(analyticsEventsResult).build();
     }
 
     @Operation(
-            operationId = "getSiteConfig",
-            summary = "Site Configuration",
-            description = "Returns the expected JS configuration object that must be used for " +
-                    "client-side JS code to send custom Events",
+            operationId = "generateSiteKey",
+            summary = "Generate Site Key",
+            description = "Generates and returns a Site Key that must be used by the client-side JS " +
+                    "code to send custom Content Analytics Events",
             tags = {"Content Analytics"},
             responses = {
-                    @ApiResponse(responseCode = "200", description = "The Site configuration was " +
+                    @ApiResponse(responseCode = "200", description = "The Site key was generated and " +
                             "returned successfully"),
                     @ApiResponse(responseCode = "400", description = "Bad Request"),
-                    @ApiResponse(responseCode = "403", description = "Forbidden"),
-                    @ApiResponse(responseCode = "415", description = "Unsupported Media Type"),
-                    @ApiResponse(responseCode = "404", description = "Site ID in path is not " +
-                            "present"),
+                    @ApiResponse(responseCode = "401", description = "Unauthorized"),
+                    @ApiResponse(responseCode = "404", description = "Site ID in path is not found or " +
+                            "incorrect path"),
+                    @ApiResponse(responseCode = "405", description = "Method Not Allowed"),
                     @ApiResponse(responseCode = "500", description = "Internal Server Error")
             }
     )
     @GET
-    @Path("/siteconfig/{siteId}")
+    @Path("/sitekey/generate/{siteId}")
     @JSONP
     @NoCache
-    @Consumes(MediaType.TEXT_PLAIN)
     @Produces({MediaType.TEXT_PLAIN, "text/plain"})
-    public Response getSiteConfig(@PathParam("siteId") final String siteId,
-                                  @Context final HttpServletRequest request,
-                                  @Context final HttpServletResponse response) throws DotDataException, DotSecurityException {
+    public Response generateSiteKey(@PathParam("siteId") final String siteId,
+                                    @Context final HttpServletRequest request,
+                                    @Context final HttpServletResponse response) throws DotDataException, DotSecurityException {
         final InitDataObject initDataObject = new WebResource.InitBuilder(this.webResource)
                 .requestAndResponse(request, response)
                 .requiredBackendUser(true)
@@ -381,7 +365,7 @@ public class ContentAnalyticsResource {
         final User user = initDataObject.getUser();
         final Host site = APILocator.getHostAPI().find(siteId, user, DONT_RESPECT_FRONT_END_ROLES);
         Objects.requireNonNull(site, String.format("Site with ID '%s' was not found", siteId));
-        return Response.ok().entity(ContentAnalyticsUtil.getSiteJSConfig(site)).build();
+        return Response.ok().entity(ContentAnalyticsUtil.generateInternalSiteKey(site.getIdentifier())).build();
     }
 
     private int getResponseStatus(final AnalyticsEventsResult analyticsEventsResult) {
