@@ -1,4 +1,4 @@
-import { Inject, Injectable, NgModule } from '@angular/core';
+import { Inject, Injectable, NgModule, inject } from '@angular/core';
 
 import { AppConfig } from './app.config';
 
@@ -19,7 +19,9 @@ declare class Notification {
 export class NotificationService {
     iconPath: string;
 
-    constructor(config: AppConfig) {
+    constructor() {
+        const config = inject(AppConfig);
+
         this.iconPath = config.iconPath;
     }
 
