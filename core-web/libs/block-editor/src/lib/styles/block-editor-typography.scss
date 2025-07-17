@@ -113,7 +113,7 @@ blockquote {
     font-size: $font-size-lmd;
     line-height: 1.5;
     margin: $spacing-4 0;
-    padding: $spacing-3 0 $spacing-3 $spacing-4; // Top/bottom padding with left padding
+    padding: $spacing-2 0 $spacing-2 $spacing-4; // Top/bottom padding with left padding
     border-left: 3px solid $color-palette-gray-400;
     color: $color-palette-gray-700;
     font-style: italic;
@@ -150,7 +150,8 @@ img.dot-image {
     display: block;
     margin: $spacing-4 0;
     padding: 0;
-    max-width: 100%;
+    max-height: 300px;
+    max-width: 50%;
     height: auto;
     border-radius: $spacing-0;
 }
