@@ -1,10 +1,6 @@
-# Migration Guide: @dotcms/react Alpha to Stable
+# Migration Guide: @dotcms/react Alpha to 1.0.X
 
-This guide helps you migrate from the alpha version (`0.0.1-alpha.54`) to the stable version (`latest`) of the `@dotcms/react` SDK.
-
-## Overview
-
-The stable version of `@dotcms/react` introduces significant architectural changes that provide better TypeScript support, improved performance, and a more intuitive API. The main changes focus on component naming, prop structure, and the introduction of new hooks and utilities.
+The 1.0.X version of `@dotcms/react` introduces significant architectural changes that provide better TypeScript support, improved performance, and a more intuitive API. This guide helps you migrate from the alpha version to the 1.0.X version (`latest`) of the `@dotcms/react` SDK.
 
 ## Breaking Changes
 
@@ -15,7 +11,7 @@ The stable version of `@dotcms/react` introduces significant architectural chang
 import { DotcmsLayout } from '@dotcms/react';
 ```
 
-**Stable Version:**
+**1.0.X Version:**
 ```jsx
 import { DotCMSLayoutBody } from '@dotcms/react';
 ```
@@ -40,14 +36,16 @@ import { DotCMSLayoutBody } from '@dotcms/react';
 />
 ```
 
-**Stable Version:**
+**1.0.X Version:**
 ```jsx
-<DotCMSLayoutBody 
-    page={pageAsset} 
-    components={componentsMap} 
+<DotCMSLayoutBody
+    page={pageAsset}
+    components={componentsMap}
     mode="development" // or "production"
 />
 ```
+
+🚨 The `pageAsset` is part of the object response from the method `client.page.get` in the `@dotcms/client` library. [Learn more](https://www.npmjs.com/package/@dotcms/client)
 
 ### 3. Hook Usage Changes
 
@@ -61,7 +59,7 @@ export function MyPage({ pageAsset, nav }) {
 }
 ```
 
-**Stable Version:**
+**1.0.X Version:**
 ```jsx
 import { useEditableDotCMSPage } from '@dotcms/react';
 
@@ -71,38 +69,13 @@ export function MyPage({ pageResponse, nav }) {
 }
 ```
 
-### 4. Client Configuration Changes
+🚨 The `pageResponse` is the object response from the method `client.page.get` in the `@dotcms/client` library. [Learn more](https://www.npmjs.com/package/@dotcms/client)
 
-**Alpha Version:**
-```jsx
-import { DotCmsClient } from '@dotcms/client';
-
-export const client = DotCmsClient.init({
-    dotcmsUrl: process.env.NEXT_PUBLIC_DOTCMS_HOST,
-    authToken: process.env.NEXT_PUBLIC_DOTCMS_AUTH_TOKEN,
-    siteId: "your-site-id",
-    requestOptions: {
-        cache: "no-cache",
-    }
-});
-```
-
-**Stable Version:**
-```jsx
-import { createDotCMSClient } from '@dotcms/client';
-
-export const dotCMSClient = createDotCMSClient({
-    dotcmsUrl: 'https://your-dotcms-instance.com',
-    authToken: 'your-auth-token',
-    siteId: 'your-site-id'
-});
-```
-
-## New Features in Stable Version
+## New Features in 1.0.X Version
 
 ### 1. DotCMSEditableText Component
 
-The stable version introduces a new component for inline text editing:
+The 1.0.X version introduces a new component for inline text editing:
 
 ```jsx
 import { DotCMSEditableText } from '@dotcms/react';
@@ -168,11 +141,11 @@ import { UVE_MODE } from '@dotcms/types';
 
 function MyEditButton() {
     const isEditMode = useDotCMSShowWhen(UVE_MODE.EDIT);
-    
+
     if (isEditMode) {
         return <button>Edit</button>;
     }
-    
+
     return null;
 }
 ```
@@ -223,9 +196,9 @@ Replace all instances of:
 
 **After:**
 ```jsx
-<DotCMSLayoutBody 
-    page={pageAsset} 
-    components={componentsMap} 
+<DotCMSLayoutBody
+    page={pageAsset}
+    components={componentsMap}
     mode="development"
 />
 ```
@@ -269,7 +242,7 @@ export const client = DotCmsClient.init({
 ```jsx
 import { createDotCMSClient } from '@dotcms/client';
 
-export const dotCMSClient = createDotCMSClient({
+export const client = createDotCMSClient({
     dotcmsUrl: process.env.NEXT_PUBLIC_DOTCMS_HOST,
     authToken: process.env.NEXT_PUBLIC_DOTCMS_AUTH_TOKEN,
     siteId: "your-site-id"
@@ -279,121 +252,25 @@ export const dotCMSClient = createDotCMSClient({
 ### Step 6: Update Page Data Fetching
 
 **Before:**
-```jsx
-const pageAsset = await client.page.get({
-    ...params,
-    depth: 3,
+```javascript
+const pageData = await client.page.get({
+    path: '/your-page-path',
+    language_id: 1, // underscore naming
+    personaId: 'optional-persona-id'
 });
 ```
 
-**After:**
-```jsx
-const pageResponse = await dotCMSClient.page.get({
-    ...params,
-    depth: 3,
+**After (1.0.X):**
+```javascript
+const { pageAsset } = await client.page.get('/your-page-path', {
+    languageId: 1, // camelCase naming
+    personaId: 'optional-persona-id'
 });
-```
-
-## Component-Specific Changes
-
-### Banner Component Migration
-
-**Alpha Version:**
-```jsx
-import { DotEditableText } from '@dotcms/react';
-
-function Banner(contentlet) {
-    return (
-        <h2>
-            <DotEditableText
-                contentlet={contentlet}
-                fieldName="title"
-            />
-        </h2>
-    );
-}
-```
-
-**Stable Version:**
-```jsx
-import { DotCMSEditableText } from '@dotcms/react';
-
-function Banner(contentlet) {
-    return (
-        <h2>
-            <DotCMSEditableText
-                contentlet={contentlet}
-                fieldName="title"
-                mode="plain"
-                format="text"
-            />
-        </h2>
-    );
-}
-```
-
-### Block Editor Component Migration
-
-**Alpha Version:**
-```jsx
-import { BlockEditorRenderer } from '@dotcms/react';
-
-function Blog({ blogContent, ...contentlet }) {
-    return (
-        <BlockEditorRenderer
-            editable={true}
-            contentlet={contentlet}
-            blocks={blogContent}
-            fieldName="blogContent"
-            customRenderers={{
-                Activity: ActivityBlock,
-                paragraph: CustomParagraph,
-            }}
-        />
-    );
-}
-```
-
-**Stable Version:**
-```jsx
-import { DotCMSBlockEditorRenderer } from '@dotcms/react';
-
-function Blog({ blogContent, ...contentlet }) {
-    return (
-        <DotCMSBlockEditorRenderer
-            blocks={blogContent}
-            customRenderers={{
-                Activity: ActivityBlock,
-                paragraph: CustomParagraph,
-            }}
-        />
-    );
-}
-```
-
-## Environment Variables
-
-Update your `.env.local` file:
-
-**Alpha Version:**
-```env
-NEXT_PUBLIC_DOTCMS_AUTH_TOKEN=YOUR_API_TOKEN
-NEXT_PUBLIC_DOTCMS_HOST=http://localhost:8080
-NEXT_PUBLIC_EXPERIMENTS_API_KEY=analytic-api-key-from-dotcms-portlet
-NEXT_PUBLIC_EXPERIMENTS_DEBUG=true
-```
-
-**Stable Version:**
-```env
-NEXT_PUBLIC_DOTCMS_AUTH_TOKEN=YOUR_API_TOKEN
-NEXT_PUBLIC_DOTCMS_HOST=http://localhost:8080/
-NEXT_PUBLIC_DOTCMS_SITE_ID=your-site-id
-NEXT_PUBLIC_DOTCMS_MODE='production'
 ```
 
 ## TypeScript Support
 
-The stable version provides better TypeScript support with improved type definitions. Make sure to import types from `@dotcms/types`:
+The 1.0.X version provides better TypeScript support with improved type definitions. Make sure to import types from `@dotcms/types`:
 
 ```typescript
 import type { DotCMSPageResponse, DotCMSPageAsset } from '@dotcms/types';
@@ -402,21 +279,13 @@ import { UVE_MODE } from '@dotcms/types';
 
 ## Common Migration Issues
 
-### 1. Component Not Rendering
-
-**Issue:** Components not rendering after migration.
-
-**Solution:** Ensure you're using the correct prop names:
-- `pageContext` → `page`
-- `config` → `mode`
-
-### 2. Hook Not Working
+### 1. Hook Not Working
 
 **Issue:** Page updates not working in edit mode.
 
 **Solution:** Use `useEditableDotCMSPage` instead of the custom `usePageAsset` hook.
 
-### 3. Types Not Found
+### 2. Types Not Found
 
 **Issue:** TypeScript errors about missing types.
 
