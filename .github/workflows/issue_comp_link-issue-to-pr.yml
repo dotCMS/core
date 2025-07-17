@@ -233,9 +233,9 @@ jobs:
           if ! echo "$current_body" | grep -q "#$issue_number"; then
             # Add issue reference to PR body
             if [[ -n "$current_body" && "$current_body" != "null" ]]; then
-              new_body=$(printf "%s\n\n---\n*This PR addresses issue #%s*" "$current_body" "$issue_number")
+              new_body=$(printf "%s\n\n---\n*This PR resolves issue #%s*" "$current_body" "$issue_number")
             else
-              new_body="*This PR addresses issue #$issue_number*"
+              new_body="*This PR resolves issue #$issue_number*"
             fi
             
             # Update PR body
