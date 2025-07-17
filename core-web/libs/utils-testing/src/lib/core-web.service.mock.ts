@@ -19,7 +19,6 @@ import { ResponseView, DotCMSResponse, DotRequestOptionsArgs } from '@dotcms/dot
 export class CoreWebServiceMock {
     private _http = inject(HttpClient);
 
-
     request<T = unknown>(
         options: DotRequestOptionsArgs
     ): Observable<HttpResponse<DotCMSResponse<T>> | DotCMSResponse<T>> {
