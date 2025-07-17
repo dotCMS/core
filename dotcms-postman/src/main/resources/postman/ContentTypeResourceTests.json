@@ -6750,6 +6750,16 @@
 										}
 									],
 									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "{{jwt}}",
+													"type": "string"
+												}
+											]
+										},
 										"method": "POST",
 										"header": [
 											{
@@ -6795,6 +6805,16 @@
 										}
 									],
 									"request": {
+										"auth": {
+											"type": "bearer",
+											"bearer": [
+												{
+													"key": "token",
+													"value": "{{jwt}}",
+													"type": "string"
+												}
+											]
+										},
 										"method": "GET",
 										"header": [],
 										"url": {
@@ -7422,6 +7442,14 @@
 											]
 										},
 										"description": "Cleanup"
+									},
+									"response": []
+								},
+								{
+									"name": "New Request",
+									"request": {
+										"method": "GET",
+										"header": []
 									},
 									"response": []
 								}
