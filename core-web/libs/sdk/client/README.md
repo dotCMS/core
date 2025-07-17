@@ -21,7 +21,6 @@ The `@dotcms/client` is a powerful JavaScript/TypeScript SDK designed to simplif
 
 ## Table of Contents
 
--   [Migration from Alpha Version](./MIGRATION.md)
 -   [Getting Started](#getting-started)
     -   [Prerequisites & Setup](#prerequisites--setup)
     -   [Installation](#installation)
@@ -417,7 +416,7 @@ Only use `content.getCollection()` or `navigation.get()` if you have advanced ne
 The SDK follows a client-builder pattern with three main APIs:
 
 - **Page API** (`client.page.get()`) - Fetches complete page content with layout and containers
-- **Content API** (`client.content.getCollection()`) - Builder pattern for querying content collections  
+- **Content API** (`client.content.getCollection()`) - Builder pattern for querying content collections
 - **Navigation API** (`client.navigation.get()`) - Fetches site navigation structure
 
 All APIs support:
