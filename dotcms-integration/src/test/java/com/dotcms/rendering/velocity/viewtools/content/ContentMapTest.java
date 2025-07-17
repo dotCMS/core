@@ -3,13 +3,7 @@ package com.dotcms.rendering.velocity.viewtools.content;
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.FieldAPI;
-import com.dotcms.contenttype.model.field.DateField;
-import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.contenttype.model.field.FieldBuilder;
-import com.dotcms.contenttype.model.field.FieldVariable;
-import com.dotcms.contenttype.model.field.ImmutableFieldVariable;
-import com.dotcms.contenttype.model.field.RelationshipField;
-import com.dotcms.contenttype.model.field.TextField;
+import com.dotcms.contenttype.model.field.*;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.SimpleContentType;
@@ -392,6 +386,74 @@ public class ContentMapTest extends IntegrationTestBase {
             throws DotSecurityException, DotDataException {
 
         final Field field = FieldBuilder.builder(DateField.class).name(fieldName)
+                .contentTypeId(contentTypeId).build();
+
+        return fieldAPI.save(field, user);
+    }
+
+    /**
+     * Method to test: {@link ContentMap#get(String)} applied on a key-value field
+     * Given Scenario: Creates a key-value field with keys containing non-word characters (spaces, hyphens, dots, etc.)
+     * ExpectedResult: The ContentMap should preserve the original keys with non-word characters
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void testGetKeyValueFieldWithNonWordCharacters() throws DotDataException, DotSecurityException {
+        ContentType contentType = null;
+        try {
+            // Create content type
+            contentType = createContentType("testContentTypeWithKeyValueField");
+
+            // Create key-value field
+            final Field keyValueField = createKeyValueField("testKeyValueField", contentType.id());
+
+            // Create content with key-value data containing non-word characters
+            final String keyValueData = "{\"my-key\": \"value1\", \"my key.with spaces\": \"value2\", \"my@special#key\": \"value3\"}";
+            final ContentletDataGen contentletDataGen = new ContentletDataGen(contentType.id());
+            final Contentlet contentlet = contentletDataGen
+                    .setProperty("testKeyValueField", keyValueData).next();
+
+            // Test ContentMap behavior
+            final Context velocityContext = mock(Context.class);
+            final ContentMap contentMap = new ContentMap(contentlet, userAPI.getAnonymousUser(),
+                    PageMode.LIVE, defaultHost, velocityContext);
+
+            // Get the key-value field result
+            final Map<String, Object> result = (Map<String, Object>) contentMap.get("testKeyValueField");
+            assertNotNull(result);
+
+            // Verify that keys with non-word characters are preserved
+            assertEquals("value1", result.get("my-key"));
+            assertEquals("value2", result.get("my key.with spaces"));
+            assertEquals("value3", result.get("my@special#key"));
+
+            // Verify that the keys set contains the original keys
+            final java.util.Set<String> keys = (java.util.Set<String>) result.get("keys");
+            assertNotNull(keys);
+            assertEquals(true, keys.contains("my-key"));
+            assertEquals(true, keys.contains("my key.with spaces"));
+            assertEquals(true, keys.contains("my@special#key"));
+
+        } finally {
+            if (contentType != null) {
+                contentTypeAPI.delete(contentType);
+            }
+        }
+    }
+
+    /**
+     * Helper method to create a key-value field
+     * @param fieldName
+     * @param contentTypeId
+     * @return
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    private Field createKeyValueField(final String fieldName, final String contentTypeId)
+            throws DotSecurityException, DotDataException {
+
+        final Field field = FieldBuilder.builder(KeyValueField.class).name(fieldName)
                 .contentTypeId(contentTypeId).build();
 
         return fieldAPI.save(field, user);
