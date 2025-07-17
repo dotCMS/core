@@ -186,7 +186,7 @@ jobs:
               fi
               
               updated_list=$(echo -e "$pr_list\n$new_pr_line" | sort -u)
-              new_body="## PRs linked to this issue\n\n$updated_list"
+              new_body=$(printf "## PRs linked to this issue\n\n%s" "$updated_list")
               echo "pr_list=$new_body" >> "$GITHUB_OUTPUT"
             fi
           else
@@ -196,7 +196,7 @@ jobs:
               new_pr_line="$new_pr_line ✅"
             fi
             
-            new_body="## PRs linked to this issue\n\n$new_pr_line"
+            new_body=$(printf "## PRs linked to this issue\n\n%s" "$new_pr_line")
             echo "pr_list=$new_body" >> "$GITHUB_OUTPUT"
           fi
 
@@ -233,7 +233,7 @@ jobs:
           if ! echo "$current_body" | grep -q "#$issue_number"; then
             # Add issue reference to PR body
             if [[ -n "$current_body" && "$current_body" != "null" ]]; then
-              new_body="$current_body\n\n---\n*This PR addresses issue #$issue_number*"
+              new_body=$(printf "%s\n\n---\n*This PR addresses issue #%s*" "$current_body" "$issue_number")
             else
               new_body="*This PR addresses issue #$issue_number*"
             fi
