@@ -109,17 +109,32 @@ public class HibernateUtil {
 
     public static String getTableName(Class c) {
         try {
-            // In Hibernate 5.6, the API has changed significantly
-            // For now, use a simple naming convention as fallback
-            // This can be enhanced later with proper Hibernate 5.6 APIs
+            // Ensure SessionFactory is initialized
+            if (sessionFactory == null) {
+                buildSessionFactory();
+            }
+            
+            // Use Hibernate 5.6 metadata API to get actual table name
+            EntityPersister persister = ((SessionFactoryImpl) sessionFactory).getMetamodel().entityPersister(c.getName());
+            if (persister instanceof AbstractEntityPersister) {
+                return ((AbstractEntityPersister) persister).getTableName();
+            }
+            
+            // Fallback to naming convention if persister not found
+            Logger.debug(HibernateUtil.class, "No entity persister found for class: " + c.getName() + ", using naming convention");
             String className = c.getSimpleName();
             if (className.endsWith("HBM")) {
                 className = className.substring(0, className.length() - 3);
             }
             return className.toLowerCase();
         } catch (Exception e) {
-            Logger.debug(HibernateUtil.class, "Could not get table name for class: " + c.getName(), e);
-            return c.getSimpleName().toLowerCase();
+            Logger.debug(HibernateUtil.class, "Could not get table name for class: " + c.getName() + ", falling back to naming convention", e);
+            // Fallback to naming convention
+            String className = c.getSimpleName();
+            if (className.endsWith("HBM")) {
+                className = className.substring(0, className.length() - 3);
+            }
+            return className.toLowerCase();
         }
     }
 
