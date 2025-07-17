@@ -1,6 +1,6 @@
 import { Observable, Subscription, Subject } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { switchMap } from 'rxjs/operators';
 
@@ -11,13 +11,11 @@ import { DotEventMessage } from './util/models/dot-event-message';
 
 @Injectable()
 export class DotcmsEventsService {
+    private dotEventsSocket = inject(DotEventsSocket);
+    private loggerService = inject(LoggerService);
+
     private subjects = [];
     private messagesSub: Subscription;
-
-    constructor(
-        private dotEventsSocket: DotEventsSocket,
-        private loggerService: LoggerService
-    ) {}
 
     /**
      * Close the socket
