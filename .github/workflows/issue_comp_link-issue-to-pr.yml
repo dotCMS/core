@@ -177,7 +177,11 @@ jobs:
             # Check if current PR is already in the list
             if echo "$pr_list" | grep -q "$pr_url"; then
               echo "PR already exists in comment, using existing list"
-              echo "pr_list=$existing_body" >> "$GITHUB_OUTPUT"
+              {
+                echo "pr_list<<EOF"
+                echo "$existing_body"
+                echo "EOF"
+              } >> "$GITHUB_OUTPUT"
             else
               # Add new PR to the list
               new_pr_line="- [${{ inputs.pr_title }}](${{ inputs.pr_url }}) by @${{ inputs.pr_author }}"
@@ -187,7 +191,11 @@ jobs:
               
               updated_list=$(echo -e "$pr_list\n$new_pr_line" | sort -u)
               new_body=$(printf "## PRs linked to this issue\n\n%s" "$updated_list")
-              echo "pr_list=$new_body" >> "$GITHUB_OUTPUT"
+              {
+                echo "pr_list<<EOF"
+                echo "$new_body"
+                echo "EOF"
+              } >> "$GITHUB_OUTPUT"
             fi
           else
             # Create new PR list
@@ -197,7 +205,11 @@ jobs:
             fi
             
             new_body=$(printf "## PRs linked to this issue\n\n%s" "$new_pr_line")
-            echo "pr_list=$new_body" >> "$GITHUB_OUTPUT"
+            {
+              echo "pr_list<<EOF"
+              echo "$new_body"
+              echo "EOF"
+            } >> "$GITHUB_OUTPUT"
           fi
 
       - name: Create new comment
