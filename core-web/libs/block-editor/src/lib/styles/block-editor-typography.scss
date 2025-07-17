@@ -2,77 +2,77 @@
 
 // Text Blocks
 p {
-    font-size: $font-size-lmd; // 16px
-    line-height: 1.5; // 1.5
-    margin: 0 0 $spacing-1 0; // 0 0 8px 0
+    font-size: $font-size-lmd;
+    line-height: 1.5;
+    margin: 0 0 $spacing-1 0;
     padding: 4px 0; // Minimal padding for better click targets
     color: $black;
     font-weight: 400;
 }
 
 p.is-empty {
-    margin: 0 0 $spacing-1 0; // 0 0 8px 0
+    margin: 0 0 $spacing-1 0;
     padding: 4px 0;
     min-height: 24px; // Prevents collapse
 }
 
 // Ensure empty paragraphs have consistent spacing
 p:empty {
-    margin: 0 0 $spacing-1 0; // 0 0 8px 0
+    margin: 0 0 $spacing-1 0;
     padding: 4px 0;
     min-height: 24px; // Prevents collapse and maintains rhythm
 }
 
 // Headings
 h1 {
-    font-size: $font-size-xxxxl; // 40px
+    font-size: $font-size-xxxxl;
     line-height: 1.2;
-    margin: $spacing-5 0 $spacing-4 0; // 32px 0 24px 0
+    margin: $spacing-5 0 $spacing-4 0;
     padding: 0;
     font-weight: 700;
     color: $black;
 }
 
 h2 {
-    font-size: $font-size-xxxl; // 32px
+    font-size: $font-size-xxxl;
     line-height: 1.2;
-    margin: $spacing-4 0 $spacing-4 0; // 24px 0 24px 0
+    margin: $spacing-4 0 $spacing-4 0;
     padding: 0;
     font-weight: 700;
     color: $black;
 }
 
 h3 {
-    font-size: $font-size-xxl; // 28px
+    font-size: $font-size-xxl;
     line-height: 1.3;
-    margin: $spacing-4 0 $spacing-4 0; // 24px 0 24px 0
+    margin: $spacing-4 0 $spacing-4 0;
     padding: 0;
     font-weight: 600;
     color: $black;
 }
 
 h4 {
-    font-size: $font-size-xl; // 24px
+    font-size: $font-size-xl;
     line-height: 1.3;
-    margin: $spacing-4 0 $spacing-4 0; // 24px 0 24px 0
+    margin: $spacing-4 0 $spacing-4 0;
     padding: 0;
     font-weight: 600;
     color: $black;
 }
 
 h5 {
-    font-size: $font-size-lg; // 20px
+    font-size: $font-size-lg;
     line-height: 1.4;
-    margin: $spacing-4 0 $spacing-4 0; // 24px 0 24px 0
+    margin: $spacing-4 0 $spacing-4 0;
     padding: 0;
     font-weight: 600;
     color: $black;
 }
 
 h6 {
-    font-size: $font-size-md; // 18px
+    font-size: $font-size-md;
     line-height: 1.4;
-    margin: $spacing-4 0 $spacing-4 0; // 24px 0 24px 0
+    margin: $spacing-4 0 $spacing-4 0;
     padding: 0;
     font-weight: 600;
     color: $black;
@@ -81,9 +81,9 @@ h6 {
 // List Blocks
 ul,
 ol {
-    font-size: $font-size-lmd; // 16px
-    line-height: 1.5; // 1.5
-    margin: $spacing-1 0 $spacing-4 0; // 8px 0 24px 0
+    font-size: $font-size-lmd;
+    line-height: 1.5;
+    margin: $spacing-1 0 $spacing-4 0;
     padding: 0;
     padding-left: 24px; // Consistent indentation
 }
@@ -110,9 +110,9 @@ ol ul {
 
 // Content Blocks
 blockquote {
-    font-size: $font-size-lmd; // 16px
-    line-height: 1.5; // 1.5
-    margin: $spacing-4 0; // 24px 0
+    font-size: $font-size-lmd;
+    line-height: 1.5;
+    margin: $spacing-4 0;
     padding: 16px 0 16px 24px; // Top/bottom padding with left padding
     border-left: 3px solid $color-palette-gray-400;
     color: $color-palette-gray-700;
@@ -128,7 +128,7 @@ blockquote p {
 pre {
     font-size: 14px; // Slightly smaller for code readability
     line-height: 1.4;
-    margin: $spacing-4 0; // 24px 0
+    margin: $spacing-4 0;
     padding: 16px 20px; // Consistent padding
     background: $color-palette-gray-900;
     color: $white;
@@ -148,7 +148,7 @@ pre code {
 // Media Blocks
 img.dot-image {
     display: block;
-    margin: $spacing-4 0; // 24px 0
+    margin: $spacing-4 0;
     padding: 0;
     max-width: 100%;
     height: auto;
@@ -158,7 +158,7 @@ img.dot-image {
 // Image with links
 a:has(img.dot-image) {
     display: block;
-    margin: $spacing-4 0; // 24px 0
+    margin: $spacing-4 0;
     padding: 0;
     max-width: 100%;
 }
