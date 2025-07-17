@@ -327,15 +327,15 @@ public class LoginServiceAPIFactory implements Serializable {
                 if (Config.getBooleanProperty("show.lts.eol.message", false)) {
                     messageLTSVersionEOL(logInUser);
                 }
-                messageTokensToExpire(logInUser);
+
                 // Run token expiry check asynchronously to avoid blocking login
-                /**DotConcurrentFactory.getInstance().getSubmitter().submit(() -> {
+                DotConcurrentFactory.getInstance().getSubmitter().submit(() -> {
                     try {
                         messageTokensToExpire(logInUser);
                     } catch (LanguageException e) {
                         Logger.error(this, "Error getting localized token expiry message: " + e.getMessage(), e);
                     }
-                });**/
+                });
             }
 
             if (authResult != Authenticator.SUCCESS) {
