@@ -1,23 +1,10 @@
-# Migration Guide: Alpha to Stable Version
+# Migration Guide: Alpha to 1.0.X
 
-This guide will help you migrate from the alpha version of `@dotcms/client` to the stable release. The stable version introduces several breaking changes and improvements for better developer experience, type safety, and performance.
-
-## Migration Overview
-
-If you're upgrading from the alpha version of `@dotcms/client`, this guide will help you migrate to the stable release. The stable version introduces several breaking changes and improvements for better developer experience, type safety, and performance.
-
-### What's New in the Stable Version
-
--   **Improved API Design**: More intuitive method names and consistent patterns
--   **Enhanced Type Safety**: Better TypeScript support with comprehensive type definitions
--   **Simplified Content Querying**: Streamlined builder pattern for content collections
--   **Better Error Handling**: More descriptive error messages and handling
--   **Performance Improvements**: Optimized requests and response handling
--   **GraphQL Integration**: Enhanced GraphQL support for flexible data fetching
+If you're upgrading from the `alpha.xx` version of `@dotcms/client`, this guide will help you migrate to the 1.0.X release. The 1.0.X version introduces several breaking changes and improvements for better developer experience, type safety, and performance.
 
 ### Breaking Changes Summary
 
-| Change | Alpha Version | Stable Version |
+| Change | Alpha Version | 1.0.X Version |
 |--------|---------------|----------------|
 | Client Initialization | `DotCmsClient.init()` | `createDotCMSClient()` |
 | Import Statement | `import { DotCmsClient }` | `import { createDotCMSClient }` |
@@ -30,13 +17,13 @@ If you're upgrading from the alpha version of `@dotcms/client`, this guide will 
 
 ### 1. Update Dependencies
 
-First, update your package.json to use the latest stable version:
+First, update your package.json to use the latest 1.0.X version:
 
 ```bash
 # Remove the alpha version
 npm uninstall @dotcms/client
 
-# Install the stable version with types
+# Install the 1.0.X version with types
 npm install @dotcms/client@latest @dotcms/types@latest
 ```
 
@@ -45,15 +32,11 @@ npm install @dotcms/client@latest @dotcms/types@latest
 **Before (Alpha):**
 ```javascript
 import { DotCmsClient } from '@dotcms/client';
-// or
-const { DotCmsClient } = require('@dotcms/client');
 ```
 
-**After (Stable):**
+**After (1.0.X):**
 ```javascript
 import { createDotCMSClient } from '@dotcms/client';
-// or
-const { createDotCMSClient } = require('@dotcms/client');
 ```
 
 ### 3. Update Client Initialization
@@ -67,7 +50,7 @@ const client = DotCmsClient.init({
 });
 ```
 
-**After (Stable):**
+**After (1.0.X):**
 ```javascript
 const client = createDotCMSClient({
     dotcmsUrl: 'https://your-dotcms-instance.com',
@@ -87,7 +70,7 @@ const navData = await client.nav.get({
 });
 ```
 
-**After (Stable):**
+**After (1.0.X):**
 ```javascript
 const navData = await client.navigation.get('/', {
     depth: 2,
@@ -108,7 +91,7 @@ const collectionResponse = await client.content
 console.log(collectionResponse.contentlets);
 ```
 
-**After (Stable):**
+**After (1.0.X):**
 ```javascript
 const blogs = await client.content
     .getCollection('Blog')
@@ -129,13 +112,15 @@ const pageData = await client.page.get({
 });
 ```
 
-**After (Stable):**
+**After (1.0.X):**
 ```javascript
 const { pageAsset } = await client.page.get('/your-page-path', {
     languageId: 1, // camelCase naming
     personaId: 'optional-persona-id'
 });
 ```
+
+🚨 Also notice that the url path is now the first param of the `get` method and is not longer in the object.
 
 ### 7. Update Response Handling
 
@@ -146,7 +131,7 @@ const pageData = await client.page.get({ path: '/about-us' });
 console.log(pageData.page.title);
 ```
 
-**After (Stable):**
+**After (1.0.X):**
 ```javascript
 const { pageAsset } = await client.page.get('/about-us');
 // Destructured response
@@ -163,7 +148,7 @@ const complexQueryResponse = await client.content
     .fetch();
 ```
 
-**After (Stable):**
+**After (1.0.X):**
 ```javascript
 const blogs = await client.content
     .getCollection('Blog')
@@ -180,36 +165,11 @@ const sortedResponse = await client.content
     .fetch();
 ```
 
-**After (Stable):**
+**After (1.0.X):**
 ```javascript
 const blogs = await client.content
     .getCollection('Blog')
     .sortBy([{ field: 'title', direction: 'asc' }]); // 'order' changed to 'direction'
-```
-
-### 10. Update Error Handling
-
-**Before (Alpha):**
-```javascript
-try {
-    const pageData = await client.page.get({
-        path: '/your-page-path',
-        languageId: 1
-    });
-} catch (error) {
-    console.error('Failed to fetch page data:', error);
-}
-```
-
-**After (Stable):**
-```javascript
-try {
-    const { pageAsset } = await client.page.get('/your-page-path', {
-        languageId: 1
-    });
-} catch (error) {
-    console.error('Failed to fetch page data:', error);
-}
 ```
 
 ## Troubleshooting
@@ -326,7 +286,6 @@ Use this checklist to ensure you've completed all necessary migration steps:
 - [ ] **Parameter Names**: Update parameter names from snake_case to camelCase
 - [ ] **Response Handling**: Update response destructuring (especially for page requests)
 - [ ] **Sorting**: Update sort parameter from `order` to `direction`
-- [ ] **Error Handling**: Update error handling if needed
 - [ ] **TypeScript**: Install and configure TypeScript types if using TypeScript
 - [ ] **Testing**: Test all API calls to ensure they work correctly
 - [ ] **Documentation**: Update any internal documentation or comments
@@ -344,7 +303,7 @@ After completing the migration, test these key areas:
 
 ### Performance Considerations
 
-The stable version includes several performance improvements:
+The 1.0.X version includes several performance improvements:
 
 - **Optimized Requests**: Reduced request overhead and improved caching
 - **Better Error Handling**: More efficient error processing
@@ -355,10 +314,9 @@ The stable version includes several performance improvements:
 
 If you encounter issues during migration that aren't covered here:
 
-1. **Check the Documentation**: Review the [README.md](./README.md) for updated API documentation
+1. **Check the Full Documentation**: Review the [README.md](./README.md) for updated API documentation
 2. **GitHub Issues**: [Open an issue](https://github.com/dotCMS/core/issues/new/choose) on GitHub with your specific problem
 3. **Community Support**: Visit our [community forum](https://community.dotcms.com/) for community support
-4. **Stack Overflow**: Use the tag `dotcms-client` when posting questions
 
 ### Additional Resources
 
@@ -369,4 +327,4 @@ If you encounter issues during migration that aren't covered here:
 
 ---
 
-**Note**: This migration guide is specific to upgrading from the alpha version to the stable release. For other version migrations, please refer to the appropriate documentation or release notes.
+**Note**: This migration guide is specific to upgrading from the alpha version to the 1.0.X release. For other version migrations, please refer to the appropriate documentation or release notes.
