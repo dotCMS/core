@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 
 import { LoginService } from '@dotcms/dotcms-js';
 
@@ -11,5 +11,5 @@ import { LoginService } from '@dotcms/dotcms-js';
         '<cw-rule-engine-container class="rules__engine-container" *ngIf="this.loginService.auth"></cw-rule-engine-container>'
 })
 export class AppRulesComponent {
-    constructor(public loginService: LoginService) {}
+    loginService = inject(LoginService);
 }
