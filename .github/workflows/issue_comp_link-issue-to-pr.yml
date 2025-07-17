@@ -27,16 +27,11 @@ on:
         description: 'PR merged status'
         required: true
         type: string
-    secrets:
-      GITHUB_TOKEN:
-        description: 'GitHub token'
-        required: true
-
 jobs:
   link-issue:
     runs-on: ubuntu-latest
     env:
-      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GH_TOKEN: ${{ github.token }}
     
     steps:
       - name: Checkout code

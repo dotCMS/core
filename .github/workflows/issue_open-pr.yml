@@ -15,5 +15,3 @@ jobs:
       pr_body: ${{ github.event.pull_request.body }}
       pr_author: ${{ github.event.pull_request.user.login }}
       pr_merged: ${{ github.event.pull_request.merged }}
-    secrets:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
