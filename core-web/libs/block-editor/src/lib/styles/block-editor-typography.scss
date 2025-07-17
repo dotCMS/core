@@ -5,22 +5,22 @@ p {
     font-size: $font-size-lmd;
     line-height: 1.5;
     margin: 0 0 $spacing-1 0;
-    padding: 4px 0; // Minimal padding for better click targets
+    padding: $spacing-0 0; // Minimal padding for better click targets
     color: $black;
     font-weight: 400;
 }
 
 p.is-empty {
     margin: 0 0 $spacing-1 0;
-    padding: 4px 0;
-    min-height: 24px; // Prevents collapse
+    padding: $spacing-0 0;
+    min-height: $spacing-4; // Prevents collapse
 }
 
 // Ensure empty paragraphs have consistent spacing
 p:empty {
     margin: 0 0 $spacing-1 0;
-    padding: 4px 0;
-    min-height: 24px; // Prevents collapse and maintains rhythm
+    padding: $spacing-0 0;
+    min-height: $spacing-4; // Prevents collapse and maintains rhythm
 }
 
 // Headings
@@ -70,7 +70,7 @@ h5 {
 }
 
 h6 {
-    font-size: $font-size-md;
+    font-size: $font-size-slg;
     line-height: 1.4;
     margin: $spacing-4 0 $spacing-4 0;
     padding: 0;
@@ -85,12 +85,12 @@ ol {
     line-height: 1.5;
     margin: $spacing-1 0 $spacing-4 0;
     padding: 0;
-    padding-left: 24px; // Consistent indentation
+    padding-left: $spacing-4; // Consistent indentation
 }
 
 li {
-    margin: 0 0 4px 0; // Tight spacing between items
-    padding: 2px 0; // Minimal padding for click targets
+    margin: 0 0 $spacing-0 0; // Tight spacing between items
+    padding: $spacing-xxs 0; // Minimal padding for click targets
     line-height: 1.5;
 }
 
@@ -104,8 +104,8 @@ ul ul,
 ol ol,
 ul ol,
 ol ul {
-    margin: 4px 0 0 0; // Minimal top margin for nested
-    padding-left: 24px;
+    margin: $spacing-0 0 0 0; // Minimal top margin for nested
+    padding-left: $spacing-4;
 }
 
 // Content Blocks
@@ -113,7 +113,7 @@ blockquote {
     font-size: $font-size-lmd;
     line-height: 1.5;
     margin: $spacing-4 0;
-    padding: 16px 0 16px 24px; // Top/bottom padding with left padding
+    padding: $spacing-3 0 $spacing-3 $spacing-4; // Top/bottom padding with left padding
     border-left: 3px solid $color-palette-gray-400;
     color: $color-palette-gray-700;
     font-style: italic;
@@ -121,25 +121,25 @@ blockquote {
 }
 
 blockquote p {
-    margin: 0 0 8px 0; // Override paragraph margins in quotes
+    margin: 0 0 $spacing-1 0; // Override paragraph margins in quotes
 }
 
 // Code Block
 pre {
-    font-size: 14px; // Slightly smaller for code readability
+    font-size: $font-size-md; // Slightly smaller for code readability
     line-height: 1.4;
     margin: $spacing-4 0;
-    padding: 16px 20px; // Consistent padding
+    padding: $spacing-3 20px; // Consistent padding
     background: $color-palette-gray-900;
     color: $white;
-    border-radius: 8px;
+    border-radius: $spacing-1;
     overflow-x: auto;
     font-family: "Monaco", "Menlo", "Consolas", monospace;
 }
 
 pre code {
     font-family: "Monaco", "Menlo", "Consolas", monospace;
-    font-size: 14px;
+    font-size: $font-size-md;
     background: none;
     padding: 0;
     color: inherit;
@@ -152,7 +152,7 @@ img.dot-image {
     padding: 0;
     max-width: 100%;
     height: auto;
-    border-radius: 4px;
+    border-radius: $spacing-0;
 }
 
 // Image with links
