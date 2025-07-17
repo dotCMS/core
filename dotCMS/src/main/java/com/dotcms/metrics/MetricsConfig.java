@@ -69,6 +69,59 @@ public final class MetricsConfig {
         Config.getBooleanProperty("metrics.include.common-tags", true);
     
     // ====================================================================
+    // KUBERNETES TAGS CONFIGURATION
+    // ====================================================================
+    
+    /**
+     * Application name tag for Kubernetes deployment identification.
+     * Environment variable: DOT_K8S_APP
+     * Default: "dotcms"
+     */
+    public static final String K8S_APP_TAG = 
+        Config.getStringProperty("k8s.tags.app", "dotcms");
+    
+    /**
+     * Environment name tag for Kubernetes deployment identification.
+     * Environment variable: DOT_K8S_ENV
+     * Falls back to DOT_ENVIRONMENT if not set.
+     * Default: "local"
+     */
+    public static final String K8S_ENV_TAG = 
+        Config.getStringProperty("k8s.tags.env", 
+            Config.getStringProperty("environment", "local"));
+    
+    /**
+     * Version tag for Kubernetes deployment identification.
+     * Environment variable: DOT_K8S_VERSION
+     * Default: "unknown"
+     */
+    public static final String K8S_VERSION_TAG = 
+        Config.getStringProperty("k8s.tags.version", "unknown");
+    
+    /**
+     * Customer identifier tag for multi-tenant deployments.
+     * Environment variable: DOT_K8S_CUSTOMER
+     * Default: "default"
+     */
+    public static final String K8S_CUSTOMER_TAG = 
+        Config.getStringProperty("k8s.tags.customer", "default");
+    
+    /**
+     * Full deployment name tag for Kubernetes deployment identification.
+     * Environment variable: DOT_K8S_DEPLOYMENT
+     * Default: hostname
+     */
+    public static final String K8S_DEPLOYMENT_TAG = 
+        Config.getStringProperty("k8s.tags.deployment", null);
+    
+    /**
+     * Whether to enable Kubernetes-specific tagging.
+     * Default: true
+     */
+    public static final boolean K8S_TAGGING_ENABLED = 
+        Config.getBooleanProperty("k8s.tags.enabled", true);
+    
+    // ====================================================================
     // PROMETHEUS REGISTRY CONFIGURATION
     // ====================================================================
     
@@ -233,8 +286,15 @@ public final class MetricsConfig {
         Logger.debug(MetricsConfig.class, "  Enabled: " + ENABLED);
         Logger.debug(MetricsConfig.class, "  Prefix: " + METRIC_PREFIX);
         Logger.debug(MetricsConfig.class, "  Collection Interval: " + COLLECTION_INTERVAL_SECONDS + "s");
+        Logger.debug(MetricsConfig.class, "  Include Common Tags: " + INCLUDE_COMMON_TAGS);
         Logger.debug(MetricsConfig.class, "  Prometheus: " + PROMETHEUS_ENABLED + " (endpoint: " + PROMETHEUS_ENDPOINT + ")");
         Logger.debug(MetricsConfig.class, "  JMX: " + JMX_ENABLED + " (domain: " + JMX_DOMAIN + ")");
+        Logger.debug(MetricsConfig.class, "  K8s Tagging: " + K8S_TAGGING_ENABLED);
+        Logger.debug(MetricsConfig.class, "    App: " + K8S_APP_TAG);
+        Logger.debug(MetricsConfig.class, "    Env: " + K8S_ENV_TAG);
+        Logger.debug(MetricsConfig.class, "    Version: " + K8S_VERSION_TAG);
+        Logger.debug(MetricsConfig.class, "    Customer: " + K8S_CUSTOMER_TAG);
+        Logger.debug(MetricsConfig.class, "    Deployment: " + K8S_DEPLOYMENT_TAG);
         Logger.debug(MetricsConfig.class, "  JVM Metrics: " + JVM_METRICS_ENABLED);
         Logger.debug(MetricsConfig.class, "  System Metrics: " + SYSTEM_METRICS_ENABLED);
         Logger.debug(MetricsConfig.class, "  Application Metrics: " + APPLICATION_METRICS_ENABLED);

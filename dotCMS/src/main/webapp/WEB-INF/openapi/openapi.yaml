@@ -8952,6 +8952,22 @@ paths:
           description: default response
       tags:
       - Navigation
+  /v1/metrics/prometheus:
+    get:
+      operationId: getPrometheusMetrics
+      responses:
+        default:
+          content:
+            text/plain: {}
+          description: default response
+  /v1/metrics/status:
+    get:
+      operationId: getMetricsStatus
+      responses:
+        default:
+          content:
+            application/json: {}
+          description: default response
   /v1/nav/{uri}:
     get:
       operationId: loadJson_1

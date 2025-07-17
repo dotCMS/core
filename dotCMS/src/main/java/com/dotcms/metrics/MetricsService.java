@@ -19,7 +19,7 @@ import io.micrometer.prometheusmetrics.PrometheusConfig;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.enterprise.context.ApplicationScoped;
-import java.net.InetAddress;
+import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -44,6 +44,12 @@ public class MetricsService {
     private JmxMeterRegistry jmxRegistry;
     private final List<MeterRegistry> registries = new ArrayList<>();
     
+    @Inject
+    private MetricsTaggingService taggingService;
+    
+    @Inject
+    private MetricsValidator metricsValidator;
+    
     /**
      * Initialize the metrics service and configure registries.
      * Called automatically by CDI after bean construction.
@@ -61,6 +67,12 @@ public class MetricsService {
         try {
             configureRegistries();
             registerCommonMetrics();
+            
+            // Validate configuration after initialization
+            if (!metricsValidator.isValidForProduction()) {
+                Logger.warn(this, "Metrics Service initialized with configuration warnings - check logs for details");
+            }
+            
             Logger.info(this, "Metrics Service initialized successfully");
         } catch (Exception e) {
             Logger.error(this, "Failed to initialize Metrics Service: " + e.getMessage(), e);
@@ -77,8 +89,8 @@ public class MetricsService {
                 prometheusRegistry = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT);
                 
                 // Add common tags
-                if (MetricsConfig.INCLUDE_COMMON_TAGS) {
-                    prometheusRegistry.config().commonTags(getCommonTags());
+                if (MetricsConfig.INCLUDE_COMMON_TAGS && MetricsConfig.K8S_TAGGING_ENABLED) {
+                    prometheusRegistry.config().commonTags(taggingService.getCommonTags());
                 }
                 
                 Metrics.addRegistry(prometheusRegistry);
@@ -99,8 +111,8 @@ public class MetricsService {
                 );
                 
                 // Add common tags
-                if (MetricsConfig.INCLUDE_COMMON_TAGS) {
-                    jmxRegistry.config().commonTags(getCommonTags());
+                if (MetricsConfig.INCLUDE_COMMON_TAGS && MetricsConfig.K8S_TAGGING_ENABLED) {
+                    jmxRegistry.config().commonTags(taggingService.getCommonTags());
                 }
                 
                 Metrics.addRegistry(jmxRegistry);
@@ -173,32 +185,6 @@ public class MetricsService {
         }
     }
     
-    /**
-     * Get common tags to be applied to all metrics.
-     * 
-     * @return List of common tags
-     */
-    private List<Tag> getCommonTags() {
-        List<Tag> tags = new ArrayList<>();
-        
-        try {
-            // Add application tag
-            tags.add(Tag.of("application", "dotcms"));
-            
-            // Add hostname tag
-            String hostname = InetAddress.getLocalHost().getHostName();
-            tags.add(Tag.of("host", hostname));
-            
-            // Add environment tag if configured
-            String environment = System.getProperty("DOT_ENVIRONMENT", "local");
-            tags.add(Tag.of("environment", environment));
-            
-        } catch (Exception e) {
-            Logger.warn(this, "Failed to create some common tags: " + e.getMessage());
-        }
-        
-        return tags;
-    }
     
     /**
      * Get the Prometheus meter registry.
@@ -225,6 +211,15 @@ public class MetricsService {
      */
     public MeterRegistry getGlobalRegistry() {
         return Metrics.globalRegistry;
+    }
+    
+    /**
+     * Get the metrics tagging service for creating tagged metrics.
+     * 
+     * @return MetricsTaggingService instance
+     */
+    public MetricsTaggingService getTaggingService() {
+        return taggingService;
     }
     
     /**
