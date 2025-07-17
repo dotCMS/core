@@ -1,0 +1,49 @@
+@use "variables" as *;
+
+:host {
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background: $color-palette-gray-100;
+    display: flex;
+    flex-direction: column;
+    padding: $spacing-4 $spacing-4;
+    gap: $spacing-4;
+}
+
+.analytics-dashboard {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-6;
+    min-height: 100%;
+}
+
+// Solo CSS esencial para elementos específicos que no se pueden lograr con PrimeFlex
+.analytics-dashboard__table {
+    ::ng-deep .p-table {
+        .p-datatable-thead > tr > th {
+            background: $color-palette-gray-100;
+            font-weight: 600;
+            border-bottom: 2px solid $color-palette-gray-200;
+        }
+
+        .p-datatable-tbody > tr:hover {
+            background: $color-palette-gray-100;
+        }
+    }
+}
+
+// Responsive simplificado
+@media (max-width: $screen-lg-max) {
+    :host {
+        padding: $spacing-3 $spacing-4;
+        gap: $spacing-3;
+    }
+}
+
+@media (max-width: $screen-md-max) {
+    :host {
+        padding: $spacing-2 $spacing-3;
+        gap: $spacing-2;
+    }
+}

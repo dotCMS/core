@@ -1,0 +1,16 @@
+<div class="flex justify-content-end align-items-center gap-3" data-testid="analytics-filters">
+    <label for="period-filter" class="text-sm font-medium text-600">
+        {{ 'analytics.filters.time-period.label' | dm }}:
+    </label>
+    <p-dropdown
+        id="period-filter"
+        size="small"
+        [options]="$translatedTimeOptions()"
+        [ngModel]="$selectedPeriod()"
+        (ngModelChange)="onPeriodChange($event)"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="{{ 'analytics.filters.time-period.placeholder' | dm }}"
+        [style]="{ minWidth: '120px' }"
+        data-testid="period-dropdown"></p-dropdown>
+</div>

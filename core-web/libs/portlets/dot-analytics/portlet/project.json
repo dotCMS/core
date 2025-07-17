@@ -1,5 +1,5 @@
 {
-    "name": "portlets-dot-analytics",
+    "name": "analytics-portlets",
     "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
     "sourceRoot": "libs/portlets/dot-analytics/portlet/src",
     "prefix": "dot",

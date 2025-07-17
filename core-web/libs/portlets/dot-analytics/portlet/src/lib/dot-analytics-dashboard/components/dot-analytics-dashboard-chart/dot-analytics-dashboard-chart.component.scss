@@ -1,0 +1,10 @@
+// AnalyticsChart usando PrimeFlex - CSS mínimo
+:host {
+    display: block;
+    width: 100%;
+}
+
+.chart-container {
+    width: 100%;
+    position: relative;
+}

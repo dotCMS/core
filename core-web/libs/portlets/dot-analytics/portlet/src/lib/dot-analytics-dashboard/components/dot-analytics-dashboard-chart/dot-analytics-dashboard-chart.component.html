@@ -1,0 +1,17 @@
+<p-card class="h-full" data-testid="analytics-chart">
+    @if ($title()) {
+        <ng-template pTemplate="header">
+            <h3 class="text-lg font-semibold text-800 m-0">{{ $title() }}</h3>
+        </ng-template>
+    }
+
+    <div class="chart-container" [style.height]="$height()">
+        <p-chart
+            [type]="$type()"
+            [data]="$chartData()"
+            [options]="$chartOptions()"
+            [width]="$width()"
+            [height]="$height()"
+            data-testid="chart"></p-chart>
+    </div>
+</p-card>

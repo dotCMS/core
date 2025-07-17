@@ -1,1 +1,57 @@
-<p>dot-analytics-dashboard works!</p>
+<div class="flex flex-column gap-3 min-h-full" data-testid="analytics-dashboard">
+    @if ($isLoading) {
+        <!-- Loading State -->
+        <dot-analytics-dashboard-loading
+            data-testid="loading-skeleton"></dot-analytics-dashboard-loading>
+    } @else {
+        <!-- Dashboard Content -->
+        <div class="flex flex-column gap-3 flex-1" data-testid="dashboard-content">
+            <!-- Filters Section -->
+            <dot-analytics-dashboard-filters
+                (periodChanged)="onPeriodChange($event)"
+                data-testid="analytics-filters"></dot-analytics-dashboard-filters>
+
+            <!-- Metrics Cards -->
+            <div class="grid" data-testid="metrics-grid">
+                @for (metric of $mockData.metrics; track metric.name) {
+                    <div class="col-12 md:col-6 lg:col-4">
+                        <dot-analytics-dashboard-metrics
+                            [name]="metric.name"
+                            [value]="metric.value"
+                            [subtitle]="metric.subtitle || ''"
+                            [icon]="metric.icon || ''"></dot-analytics-dashboard-metrics>
+                    </div>
+                }
+            </div>
+
+            <!-- Charts Section -->
+            <div class="grid" data-testid="charts-section">
+                <!-- Pageviews Timeline Chart -->
+                <div class="col-12 lg:col-8">
+                    <dot-analytics-dashboard-chart
+                        [title]="'analytics.charts.pageviews-timeline.title' | dm"
+                        type="line"
+                        [data]="$mockData.pageviewsTimeline"
+                        height="350px"></dot-analytics-dashboard-chart>
+                </div>
+
+                <!-- Device Breakdown Chart -->
+                <div class="col-12 lg:col-4">
+                    <dot-analytics-dashboard-chart
+                        [title]="'analytics.charts.device-breakdown.title' | dm"
+                        type="pie"
+                        [data]="$mockData.deviceBreakdown"
+                        height="350px"></dot-analytics-dashboard-chart>
+                </div>
+            </div>
+
+            <!-- Top Pages Table -->
+            <div class="analytics-dashboard__table">
+                <dot-analytics-dashboard-table
+                    [title]="'analytics.table.title' | dm"
+                    [data]="$mockData.topPages"
+                    [columns]="$mockData.topPagesTableConfig"></dot-analytics-dashboard-table>
+            </div>
+        </div>
+    }
+</div>
