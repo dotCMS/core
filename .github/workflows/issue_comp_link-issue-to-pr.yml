@@ -186,7 +186,9 @@ jobs:
               fi
               
               updated_list=$(echo -e "$pr_list\n$new_pr_line" | sort -u)
-              new_body="## PRs linked to this issue\n\n$updated_list"
+              new_body="## PRs linked to this issue
+
+$updated_list"
               echo "pr_list=$new_body" >> "$GITHUB_OUTPUT"
             fi
           else
@@ -196,7 +198,9 @@ jobs:
               new_pr_line="$new_pr_line ✅"
             fi
             
-            new_body="## PRs linked to this issue\n\n$new_pr_line"
+            new_body="## PRs linked to this issue
+
+$new_pr_line"
             echo "pr_list=$new_body" >> "$GITHUB_OUTPUT"
           fi
 
@@ -213,3 +217,43 @@ jobs:
         with:
           comment-id: ${{ steps.check_comment.outputs.existing_comment_id }}
           body: ${{ steps.check_comment.outputs.pr_list }}
+
+      - name: Link PR to issue
+        run: |
+          pr_url="${{ inputs.pr_url }}"
+          pr_number=$(echo "$pr_url" | grep -o '[0-9]*$')
+          issue_number="${{ steps.determine_issue.outputs.final_issue_number }}"
+          
+          # Get current PR body
+          current_pr=$(curl -s \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ env.GH_TOKEN }}" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/${{ github.repository }}/pulls/$pr_number")
+          
+          current_body=$(echo "$current_pr" | jq -r '.body // ""')
+          
+          # Check if issue reference already exists
+          if ! echo "$current_body" | grep -q "#$issue_number"; then
+            # Add issue reference to PR body
+            if [[ -n "$current_body" && "$current_body" != "null" ]]; then
+              new_body="$current_body
+
+---
+*This PR addresses issue #$issue_number*"
+            else
+              new_body="*This PR addresses issue #$issue_number*"
+            fi
+            
+            # Update PR body
+            curl -X PATCH \
+              -H "Accept: application/vnd.github+json" \
+              -H "Authorization: Bearer ${{ env.GH_TOKEN }}" \
+              -H "X-GitHub-Api-Version: 2022-11-28" \
+              "https://api.github.com/repos/${{ github.repository }}/pulls/$pr_number" \
+              -d "{\"body\":$(echo "$new_body" | jq -R -s .)}"
+            
+            echo "Added issue #$issue_number reference to PR #$pr_number body"
+          else
+            echo "Issue #$issue_number already referenced in PR #$pr_number body"
+          fi
