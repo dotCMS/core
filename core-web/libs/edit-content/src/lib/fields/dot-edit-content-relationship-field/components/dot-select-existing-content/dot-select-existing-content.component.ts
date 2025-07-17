@@ -2,11 +2,11 @@ import { DatePipe } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
+    CUSTOM_ELEMENTS_SCHEMA,
+    effect,
     inject,
     model,
     OnInit,
-    effect,
-    CUSTOM_ELEMENTS_SCHEMA,
     signal
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -36,6 +36,7 @@ type DialogData = {
     contentTypeId: string;
     selectionMode: SelectionMode;
     currentItemsIds: string[];
+    showFields?: string[] | null;
 };
 
 const STATIC_COLUMNS = 6;
@@ -130,7 +131,8 @@ export class DotSelectExistingContentComponent implements OnInit {
         this.store.initLoad({
             contentTypeId: data.contentTypeId,
             selectionMode: data.selectionMode,
-            selectedItemsIds: data.currentItemsIds
+            selectedItemsIds: data.currentItemsIds,
+            showFields: data.showFields
         });
     }
 

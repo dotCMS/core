@@ -2,15 +2,17 @@ import { patchState, signalStore, withComputed, withMethods, withState } from '@
 
 import { computed } from '@angular/core';
 
-import { ComponentStatus, DotCMSContentlet } from '@dotcms/dotcms-models';
+import { ComponentStatus, DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
-import { SelectionMode } from '../models/relationship.models';
-import { getRelationshipFromContentlet, getSelectionModeByCardinality } from '../utils';
+import { ACTION_COLUMN, DEFAULT_RELATIONSHIP_COLUMNS, REORDER_COLUMN } from '../dot-edit-content-relationship-field.constants';
+import { SelectionMode, TableColumn } from '../models/relationship.models';
+import { createColumn, extractShowFields, getFieldHeader, getFieldWidth, getRelationshipFromContentlet, getSelectionModeByCardinality } from '../utils';
 
 export interface RelationshipFieldState {
     data: DotCMSContentlet[];
     status: ComponentStatus;
     selectionMode: SelectionMode | null;
+    field: DotCMSContentTypeField | null;
     pagination: {
         offset: number;
         currentPage: number;
@@ -22,6 +24,7 @@ const initialState: RelationshipFieldState = {
     data: [],
     status: ComponentStatus.INIT,
     selectionMode: null,
+    field: null,
     pagination: {
         offset: 0,
         currentPage: 1,
@@ -34,39 +37,85 @@ const initialState: RelationshipFieldState = {
  * This store manages the state and actions related to the relationship field.
  */
 export const RelationshipFieldStore = signalStore(
-    { providedIn: 'root' },
     withState(initialState),
-    withComputed((state) => ({
-        /**
-         * Computes the total number of pages based on the number of items and the rows per page.
-         * @returns {number} The total number of pages.
-         */
-        totalPages: computed(() => Math.ceil(state.data().length / state.pagination().rowsPerPage)),
-        /**
-         * Checks if the create new content button is disabled based on the selection mode and the number of items.
-         * @returns {boolean} True if the button is disabled, false otherwise.
-         */
-        isDisabledCreateNewContent: computed(() => {
-            const totalItems = state.data().length;
-            const selectionMode = state.selectionMode();
+    withComputed((state) => {
+        return {
+            /**
+             * Computes the total number of pages based on the number of items and the rows per page.
+             * @returns {number} The total number of pages.
+             */
+            totalPages: computed(() => Math.ceil(state.data().length / state.pagination().rowsPerPage)),
+            /**
+             * Checks if the create new content button is disabled based on the selection mode and the number of items.
+             * @returns {boolean} True if the button is disabled, false otherwise.
+             */
+            isDisabledCreateNewContent: computed(() => {
+                const totalItems = state.data().length;
+                const selectionMode = state.selectionMode();
 
-            if (selectionMode === 'single') {
-                return totalItems >= 1;
-            }
+                if (selectionMode === 'single') {
+                    return totalItems >= 1;
+                }
 
-            return false;
-        }),
-        /**
-         * Formats the relationship field data into a string of IDs.
-         * @returns {string} A string of IDs separated by commas.
-         */
-        formattedRelationship: computed(() => {
-            const data = state.data();
-            const identifiers = data.map((item) => item.identifier).join(',');
+                return false;
+            }),
+            /**
+             * Formats the relationship field data into a string of IDs.
+             * @returns {string} A string of IDs separated by commas.
+             */
+            formattedRelationship: computed(() => {
+                const data = state.data();
+                const identifiers = data.map((item) => item.identifier).join(',');
 
-            return `${identifiers}`;
-        })
-    })),
+                return `${identifiers}`;
+            }),
+
+            /**
+             * A computed signal that extracts the showFields variable from field variables.
+             * This determines which columns should be displayed in the relationship table.
+             */
+            showFields: computed(() => extractShowFields(state.field())),
+
+            /**
+             * A computed signal that defines the table columns structure.
+             * Dynamically builds columns based on showFields() content.
+             */
+            columns: computed<TableColumn[]>(() => {
+                const isEmpty = state.data().length === 0;
+                const field = state.field();
+                const showFields = extractShowFields(field);
+
+                // Fixed columns that always appear
+                const columns: TableColumn[] = [
+                    REORDER_COLUMN
+                ];
+
+                // Dynamic center columns
+                if (showFields && showFields.length > 0) {
+                    // Use custom fields from showFields
+                    showFields.forEach(fieldName => {
+                        columns.push(createColumn(
+                            fieldName,
+                            getFieldHeader(fieldName),
+                            getFieldWidth(fieldName)
+                        ));
+                    });
+                } else {
+                    // Use default columns when no showFields
+                    columns.push(
+                        { ...DEFAULT_RELATIONSHIP_COLUMNS.TITLE, width: isEmpty ? undefined : '12rem' },
+                        { ...DEFAULT_RELATIONSHIP_COLUMNS.LANGUAGE, width: isEmpty ? undefined : '8rem' },
+                        { ...DEFAULT_RELATIONSHIP_COLUMNS.STATUS, width: isEmpty ? undefined : '8rem' }
+                    );
+                }
+
+                // Fixed actions column always at the end
+                columns.push(ACTION_COLUMN);
+
+                return columns;
+            })
+        };
+    }),
     withMethods((store) => {
         return {
             /**
@@ -77,20 +126,27 @@ export const RelationshipFieldStore = signalStore(
                 patchState(store, { data: [...data] });
             },
             /**
-             * Sets the cardinality of the relationship field.
-             * @param {number} cardinality - The cardinality of the relationship field.
+             * Initializes the relationship field store with field data and relationship settings.
+             * @param {Object} params - The initialization parameters.
+             * @param {DotCMSContentTypeField} params.field - The complete field configuration.
+             * @param {DotCMSContentlet} params.contentlet - The contentlet data.
              */
             initialize(params: {
-                cardinality: number;
+                field: DotCMSContentTypeField;
                 contentlet: DotCMSContentlet;
-                variable: string;
             }) {
-                const { cardinality, contentlet, variable } = params;
+                const { field, contentlet } = params;
+                const cardinality = field?.relationships?.cardinality;
 
-                const data = getRelationshipFromContentlet({ contentlet, variable });
+                if (cardinality == null || !field?.variable) {
+                    return;
+                }
+
+                const data = getRelationshipFromContentlet({ contentlet, variable: field.variable });
                 const selectionMode = getSelectionModeByCardinality(cardinality);
 
                 patchState(store, {
+                    field,
                     selectionMode,
                     data
                 });
@@ -131,3 +187,5 @@ export const RelationshipFieldStore = signalStore(
         };
     })
 );
+
+

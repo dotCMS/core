@@ -60,28 +60,40 @@ describe('RelationshipFieldStore', () => {
     describe('State Management', () => {
         describe('initialize', () => {
             it('should set single selection mode for ONE_TO_ONE relationship', () => {
+                const field = {
+                    ...mockField,
+                    variable: 'relationship_field',
+                    relationships: { cardinality: 2 }
+                };
                 store.initialize({
-                    cardinality: 2,
-                    contentlet: mockContentlet,
-                    variable: 'relationship_field'
+                    field,
+                    contentlet: mockContentlet
                 });
                 expect(store.selectionMode()).toBe('single');
             });
 
             it('should set multiple selection mode for other relationship types', () => {
+                const field = {
+                    ...mockField,
+                    variable: 'relationship_field',
+                    relationships: { cardinality: 0 }
+                };
                 store.initialize({
-                    cardinality: 0,
-                    contentlet: mockContentlet,
-                    variable: 'relationship_field'
+                    field,
+                    contentlet: mockContentlet
                 });
                 expect(store.selectionMode()).toBe('multiple');
             });
 
             it('should initialize data from contentlet', () => {
+                const field = {
+                    ...mockField,
+                    variable: 'relationship_field',
+                    relationships: { cardinality: 0 }
+                };
                 store.initialize({
-                    cardinality: 0,
-                    contentlet: mockContentlet,
-                    variable: 'relationship_field'
+                    field,
+                    contentlet: mockContentlet
                 });
                 expect(store.data()).toBeDefined();
             });
@@ -139,10 +151,14 @@ describe('RelationshipFieldStore', () => {
 
         describe('isDisabledCreateNewContent', () => {
             beforeEach(() => {
+                const field = {
+                    ...mockField,
+                    variable: 'relationship_field',
+                    relationships: { cardinality: 2 }
+                };
                 store.initialize({
-                    cardinality: 2,
-                    contentlet: mockContentlet,
-                    variable: 'relationship_field'
+                    field,
+                    contentlet: mockContentlet
                 });
             });
 
@@ -157,10 +173,14 @@ describe('RelationshipFieldStore', () => {
             });
 
             it('should not disable for multiple mode regardless of items', () => {
+                const field = {
+                    ...mockField,
+                    variable: 'relationship_field',
+                    relationships: { cardinality: 0 }
+                };
                 store.initialize({
-                    cardinality: 0,
-                    contentlet: mockContentlet,
-                    variable: 'relationship_field'
+                    field,
+                    contentlet: mockContentlet
                 });
                 store.setData(mockData);
                 expect(store.isDisabledCreateNewContent()).toBe(false);
@@ -248,10 +268,14 @@ describe('RelationshipFieldStore', () => {
                     inode: 'empty',
                     variable: 'relationship_field'
                 });
+                const field = {
+                    ...mockField,
+                    variable: 'relationship_field',
+                    relationships: { cardinality: 0 }
+                };
                 store.initialize({
-                    cardinality: 0,
-                    contentlet: emptyContentlet,
-                    variable: 'relationship_field'
+                    field,
+                    contentlet: emptyContentlet
                 });
                 expect(store.data()).toBeDefined();
                 expect(store.data().length).toBe(0);
@@ -259,10 +283,14 @@ describe('RelationshipFieldStore', () => {
 
             it('should handle extreme cardinality values', () => {
                 expect(() => {
+                    const field = {
+                        ...mockField,
+                        variable: 'relationship_field',
+                        relationships: { cardinality: 999 }
+                    };
                     store.initialize({
-                        cardinality: 999,
-                        contentlet: mockContentlet,
-                        variable: 'relationship_field'
+                        field,
+                        contentlet: mockContentlet
                     });
                 }).toThrowError();
             });

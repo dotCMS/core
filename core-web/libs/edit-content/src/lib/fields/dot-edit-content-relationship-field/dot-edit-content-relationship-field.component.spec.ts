@@ -261,10 +261,17 @@ describe('DotEditContentRelationshipFieldComponent', () => {
         beforeEach(() => {
             spectator.detectChanges();
             // Initialize store with many-to-many cardinality (1) to allow multiple items
-            store.initialize({
-                cardinality: 1, // MANY_TO_MANY
-                contentlet: createFakeContentlet({}),
+            const fieldWithCardinality = createFakeRelationshipField({
+                relationships: {
+                    cardinality: 1, // MANY_TO_MANY
+                    isParentField: true,
+                    velocityVar: 'AllTypes'
+                },
                 variable: 'test'
+            });
+            store.initialize({
+                field: fieldWithCardinality,
+                contentlet: createFakeContentlet({})
             });
             store.setData([]);
         });
@@ -429,6 +436,140 @@ describe('DotEditContentRelationshipFieldComponent', () => {
 
             expect(attributes).toHaveProperty('contentTypeId');
             expect(attributes).toHaveProperty('hitText');
+        });
+    });
+
+    describe('ShowFields Functionality', () => {
+        it('should return null when no fieldVariables are present', () => {
+            const fieldWithoutVariables = createFakeRelationshipField({
+                relationships: {
+                    cardinality: 0,
+                    isParentField: true,
+                    velocityVar: 'AllTypes'
+                },
+                variable: 'relationshipField',
+                fieldVariables: null
+            });
+
+            spectator.setInput('field', fieldWithoutVariables);
+            spectator.detectChanges();
+
+            expect(spectator.component.$showFields()).toBeNull();
+        });
+
+        it('should return null when showFields variable is not present', () => {
+            const fieldWithoutShowFields = createFakeRelationshipField({
+                relationships: {
+                    cardinality: 0,
+                    isParentField: true,
+                    velocityVar: 'AllTypes'
+                },
+                variable: 'relationshipField',
+                fieldVariables: [
+                    { key: 'someOtherVariable', value: 'someValue', clazz: 'test', fieldId: 'test', id: 'test' }
+                ]
+            });
+
+            spectator.setInput('field', fieldWithoutShowFields);
+            spectator.detectChanges();
+
+            expect(spectator.component.$showFields()).toBeNull();
+        });
+
+        it('should return null when showFields variable value is empty', () => {
+            const fieldWithEmptyShowFields = createFakeRelationshipField({
+                relationships: {
+                    cardinality: 0,
+                    isParentField: true,
+                    velocityVar: 'AllTypes'
+                },
+                variable: 'relationshipField',
+                fieldVariables: [
+                    { key: 'showFields', value: '', clazz: 'test', fieldId: 'test', id: 'test' }
+                ]
+            });
+
+            spectator.setInput('field', fieldWithEmptyShowFields);
+            spectator.detectChanges();
+
+            expect(spectator.component.$showFields()).toBeNull();
+        });
+
+        it('should parse comma-separated showFields correctly', () => {
+            const fieldWithShowFields = createFakeRelationshipField({
+                relationships: {
+                    cardinality: 0,
+                    isParentField: true,
+                    velocityVar: 'AllTypes'
+                },
+                variable: 'relationshipField',
+                fieldVariables: [
+                    { key: 'showFields', value: 'field1,field2,field3', clazz: 'test', fieldId: 'test', id: 'test' }
+                ]
+            });
+
+            spectator.setInput('field', fieldWithShowFields);
+            spectator.detectChanges();
+
+            expect(spectator.component.$showFields()).toEqual(['field1', 'field2', 'field3']);
+        });
+
+        it('should handle showFields with spaces correctly', () => {
+            const fieldWithSpacedShowFields = createFakeRelationshipField({
+                relationships: {
+                    cardinality: 0,
+                    isParentField: true,
+                    velocityVar: 'AllTypes'
+                },
+                variable: 'relationshipField',
+                fieldVariables: [
+                    { key: 'showFields', value: ' field1 , field2 , field3 ', clazz: 'test', fieldId: 'test', id: 'test' }
+                ]
+            });
+
+            spectator.setInput('field', fieldWithSpacedShowFields);
+            spectator.detectChanges();
+
+            expect(spectator.component.$showFields()).toEqual(['field1', 'field2', 'field3']);
+        });
+
+        it('should filter out empty fields from showFields', () => {
+            const fieldWithEmptyFields = createFakeRelationshipField({
+                relationships: {
+                    cardinality: 0,
+                    isParentField: true,
+                    velocityVar: 'AllTypes'
+                },
+                variable: 'relationshipField',
+                fieldVariables: [
+                    { key: 'showFields', value: 'field1,,field2, ,field3', clazz: 'test', fieldId: 'test', id: 'test' }
+                ]
+            });
+
+            spectator.setInput('field', fieldWithEmptyFields);
+            spectator.detectChanges();
+
+            expect(spectator.component.$showFields()).toEqual(['field1', 'field2', 'field3']);
+        });
+
+        it('should include showFields in $attributes', () => {
+            const fieldWithShowFields = createFakeRelationshipField({
+                relationships: {
+                    cardinality: 0,
+                    isParentField: true,
+                    velocityVar: 'AllTypes'
+                },
+                variable: 'relationshipField',
+                fieldVariables: [
+                    { key: 'showFields', value: 'field1,field2', clazz: 'test', fieldId: 'test', id: 'test' }
+                ]
+            });
+
+            spectator.setInput('field', fieldWithShowFields);
+            spectator.detectChanges();
+
+            const attributes = spectator.component.$attributes();
+            expect(attributes.showFields).toEqual(['field1', 'field2']);
         });
     });
 });
