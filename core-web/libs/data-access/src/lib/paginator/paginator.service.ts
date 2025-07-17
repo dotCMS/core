@@ -34,7 +34,7 @@ interface PaginatiorServiceParams {
  */
 @Injectable()
 export class PaginatorService {
-    private coreWebService = inject(CoreWebService);
+    private readonly coreWebService = inject(CoreWebService);
 
     public static readonly LINK_HEADER_NAME = 'Link';
     public static readonly PAGINATION_PER_PAGE_HEADER_NAME = 'X-Pagination-Per-Page';

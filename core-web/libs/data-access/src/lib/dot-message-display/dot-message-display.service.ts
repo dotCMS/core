@@ -18,16 +18,15 @@ import { DotRouterService } from '../dot-router/dot-router.service';
 @Injectable()
 export class DotMessageDisplayService {
     private dotRouterService = inject(DotRouterService);
+    private dotcmsEventsService = inject(DotcmsEventsService);
 
     private messages$: Observable<DotMessage>;
     private destroy$: Subject<boolean> = new Subject<boolean>();
     private localMessage$: Subject<DotMessage> = new Subject<DotMessage>();
 
     constructor() {
-        const dotcmsEventsService = inject(DotcmsEventsService);
-
         const webSocketMessage = (
-            dotcmsEventsService.subscribeTo('MESSAGE') as Observable<DotMessage>
+            this.dotcmsEventsService.subscribeTo('MESSAGE') as Observable<DotMessage>
         ).pipe(
             takeUntil<DotMessage>(this.destroy$),
             filter((data: DotMessage) => this.hasPortletIdList(data))
