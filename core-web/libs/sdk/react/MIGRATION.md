@@ -2,155 +2,31 @@
 
 The 1.0.X version of `@dotcms/react` introduces significant architectural changes that provide better TypeScript support, improved performance, and a more intuitive API. This guide helps you migrate from the alpha version to the 1.0.X version (`latest`) of the `@dotcms/react` SDK.
 
-## Breaking Changes
+## Breaking Changes Summary
 
-### 1. Core Component Renaming
-
-**Alpha Version:**
-```jsx
-import { DotcmsLayout } from '@dotcms/react';
-```
-
-**1.0.X Version:**
-```jsx
-import { DotCMSLayoutBody } from '@dotcms/react';
-```
-
-### 2. Component Props Structure
-
-**Alpha Version:**
-```jsx
-<DotcmsLayout
-    pageContext={{
-        pageAsset,
-        components: componentsMap,
-    }}
-    config={{
-        pathname,
-        editor: {
-            params: {
-                depth: 3,
-            },
-        },
-    }}
-/>
-```
-
-**1.0.X Version:**
-```jsx
-<DotCMSLayoutBody
-    page={pageAsset}
-    components={componentsMap}
-    mode="development" // or "production"
-/>
-```
-
-🚨 The `pageAsset` is part of the object response from the method `client.page.get` in the `@dotcms/client` library. [Learn more](https://www.npmjs.com/package/@dotcms/client)
-
-### 3. Hook Usage Changes
-
-**Alpha Version:**
-```jsx
-import { usePageAsset } from '../hooks/usePageAsset';
-
-export function MyPage({ pageAsset, nav }) {
-    pageAsset = usePageAsset(pageAsset);
-    // Component logic
-}
-```
-
-**1.0.X Version:**
-```jsx
-import { useEditableDotCMSPage } from '@dotcms/react';
-
-export function MyPage({ pageResponse, nav }) {
-    const { pageAsset } = useEditableDotCMSPage(pageResponse);
-    // Component logic
-}
-```
-
-🚨 The `pageResponse` is the object response from the method `client.page.get` in the `@dotcms/client` library. [Learn more](https://www.npmjs.com/package/@dotcms/client)
+| Change | Alpha Version | 1.0.X Version |
+|--------|---------------|----------------|
+| Core Layout Component | `DotcmsLayout` | `DotCMSLayoutBody` |
+| Layout Props Structure | `pageContext`/`config` | `page`, `components`, `mode` |
+| Editable Text Component | `DotEditableText` | `DotCMSEditableText` |
+| Block Editor Renderer | `BlockEditorRenderer` | `DotCMSBlockEditorRenderer` |
+| Conditional Rendering | Custom logic | `DotCMSShow` / `useDotCMSShowWhen` |
+| Page Asset Hook | `usePageAsset(pageAsset)` | `useEditableDotCMSPage(pageResponse)` |
 
 ## New Features in 1.0.X Version
 
-### 1. DotCMSEditableText Component
+| Feature | Purpose | Example Usage |
+|---------|---------|---------------|
+| `DotCMSEditableText` | Inline editing of text fields in contentlets | `<DotCMSEditableText contentlet={contentlet} fieldName="title" />` |
+| `DotCMSBlockEditorRenderer` | Render Block Editor content with custom block support | `<DotCMSBlockEditorRenderer blocks={contentlet.blockEditorField} customRenderers={{ customBannerBlock: MyCustomBannerBlock }} />` |
+| `DotCMSShow` | Conditional rendering based on UVE mode | `<DotCMSShow when={UVE_MODE.EDIT}>...</DotCMSShow>` |
+| `useDotCMSShowWhen` | Hook for conditional logic based on UVE mode | `const isEditMode = useDotCMSShowWhen(UVE_MODE.EDIT);` |
+| Improved TypeScript Support | Better type definitions and type safety | `import type { DotCMSPageResponse } from '@dotcms/types';` |
 
-The 1.0.X version introduces a new component for inline text editing:
-
-```jsx
-import { DotCMSEditableText } from '@dotcms/react';
-
-function Banner(contentlet) {
-    return (
-        <h2>
-            <DotCMSEditableText
-                contentlet={contentlet}
-                fieldName="title"
-                mode="plain" // or "full"
-                format="text" // or "html"
-            />
-        </h2>
-    );
-}
-```
-
-### 2. DotCMSBlockEditorRenderer Component
-
-New component for rendering Block Editor content:
-
-```jsx
-import { DotCMSBlockEditorRenderer } from '@dotcms/react';
-
-function DetailPage({ contentlet }) {
-    return (
-        <DotCMSBlockEditorRenderer
-            blocks={contentlet.blockEditorField}
-            customRenderers={{
-                customBannerBlock: MyCustomBannerBlock,
-                h1: MyCustomH1
-            }}
-        />
-    );
-}
-```
-
-### 3. DotCMSShow Component
-
-Conditional rendering based on UVE mode:
-
-```jsx
-import { DotCMSShow } from '@dotcms/react';
-import { UVE_MODE } from '@dotcms/types';
-
-function MyComponent() {
-    return (
-        <DotCMSShow when={UVE_MODE.EDIT}>
-            <div>This will only render in UVE EDIT mode</div>
-        </DotCMSShow>
-    );
-}
-```
-
-### 4. useDotCMSShowWhen Hook
-
-Hook for conditional logic based on UVE mode:
-
-```jsx
-import { useDotCMSShowWhen } from '@dotcms/react';
-import { UVE_MODE } from '@dotcms/types';
-
-function MyEditButton() {
-    const isEditMode = useDotCMSShowWhen(UVE_MODE.EDIT);
-
-    if (isEditMode) {
-        return <button>Edit</button>;
-    }
-
-    return null;
-}
-```
+🚨 More information in the [README](./README.md) file.
 
 ## Step-by-Step Migration Process
+Before starting, if you are using the `@dotcms/client` library in your React project, please refer to the [client documentation](https://www.npmjs.com/package/@dotcms/client) for more information.
 
 ### Step 1: Update Dependencies
 
@@ -159,10 +35,10 @@ Update your `package.json`:
 ```json
 {
     "dependencies": {
-        "@dotcms/client": "latest",
-        "@dotcms/react": "latest",
-        "@dotcms/types": "latest",
-        "@dotcms/uve": "latest"
+        "@dotcms/client": "1.0.0",
+        "@dotcms/react": "1.0.0",
+        "@dotcms/types": "1.0.0",
+        "@dotcms/uve": "1.0.0"
     }
 }
 ```
