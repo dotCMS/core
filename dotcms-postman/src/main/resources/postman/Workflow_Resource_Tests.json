@@ -1,10 +1,10 @@
 {
 	"info": {
-		"_postman_id": "5e5a9191-300f-43ce-96a2-9ceae5f98a6b",
+		"_postman_id": "fda4d193-749b-484f-be5d-9fe1c2b8a736",
 		"name": "Workflow Resource Tests [/api/v1/workflows]",
 		"description": "Test the necesary validations to every end point of the worlflow resource ",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "5403727"
+		"_exporter_id": "781456"
 	},
 	"item": [
 		{
@@ -19510,6 +19510,135 @@
 									"key": "variantName",
 									"value": "{{variantName}}"
 								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "FireWithDefaultValue",
+			"item": [
+				{
+					"name": "CreateContentTypeWithDefaultValue",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"baseType\": \"CONTENT\",\n    \"clazz\": \"com.dotcms.contenttype.model.type.ImmutableSimpleContentType\",\n    \"defaultType\": false,\n    \"fields\": [\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableRowField\",\n            \"dataType\": \"SYSTEM\",\n            \"fieldContentTypeProperties\": [],\n            \"fieldType\": \"Row\",\n            \"fieldTypeLabel\": \"Row\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": false,\n            \"listed\": false,\n            \"name\": \"fields-0\",\n            \"readOnly\": false,\n            \"required\": false,\n            \"searchable\": false,\n            \"sortOrder\": 0,\n            \"unique\": false,\n            \"variable\": \"fields0\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableColumnField\",\n            \"dataType\": \"SYSTEM\",\n            \"fieldContentTypeProperties\": [],\n            \"fieldType\": \"Column\",\n            \"fieldTypeLabel\": \"Column\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": false,\n            \"listed\": false,\n            \"name\": \"fields-1\",\n            \"readOnly\": false,\n            \"required\": false,\n            \"searchable\": false,\n            \"sortOrder\": 1,\n            \"unique\": false,\n            \"variable\": \"fields1\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n            \"dataType\": \"TEXT\",\n            \"fieldType\": \"Text\",\n            \"fieldTypeLabel\": \"Text\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": false,\n            \"listed\": false,\n            \"name\": \"title\",\n            \"readOnly\": false,\n            \"required\": false,\n            \"searchable\": false,\n            \"sortOrder\": 2,\n            \"unique\": false,\n            \"variable\": \"title\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableRadioField\",\n            \"dataType\": \"TEXT\",\n            \"defaultValue\": \"True\",\n            \"fieldType\": \"Radio\",\n            \"fieldTypeLabel\": \"Radio\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"indexed\": false,\n            \"listed\": false,\n            \"name\": \"TestRadio\",\n            \"readOnly\": false,\n            \"required\": false,\n            \"searchable\": false,\n            \"sortOrder\": 3,\n            \"unique\": false,\n            \"values\": \"1|True\\r\\n0|False\",\n            \"variable\": \"testradio\"\n        }\n    ],\n    \"fixed\": false,\n    \"folder\": \"SYSTEM_FOLDER\",\n    \"folderPath\": \"/\",\n    \"icon\": \"event_note\",\n    \"multilingualable\": false,\n    \"name\": \"TestContentType3\",\n    \"siteName\": \"demo.dotcms.com\",\n    \"system\": false,\n    \"systemActionMappings\": {},\n    \"variable\": \"TestContentType3\",\n    \"versionable\": true,\n    \"workflows\": [\n        {\n            \"archived\": false,\n            \"creationDate\": 1752786068588,\n            \"defaultScheme\": false,\n            \"description\": \"\",\n            \"entryActionId\": null,\n            \"id\": \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\",\n            \"mandatory\": false,\n            \"modDate\": 1752690077952,\n            \"name\": \"System Workflow\",\n            \"system\": true,\n            \"variableName\": \"SystemWorkflow\"\n        }\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "FireTheTypeWithoutTheDefaultValue",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Check testradio\", function () {",
+									"",
+									"    pm.expect(jsonData.entity.testradio).to.be.eql(\"True\");",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Origin",
+								"value": "http://localhost:8080",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"contentlet\": {\n        \"contentType\": \"TestContentType3\",\n        \"title\": \"Test\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
 							]
 						}
 					},
