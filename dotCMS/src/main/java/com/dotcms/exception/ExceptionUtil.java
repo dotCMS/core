@@ -170,11 +170,12 @@ public class ExceptionUtil {
      * @return boolean
      */
     public static boolean causedBy(final Throwable e, final Set<Class<? extends Throwable>> exceptionClasses) {
-
         Throwable t = e;
         while (t != null) {
-            if (exceptionClasses.contains(t.getClass())) {
-                return true;
+            for (Class<? extends Throwable> exceptionClass : exceptionClasses) {
+                if (exceptionClass.isAssignableFrom(t.getClass())) {
+                    return true;
+                }
             }
             t = t.getCause();
         }
