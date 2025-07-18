@@ -366,6 +366,7 @@
                                     <ports combine.children="append">
                                         <port>tomcat.port:8080</port>
                                         <port>tomcat.ssl.port:8443</port>
+                                        <port>management.port:8090</port>
                                     </ports>
                                     <env>
                                         <CMS_JAVA_OPTS>${docker.debug.args}</CMS_JAVA_OPTS>
@@ -1523,6 +1524,8 @@
                                         <!-- Here is where you define your Ant tasks -->
                                         <!--suppress UnresolvedMavenProperty -->
                                         <echo message="DotCMS started on (use fixed with -Dtomcat.port=8080)    : http://localhost:${tomcat.port}/dotAdmin"/>
+                                        <!--suppress UnresolvedMavenProperty -->
+                                        <echo message="DotCMS Management Port started on (use fixed with -Dmanagement.port=8090)    : http://localhost:${management.port}/dotmgt/livez"/>
                                         <!--suppress UnresolvedMavenProperty -->
                                         <echo message="DotCMS SSL started on (use fixed with -Dtomcat.ssl.port=8443)    : https://localhost:${tomcat.ssl.port}/dotAdmin"/>
 
