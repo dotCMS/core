@@ -327,15 +327,14 @@ public class LoginServiceAPIFactory implements Serializable {
                 if (Config.getBooleanProperty("show.lts.eol.message", false)) {
                     messageLTSVersionEOL(logInUser);
                 }
-
-                // Run token expiry check asynchronously to avoid blocking login
-                DotConcurrentFactory.getInstance().getSubmitter().submit(() -> {
+                // Run token expiry check with delay to avoid interfering with immediate API calls
+                DotConcurrentFactory.getInstance().getSubmitter().delay(() -> {
                     try {
                         messageTokensToExpire(logInUser);
-                    } catch (LanguageException e) {
-                        Logger.error(this, "Error getting localized token expiry message: " + e.getMessage(), e);
+                    } catch (Exception e) {
+                        Logger.error(this, "Error checking token expiry: " + e.getMessage(), e);
                     }
-                });
+                }, 3000, java.util.concurrent.TimeUnit.MILLISECONDS);
             }
 
             if (authResult != Authenticator.SUCCESS) {
@@ -717,7 +716,8 @@ public class LoginServiceAPIFactory implements Serializable {
      * If the user is an admin, shows all expiring tokens with link to REST API.
      * If the user is not an admin, shows only their own tokens with notification to contact admin.
      */
-    private void messageTokensToExpire(User logInUser) throws LanguageException {
+    @CloseDBIfOpened
+    private void messageTokensToExpire(User logInUser) {
 
         if (!Config.getBooleanProperty("DISPLAY_EXPIRING_TOKEN_ALERTS", true)) {
             return;
@@ -730,41 +730,45 @@ public class LoginServiceAPIFactory implements Serializable {
             return;
         }
 
-        ApiTokenAPI apiTokenAPI = APILocator.getApiTokenAPI();
-        List<ApiToken> expiringTokens = apiTokenAPI.findExpiringTokens(daysLookahead, logInUser);
+        try {
+            ApiTokenAPI apiTokenAPI = APILocator.getApiTokenAPI();
+            List<ApiToken> expiringTokens = apiTokenAPI.findExpiringTokens(daysLookahead, logInUser);
 
-        if (!expiringTokens.isEmpty()) {
-            SystemMessageBuilder message;
+            if (!expiringTokens.isEmpty()) {
+                SystemMessageBuilder message;
 
-            if (logInUser.isAdmin()) {
+                if (logInUser.isAdmin()) {
 
-                String msg = LanguageUtil.get(logInUser.getLocale(), "apitoken.expiry.admin.message");
-                message = new SystemMessageBuilder()
-                        .setMessage(msg)
-                        .setSeverity(MessageSeverity.WARNING)
-                        .setType(MessageType.SIMPLE_MESSAGE)
-                        .setLife(86400000);
-            } else {
+                    String msg = LanguageUtil.get(logInUser.getLocale(), "apitoken.expiry.admin.message");
+                    message = new SystemMessageBuilder()
+                            .setMessage(msg)
+                            .setSeverity(MessageSeverity.WARNING)
+                            .setType(MessageType.SIMPLE_MESSAGE)
+                            .setLife(86400000);
+                } else {
 
-                String msg = LanguageUtil.get(logInUser.getLocale(), "apitoken.expiry.user.message");
-                message = new SystemMessageBuilder()
-                        .setMessage(msg)
-                        .setSeverity(MessageSeverity.WARNING)
-                        .setType(MessageType.SIMPLE_MESSAGE)
-                        .setLife(86400000);
+                    String msg = LanguageUtil.get(logInUser.getLocale(), "apitoken.expiry.user.message");
+                    message = new SystemMessageBuilder()
+                            .setMessage(msg)
+                            .setSeverity(MessageSeverity.WARNING)
+                            .setType(MessageType.SIMPLE_MESSAGE)
+                            .setLife(86400000);
+                }
+
+                sendMessage(message, logInUser);
             }
-
-            sendMessageDelayed(message, logInUser);
+        } catch (Exception e) {
+            Logger.error(this, "Error checking for expiring tokens: " + e.getMessage(), e);
         }
     }
 
-    private void sendMessageDelayed(SystemMessageBuilder message, User user) {
-        final SystemMessageBuilder finalMessage = message;
-        DotConcurrentFactory.getInstance().getSubmitter().delay(() -> {
-                    SystemMessageEventUtil.getInstance().pushMessage(finalMessage.create(), list(user.getUserId()));
-                    Logger.info("", finalMessage.create().getMessage().toString());
-                },
-                3000, TimeUnit.MILLISECONDS);
+    private void sendMessage(SystemMessageBuilder message, User user) {
+        try {
+            SystemMessageEventUtil.getInstance().pushMessage(message.create(), list(user.getUserId()));
+            Logger.info("", message.create().getMessage().toString());
+        } catch (Exception e) {
+            Logger.error(this, "Error sending message: " + e.getMessage(), e);
+        }
     }
     
 
