@@ -232,7 +232,7 @@ cube('request', {
       type: 'countDistinct',
       title: 'Total Requests'
     },
-    totalUser: {
+    totalUsers: {
       sql: 'context_user_id',
       type: 'countDistinct',
       title: 'Total Users'
