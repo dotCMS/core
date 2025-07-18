@@ -285,6 +285,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
     private final BaseTypeToContentTypeStrategyResolver baseTypeToContentTypeStrategyResolver =
             BaseTypeToContentTypeStrategyResolver.getInstance();
 
+    private final static Lazy<Boolean> SET_DEFAULT_VALUES = Lazy.of(()-> Config.getBooleanProperty("CONTENT_API_SET_DEFAULT_VALUES", true));
+
 
     private  final Lazy<UniqueFieldValidationStrategyResolver> uniqueFieldValidationStrategyResolver;
 
@@ -5664,7 +5666,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
 
             contentlet = applyNullProperties(contentlet);
-            contentlet = isNewContent? setDefaultValues(contentlet):contentlet;
+            contentlet = SET_DEFAULT_VALUES.get() && isNewContent? setDefaultValues(contentlet):contentlet;
 
             //This is executed first hand to create the inode-contentlet relationship.
             if (InodeUtils.isSet(existingInode)) {
@@ -5817,8 +5819,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             if (!map.containsKey(field.variable()) && UtilMethods.isSet(field.defaultValue())) {
 
-                APILocator.getContentletAPI()
-                        .setContentletProperty(contentlet, field, field.defaultValue());
+                try {
+                    APILocator.getContentletAPI()
+                            .setContentletProperty(contentlet, field, field.defaultValue());
+                } catch (Exception e) {
+
+                    Logger.error(this, "Can not set the default value: " + field.defaultValue() +
+                            " to the field: " + field.variable() + ", on the ct: " + contentlet.getContentType().variable());
+                }
             }
         }
 
