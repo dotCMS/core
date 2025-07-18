@@ -30,7 +30,7 @@ public class VisitorCharacter extends AbstractCharacter {
         final String remoteIp = visitor.getIpAddress().getHostAddress();
 
         getMap().put("ipHash", DigestUtils.sha1Hex(remoteIp));
-        getMap().put(WebKeys.LONG_LIVED_DOTCMS_ID_COOKIE, WebKeys.LONG_LIVED_DOTCMS_ID_COOKIE);
+        getMap().put(WebKeys.LONG_LIVED_DOTCMS_ID_COOKIE, dmid);
         getMap().put("device", device);
         getMap().put("weightedTags", ImmutableList.copyOf(tags));
         getMap().put("persona", (persona != null) ? persona.getKeyTag() : null);
