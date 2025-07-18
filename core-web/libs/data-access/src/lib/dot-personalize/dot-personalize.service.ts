@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { pluck } from 'rxjs/operators';
 
@@ -11,10 +11,8 @@ import { DotSessionStorageService } from '../dot-session-storage/dot-session-sto
 
 @Injectable()
 export class DotPersonalizeService {
-    constructor(
-        private coreWebService: CoreWebService,
-        private dotSessionStorageService: DotSessionStorageService
-    ) {}
+    private coreWebService = inject(CoreWebService);
+    private dotSessionStorageService = inject(DotSessionStorageService);
 
     /**
      * Set a personalized page for the persona passed
