@@ -19,6 +19,7 @@ import {
 import { withActivities } from './features/activities/activities.feature';
 import { withContent, DialogInitializationOptions } from './features/content/content.feature';
 import { withForm } from './features/form/form.feature';
+import { withHistory } from './features/history/history.feature';
 import { withInformation } from './features/information/information.feature';
 import { withLocales } from './features/locales/locales.feature';
 import { withLock } from './features/lock/lock.feature';
@@ -99,6 +100,13 @@ export interface EditContentState {
         status: ComponentStatus;
         error: string | null;
     };
+
+    // Versions state
+    versions: DotCMSContentlet[];
+    versionsStatus: {
+        status: ComponentStatus;
+        error: string | null;
+    };
 }
 
 export const initialRootState: EditContentState = {
@@ -166,6 +174,13 @@ export const initialRootState: EditContentState = {
     activitiesStatus: {
         status: ComponentStatus.INIT,
         error: null
+    },
+
+    // Versions state
+    versions: [],
+    versionsStatus: {
+        status: ComponentStatus.INIT,
+        error: null
     }
 };
 
@@ -186,6 +201,7 @@ export const DotEditContentStore = signalStore(
     withForm(),
     withLocales(),
     withActivities(),
+    withHistory(),
     withHooks({
         onInit(store) {
             // Always load the current user

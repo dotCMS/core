@@ -299,4 +299,19 @@ export class DotEditContentService {
             .post<Activity>(`/api/v1/workflow/${identifier}/comments`, { comment })
             .pipe(pluck('entity'));
     }
+
+    /**
+     * Retrieves the versions for a content item by its identifier.
+     * Returns all versions of the content including live, working, and archived versions.
+     *
+     * @param {string} identifier - The unique identifier of the content item
+     * @returns {Observable<DotCMSContentlet[]>} Observable that emits an array of contentlet versions ordered by modification date
+     */
+    getVersions(identifier: string): Observable<DotCMSContentlet[]> {
+        return this.#http
+            .get<{
+                entity: DotCMSContentlet[];
+            }>(`/api/v1/content/versions?identifier=${identifier}`)
+            .pipe(pluck('entity', 'versions'));
+    }
 }

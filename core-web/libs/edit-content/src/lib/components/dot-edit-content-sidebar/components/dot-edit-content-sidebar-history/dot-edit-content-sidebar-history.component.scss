@@ -1,0 +1,359 @@
+@use "variables" as *;
+
+@keyframes fadeInHistory {
+    from {
+        opacity: 0;
+        transform: translateY(-$spacing-1);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+// Block
+.history {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    position: relative;
+}
+
+// Elements
+.history__content {
+    flex: 1;
+    overflow-y: auto;
+    padding: $spacing-3 $spacing-4;
+
+    ::ng-deep .history__timeline {
+        .p-timeline-event {
+        }
+
+        .p-timeline-event-marker {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border: 2px solid $white;
+            position: relative;
+            z-index: 1;
+        }
+
+        .p-timeline-event-content {
+            padding-left: $spacing-3;
+            margin-top: -$spacing-1;
+        }
+
+        .p-timeline-event-connector {
+            background: $color-palette-gray-300;
+            width: 2px;
+        }
+
+        .p-timeline-event-opposite {
+            display: none;
+        }
+    }
+}
+
+.history__loading {
+    padding: $spacing-3 $spacing-4;
+
+    ::ng-deep .p-skeleton {
+        background: $color-palette-gray-200;
+        border-radius: $border-radius-md;
+    }
+}
+
+.history__skeleton-item {
+    margin-bottom: $spacing-3;
+
+    &:last-child {
+        margin-bottom: 0;
+    }
+}
+
+.history__empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: $spacing-6 $spacing-4;
+    text-align: center;
+    height: 100%;
+    min-height: 200px;
+}
+
+.history__empty-icon {
+    margin-bottom: $spacing-3;
+    color: $color-palette-gray-400;
+
+    .pi {
+        font-size: 3rem;
+    }
+}
+
+.history__empty-title {
+    margin: 0 0 $spacing-2 0;
+    color: $color-palette-gray-600;
+    font-size: $font-size-lg;
+    font-weight: 600;
+}
+
+.history__empty-message {
+    margin: 0;
+    color: $color-palette-gray-500;
+    font-size: $font-size-md;
+    line-height: 1.5;
+}
+
+// Timeline markers
+.history__marker {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid $white;
+    position: relative;
+    z-index: 1;
+}
+
+.history__marker--current {
+    background: $color-palette-yellow;
+    box-shadow: 0 0 0 2px $color-palette-yellow-op-20;
+}
+
+.history__marker--published {
+    background: $color-palette-green;
+    box-shadow: 0 0 0 2px $color-palette-green-op-20;
+}
+
+.history__marker--live {
+    background: $color-palette-green;
+}
+
+.history__marker--draft {
+    background: $color-palette-gray-400;
+}
+
+// Timeline item structure
+.history__timeline-item {
+    background: $color-palette-gray-100;
+    border-radius: $border-radius-md;
+    padding: $spacing-3;
+    position: relative;
+    margin-bottom: $spacing-2;
+}
+
+.history__item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: $spacing-3;
+}
+
+.history__time-section {
+    display: flex;
+    align-items: center;
+    gap: $spacing-2;
+}
+
+.history__time-now {
+    font-weight: 700;
+    color: $color-palette-gray-800;
+    font-size: $font-size-md;
+}
+
+.history__time-relative {
+    font-weight: 600;
+    color: $color-palette-gray-600;
+    font-size: $font-size-sm;
+}
+
+.history__status {
+    padding: $spacing-1 $spacing-2;
+    border-radius: $border-radius-sm;
+    font-size: $font-size-xs;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.history__status--published {
+    background: $color-palette-green;
+    color: $white;
+}
+
+.history__status--working {
+    background: $color-palette-yellow;
+    color: $white;
+}
+
+.history__status--live {
+    background: $color-palette-green;
+    color: $white;
+}
+
+.history__status--draft {
+    background: $color-palette-gray-500;
+    color: $white;
+}
+
+.history__actions {
+    display: flex;
+    align-items: center;
+}
+
+.history__menu-button {
+    ::ng-deep .p-button {
+        width: 32px;
+        height: 32px;
+        padding: 0;
+
+        &:hover {
+            background: $color-palette-gray-200;
+        }
+    }
+}
+
+.history__user-section {
+    display: flex;
+    align-items: center;
+    gap: $spacing-2;
+    margin-bottom: $spacing-2;
+}
+
+.history__avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+
+    ::ng-deep .p-avatar {
+        width: 32px;
+        height: 32px;
+    }
+}
+
+.history__user-name {
+    font-weight: 600;
+    color: $color-palette-gray-700;
+    font-size: $font-size-sm;
+}
+
+.history__states {
+    display: flex;
+    gap: $spacing-2;
+}
+
+.history__state {
+    padding: $spacing-1 $spacing-2;
+    border-radius: $border-radius-sm;
+    font-size: $font-size-xs;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.history__state--working {
+    background: $color-palette-yellow-op-10;
+    color: $color-palette-yellow;
+}
+
+.history__state--live {
+    background: $color-palette-green-op-10;
+    color: $color-palette-green;
+}
+
+// OverlayPanel styles
+::ng-deep .history__overlay {
+    .p-overlaypanel {
+        background: $white;
+        border: 1px solid $color-palette-gray-300;
+        border-radius: $border-radius-md;
+        box-shadow: $shadow-l;
+        padding: 0;
+        min-width: 300px;
+        max-width: 400px;
+
+        .p-overlaypanel-content {
+            padding: 0;
+        }
+    }
+}
+
+.history__overlay-title {
+    margin: 0;
+    color: $color-palette-gray-800;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-bold;
+    word-wrap: break-word;
+}
+
+.history__overlay-list {
+    padding-left: $spacing-3;
+    margin: 0;
+
+    li {
+        font-size: $font-size-sm;
+        color: $color-palette-gray-700;
+        line-height: 1.5;
+
+        &:last-child {
+            margin-bottom: 0;
+        }
+
+        strong {
+            color: $color-palette-gray-800;
+            font-weight: 600;
+        }
+    }
+}
+
+.history__overlay-states {
+    display: flex;
+    gap: $spacing-2;
+    margin-top: $spacing-2;
+}
+
+// Timeline item hover effect
+.history__timeline-item {
+    cursor: pointer;
+    transition: background-color $basic-speed ease;
+
+    &:hover {
+        background: $color-palette-gray-500;
+    }
+}
+
+// Responsive adjustments
+@media (max-width: $screen-sm-max) {
+    .history__content {
+        padding: $spacing-2;
+    }
+
+    .history__item {
+        padding: $spacing-2;
+    }
+
+    .history__header {
+        flex-direction: column;
+        gap: $spacing-2;
+    }
+
+    .history__meta {
+        align-items: flex-start;
+    }
+
+    .history__content-info {
+        flex-direction: column;
+        gap: $spacing-2;
+    }
+
+    ::ng-deep .history__overlay {
+        .p-overlaypanel {
+            min-width: 280px;
+            max-width: 320px;
+        }
+    }
+
+    .history__overlay-content {
+        padding: $spacing-3;
+    }
+}

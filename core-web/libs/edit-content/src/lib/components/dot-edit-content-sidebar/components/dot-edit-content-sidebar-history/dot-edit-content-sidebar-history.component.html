@@ -1,0 +1,151 @@
+<!-- History List -->
+<section class="history" role="region" aria-label="Content Version History">
+    @if ($isLoading()) {
+        <!-- Loading state -->
+        <div class="history__loading" data-testid="loading-state">
+            @for (item of [1, 2, 3]; track $index) {
+                <div class="history__skeleton-item">
+                    <p-skeleton width="100%" height="60px" />
+                </div>
+            }
+        </div>
+    } @else if (!$hasHistoryItems()) {
+        <!-- Empty state -->
+        <div class="history__empty" data-testid="empty-state">
+            <div class="history__empty-icon">
+                <i class="pi pi-history"></i>
+            </div>
+            <h3 class="history__empty-title">
+                {{ 'edit.content.sidebar.history.empty.title' | dm }}
+            </h3>
+            <p class="history__empty-message">
+                {{ 'edit.content.sidebar.history.empty.message' | dm }}
+            </p>
+        </div>
+    } @else {
+        <!-- History content -->
+        <div class="history__content">
+            <p-timeline
+                [value]="$historyItems()"
+                layout="vertical"
+                styleClass="history__timeline"
+                data-testid="history-timeline">
+                <ng-template pTemplate="marker" let-item let-index="index">
+                    <div
+                        class="history__marker"
+                        [class]="getTimelineMarkerClass(item, index)"
+                        data-testid="timeline-marker"></div>
+                </ng-template>
+
+                <ng-template pTemplate="content" let-item let-index="index">
+                    <div
+                        class="history__timeline-item"
+                        data-testid="history-item"
+                        (mouseenter)="showOverlay($event, item)"
+                        (mouseleave)="hideOverlay()">
+                        <!-- Timeline item header -->
+                        <div class="history__item-header">
+                            <div class="history__time-section">
+                                @if (getTimeDisplay(item, index)) {
+                                    <span class="history__time-now" data-testid="time-display">
+                                        {{ getTimeDisplay(item, index) }}
+                                    </span>
+                                } @else {
+                                    <span class="history__time-relative" data-testid="time-display">
+                                        {{ item.modDate | dotRelativeDate }}
+                                    </span>
+                                }
+
+                                <span
+                                    class="history__status"
+                                    [class]="getStatusClass(item)"
+                                    data-testid="version-status">
+                                    {{ getStatusLabel(item) }}
+                                </span>
+                            </div>
+
+                            <div class="history__actions">
+                                <p-button
+                                    icon="pi pi-ellipsis-v"
+                                    styleClass="p-button-text p-button-sm history__menu-button"
+                                    (click)="versionMenu.toggle($event)"
+                                    data-testid="version-menu-button"></p-button>
+                                <p-menu
+                                    #versionMenu
+                                    [model]="getVersionMenuItems(item)"
+                                    [popup]="true"></p-menu>
+                            </div>
+                        </div>
+
+                        <!-- User info -->
+                        <div class="history__user-section">
+                            <p-avatar
+                                dotGravatar
+                                [email]="item.modUser"
+                                styleClass="history__avatar"
+                                data-testid="user-avatar"></p-avatar>
+                            <span class="history__user-name" data-testid="history-user">
+                                {{ item.modUserName || item.modUser }}
+                            </span>
+                        </div>
+                    </div>
+                </ng-template>
+            </p-timeline>
+        </div>
+
+        <!-- OverlayPanel for version details -->
+        <p-overlayPanel
+            #overlayPanel
+            [showCloseIcon]="false"
+            [dismissable]="false"
+            styleClass="history__overlay"
+            data-testid="history-overlay">
+            @if (selectedItem) {
+                <div class="history__overlay-content">
+                    <h4 class="history__overlay-title" data-testid="overlay-title">
+                        {{ selectedItem.title }}
+                    </h4>
+
+                    <ul class="history__overlay-list">
+                        <li>
+                            {{ selectedItem.modDate | date: 'MMM d, yyyy - h:mma' }}
+                        </li>
+                        @if (selectedItem.variant) {
+                            <li>
+                                {{ 'edit.content.sidebar.history.variant' | dm }}:
+                                {{ selectedItem.variant }}
+                            </li>
+                        }
+                        <li>
+                            {{ 'edit.content.sidebar.history.page.path' | dm }}:
+                            {{ selectedItem.url || 'N/A' }}
+                        </li>
+                        <li>
+                            {{ 'edit.content.sidebar.history.page.name' | dm }}:
+                            {{ selectedItem.pageName || 'N/A' }}
+                        </li>
+                    </ul>
+
+                    @if (selectedItem.live || selectedItem.working) {
+                        <div class="history__overlay-states">
+                            @if (selectedItem.working) {
+                                <span
+                                    class="history__state history__state--working"
+                                    data-testid="overlay-state-working">
+                                    {{ 'edit.content.sidebar.history.working' | dm }}
+                                </span>
+                            }
+                            @if (selectedItem.live) {
+                                <span
+                                    class="history__state history__state--live"
+                                    data-testid="overlay-state-live">
+                                    {{ 'edit.content.sidebar.history.live' | dm }}
+                                </span>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+        </p-overlayPanel>
+    }
+</section>

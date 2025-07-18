@@ -18,6 +18,7 @@ import { DotEditContentSidebarLocalesComponent } from '@dotcms/edit-content/comp
 import { DotCopyButtonComponent, DotMessagePipe } from '@dotcms/ui';
 
 import { DotEditContentSidebarActivitiesComponent } from './components/dot-edit-content-sidebar-activities/dot-edit-content-sidebar-activities.component';
+import { DotEditContentSidebarHistoryComponent } from './components/dot-edit-content-sidebar-history/dot-edit-content-sidebar-history.component';
 import { DotEditContentSidebarInformationComponent } from './components/dot-edit-content-sidebar-information/dot-edit-content-sidebar-information.component';
 import { DotEditContentSidebarSectionComponent } from './components/dot-edit-content-sidebar-section/dot-edit-content-sidebar-section.component';
 import { DotEditContentSidebarWorkflowComponent } from './components/dot-edit-content-sidebar-workflow/dot-edit-content-sidebar-workflow.component';
@@ -49,7 +50,8 @@ import { DotEditContentStore } from '../../store/edit-content.store';
         DropdownModule,
         ButtonModule,
         DotEditContentSidebarLocalesComponent,
-        DotEditContentSidebarActivitiesComponent
+        DotEditContentSidebarActivitiesComponent,
+        DotEditContentSidebarHistoryComponent
     ]
 })
 export class DotEditContentSidebarComponent {
@@ -63,6 +65,11 @@ export class DotEditContentSidebarComponent {
     readonly $activities = this.$store.activities;
     readonly $initialContentletState = this.$store.initialContentletState;
     readonly $activitiesStatus = computed(() => this.$store.activitiesStatus().status);
+
+    // History - placeholder properties (to be connected to store later)
+
+    readonly $versionsItems = this.$store.versions;
+    readonly $historyStatus = computed(() => this.$store.versionsStatus().status);
 
     /**
      * Computed property that returns the workflow state of the content.
@@ -100,6 +107,7 @@ export class DotEditContentSidebarComponent {
             if (identifier) {
                 this.$store.getReferencePages(identifier);
                 this.$store.loadActivities(identifier);
+                this.$store.loadVersions(identifier);
             }
         });
     });
