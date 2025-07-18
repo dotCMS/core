@@ -1,20 +1,15 @@
 package com.dotcms.content.elasticsearch.business.field;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
-import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
-import com.dotcms.contenttype.model.field.BinaryField;
-import com.dotcms.contenttype.model.field.CategoryField;
-import com.dotcms.contenttype.model.field.ConstantField;
-import com.dotcms.contenttype.model.field.KeyValueField;
 import com.dotcms.contenttype.model.field.LegacyFieldTypes;
 import com.dotcms.rest.api.v1.temp.DotTempFile;
 import com.dotcms.util.JsonUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.portlets.contentlet.business.DotContentletJsonFieldException;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.contenttype.model.field.JSONField;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import io.vavr.Tuple;
@@ -154,21 +149,28 @@ public class FieldHandlerStrategyFactory {
 
     private void keyValueStrategy(final Contentlet contentlet, final Field field, final Object value) throws DotContentletStateException {
 
-        if ((value instanceof String) && (JsonUtil.isValidJSON((String) value))) {
+        if (value instanceof String) {
+            JsonUtil.JSONValidationResult validationResult = JsonUtil.validateJSON((String) value);
 
-            contentlet.setStringProperty(field.variable(), Try.of(
-                            () -> JsonUtil.JSON_MAPPER.readTree((String) value).toString())
-                    .getOrElse("{}"));
+            if (validationResult.isValid()) {
+                contentlet.setStringProperty(field.variable(), validationResult.node.toString());
+            } else {
+                // Throw a backwards compatible but detailed exception
+                throw new DotContentletJsonFieldException(
+                        field.variable(),
+                        (String) value,
+                        validationResult.line,
+                        validationResult.column,
+                        validationResult.errorMessage
+                );
+            }
+
         } else if (value instanceof Map) {
-
             contentlet.setStringProperty(field.variable(),
                     Try.of(() -> JsonUtil.getJsonAsString((Map<String, Object>) value))
                             .getOrElse("{}"));
         } else {
-
-            throw new DotContentletStateException(
-                    "Invalid JSON field provided. Key Value Field variable: " +
-                            field.variable());
+            throw new DotContentletJsonFieldException(field.variable(),"UNK",-1,-1,"Unknown value type");
         }
     }
 
