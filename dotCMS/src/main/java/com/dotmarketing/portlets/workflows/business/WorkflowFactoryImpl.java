@@ -1132,7 +1132,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
     public WorkflowComment findWorkFlowCommentById(String id) throws DotDataException {
         final HibernateUtil hu = new HibernateUtil(WorkflowComment.class);
         hu.setQuery(
-                "from workflow_comment in class com.dotmarketing.portlets.workflows.model.WorkflowComment where id = ?");
+                "from workflow_comment in class com.dotmarketing.portlets.workflows.model.WorkflowComment where id = ?1");
         hu.setParam(id);
         return (WorkflowComment) hu.load();
     }
@@ -1163,7 +1163,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
     public WorkflowHistory findWorkFlowHistoryById(String id) throws DotDataException {
         final HibernateUtil hu = new HibernateUtil(WorkflowHistory.class);
         hu.setQuery(
-                "from workflow_history in class com.dotmarketing.portlets.workflows.model.WorkflowHistory where id = ?");
+                "from workflow_history in class com.dotmarketing.portlets.workflows.model.WorkflowHistory where id = ?1");
         hu.setParam(id);
         return (WorkflowHistory) hu.load();
     }
@@ -1172,7 +1172,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
     public WorkflowTask findWorkFlowTaskById(String id) throws DotDataException {
         final HibernateUtil hu = new HibernateUtil(WorkflowTask.class);
         hu.setQuery(
-                "from workflow_task in class com.dotmarketing.portlets.workflows.model.WorkflowTask where id = ?");
+                "from workflow_task in class com.dotmarketing.portlets.workflows.model.WorkflowTask where id = ?1");
         hu.setParam(id);
         return (WorkflowTask) hu.load();
     }
@@ -1182,7 +1182,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
             throws DotDataException {
         final HibernateUtil hu = new HibernateUtil(WorkFlowTaskFiles.class);
         hu.setQuery(
-                "from workflow_task_files in class com.dotmarketing.portlets.workflows.model.WorkFlowTaskFiles where workflowtask_id = ?");
+                "from workflow_task_files in class com.dotmarketing.portlets.workflows.model.WorkFlowTaskFiles where workflowtask_id = ?1");
         hu.setParam(task.getId());
         List<Contentlet> contents = new ArrayList<>();
         List<WorkFlowTaskFiles> l = hu.list();

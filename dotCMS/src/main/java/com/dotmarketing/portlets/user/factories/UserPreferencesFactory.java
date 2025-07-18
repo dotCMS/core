@@ -34,7 +34,7 @@ public class UserPreferencesFactory {
         try {
             Logger.debug(UserPreferencesFactory.class, "Retrieving user preferences from DB.");
             HibernateUtil dh = new HibernateUtil(UserPreference.class);
-            dh.setQuery("from user_preferences in class com.dotmarketing.portlets.user.model.UserPreference where user_id = ?");
+            dh.setQuery("from user_preferences in class com.dotmarketing.portlets.user.model.UserPreference where user_id = ?1");
             dh.setParam(userId);
 
             List list = dh.list();
@@ -59,7 +59,7 @@ public class UserPreferencesFactory {
 	        try {
 	            Logger.debug(UserPreferencesFactory.class, "Retrieving preference from DB.");
 	            HibernateUtil dh = new HibernateUtil(UserPreference.class);
-	            dh.setQuery("from user_preferences in class com.dotmarketing.portlets.user.model.UserPreference where user_id = ? and preference = ?");
+	            dh.setQuery("from user_preferences in class com.dotmarketing.portlets.user.model.UserPreference where user_id = ?1 and preference = ?2");
 	            dh.setParam(userId);
 	            dh.setParam(preference);
 	

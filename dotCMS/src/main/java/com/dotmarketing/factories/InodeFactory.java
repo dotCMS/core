@@ -66,7 +66,7 @@ public class InodeFactory {
 			final String tableName = c.getDeclaredConstructor().newInstance().getType();
 			final HibernateUtil dh = new HibernateUtil(c);
 
-			String sql = "SELECT {" + tableName + ".*} from " + tableName + " " + tableName + ", tree tree, inode "
+			String sql = "SELECT " + tableName + ".* from " + tableName + " " + tableName + ", tree tree, inode "
 					+ tableName + "_1_ where tree.parent = ? and tree.child = " + tableName + ".inode and " + tableName
 					+ "_1_.inode = " + tableName + ".inode and "+tableName+"_1_.type = '"+tableName+"' and " + condition + " order by " + orderby;
 

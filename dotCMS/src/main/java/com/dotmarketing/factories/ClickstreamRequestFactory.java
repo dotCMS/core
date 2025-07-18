@@ -94,7 +94,7 @@ public class ClickstreamRequestFactory {
 	public static java.util.List<ClickstreamRequest> getClickstreamRequestsByRequestURI(String requestUri) {
         HibernateUtil dh = new HibernateUtil(ClickstreamRequest.class);
         try {
-			dh.setSQLQuery("SELECT {clickstream_request.*}  FROM clickstream_request WHERE  request_uri = ? ORDER BY timestampper");
+			dh.setSQLQuery("SELECT clickstream_request_id, clickstream_id, server_name, protocol, server_port, request_uri, request_order, query_string, language_id, timestamptzper, host_id, associated_identifier FROM clickstream_request WHERE request_uri = ? ORDER BY timestamptzper");
 	        dh.setParam(requestUri);
 	        return (List<ClickstreamRequest>) dh.list();
 		} catch (DotHibernateException e) {
@@ -107,7 +107,7 @@ public class ClickstreamRequestFactory {
 	public static java.util.List<ClickstreamRequest> getClickstreamRequestsByClickStream(Clickstream cs) {
         HibernateUtil dh = new HibernateUtil(ClickstreamRequest.class);
         try {
-	        dh.setSQLQuery("SELECT    {clickstream_request.*}  FROM clickstream_request WHERE  clickstream_id = ? ORDER BY timestampper");
+	        dh.setSQLQuery("SELECT clickstream_request_id, clickstream_id, server_name, protocol, server_port, request_uri, request_order, query_string, language_id, timestamptzper, host_id, associated_identifier FROM clickstream_request WHERE clickstream_id = ? ORDER BY timestamptzper");
 	        dh.setParam(cs.getClickstreamId());
 	        return (List<ClickstreamRequest>)dh.list();
 		} catch (DotHibernateException e) {

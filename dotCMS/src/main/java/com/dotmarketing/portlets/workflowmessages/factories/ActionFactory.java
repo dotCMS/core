@@ -23,7 +23,7 @@ public class ActionFactory {
 		Action myAction = null;
 		try {
 			dh.setQuery(
-				"from action in class com.dotmarketing.portlets.workflowmessages.model.Action where id = ?");
+				"from action in class com.dotmarketing.portlets.workflowmessages.model.Action where id = ?1");
 			dh.setParam(actionId);
 			myAction = (Action) dh.load();
 		} catch (DotHibernateException e) {
@@ -37,7 +37,7 @@ public class ActionFactory {
 		List actionList =null;
 		try {
 			dh.setQuery(
-				"from action in class com.dotmarketing.portlets.workflowmessages.model.Action where anti_status_id = ?");
+				"from action in class com.dotmarketing.portlets.workflowmessages.model.Action where anti_status_id = ?1");
 			dh.setParam(statusId);
 			actionList = dh.list();
 		} catch (DotHibernateException e) {

@@ -173,7 +173,7 @@ public class AdminConfigPersistence extends BasePersistence {
 			query.append(" ");
 
 			Query q = session.createQuery(query.toString());
-			int queryPos = 0;
+			int queryPos = 1;
 			q.setString(queryPos++, companyId);
 
 			Iterator itr = q.list().iterator();
@@ -217,7 +217,7 @@ public class AdminConfigPersistence extends BasePersistence {
 			}
 
 			Query q = session.createQuery(query.toString());
-			int queryPos = 0;
+			int queryPos = 1;
 			q.setString(queryPos++, companyId);
 
 			List list = new ArrayList();
@@ -306,7 +306,7 @@ public class AdminConfigPersistence extends BasePersistence {
 			}
 
 			Query q = session.createQuery(query.toString());
-			int queryPos = 0;
+			int queryPos = 1;
 			q.setString(queryPos++, companyId);
 
 			com.liferay.portlet.admin.model.AdminConfig[] array = new com.liferay.portlet.admin.model.AdminConfig[3];
@@ -390,7 +390,7 @@ public class AdminConfigPersistence extends BasePersistence {
 			query.append(" ");
 
 			Query q = session.createQuery(query.toString());
-			int queryPos = 0;
+			int queryPos = 1;
 			q.setString(queryPos++, companyId);
 			q.setString(queryPos++, type);
 
@@ -437,7 +437,7 @@ public class AdminConfigPersistence extends BasePersistence {
 			}
 
 			Query q = session.createQuery(query.toString());
-			int queryPos = 0;
+			int queryPos = 1;
 			q.setString(queryPos++, companyId);
 			q.setString(queryPos++, type);
 
@@ -529,7 +529,7 @@ public class AdminConfigPersistence extends BasePersistence {
 			}
 
 			Query q = session.createQuery(query.toString());
-			int queryPos = 0;
+			int queryPos = 1;
 			q.setString(queryPos++, companyId);
 			q.setString(queryPos++, type);
 
@@ -640,7 +640,7 @@ public class AdminConfigPersistence extends BasePersistence {
 			query.append(" ");
 
 			Query q = session.createQuery(query.toString());
-			int queryPos = 0;
+			int queryPos = 1;
 			q.setString(queryPos++, companyId);
 
 			Iterator itr = q.list().iterator();
@@ -677,7 +677,7 @@ public class AdminConfigPersistence extends BasePersistence {
 			query.append(" ");
 
 			Query q = session.createQuery(query.toString());
-			int queryPos = 0;
+			int queryPos = 1;
 			q.setString(queryPos++, companyId);
 			q.setString(queryPos++, type);
 
@@ -713,13 +713,13 @@ public class AdminConfigPersistence extends BasePersistence {
 			query.append(" ");
 
 			Query q = session.createQuery(query.toString());
-			int queryPos = 0;
+			int queryPos = 1;
 			q.setString(queryPos++, companyId);
 
 			Iterator itr = q.list().iterator();
 
 			if (itr.hasNext()) {
-				Integer count = (Integer)itr.next();
+				Number count = (Number)itr.next();
 
 				if (count != null) {
 					return count.intValue();
@@ -753,14 +753,14 @@ public class AdminConfigPersistence extends BasePersistence {
 			query.append(" ");
 
 			Query q = session.createQuery(query.toString());
-			int queryPos = 0;
+			int queryPos = 1;
 			q.setString(queryPos++, companyId);
 			q.setString(queryPos++, type);
 
 			Iterator itr = q.list().iterator();
 
 			if (itr.hasNext()) {
-				Integer count = (Integer)itr.next();
+				Number count = (Number)itr.next();
 
 				if (count != null) {
 					return count.intValue();

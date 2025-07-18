@@ -250,7 +250,7 @@ public class WebAssetFactory {
 		HibernateUtil dh = new HibernateUtil(WebAsset.class);
 		WebAsset webAsset = null ;
 		try {
-			dh.setQuery("from inode in class " + WebAsset.class.getName() + " where ? in inode.children.elements");
+			dh.setQuery("from inode in class " + WebAsset.class.getName() + " where ?1 in inode.children.elements");
 			dh.setParam(i.getInode());
 			webAsset = (WebAsset) dh.load();
 		} catch (DotHibernateException e) {

@@ -248,7 +248,7 @@ public class UserAPIImpl implements UserAPI {
             user = createSystemUser();
         }
 
-        if(!roleAPI.doesUserHaveRole(user, cmsAdminRole)) {
+        if(cmsAdminRole != null && !roleAPI.doesUserHaveRole(user, cmsAdminRole)) {
             roleAPI.addRoleToUser(cmsAdminRole.getId(), user);
         }
 

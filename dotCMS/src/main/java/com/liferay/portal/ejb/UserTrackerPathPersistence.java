@@ -176,7 +176,7 @@ public class UserTrackerPathPersistence extends BasePersistence {
 			query.append(" ");
 
 			Query q = session.createQuery(query.toString());
-			int queryPos = 0;
+			int queryPos = 1;
 			q.setString(queryPos++, userTrackerId);
 
 			Iterator itr = q.list().iterator();
@@ -220,7 +220,7 @@ public class UserTrackerPathPersistence extends BasePersistence {
 			}
 
 			Query q = session.createQuery(query.toString());
-			int queryPos = 0;
+			int queryPos = 1;
 			q.setString(queryPos++, userTrackerId);
 
 			List list = new ArrayList();
@@ -310,7 +310,7 @@ public class UserTrackerPathPersistence extends BasePersistence {
 			}
 
 			Query q = session.createQuery(query.toString());
-			int queryPos = 0;
+			int queryPos = 1;
 			q.setString(queryPos++, userTrackerId);
 
 			com.liferay.portal.model.UserTrackerPath[] array = new com.liferay.portal.model.UserTrackerPath[3];
@@ -420,7 +420,7 @@ public class UserTrackerPathPersistence extends BasePersistence {
 			query.append(" ");
 
 			Query q = session.createQuery(query.toString());
-			int queryPos = 0;
+			int queryPos = 1;
 			q.setString(queryPos++, userTrackerId);
 
 			Iterator itr = q.list().iterator();
@@ -456,13 +456,13 @@ public class UserTrackerPathPersistence extends BasePersistence {
 			query.append(" ");
 
 			Query q = session.createQuery(query.toString());
-			int queryPos = 0;
+			int queryPos = 1;
 			q.setString(queryPos++, userTrackerId);
 
 			Iterator itr = q.list().iterator();
 
 			if (itr.hasNext()) {
-				Integer count = (Integer)itr.next();
+				Number count = (Number)itr.next();
 
 				if (count != null) {
 					return count.intValue();

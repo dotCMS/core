@@ -178,7 +178,7 @@ public class PasswordTrackerPersistence extends BasePersistence {
 			query.append("createDate DESC");
 
 			Query q = session.createQuery(query.toString());
-			int queryPos = 0;
+			int queryPos = 1;
 			q.setString(queryPos++, userId);
 
 			Iterator itr = q.list().iterator();
@@ -227,7 +227,7 @@ public class PasswordTrackerPersistence extends BasePersistence {
 			}
 
 			Query q = session.createQuery(query.toString());
-			int queryPos = 0;
+			int queryPos = 1;
 			q.setString(queryPos++, userId);
 
 			List list = new ArrayList();
@@ -322,7 +322,7 @@ public class PasswordTrackerPersistence extends BasePersistence {
 			}
 
 			Query q = session.createQuery(query.toString());
-			int queryPos = 0;
+			int queryPos = 1;
 			q.setString(queryPos++, userId);
 
 			com.liferay.portal.model.PasswordTracker[] array = new com.liferay.portal.model.PasswordTracker[3];
@@ -437,7 +437,7 @@ public class PasswordTrackerPersistence extends BasePersistence {
 			query.append("createDate DESC");
 
 			Query q = session.createQuery(query.toString());
-			int queryPos = 0;
+			int queryPos = 1;
 			q.setString(queryPos++, userId);
 
 			Iterator itr = q.list().iterator();
@@ -472,13 +472,13 @@ public class PasswordTrackerPersistence extends BasePersistence {
 			query.append(" ");
 
 			Query q = session.createQuery(query.toString());
-			int queryPos = 0;
+			int queryPos = 1;
 			q.setString(queryPos++, userId);
 
 			Iterator itr = q.list().iterator();
 
 			if (itr.hasNext()) {
-				Integer count = (Integer)itr.next();
+				Number count = (Number)itr.next();
 
 				if (count != null) {
 					return count.intValue();

@@ -75,11 +75,11 @@ public class BooleanType implements UserType {
 	public Object nullSafeGet(ResultSet rs, String[] names, SharedSessionContractImplementor session, Object owner)
 		throws HibernateException, SQLException {
 
-		Boolean value = rs.getBoolean(names[0]);
+		boolean value = rs.getBoolean(names[0]);
 		if (rs.wasNull()) {
 			return Boolean.valueOf(DEFAULT_VALUE);
 		}
-		return value;
+		return Boolean.valueOf(value);
 	}
 
 	@Override

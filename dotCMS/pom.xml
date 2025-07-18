@@ -269,10 +269,6 @@
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
-            <artifactId>dot.jboss-logging</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.jempbox</artifactId>
         </dependency>
         <dependency>
@@ -770,7 +766,7 @@
             <artifactId>validation-api</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.hibernate</groupId>
+            <groupId>org.hibernate.validator</groupId>
             <artifactId>hibernate-validator</artifactId>
         </dependency>
 
@@ -1408,9 +1404,15 @@
 
         <!-- Weld CDI -->
 
+        <!-- Explicit JBoss logging dependency to ensure correct version loads before shaded versions -->
+        <dependency>
+            <groupId>org.jboss.logging</groupId>
+            <artifactId>jboss-logging</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>org.jboss.weld.servlet</groupId>
-            <artifactId>weld-servlet-shaded</artifactId>
+            <artifactId>weld-servlet-core</artifactId>
             <version>3.1.9.Final</version>
         </dependency>
 
@@ -1425,11 +1427,6 @@
             <artifactId>jersey-cdi1x-servlet</artifactId>
         </dependency>
 
-        <dependency>
-            <groupId>org.glassfish.hk2.external</groupId>
-            <artifactId>bean-validator</artifactId>
-            <version>2.5.0-b06</version>
-        </dependency>
 
         <dependency>
             <groupId>org.glassfish.hk2</groupId>

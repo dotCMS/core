@@ -181,7 +181,7 @@ public class UserTrackerPersistence extends BasePersistence {
 			query.append(" ");
 
 			Query q = session.createQuery(query.toString());
-			int queryPos = 0;
+			int queryPos = 1;
 			q.setString(queryPos++, companyId);
 
 			Iterator itr = q.list().iterator();
@@ -225,7 +225,7 @@ public class UserTrackerPersistence extends BasePersistence {
 			}
 
 			Query q = session.createQuery(query.toString());
-			int queryPos = 0;
+			int queryPos = 1;
 			q.setString(queryPos++, companyId);
 
 			List list = new ArrayList();
@@ -314,7 +314,7 @@ public class UserTrackerPersistence extends BasePersistence {
 			}
 
 			Query q = session.createQuery(query.toString());
-			int queryPos = 0;
+			int queryPos = 1;
 			q.setString(queryPos++, companyId);
 
 			com.liferay.portal.model.UserTracker[] array = new com.liferay.portal.model.UserTracker[3];
@@ -395,7 +395,7 @@ public class UserTrackerPersistence extends BasePersistence {
 			query.append(" ");
 
 			Query q = session.createQuery(query.toString());
-			int queryPos = 0;
+			int queryPos = 1;
 			q.setString(queryPos++, userId);
 
 			Iterator itr = q.list().iterator();
@@ -439,7 +439,7 @@ public class UserTrackerPersistence extends BasePersistence {
 			}
 
 			Query q = session.createQuery(query.toString());
-			int queryPos = 0;
+			int queryPos = 1;
 			q.setString(queryPos++, userId);
 
 			List list = new ArrayList();
@@ -528,7 +528,7 @@ public class UserTrackerPersistence extends BasePersistence {
 			}
 
 			Query q = session.createQuery(query.toString());
-			int queryPos = 0;
+			int queryPos = 1;
 			q.setString(queryPos++, userId);
 
 			com.liferay.portal.model.UserTracker[] array = new com.liferay.portal.model.UserTracker[3];
@@ -638,7 +638,7 @@ public class UserTrackerPersistence extends BasePersistence {
 			query.append(" ");
 
 			Query q = session.createQuery(query.toString());
-			int queryPos = 0;
+			int queryPos = 1;
 			q.setString(queryPos++, companyId);
 
 			Iterator itr = q.list().iterator();
@@ -672,7 +672,7 @@ public class UserTrackerPersistence extends BasePersistence {
 			query.append(" ");
 
 			Query q = session.createQuery(query.toString());
-			int queryPos = 0;
+			int queryPos = 1;
 			q.setString(queryPos++, userId);
 
 			Iterator itr = q.list().iterator();
@@ -707,13 +707,13 @@ public class UserTrackerPersistence extends BasePersistence {
 			query.append(" ");
 
 			Query q = session.createQuery(query.toString());
-			int queryPos = 0;
+			int queryPos = 1;
 			q.setString(queryPos++, companyId);
 
 			Iterator itr = q.list().iterator();
 
 			if (itr.hasNext()) {
-				Integer count = (Integer)itr.next();
+				Number count = (Number)itr.next();
 
 				if (count != null) {
 					return count.intValue();
@@ -744,13 +744,13 @@ public class UserTrackerPersistence extends BasePersistence {
 			query.append(" ");
 
 			Query q = session.createQuery(query.toString());
-			int queryPos = 0;
+			int queryPos = 1;
 			q.setString(queryPos++, userId);
 
 			Iterator itr = q.list().iterator();
 
 			if (itr.hasNext()) {
-				Integer count = (Integer)itr.next();
+				Number count = (Number)itr.next();
 
 				if (count != null) {
 					return count.intValue();

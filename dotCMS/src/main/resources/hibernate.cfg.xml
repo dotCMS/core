@@ -5,5 +5,14 @@
 <hibernate-configuration>
 	<session-factory>
 		<property name="show_sql">false</property>
+		<property name="connection.provider_class">com.dotmarketing.db.DotCMSConnectionProvider</property>
+		<!-- Reduce Hibernate logging -->
+		<property name="hibernate.generate_statistics">false</property>
+		<property name="hibernate.format_sql">false</property>
+		<property name="hibernate.use_sql_comments">false</property>
+		<!-- CDI integration settings -->
+		<property name="hibernate.cdi.bean_container">javax.enterprise.inject.spi.CDI</property>
+		<!-- Configure sequence generation strategy for Hibernate 5.6+ -->
+		<property name="hibernate.id.new_generator_mappings">false</property>
 	</session-factory>
 </hibernate-configuration>

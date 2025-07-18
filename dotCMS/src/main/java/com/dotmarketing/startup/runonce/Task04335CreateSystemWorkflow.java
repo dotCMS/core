@@ -3,6 +3,7 @@
 package com.dotmarketing.startup.runonce;
 
 import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.util.ConversionUtils;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -54,7 +55,7 @@ public class Task04335CreateSystemWorkflow implements StartupTask {
     }
 
     @Override
-    @CloseDBIfOpened
+    @WrapInTransaction
     public void executeUpgrade() throws DotDataException {
 
         final Map systemWorkflowMap         = this.getSystemWorkflowMap();

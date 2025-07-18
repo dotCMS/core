@@ -53,7 +53,7 @@ public class LayoutFactoryImpl extends LayoutFactory {
 		l = lc.get(layoutId);
 		if(l == null || !InodeUtils.isSet(l.getId())){
 			HibernateUtil hu = new HibernateUtil(Layout.class);
-			hu.setQuery("from com.dotmarketing.business.Layout where id = ?");
+			hu.setQuery("from com.dotmarketing.business.Layout where id = ?1");
 			hu.setParam(layoutId);
 			l = (Layout)hu.load();
 		
@@ -74,7 +74,7 @@ public class LayoutFactoryImpl extends LayoutFactory {
 		Layout l = null;
 
 		HibernateUtil hu = new HibernateUtil(Layout.class);
-		hu.setQuery("from com.dotmarketing.business.Layout where id = ?");
+		hu.setQuery("from com.dotmarketing.business.Layout where id = ?1");
 		hu.setParam(layoutId);
 		l = (Layout)hu.load();
 	
@@ -130,7 +130,7 @@ public class LayoutFactoryImpl extends LayoutFactory {
 			return;
 		}
 		HibernateUtil hu = new HibernateUtil(PortletsLayouts.class);
-		hu.setQuery("from com.dotmarketing.business.PortletsLayouts where layout_id = ? order by portlet_order");
+		hu.setQuery("from com.dotmarketing.business.PortletsLayouts where layout_id = ?1 order by portlet_order");
 		hu.setParam(layout.getId());
 		List<PortletsLayouts> pls = hu.list();
 		List<String> pids = new ArrayList<>();
@@ -187,7 +187,7 @@ public class LayoutFactoryImpl extends LayoutFactory {
 	protected Layout findLayoutByName(String name) throws DotDataException {
 
 		HibernateUtil hu = new HibernateUtil(Layout.class);
-		hu.setQuery("from com.dotmarketing.business.Layout where layout_name = ?");
+		hu.setQuery("from com.dotmarketing.business.Layout where layout_name = ?1");
 		hu.setParam(name);
 		return (Layout)hu.load();
 	}

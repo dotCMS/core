@@ -50,6 +50,13 @@
                 <version>${log4j.version}</version>
                 <scope>runtime</scope>
             </dependency>
+            
+            <!-- Force jboss-logging to specific version for Hibernate 5.6 compatibility -->
+            <dependency>
+                <groupId>org.jboss.logging</groupId>
+                <artifactId>jboss-logging</artifactId>
+                <version>3.4.3.Final</version>
+            </dependency>
             <dependency>
                 <!-- Support Java Commons Logging API in Log4j2 -->
                 <groupId>org.apache.logging.log4j</groupId>

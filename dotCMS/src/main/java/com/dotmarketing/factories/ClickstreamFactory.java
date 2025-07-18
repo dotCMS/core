@@ -228,7 +228,7 @@ public class ClickstreamFactory {
 		HibernateUtil dh = new HibernateUtil(Clickstream.class);
 		Clickstream clickStream = new Clickstream();
 		try {
-			dh.setQuery("from clickstream in class " + Clickstream.class.getName() + " where clickstream_id = ?");
+			dh.setQuery("from clickstream in class " + Clickstream.class.getName() + " where clickstream_id = ?1");
 			dh.setParam(Integer.parseInt(clickstreamId));
 			clickStream = (Clickstream) dh.load();
 		} catch (NumberFormatException e) {
@@ -245,7 +245,7 @@ public class ClickstreamFactory {
 		HibernateUtil dh = new HibernateUtil(Clickstream.class);
 		List<Clickstream> list = new ArrayList<>();
 		try {
-			dh.setQuery("from clickstream in class " + Clickstream.class.getName() + " where cookie_id = ?");
+			dh.setQuery("from clickstream in class " + Clickstream.class.getName() + " where cookie_id = ?1");
 			dh.setParam(cookieId);
 			list = dh.list();
 		} catch (DotHibernateException e) {

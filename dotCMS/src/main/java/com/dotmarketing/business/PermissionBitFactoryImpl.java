@@ -112,11 +112,11 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 2. The permisionable id
 	 */
 	private static final String LOAD_PERMISSION_SQL =
-		" select {permission.*} from permission where inode_id = ? "+
+		" select id, permission_type, inode_id, roleid, permission from permission where inode_id = ? "+
         " union all "+
-        " select {permission.*} from permission join permission_reference "+
-        "    on (inode_id = reference_id and permission.permission_type = permission_reference.permission_type) "+
-        "    where asset_id = ?";
+        " select permission.id, permission.permission_type, permission.inode_id, permission.roleid, permission.permission from permission join permission_reference "+
+        "    on (permission.inode_id = permission_reference.reference_id and permission.permission_type = permission_reference.permission_type) "+
+        "    where permission_reference.asset_id = ?";
 
 	/*
 	 * To load permission references objects based on the reference they are pointing to
@@ -1612,7 +1612,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		try {
 			HibernateUtil persistanceService = new HibernateUtil(Permission.class);
 
-			persistanceService.setQuery("from inode in class com.dotmarketing.beans.Permission where inode_id = ? and roleid = ? " +
+			persistanceService.setQuery("from inode in class com.dotmarketing.beans.Permission where inode_id = ?1 and roleid = ?2 " +
 					"and permission_type = ?");
 			persistanceService.setParam(inode);
 			persistanceService.setParam(roleId);
@@ -1979,12 +1979,12 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 
 
 		StringBuilder query = new StringBuilder();
-		query.append("select distinct {permission.*} from permission ");
+		query.append("select distinct permission.id, permission.permission_type, permission.inode_id, permission.roleid, permission.permission from permission ");
 		if(onlyFoldersAndHosts) {
 		    query.append("  join contentlet on (contentlet.identifier=permission.inode_id and structure_inode=?) ")
 		         .append("  where permission.roleid =? ")
 		         .append("  union all ")
-		         .append("  select {permission.*} from permission join folder on (permission.inode_id=folder.inode) ");
+		         .append("  select permission.id, permission.permission_type, permission.inode_id, permission.roleid, permission.permission from permission join folder on (permission.inode_id=folder.inode) ");
 		}
 		query.append(" where permission.roleid = ? ");
 

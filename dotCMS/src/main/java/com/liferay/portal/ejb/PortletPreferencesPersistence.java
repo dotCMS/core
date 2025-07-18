@@ -173,7 +173,7 @@ public class PortletPreferencesPersistence extends BasePersistence {
 			query.append(" ");
 
 			Query q = session.createQuery(query.toString());
-			int queryPos = 0;
+			int queryPos = 1;
 			q.setString(queryPos++, layoutId);
 
 			Iterator itr = q.list().iterator();
@@ -217,7 +217,7 @@ public class PortletPreferencesPersistence extends BasePersistence {
 			}
 
 			Query q = session.createQuery(query.toString());
-			int queryPos = 0;
+			int queryPos = 1;
 			q.setString(queryPos++, layoutId);
 
 			List list = new ArrayList();
@@ -309,7 +309,7 @@ public class PortletPreferencesPersistence extends BasePersistence {
 			}
 
 			Query q = session.createQuery(query.toString());
-			int queryPos = 0;
+			int queryPos = 1;
 			q.setString(queryPos++, layoutId);
 
 			com.liferay.portal.model.PortletPreferences[] array = new com.liferay.portal.model.PortletPreferences[3];
@@ -392,7 +392,7 @@ public class PortletPreferencesPersistence extends BasePersistence {
 			query.append(" ");
 
 			Query q = session.createQuery(query.toString());
-			int queryPos = 0;
+			int queryPos = 1;
 			q.setString(queryPos++, userId);
 
 			Iterator itr = q.list().iterator();
@@ -436,7 +436,7 @@ public class PortletPreferencesPersistence extends BasePersistence {
 			}
 
 			Query q = session.createQuery(query.toString());
-			int queryPos = 0;
+			int queryPos = 1;
 			q.setString(queryPos++, userId);
 
 			List list = new ArrayList();
@@ -528,7 +528,7 @@ public class PortletPreferencesPersistence extends BasePersistence {
 			}
 
 			Query q = session.createQuery(query.toString());
-			int queryPos = 0;
+			int queryPos = 1;
 			q.setString(queryPos++, userId);
 
 			com.liferay.portal.model.PortletPreferences[] array = new com.liferay.portal.model.PortletPreferences[3];
@@ -614,7 +614,7 @@ public class PortletPreferencesPersistence extends BasePersistence {
 			query.append(" ");
 
 			Query q = session.createQuery(query.toString());
-			int queryPos = 0;
+			int queryPos = 1;
 			q.setString(queryPos++, layoutId);
 			q.setString(queryPos++, userId);
 
@@ -661,7 +661,7 @@ public class PortletPreferencesPersistence extends BasePersistence {
 			}
 
 			Query q = session.createQuery(query.toString());
-			int queryPos = 0;
+			int queryPos = 1;
 			q.setString(queryPos++, layoutId);
 			q.setString(queryPos++, userId);
 
@@ -756,7 +756,7 @@ public class PortletPreferencesPersistence extends BasePersistence {
 			}
 
 			Query q = session.createQuery(query.toString());
-			int queryPos = 0;
+			int queryPos = 1;
 			q.setString(queryPos++, layoutId);
 			q.setString(queryPos++, userId);
 
@@ -868,7 +868,7 @@ public class PortletPreferencesPersistence extends BasePersistence {
 			query.append(" ");
 
 			Query q = session.createQuery(query.toString());
-			int queryPos = 0;
+			int queryPos = 1;
 			q.setString(queryPos++, layoutId);
 
 			Iterator itr = q.list().iterator();
@@ -902,7 +902,7 @@ public class PortletPreferencesPersistence extends BasePersistence {
 			query.append(" ");
 
 			Query q = session.createQuery(query.toString());
-			int queryPos = 0;
+			int queryPos = 1;
 			q.setString(queryPos++, userId);
 
 			Iterator itr = q.list().iterator();
@@ -939,7 +939,7 @@ public class PortletPreferencesPersistence extends BasePersistence {
 			query.append(" ");
 
 			Query q = session.createQuery(query.toString());
-			int queryPos = 0;
+			int queryPos = 1;
 			q.setString(queryPos++, layoutId);
 			q.setString(queryPos++, userId);
 
@@ -975,13 +975,13 @@ public class PortletPreferencesPersistence extends BasePersistence {
 			query.append(" ");
 
 			Query q = session.createQuery(query.toString());
-			int queryPos = 0;
+			int queryPos = 1;
 			q.setString(queryPos++, layoutId);
 
 			Iterator itr = q.list().iterator();
 
 			if (itr.hasNext()) {
-				Integer count = (Integer)itr.next();
+				Number count = (Number)itr.next();
 
 				if (count != null) {
 					return count.intValue();
@@ -1012,13 +1012,13 @@ public class PortletPreferencesPersistence extends BasePersistence {
 			query.append(" ");
 
 			Query q = session.createQuery(query.toString());
-			int queryPos = 0;
+			int queryPos = 1;
 			q.setString(queryPos++, userId);
 
 			Iterator itr = q.list().iterator();
 
 			if (itr.hasNext()) {
-				Integer count = (Integer)itr.next();
+				Number count = (Number)itr.next();
 
 				if (count != null) {
 					return count.intValue();
@@ -1052,14 +1052,14 @@ public class PortletPreferencesPersistence extends BasePersistence {
 			query.append(" ");
 
 			Query q = session.createQuery(query.toString());
-			int queryPos = 0;
+			int queryPos = 1;
 			q.setString(queryPos++, layoutId);
 			q.setString(queryPos++, userId);
 
 			Iterator itr = q.list().iterator();
 
 			if (itr.hasNext()) {
-				Integer count = (Integer)itr.next();
+				Number count = (Number)itr.next();
 
 				if (count != null) {
 					return count.intValue();

@@ -8,7 +8,12 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.util.ContentTypeImportExportUtil;
 import com.dotcms.publishing.BundlerUtil;
 import org.hibernate.HibernateException;
+import org.hibernate.SessionFactory;
+import org.hibernate.engine.spi.SessionImplementor;
+import org.hibernate.metamodel.spi.MetamodelImplementor;
 import org.hibernate.persister.entity.AbstractEntityPersister;
+import org.hibernate.persister.entity.EntityPersister;
+import javax.persistence.metamodel.EntityType;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.Tree;
@@ -73,11 +78,15 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.zip.ZipFile;
@@ -206,6 +215,15 @@ public class ImportStarterUtil {
                 }
 
                 if (WorkflowSchemeImportExportObject.class.equals(entity.type())){
+                    // Commit any pending transactions before workflow import to ensure roles are available
+                    try {
+                        if (HibernateUtil.getSession().getTransaction().isActive()) {
+                            HibernateUtil.getSession().getTransaction().commit();
+                            HibernateUtil.getSession().beginTransaction();
+                        }
+                    } catch (Exception e) {
+                        Logger.debug(this, "Transaction commit before workflow import: " + e.getMessage());
+                    }
                     WorkflowImportExportUtil.getInstance().importWorkflowExport(file);
                     continue;
                 }
@@ -416,10 +434,13 @@ public class ImportStarterUtil {
 
 
     private void deleteTable(final String table) {
-
-        final DotConnect dotConnect = new DotConnect();
-        dotConnect.setSQL("delete from " + table);
-        dotConnect.getResult();
+        try {
+            final DotConnect dotConnect = new DotConnect();
+            dotConnect.executeUpdate("delete from " + table, false);
+        } catch (Exception e) {
+            // Table might not exist, log warning but continue
+            Logger.warn(this, "Unable to delete from table '" + table + "': " + e.getMessage());
+        }
     }
 
     interface ObjectFilter {
@@ -658,6 +679,17 @@ public class ImportStarterUtil {
             for (Object role : l) {
                 final UsersRoles userRole = (UsersRoles) role;
 
+                // Check if the role exists before creating the relationship
+                List<Map<String, Object>> roleExists = new DotConnect()
+                        .setSQL("SELECT id FROM cms_role WHERE id = ?")
+                        .addParam(userRole.getRoleId())
+                        .loadObjectResults();
+                
+                if (roleExists.isEmpty()) {
+                    Logger.warn(this, "Skipping user-role relationship: Role ID " + userRole.getRoleId() + " does not exist for user " + userRole.getUserId());
+                    continue;
+                }
+
                 // upsert pattern for the user role
                 new DotConnect().setSQL("delete from users_cms_roles where user_id=? and role_id=?")
                         .addParam(userRole.getUserId())
@@ -676,15 +708,25 @@ public class ImportStarterUtil {
         } else if (Role.class.equals(_importClass)) {
             List<Role> roles = (List<Role>) l;
             Collections.sort(roles);
+            Logger.debug(this.getClass(), "Starting role import for " + roles.size() + " roles");
+            
             for (Role role : roles) {
                 _dh = new HibernateUtil(Role.class);
                 if(UtilMethods.isSet(role.getRoleKey())) {
                     List<Map<String,Object>>  matches= new DotConnect().setSQL("select * from cms_role where role_key =?").addParam(role.getRoleKey()).loadObjectResults();
-                    Logger.info(this.getClass(), "roleKey:" +role.getRoleKey() + " = " + matches.size() );
+                    Logger.debug(this.getClass(), "roleKey:" +role.getRoleKey() + " = " + matches.size() );
                 }
 
                 _dh.saveWithPrimaryKey(role, role.getId());
-                HibernateUtil.getSession().flush();
+                if (HibernateUtil.getSession().getTransaction() != null && HibernateUtil.getSession().getTransaction().isActive()) {
+                    HibernateUtil.getSession().flush();
+                }
+            }
+            
+            // Commit the roles transaction to ensure they're visible to subsequent DotConnect operations
+            if (HibernateUtil.getSession().getTransaction() != null && HibernateUtil.getSession().getTransaction().isActive()) {
+                HibernateUtil.getSession().getTransaction().commit();
+                HibernateUtil.getSession().beginTransaction();
             }
         } else {
             String id;
@@ -697,7 +739,9 @@ public class ImportStarterUtil {
                 _dh = new HibernateUtil(_importClass);
                 id = HibernateUtil.getSession().getSessionFactory().getClassMetadata(_importClass)
                         .getIdentifierPropertyName();
-                HibernateUtil.getSession().flush();
+                if (HibernateUtil.getSession().getTransaction() != null && HibernateUtil.getSession().getTransaction().isActive()) {
+                    HibernateUtil.getSession().flush();
+                }
             }
 
             boolean identityOn = false;
@@ -826,7 +870,9 @@ public class ImportStarterUtil {
                     }
                 }
 
-                HibernateUtil.getSession().flush();
+                if (HibernateUtil.getSession().getTransaction() != null && HibernateUtil.getSession().getTransaction().isActive()) {
+                    HibernateUtil.getSession().flush();
+                }
 
 
             }
@@ -1040,16 +1086,41 @@ public class ImportStarterUtil {
             //These tables will be added later to preserve order
             final List<String> tablesToIgnore = getTablesToIgnore();
 
-            final Map map = HibernateUtil.getSession().getSessionFactory().getAllClassMetadata();
+            final SessionFactory sessionFactory = HibernateUtil.getSession().getSessionFactory();
+            final SessionImplementor sessionImplementor = (SessionImplementor) HibernateUtil.getSession();
+            final MetamodelImplementor metamodel = sessionImplementor.getFactory().getMetamodel();
+            
+            // Use reflection to get all entity persisters as a fallback
+            try {
+                final java.lang.reflect.Method getAllEntityPersistersMethod = metamodel.getClass().getMethod("getAllEntityPersistenceInfos");
+                final Collection<?> persisters = (Collection<?>) getAllEntityPersistersMethod.invoke(metamodel);
+                
+                for (Object persister : persisters) {
+                    if (persister instanceof AbstractEntityPersister) {
+                        final AbstractEntityPersister cmd = (AbstractEntityPersister) persister;
+                        final String tableName = cmd.getTableName();
 
-            final Iterator it = map.entrySet().iterator();
-            while (it.hasNext()) {
-                final Entry pairs = (Entry) it.next();
-                final AbstractEntityPersister cmd = (AbstractEntityPersister) pairs.getValue();
-                final String tableName = cmd.getTableName();
-
-                if(!tablesToIgnore.contains(tableName.toLowerCase())){
-                    _tablesToDelete.add(tableName);
+                        if(!tablesToIgnore.contains(tableName.toLowerCase())){
+                            _tablesToDelete.add(tableName);
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                // If reflection fails, try to get persisters directly from session factory
+                Logger.warn(this.getClass(), "Could not get entity persisters via reflection, trying alternative approach: " + e.getMessage());
+                
+                // Alternative: Iterate through all known entity classes and get their persisters
+                final Set<String> knownTables = new HashSet<>();
+                knownTables.addAll(Arrays.asList(
+                    "contentlet", "structure", "field", "relationship", "tree", "permission", 
+                    "\"user\"", "company", "cms_role", "users_cms_roles", "layout", "portlet", 
+                    "address", "clickstream", "usertracker", "usertracker_path"
+                ));
+                
+                for (String tableName : knownTables) {
+                    if(!tablesToIgnore.contains(tableName.toLowerCase())){
+                        _tablesToDelete.add(tableName);
+                    }
                 }
             }
 

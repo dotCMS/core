@@ -50,10 +50,23 @@ class WorkflowActionUtils {
                 .loadRoleByKey(RoleAPI.WORKFLOW_ANY_WHO_CAN_PUBLISH_ROLE_KEY);
         anyWhoCanEditPermisionsContentRole = roleAPI
                 .loadRoleByKey(RoleAPI.WORKFLOW_ANY_WHO_CAN_EDIT_PERMISSIONS_ROLE_KEY);
+        
         // Do not alter the order of the Elements on the list. It is tied to the logic!!
-        specialRolesHierarchy = ImmutableList
-                .of(anyWhoCanEditPermisionsContentRole, anyWhoCanPublishContentRole,
-                        anyWhoCanEditContentRole, anyWhoCanViewContentRole);
+        // Filter out null roles that might not exist during startup
+        ImmutableList.Builder<Role> builder = ImmutableList.builder();
+        if (anyWhoCanEditPermisionsContentRole != null) {
+            builder.add(anyWhoCanEditPermisionsContentRole);
+        }
+        if (anyWhoCanPublishContentRole != null) {
+            builder.add(anyWhoCanPublishContentRole);
+        }
+        if (anyWhoCanEditContentRole != null) {
+            builder.add(anyWhoCanEditContentRole);
+        }
+        if (anyWhoCanViewContentRole != null) {
+            builder.add(anyWhoCanViewContentRole);
+        }
+        specialRolesHierarchy = builder.build();
 
         cmsAdminRole = roleAPI.loadCMSAdminRole();
     }

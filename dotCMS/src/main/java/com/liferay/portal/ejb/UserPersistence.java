@@ -365,7 +365,7 @@ public class UserPersistence extends BasePersistence {
 			StringBuffer query = new StringBuffer();
 			query.append(
 					"FROM User_ IN CLASS com.liferay.portal.ejb.UserHBM WHERE ");
-			query.append("companyId = ?");
+			query.append("companyId = ?1");
 
 			query.append(" AND delete_in_progress = ");
 			query.append(DbConnectionFactory.getDBFalse());
@@ -381,7 +381,7 @@ public class UserPersistence extends BasePersistence {
 			}
 
 			Query q = session.createQuery(query.toString());
-			int queryPos = 0;
+			int queryPos = 1;
 			q.setString(queryPos++, companyId);
 
 			com.liferay.portal.model.User[] array = new com.liferay.portal.model.User[3];
@@ -459,9 +459,9 @@ public class UserPersistence extends BasePersistence {
 			StringBuffer query = new StringBuffer();
 			query.append(
 					"FROM User_ IN CLASS com.liferay.portal.ejb.UserHBM WHERE ");
-			query.append("companyId = ?");
+			query.append("companyId = ?1");
 			query.append(" AND ");
-			query.append("userId = ?");
+			query.append("userId = ?2");
 
 			query.append(" AND delete_in_progress = ");
 			query.append(DbConnectionFactory.getDBFalse());
@@ -472,7 +472,7 @@ public class UserPersistence extends BasePersistence {
 			query.append("lastName ASC");
 
 			Query q = session.createQuery(query.toString());
-			int queryPos = 0;
+			int queryPos = 1;
 			q.setString(queryPos++, companyId);
 			q.setString(queryPos++, userId);
 
@@ -507,9 +507,9 @@ public class UserPersistence extends BasePersistence {
 			StringBuffer query = new StringBuffer();
 			query.append(
 					"FROM User_ IN CLASS com.liferay.portal.ejb.UserHBM WHERE ");
-			query.append("companyId = ?");
+			query.append("companyId = ?1");
 			query.append(" AND ");
-			query.append(getPasswordCriteria());
+			query.append(getPasswordCriteria(2));
 			query.append(" AND delete_in_progress = ");
 			query.append(DbConnectionFactory.getDBFalse());
 			query.append(" ORDER BY ");
@@ -518,7 +518,7 @@ public class UserPersistence extends BasePersistence {
 			query.append("lastName ASC");
 
 			Query q = session.createQuery(query.toString());
-			int queryPos = 0;
+			int queryPos = 1;
 			q.setString(queryPos++, companyId);
 			q.setString(queryPos++, password);
 
@@ -553,9 +553,9 @@ public class UserPersistence extends BasePersistence {
 			StringBuffer query = new StringBuffer();
 			query.append(
 					"FROM User_ IN CLASS com.liferay.portal.ejb.UserHBM WHERE ");
-			query.append("companyId = ?");
+			query.append("companyId = ?1");
 			query.append(" AND ");
-			query.append(getPasswordCriteria());
+			query.append(getPasswordCriteria(2));
 
 			query.append(" AND delete_in_progress = ");
 			query.append(DbConnectionFactory.getDBFalse());
@@ -571,7 +571,7 @@ public class UserPersistence extends BasePersistence {
 			}
 
 			Query q = session.createQuery(query.toString());
-			int queryPos = 0;
+			int queryPos = 1;
 			q.setString(queryPos++, companyId);
 			q.setString(queryPos++, password);
 
@@ -651,9 +651,9 @@ public class UserPersistence extends BasePersistence {
 			StringBuffer query = new StringBuffer();
 			query.append(
 					"FROM User_ IN CLASS com.liferay.portal.ejb.UserHBM WHERE ");
-			query.append("companyId = ?");
+			query.append("companyId = ?1");
 			query.append(" AND ");
-			query.append(getPasswordCriteria());
+			query.append(getPasswordCriteria(2));
 			query.append(" AND delete_in_progress = ");
 			query.append(DbConnectionFactory.getDBFalse());
 
@@ -668,7 +668,7 @@ public class UserPersistence extends BasePersistence {
 			}
 
 			Query q = session.createQuery(query.toString());
-			int queryPos = 0;
+			int queryPos = 1;
 			q.setString(queryPos++, companyId);
 			q.setString(queryPos++, password);
 
@@ -743,9 +743,9 @@ public class UserPersistence extends BasePersistence {
 			StringBuffer query = new StringBuffer();
 			query.append(
 					"FROM User_ IN CLASS com.liferay.portal.ejb.UserHBM WHERE ");
-			query.append("companyId = ?");
+			query.append("companyId = ?1");
 			query.append(" AND ");
-			query.append("emailAddress = ?");
+			query.append("emailAddress = ?2");
 			query.append(" AND delete_in_progress = ");
 			query.append(DbConnectionFactory.getDBFalse());
 
@@ -755,7 +755,7 @@ public class UserPersistence extends BasePersistence {
 			query.append("lastName ASC");
 
 			Query q = session.createQuery(query.toString());
-			int queryPos = 0;
+			int queryPos = 1;
 			q.setString(queryPos++, companyId);
 			q.setString(queryPos++, emailAddress);
 
@@ -819,7 +819,7 @@ public class UserPersistence extends BasePersistence {
 			StringBuffer query = new StringBuffer();
 			query.append(
 					"FROM User_ IN CLASS com.liferay.portal.ejb.UserHBM WHERE ");
-			query.append("companyId = ?");
+			query.append("companyId = ?1");
 			query.append(" AND delete_in_progress = ");
 			query.append(DbConnectionFactory.getDBFalse());
 			query.append(" ORDER BY ");
@@ -828,7 +828,7 @@ public class UserPersistence extends BasePersistence {
 			query.append("lastName ASC");
 
 			Query q = session.createQuery(query.toString());
-			int queryPos = 0;
+			int queryPos = 1;
 			q.setString(queryPos++, companyId);
 
 			Iterator itr = q.list().iterator();
@@ -863,11 +863,11 @@ public class UserPersistence extends BasePersistence {
 			StringBuffer query = new StringBuffer();
 			query.append(
 					"FROM User_ IN CLASS com.liferay.portal.ejb.UserHBM WHERE ");
-			query.append("companyId = ?");
+			query.append("companyId = ?1");
 			query.append(" AND ");
-			query.append("userId = ?");
+			query.append("userId = ?2");
 			query.append(" AND ");
-			query.append(" userId <> ?");
+			query.append(" userId <> ?3");
 			query.append(" AND delete_in_progress = ");
 			query.append(DbConnectionFactory.getDBFalse());
 			query.append(" ORDER BY ");
@@ -876,7 +876,7 @@ public class UserPersistence extends BasePersistence {
 			query.append("lastName ASC");
 
 			Query q = session.createQuery(query.toString());
-			int queryPos = 0;
+			int queryPos = 1;
 			q.setString(queryPos++, companyId);
 			q.setString(queryPos++, userId);
 			q.setString(queryPos++, systemUser.getUserId());
@@ -917,11 +917,11 @@ public class UserPersistence extends BasePersistence {
 			StringBuffer query = new StringBuffer();
 			query.append(
 					"FROM User_ IN CLASS com.liferay.portal.ejb.UserHBM WHERE ");
-			query.append("companyId = ?");
+			query.append("companyId = ?1");
 			query.append(" AND ");
-			query.append(getPasswordCriteria());
+			query.append(getPasswordCriteria(2));
 			query.append(" AND ");
-			query.append("userId <> ?");
+			query.append("userId <> ?3");
 			query.append(" AND delete_in_progress = ");
 			query.append(DbConnectionFactory.getDBFalse());
 			query.append(" ORDER BY ");
@@ -930,7 +930,7 @@ public class UserPersistence extends BasePersistence {
 			query.append("lastName ASC");
 
 			Query q = session.createQuery(query.toString());
-			int queryPos = 0;
+			int queryPos = 1;
 			q.setString(queryPos++, companyId);
 			q.setString(queryPos++, password);
 			q.setString(queryPos++, systemUser.getUserId());
@@ -967,11 +967,11 @@ public class UserPersistence extends BasePersistence {
 			StringBuffer query = new StringBuffer();
 			query.append(
 					"FROM User_ IN CLASS com.liferay.portal.ejb.UserHBM WHERE ");
-			query.append("companyId = ?");
+			query.append("companyId = ?1");
 			query.append(" AND ");
-			query.append("emailAddress = ?");
+			query.append("emailAddress = ?2");
 			query.append(" AND ");
-			query.append("userId <> ?");
+			query.append("userId <> ?3");
 			query.append(" AND delete_in_progress = ");
 			query.append(DbConnectionFactory.getDBFalse());
 			query.append(" ORDER BY ");
@@ -980,7 +980,7 @@ public class UserPersistence extends BasePersistence {
 			query.append("lastName ASC");
 
 			Query q = session.createQuery(query.toString());
-			int queryPos = 0;
+			int queryPos = 1;
 			q.setString(queryPos++, companyId);
 			q.setString(queryPos++, emailAddress);
 			q.setString(queryPos++, systemUser.getUserId());
@@ -1017,18 +1017,17 @@ public class UserPersistence extends BasePersistence {
 			query.append("SELECT COUNT(*) ");
 			query.append(
 					"FROM User_ IN CLASS com.liferay.portal.ejb.UserHBM WHERE ");
-			query.append("companyId = ?");
+			query.append("companyId = ?1");
 			query.append(" AND delete_in_progress = ");
 			query.append(DbConnectionFactory.getDBFalse());
 
 			Query q = session.createQuery(query.toString());
-			int queryPos = 0;
-			q.setString(queryPos++, companyId);
+			q.setString(1, companyId);
 
 			Iterator itr = q.list().iterator();
 
 			if (itr.hasNext()) {
-				Integer count = (Integer)itr.next();
+				Number count = (Number)itr.next();
 
 				if (count != null) {
 					return count.intValue();
@@ -1054,21 +1053,21 @@ public class UserPersistence extends BasePersistence {
 			query.append("SELECT COUNT(*) ");
 			query.append(
 					"FROM User_ IN CLASS com.liferay.portal.ejb.UserHBM WHERE ");
-			query.append("companyId = ?");
+			query.append("companyId = ?1");
 			query.append(" AND ");
-			query.append("userId = ?");
+			query.append("userId = ?2");
 			query.append(" AND delete_in_progress = ");
 			query.append(DbConnectionFactory.getDBFalse());
 
 			Query q = session.createQuery(query.toString());
-			int queryPos = 0;
+			int queryPos = 1;
 			q.setString(queryPos++, companyId);
 			q.setString(queryPos++, userId);
 
 			Iterator itr = q.list().iterator();
 
 			if (itr.hasNext()) {
-				Integer count = (Integer)itr.next();
+				Number count = (Number)itr.next();
 
 				if (count != null) {
 					return count.intValue();
@@ -1094,23 +1093,23 @@ public class UserPersistence extends BasePersistence {
 			query.append("SELECT COUNT(*) ");
 			query.append(
 					"FROM User_ IN CLASS com.liferay.portal.ejb.UserHBM WHERE ");
-			query.append("companyId = ?");
+			query.append("companyId = ?1");
 			query.append(" AND ");
 
-			query.append(getPasswordCriteria());
+			query.append(getPasswordCriteria(2));
 
 			query.append(" AND delete_in_progress = ");
 			query.append(DbConnectionFactory.getDBFalse());
 
 			Query q = session.createQuery(query.toString());
-			int queryPos = 0;
+			int queryPos = 1;
 			q.setString(queryPos++, companyId);
 			q.setString(queryPos++, password);
 
 			Iterator itr = q.list().iterator();
 
 			if (itr.hasNext()) {
-				Integer count = (Integer)itr.next();
+				Number count = (Number)itr.next();
 
 				if (count != null) {
 					return count.intValue();
@@ -1136,21 +1135,21 @@ public class UserPersistence extends BasePersistence {
 			query.append("SELECT COUNT(*) ");
 			query.append(
 					"FROM User_ IN CLASS com.liferay.portal.ejb.UserHBM WHERE ");
-			query.append("companyId = ?");
+			query.append("companyId = ?1");
 			query.append(" AND ");
-			query.append("emailAddress = ?");
+			query.append("emailAddress = ?2");
 			query.append(" AND delete_in_progress = ");
 			query.append(DbConnectionFactory.getDBFalse());
 
 			Query q = session.createQuery(query.toString());
-			int queryPos = 0;
+			int queryPos = 1;
 			q.setString(queryPos++, companyId);
 			q.setString(queryPos++, emailAddress);
 
 			Iterator itr = q.list().iterator();
 
 			if (itr.hasNext()) {
-				Integer count = (Integer)itr.next();
+				Number count = (Number)itr.next();
 
 				if (count != null) {
 					return count.intValue();
@@ -1165,13 +1164,13 @@ public class UserPersistence extends BasePersistence {
 
 	}
 	@CloseDBIfOpened
-	private String getPasswordCriteria(){
+	private String getPasswordCriteria(int index){
 		if (DbConnectionFactory.isOracle()){
-			return "dbms_lob.compare(password_, ?) = 0";
+			return "dbms_lob.compare(password_, ?" +index+ ") = 0";
 		}else if (DbConnectionFactory.isMsSql()){
-			return "cast(password_ AS varchar(max)) = ?";
+            return "cast(password_ AS varchar(max)) = ?"+index;
 		} else{
-			return "password_ = ?";
+			return "password_ = ?"+index;
 		}
 	}
 }

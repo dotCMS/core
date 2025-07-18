@@ -279,11 +279,6 @@
             </dependency>
             <dependency>
                 <groupId>com.dotcms.lib</groupId>
-                <artifactId>dot.jboss-logging</artifactId>
-                <version>3.3.0.Final_2</version>
-            </dependency>
-            <dependency>
-                <groupId>com.dotcms.lib</groupId>
                 <artifactId>dot.jempbox</artifactId>
                 <version>1.6.0_2</version>
             </dependency>
@@ -891,12 +886,18 @@
             <dependency>
                 <groupId>javax.validation</groupId>
                 <artifactId>validation-api</artifactId>
-                <version>1.1.0.Final</version>
+                <version>2.0.1.Final</version>
             </dependency>
             <dependency>
-                <groupId>org.hibernate</groupId>
+                <groupId>org.hibernate.validator</groupId>
                 <artifactId>hibernate-validator</artifactId>
-                <version>5.4.3.Final</version>
+                <version>6.0.23.Final</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.jboss.logging</groupId>
+                        <artifactId>jboss-logging</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
 
             <dependency>
@@ -1165,6 +1166,12 @@
                 <artifactId>weld-servlet-shaded</artifactId>
                 <version>3.1.9.Final</version>
             </dependency>
+            
+            <dependency>
+                <groupId>org.jboss.weld.servlet</groupId>
+                <artifactId>weld-servlet-core</artifactId>
+                <version>3.1.9.Final</version>
+            </dependency>
 
             <dependency>
                 <groupId>org.glassfish.jersey.ext.cdi</groupId>
@@ -1176,13 +1183,6 @@
                 <groupId>org.glassfish.jersey.ext.cdi</groupId>
                 <artifactId>jersey-cdi1x-servlet</artifactId>
                 <version>${jersey.version}</version>
-            </dependency>
-
-
-            <dependency>
-                <groupId>org.glassfish.hk2.external</groupId>
-                <artifactId>bean-validator</artifactId>
-                <version>2.5.0-b06</version>
             </dependency>
 
             <dependency>

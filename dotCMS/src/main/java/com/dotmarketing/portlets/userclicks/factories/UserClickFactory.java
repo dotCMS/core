@@ -17,7 +17,7 @@ import com.dotmarketing.util.Logger;
  */
 public class UserClickFactory {
 
-	private static final String GET_TOP_USER_CLICKSTREAMS = "SELECT {clickstream.*} from clickstream where user_id = ? order by clickstream_id desc";
+	private static final String GET_TOP_USER_CLICKSTREAMS = "SELECT clickstream_id, cookie_id, user_id, start_date, end_date, referer, remote_address, remote_hostname, user_agent, bot, host_id, last_page_id, first_page_id, operating_system, browser_name, browser_version, mobile_device, number_of_requests from clickstream where user_id = ? order by clickstream_id desc";
 	private static final String COUNT_USER_CLICKS = "SELECT count(*) as test from clickstream where user_id = ?";
 
     public static java.util.List getTopUserClicks(String UserId){
@@ -38,7 +38,7 @@ public class UserClickFactory {
     	HibernateUtil dh = new HibernateUtil(Clickstream.class);
     	List userClicks=null;
     	try {
-			dh.setQuery("from inode in class " + Clickstream.class.getName() + " where user_id = ? order by clickstream_id desc");
+			dh.setQuery("from inode in class " + Clickstream.class.getName() + " where user_id = ?1 order by clickstream_id desc");
 			dh.setParam(UserId);
 			dh.setFirstResult(offset);
 			dh.setMaxResults(limit);
@@ -54,7 +54,7 @@ public class UserClickFactory {
     	HibernateUtil dh = new HibernateUtil(Clickstream.class);
     	List allUserClicks =null;
     	try {
-			dh.setQuery("from inode in class " + Clickstream.class.getName() + " where user_id = ? order by clickstream_id desc");
+			dh.setQuery("from inode in class " + Clickstream.class.getName() + " where user_id = ?1 order by clickstream_id desc");
 			dh.setParam(UserId);
 			allUserClicks = dh.list();
 		} catch (DotHibernateException e) {
