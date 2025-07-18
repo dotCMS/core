@@ -108,6 +108,26 @@
         keystorePass="${CMS_KEYSTORE_PASS:-dotcms}"
     />
 
+    <!-- Management Connector for metrics, monitoring, and infrastructure health checks
+         Provides isolated access to /livez, /readyz, /metrics endpoints
+         Can be disabled by setting CMS_MANAGEMENT_PORT_ENABLED=false
+    -->
+    <Connector
+        port="${CMS_MANAGEMENT_PORT:-8090}"
+        address="${CMS_MANAGEMENT_BIND_ADDRESS:-127.0.0.1}"
+        scheme="http"
+        protocol="org.apache.coyote.http11.Http11Nio2Protocol"
+        connectionTimeout="${CMS_MANAGEMENT_CONNECTION_TIMEOUT:-3000}"
+        enableLookups="false"
+        URIEncoding="UTF-8"
+        bindOnInit="true"
+        maxThreads="${CMS_MANAGEMENT_CONNECTOR_THREADS:-25}"
+        minSpareThreads="5"
+        useSendfile="false"
+        maxHttpHeaderSize="8192"
+        compression="off"
+    />
+
 
     <Engine name="Catalina" defaultHost="${CMS_DEFAULT_HOST:-localhost}">
 

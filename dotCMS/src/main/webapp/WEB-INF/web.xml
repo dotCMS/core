@@ -72,6 +72,12 @@
 	</filter>
 	
 	<filter>
+		<filter-name>ManagementPortFilter</filter-name>
+		<filter-class>com.dotcms.management.filter.ManagementPortFilter</filter-class>
+		<async-supported>true</async-supported>
+	</filter>
+	
+	<filter>
 	    <filter-name>TimeMachineFilter</filter-name>
 		<filter-class>com.dotmarketing.filters.TimeMachineFilter</filter-class>
 		<async-supported>true</async-supported>
@@ -152,6 +158,12 @@
 	<filter-mapping>
 		<filter-name>CharsetEncodingFilter</filter-name>
 		<url-pattern>/*</url-pattern>
+	</filter-mapping>
+	
+	<!-- Management port filter for restricting /dotmgt/* endpoints to management port only -->
+	<filter-mapping>
+		<filter-name>ManagementPortFilter</filter-name>
+		<url-pattern>/dotmgt/*</url-pattern>
 	</filter-mapping>
 	
 	<filter-mapping>
@@ -404,6 +416,12 @@
 		<servlet-class>com.dotcms.health.servlet.HealthProbeServlet</servlet-class>
 		<load-on-startup>1</load-on-startup>
 	</servlet>
+
+	<servlet>
+		<servlet-name>ManagementServlet</servlet-name>
+		<servlet-class>com.dotcms.management.servlet.ManagementServlet</servlet-class>
+		<load-on-startup>1</load-on-startup>
+	</servlet>
     
 	<!--END DOTMARKETING SERVLETS-->
 	
@@ -535,14 +553,25 @@
 		<url-pattern>/api/v1/graphql</url-pattern>
 	</servlet-mapping>
 	
+	<!-- Management servlet mappings with /dotmgt prefix -->
 	<servlet-mapping>
-		<servlet-name>HealthProbeServlet</servlet-name>
-		<url-pattern>/livez</url-pattern>
+		<servlet-name>ManagementServlet</servlet-name>
+		<url-pattern>/dotmgt/livez</url-pattern>
 	</servlet-mapping>
 	
 	<servlet-mapping>
-		<servlet-name>HealthProbeServlet</servlet-name>
-		<url-pattern>/readyz</url-pattern>
+		<servlet-name>ManagementServlet</servlet-name>
+		<url-pattern>/dotmgt/readyz</url-pattern>
+	</servlet-mapping>
+	
+	<servlet-mapping>
+		<servlet-name>ManagementServlet</servlet-name>
+		<url-pattern>/dotmgt/metrics</url-pattern>
+	</servlet-mapping>
+	
+	<servlet-mapping>
+		<servlet-name>ManagementServlet</servlet-name>
+		<url-pattern>/dotmgt/health</url-pattern>
 	</servlet-mapping>
 
 	<!--END DOTMARKETING SERVLET-MAPPING-->
