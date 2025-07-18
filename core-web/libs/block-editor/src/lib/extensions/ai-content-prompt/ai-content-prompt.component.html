@@ -47,7 +47,7 @@
                 <div
                     class="ai-content__pagination"
                     [style]="{
-                        display: generatedText?.value ? 'flex' : 'none'
+                        display: generatedText.value ? 'flex' : 'none'
                     }">
                     <button
                         (click)="store.updateActiveIndex(vm.activeIndex - 1)"
