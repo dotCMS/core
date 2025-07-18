@@ -102,6 +102,16 @@ ol ul {
     padding-left: $spacing-4;
 }
 
+// JSP List Decimal Support
+ol li {
+    list-style-type: decimal;
+}
+
+// JSP List Disc Support
+ul li {
+    list-style-type: disc;
+}
+
 // Content Blocks
 blockquote {
     font-size: $font-size-lmd;
