@@ -256,16 +256,6 @@ public class MapToContentletPopulator  {
             }
         }
 
-        // check default values for fields not coming on the map
-        for (final Field field : fieldMap.values()) {
-
-            if (!map.containsKey(field.getVelocityVarName()) && UtilMethods.isSet(field.getDefaultValue())) {
-
-                APILocator.getContentletAPI()
-                        .setContentletProperty(contentlet, field, field.getDefaultValue());
-            }
-        }
-
     } // fillFields.
 
     private static void processPlainValueForBinaryField(final Map<String, Object> map,
