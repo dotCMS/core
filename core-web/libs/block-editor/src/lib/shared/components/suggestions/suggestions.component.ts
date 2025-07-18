@@ -50,6 +50,36 @@ export class SuggestionsComponent implements OnInit {
 
     @Input() onSelectContentlet: (props: SuggestionsCommandProps) => void;
     @Input() items: DotMenuItem[] = [];
+
+    get sortedItems() {
+        const { withAi, withoutAi } = this.items.reduce(
+            (acc, item) => {
+                // Check if the item is an AI item
+                if (item?.label?.toLowerCase().startsWith('ai')) {
+                    acc.withAi.push(item);
+                } else {
+                    acc.withoutAi.push(item);
+                }
+
+                return acc;
+            },
+            {
+                withAi: [],
+                withoutAi: []
+            }
+        );
+
+        // Add a divider between AI and non-AI items
+        const divider: DotMenuItem = { id: 'divider', label: 'DIVIDER', icon: 'divider' };
+
+        // If there are AI items, add a divider after them
+        if (withAi.length) {
+            withAi.push(divider);
+        }
+
+        // Return the items sorted by AI items first, then non-AI items
+        return [...withAi, ...withoutAi];
+    }
     @Input() title = 'Select a block';
     @Input() noResultsMessage = 'No Results';
     @Input() currentLanguage = DEFAULT_LANG_ID;
