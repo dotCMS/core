@@ -28,6 +28,7 @@ import com.dotcms.contenttype.model.field.HostFolderField;
 import com.dotcms.contenttype.model.field.ImageField;
 import com.dotcms.contenttype.model.field.ImmutableTextAreaField;
 import com.dotcms.contenttype.model.field.ImmutableTextField;
+import com.dotcms.contenttype.model.field.KeyValueField;
 import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.BaseContentType;
@@ -3911,6 +3912,206 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
 
         List<Category> assignedCategories = APILocator.getCategoryAPI().getParents(saved.get(0), user, false);
         assertTrue(assignedCategories.stream().anyMatch(cat -> cat.getInode().equals(validChild.getInode())));
+    }
+
+    /**
+     * Method to test: {@link ImportUtil#importFile(Long, String, String, String[], boolean, boolean, User, long, String[], CsvReader, int, int, Reader, String, HttpServletRequest)}
+     * Given scenario: We try to import a file with a valid text field and a JSON field where one entry contains invalid JSON
+     * Expected behavior: The import should fail for the invalid JSON but succeed for valid entries, returning specific error details
+     * @throws DotSecurityException
+     * @throws DotDataException
+     * @throws IOException
+     */
+    @Test
+    public void importFile_withInvalidJSONField_shouldReturnSpecificErrorDetails()
+            throws DotSecurityException, DotDataException, IOException {
+
+        ContentType contentType = null;
+        long time = System.currentTimeMillis();
+
+        try {
+            final String contentTypeName = "JSONTestContentType_" + time;
+            final String contentTypeVarName = "jsonTestContentType_" + time;
+
+            // Create text field
+            com.dotcms.contenttype.model.field.Field titleField = new FieldDataGen()
+                    .name("title")
+                    .velocityVarName("title")
+                    .type(TextField.class)
+                    .required(true)
+                    .next();
+
+            // Create JSON field
+            com.dotcms.contenttype.model.field.Field jsonField = new FieldDataGen()
+                    .name("keyValue")
+                    .velocityVarName("keyValue")
+                    .type(KeyValueField.class)
+                    .required(false)
+                    .next();
+
+            // Create content type with both fields
+            contentType = new ContentTypeDataGen()
+                    .name(contentTypeName)
+                    .velocityVarName(contentTypeVarName)
+                    .host(APILocator.systemHost())
+                    .fields(List.of(titleField, jsonField))
+                    .nextPersisted();
+
+            // Refresh content type to get saved field references
+            final ContentType savedContentType = contentTypeApi.find(contentType.inode());
+            titleField = savedContentType.fields().stream()
+                    .filter(f -> "title".equals(f.variable()))
+                    .findFirst()
+                    .orElseThrow();
+            jsonField = savedContentType.fields().stream()
+                    .filter(f -> "keyValue".equals(f.variable()))
+                    .findFirst()
+                    .orElseThrow();
+
+            // Create CSV with valid and invalid JSON entries
+            final String csvContent = "title,keyValue\r\n" +
+                    "Valid Entry 1,\"{\"\"timeline\"\":\"\"18_months\"\",\"\"team_size\"\":\"\"12\"\"}\"\r\n" +
+                    "Invalid Entry,\"{'timeline':'18_months','team_size':'12'}\"\r\n" +
+                    "Valid Entry 2,\"{\"\"status\"\":\"\"active\"\",\"\"priority\"\":\"\"high\"\"}\"\r\n";
+
+            final Reader reader = createTempFile(csvContent);
+
+            // Perform import with stopOnError=false to process all rows
+            final ImportResult result = importAndValidate(
+                    savedContentType,
+                    titleField,
+                    reader,
+                    false, // stopOnError = false to continue processing
+                    1,     // commitGranularity = 1
+                    WORKFLOW_PUBLISH_ACTION_ID
+            );
+
+            // Validate that we have errors
+            assertNotNull(result);
+            assertFalse("Expected errors for invalid JSON", result.error().isEmpty());
+
+            // Find the JSON validation error
+            ValidationMessage jsonError = result.error().stream()
+                    .filter(error -> "INVALID_JSON".equals(error.code().orElse("")))
+                    .findFirst()
+                    .orElseThrow(() -> new AssertionError("Expected INVALID_JSON error not found"));
+
+            // Validate error type
+            assertEquals("Error type should be ERROR", "ERROR", jsonError.type().toString());
+
+            // Validate error code
+            assertTrue("Error code should be present", jsonError.code().isPresent());
+            assertEquals("Error code should be INVALID_JSON", "INVALID_JSON", jsonError.code().get());
+
+            // Validate error message
+            String errorMessage = jsonError.message();
+            assertEquals("Error message should match expected format",
+                    "Invalid JSON field provided. Key Value Field variable: keyValue", errorMessage);
+
+            // Validate field
+            assertTrue("Error field should be present", jsonError.field().isPresent());
+            assertEquals("Error field should be keyValue", "keyValue", jsonError.field().get());
+
+            // Validate line number (row number in CSV)
+            assertTrue("Line number should be present", jsonError.lineNumber().isPresent());
+            assertEquals("Line number should be 3 (header + 2 data rows)", Integer.valueOf(3), jsonError.lineNumber().get());
+
+
+            Map<String, Object> context = jsonError.context();
+
+            // Validate context size and keys
+            assertEquals("Context should have 4 entries", 4, context.size());
+            assertTrue("Context should contain 'line' key", context.containsKey("line"));
+            assertTrue("Context should contain 'column' key", context.containsKey("column"));
+            assertTrue("Context should contain 'parseError' key", context.containsKey("parseError"));
+            assertTrue("Context should contain 'invalidJSON' key", context.containsKey("invalidJSON"));
+
+            // Validate context values
+            assertEquals("Context line should be 1", Integer.valueOf(1), context.get("line"));
+            assertEquals("Context column should be 2", Integer.valueOf(2), context.get("column"));
+            assertEquals("Context invalidJSON should match",
+                    "{'timeline':'18_months','team_size':'12'}", context.get("invalidJSON"));
+
+            // Validate parse error details
+            String parseError = (String) context.get("parseError");
+            assertNotNull("Parse error should not be null", parseError);
+            assertTrue("Parse error should mention unexpected character",
+                    parseError.contains("Unexpected character"));
+            assertTrue("Parse error should mention single quote character code",
+                    parseError.contains("''' (code 39)"));
+            assertTrue("Parse error should mention expecting double-quote",
+                    parseError.contains("was expecting double-quote to start field name"));
+
+
+            Logger.info(this, "JSON Validation Error Details:");
+            Logger.info(this, "  Type: " + jsonError.type());
+            Logger.info(this, "  Code: " + jsonError.code().orElse("N/A"));
+            Logger.info(this, "  Message: " + jsonError.message());
+            Logger.info(this, "  Field: " + jsonError.field().orElse("N/A"));
+            Logger.info(this, "  Context: " + context);
+
+            // Validate import results
+            final Optional<ResultData> resultData = result.data();
+            assertTrue("Result data should be present", resultData.isPresent());
+
+            // Should have processed 3 rows + header = 4 total
+            assertEquals("Should have parsed 4 rows including header",
+                    4, resultData.get().processed().parsedRows());
+            assertEquals("Should have 1 failed row",
+                    1, resultData.get().processed().failedRows());
+            assertEquals("Should have created 2 content items",
+                    2, resultData.get().summary().createdContent());
+            assertEquals("Should have 1 rollback for the failed row",
+                    1, resultData.get().summary().rollbacks());
+
+            // Verify that valid entries were saved
+            List<Contentlet> savedData = contentletAPI.findByStructure(
+                    contentType.inode(), user, false, 0, 0);
+            assertNotNull("Saved data should not be null", savedData);
+            assertEquals("Should have 2 saved contentlets", 2, savedData.size());
+
+            // Verify the valid JSON entries were saved correctly
+            boolean foundValidEntry1 = false;
+            boolean foundValidEntry2 = false;
+
+            for (Contentlet contentlet : savedData) {
+                String title = contentlet.getStringProperty("title");
+                Object jsonValue = contentlet.get("keyValue");
+
+                if ("Valid Entry 1".equals(title)) {
+                    foundValidEntry1 = true;
+                    assertNotNull("JSON field should not be null for valid entry 1", jsonValue);
+                    // Verify JSON was parsed correctly
+                    String jsonString = jsonValue.toString();
+                    assertTrue("JSON should contain timeline", jsonString.contains("timeline"));
+                    assertTrue("JSON should contain 18_months", jsonString.contains("18_months"));
+                } else if ("Valid Entry 2".equals(title)) {
+                    foundValidEntry2 = true;
+                    assertNotNull("JSON field should not be null for valid entry 2", jsonValue);
+                    // Verify JSON was parsed correctly
+                    String jsonString = jsonValue.toString();
+                    assertTrue("JSON should contain status", jsonString.contains("status"));
+                    assertTrue("JSON should contain active", jsonString.contains("active"));
+                }
+            }
+
+            assertTrue("Should have found Valid Entry 1", foundValidEntry1);
+            assertTrue("Should have found Valid Entry 2", foundValidEntry2);
+
+            // Verify the invalid entry was not saved
+            boolean foundInvalidEntry = savedData.stream()
+                    .anyMatch(c -> "Invalid Entry".equals(c.getStringProperty("title")));
+            assertFalse("Invalid entry should not have been saved", foundInvalidEntry);
+
+        } finally {
+            try {
+                if (contentType != null) {
+                    contentTypeApi.delete(contentType);
+                }
+            } catch (Exception e) {
+                Logger.error("Error deleting content type", e);
+            }
+        }
     }
 
 }
