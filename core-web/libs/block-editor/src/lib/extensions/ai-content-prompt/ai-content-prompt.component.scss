@@ -37,15 +37,6 @@ form {
         padding: $spacing-1 $spacing-6 $spacing-1 $spacing-4;
         min-height: $spacing-8;
         resize: vertical;
-
-        &:read-only {
-            // Base styles
-            &:focus,
-            &:hover {
-                outline: none;
-                border: 1.5px solid var(--gray-400);
-            }
-        }
     }
 
     dot-copy-button {
