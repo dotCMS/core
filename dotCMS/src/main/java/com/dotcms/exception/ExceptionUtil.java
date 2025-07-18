@@ -19,6 +19,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.InvalidLicenseException;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
+import com.dotmarketing.portlets.contentlet.business.DotJsonFieldException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetValidationException;
 import com.dotmarketing.portlets.folders.business.AddContentToFolderPermissionException;
@@ -110,6 +111,7 @@ public class ExceptionUtil {
                     DotStateException.class,
                     DotContentletStateException.class,
                     DotDataValidationException.class,
+                    DotJsonFieldException.class,
                     ValidationException.class,
                     BadRequestException.class,
                     JsonProcessingException.class,
@@ -170,12 +172,11 @@ public class ExceptionUtil {
      * @return boolean
      */
     public static boolean causedBy(final Throwable e, final Set<Class<? extends Throwable>> exceptionClasses) {
+
         Throwable t = e;
         while (t != null) {
-            for (Class<? extends Throwable> exceptionClass : exceptionClasses) {
-                if (exceptionClass.isAssignableFrom(t.getClass())) {
-                    return true;
-                }
+            if (exceptionClasses.contains(t.getClass())) {
+                return true;
             }
             t = t.getCause();
         }
