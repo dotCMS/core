@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { Component, EventEmitter, Input, Output, OnChanges } from '@angular/core';
+import { Component, EventEmitter, Input, Output, OnChanges, inject } from '@angular/core';
 
 import { LoggerService } from '@dotcms/dotcms-js';
 
@@ -68,6 +68,8 @@ import { I18nService } from './services/system/locale/I18n';
     `
 })
 export class ConditionGroupComponent implements OnChanges {
+    private loggerService = inject(LoggerService);
+
     private static I8N_BASE = 'api.sites.ruleengine.rules';
 
     @Input() group: ConditionGroupModel;
@@ -90,10 +92,9 @@ export class ConditionGroupComponent implements OnChanges {
     private resources: I18nService;
     private _rsrcCache: { [key: string]: Observable<string> };
 
-    constructor(
-        resources: I18nService,
-        private loggerService: LoggerService
-    ) {
+    constructor() {
+        const resources = inject(I18nService);
+
         this.resources = resources;
         this._rsrcCache = {};
     }
