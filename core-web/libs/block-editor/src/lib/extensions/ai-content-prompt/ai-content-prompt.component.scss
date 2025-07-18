@@ -33,9 +33,21 @@ form {
     flex-direction: column;
     position: relative;
 
+    transition: all 3s ease-in-out;
+
     .p-inputtext.p-inputtextarea {
         padding: $spacing-1 $spacing-6 $spacing-1 $spacing-4;
         min-height: $spacing-8;
+        resize: vertical;
+
+        &:read-only {
+            // Base styles
+            &:focus,
+            &:hover {
+                outline: none;
+                border: 1.5px solid var(--gray-400);
+            }
+        }
     }
 
     dot-copy-button {
@@ -58,6 +70,7 @@ dot-empty-container {
 }
 
 .ai-content__input-text {
+    resize: vertical;
     height: $spacing-8;
 }
 
