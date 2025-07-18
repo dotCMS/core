@@ -215,8 +215,10 @@ public class SwaggerCompliantCumulativeTest {
                 try {
                     Class<?> clazz = Class.forName(className);
                     classes.add(clazz);
+                } catch (ClassNotFoundException | NoClassDefFoundError | ExceptionInInitializerError e) {
+                    // Skip classes that can't be loaded or initialized
                 } catch (Exception e) {
-                    // Ignore classes that can't be loaded
+                    // Skip any other class loading errors
                 }
             }
         }

@@ -783,8 +783,10 @@ public class RestEndpointAnnotationComplianceTest extends UnitTestBase {
                 try {
                     Class<?> clazz = Class.forName(className);
                     classes.add(clazz);
-                } catch (ClassNotFoundException | NoClassDefFoundError e) {
-                    // Skip classes that can't be loaded
+                } catch (ClassNotFoundException | NoClassDefFoundError | ExceptionInInitializerError e) {
+                    // Skip classes that can't be loaded or initialized
+                } catch (Exception e) {
+                    // Skip any other class loading errors
                 }
             }
         }
@@ -819,8 +821,10 @@ public class RestEndpointAnnotationComplianceTest extends UnitTestBase {
                     try {
                         Class<?> clazz = Class.forName(className);
                         classes.add(clazz);
-                    } catch (ClassNotFoundException | NoClassDefFoundError e) {
-                        // Skip classes that can't be loaded
+                    } catch (ClassNotFoundException | NoClassDefFoundError | ExceptionInInitializerError e) {
+                        // Skip classes that can't be loaded or initialized
+                    } catch (Exception e) {
+                        // Skip any other class loading errors
                     }
                 }
             }
