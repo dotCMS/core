@@ -37,7 +37,7 @@ import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.action.ImportAuditUtil;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
-import com.dotmarketing.portlets.contentlet.business.DotContentletJsonFieldException;
+import com.dotmarketing.portlets.contentlet.business.DotJsonFieldException;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
@@ -801,8 +801,8 @@ public class ImportUtil {
                     .invalidValue(validationMessageException.getInvalidValue())
                     .context(validationMessageException.getContext());
         }
-        if (ex instanceof DotContentletJsonFieldException) {
-            final var jsonFieldException = (DotContentletJsonFieldException) ex;
+        if (ex instanceof DotJsonFieldException) {
+            final var jsonFieldException = (DotJsonFieldException) ex;
             messageBuilder
                     .code(ImportLineValidationCodes.INVALID_JSON.name())
                     .field(jsonFieldException.getField())

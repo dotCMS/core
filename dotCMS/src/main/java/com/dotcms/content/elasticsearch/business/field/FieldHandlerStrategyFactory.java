@@ -6,7 +6,7 @@ import com.dotcms.rest.api.v1.temp.DotTempFile;
 import com.dotcms.util.JsonUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.portlets.contentlet.business.DotContentletJsonFieldException;
+import com.dotmarketing.portlets.contentlet.business.DotJsonFieldException;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotcms.contenttype.model.field.Field;
@@ -156,7 +156,7 @@ public class FieldHandlerStrategyFactory {
                 contentlet.setStringProperty(field.variable(), validationResult.node.toString());
             } else {
                 // Throw a backwards compatible but detailed exception
-                throw new DotContentletJsonFieldException(
+                throw new DotJsonFieldException(
                         field.variable(),
                         (String) value,
                         validationResult.line,
@@ -170,7 +170,7 @@ public class FieldHandlerStrategyFactory {
                     Try.of(() -> JsonUtil.getJsonAsString((Map<String, Object>) value))
                             .getOrElse("{}"));
         } else {
-            throw new DotContentletJsonFieldException(field.variable(),"UNK",-1,-1,"Unknown value type");
+            throw new DotJsonFieldException(field.variable(),"UNK",-1,-1,"Unknown value type");
         }
     }
 

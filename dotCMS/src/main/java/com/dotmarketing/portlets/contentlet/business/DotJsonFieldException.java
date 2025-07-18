@@ -3,7 +3,7 @@ package com.dotmarketing.portlets.contentlet.business;
 import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 
-public class DotContentletJsonFieldException extends DotContentletStateException {
+public class DotJsonFieldException extends DotContentletStateException {
 
     public static final String INVALID_JSON_FIELD_PROVIDED_KEY_VALUE_FIELD_VARIABLE = "Invalid JSON field provided. Key Value Field variable: ";
     private final String invalidJson;
@@ -12,7 +12,7 @@ public class DotContentletJsonFieldException extends DotContentletStateException
     private final String parseError;
     private final String field;
 
-    public DotContentletJsonFieldException(String field, String invalidJson,
+    public DotJsonFieldException(String field, String invalidJson,
             int line, int column, String parseError) {
         super(INVALID_JSON_FIELD_PROVIDED_KEY_VALUE_FIELD_VARIABLE + field);
         this.field = field;
