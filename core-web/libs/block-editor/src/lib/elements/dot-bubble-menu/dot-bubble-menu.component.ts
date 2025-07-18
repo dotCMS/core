@@ -36,7 +36,6 @@ interface NodeTypeOption {
 }
 
 const BUBBLE_MENU_HIDDEN_NODES = {
-    tableCell: true,
     table: true,
     youtube: true,
     dotVideo: true,
