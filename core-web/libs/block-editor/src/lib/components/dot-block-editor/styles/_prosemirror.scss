@@ -1,0 +1,180 @@
+@use "variables" as *;
+
+// =============================================================================
+// PROSEMIRROR EDITOR STYLES
+// =============================================================================
+
+tiptap-editor {
+    display: block;
+    height: 100%;
+    width: 100%;
+    overflow-y: auto;
+    scrollbar-gutter: stable;
+}
+
+tiptap-editor ::ng-deep .ProseMirror {
+    -moz-box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+    box-sizing: border-box;
+    display: block;
+    min-height: 100%;
+    outline: none;
+    padding: $dot-editor-size (4 * $dot-editor-size);
+    font: $dot-editor-size;
+
+    .ProseMirror-selectednode {
+        &.dot-image,
+        .dot-image {
+            outline: 1px solid $color-palette-primary;
+        }
+    }
+
+    .is-empty::before {
+        color: $color-palette-gray-500;
+        content: attr(data-placeholder);
+        float: left;
+        position: absolute;
+        pointer-events: none;
+    }
+
+    .add-button {
+        all: unset;
+        cursor: pointer;
+        border: solid 1px #eee;
+        width: 2 * $dot-editor-size;
+        height: 2 * $dot-editor-size;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #666;
+        background: #ffffff;
+    }
+
+    .ai-loading {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-width: 100%;
+        padding: $spacing-1;
+        border-radius: $spacing-1;
+        border: 1px solid $color-palette-gray-400;
+        color: $color-palette-primary;
+    }
+
+    table {
+        border-collapse: collapse;
+        margin: 0;
+        overflow: hidden;
+        table-layout: fixed;
+        width: 100%;
+
+        td,
+        th {
+            border: 2px solid $color-palette-gray-500;
+            box-sizing: border-box;
+            min-width: $spacing-3;
+            padding: 3px 20px 3px 5px;
+            position: relative;
+            vertical-align: top;
+        }
+
+        /* fix borders in FF: https://stackoverflow.com/a/16337203/3847132*/
+        th {
+            background-clip: padding-box;
+        }
+
+        td > *,
+        th > * {
+            margin-bottom: 0;
+        }
+
+        th {
+            background-color: $color-palette-gray-200;
+            font-weight: 700;
+            text-align: left;
+        }
+
+        .selectedCell {
+            background-color: $color-palette-gray-300;
+        }
+
+        .selectedCell:after {
+            content: "";
+            left: 0;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            pointer-events: none;
+            position: absolute;
+        }
+
+        .column-resize-handle {
+            bottom: -2px;
+            position: absolute;
+            right: -2px;
+            pointer-events: none;
+            top: 0;
+            width: 4px;
+        }
+
+        .tableWrapper {
+            padding: $spacing-3 0;
+            overflow-x: auto;
+        }
+
+        .resize-cursor {
+            cursor: ew-resize;
+            cursor: col-resize;
+        }
+
+        .dot-cell-arrow {
+            position: absolute;
+            display: none;
+            top: 3px;
+            right: 5px;
+            border: solid black;
+            border-width: 0 2px 2px 0;
+            padding: 3px;
+            transform: rotate(45deg);
+            -webkit-transform: rotate(45deg);
+            background: transparent;
+            cursor: pointer;
+            z-index: 100;
+        }
+
+        .selectedCell {
+            .dot-cell-arrow {
+                display: block;
+            }
+        }
+
+        td.focus,
+        th.focus {
+            .dot-cell-arrow {
+                display: block;
+            }
+        }
+    }
+}
+
+tiptap-editor ::ng-deep {
+    &.editor-disabled .ProseMirror {
+        color: $color-palette-gray-600;
+        background-color: $color-palette-gray-100;
+        cursor: not-allowed;
+        user-select: none;
+        pointer-events: none;
+
+        // Disabled placeholder styling
+        .is-empty::before {
+            color: $color-palette-gray-400;
+        }
+
+        // Disabled button styling
+        .add-button {
+            cursor: not-allowed;
+            opacity: $field-disabled-opacity;
+            pointer-events: none;
+        }
+    }
+}
