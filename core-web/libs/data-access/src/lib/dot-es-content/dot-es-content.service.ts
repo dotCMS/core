@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { take, pluck } from 'rxjs/operators';
 
@@ -29,6 +29,8 @@ export interface queryEsParams {
  */
 @Injectable()
 export class DotESContentService {
+    private coreWebService = inject(CoreWebService);
+
     private _paginationPerPage = 40;
     private _offset = '0';
     private _url = '/api/content/_search';
@@ -36,8 +38,6 @@ export class DotESContentService {
     private _sortField = 'modDate';
     private _sortOrder: ESOrderDirection | string = ESOrderDirection.DESC;
     private _extraParams: Map<string, string> = new Map(Object.entries(this._defaultQueryParams));
-
-    constructor(private coreWebService: CoreWebService) {}
 
     /**
      * Returns a list of contentlets from Elastic Search endpoint

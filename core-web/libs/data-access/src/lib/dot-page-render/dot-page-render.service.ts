@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { Params } from '@angular/router';
 
 import { pluck } from 'rxjs/operators';
@@ -26,10 +26,8 @@ import { DotSessionStorageService } from '../dot-session-storage/dot-session-sto
  */
 @Injectable()
 export class DotPageRenderService {
-    constructor(
-        private coreWebService: CoreWebService,
-        private readonly dotSessionStorageService: DotSessionStorageService
-    ) {}
+    private coreWebService = inject(CoreWebService);
+    private readonly dotSessionStorageService = inject(DotSessionStorageService);
 
     /**
      * Verifies if a use can access a page based on the path param
