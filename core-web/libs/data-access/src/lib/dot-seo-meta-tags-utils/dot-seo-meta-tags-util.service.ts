@@ -1,6 +1,6 @@
 import { Observable, from, of } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { catchError, map, switchMap } from 'rxjs/operators';
 
@@ -22,10 +22,8 @@ import {
 
 @Injectable()
 export class DotSeoMetaTagsUtilService {
-    constructor(
-        private dotMessageService: DotMessageService,
-        private dotUploadService: DotUploadService
-    ) {}
+    private dotMessageService = inject(DotMessageService);
+    private dotUploadService = inject(DotUploadService);
 
     /**
      * Get meta tags from the document

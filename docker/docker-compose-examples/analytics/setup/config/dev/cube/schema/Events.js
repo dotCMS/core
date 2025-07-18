@@ -216,7 +216,8 @@ cube('request', {
     userId: { sql: 'context_user_id', type: `string` },
     requestId: { sql: 'request_id', type: `string` },
     clusterId: { sql: 'cluster_id', type: `string` },
-    customerId: { sql: 'customer_id', type: `string` }
+    customerId: { sql: 'customer_id', type: `string` },
+    createdAt: { sql: 'utc_time', type: `time`, },
   },
   measures: {
     count: {
