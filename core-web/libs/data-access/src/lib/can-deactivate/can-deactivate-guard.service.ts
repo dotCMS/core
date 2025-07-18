@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { CanDeactivate } from '@angular/router';
 
 import { filter } from 'rxjs/operators';
@@ -25,7 +25,7 @@ interface CanDeactivateGuard {
  */
 @Injectable()
 export class CanDeactivateGuardService implements CanDeactivate<CanDeactivateGuard> {
-    constructor(private dotRouterService: DotRouterService) {}
+    private dotRouterService = inject(DotRouterService);
 
     /**
      *
