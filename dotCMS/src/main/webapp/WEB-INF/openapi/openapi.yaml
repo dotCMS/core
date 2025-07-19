@@ -2976,6 +2976,46 @@ paths:
       summary: Issues an API token
       tags:
       - API Token
+  /v1/apitoken/expiring:
+    get:
+      description: |-
+        Returns a list of API tokens that will expire within the configured number of days.
+
+        For admin users, returns all expiring tokens from all users.
+        For limited users, returns only their own expiring tokens.
+
+        The number of days to look ahead can be configured via the EXPIRING_TOKEN_LOOKAHEAD_DAYS property (default: 7).
+      operationId: getExpiringApiTokens
+      responses:
+        "200":
+          content:
+            application/json:
+              example:
+                entity:
+                  tokens:
+                  - expiresDate: 1844834400000
+                    id: apie3362144-8906-460d-b16e-e46a5bf69aef
+                    issueDate: 1750183464000
+                    userId: dotcms.org.1
+                  - expiresDate: 1844835400000
+                    id: apie46a5bf69aef-8906-460d-asde-e46a5bf69aef
+                    issueDate: 1750183464000
+                    userId: dotcms.org.1
+                errors: []
+                i18nMessagesMap: {}
+                messages: []
+                pagination: null
+                permissions: []
+          description: Expiring API tokens successfully retrieved
+        "401":
+          description: Invalid user
+        "403":
+          description: Forbidden
+        "500":
+          description: Unexpected server error
+      summary: Retrieves API tokens that are about to expire
+      tags:
+      - API Token
   /v1/apitoken/remote:
     put:
       description: |-

@@ -3,8 +3,10 @@ package com.dotcms.auth.providers.jwt.beans;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import javax.annotation.Nonnull;
 
@@ -407,6 +409,37 @@ public class ApiToken implements JWToken {
     
     public Date getRevokedDate() {
         return this.revoked;
+    }
+
+    /**
+     * Creates a simplified view map for API token responses.
+     * This method extracts only the essential fields needed for API responses:
+     * id, userId, expiresDate (as Date), and issueDate (as Date).
+     * 
+     * @param token The ApiToken to convert to a view map
+     * @return Map containing simplified token data for API responses
+     */
+    public static Map<String, Object> toResponseView(ApiToken token) {
+        return Map.of(
+            "id", token.id,
+            "userId", token.userId,
+            "expiresDate", token.getExpiresDate(),
+            "issueDate", token.issueDate
+        );
+    }
+
+    /**
+     * Creates a list of simplified view maps for API token responses.
+     * This method transforms a list of ApiTokens into the format expected
+     * by the API response structure.
+     * 
+     * @param tokens List of ApiTokens to convert to view maps
+     * @return List of maps containing simplified token data for API responses
+     */
+    public static List<Map<String, Object>> toResponseViewList(List<ApiToken> tokens) {
+        return tokens.stream()
+            .map(ApiToken::toResponseView)
+            .collect(Collectors.toList());
     }
     
     

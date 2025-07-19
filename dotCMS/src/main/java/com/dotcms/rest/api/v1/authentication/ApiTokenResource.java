@@ -67,6 +67,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static java.util.Collections.EMPTY_MAP;
 
@@ -890,5 +891,78 @@ public class ApiTokenResource implements Serializable {
         }
 
         return ExceptionMapperUtil.createResponse(new DotStateException("No token"), Response.Status.NOT_FOUND);
+    }
+
+    @GET
+    @Path("/expiring")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Operation(operationId = "getExpiringApiTokens",
+            summary = "Retrieves API tokens that are about to expire",
+            description = "Returns a list of API tokens that will expire within the configured number of days.\n\n" +
+                    "For admin users, returns all expiring tokens from all users.\n" +
+                    "For limited users, returns only their own expiring tokens.\n\n" +
+                    "The number of days to look ahead can be configured via the EXPIRING_TOKEN_LOOKAHEAD_DAYS property (default: 7).",
+            tags = {"API Token"},
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Expiring API tokens successfully retrieved",
+                            content = @Content(mediaType = "application/json",
+                                    examples = {
+                                            @ExampleObject(
+                                                    value = "{\n" +
+                                                            "  \"entity\": {\n" +
+                                                            "    \"tokens\": [\n" +
+                                                            "      {\n" +
+                                                            "        \"expiresDate\": 1844834400000,\n" +
+                                                            "        \"id\": \"apie3362144-8906-460d-b16e-e46a5bf69aef\",\n" +
+                                                            "        \"issueDate\": 1750183464000,\n" +
+                                                            "        \"userId\": \"dotcms.org.1\"\n" +
+                                                            "      },\n" +
+                                                            "      {\n" +
+                                                            "        \"expiresDate\": 1844835400000,\n" +
+                                                            "        \"id\": \"apie46a5bf69aef-8906-460d-asde-e46a5bf69aef\",\n" +
+                                                            "        \"issueDate\": 1750183464000,\n" +
+                                                            "        \"userId\": \"dotcms.org.1\"\n" +
+                                                            "      }\n" +
+                                                            "    ]\n" +
+                                                            "  },\n" +
+                                                            "  \"errors\": [],\n" +
+                                                            "  \"i18nMessagesMap\": {},\n" +
+                                                            "  \"messages\": [],\n" +
+                                                            "  \"pagination\": null,\n" +
+                                                            "  \"permissions\": []\n" +
+                                                            "}"
+                                            )
+                                    }
+                            )
+                    ),
+                    @ApiResponse(responseCode = "401", description = "Invalid user"),
+                    @ApiResponse(responseCode = "403", description = "Forbidden"),
+                    @ApiResponse(responseCode = "500", description = "Unexpected server error")
+            }
+    )
+    public final Response getExpiringApiTokens(
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response) {
+
+        final InitDataObject initDataObject = this.webResource.init(null, true, request, true, "users");
+        final User user = initDataObject.getUser();
+
+        final int daysLookahead = Config.getIntProperty("EXPIRING_TOKEN_LOOKAHEAD_DAYS", 7);
+
+        if (daysLookahead < 0) {
+            return ExceptionMapperUtil.createResponse(
+                new DotStateException("Invalid EXPIRING_TOKEN_LOOKAHEAD_DAYS configuration: " + daysLookahead), 
+                Response.Status.INTERNAL_SERVER_ERROR);
+        }
+
+        //Get the expiring tokens
+        final List<ApiToken> expiringTokens = tokenApi.findExpiringTokens(daysLookahead, user);
+        
+        // Create token view
+        final List<Map<String, Object>> tokenViews = ApiToken.toResponseViewList(expiringTokens);
+        
+        return Response.ok(new ResponseEntityView(Map.of("tokens", tokenViews), EMPTY_MAP)).build();
     }
 }
