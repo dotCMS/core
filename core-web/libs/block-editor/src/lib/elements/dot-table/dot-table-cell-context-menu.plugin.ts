@@ -1,30 +1,17 @@
 import { Plugin, PluginKey } from 'prosemirror-state';
 import { Decoration, DecorationSet } from 'prosemirror-view';
-import tippy, { Instance, Props } from 'tippy.js';
+import tippy, { Props } from 'tippy.js';
+
+import { ViewContainerRef } from '@angular/core';
+
+import { Extension } from '@tiptap/core';
 
 import { getCellsOptions } from './utils';
 
 import { SuggestionsComponent, popperModifiers } from '../../shared';
 
-class DotTableCellPluginView {
-    public tippy: Instance | undefined;
-
-    constructor(view, tippy) {
-        this.tippy = tippy;
-    }
-
-    // eslint-disable-next-line
-    init(): void {}
-
-    // eslint-disable-next-line
-    update(): void {}
-
-    destroy() {
-        this.tippy.destroy();
-    }
-}
-
-export const DotTableCellPlugin = (options) => {
+// DotTable Options
+const TableCellContextMenuPlugin = (options) => {
     let tippyCellOptions;
 
     function setFocusDecoration(selection): Decoration {
@@ -109,8 +96,6 @@ export const DotTableCellPlugin = (options) => {
                 component.changeDetectorRef.detectChanges();
             }
         },
-
-        view: (view) => new DotTableCellPluginView(view, tippyCellOptions),
         props: {
             decorations(state) {
                 // Table cells deep is 3, this approach will work while we don't allow nested tables.
@@ -153,3 +138,16 @@ export const DotTableCellPlugin = (options) => {
         }
     });
 };
+
+export const DotTableCellContextMenu = (viewContainerRef: ViewContainerRef) =>
+    Extension.create({
+        name: 'dotTableCellContextMenu',
+        addProseMirrorPlugins() {
+            return [
+                TableCellContextMenuPlugin({
+                    editor: this.editor,
+                    viewContainerRef: viewContainerRef
+                })
+            ];
+        }
+    });
