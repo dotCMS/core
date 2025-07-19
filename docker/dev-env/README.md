@@ -52,7 +52,7 @@ docker run --rm \
 ```
 
 
-#### Clone demo using a starter.zip 
+#### Clone environment using the starter functionality 
 This asks the source server to generate a starter.zip, which can be time-consuming to generate AND to import initially.  
 ```
 docker run --rm \
@@ -65,6 +65,17 @@ docker run --rm \
 dotcms/dotcms-dev:nightly
 ```
 
+#### Start a new environment by downloading a fresh starter
+This will download a clean demo starter.zip from the dotCMS artifactory repo and import it into the new environment.  This is useful for starting a new dev instance with a clean slate.
+```
+docker run --rm \
+--pull always \
+-p 8443:8443 \
+-v $PWD/data:/data \
+-e DOTCMS_STARTER_URL=https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20250613/starter-20250613.zip \
+dotcms/dotcms-dev:nightly
+
+```
 
 #### DEV DEBUG - with Postgres port exposed.  
 In this case dotCMS java waits to start up until a debugger is connected to it on port 8000.
