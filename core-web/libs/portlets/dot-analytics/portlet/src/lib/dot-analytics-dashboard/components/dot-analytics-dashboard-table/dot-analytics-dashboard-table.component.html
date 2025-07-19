@@ -1,0 +1,42 @@
+<p-card class="h-full">
+    <ng-template pTemplate="header">
+        <h3 class="text-lg font-semibold text-800 m-0">{{ $title() | dm }}</h3>
+    </ng-template>
+
+    <p-table [value]="$data()" [attr.data-testid]="$testId()" class="p-datatable-sm">
+        <ng-template pTemplate="header">
+            <tr>
+                @for (column of $columns(); track column.field) {
+                    <th [class]="'text-' + (column.alignment || 'left')">
+                        {{ column.header | dm }}
+                    </th>
+                }
+            </tr>
+        </ng-template>
+
+        <ng-template pTemplate="body" let-row>
+            <tr>
+                @for (column of $columns(); track column.field) {
+                    <td [class]="'text-' + (column.alignment || 'left')">
+                        @switch (column.type) {
+                            @case ('link') {
+                                <a [href]="row[column.field]" class="font-medium hover:underline">
+                                    {{ row[column.field] }}
+                                </a>
+                            }
+                            @case ('number') {
+                                <span class="font-semibold">{{ row[column.field] | number }}</span>
+                            }
+                            @case ('percentage') {
+                                <span class="text-600 font-medium">{{ row[column.field] }}%</span>
+                            }
+                            @default {
+                                {{ row[column.field] }}
+                            }
+                        }
+                    </td>
+                }
+            </tr>
+        </ng-template>
+    </p-table>
+</p-card>
