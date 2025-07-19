@@ -845,7 +845,7 @@ describe('DotContentTypesEditComponent', () => {
                 contentTypeForm = de.query(By.css('dot-content-types-form'));
             });
 
-            it('should udpate content type', () => {
+            it('should update content type', () => {
                 const responseContentType = Object.assign({}, fakeContentType, {
                     fields: [{ hello: 'world' }]
                 });

@@ -22,6 +22,12 @@ import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.rules.exception.RuleConstructionFailedException;
 import com.dotmarketing.portlets.rules.model.Condition;
 import com.liferay.portal.model.User;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -38,7 +44,9 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import com.dotcms.rest.annotation.SwaggerCompliant;
 
+@SwaggerCompliant(value = "Rules engine and business logic APIs", batch = 6)
 @Path("/v1/sites/{siteId}/ruleengine")
 @Tag(name = "Rules Engine")
 public class ConditionResource {
@@ -64,19 +72,35 @@ public class ConditionResource {
         this.conditionTransform = new ConditionTransform();
     }
 
-    /**
-     * <p>Returns a JSON with the Condition Groups and its Conditions for the rule with the given ruleId.
-     * <br>Each Rule node contains all fields in  .
-     * <p>
-     * <p>If a conditionId is provided, it will return the condition whose id matches the provided conditionId.
-     * <p>
-     * Usage: /conditions/{conditionId}
-     */
+    @Operation(
+        summary = "Get condition by ID",
+        description = "Retrieves a specific rule condition by its identifier"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Condition retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = RestCondition.class))),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid site ID or condition ID",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "Site or condition not found",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @NoCache
     @Path("/conditions/{conditionId}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response self(@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam("siteId") String siteId, @PathParam("conditionId") String conditionId)
+    public Response self(@Context HttpServletRequest request, @Context final HttpServletResponse response, 
+                        @Parameter(description = "Site identifier", required = true) @PathParam("siteId") String siteId, 
+                        @Parameter(description = "Condition identifier", required = true) @PathParam("conditionId") String conditionId)
             throws JSONException {
         User user = getUser(request, response);
 
@@ -93,17 +117,42 @@ public class ConditionResource {
         } 
     }
 
-    /**
-     * <p>Saves a new Condition
-     * <br>
-     * <p>
-     * Usage: /rules/
-     */
+    @Operation(
+        summary = "Create rule condition",
+        description = "Creates a new rule condition for the specified site"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Condition created successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(type = "object", description = "JSON object containing the created condition ID in format: { 'id': 'condition-uuid' }"))),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid site ID or condition data",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "Site not found",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @POST
     @Path("/conditions")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response add(@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam("siteId") String siteId, RestCondition condition) {
+    public Response add(@Context HttpServletRequest request, @Context final HttpServletResponse response, 
+                       @Parameter(description = "Site identifier", required = true) @PathParam("siteId") String siteId, 
+                       @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                           description = "Rule condition data", 
+                           required = true,
+                           content = @Content(schema = @Schema(implementation = RestCondition.class))
+                       ) RestCondition condition) {
         siteId = checkNotEmpty(siteId, BadRequestException.class, "Site id is required.");
         condition = checkNotNull(condition, BadRequestException.class, "Condition is required.");
         User user = getUser(request, response);
@@ -118,21 +167,41 @@ public class ConditionResource {
         }
     }
 
-    /**
-     * <p>Updates a Condition
-     * <br>
-     * <p>
-     * Usage: PUT /rules/conditiongroups/{groupId}/conditions
-     */
+    @Operation(
+        summary = "Update rule condition",
+        description = "Updates an existing rule condition"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Condition updated successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = RestCondition.class))),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid parameters or condition data",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "Site or condition not found",
+                    content = @Content(mediaType = "application/json"))
+    })
     @PUT
     @Path("/conditions/{conditionId}")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     public RestCondition update(@Context HttpServletRequest request,
                                 @Context final HttpServletResponse response,
-                                @PathParam("siteId") String siteId,
-                                @PathParam("conditionId") String conditionId,
-                                RestCondition restCondition) throws DotDataException, DotSecurityException, JSONException {
+                                @Parameter(description = "Site identifier", required = true) @PathParam("siteId") String siteId,
+                                @Parameter(description = "Condition identifier", required = true) @PathParam("conditionId") String conditionId,
+                                @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                                    description = "Updated rule condition data", 
+                                    required = true,
+                                    content = @Content(schema = @Schema(implementation = RestCondition.class))
+                                ) RestCondition restCondition) throws DotDataException, DotSecurityException, JSONException {
 
         siteId = checkNotEmpty(siteId, BadRequestException.class, "Site Id is required.");
         conditionId = checkNotEmpty(conditionId, BadRequestException.class, "Condition Id is required.");
@@ -144,15 +213,32 @@ public class ConditionResource {
         return restCondition;
     }
 
-    /**
-     * <p>Deletes a Condition
-     * <br>
-     * <p>
-     * Usage: DELETE api/rules-engine/rules
-     */
+    @Operation(
+        summary = "Delete rule condition",
+        description = "Removes a rule condition from the system"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "204", 
+                    description = "Condition deleted successfully"),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid site ID or condition ID",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "Site or condition not found",
+                    content = @Content(mediaType = "application/json"))
+    })
     @DELETE
     @Path("/conditions/{conditionId}")
-    public Response remove(@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam("siteId") String siteId, @PathParam("conditionId") String conditionId)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response remove(@Context HttpServletRequest request, @Context final HttpServletResponse response, 
+                          @Parameter(description = "Site identifier", required = true) @PathParam("siteId") String siteId, 
+                          @Parameter(description = "Condition identifier", required = true) @PathParam("conditionId") String conditionId)
             throws JSONException {
         User user = getUser(request, response);
 

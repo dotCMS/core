@@ -2,10 +2,17 @@ package com.dotcms.rest.api.v1.system;
 
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.ResponseEntityMapView;
 import com.dotcms.rest.annotation.AccessControlAllowOrigin;
 import com.dotcms.rest.annotation.InitRequestRequired;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.annotation.SwaggerCompliant;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.glassfish.jersey.server.JSONP;
 
@@ -36,6 +43,7 @@ import java.util.Map;
  * @version 3.7
  * @since Jul 22, 2016
  */
+@SwaggerCompliant(value = "System administration and configuration APIs", batch = 4)
 @Tag(name = "System Configuration")
 @Path("/v1/appconfiguration")
 @SuppressWarnings("serial")
@@ -66,12 +74,25 @@ public class AppContextInitResource implements Serializable {
      * @param request - The {@link HttpServletRequest} object.
      * @return The JSON representation of configuration parameters.
      */
+    @Operation(
+        summary = "Get application configuration",
+        description = "Returns system properties that are useful to the dotCMS Angular UI, including configuration parameters and menu items for logged in users"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Configuration data retrieved successfully (no body if k8s probe)",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityMapView.class))),
+        @ApiResponse(responseCode = "500",
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @JSONP
     @NoCache
     @AccessControlAllowOrigin
     @InitRequestRequired
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces(MediaType.APPLICATION_JSON)
     public final Response list(@Context final HttpServletRequest request) {
         try {
             // Return all configuration parameters in one response
@@ -84,7 +105,7 @@ public class AppContextInitResource implements Serializable {
 
             final Map<String, Object> configMap = Map.of(CONFIG, configData);
 
-            return Response.ok(new ResponseEntityView(configMap)).build();
+            return Response.ok(new ResponseEntityView<>(configMap)).build();
         } catch (Exception e) {
             // In case of unknown error, so we report it as a 500
             return ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
