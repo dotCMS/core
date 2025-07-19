@@ -35,7 +35,7 @@ export class SiteService {
         'UPDATE_SITE',
         'ARCHIVE_SITE'
     ];
-    private _switchSite$: Subject<Site> = new Subject<Site>();
+    private _switchSite$ = new Subject<Site>();
     private _refreshSites$: Subject<Site> = new Subject<Site>();
 
     constructor() {
@@ -60,7 +60,9 @@ export class SiteService {
             .subscribeToEvents<Site>(['SWITCH_SITE'])
             .subscribe(({ data }: DotEventTypeWrapper<Site>) => this.setCurrentSite(data));
 
-        loginService.watchUser(() => this.loadCurrentSite());
+        loginService.watchUser(() => {
+            this.loadCurrentSite();
+        });
     }
 
     /**
