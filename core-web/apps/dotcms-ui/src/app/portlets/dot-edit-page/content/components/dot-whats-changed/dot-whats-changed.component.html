@@ -1,6 +1,7 @@
-<dot-iframe *ngIf="whatsChanged.diff; else noChanges" #dotIframe></dot-iframe>
-<ng-template #noChanges>
+@if (whatsChanged.diff) {
+    <dot-iframe #dotIframe></dot-iframe>
+} @else {
     <span class="whats-changed__empty-state">
         {{ 'nothing-changed' | dm }}
     </span>
-</ng-template>
+}

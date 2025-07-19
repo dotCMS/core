@@ -1,4 +1,4 @@
-<ng-container *ngIf="isEnterpriseLicense$ | async as isEnterpriseLicense; else language">
+@if (isEnterpriseLicense$ | async; as isEnterpriseLicense) {
     <dot-device-selector
         (selected)="changeDeviceHandler($event)"
         [pTooltip]="pageState.viewAs.device?.name || ('editpage.viewas.default.device' | dm)"
@@ -6,7 +6,6 @@
         appendTo="body"
         tooltipPosition="bottom"
         tooltipStyleClass="dot-device-selector__dialog" />
-
     <dot-language-selector
         (selected)="changeLanguageHandler($event)"
         [pTooltip]="pageState.viewAs.language.language"
@@ -14,13 +13,16 @@
         appendTo="body"
         tooltipPosition="bottom"
         tooltipStyleClass="dot-language-selector__dialog" />
-
     <dot-persona-selector
         (delete)="deletePersonalization($event)"
         (selected)="changePersonaHandler($event)"
         [disabled]="(dotPageStateService.haveContent$ | async) === false"
         [pageState]="pageState" />
-</ng-container>
+} @else {
+    <dot-language-selector
+        (selected)="changeLanguageHandler($event)"
+        [value]="pageState.viewAs.language" />
+}
 
 <ng-template #language>
     <dot-language-selector

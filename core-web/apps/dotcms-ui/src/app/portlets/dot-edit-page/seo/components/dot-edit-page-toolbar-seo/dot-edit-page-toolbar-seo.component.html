@@ -1,7 +1,7 @@
 <dot-secondary-toolbar>
     <!-- Header title and actions-->
     <div class="main-toolbar-left flex align-items-center gap-2">
-        <ng-container *ngIf="variant; else defaultHeaderLeftTpl">
+        @if (variant) {
             <button
                 (click)="backToExperiment.emit(true)"
                 [pTooltip]="'editpage.header.back.to.experiment' | dm"
@@ -10,21 +10,63 @@
                 icon="pi pi-arrow-left"
                 pButton
                 tooltipPosition="bottom"></button>
-
             <dot-edit-page-info-seo
                 [title]="variant.variant.title"
                 [apiLink]="apiLink"
                 [url]="variant.variant.url"
                 class="dot-variant-header flex gap-3"></dot-edit-page-info-seo>
-        </ng-container>
+        } @else {
+            <dot-edit-page-info-seo
+                [title]="pageState.page.title"
+                [apiLink]="apiLink"
+                [url]="pageState.page.pageURI"
+                class="flex gap-2"></dot-edit-page-info-seo>
+            @if (showFavoritePageStar) {
+                <p-button
+                    (click)="favoritePage.emit(true)"
+                    [icon]="!pageState.favoritePage ? 'pi pi-star' : 'pi pi-star-fill'"
+                    [pTooltip]="'favoritePage.star.icon.tooltip' | dm"
+                    class="flex gap-3"
+                    styleClass="p-button-rounded p-button-sm p-button-text"
+                    data-testId="addFavoritePageButton"
+                    tooltipPosition="bottom"></p-button>
+            }
+        }
     </div>
 
     <div class="main-toolbar-right flex align-items-center gap-3">
-        <ng-container *ngIf="variant; else defaultHeaderRightTpl">
+        @if (variant) {
             <dot-global-message data-testId="globalMessage" right></dot-global-message>
             <i class="pi pi-filter-fill -rotate-180"></i>
             <h2>{{ variant.experimentName }}</h2>
-        </ng-container>
+        } @else {
+            <dot-global-message data-testId="globalMessage" right></dot-global-message>
+            @if (runningExperiment) {
+                <p-tag
+                    [value]="
+                        ('running' | dm | titlecase) +
+                        ' ' +
+                        ('dot.common.until' | dm) +
+                        ' ' +
+                        (runningExperiment.scheduling.endDate | date: runningUntilDateFormat)
+                    "
+                    [routerLink]="[
+                        '/edit-page/experiments/',
+                        runningExperiment.pageId,
+                        runningExperiment.id,
+                        'reports'
+                    ]"
+                    class="sm p-tag-success dot-edit__experiments-results-tag"
+                    role="button"
+                    data-testId="runningExperimentTag"
+                    queryParamsHandling="preserve">
+                    <i class="material-icons">science</i>
+                </p-tag>
+            }
+            <dot-edit-page-workflows-actions
+                (fired)="actionFired.emit($event)"
+                [page]="pageState.page"></dot-edit-page-workflows-actions>
+        }
     </div>
 
     <!-- Tab actions and dropdowns -->
@@ -37,63 +79,18 @@
     </div>
 
     <div class="lower-toolbar-right w-6">
-        <p-checkbox
-            *ngIf="showWhatsChanged && isEnterpriseLicense$ | async"
-            (onChange)="whatschange.emit($event.checked)"
-            [binary]="true"
-            [label]="'dot.common.whats.changed' | dm"
-            [pTooltip]="'dot.common.whats.changed.clipboard' | dm"
-            class="flex dot-edit__what-changed-button"
-            tooltipPosition="bottom"></p-checkbox>
+        @if (showWhatsChanged && isEnterpriseLicense$ | async) {
+            <p-checkbox
+                (onChange)="whatschange.emit($event.checked)"
+                [binary]="true"
+                [label]="'dot.common.whats.changed' | dm"
+                [pTooltip]="'dot.common.whats.changed.clipboard' | dm"
+                class="flex dot-edit__what-changed-button"
+                tooltipPosition="bottom"></p-checkbox>
+        }
         <dot-edit-page-view-as-controller-seo
             [pageState]="pageState"
             [variant]="variant"
             class="flex gap-2"></dot-edit-page-view-as-controller-seo>
     </div>
 </dot-secondary-toolbar>
-
-<ng-template #defaultHeaderLeftTpl>
-    <dot-edit-page-info-seo
-        [title]="pageState.page.title"
-        [apiLink]="apiLink"
-        [url]="pageState.page.pageURI"
-        class="flex gap-2"></dot-edit-page-info-seo>
-    <p-button
-        *ngIf="showFavoritePageStar"
-        (click)="favoritePage.emit(true)"
-        [icon]="!pageState.favoritePage ? 'pi pi-star' : 'pi pi-star-fill'"
-        [pTooltip]="'favoritePage.star.icon.tooltip' | dm"
-        class="flex gap-3"
-        styleClass="p-button-rounded p-button-sm p-button-text"
-        data-testId="addFavoritePageButton"
-        tooltipPosition="bottom"></p-button>
-</ng-template>
-
-<ng-template #defaultHeaderRightTpl>
-    <dot-global-message data-testId="globalMessage" right></dot-global-message>
-
-    <p-tag
-        *ngIf="runningExperiment"
-        [value]="
-            ('running' | dm | titlecase) +
-            ' ' +
-            ('dot.common.until' | dm) +
-            ' ' +
-            (runningExperiment.scheduling.endDate | date: runningUntilDateFormat)
-        "
-        [routerLink]="[
-            '/edit-page/experiments/',
-            runningExperiment.pageId,
-            runningExperiment.id,
-            'reports'
-        ]"
-        class="sm p-tag-success dot-edit__experiments-results-tag"
-        role="button"
-        data-testId="runningExperimentTag"
-        queryParamsHandling="preserve">
-        <i class="material-icons">science</i>
-    </p-tag>
-    <dot-edit-page-workflows-actions
-        (fired)="actionFired.emit($event)"
-        [page]="pageState.page"></dot-edit-page-workflows-actions>
-</ng-template>

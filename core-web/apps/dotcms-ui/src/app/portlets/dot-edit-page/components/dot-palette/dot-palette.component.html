@@ -1,4 +1,4 @@
-<ng-container *ngIf="vm$ | async as vm">
+@if (vm$ | async; as vm) {
     <div (@inOut.done)="onAnimationDone($event)" [@inOut]="vm.viewContentlet" data-testId="wrapper">
         <dot-palette-content-type
             (filter)="filterContentTypes($event)"
@@ -16,4 +16,4 @@
             [totalRecords]="vm.totalRecords"
             #contentlets></dot-palette-contentlets>
     </div>
-</ng-container>
+}
