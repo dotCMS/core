@@ -1,5 +1,8 @@
 package com.dotcms.rest;
 
+import com.dotcms.rest.annotation.SwaggerCompliant;
+import java.io.IOException;
+import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -15,6 +18,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
+@SwaggerCompliant(value = "Legacy & Utility Resources - Example REST endpoint for testing and demonstration purposes", batch = 8)
 @Tag(name = "Administration")
 @Path("/restexample")
 public class RestExamplePortlet extends BaseRestPortlet {

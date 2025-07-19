@@ -1,7 +1,7 @@
 package com.dotcms.rest.api.v1.osgi;
 
 import com.dotcms.rest.ResponseEntityBooleanView;
-import com.dotcms.rest.ResponseEntityListView;
+import com.dotcms.rest.ResponseEntityListStringView;
 import com.dotcms.rest.ResponseEntityStringView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
@@ -17,9 +17,12 @@ import com.dotmarketing.util.SecurityLogger;
 import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vavr.Tuple2;
 import org.apache.commons.io.IOUtils;
@@ -56,11 +59,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import com.dotcms.rest.annotation.SwaggerCompliant;
 
 /**
  * This class is a RESTful resource for OSGi related operations.
  * @author jsanca
  */
+@SwaggerCompliant(value = "Rules engine and business logic APIs", batch = 6)
 @Tag(name = "OSGi Plugins")
 @Path ("/v1/osgi")
 public class OSGIResource {
@@ -80,12 +85,21 @@ public class OSGIResource {
     @GET
     @Path ("/dotsystem")
     @Produces (MediaType.APPLICATION_JSON)
-    @Operation(summary = "Returns the dot system list of all bundles installed",
-            responses = {
-                    @ApiResponse(
-                            responseCode = "200",
-                            content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseEntityBundleListView.class)))
+    @Operation(
+        summary = "Get dot system installed bundles",
+        description = "Returns the dot system list of all bundles installed in the OSGi environment. Optionally exclude system bundles from the results."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Bundles retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityBundleListView.class))),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - backend user required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - dynamic-plugins portlet access required",
+                    content = @Content(mediaType = "application/json"))
     })
     public ResponseEntityBundleListView getSystemInstalledBundles (@Context HttpServletRequest request,
                                                @Context final HttpServletResponse response,
@@ -110,13 +124,22 @@ public class OSGIResource {
      */
     @GET
     @Produces (MediaType.APPLICATION_JSON)
-    @Operation(summary = "Returns a list of all bundles installed",
-            responses = {
-                    @ApiResponse(
-                            responseCode = "200",
-                            content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseEntityBundleListView.class)))
-            })
+    @Operation(
+        summary = "Get all installed bundles",
+        description = "Returns a list of all bundles installed in the OSGi environment. Optionally exclude system bundles from the results."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Bundles retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityBundleListView.class))),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - backend user required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - dynamic-plugins portlet access required",
+                    content = @Content(mediaType = "application/json"))
+    })
     public ResponseEntityBundleListView getInstalledBundles (@Context HttpServletRequest request,
                                                @Context final HttpServletResponse response,
                                                @QueryParam("ignoresystembundles") final boolean ignoreSystemBundles) {
@@ -182,6 +205,7 @@ public class OSGIResource {
     @Path ("/_processExports/{bundle:.*}")
     @Produces (MediaType.APPLICATION_JSON)
     @Operation(summary = "Process exports",
+            description = "Processes the export packages for a specific OSGi bundle. This updates the bundle's export declarations for package sharing.",
             responses = {
                     @ApiResponse(
                             responseCode = "200",
@@ -190,7 +214,7 @@ public class OSGIResource {
             })
     public ResponseEntityStringView processBundle (@Context final HttpServletRequest request,
                                                    @Context final HttpServletResponse response,
-                                                   @PathParam ("bundle") final String bundle) {
+                                                   @Parameter(description = "Bundle name to process") @PathParam ("bundle") final String bundle) {
 
         checkUserPermissions(request, response, DYNAMIC_PLUGINS);
 
@@ -229,8 +253,9 @@ public class OSGIResource {
     @Path("/jar/{jar}")
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces({MediaType.APPLICATION_JSON})
     @Operation(summary = "Undeploys bundle",
+            description = "Undeploys an OSGi bundle by moving it from the load folder to the undeployed folder. This will stop and uninstall the bundle.",
             responses = {
                     @ApiResponse(
                             responseCode = "200",
@@ -243,7 +268,7 @@ public class OSGIResource {
             })
     public final ResponseEntityBooleanView undeploy(@Context final HttpServletRequest request,
                                                     @Context final HttpServletResponse response,
-                                                    @PathParam ("jar") final String jarName) throws BundleException, IOException {
+                                                    @Parameter(description = "JAR file name to undeploy") @PathParam ("jar") final String jarName) throws BundleException, IOException {
 
         checkUserPermissions(request, response, DYNAMIC_PLUGINS);
         Logger.debug(this, ()->"Undeploying OSGI jar " + jarName);
@@ -313,8 +338,9 @@ public class OSGIResource {
     @Path("/jar/{jar}/_deploy")
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces({MediaType.APPLICATION_JSON})
     @Operation(summary = "deploys bundle",
+            description = "Deploys an OSGi bundle from its JAR file. This will load and activate the bundle from the load folder.",
             responses = {
                     @ApiResponse(
                             responseCode = "200",
@@ -325,7 +351,7 @@ public class OSGIResource {
             })
     public final ResponseEntityStringView deploy(@Context final HttpServletRequest request,
                                    @Context final HttpServletResponse response,
-                                   @PathParam ("jar") final String jarName) throws  IOException {
+                                   @Parameter(description = "JAR file name to deploy") @PathParam ("jar") final String jarName) throws  IOException {
 
         checkUserPermissions(request, response, DYNAMIC_PLUGINS);
 
@@ -364,8 +390,9 @@ public class OSGIResource {
     @Path("/jar/{jar}/_stop")
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces({MediaType.APPLICATION_JSON})
     @Operation(summary = "stops bundle",
+            description = "Stops an OSGi bundle by its JAR file name. This will deactivate the bundle but not uninstall it.",
             responses = {
                     @ApiResponse(
                             responseCode = "200",
@@ -376,7 +403,7 @@ public class OSGIResource {
             })
     public final ResponseEntityStringView stop(@Context final HttpServletRequest request,
                                  @Context final HttpServletResponse response,
-                                 @PathParam ("jar") final String jarName) throws BundleException {
+                                 @Parameter(description = "JAR file name to stop") @PathParam ("jar") final String jarName) throws BundleException {
 
         checkUserPermissions(request, response, DYNAMIC_PLUGINS);
 
@@ -412,19 +439,32 @@ public class OSGIResource {
     @Path("/jar/{jar}/_start")
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    @Operation(summary = "starts bundle",
-            responses = {
-                    @ApiResponse(
-                            responseCode = "200",
-                            content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseEntityStringView.class))),
-                    @ApiResponse(responseCode = "404", description = "Bundle not found"),
-                    @ApiResponse(responseCode = "400", description = "Can not stop system bundle")
-            })
+    @Produces({MediaType.APPLICATION_JSON})
+    @Operation(
+        summary = "Start OSGi bundle",
+        description = "Starts a specific OSGi bundle by jar name. System bundles cannot be started manually."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200",
+                    description = "Bundle started successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityStringView.class))),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - backend user required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - dynamic-plugins portlet access required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "Bundle not found",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "400", 
+                    description = "Cannot start system bundle",
+                    content = @Content(mediaType = "application/json"))
+    })
     public final ResponseEntityStringView start(@Context final HttpServletRequest request,
                                @Context final HttpServletResponse response,
-                               @PathParam ("jar") final String jarName) throws BundleException {
+                               @Parameter(description = "Name of the jar file containing the OSGi bundle", required = true) @PathParam ("jar") final String jarName) throws BundleException {
 
         checkUserPermissions(request, response, DYNAMIC_PLUGINS);
 
@@ -453,7 +493,8 @@ public class OSGIResource {
     @GET
     @Path ("/extra-packages")
     @Produces (MediaType.APPLICATION_JSON)
-    @Operation(summary = "get extra packages",
+    @Operation(summary = "Get extra packages",
+            description = "Returns the packages listed in the osgi-extra.conf file. These packages are exported to OSGi bundles as system packages.",
             responses = {
                     @ApiResponse(
                             responseCode = "200",
@@ -481,8 +522,10 @@ public class OSGIResource {
     @Path("/extra-packages")
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    @Operation(summary = "modify extra packages",
+    @Produces({MediaType.APPLICATION_JSON})
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Operation(summary = "Modify extra packages",
+            description = "Updates the content of the osgi-extra.conf file with new package definitions. These packages will be available to OSGi bundles as system packages.",
             responses = {
                     @ApiResponse(
                             responseCode = "200",
@@ -491,6 +534,10 @@ public class OSGIResource {
             })
     public final ResponseEntityStringView modifyExtraPackages(@Context final HttpServletRequest request,
                                 @Context final HttpServletResponse response,
+                                @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                                    description = "Extra packages configuration to update", 
+                                    required = true,
+                                    content = @Content(schema = @Schema(implementation = ExtraPackagesForm.class)))
                                 final ExtraPackagesForm extraPackagesForm)  {
 
         checkUserPermissions(request, response, DYNAMIC_PLUGINS);
@@ -518,8 +565,9 @@ public class OSGIResource {
     @Path("/_restart")
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces({MediaType.APPLICATION_JSON})
     @Operation(summary = "restarts the OSGI framework",
+            description = "Restarts the entire OSGi framework, which will reload all bundles. This is a system-level operation that affects all deployed plugins.",
             responses = {
                     @ApiResponse(
                             responseCode = "200",
@@ -566,9 +614,10 @@ public class OSGIResource {
     @POST
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces({MediaType.APPLICATION_JSON})
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Operation(summary = "Upload bundles to the OSGI framework",
+            description = "Uploads one or more JAR files to the OSGi upload folder for deployment. Only JAR files are accepted and will be processed by the OSGi framework.",
             responses = {
                     @ApiResponse(
                             responseCode = "200",
@@ -576,9 +625,9 @@ public class OSGIResource {
                                     schema = @Schema(implementation = ResponseEntityStringView.class))),
                     @ApiResponse(responseCode = "403", description = "Can not access the upload folder or invalid OSGI Upload request"),
             })
-    public final Response uploadBundles(@Context final HttpServletRequest request,
-                                              @Context final HttpServletResponse response,
-                                              final FormDataMultiPart multipart) throws IOException {
+    public final Response uploadBundles(@Parameter(hidden = true) @Context final HttpServletRequest request,
+                                              @Parameter(hidden = true) @Context final HttpServletResponse response,
+                                              @RequestBody(description = "Multipart form data containing OSGI bundle files", required = true) final FormDataMultiPart multipart) throws IOException {
 
         checkUserPermissions(request, response, PortletID.DYNAMIC_PLUGINS.toString());
 
@@ -643,14 +692,15 @@ public class OSGIResource {
     @GET
     @Path ("/available-plugins")
     @Produces (MediaType.APPLICATION_JSON)
-    @Operation(summary = "get available plugins",
+    @Operation(summary = "Get available plugins",
+            description = "Returns a list of JAR files available for deployment from the undeployed folder. These are plugins that have been uploaded but are not currently active.",
             responses = {
                     @ApiResponse(
                             responseCode = "200",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseEntityListView.class)))
+                                    schema = @Schema(implementation = ResponseEntityListStringView.class)))
             })
-    public ResponseEntityListView<String> getAvailablePlugis (@Context HttpServletRequest request,
+    public ResponseEntityListStringView getAvailablePlugis (@Context HttpServletRequest request,
                                                       @Context final HttpServletResponse response) {
 
         checkUserPermissions(request, response, DYNAMIC_PLUGINS);
@@ -660,7 +710,7 @@ public class OSGIResource {
         final String path = OSGIUtil.getInstance().getFelixUndeployPath();
         final File undeployDirectory = new File(path);
 
-        return new ResponseEntityListView<>(
+        return new ResponseEntityListStringView(
                 Arrays.stream(undeployDirectory.list()).filter(f -> f.toLowerCase().endsWith(".jar")).collect(Collectors.toList())
         );
     }

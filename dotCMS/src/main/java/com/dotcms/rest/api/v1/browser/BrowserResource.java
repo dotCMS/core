@@ -3,10 +3,14 @@ package com.dotcms.rest.api.v1.browser;
 import com.dotcms.browser.BrowserAPI;
 import com.dotcms.browser.BrowserQuery;
 import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.ResponseEntityMapStringObjectView;
 import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.ResponseEntityBooleanView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.annotation.SwaggerCompliant;
 import com.dotcms.rest.api.v1.browsertree.BrowserTreeHelper;
+import com.dotcms.rest.api.v1.folder.ResponseEntityFolderView;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -15,11 +19,17 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.glassfish.jersey.server.JSONP;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -36,6 +46,7 @@ import static com.dotcms.rest.api.v1.browsertree.BrowserTreeHelper.ACTIVE_FOLDER
  * Expose the Browser functionality such as get the contents in a folder
  * @author jsanca
  */
+@SwaggerCompliant(value = "Site architecture and template management APIs", batch = 3)
 @Tag(name = "Browser Tree")
 @Path("/v1/browser")
 public class BrowserResource {
@@ -53,19 +64,33 @@ public class BrowserResource {
         this.browserAPI = browserAPI;
     }
 
-    /**
-     * Get the select folder into the site browser
-     * @param request  {@link HttpServletRequest}
-     * @param response {@link HttpServletResponse}
-     * @return Response
-     * @throws DotSecurityException
-     * @throws DotDataException
-     */
+    @Operation(
+        summary = "Get selected folder",
+        description = "Retrieves the currently selected folder from the site browser session. Returns the folder information if one is selected, otherwise returns 404."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Selected folder retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityFolderView.class))),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "No folder currently selected in session",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @Path("/selectedfolder")
     @GET
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces({MediaType.APPLICATION_JSON})
     public Response getSelectFolder(@Context final HttpServletRequest request,
                                  @Context final HttpServletResponse response) throws DotSecurityException, DotDataException {
 
@@ -79,27 +104,45 @@ public class BrowserResource {
 
         final Optional<String> selectedPathOpt = Optional.ofNullable((String) request.getSession().getAttribute(ACTIVE_FOLDER_ID));
         return selectedPathOpt.isPresent()?
-                Response.ok(new ResponseEntityView(APILocator.getFolderAPI().find(selectedPathOpt.get(), user, false))).build():
+                Response.ok(new ResponseEntityView<>(APILocator.getFolderAPI().find(selectedPathOpt.get(), user, false))).build():
                 Response.status(Response.Status.NOT_FOUND).build();
     }
 
-    /**
-     * Set the select folder into the site browser, next time the site browser is opened will expand to selected folder
-     * @param request  {@link HttpServletRequest}
-     * @param response {@link HttpServletResponse}
-     * @param openFolderForm {@link OpenFolderForm}
-     * @return Response
-     * @throws DotSecurityException
-     * @throws DotDataException
-     */
+    @Operation(
+        summary = "Set selected folder",
+        description = "Sets the selected folder in the site browser session. Next time the site browser is opened, it will expand to this selected folder."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Folder selection updated successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityBooleanView.class))),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid folder path",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @Path("/selectedfolder")
     @PUT
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON})
     public Response selectFolder(@Context final HttpServletRequest request,
                                      @Context final HttpServletResponse response,
-                                     final OpenFolderForm openFolderForm) throws DotSecurityException, DotDataException {
+                                     @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                                         description = "Folder selection form with path", 
+                                         required = true,
+                                         content = @Content(schema = @Schema(implementation = OpenFolderForm.class))
+                                     ) final OpenFolderForm openFolderForm) throws DotSecurityException, DotDataException {
 
         final InitDataObject initData = new WebResource.InitBuilder()
                 .requiredBackendUser(true)
@@ -115,27 +158,46 @@ public class BrowserResource {
         Logger.debug(this, ()-> "Selecting the folder on the site browser: " + folderPath);
         browserTreeHelper.selectFolder(request, folderPath, user, respectFrontendRoles);
 
-        return Response.ok(new ResponseEntityView(Boolean.TRUE)).build();
+        return Response.ok(new ResponseEntityView<>(Boolean.TRUE)).build();
     }
 
-    /**
-     * Get the folder contents
-     * Can get a host or specific folder, retrieve archive, working, include folders, pages, files and dotAsset
-     * Can filter by extensions and mime type
-     * @param request  {@link HttpServletRequest}
-     * @param response {@link HttpServletResponse}
-     * @param browserQueryForm {@link BrowserQueryForm}
-     * @return Response
-     * @throws DotSecurityException
-     * @throws DotDataException
-     */
+    @Operation(
+        summary = "Get folder content",
+        description = "Retrieves folder contents with extensive filtering options. Can get host or specific folder contents, including archived/working content, folders, pages, files, and dotAssets. Supports filtering by extensions, MIME types, and various content states."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Folder content retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityMapStringObjectView.class))),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid query parameters",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "Folder not found",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @POST
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON})
     public Response getFolderContent(@Context final HttpServletRequest request,
                                                 @Context final HttpServletResponse response,
-                                                final BrowserQueryForm browserQueryForm) throws DotSecurityException, DotDataException {
+                                                @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                                                    description = "Browser query form with filtering and pagination options", 
+                                                    required = true,
+                                                    content = @Content(schema = @Schema(implementation = BrowserQueryForm.class))
+                                                ) final BrowserQueryForm browserQueryForm) throws DotSecurityException, DotDataException {
 
         final InitDataObject initData = new WebResource.InitBuilder()
                 .requiredBackendUser(true)
@@ -148,7 +210,7 @@ public class BrowserResource {
 
         Logger.debug(this, "Getting folder contents, browser query form: " + browserQueryForm);
 
-        return Response.ok(new ResponseEntityView(this.browserAPI.getFolderContent(
+        return Response.ok(new ResponseEntityView<>(this.browserAPI.getFolderContent(
                 BrowserQuery.builder()
                         .showDotAssets(browserQueryForm.isShowDotAssets())
                         .showLinks(browserQueryForm.isShowLinks())

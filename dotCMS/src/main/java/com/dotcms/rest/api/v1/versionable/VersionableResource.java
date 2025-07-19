@@ -2,6 +2,7 @@ package com.dotcms.rest.api.v1.versionable;
 
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.annotation.SwaggerCompliant;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotmarketing.beans.Identifier;
@@ -20,6 +21,12 @@ import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vavr.control.Try;
 import org.glassfish.jersey.server.JSONP;
@@ -42,7 +49,8 @@ import java.util.Optional;
  * Resource to interact with versions for Contentlet, Templates, Containers, Links, etc
  * @author erickgonzalez
  */
-@Tag(name = "Variants")
+@SwaggerCompliant(value = "Publishing and content distribution APIs", batch = 5)
+@Tag(name = "Versionables")
 @Path("/v1/versionables")
 public class VersionableResource {
 
@@ -67,25 +75,39 @@ public class VersionableResource {
                 permissionAPI, containerAPI);
     }
 
-    /**
-     * Deletes the version inode.
-     *
-     * It checks that the inode provided is not working or live, and the user executing the action
-     * needs to have Edit Permissions over the element.
-     *
-     * @param versionableInode {@link String} Inode of the element to be deleted
-     * @throws DotDataException
-     * @throws DotSecurityException
-     */
+    @Operation(
+        summary = "Delete version",
+        description = "Deletes a specific version of a versionable asset. The version cannot be working or live, and user needs edit permissions"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Version deleted successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityVersionableOperationView.class))),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - version is working or live",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "Version not found",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @DELETE
     @Path("/{versionableInode}")
     @JSONP
     @NoCache
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces({MediaType.APPLICATION_JSON})
     public Response deleteVersion(@Context final HttpServletRequest httpRequest,
             @Context final HttpServletResponse httpResponse,
-            @PathParam("versionableInode") final String versionableInode)
+            @Parameter(description = "Versionable asset inode", required = true) @PathParam("versionableInode") final String versionableInode)
             throws DotSecurityException, DotDataException {
 
         final InitDataObject initData = new WebResource.InitBuilder(this.webResource)
@@ -105,31 +127,39 @@ public class VersionableResource {
                 this.versionableHelper.getDefaultVersionableDeleteStrategy())
                 .deleteVersionByInode(versionableInode, user, mode.respectAnonPerms);
 
-        return Response.ok(new ResponseEntityView("Version " + versionableInode + " deleted successfully")).build();
+        return Response.ok(new ResponseEntityVersionableOperationView("Version " + versionableInode + " deleted successfully")).build();
     }
 
-    /**
-     * Finds the versionable for the passed UUID.
-     *
-     * If the UUID is an inode it will return the versionable for that specific element.
-     * If the UUID is an identifier it will return all the versionables for that element.
-     *
-     * User executing the action needs to have View Permissions over the element.
-     *
-     * If the UUID does not exist, 404 is returned.
-     *
-     * @param versionableInodeOrIdentifier {@link String} UUID of the element
-     * @return {@link VersionableView} versionable view object
-     */
+    @Operation(
+        summary = "Find versionable",
+        description = "Finds versionable asset by UUID. If UUID is an inode, returns specific version; if identifier, returns all versions"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Versionable found successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityVersionableView.class))),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "Versionable not found",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @Path("/{versionableInodeOrIdentifier}")
     @JSONP
     @NoCache
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces({MediaType.APPLICATION_JSON})
     public Response findVersionable(@Context final HttpServletRequest httpRequest,
             @Context final HttpServletResponse httpResponse,
-            @PathParam("versionableInodeOrIdentifier") final String versionableInodeOrIdentifier)
+            @Parameter(description = "Versionable asset inode or identifier", required = true) @PathParam("versionableInodeOrIdentifier") final String versionableInodeOrIdentifier)
             throws DotDataException, DotSecurityException {
 
         final InitDataObject initData = new WebResource.InitBuilder(this.webResource)
@@ -153,7 +183,7 @@ public class VersionableResource {
                                 + " does not exist");
             }
 
-            return Response.ok(new ResponseEntityView<>(
+            return Response.ok(new ResponseEntityVersionableListView(
                     this.versionableHelper.getAssetTypeByVersionableFindAllMap()
                             .getOrDefault(identifier.getAssetType(),
                                     this.versionableHelper.getDefaultVersionableFindAllStrategy())
@@ -165,28 +195,39 @@ public class VersionableResource {
                         this.versionableHelper.getDefaultVersionableFindVersionStrategy())
                 .findVersion(versionableInodeOrIdentifier, user, mode.respectAnonPerms);
 
-        return Response.ok(new ResponseEntityView(versionable)).build();
+        return Response.ok(new ResponseEntityVersionableView(versionable)).build();
     }
 
-    /**
-     * Finds the versionable for the passed inode and sets this version as a working
-     *
-     * User executing the action needs to have Edit Permissions over the element.
-     *
-     * If the UUID does not exist, 404 is returned. If exists set the version and returns it
-     *
-     * @param versionableInode {@link String} UUID of the element inode
-     * @return {@link VersionableView} versionable view object
-     */
+    @Operation(
+        summary = "Bring back version",
+        description = "Restores a specific version as the working version. User needs edit permissions"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Version restored successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityVersionableView.class))),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "Version not found",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @PUT
     @Path("/{versionableInode}/_bringback")
     @JSONP
     @NoCache
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces({MediaType.APPLICATION_JSON})
     public Response bringBack(@Context final HttpServletRequest httpRequest,
                               @Context final HttpServletResponse httpResponse,
-                              @PathParam("versionableInode") final String versionableInode)
+                              @Parameter(description = "Versionable asset inode to restore", required = true) @PathParam("versionableInode") final String versionableInode)
             throws DotDataException, DotSecurityException {
 
         final InitDataObject initData = new WebResource.InitBuilder(this.webResource)
@@ -228,6 +269,6 @@ public class VersionableResource {
                     this.versionableHelper.getDefaultVersionableRestoreVersionStrategy())
                 .restoreVersion(versionable.getVersionable(), user, false);
 
-        return Response.ok(new ResponseEntityView(newVersionable)).build();
+        return Response.ok(new ResponseEntityVersionableView(newVersionable)).build();
     }
 }

@@ -11,6 +11,7 @@ import com.dotcms.repackage.com.google.common.cache.Cache;
 import com.dotcms.repackage.com.google.common.cache.CacheBuilder;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.rest.exception.ForbiddenException;
+import com.dotcms.rest.annotation.SwaggerCompliant;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
@@ -54,6 +55,13 @@ import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import org.glassfish.jersey.media.multipart.FormDataParam;
 import org.glassfish.jersey.media.multipart.file.FileDataBodyPart;
 import org.quartz.SchedulerException;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 /**
@@ -81,8 +89,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
  * @since Jun 23, 2014
  *
  */
+@SwaggerCompliant(value = "Publishing and content distribution APIs", batch = 5)
 @Path("/integrity")
-@Tag(name = "Data Integrity", description = "Data integrity checking and conflict resolution")
+@Tag(name = "Data Integrity")
 public class IntegrityResource {
 
     private final WebResource webResource = new WebResource();
@@ -171,6 +180,28 @@ public class IntegrityResource {
     /**
      * <p>Returns a zip with data from structures and folders for integrity check
      */
+    @Operation(
+        summary = "Generate integrity data",
+        description = "Generates integrity data for checking content conflicts between servers. This endpoint triggers the IntegrityDataGenerationJob to create verification data that can be used for integrity checking."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Integrity data generation started successfully",
+                    content = @Content(mediaType = "text/plain",
+                                      schema = @Schema(implementation = String.class))),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - invalid or missing authentication token",
+                    content = @Content(mediaType = "text/plain")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - community license or insufficient permissions",
+                    content = @Content(mediaType = "text/plain")),
+        @ApiResponse(responseCode = "409", 
+                    description = "Conflict - integrity job already running",
+                    content = @Content(mediaType = "text/plain")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error during data generation",
+                    content = @Content(mediaType = "text/plain"))
+    })
     @POST
     @Path("/_generateintegritydata")
     @Produces("text/plain")
@@ -243,11 +274,30 @@ public class IntegrityResource {
      * Usage: /integrityData
      *
      */
+    @Operation(
+        summary = "Get integrity data file",
+        description = "Retrieves the generated integrity data as a ZIP file if the generation process is complete. Returns status codes to indicate if the process is still running, complete, or has encountered errors."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Integrity data ZIP file ready for download",
+                    content = @Content(mediaType = "application/zip",
+                                      schema = @Schema(type = "string", format = "binary"))),
+        @ApiResponse(responseCode = "202", 
+                    description = "Accepted - integrity data generation still processing",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - invalid authentication or request ID mismatch",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error during integrity data generation",
+                    content = @Content(mediaType = "text/plain"))
+    })
     @GET
     @Path("/{requestId}/integrityData")
     @Produces("application/zip")
     public Response getIntegrityData(@Context HttpServletRequest request,
-                                     @PathParam("requestId") final String requestId)  {
+                                     @Parameter(description = "Request ID returned from the integrity data generation process", required = true) @PathParam("requestId") final String requestId)  {
         final String remoteIp = RestEndPointIPUtil.resolveRemoteIp(request);
         final String localAddress = RestEndPointIPUtil.getFullLocalIp(request);
         final AuthCredentialPushPublishUtil.PushPublishAuthenticationToken pushPublishAuthenticationToken
@@ -383,12 +433,34 @@ public class IntegrityResource {
      *            end-point ID.
      * @return The REST {@link Response} with the status of the operation.
      */
+    @Operation(
+        summary = "Check data integrity",
+        description = "Initiates an integrity check process between local and remote servers to identify data conflicts. This is the main entry point for the Integrity Checker process that compares local data with selected endpoint data."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Integrity check process initiated successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(type = "object", description = "JSON response with success status and initialization message"))),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - missing required endpoint parameter",
+                    content = @Content(mediaType = "text/plain")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - backend user authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions or security error",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error during integrity check initialization",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @Path("/checkintegrity/{params:.*}")
     @Produces (MediaType.APPLICATION_JSON)
     public Response checkIntegrity(@Context final HttpServletRequest httpServletRequest,
                                    @Context final HttpServletResponse httpServletResponse,
-                                   @PathParam("params") final String params)  {
+                                   @Parameter(description = "URL parameters including the endpoint ID for integrity checking", required = true) @PathParam("params") final String params)  {
         final InitDataObject initData = webResource.init(params, httpServletRequest, httpServletResponse, true, null);
         final Map<String, String> paramsMap = initData.getParamsMap();
         final HttpSession session = httpServletRequest.getSession();
@@ -518,10 +590,33 @@ public class IntegrityResource {
      * @return
      * @throws JSONException
      */
+    @Operation(
+        summary = "Check integrity process status",
+        description = "Verifies the status of an integrity check process for a given endpoint. Returns current status: processing, finished, no conflicts, or error."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Process status retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(type = "object", description = "JSON response containing process status (processing, finished, noConflicts, error) and relevant messages"))),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - missing required endpoint parameter",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - backend user authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions or security error",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error checking process status",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @Path ("/checkIntegrityProcessStatus/{params:.*}")
     @Produces (MediaType.APPLICATION_JSON)
-    public Response checkIntegrityProcessStatus ( @Context final HttpServletRequest request, @Context final HttpServletResponse response, @PathParam ("params") String params ) throws JSONException {
+    public Response checkIntegrityProcessStatus ( @Context final HttpServletRequest request, @Context final HttpServletResponse response, 
+        @Parameter(description = "URL parameters including the endpoint ID to check status for", required = true) @PathParam ("params") String params ) throws JSONException {
 
         StringBuilder responseMessage = new StringBuilder();
 
@@ -593,10 +688,30 @@ public class IntegrityResource {
      * @return
      * @throws JSONException
      */
+    @Operation(
+        summary = "Get integrity check results",
+        description = "Generates and returns the detailed integrity check results for a given endpoint, grouped by object type (HTML Pages, Content Types, etc.)."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Integrity results retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(type = "object", description = "JSON response containing integrity conflict results grouped by object type (htmlpages, contentlets, folders, etc.) with detailed conflict information"))),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - missing required endpoint parameter",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions or security error",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error generating integrity results",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @Path ("/getIntegrityResult/{params:.*}")
     @Produces (MediaType.APPLICATION_JSON)
-    public Response getIntegrityResult ( @Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam ("params") String params ) throws JSONException {
+    public Response getIntegrityResult ( @Context HttpServletRequest request, @Context final HttpServletResponse response, 
+        @Parameter(description = "URL parameters including the endpoint ID to get results for", required = true) @PathParam ("params") String params ) throws JSONException {
 
         StringBuilder responseMessage = new StringBuilder();
 
@@ -721,10 +836,30 @@ public class IntegrityResource {
      * @return
      * @throws JSONException
      */
+    @Operation(
+        summary = "Discard integrity conflicts",
+        description = "Discards the conflicts between local node and given endpoint for a specific object type. This clears the temporary conflict data without making any changes to the actual content."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Conflicts discarded successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(type = "object", description = "JSON response confirming successful discard of conflicts for the specified type"))),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - missing required endpoint or type parameters",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions or security error",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error discarding conflicts",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @Path ("/discardconflicts/{params:.*}")
     @Produces (MediaType.APPLICATION_JSON)
-    public Response discardConflicts ( @Context final HttpServletRequest request, @Context final HttpServletResponse response, @PathParam ("params") String params ) throws JSONException {
+    public Response discardConflicts ( @Context final HttpServletRequest request, @Context final HttpServletResponse response, 
+        @Parameter(description = "URL parameters including endpoint ID and type of conflicts to discard", required = true) @PathParam ("params") String params ) throws JSONException {
 
         StringBuilder responseMessage = new StringBuilder();
 
@@ -776,13 +911,32 @@ public class IntegrityResource {
      * @return
      * @throws JSONException
      */
+    @Operation(
+        summary = "Fix conflicts from remote endpoint",
+        description = "Processes conflict resolution data received from a remote endpoint. This endpoint receives multipart data containing the conflicts to fix and the type of objects being processed."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Conflicts fixed successfully in remote endpoint",
+                    content = @Content(mediaType = "text/plain",
+                                      schema = @Schema(implementation = String.class))),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - invalid or missing authentication token",
+                    content = @Content(mediaType = "text/plain")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - community license or insufficient permissions",
+                    content = @Content(mediaType = "text/plain")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error fixing conflicts from remote",
+                    content = @Content(mediaType = "text/plain"))
+    })
     @POST
     @Path("/_fixconflictsfromremote")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces("text/plain")
     public Response fixConflictsFromRemote ( @Context final HttpServletRequest request,
-                                             @FormDataParam("DATA_TO_FIX") InputStream dataToFix,
-                                             @FormDataParam("TYPE") String type ) throws JSONException {
+                                             @RequestBody(description = "Multipart data containing conflicts to fix", required = true) @FormDataParam("DATA_TO_FIX") InputStream dataToFix,
+                                             @Parameter(description = "Type of integrity conflicts to fix (e.g., HTMLPAGES, CONTENTLETS)", required = true) @FormDataParam("TYPE") String type ) throws JSONException {
 
         if (LicenseManager.getInstance().isCommunity()) {
             throw new InvalidLicenseException("License required");
@@ -847,10 +1001,30 @@ public class IntegrityResource {
      * @throws JSONException
      *             An error occurred when generating the JSON response.
      */
+    @Operation(
+        summary = "Fix data conflicts",
+        description = "Fixes data conflicts between local and remote servers. Can fix conflicts either locally or remotely based on the whereToFix parameter. This resolves integrity conflicts by replacing conflicting data."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Conflicts fixed successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(type = "object", description = "JSON response with success status and message indicating conflicts were fixed locally or remotely"))),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - missing required parameters (endpoint, type, or whereToFix)",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions or security error",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error fixing conflicts",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @Path ("/fixconflicts/{params:.*}")
     @Produces (MediaType.APPLICATION_JSON)
-    public Response fixConflicts ( @Context final HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse, @PathParam ("params") final String params ) throws JSONException {
+    public Response fixConflicts ( @Context final HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse, 
+        @Parameter(description = "URL parameters including endpoint ID, type, and whereToFix (local/remote)", required = true) @PathParam ("params") final String params ) throws JSONException {
 
         final InitDataObject initData = webResource.init(params, httpServletRequest, httpServletResponse, true, null);
         final Map<String, String> paramsMap = initData.getParamsMap();
