@@ -1,6 +1,9 @@
 package com.dotcms.rest.api.v1.index;
 
 import com.dotcms.content.elasticsearch.util.ESMappingUtilHelper;
+import com.dotcms.rest.ResponseEntityMapView;
+import com.dotcms.rest.ResponseEntityListMapView;
+import com.dotcms.rest.ResponseEntityListStringView;
 import com.liferay.portal.language.LanguageUtil;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -44,6 +47,7 @@ import com.dotcms.rest.ResourceResponse;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.annotation.SwaggerCompliant;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.LayoutAPI;
@@ -60,6 +64,12 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 
@@ -67,8 +77,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
  * Index endpoint for REST calls version 1
  *
  */
+@SwaggerCompliant(value = "Modern APIs and specialized services", batch = 7)
 @Path("/v1/esindex")
-@Tag(name = "Search Index", description = "Elasticsearch index management and operations")
+@Tag(name = "Search Index")
 public class ESIndexResource {
 
     private enum IndexAction{
@@ -138,12 +149,31 @@ public class ESIndexResource {
     }
     
     
+    @Operation(
+        summary = "Get Elasticsearch cluster statistics",
+        description = "Retrieves comprehensive statistics about the Elasticsearch cluster including cluster name, node information, and performance metrics. Requires CMS Administrator role."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Cluster statistics retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityMapView.class))),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - CMS Administrator role required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error retrieving cluster statistics",
+                    content = @Content(mediaType = "application/json"))
+    })
     @CloseDBIfOpened
     @GET
     @JSONP
     @NoCache
     @Path("/cluster")
-    @Produces({MediaType.APPLICATION_JSON})
+    @Produces(MediaType.APPLICATION_JSON)
     public Response getClusterStats(@Context final HttpServletRequest request, @Context final HttpServletResponse response)
                     throws DotDataException {
 
@@ -164,15 +194,34 @@ public class ESIndexResource {
                 .put("size", stats.getSize())
                 .put("count", stats.getDocCount());
         }
-        return Response.ok(new ResponseEntityView(builder.build())).build();
+        return Response.ok(new ResponseEntityMapView(builder.build())).build();
     }
     
+    @Operation(
+        summary = "Download failed reindex records",
+        description = "Retrieves a list of failed reindex records in JSON format. Each record includes identifier, server ID, failure reason, and priority information. Requires CMS Administrator role."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Failed reindex records retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityListMapView.class))),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - CMS Administrator role required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error retrieving failed records",
+                    content = @Content(mediaType = "application/json"))
+    })
     @CloseDBIfOpened
     @GET
     @JSONP
     @NoCache
     @Path("/failed")
-    @Produces({MediaType.APPLICATION_JSON})
+    @Produces(MediaType.APPLICATION_JSON)
     public Response downloadRemainingRecordsAsCsv(@Context final HttpServletRequest request,
                     @Context final HttpServletResponse response) throws DotDataException {
         auth(request, response);
@@ -208,28 +257,63 @@ public class ESIndexResource {
             results.add(failure);
         });
 
-        return Response.ok(results).build();
+        return Response.ok(new ResponseEntityListMapView(results)).build();
     }
 
     @CloseDBIfOpened
+    @Operation(
+        summary = "Delete failed reindex records",
+        description = "Deletes all failed reindex records from the reindex queue. This clears the list of content items that previously failed to reindex. Requires CMS Administrator role."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Failed reindex records deleted successfully",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - CMS Administrator role required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error deleting failed records",
+                    content = @Content(mediaType = "application/json"))
+    })
     @DELETE
     @JSONP
     @NoCache
     @Path("/failed")
-    @Produces({MediaType.APPLICATION_JSON})
+    @Produces(MediaType.APPLICATION_JSON)
     public Response deleteFailedRecords(@Context final HttpServletRequest request, @Context final HttpServletResponse response)
                     throws DotDataException {
         final InitDataObject init = auth(request, response);
         APILocator.getReindexQueueAPI().deleteFailedRecords();
-        return Response.ok(new ResponseEntityView(true)).build();
+        return Response.ok(new ResponseEntityIndexOperationView(true)).build();
     }
 
+    @Operation(
+        summary = "Optimize Elasticsearch indices",
+        description = "Optimizes all Elasticsearch indices to improve search performance by reducing the number of segments and freeing up disk space. This operation can be resource-intensive. Requires CMS Administrator role."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Index optimization completed successfully (no body)"),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - CMS Administrator role required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error during index optimization",
+                    content = @Content(mediaType = "application/json"))
+    })
     @CloseDBIfOpened
     @POST
     @JSONP
     @NoCache
     @Path("/optimize")
-    @Produces({MediaType.APPLICATION_JSON})
+    @Produces(MediaType.APPLICATION_JSON)
     public Response optimizeIndices(@Context final HttpServletRequest request, @Context final HttpServletResponse response) {
         final InitDataObject init = auth(request, response);
         final ContentletIndexAPI api = APILocator.getContentletIndexAPI();
@@ -241,11 +325,30 @@ public class ESIndexResource {
     }
 
     @CloseDBIfOpened
+    @Operation(
+        summary = "Flush Elasticsearch indices cache",
+        description = "Flushes the cache for all dotCMS Elasticsearch indices to ensure data consistency. Returns the number of successful and failed shard operations. Requires CMS Administrator role."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Index cache flushed successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityIndexOperationView.class))),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - CMS Administrator role required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error during cache flush",
+                    content = @Content(mediaType = "application/json"))
+    })
     @DELETE
     @JSONP
     @NoCache
     @Path("/cache")
-    @Produces({MediaType.APPLICATION_JSON})
+    @Produces(MediaType.APPLICATION_JSON)
     public Response flushIndiciesCache(@Context final HttpServletRequest request, @Context final HttpServletResponse response) {
         final InitDataObject init = auth(request, response);
         final ContentletIndexAPI api = APILocator.getContentletIndexAPI();
@@ -255,16 +358,21 @@ public class ESIndexResource {
         message=message.replace("{0}", String.valueOf(data.get("successfulShards")));
         message=message.replace("{1}", String.valueOf(data.get("failedShards")));
         sendAdminMessage(message, MessageSeverity.INFO, init.getUser(),5000);
-        return Response.ok(new ResponseEntityView(data)).build();
+        return Response.ok(new ResponseEntityIndexOperationView(data)).build();
 
     }
 
 
     @Deprecated
+    @Operation(
+        summary = "Create index (deprecated)",
+        description = "Creates a new Elasticsearch index with specified parameters. This endpoint is deprecated - use the modern reindexing endpoints instead. Requires CMS Administrator role.",
+        deprecated = true
+    )
     @PUT
     @Path("/create/{params:.*}")
     @Produces("text/plain")
-    public Response createIndex(@Context HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse, @PathParam("params") String params) {
+    public Response createIndex(@Context HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse, @Parameter(description = "Index creation parameters") @PathParam("params") String params) {
         try {
             InitDataObject init=auth(httpServletRequest, httpServletResponse);
 
@@ -294,9 +402,15 @@ public class ESIndexResource {
      * @return
      */
     @Deprecated
+    @Operation(
+        summary = "Clear index (deprecated)",
+        description = "Clears an Elasticsearch index by name. This endpoint is deprecated - use PUT /api/v1/esindex/{indexName}?action=clear instead. Requires CMS Administrator role.",
+        deprecated = true
+    )
     @PUT
     @Path("/clear/{params:.*}")
-    public Response clearIndex(@Context HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse, @PathParam("params") String params) throws DotDataException, IOException {
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response clearIndex(@Context HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse, @Parameter(description = "Index clearing parameters") @PathParam("params") String params) throws DotDataException, IOException {
 
         InitDataObject init=auth(httpServletRequest,httpServletResponse);
         String indexName = this.indexHelper.getIndexNameOrAlias(init.getParamsMap(),"index","alias",this.indexAPI);
@@ -304,30 +418,72 @@ public class ESIndexResource {
     }
 
     @CloseDBIfOpened
+    @Operation(
+        summary = "Get reindexation progress",
+        description = "Retrieves the current progress status of content reindexation process including percentage completed, records processed, and estimated time remaining. Requires CMS Administrator role."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Reindexation progress retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityIndexOperationView.class))),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - CMS Administrator role required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error retrieving reindexation progress",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @JSONP
     @NoCache
     @Path("/reindex")
-    @Produces({MediaType.APPLICATION_JSON})
+    @Produces(MediaType.APPLICATION_JSON)
     public Response getReindexationProgress(@Context final HttpServletRequest request,
                     @Context final HttpServletResponse response) throws DotDataException {
 
         final InitDataObject init = auth(request, response);
 
-        return Response.ok(new ResponseEntityView(ESReindexationProcessStatus.getProcessIndexationMap())).build();
+        return Response.ok(new ResponseEntityIndexOperationView(ESReindexationProcessStatus.getProcessIndexationMap())).build();
 
     }
     private static final String DOTALL="DOTALL";
     
     
     @CloseDBIfOpened
+    @Operation(
+        summary = "Start content reindexation",
+        description = "Initiates a content reindexation process for all content or a specific content type. Optionally allows configuration of the number of Elasticsearch shards. This is a resource-intensive operation that rebuilds the search index. Requires CMS Administrator role."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Reindexation started successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityIndexOperationView.class))),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid content type or shard count",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - CMS Administrator role required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error starting reindexation",
+                    content = @Content(mediaType = "application/json"))
+    })
     @POST
     @JSONP
     @NoCache
     @Path("/reindex")
-    @Produces({MediaType.APPLICATION_JSON})
+    @Produces(MediaType.APPLICATION_JSON)
     public Response startReindex(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
-                    @QueryParam("shards") int shards, @DefaultValue(DOTALL) @QueryParam("contentType") String contentType) throws DotDataException, DotSecurityException {
+                    @Parameter(description = "Number of Elasticsearch shards (defaults to configuration value if 0 or negative)", required = false) @QueryParam("shards") int shards, 
+                    @Parameter(description = "Content type to reindex (defaults to 'DOTALL' for all content)", required = false) @DefaultValue(DOTALL) @QueryParam("contentType") String contentType) throws DotDataException, DotSecurityException {
         final InitDataObject init = auth(request, response);
         shards = (shards <= 0) ? Config.getIntProperty("es.index.number_of_shards", 2) : shards;
 
@@ -350,14 +506,33 @@ public class ESIndexResource {
     }
     
     @CloseDBIfOpened
+    @Operation(
+        summary = "Stop content reindexation",
+        description = "Stops the currently running content reindexation process. Optionally performs a switchover to activate the new index after stopping. Requires CMS Administrator role."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Reindexation stopped successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityIndexOperationView.class))),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - CMS Administrator role required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error stopping reindexation",
+                    content = @Content(mediaType = "application/json"))
+    })
     @DELETE
     @JSONP
     @NoCache
     @Path("/reindex")
-    @Produces({MediaType.APPLICATION_JSON})
+    @Produces(MediaType.APPLICATION_JSON)
     public Response stopReindexation(@Context final HttpServletRequest request, 
                     @Context final HttpServletResponse response, 
-                    @DefaultValue("true") @QueryParam("switch") boolean switchMe)
+                    @Parameter(description = "Whether to perform switchover to activate new index after stopping (defaults to true)", required = false) @DefaultValue("true") @QueryParam("switch") boolean switchMe)
                     throws DotDataException {
         final InitDataObject init = auth(request, response);
         
@@ -373,13 +548,35 @@ public class ESIndexResource {
     
     
     @CloseDBIfOpened
+    @Operation(
+        summary = "Delete specific Elasticsearch index",
+        description = "Deletes a specific Elasticsearch index by name. This is a destructive operation that permanently removes the index and all its data. Requires CMS Administrator role."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Index deleted successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityIndexOperationView.class))),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - CMS Administrator role required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "Index not found",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error deleting index",
+                    content = @Content(mediaType = "application/json"))
+    })
     @DELETE
     @JSONP
     @NoCache
     @Path("/{indexName: .*}")
-    @Produces({MediaType.APPLICATION_JSON})
+    @Produces(MediaType.APPLICATION_JSON)
     public Response deleteIndex(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
-                    @PathParam("indexName") final String indexName) throws DotDataException {
+                    @Parameter(description = "Name of the Elasticsearch index to delete", required = true) @PathParam("indexName") final String indexName) throws DotDataException {
         
         final InitDataObject init = auth(request, response);
 
@@ -405,9 +602,15 @@ public class ESIndexResource {
      * @return
      */
     @Deprecated
+    @Operation(
+        summary = "Activate index (deprecated)",
+        description = "Activates an Elasticsearch index by name. This endpoint is deprecated - use PUT /api/v1/esindex/{indexName}?action=activate instead. Requires CMS Administrator role.",
+        deprecated = true
+    )
     @PUT
     @Path("/activate/{params:.*}")
-    public Response activateIndex(@Context HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse, @PathParam("params") String params) throws DotDataException, IOException {
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response activateIndex(@Context HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse, @Parameter(description = "Index activation parameters") @PathParam("params") String params) throws DotDataException, IOException {
         InitDataObject init=auth(httpServletRequest,httpServletResponse);
         String indexName = this.indexHelper.getIndexNameOrAlias(init.getParamsMap(),"index","alias",this.indexAPI);
         return modIndex(httpServletRequest, httpServletResponse, indexName, IndexAction.ACTIVATE.name());
@@ -422,9 +625,15 @@ public class ESIndexResource {
      * @return
      */
     @Deprecated
+    @Operation(
+        summary = "Deactivate index (deprecated)",
+        description = "Deactivates an Elasticsearch index by name. This endpoint is deprecated - use PUT /api/v1/esindex/{indexName}?action=deactivate instead. Requires CMS Administrator role.",
+        deprecated = true
+    )
     @PUT
     @Path("/deactivate/{params:.*}")
-    public Response deactivateIndex(@Context HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse, @PathParam("params") String params) throws DotDataException, IOException {
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response deactivateIndex(@Context HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse, @Parameter(description = "Index deactivation parameters") @PathParam("params") String params) throws DotDataException, IOException {
         InitDataObject init=auth(httpServletRequest,httpServletResponse);
         String indexName = this.indexHelper.getIndexNameOrAlias(init.getParamsMap(),"index","alias",this.indexAPI);
         return modIndex(httpServletRequest, httpServletResponse, indexName, IndexAction.DEACTIVATE.name());
@@ -438,9 +647,15 @@ public class ESIndexResource {
      * @return
      */
     @Deprecated
+    @Operation(
+        summary = "Close index (deprecated)",
+        description = "Closes an Elasticsearch index by name. This endpoint is deprecated - use PUT /api/v1/esindex/{indexName}?action=close instead. Requires CMS Administrator role.",
+        deprecated = true
+    )
     @PUT
     @Path("/close/{params:.*}")
-    public Response closeIndex(@Context HttpServletRequest httpServletRequest,@Context final HttpServletResponse httpServletResponse, @PathParam("params") String params) throws DotDataException, IOException {
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response closeIndex(@Context HttpServletRequest httpServletRequest,@Context final HttpServletResponse httpServletResponse, @Parameter(description = "Index closing parameters") @PathParam("params") String params) throws DotDataException, IOException {
         InitDataObject init=auth(httpServletRequest,httpServletResponse);
         String indexName = this.indexHelper.getIndexNameOrAlias(init.getParamsMap(),"index","alias",this.indexAPI);
         return modIndex(httpServletRequest, httpServletResponse, indexName, IndexAction.CLOSE.name());
@@ -454,9 +669,15 @@ public class ESIndexResource {
      * @return
      */
     @Deprecated
+    @Operation(
+        summary = "Open index (deprecated)",
+        description = "Opens an Elasticsearch index by name. This endpoint is deprecated - use PUT /api/v1/esindex/{indexName}?action=open instead. Requires CMS Administrator role.",
+        deprecated = true
+    )
     @PUT
     @Path("/open/{params:.*}")
-    public Response openIndex(@Context HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse, @PathParam("params") String params) {
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response openIndex(@Context HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse, @Parameter(description = "Index opening parameters") @PathParam("params") String params) {
         try {
             InitDataObject init=auth(httpServletRequest, httpServletResponse);
             String indexName = this.indexHelper.getIndexNameOrAlias(init.getParamsMap(),"index","alias",this.indexAPI);
@@ -470,10 +691,15 @@ public class ESIndexResource {
     }
 
     @Deprecated
+    @Operation(
+        summary = "Get active index (deprecated)",
+        description = "Retrieves the name of the active Elasticsearch index for a given type. This endpoint is deprecated - use the modern index status endpoints instead. Requires CMS Administrator role.",
+        deprecated = true
+    )
     @GET
     @Path("/active/{params:.*}")
     @Produces("text/plain")
-    public Response getActive(@Context HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse, @PathParam("params") String params) {
+    public Response getActive(@Context HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse, @Parameter(description = "Active index query parameters") @PathParam("params") String params) {
         try {
             InitDataObject init=auth(httpServletRequest,httpServletResponse, params);
 
@@ -489,16 +715,20 @@ public class ESIndexResource {
 
 
 
+    @Operation(
+        summary = "List Elasticsearch indices",
+        description = "Retrieves a list of all dotCMS Elasticsearch indices. Requires CMS Administrator role."
+    )
     @GET
     @Path("/indexlist/{params:.*}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response indexList(@Context HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse, @PathParam("params") String params) {
+    public Response indexList(@Context HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse, @Parameter(description = "Index list query parameters") @PathParam("params") String params) {
         try {
             InitDataObject init = auth(httpServletRequest, httpServletResponse);
 
             //Creating an utility response object
 
-            return Response.ok(new ResponseEntityView<>(APILocator.getContentletIndexAPI().listDotCMSIndices())).build();
+            return Response.ok(new ResponseEntityListStringView(APILocator.getContentletIndexAPI().listDotCMSIndices())).build();
         } catch (Exception e) {
             Logger.error(this.getClass(),"Exception trying to list indices: " + e.getMessage(), e);
             return ResponseUtil.mapExceptionResponse(e);
@@ -528,13 +758,39 @@ public class ESIndexResource {
     }
     
     @CloseDBIfOpened
+    @Operation(
+        summary = "Modify Elasticsearch index",
+        description = "Performs various operations on a specific Elasticsearch index including activate, deactivate, clear, open, and close actions. This replaces several deprecated endpoints. Requires CMS Administrator role."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Index operation completed successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityIndexOperationView.class))),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid action parameter",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - CMS Administrator role required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "Index not found",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error during index operation",
+                    content = @Content(mediaType = "application/json"))
+    })
     @PUT
     @JSONP
     @NoCache
     @Path("/{indexName: .*}")
-    @Produces({MediaType.APPLICATION_JSON})
+    @Produces(MediaType.APPLICATION_JSON)
     public Response modIndex(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
-                    @PathParam("indexName") final String indexName, @QueryParam("action") final String action) throws DotDataException, IOException {
+                    @Parameter(description = "Name of the Elasticsearch index to modify", required = true) @PathParam("indexName") final String indexName, 
+                    @Parameter(description = "Action to perform: ACTIVATE, DEACTIVATE, CLEAR, OPEN, CLOSE", required = true) @QueryParam("action") final String action) throws DotDataException, IOException {
 
         final InitDataObject init = auth(request, response);
         final IndexAction indexAction = IndexAction.fromString(action);
@@ -571,18 +827,37 @@ public class ESIndexResource {
     }
     
     @CloseDBIfOpened
+    @Operation(
+        summary = "Get Elasticsearch index status",
+        description = "Retrieves the status information for all Elasticsearch indices including their state, document count, and health information. Requires CMS Administrator role."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Index status retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityListMapView.class))),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - CMS Administrator role required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error retrieving index status",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @JSONP
     @NoCache
     @Path("/")
-    @Produces({MediaType.APPLICATION_JSON})
+    @Produces(MediaType.APPLICATION_JSON)
     public Response getIndexStatus(@Context final HttpServletRequest request,
                     @Context final HttpServletResponse response) throws DotDataException  {
 
         
         final InitDataObject init = auth(request, response);
 
-        return Response.ok(new ResponseEntityView<>(IndexResourceHelper.getInstance().indexStatsList())).build();
+        return Response.ok(new ResponseEntityListMapView(IndexResourceHelper.getInstance().indexStatsList())).build();
 
     }
     

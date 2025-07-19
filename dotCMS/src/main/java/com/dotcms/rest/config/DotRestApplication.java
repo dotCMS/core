@@ -6,6 +6,7 @@ import com.dotcms.telemetry.rest.TelemetryResource;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.jaxrs.json.JacksonJaxbJsonProvider;
+import io.swagger.v3.oas.annotations.ExternalDocumentation;
 import io.swagger.v3.oas.annotations.OpenAPIDefinition;
 import io.swagger.v3.oas.annotations.info.Info;
 import io.swagger.v3.oas.annotations.servers.Server;
@@ -43,9 +44,13 @@ import org.glassfish.jersey.server.ResourceConfig;
 				@Tag(name = "Administration", description = "System administration and management tools"),
 				@Tag(name = "AI", description = "AI-powered content generation and analysis endpoints"),
 				@Tag(name = "Announcements", description = "System announcements and notifications"),
-				@Tag(name = "API Token", description = "API token management and authentication"),
+				@Tag(name = "API Token", description = "API token management and authentication", 
+					externalDocs = @ExternalDocumentation(description = "Additional API token information",
+						url = "https://www.dotcms.com/docs/latest/rest-api-authentication#APIToken")),
 				@Tag(name = "Apps", description = "Third-party application integration and configuration"),
-				@Tag(name = "Authentication", description = "User authentication and session management"),
+				@Tag(name = "Authentication", description = "User authentication and session management",
+					externalDocs = @ExternalDocumentation(description = "Additional Authentication API information",
+						url = "https://www.dotcms.com/docs/latest/rest-api-authentication")),
 				@Tag(name = "Browser Tree", description = "File and folder browser tree operations"),
 				@Tag(name = "Bundle", description = "Content bundle management and deployment"),
 				@Tag(name = "Cache Management", description = "Cache provider management and operations"),
@@ -56,11 +61,13 @@ import org.glassfish.jersey.server.ResourceConfig;
 				@Tag(name = "Content Analytics", description = "Content performance analytics and reporting"),
 				@Tag(name = "Content Delivery", description = "Content delivery and rendering"),
 				@Tag(name = "Content Report", description = "Content reporting and analytics"),
-				@Tag(name = "Content Type", description = "Content type definitions and schema management"),
+				@Tag(name = "Content Type", description = "Content type definitions and schema management",
+					externalDocs = @ExternalDocumentation(description = "Additional Content Type API information",
+						url = "https://www.dotcms.com/docs/latest/content-type-api")),
 				@Tag(name = "Content Type Field", description = "Content type field definitions and configuration"),
 				@Tag(name = "Data Integrity", description = "Data integrity checking and conflict resolution"),
 				@Tag(name = "Environment", description = "Publishing environment management and configuration"),
-				@Tag(name = "Experiment", description = "A/B testing and experimentation"),
+				@Tag(name = "Experiments", description = "A/B testing and experimentation management"),
 				@Tag(name = "File Assets", description = "File asset management and download operations"),
 				@Tag(name = "Folders", description = "Folder structure and organization"),
 				@Tag(name = "Forms", description = "Form management and processing"),
@@ -73,11 +80,17 @@ import org.glassfish.jersey.server.ResourceConfig;
 				@Tag(name = "Navigation", description = "Site navigation and menu management"),
 				@Tag(name = "Notifications", description = "User notifications and alerts management"),
 				@Tag(name = "OSGi Plugins", description = "OSGi plugin management and dynamic deployment"),
-				@Tag(name = "Page", description = "Page management and rendering"),
+				@Tag(name = "Page",
+						description = "Endpoints that operate on pages",
+						externalDocs = @ExternalDocumentation(description = "Additional Page API information",
+								url = "https://www.dotcms.com/docs/latest/page-rest-api-layout-as-a-service-laas")
+				),
 				@Tag(name = "Permissions", description = "Permission management and access control"),
+				@Tag(name = "Personas", description = "Content persona management and targeting"),
 				@Tag(name = "Personalization", description = "Content personalization and persona management"),
 				@Tag(name = "Portlets", description = "Portlet management and administration"),
 				@Tag(name = "Publishing", description = "Content publishing and deployment operations"),
+				@Tag(name = "Push Publishing", description = "Remote content publishing and synchronization"),
 				@Tag(name = "Relationships", description = "Content relationship management"),
 				@Tag(name = "Roles", description = "User role and permission management"),
 				@Tag(name = "Rules Engine", description = "Business rules and conditional logic management"),
@@ -85,17 +98,29 @@ import org.glassfish.jersey.server.ResourceConfig;
 				@Tag(name = "Search", description = "Content search and query operations"),
 				@Tag(name = "Search Index", description = "Search index management and operations"),
 				@Tag(name = "Sites", description = "Multi-site management and configuration"),
+				@Tag(name = "System", description = "System-level operations and Redis management"),
 				@Tag(name = "System Configuration", description = "System configuration and company settings"),
 				@Tag(name = "System Logging", description = "System logging configuration and management"),
 				@Tag(name = "System Monitoring", description = "System monitoring and health checks"),
 				@Tag(name = "System Storage", description = "Storage providers and data replication management"),
+				@Tag(name = "TailLog", description = "Server log file monitoring and real-time viewing"),
 				@Tag(name = "Tags", description = "Content tagging and labeling"),
 				@Tag(name = "Templates", description = "Template design and management"),
 				@Tag(name = "Temporary Files", description = "Temporary file upload and management operations"),
+				@Tag(name = "Testing", description = "Testing utilities and development endpoints"),
+				@Tag(name = "Themes", description = "Theme design and management"),
+				@Tag(name = "Tool Groups", description = "Administrative tool group management"),
 				@Tag(name = "Users", description = "User account management and administration"),
 				@Tag(name = "Variants", description = "Content variant management and personalization"),
+				@Tag(name = "Versionables", description = "Version control and content archiving"),
+				@Tag(name = "VTL", description = "Velocity Template Language execution and rendering"),
+				@Tag(name = "Web Assets", description = "Web asset management and operations"),
 				@Tag(name = "Widgets", description = "Widget development and rendering"),
-				@Tag(name = "Workflow", description = "Content workflow and approval processes")
+				@Tag(name = "Workflow",
+						description = "Endpoints that perform operations related to workflows.",
+						externalDocs = @ExternalDocumentation(description = "Additional Workflow API information",
+								url = "https://www.dotcms.com/docs/latest/workflow-rest-api")
+				)
 		}
 )
 public class DotRestApplication extends ResourceConfig {

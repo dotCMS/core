@@ -17,12 +17,20 @@ import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import com.dotcms.rest.annotation.SwaggerCompliant;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 
+@SwaggerCompliant(value = "Legacy and utility APIs", batch = 8)
 @Tag(name = "Administration")
 @Path("/util")
 public class UtilResource {
@@ -37,11 +45,24 @@ public class UtilResource {
 	 * @throws JSONException 
 	 *
 	 */
-
+    @Operation(
+        summary = "Get logged in user",
+        description = "Returns a JSON representation of the currently logged in user including userId, firstName, lastName, and roleId. Returns empty object if no user is logged in."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "User information retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(type = "object", description = "User information object with userId, firstName, lastName, and roleId properties"))),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
 	@GET
 	@Path("/encodeQueryParamValue/{params:.*}")
 	@Produces("application/json")
-	public Response getLoggedInUser(@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam("params") String params) throws DotDataException,
+	public Response getLoggedInUser(@Context HttpServletRequest request, @Context final HttpServletResponse response, 
+		@Parameter(description = "URL parameters for the request", required = true) @PathParam("params") String params) throws DotDataException,
 			DotRuntimeException, PortalException, SystemException, JSONException {
 
         InitDataObject initData = webResource.init(params, request, response, true, null);
