@@ -4,7 +4,9 @@ import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.ResponseEntityStringView;
 import com.dotcms.rest.WebResource;
+import com.dotcms.rest.annotation.SwaggerCompliant;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.util.DbExporterUtil;
 import com.dotcms.util.SizeUtil;
@@ -25,6 +27,11 @@ import io.vavr.Lazy;
 import io.vavr.control.Try;
 import org.apache.commons.io.IOUtils;
 import org.glassfish.jersey.server.JSONP;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import javax.servlet.http.HttpServletRequest;
@@ -59,8 +66,9 @@ import java.util.concurrent.TimeUnit;
  * @author Will Ezell
  * @since Oct 21st, 2020
  */
+@SwaggerCompliant(value = "Publishing and content distribution APIs", batch = 5)
 @Path("/v1/maintenance")
-@Tag(name = "Maintenance", description = "System maintenance and administration operations")
+@Tag(name = "Maintenance")
 @SuppressWarnings("serial")
 public class MaintenanceResource implements Serializable {
 
@@ -81,20 +89,30 @@ public class MaintenanceResource implements Serializable {
         this.webResource = webResource;
     }
 
-    /**
-     * This method is meant to shut down the current DotCMS instance.
-     * It will pass the control to catalina.sh (Tomcat) script to deal with any exit code.
-     * 
-     * @param request http request
-     * @param response http response
-     * @return string response
-     */
+    @Operation(
+        summary = "Shutdown DotCMS instance",
+        description = "Shuts down the current DotCMS instance. Control is passed to catalina.sh (Tomcat) script to handle the exit code. Requires CMS Administrator role."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Shutdown initiated successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @io.swagger.v3.oas.annotations.media.Schema(implementation = ResponseEntityStringView.class))),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions or shutdown not allowed",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @DELETE
     @Path("/_shutdown")
     @JSONP
     @NoCache
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces({MediaType.APPLICATION_JSON})
     public final Response shutdown(@Context final HttpServletRequest request,
                                    @Context final HttpServletResponse response) {
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
@@ -121,26 +139,36 @@ public class MaintenanceResource implements Serializable {
                         TimeUnit.SECONDS
                 );
 
-        return Response.ok(new ResponseEntityView<>("Shutdown")).build();
+        return Response.ok(new ResponseEntityStringView("Shutdown")).build();
     }
 
-    /**
-     * This method is meant to shut down the current DotCMS instance.
-     * It will pass the control to catalina.sh (Tomcat) script to deal with any exit code.
-     * 
-     * @param request http request
-     * @param response http response
-     * @return string response
-     */
+    @Operation(
+        summary = "Shutdown DotCMS cluster",
+        description = "Shuts down the entire DotCMS cluster with a configurable rolling delay between nodes. Requires CMS Administrator role."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Cluster shutdown initiated successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @io.swagger.v3.oas.annotations.media.Schema(implementation = ResponseEntityStringView.class))),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions or shutdown not allowed",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @DELETE
     @Path("/_shutdownCluster")
     @JSONP
     @NoCache
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces({MediaType.APPLICATION_JSON})
     public final Response shutdownCluster(@Context final HttpServletRequest request,
                                    @Context final HttpServletResponse response,
-                                   @DefaultValue("60") @QueryParam("rollingDelay") int rollingDelay) {
+                                   @Parameter(description = "Delay in seconds between shutting down cluster nodes (default: 60)") @DefaultValue("60") @QueryParam("rollingDelay") int rollingDelay) {
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requiredRoles(Role.CMS_ADMINISTRATOR_ROLE)
                 .requestAndResponse(request, response)
@@ -155,25 +183,37 @@ public class MaintenanceResource implements Serializable {
             return Response.status(Status.FORBIDDEN).build();
         }
         ClusterManagementTopic.getInstance().restartCluster(rollingDelay);
-        return Response.ok(new ResponseEntityView<>("Shutdown")).build();
+        return Response.ok(new ResponseEntityStringView("Shutdown")).build();
     }
     
-    /**
-     * This method attempts to send resolved log file using an octet stream http response.
-     *
-     * @param request  http request
-     * @param response http response
-     * @param fileName name to give to file
-     * @return octet stream response with file contents
-     * @throws IOException
-     */
+    @Operation(
+        summary = "Download log file",
+        description = "Downloads a specific log file from the dotCMS logs directory as an octet stream. Requires backend admin access."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Log file downloaded successfully",
+                    content = @Content(mediaType = "application/octet-stream")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "Log file not found",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @Path("/_downloadLog/{fileName}")
     @GET
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_OCTET_STREAM, MediaType.APPLICATION_JSON})
     public final Response downloadLogFile(@Context final HttpServletRequest request,
-            @Context final HttpServletResponse response, @PathParam("fileName") final String fileName)
+            @Context final HttpServletResponse response, @Parameter(description = "Name of the log file to download", required = true) @PathParam("fileName") final String fileName)
             throws IOException {
 
         assertBackendUser(request, response);
@@ -193,13 +233,24 @@ public class MaintenanceResource implements Serializable {
         return this.buildFileResponse(response, logFile, fileName);
     }
 
-    /**
-     * Returns a text/plain response flag telling whether the pg_dump binary is available (and callable) or not.
-     *
-     * @param request http request
-     * @param response http response
-     * @return a text/plain boolean response
-     */
+    @Operation(
+        summary = "Check pg_dump availability",
+        description = "Returns a boolean indicating whether the pg_dump binary is available and callable on the system. Used for database export functionality."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "pg_dump availability checked successfully",
+                    content = @Content(mediaType = "text/plain")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @Path("/_pgDumpAvailable")
     @GET
     @JSONP
@@ -211,13 +262,24 @@ public class MaintenanceResource implements Serializable {
         return Response.ok(DbExporterUtil.isPgDumpAvailable().isPresent(), MediaType.TEXT_PLAIN).build();
     }
 
-    /**
-     * This method attempts to send resolved DB dump file using an octet stream http response.
-     *
-     * @param request  http request
-     * @param response http response
-     * @return octet stream response with file contents
-     */
+    @Operation(
+        summary = "Download database backup",
+        description = "Generates and downloads a compressed SQL dump of the current database. File is named with hostname and timestamp for identification."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Database backup downloaded successfully",
+                    content = @Content(mediaType = "application/octet-stream")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error or database export failed",
+                    content = @Content(mediaType = "application/json"))
+    })
     @Path("/_downloadDb")
     @GET
     @JSONP
@@ -253,15 +315,24 @@ public class MaintenanceResource implements Serializable {
         }
     }
 
-    /**
-     * Provides a compressed file with all the assets living in the current dotCMS instance.
-     *
-     * @param request  The current instance of the {@link HttpServletRequest}.
-     * @param response The current instance of the {@link HttpServletResponse}.
-     * @param oldAssets If the resulting file must have absolutely all versions of all assets, set this to {@code true}.
-     * @param maxSize  The maximum size of the assets to include in the ZIP file. If the assets exceed this size, they will not be included.
-     * @return The {@link StreamingOutput} with the compressed file.
-     */
+    @Operation(
+        summary = "Download assets backup",
+        description = "Generates and downloads a compressed ZIP file containing all assets from the current dotCMS instance. Can include all asset versions and has configurable size limits."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Assets backup downloaded successfully",
+                    content = @Content(mediaType = "application/octet-stream")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error or asset export failed",
+                    content = @Content(mediaType = "application/json"))
+    })
     @Path("/_downloadAssets")
     @GET
     @JSONP
@@ -269,8 +340,8 @@ public class MaintenanceResource implements Serializable {
     @Produces({MediaType.APPLICATION_OCTET_STREAM, MediaType.APPLICATION_JSON})
     public final Response downloadAssets(@Context final HttpServletRequest request,
                                          @Context final HttpServletResponse response,
-                                         @DefaultValue("true") @QueryParam("oldAssets") boolean oldAssets,
-                                         @QueryParam("maxSize") String maxSize) {
+                                         @Parameter(description = "Include all versions of assets (default: true)") @DefaultValue("true") @QueryParam("oldAssets") boolean oldAssets,
+                                         @Parameter(description = "Maximum size limit for assets to include (e.g., '100MB', '1GB')") @QueryParam("maxSize") String maxSize) {
 
 
 
@@ -292,14 +363,24 @@ public class MaintenanceResource implements Serializable {
         return this.buildFileResponse(response, stream, zipName);
     }
 
-    /**
-     * This method attempts to download a zip file containing the starter data only.
-     *
-     * @param request  http request
-     * @param response http response
-     *  @param maxSize  The maximum size of the assets to include in the ZIP file. If the assets exceed this size, they will not be included.
-     * @return octet stream response with octet stream
-     */
+    @Operation(
+        summary = "Download starter data",
+        description = "Downloads a ZIP file containing only the starter data structures and records required to create a Starter Site in dotCMS, without assets."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Starter data downloaded successfully",
+                    content = @Content(mediaType = "application/octet-stream")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error or starter export failed",
+                    content = @Content(mediaType = "application/json"))
+    })
     @Path("/_downloadStarter")
     @GET
     @JSONP
@@ -307,17 +388,28 @@ public class MaintenanceResource implements Serializable {
     @Produces({MediaType.APPLICATION_OCTET_STREAM, MediaType.APPLICATION_JSON})
     public final Response downloadStarter(@Context final HttpServletRequest request,
                                           @Context final HttpServletResponse response,
-                                            @QueryParam("maxSize") String maxSize) {
+                                            @Parameter(description = "Maximum size limit for assets to include (e.g., '100MB', '1GB')") @QueryParam("maxSize") String maxSize) {
         return downloadStarter(request, response, false, true, maxSize);
     }
 
-    /**
-     * This method attempts to download a zip file containing the starter with both data and assets.
-     *
-     * @param request  http request
-     * @param response http response
-     * @return octet stream response with octet stream
-     */
+    @Operation(
+        summary = "Download starter with assets",
+        description = "Downloads a ZIP file containing starter data structures plus all assets. Supports including all asset versions and configurable size limits."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Starter with assets downloaded successfully",
+                    content = @Content(mediaType = "application/octet-stream")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error or starter+assets export failed",
+                    content = @Content(mediaType = "application/json"))
+    })
     @Path("/_downloadStarterWithAssets")
     @GET
     @JSONP
@@ -325,8 +417,8 @@ public class MaintenanceResource implements Serializable {
     @Produces({MediaType.APPLICATION_OCTET_STREAM, MediaType.APPLICATION_JSON})
     public final Response downloadStarterWithAssets(@Context final HttpServletRequest request,
                                                     @Context final HttpServletResponse response,
-                                                    @DefaultValue("true") @QueryParam("oldAssets") boolean oldAssets,
-                                                    @QueryParam("maxSize") String maxSize) {
+                                                    @Parameter(description = "Include all versions of assets (default: true)") @DefaultValue("true") @QueryParam("oldAssets") boolean oldAssets,
+                                                    @Parameter(description = "Maximum size limit for assets to include (e.g., '100MB', '1GB')") @QueryParam("maxSize") String maxSize) {
         return downloadStarter(request, response, true, oldAssets, maxSize);
     }
 

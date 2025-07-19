@@ -2,9 +2,11 @@ package com.dotcms.rest.api.v1.system;
 
 import com.dotcms.business.SystemTable;
 import com.dotcms.rest.ResponseEntityStringView;
+import com.dotcms.rest.ResponseEntityMapStringStringView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource.InitBuilder;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.annotation.SwaggerCompliant;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.WhiteBlackList;
 import com.dotmarketing.business.APILocator;
@@ -14,6 +16,12 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.glassfish.jersey.server.JSONP;
 
@@ -44,6 +52,7 @@ import static com.dotcms.util.DotPreconditions.checkNotNull;
  *
  * @author jsanca
  */
+@SwaggerCompliant(value = "System administration and configuration APIs", batch = 4)
 @Tag(name = "System Configuration")
 @Path("/v1/system-table")
 public class SystemTableResource implements Serializable {
@@ -64,10 +73,26 @@ public class SystemTableResource implements Serializable {
 	 *
 	 * @return A {@link Map} containing all entries in the system table.
 	 */
+	@Operation(
+		summary = "Get all system table entries",
+		description = "Returns all entries in the system table (filtered by whitelist/blacklist)"
+	)
+	@ApiResponses(value = {
+		@ApiResponse(responseCode = "200", 
+					description = "System table entries retrieved successfully",
+					content = @Content(mediaType = "application/json",
+									  schema = @Schema(implementation = ResponseEntityMapStringStringView.class))),
+		@ApiResponse(responseCode = "401", 
+					description = "Unauthorized - authentication required",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "403", 
+					description = "Forbidden - CMS Administrator role required",
+					content = @Content(mediaType = "application/json"))
+	})
 	@GET
 	@JSONP
 	@NoCache
-	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+	@Produces({MediaType.APPLICATION_JSON})
 	public final ResponseEntityView<Map<String,String>> getAll(@Context final HttpServletRequest request,
 															   @Context final HttpServletResponse response) {
 
@@ -78,7 +103,7 @@ public class SystemTableResource implements Serializable {
 				.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
 		Logger.debug(this, ()-> "Getting all system table values");
-		return new ResponseEntityView<>(filteredEntries);
+		return new ResponseEntityMapStringStringView(filteredEntries);
 	}
 
 	/**
@@ -93,13 +118,36 @@ public class SystemTableResource implements Serializable {
 	 * @throws IllegalArgumentException If the key is blacklisted.
 	 * @throws DoesNotExistException The key was not found.
 	 */
+	@Operation(
+		summary = "Get system table value by key",
+		description = "Returns the value of a key in the System Table"
+	)
+	@ApiResponses(value = {
+		@ApiResponse(responseCode = "200", 
+					description = "System table value retrieved successfully",
+					content = @Content(mediaType = "application/json",
+									  schema = @Schema(implementation = ResponseEntityStringView.class))),
+		@ApiResponse(responseCode = "400", 
+					description = "Bad request - key is blacklisted or invalid",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "401", 
+					description = "Unauthorized - authentication required",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "403", 
+					description = "Forbidden - CMS Administrator role required",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "404", 
+					description = "Key not found",
+					content = @Content(mediaType = "application/json"))
+	})
 	@Path("/{key}")
 	@GET
 	@JSONP
 	@NoCache
-	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+	@Produces({MediaType.APPLICATION_JSON})
 	public final ResponseEntityStringView get(@Context final HttpServletRequest request,
 											 @Context final HttpServletResponse response,
+											 @Parameter(description = "System table key", required = true)
 											 @PathParam("key") final String key)
 			throws IllegalAccessException {
 		checkNotEmpty(key, IllegalArgumentException.class, "Key cannot be null or empty");
@@ -159,13 +207,38 @@ public class SystemTableResource implements Serializable {
 	 *
 	 * @throws IllegalArgumentException If the key is blacklisted.
 	 */
+	@Operation(
+		summary = "Save system table key-value",
+		description = "Saves or updates the value of a given key to the system table"
+	)
+	@ApiResponses(value = {
+		@ApiResponse(responseCode = "200", 
+					description = "System table value saved successfully",
+					content = @Content(mediaType = "application/json",
+									  schema = @Schema(implementation = ResponseEntityStringView.class))),
+		@ApiResponse(responseCode = "400", 
+					description = "Bad request - key is blacklisted or form is invalid",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "401", 
+					description = "Unauthorized - authentication required",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "403", 
+					description = "Forbidden - CMS Administrator role required",
+					content = @Content(mediaType = "application/json"))
+	})
 	@POST
 	@JSONP
 	@NoCache
-	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces({MediaType.APPLICATION_JSON})
 	public ResponseEntityStringView save(
 			@Context final HttpServletRequest request,
 			@Context final HttpServletResponse response,
+			@io.swagger.v3.oas.annotations.parameters.RequestBody(
+				description = "Key-value form data", 
+				required = true,
+				content = @Content(schema = @Schema(implementation = KeyValueForm.class))
+			)
 			final KeyValueForm form) throws IllegalAccessException {
 		checkNotNull(form, IllegalArgumentException.class, "KeyValueForm cannot be null");
 		this.init(request, response);
@@ -185,14 +258,41 @@ public class SystemTableResource implements Serializable {
 	 *
 	 * @throws IllegalArgumentException If the key is blacklisted.
 	 */
+	@Operation(
+		summary = "Update system table key-value",
+		description = "Updates a value in the System Table, returns 404 if the key doesn't exist"
+	)
+	@ApiResponses(value = {
+		@ApiResponse(responseCode = "200", 
+					description = "System table value updated successfully",
+					content = @Content(mediaType = "application/json",
+									  schema = @Schema(implementation = ResponseEntityStringView.class))),
+		@ApiResponse(responseCode = "400", 
+					description = "Bad request - key is blacklisted or form is invalid",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "401", 
+					description = "Unauthorized - authentication required",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "403", 
+					description = "Forbidden - CMS Administrator role required",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "404", 
+					description = "Key not found",
+					content = @Content(mediaType = "application/json"))
+	})
 	@PUT
 	@JSONP
 	@NoCache
 	@Consumes(MediaType.APPLICATION_JSON)
-	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+	@Produces({MediaType.APPLICATION_JSON})
 	public ResponseEntityStringView update(
 			@Context final HttpServletRequest request,
 			@Context final HttpServletResponse response,
+			@io.swagger.v3.oas.annotations.parameters.RequestBody(
+				description = "Key-value form data", 
+				required = true,
+				content = @Content(schema = @Schema(implementation = KeyValueForm.class))
+			)
 			final KeyValueForm form) throws IllegalAccessException {
 		checkNotNull(form, IllegalArgumentException.class, "KeyValueForm cannot be null");
 		this.init(request, response);
@@ -218,15 +318,37 @@ public class SystemTableResource implements Serializable {
 	 *
 	 * @throws IllegalArgumentException If the key is blacklisted.
 	 */
+	@Operation(
+		summary = "Delete system table key",
+		description = "Deletes a value from the System Table, returns 404 if the key doesn't exist"
+	)
+	@ApiResponses(value = {
+		@ApiResponse(responseCode = "200", 
+					description = "System table key deleted successfully",
+					content = @Content(mediaType = "application/json",
+									  schema = @Schema(implementation = ResponseEntityStringView.class))),
+		@ApiResponse(responseCode = "400", 
+					description = "Bad request - key is blacklisted or invalid",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "401", 
+					description = "Unauthorized - authentication required",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "403", 
+					description = "Forbidden - CMS Administrator role required",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "404", 
+					description = "Key not found",
+					content = @Content(mediaType = "application/json"))
+	})
 	@DELETE
 	@Path("/{key}")
 	@JSONP
 	@NoCache
-	@Consumes(MediaType.APPLICATION_JSON)
-	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+	@Produces({MediaType.APPLICATION_JSON})
 	public ResponseEntityStringView delete(
 			@Context final HttpServletRequest request,
 			@Context final HttpServletResponse response,
+			@Parameter(description = "System table key to delete", required = true)
 			@PathParam("key") final String key)  {
 		return deleteWithKey(request, response, Map.of("key",key));
 	}
@@ -240,15 +362,42 @@ public class SystemTableResource implements Serializable {
 	 *
 	 * @throws IllegalArgumentException If the key is blacklisted.
 	 */
+	@Operation(
+		summary = "Delete system table key with request body",
+		description = "Deletes a value from the System Table using key in request body, returns 404 if the key doesn't exist"
+	)
+	@ApiResponses(value = {
+		@ApiResponse(responseCode = "200", 
+					description = "System table key deleted successfully",
+					content = @Content(mediaType = "application/json",
+									  schema = @Schema(implementation = ResponseEntityStringView.class))),
+		@ApiResponse(responseCode = "400", 
+					description = "Bad request - key is blacklisted or invalid",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "401", 
+					description = "Unauthorized - authentication required",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "403", 
+					description = "Forbidden - CMS Administrator role required",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "404", 
+					description = "Key not found",
+					content = @Content(mediaType = "application/json"))
+	})
 	@DELETE
 	@Path("/_delete")
 	@JSONP
 	@NoCache
 	@Consumes(MediaType.APPLICATION_JSON)
-	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+	@Produces({MediaType.APPLICATION_JSON})
 	public ResponseEntityStringView deleteWithKey(
 			@Context final HttpServletRequest request,
 			@Context final HttpServletResponse response,
+			@io.swagger.v3.oas.annotations.parameters.RequestBody(
+				description = "Map containing the key to delete", 
+				required = true,
+				content = @Content(schema = @Schema(type = "object"))
+			)
 			final Map<String,String> keyMap) {
 		if(UtilMethods.isEmpty(()->keyMap.get("key"))){
 			throw new IllegalArgumentException("Key cannot be null or empty");

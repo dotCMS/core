@@ -1,6 +1,8 @@
 package com.dotcms.rest.api.v1.portlet;
 
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.rest.ResponseEntityMapStringObjectView;
+import com.dotcms.rest.ResponseEntityMapView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
@@ -10,7 +12,14 @@ import com.dotmarketing.business.Layout;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.liferay.portal.model.User;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import com.dotcms.rest.annotation.SwaggerCompliant;
 import org.glassfish.jersey.server.JSONP;
 
 import javax.servlet.http.HttpServletRequest;
@@ -30,8 +39,9 @@ import java.util.Map;
 /**
  * This Resource allows you to manage toolgroups
  */
+@SwaggerCompliant(value = "Legacy and utility APIs", batch = 8)
 @Path("/v1/toolgroups")
-@Tag(name = "Administration")
+@Tag(name = "Tool Groups")
 @SuppressWarnings("serial")
 public class ToolGroupResource implements Serializable {
 
@@ -52,19 +62,40 @@ public class ToolGroupResource implements Serializable {
     }
 
 
-    /**
-     * This method removes a toolgroup to the specified user, using the id as key to find the toolgroup.
-     * If the layoutId is gettingStarted it will remove the gettingStartedLayout to the user.
-     * In case the user is not sent, the operation will be performed over the current user
-     */
+    @Operation(
+        summary = "Remove toolgroup from user",
+        description = "Removes a toolgroup from the specified user using the layout ID as key. If the layoutId is 'gettingStarted' it will remove the getting started layout. If no user ID is provided, the operation is performed on the current user."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Toolgroup removed from user successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityMapStringObjectView.class))),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid layout ID",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "Layout or user not found",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @PUT
     @Path("/{layoutId}/_removefromuser")
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces({MediaType.APPLICATION_JSON})
     public final Response deleteToolGroupFromUser(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
-            @PathParam("layoutId") final String layoutId, @QueryParam("userid") final String userid)
+            @Parameter(description = "Layout ID or 'gettingStarted' for getting started layout", required = true) @PathParam("layoutId") final String layoutId, 
+            @Parameter(description = "User ID (optional, defaults to current user)") @QueryParam("userid") final String userid)
             throws DotDataException, DotSecurityException {
 
         User user = null;
@@ -84,7 +115,7 @@ public class ToolGroupResource implements Serializable {
 
         APILocator.getRoleAPI().removeLayoutFromRole(layoutToRemove,
                 null == userid ? loggedInUser.getUserRole() : user.getUserRole());
-        return Response.ok(new ResponseEntityView(Map.of("message",
+        return Response.ok(new ResponseEntityView<>(Map.of("message",
                         layoutId + " removed from " + (null == userid ? loggedInUser.getUserId()
                                 : userid))))
                 .build();
@@ -92,19 +123,40 @@ public class ToolGroupResource implements Serializable {
     }
 
 
-    /**
-     * This method adds a toolgroup to the specified user, using the id as key to find the toolgroup.
-     * If the layoutId is gettingStarted it will add the gettingStartedLayout to the user.
-     * In case the user is not sent, the operation will be performed over the current user
-     */
+    @Operation(
+        summary = "Add toolgroup to user",
+        description = "Adds a toolgroup to the specified user using the layout ID as key. If the layoutId is 'gettingStarted' it will add the getting started layout. If no user ID is provided, the operation is performed on the current user."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Toolgroup added to user successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityMapStringObjectView.class))),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid layout ID",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "Layout or user not found",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @PUT
     @Path("/{layoutId}/_addtouser")
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces({MediaType.APPLICATION_JSON})
     public final Response addToolGroupToUser(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
-            @PathParam("layoutId") final String layoutId, @QueryParam("userid") final String userid)
+            @Parameter(description = "Layout ID or 'gettingStarted' for getting started layout", required = true) @PathParam("layoutId") final String layoutId, 
+            @Parameter(description = "User ID (optional, defaults to current user)") @QueryParam("userid") final String userid)
             throws DotDataException, DotSecurityException {
 
         User user = null;
@@ -124,32 +176,46 @@ public class ToolGroupResource implements Serializable {
 
         APILocator.getLayoutAPI()
                 .addLayoutForUser(layoutToAdd, null == userid ? loggedInUser : user);
-        return Response.ok(new ResponseEntityView(Map.of("message",
+        return Response.ok(new ResponseEntityView<>(Map.of("message",
                 layoutId + " added to " + (null == userid ? loggedInUser.getUserId()
                         : userid))))
                 .build();
     }
 
-    /**
-     * Given a userId, this method returns a json object with a boolean indicating if the user's role
-     * has associated the specified layout.
-     * In case the user is not sent, the operation will be performed over the current user
-     * @param request
-     * @param response
-     * @param layoutId
-     * @param userid
-     * @return
-     * @throws DotDataException
-     * @throws DotSecurityException
-     */
+    @Operation(
+        summary = "Check if user has layout",
+        description = "Returns a boolean indicating if the user's role has the specified layout associated. If no user ID is provided, the operation is performed on the current user."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Layout check completed successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityMapStringObjectView.class))),
+        @ApiResponse(responseCode = "400", 
+                    description = "Bad request - invalid layout ID",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404", 
+                    description = "Layout or user not found",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @Path("/{layoutId}/_userHasLayout")
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces({MediaType.APPLICATION_JSON})
     public final Response userHasLayout(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
-            @PathParam("layoutId") final String layoutId, @QueryParam("userid") final String userid)
+            @Parameter(description = "Layout ID or 'gettingStarted' for getting started layout", required = true) @PathParam("layoutId") final String layoutId, 
+            @Parameter(description = "User ID (optional, defaults to current user)") @QueryParam("userid") final String userid)
             throws DotDataException, DotSecurityException {
 
         User user = null;
@@ -167,7 +233,7 @@ public class ToolGroupResource implements Serializable {
 
         final Layout layout = getLayout(layoutId);
 
-        return Response.ok(new ResponseEntityView(Map.of("message", APILocator.getRoleAPI()
+        return Response.ok(new ResponseEntityView<>(Map.of("message", APILocator.getRoleAPI()
                 .roleHasLayout(layout,
                         null == userid ? loggedInUser.getUserRole() : user.getUserRole()))))
                 .build();
