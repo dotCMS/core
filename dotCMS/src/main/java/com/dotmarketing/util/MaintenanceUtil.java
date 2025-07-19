@@ -21,7 +21,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import com.dotcms.repackage.net.sf.hibernate.HibernateException;
+import org.hibernate.HibernateException;
 
 /**
  * This class provides access to utility methods that will search the database
@@ -122,7 +122,7 @@ public class MaintenanceUtil {
 			map.put(Identifier.class, null);
 			map.putAll(HibernateUtil.getSession().getSessionFactory().getAllClassMetadata());
 
-		} catch (HibernateException e) {
+		} catch (Exception e) {
 			throw new DotDataException(e.getMessage(),e);
 		}
 		Iterator it = map.entrySet().iterator();
@@ -141,7 +141,7 @@ public class MaintenanceUtil {
 				if(o instanceof Inode){
 					Inode i = (Inode)o;
 					String type = i.getType();
-					String tableName = ((com.dotcms.repackage.net.sf.hibernate.persister.AbstractEntityPersister)map.get(x)).getTableName();
+					String tableName = ((org.hibernate.persister.entity.AbstractEntityPersister)map.get(x)).getTableName();
 					cleanInodeTableData(tableName, type);
 				}
 			}
@@ -162,7 +162,7 @@ public class MaintenanceUtil {
 				if(o instanceof Inode){
 					Inode i = (Inode)o;
 					String type = i.getType();
-					String tableName = ((com.dotcms.repackage.net.sf.hibernate.persister.AbstractEntityPersister)map.get(x)).getTableName();
+					String tableName = ((org.hibernate.persister.entity.AbstractEntityPersister)map.get(x)).getTableName();
 					removeOphanedInodes(tableName, type);
 				}
 			}

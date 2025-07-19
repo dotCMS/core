@@ -29,11 +29,11 @@ import com.liferay.util.dao.hibernate.OrderByComparator;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import com.dotcms.repackage.net.sf.hibernate.HibernateException;
-import com.dotcms.repackage.net.sf.hibernate.ObjectNotFoundException;
-import com.dotcms.repackage.net.sf.hibernate.Query;
-import com.dotcms.repackage.net.sf.hibernate.ScrollableResults;
-import com.dotcms.repackage.net.sf.hibernate.Session;
+import org.hibernate.HibernateException;
+import org.hibernate.ObjectNotFoundException;
+import org.hibernate.Query;
+import org.hibernate.ScrollableResults;
+import org.hibernate.Session;
 
 /**
  * <a href="AddressPersistence.java.html"><b><i>View Source</i></b></a>
@@ -1163,7 +1163,7 @@ public class AddressPersistence extends BasePersistence {
 			query.append("classPK ASC").append(", ");
 			query.append("priority ASC");
 
-			Iterator itr = session.find(query.toString()).iterator();
+			Iterator itr = session.createQuery(query.toString()).list().iterator();
 			List list = new ArrayList();
 
 			while (itr.hasNext()) {

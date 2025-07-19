@@ -6,9 +6,14 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.util.EnumSet;
 import java.util.regex.Matcher;
-import com.dotcms.repackage.net.sf.hibernate.cfg.Configuration;
-import com.dotcms.repackage.net.sf.hibernate.tool.hbm2ddl.SchemaExport;
+import org.hibernate.boot.MetadataSources;
+import org.hibernate.boot.registry.StandardServiceRegistry;
+import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
+import org.hibernate.cfg.Configuration;
+import org.hibernate.tool.hbm2ddl.SchemaExport;
+import org.hibernate.tool.schema.TargetType;
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Task;
 
@@ -47,39 +52,59 @@ public final class DotSQLGeneratorTask extends Task {
 			Configuration cfg = new Configuration();
 			cfg.setProperty("hibernate.dialect", dialect);
             
-			if (dialect.equals("com.dotcms.repackage.net.sf.hibernate.dialect.MySQLDialect")){
+			if (dialect.equals("org.hibernate.dialect.MySQLDialect")){
                 cfg.setProperty("hibernate.connection.driver_class", "com.mysql.jdbc.Driver");
 				cfg.addResource("com/dotmarketing/beans/DotCMSId.hbm.xml");
-			}else if (dialect.equals("com.dotcms.repackage.net.sf.hibernate.dialect.SybaseDialect")){
+			}else if (dialect.equals("org.hibernate.dialect.SybaseDialect")){
 				cfg.addResource("com/dotmarketing/beans/DotCMSId.hbm.xml");
                 cfg.setProperty("hibernate.connection.driver_class", "com.microsoft.sqlserver.jdbc.SQLServerDriver");
-			}else if(dialect.equals("com.dotcms.repackage.net.sf.hibernate.dialect.OracleDialect")){
+			}else if(dialect.equals("org.hibernate.dialect.OracleDialect")){
 				cfg.addResource("com/dotmarketing/beans/DotCMSSeq.hbm.xml");
                 cfg.setProperty("hibernate.connection.driver_class", "oracle.jdbc.driver.OracleDriver");
-			}else if(dialect.equals("com.dotcms.repackage.net.sf.hibernate.dialect.PostgreSQLDialect")) {
+			}else if(dialect.equals("org.hibernate.dialect.PostgreSQLDialect")) {
 				cfg.addResource("com/dotmarketing/beans/DotCMSSeq.hbm.xml");
                 cfg.setProperty("hibernate.connection.driver_class", "org.postgresql.Driver");
-			}else if(dialect.equals("com.dotcms.repackage.net.sf.hibernate.dialect.HSQLDialect")) {
+			}else if(dialect.equals("org.hibernate.dialect.HSQLDialect")) {
 			    cfg.setProperty("hibernate.connection.driver_class", "org.h2.Driver");
 			    cfg.addResource("com/dotmarketing/beans/DotCMSId.hbm.xml");
 			}
 
-            SchemaExport sexp = new SchemaExport(cfg);
-			sexp.setDelimiter(";");
-			//DOTCMS-2915
-			String basedir = this.getProject().getProperties().get("basedir").toString();
+            // Build metadata from configuration
+            StandardServiceRegistry serviceRegistry = new StandardServiceRegistryBuilder()
+                .applySettings(cfg.getProperties())
+                .build();
+            
+            MetadataSources metadataSources = new MetadataSources(serviceRegistry);
+            
+            // Add the same resources as the original configuration
+            if (dialect.equals("org.hibernate.dialect.MySQLDialect")){
+                metadataSources.addResource("com/dotmarketing/beans/DotCMSId.hbm.xml");
+            }else if (dialect.equals("org.hibernate.dialect.SybaseDialect")){
+                metadataSources.addResource("com/dotmarketing/beans/DotCMSId.hbm.xml");
+            }else if(dialect.equals("org.hibernate.dialect.OracleDialect")){
+                metadataSources.addResource("com/dotmarketing/beans/DotCMSSeq.hbm.xml");
+            }else if(dialect.equals("org.hibernate.dialect.PostgreSQLDialect")) {
+                metadataSources.addResource("com/dotmarketing/beans/DotCMSSeq.hbm.xml");
+            }else if(dialect.equals("org.hibernate.dialect.HSQLDialect")) {
+                metadataSources.addResource("com/dotmarketing/beans/DotCMSId.hbm.xml");
+            }
+            
+            SchemaExport sexp = new SchemaExport();
+            sexp.setDelimiter(";");
+            //DOTCMS-2915
+            String basedir = this.getProject().getProperties().get("basedir").toString();
             File in = new File(basedir, "sql/sql.tmp"); 
-			String[] x = dialect.split("[.]");
-			String sqlFileName = ("sql/cms/dotcms_" + x[x.length - 1].replaceAll("Dialect", "") + ".sql").toLowerCase();
-			sqlFileName = sqlFileName.replaceAll("sybase", "mssql-sybase").replaceAll("hsql", "h2");
+            String[] x = dialect.split("[.]");
+            String sqlFileName = ("sql/cms/dotcms_" + x[x.length - 1].replaceAll("Dialect", "") + ".sql").toLowerCase();
+            sqlFileName = sqlFileName.replaceAll("sybase", "mssql-sybase").replaceAll("hsql", "h2");
             Logger.info(this, "writing file:" + sqlFileName);
             //DOTCMS-2915
             //File out = new File(sqlFileName);
             File out = new File(basedir, sqlFileName);
             
-			boolean afterDrops = false;
-			sexp.setOutputFile(in.getAbsolutePath());
-			sexp.create(false, false);
+            boolean afterDrops = false;
+            sexp.setOutputFile(in.getAbsolutePath());
+            sexp.create(EnumSet.of(TargetType.SCRIPT), metadataSources.buildMetadata());
 			BufferedReader r = new BufferedReader(new FileReader(in));
 			BufferedWriter wr = new BufferedWriter(new FileWriter(out));
 			java.util.regex.Pattern p = java.util.regex.Pattern.compile("[a-zA-Z][A-Z,a-z,0-9]*\\s[A-Z,a-z,0-9]*\\s[a-zA-Z][A-Z,a-z,0-9]*\\s\\([a-zA-Z][A-Z,a-z,0-9]*.*");
@@ -105,20 +130,20 @@ public final class DotSQLGeneratorTask extends Task {
 						myLine = s.toString();
 					}
 				}
-                if (dialect.equals("com.dotcms.repackage.net.sf.hibernate.dialect.PostgreSQLDialect")
-                        || dialect.equals("com.dotcms.repackage.net.sf.hibernate.dialect.SybaseDialect")
-                        || dialect.equals("com.dotcms.repackage.net.sf.hibernate.dialect.HSQLDialect")) {
+                if (dialect.equals("org.hibernate.dialect.PostgreSQLDialect")
+                        || dialect.equals("org.hibernate.dialect.SybaseDialect")
+                        || dialect.equals("org.hibernate.dialect.HSQLDialect")) {
                     if (myLine.contains("varchar(123456789)")) {
                         myLine = myLine.replaceAll("varchar\\(123456789\\)", "text");
                     }
-                } else if (dialect.equals("com.dotcms.repackage.net.sf.hibernate.dialect.OracleDialect")) {
+                } else if (dialect.equals("org.hibernate.dialect.OracleDialect")) {
                     if (myLine.contains("varchar2(123456789)")) {
                         myLine = myLine.replaceAll("varchar2\\(123456789\\)", "clob");
                     }
                     else if (myLine.contains(" long ") || myLine.contains(" long,")) {
                         myLine = myLine.replaceAll("long", "nclob");
                     }
-                } else if (dialect.equals("com.dotcms.repackage.net.sf.hibernate.dialect.MySQLDialect")) {
+                } else if (dialect.equals("org.hibernate.dialect.MySQLDialect")) {
                     if (myLine.contains("varchar(123456789)")) {
                         myLine = myLine.replaceAll("varchar\\(123456789\\)", "longtext");
                     }

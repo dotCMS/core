@@ -1,6 +1,6 @@
 package com.dotcms.business.bytebuddy;
 
-import com.dotcms.repackage.net.sf.hibernate.Session;
+import org.hibernate.Session;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.db.LocalTransaction;

@@ -7,8 +7,8 @@ import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.util.ContentTypeImportExportUtil;
 import com.dotcms.publishing.BundlerUtil;
-import com.dotcms.repackage.net.sf.hibernate.HibernateException;
-import com.dotcms.repackage.net.sf.hibernate.persister.AbstractEntityPersister;
+import org.hibernate.HibernateException;
+import org.hibernate.persister.entity.AbstractEntityPersister;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.Tree;
@@ -1061,7 +1061,7 @@ public class ImportStarterUtil {
                 this.deleteTable(table);
                 Logger.info(this, "Deleted all records from " + table);
             }
-        } catch (HibernateException e) {
+        } catch (Exception e) {
             Logger.error(this,e.getMessage(),e);
         }
 

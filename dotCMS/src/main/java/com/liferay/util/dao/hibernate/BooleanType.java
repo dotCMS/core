@@ -25,9 +25,10 @@ package com.liferay.util.dao.hibernate;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import com.dotcms.repackage.net.sf.hibernate.Hibernate;
-import com.dotcms.repackage.net.sf.hibernate.HibernateException;
-import com.dotcms.repackage.net.sf.hibernate.UserType;
+import java.sql.Types;
+import org.hibernate.HibernateException;
+import org.hibernate.engine.spi.SharedSessionContractImplementor;
+import org.hibernate.usertype.UserType;
 
 /**
  * <a href="BooleanType.java.html"><b><i>View Source</i></b></a>
@@ -40,12 +41,14 @@ public class BooleanType implements UserType {
 
 	public final static boolean DEFAULT_VALUE = false;
 
-	public final static int[] SQL_TYPES = new int[] {java.sql.Types.BOOLEAN};
+	public final static int[] SQL_TYPES = new int[] {Types.BOOLEAN};
 
+	@Override
 	public Object deepCopy(Object obj) {
 		return obj;
 	}
 
+	@Override
 	public boolean equals(Object x, Object y) {
 		if (x == y) {
 			return true;
@@ -58,39 +61,61 @@ public class BooleanType implements UserType {
 		}
 	}
 
+	@Override
+	public int hashCode(Object x) {
+		return x == null ? 0 : x.hashCode();
+	}
+
+	@Override
 	public boolean isMutable() {
 		return false;
 	}
 
-	public Object nullSafeGet(ResultSet rs, String[] names, Object obj)
+	@Override
+	public Object nullSafeGet(ResultSet rs, String[] names, SharedSessionContractImplementor session, Object owner)
 		throws HibernateException, SQLException {
 
-		Boolean value  = (Boolean)Hibernate.BOOLEAN.nullSafeGet(rs, names[0]);
-
-		if (value == null) {
+		Boolean value = rs.getBoolean(names[0]);
+		if (rs.wasNull()) {
 			return Boolean.valueOf(DEFAULT_VALUE);
 		}
-		else {
-			return value;
-		}
+		return value;
 	}
 
-	public void nullSafeSet(PreparedStatement ps, Object obj, int index)
+	@Override
+	public void nullSafeSet(PreparedStatement ps, Object obj, int index, SharedSessionContractImplementor session)
 		throws HibernateException, SQLException {
 
 		if (obj == null) {
 			obj = Boolean.valueOf(DEFAULT_VALUE);
 		}
 
-		Hibernate.BOOLEAN.nullSafeSet(ps, obj, index);
+		ps.setBoolean(index, (Boolean) obj);
 	}
 
+	@Override
 	public Class returnedClass() {
 		return Boolean.class;
 	}
 
+	@Override
 	public int[] sqlTypes() {
 		return SQL_TYPES;
+	}
+
+	@Override
+	public Object assemble(java.io.Serializable cached, Object owner) {
+		return cached;
+	}
+
+	@Override
+	public java.io.Serializable disassemble(Object value) {
+		return (java.io.Serializable) value;
+	}
+
+	@Override
+	public Object replace(Object original, Object target, Object owner) {
+		return original;
 	}
 
 }

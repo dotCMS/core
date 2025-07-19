@@ -25,9 +25,10 @@ package com.liferay.util.dao.hibernate;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import com.dotcms.repackage.net.sf.hibernate.Hibernate;
-import com.dotcms.repackage.net.sf.hibernate.HibernateException;
-import com.dotcms.repackage.net.sf.hibernate.UserType;
+import java.sql.Types;
+import org.hibernate.HibernateException;
+import org.hibernate.engine.spi.SharedSessionContractImplementor;
+import org.hibernate.usertype.UserType;
 
 /**
  * <a href="IntegerType.java.html"><b><i>View Source</i></b></a>
@@ -40,12 +41,14 @@ public class IntegerType implements UserType {
 
 	public final static int DEFAULT_VALUE = 0;
 
-	public final static int[] SQL_TYPES = new int[] {java.sql.Types.INTEGER};
+	public final static int[] SQL_TYPES = new int[] {Types.INTEGER};
 
+	@Override
 	public Object deepCopy(Object obj) {
 		return obj;
 	}
 
+	@Override
 	public boolean equals(Object x, Object y) {
 		if (x == y) {
 			return true;
@@ -58,39 +61,61 @@ public class IntegerType implements UserType {
 		}
 	}
 
+	@Override
+	public int hashCode(Object x) {
+		return x == null ? 0 : x.hashCode();
+	}
+
+	@Override
 	public boolean isMutable() {
 		return false;
 	}
 
-	public Object nullSafeGet(ResultSet rs, String[] names, Object obj)
+	@Override
+	public Object nullSafeGet(ResultSet rs, String[] names, SharedSessionContractImplementor session, Object owner)
 		throws HibernateException, SQLException {
 
-		Integer value  = (Integer)Hibernate.INTEGER.nullSafeGet(rs, names[0]);
-
-		if (value == null) {
+		int value = rs.getInt(names[0]);
+		if (rs.wasNull()) {
 			return Integer.valueOf(DEFAULT_VALUE);
 		}
-		else {
-			return value;
-		}
+		return Integer.valueOf(value);
 	}
 
-	public void nullSafeSet(PreparedStatement ps, Object obj, int index)
+	@Override
+	public void nullSafeSet(PreparedStatement ps, Object obj, int index, SharedSessionContractImplementor session)
 		throws HibernateException, SQLException {
 
 		if (obj == null) {
 			obj = Integer.valueOf(DEFAULT_VALUE);
 		}
 
-		Hibernate.INTEGER.nullSafeSet(ps, obj, index);
+		ps.setInt(index, (Integer) obj);
 	}
 
+	@Override
 	public Class returnedClass() {
 		return Integer.class;
 	}
 
+	@Override
 	public int[] sqlTypes() {
 		return SQL_TYPES;
+	}
+
+	@Override
+	public Object assemble(java.io.Serializable cached, Object owner) {
+		return cached;
+	}
+
+	@Override
+	public java.io.Serializable disassemble(Object value) {
+		return (java.io.Serializable) value;
+	}
+
+	@Override
+	public Object replace(Object original, Object target, Object owner) {
+		return original;
 	}
 
 }

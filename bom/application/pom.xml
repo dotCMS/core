@@ -223,16 +223,23 @@
                 <artifactId>dot.guava</artifactId>
                 <version>11.0.1_2</version>
             </dependency>
+            <!-- Modern Hibernate 5.6.15 (last javax-compatible version) -->
             <dependency>
-                <groupId>com.dotcms.lib</groupId>
-                <artifactId>dot.hibernate</artifactId>
-                <version>2.1.7_3</version>
+                <groupId>org.hibernate</groupId>
+                <artifactId>hibernate-core</artifactId>
+                <version>5.6.15.Final</version>
             </dependency>
             <dependency>
-                <groupId>com.dotcms.lib</groupId>
-                <artifactId>dot.hibernate-validator</artifactId>
-                <version>4.3.2.Final_3</version>
+                <groupId>org.hibernate</groupId>
+                <artifactId>hibernate-java8</artifactId>
+                <version>5.6.15.Final</version>
             </dependency>
+            <dependency>
+                <groupId>org.hibernate</groupId>
+                <artifactId>hibernate-ehcache</artifactId>
+                <version>5.6.15.Final</version>
+            </dependency>
+            <!-- Keep repackaged hibernate for gradual migration -->
             <dependency>
                 <groupId>com.dotcms.lib</groupId>
                 <artifactId>dot.httpbridge</artifactId>
@@ -885,6 +892,11 @@
                 <groupId>javax.validation</groupId>
                 <artifactId>validation-api</artifactId>
                 <version>1.1.0.Final</version>
+            </dependency>
+            <dependency>
+                <groupId>org.hibernate</groupId>
+                <artifactId>hibernate-validator</artifactId>
+                <version>5.4.3.Final</version>
             </dependency>
 
             <dependency>

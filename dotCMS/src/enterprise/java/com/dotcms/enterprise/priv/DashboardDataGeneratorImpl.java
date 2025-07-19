@@ -206,7 +206,7 @@ public class DashboardDataGeneratorImpl extends DashboardDataGenerator{
 						try{
 							summaryPeriod = insertSummaryPeriod(calendar);
 						}catch(Exception e){
-							if(e.getMessage().contains("com.dotcms.repackage.net.sf.hibernate.UnresolvableObjectException")){
+							if(e.getMessage().contains("org.hibernate.UnresolvableObjectException")){
 								errors.add("Data for period  = "+ (calendar.get(Calendar.MONTH)+1) + " - " + (calendar.get(Calendar.DAY_OF_MONTH))  + " - " + calendar.get(Calendar.YEAR) + " already exists and has been ignored.");		
 							}else{
 								errors.add(e.getMessage());
