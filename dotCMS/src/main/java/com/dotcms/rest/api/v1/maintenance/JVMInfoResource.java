@@ -3,12 +3,18 @@ package com.dotcms.rest.api.v1.maintenance;
 import com.dotcms.business.SystemTable;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.WebResource;
+import com.dotcms.rest.annotation.SwaggerCompliant;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.util.ReleaseInfo;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vavr.control.Try;
 import org.glassfish.jersey.server.JSONP;
@@ -32,6 +38,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.regex.Pattern;
 
+@SwaggerCompliant(value = "Publishing and content distribution APIs", batch = 5)
 @Tag(name = "Administration")
 @Path("/v1/jvm")
 @SuppressWarnings("serial")
@@ -46,11 +53,30 @@ public class JVMInfoResource implements Serializable {
             Config.getStringProperty("OBFUSCATE_SYSTEM_ENVIRONMENTAL_VARIABLES", DEFAULT_OBFUSCATE_PATTERN),
             Pattern.CASE_INSENSITIVE);
 
+    @Operation(
+        summary = "Get JVM information",
+        description = "Returns comprehensive system information including JVM details, host information, environment variables, configuration overrides, and system properties. Sensitive values are automatically obfuscated."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "JVM information retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(type = "object", description = "Comprehensive system information including release, host, JVM, environment, configOverrides, and system properties"))),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @Path("/")
     @GET
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_OCTET_STREAM, MediaType.APPLICATION_JSON})
+    @Produces({MediaType.APPLICATION_JSON})
     public final Response getJvmInfo(@Context final HttpServletRequest request, @Context final HttpServletResponse response)
                     throws IOException {
 
