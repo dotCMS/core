@@ -256,6 +256,14 @@ public class HealthStateManager {
     }
     
     /**
+     * Gets the uptime of the application in seconds.
+     * Used for metrics and monitoring purposes.
+     */
+    public long getUptimeSeconds() {
+        return Duration.between(startupTime, Instant.now()).toSeconds();
+    }
+    
+    /**
      * Gets the tolerance manager for accessing failure window information
      */
     public HealthCheckToleranceManager getToleranceManager() {
