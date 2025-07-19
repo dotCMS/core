@@ -17,6 +17,7 @@ import com.dotcms.telemetry.collectors.theme.TotalSizeOfFilesPerThemeMetricTypeT
 import com.dotcms.util.TimeMachineUtilTest;
 import com.dotmarketing.business.DeterministicIdentifierAPITest;
 import com.dotmarketing.startup.runonce.Task230630CreateRunningIdsExperimentFieldIntegrationTest;
+import com.dotmarketing.startup.runonce.Task250604UpdateFolderInodesTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
@@ -37,6 +38,7 @@ import org.junit.runners.Suite;
         Task230630CreateRunningIdsExperimentFieldIntegrationTest.class,
         TotalSizeOfFilesPerThemeMetricTypeTest.class,
         TimeMachineUtilTest.class,
+        Task250604UpdateFolderInodesTest.class
         AnalyticsValidatorUtilTest.class
 })
 public class MainSuite3a {
