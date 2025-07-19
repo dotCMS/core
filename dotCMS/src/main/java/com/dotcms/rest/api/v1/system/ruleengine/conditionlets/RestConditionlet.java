@@ -3,8 +3,8 @@ package com.dotcms.rest.api.v1.system.ruleengine.conditionlets;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.google.common.collect.ImmutableList;
 import com.dotcms.repackage.com.google.common.collect.ImmutableMap;
-import com.dotcms.repackage.javax.validation.constraints.NotNull;
-import com.dotcms.repackage.javax.validation.constraints.Size;
+import javax.validation.constraints.NotNull;
+import org.hibernate.validator.constraints.Length;
 import com.dotcms.rest.api.Validated;
 
 import com.dotmarketing.portlets.rules.parameter.ParameterDefinition;
@@ -21,7 +21,7 @@ public final class RestConditionlet extends Validated {
     public final String i18nKey;
 
     @NotNull
-    @Size(min = 0, max = 100)
+    @Length(min = 0, max = 100)
     public final Map<String, ParameterDefinition> parameterDefinitions;
 
     private RestConditionlet(Builder builder) {
