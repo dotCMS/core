@@ -5820,12 +5820,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
             if (!map.containsKey(field.variable()) && UtilMethods.isSet(field.defaultValue())) {
 
                 try {
-                    APILocator.getContentletAPI()
-                            .setContentletProperty(contentlet, field, field.defaultValue());
+                    this.setContentletProperty(contentlet, field, field.defaultValue());
                 } catch (Exception e) {
 
+
                     Logger.error(this, "Can not set the default value: " + field.defaultValue() +
-                            " to the field: " + field.variable() + ", on the ct: " + contentlet.getContentType().variable());
+                            " to the field: " + field.variable() + ", on the ct: " + Try.of(()->contentlet.getContentType().variable()).getOrElse("Unknown"));
                 }
             }
         }
