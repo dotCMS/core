@@ -19,8 +19,8 @@ public class JSONObjectNullSerializer extends JsonSerializer<Object> {
     public void serialize(Object value, JsonGenerator gen, SerializerProvider serializers)
             throws IOException {
         // Check if the object is the Null marker
-        if (value == null || isNullMarker(value)) {
-            gen.writeString("null");
+        if (isNullMarker(value)) {
+            gen.writeNull();
         }
     }
 
