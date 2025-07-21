@@ -27,14 +27,6 @@
         [value]="pageState.viewAs.language" />
 }
 
-<ng-template #language>
-    <dot-language-selector
-        (selected)="changeLanguageHandler($event)"
-        [pageId]="pageState.page.identifier"
-        [readonly]="!!variant"
-        [value]="pageState.viewAs.language" />
-</ng-template>
-
 <p-confirmDialog
     [acceptIcon]="null"
     [rejectIcon]="null"
