@@ -1647,6 +1647,19 @@ public class HibernateUtil {
             throws DotHibernateException {
         try {
             Session session = getSession();
+            // Set the ID on the object before saving to ensure Hibernate uses the provided ID
+            // This is necessary because Hibernate 5.6 is stricter about ID generation
+            try {
+                // Use reflection to set the ID field
+                java.lang.reflect.Field idField = findIdField(obj.getClass());
+                if (idField != null) {
+                    idField.setAccessible(true);
+                    idField.set(obj, id);
+                }
+            } catch (Exception e) {
+                // If reflection fails, log but continue - the ID might already be set
+                Logger.debug(HibernateUtil.class, "Could not set ID via reflection, continuing with save: " + e.getMessage());
+            }
             session.save(obj);
         } catch (Exception e) {
             throw new DotHibernateException(
@@ -1688,6 +1701,32 @@ public class HibernateUtil {
 
     private static boolean asyncCommitListeners() {
         return Config.getBooleanProperty("ASYNC_COMMIT_LISTENERS", true);
+    }
+
+    /**
+     * Find the ID field for a given class using reflection.
+     * This looks for common ID field names used in dotCMS entities.
+     */
+    private static java.lang.reflect.Field findIdField(Class<?> clazz) {
+        // Try common ID field names
+        String[] idFieldNames = {"id", "inode", "tagId"};
+        
+        for (String fieldName : idFieldNames) {
+            try {
+                return clazz.getDeclaredField(fieldName);
+            } catch (NoSuchFieldException e) {
+                // Try next field name
+            }
+        }
+        
+        // If no common field found, try to find any field with @Id annotation
+        for (java.lang.reflect.Field field : clazz.getDeclaredFields()) {
+            if (field.isAnnotationPresent(javax.persistence.Id.class)) {
+                return field;
+            }
+        }
+        
+        return null;
     }
 
 }

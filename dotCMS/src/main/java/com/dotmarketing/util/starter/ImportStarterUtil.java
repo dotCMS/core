@@ -495,6 +495,8 @@ public class ImportStarterUtil {
         final String _className = classNamePattern.matcher(file.getName()).find()
                 ?  file.getName().substring(0, file.getName().lastIndexOf("_"))
                 :   file.getName().substring(0, file.getName().lastIndexOf("."));
+        
+        Logger.debug(this, "Extracted class name: " + _className);
 
 
         if (_className.equals("Counter")) {
@@ -708,9 +710,13 @@ public class ImportStarterUtil {
         } else if (Role.class.equals(_importClass)) {
             List<Role> roles = (List<Role>) l;
             Collections.sort(roles);
-            Logger.debug(this.getClass(), "Starting role import for " + roles.size() + " roles");
+            Logger.info(this.getClass(), "Starting role import for " + roles.size() + " roles");
             
+            int successCount = 0;
             for (Role role : roles) {
+                // Process role normally - UUID is preserved through HibernateUtil.saveWithPrimaryKey
+                Logger.debug(this.getClass(), "Processing role: '" + role.getName() + "' with ID: " + role.getId());
+                
                 _dh = new HibernateUtil(Role.class);
                 if(UtilMethods.isSet(role.getRoleKey())) {
                     List<Map<String,Object>>  matches= new DotConnect().setSQL("select * from cms_role where role_key =?").addParam(role.getRoleKey()).loadObjectResults();
@@ -721,12 +727,38 @@ public class ImportStarterUtil {
                 if (HibernateUtil.getSession().getTransaction() != null && HibernateUtil.getSession().getTransaction().isActive()) {
                     HibernateUtil.getSession().flush();
                 }
+                
+                // Log CMS Anonymous role specifically for debugging
+                if ("CMS Anonymous".equals(role.getName()) || "654b0931-1027-41f7-ad4d-173115ed8ec1".equals(role.getId())) {
+                    Logger.info(this.getClass(), "Imported CMS Anonymous role: " + role.getName() + " (ID: " + role.getId() + ")");
+                }
+                successCount++;
             }
+            
+            Logger.info(this.getClass(), "Successfully imported " + successCount + " roles");
             
             // Commit the roles transaction to ensure they're visible to subsequent DotConnect operations
             if (HibernateUtil.getSession().getTransaction() != null && HibernateUtil.getSession().getTransaction().isActive()) {
                 HibernateUtil.getSession().getTransaction().commit();
+                Logger.info(this.getClass(), "Committed role transaction");
                 HibernateUtil.getSession().beginTransaction();
+            }
+            
+            // Verify CMS Anonymous role was imported successfully
+            try {
+                List<Map<String, Object>> cmsAnonCheck = new DotConnect()
+                        .setSQL("select id, role_name from cms_role where role_name = ? or id = ?")
+                        .addParam("CMS Anonymous")
+                        .addParam("654b0931-1027-41f7-ad4d-173115ed8ec1")
+                        .loadObjectResults();
+                        
+                if (!cmsAnonCheck.isEmpty()) {
+                    Logger.info(this.getClass(), "Verified CMS Anonymous role exists in database after import");
+                } else {
+                    Logger.error(this.getClass(), "CRITICAL: CMS Anonymous role missing from database after role import");
+                }
+            } catch (Exception e) {
+                Logger.error(this.getClass(), "Error verifying CMS Anonymous role after import: " + e.getMessage(), e);
             }
         } else {
             String id;

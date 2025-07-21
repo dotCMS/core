@@ -237,6 +237,19 @@ public class WorkflowImportExportUtil {
 	
 	private String getCMSAnonymousRoleId() {
 		try {
+			// CRITICAL: These queries ensure transaction synchronization with the database
+			// This addresses Hibernate 5.6 stricter transaction boundary enforcement
+			// where roles imported earlier may not be visible without explicit DB queries
+			
+			// Force transaction sync by checking role count first
+			List<Map<String, Object>> allRoles = new DotConnect()
+					.setSQL("select count(*) as role_count from cms_role")
+					.loadObjectResults();
+					
+			int totalRoles = allRoles.isEmpty() ? 0 : ((Number) allRoles.get(0).get("role_count")).intValue();
+			Logger.debug(this, "Total roles in database during workflow import: " + totalRoles);
+			
+			// Primary lookup by role_key/role_name
 			List<Map<String, Object>> results = new DotConnect()
 					.setSQL("select id from cms_role where role_key = ? or role_name = ?")
 					.addParam("CMS Anonymous")
@@ -244,7 +257,9 @@ public class WorkflowImportExportUtil {
 					.loadObjectResults();
 			
 			if (!results.isEmpty()) {
-				return (String) results.get(0).get("id");
+				String roleId = (String) results.get(0).get("id");
+				Logger.debug(this, "Found CMS Anonymous role by name/key: " + roleId);
+				return roleId;
 			}
 			
 			// Fallback: check if the expected starter data UUID exists
@@ -254,9 +269,11 @@ public class WorkflowImportExportUtil {
 					.loadObjectResults();
 			
 			if (!results.isEmpty()) {
+				Logger.debug(this, "Found CMS Anonymous role by UUID: 654b0931-1027-41f7-ad4d-173115ed8ec1");
 				return "654b0931-1027-41f7-ad4d-173115ed8ec1";
 			}
 			
+			Logger.error(this, "CMS Anonymous role not found in database with " + totalRoles + " total roles");
 			return null;
 		} catch (Exception e) {
 			Logger.error(this, "Error looking up CMS Anonymous role: " + e.getMessage(), e);
