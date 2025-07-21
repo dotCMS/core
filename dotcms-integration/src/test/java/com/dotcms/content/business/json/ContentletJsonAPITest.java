@@ -316,7 +316,7 @@ public class ContentletJsonAPITest extends IntegrationTestBase {
             assertEquals(0L, out.get("textFieldNumeric"));
             assertEquals(0F, out.get("textFieldFloat"));
             assertEquals(false, out.get("hiddenBool"));
-            assertNull(out.get("textField"));
+            assertTrue(out.get("textField").toString().contains("Default")); // this was previously checking null, however with the default set on the content type, it is not longer valid
 
             final ImmutableContentlet immutableContentlet = impl.toImmutable(filledWithZeros);
             final ImmutableMap<String, FieldValue<?>> fields = immutableContentlet.fields();
