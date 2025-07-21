@@ -1,38 +1,59 @@
-# Migration Guide: @dotcms/angular from Alpha to 1.0.X
+# Migration Guide: @dotcms/angular Alpha to 1.0.X
 
-This guide will help you migrate your Angular applications from the alpha version of `@dotcms/angular` to version 1.0.X. The new version introduces significant architectural changes, new components, better TypeScript support, and enhanced Universal Visual Editor (UVE) integration.
+This guide helps you migrate from the alpha version to the 1.0.X version (`latest`) of the `@dotcms/angular` SDK.
 
-## Table of Contents
+## Breaking Changes Summary
 
-- [Overview of Changes](#overview-of-changes)
-- [Breaking Changes](#breaking-changes)
-- [Installation & Dependencies](#installation--dependencies)
-- [Configuration Changes](#configuration-changes)
-- [Component Migrations](#component-migrations)
-- [New Features](#new-features)
-- [Service Changes](#service-changes)
-- [Best Practices](#best-practices)
-- [Troubleshooting](#troubleshooting)
+| Change | Alpha Version | 1.0.X Version |
+|--------|---------------|----------------|
+| Core Layout Component | `DotcmsLayoutComponent` | `DotCMSLayoutBody` |
+| Layout Props Structure | `pageAsset`/`editor` | `page`, `components`, `mode` |
+| Client Configuration | Manual token injection | `provideDotCMSClient()` |
+| Client Injection | `DOTCMS_CLIENT_TOKEN` | `DotCMSClient` |
+| Component Registration | `DotCMSPageComponent` | `DynamicComponentEntity` |
+| Page Service | Custom implementation | `DotCMSEditablePageService` |
 
-## Overview of Changes
+## New Features in 1.0.X Version
 
-The 1.0.X version represents a major rewrite of the `@dotcms/angular` library with:
+| Feature | Purpose | Example Usage |
+|---------|---------|---------------|
+| `DotCMSEditableText` | Inline editing of text fields in contentlets | `<dotcms-editable-text fieldName="title" [contentlet]="contentlet()" />` |
+| `DotCMSBlockEditorRenderer` | Render Block Editor content with custom block support | `<dotcms-block-editor-renderer [blocks]="contentlet.blockEditorField" [customRenderers]="customRenderers()" />` |
+| `DotCMSShowWhen` | Conditional rendering based on UVE mode | `<div *dotCMSShowWhen="UVE_MODE.EDIT">...</div>` |
+| `DotCMSEditablePageService` | Service for managing page lifecycle and UVE integration | `this.editablePageService.listen(pageResponse)` |
+| `provideDotCMSImageLoader` | Angular image optimization integration | `provideDotCMSImageLoader(environment.dotcmsUrl)` |
+| Improved TypeScript Support | Better type definitions and type safety | `import type { DotCMSPageResponse } from '@dotcms/types';` |
 
-- **New Architecture**: Simplified component structure and better separation of concerns
-- **Enhanced UVE Integration**: Improved Universal Visual Editor support with real-time editing
-- **Better TypeScript Support**: Comprehensive type definitions and improved developer experience
-- **New Components**: Additional components for better content rendering and editing
-- **Simplified Configuration**: Streamlined setup process with provider functions
+🚨 For detail information check the [README](./README.md) file.
 
-## Breaking Changes
+## Step-by-Step Migration Process
+Before starting, if you are using the `@dotcms/client` library in your Angular project, please refer to the [client documentation](https://www.npmjs.com/package/@dotcms/client) for more information.
 
-### 1. Main Layout Component
+### Step 1: Update Dependencies
 
-**Old (Alpha):**
+Update your `package.json`:
+
+```json
+{
+    "dependencies": {
+        "@dotcms/angular": "1.0.0",
+        "@dotcms/client": "1.0.0",
+        "@dotcms/types": "1.0.0",
+        "@dotcms/uve": "1.0.0"
+    }
+}
+```
+
+### Step 2: Update Component Imports
+
+Replace all instances of:
+- `DotcmsLayoutComponent` → `DotCMSLayoutBody`
+- Import from `@dotcms/angular` instead of separate packages
+
+### Step 3: Update Component Usage
+
+**Before:**
 ```typescript
-import { DotcmsLayoutComponent } from '@dotcms/angular';
-
-// Usage in template
 <dotcms-layout
     [pageAsset]="pageAsset"
     [components]="components()"
@@ -40,29 +61,19 @@ import { DotcmsLayoutComponent } from '@dotcms/angular';
 />
 ```
 
-**New (1.0.X):**
+**After:**
 ```typescript
-import { DotCMSLayoutBody } from '@dotcms/angular';
-
-// Usage in template
 <dotcms-layout-body
     [page]="pageAsset()"
     [components]="components()"
-    [mode]="'development'"
+    mode="development"
 />
 ```
 
-**Key Changes:**
-- `DotcmsLayoutComponent` → `DotCMSLayoutBody`
-- `pageAsset` prop → `page` prop
-- `editor` prop removed (UVE integration now handled automatically)
-- New optional `mode` prop for development/production rendering
+### Step 4: Update Client Configuration
 
-### 2. Client Configuration
-
-**Old (Alpha):**
+**Before:**
 ```typescript
-// app.config.ts
 import { InjectionToken } from '@angular/core';
 import { ClientConfig, DotCmsClient } from '@dotcms/client';
 
@@ -76,16 +87,10 @@ export const appConfig: ApplicationConfig = {
         }
     ],
 };
-
-// Component usage
-export class YourComponent {
-    private readonly client = inject(DOTCMS_CLIENT_TOKEN);
-}
 ```
 
-**New (1.0.X):**
+**After:**
 ```typescript
-// app.config.ts
 import { provideDotCMSClient } from '@dotcms/angular';
 
 export const appConfig: ApplicationConfig = {
@@ -97,8 +102,19 @@ export const appConfig: ApplicationConfig = {
         })
     ],
 };
+```
 
-// Component usage
+### Step 5: Update Client Injection
+
+**Before:**
+```typescript
+export class YourComponent {
+    private readonly client = inject(DOTCMS_CLIENT_TOKEN);
+}
+```
+
+**After:**
+```typescript
 import { DotCMSClient } from '@dotcms/angular';
 
 export class YourComponent {
@@ -106,265 +122,52 @@ export class YourComponent {
 }
 ```
 
-**Key Changes:**
-- Use `provideDotCMSClient()` function instead of manual token creation
-- Direct import of `DotCMSClient` for injection
-- Simplified configuration approach
+### Step 6: Update Page Data Fetching
 
-## Installation & Dependencies
-
-### Update Dependencies
-
-**Remove old dependencies:**
-```bash
-npm uninstall @dotcms/client
-```
-
-**Install new dependencies:**
-```bash
-npm install @dotcms/angular@latest
-```
-
-The new version automatically includes:
-- `@dotcms/client`: Core client functionality
-- `@dotcms/uve`: Universal Visual Editor integration
-- `@dotcms/types`: TypeScript type definitions
-
-### Package.json Changes
-
-**Old (Alpha):**
-```json
-{
-  "dependencies": {
-    "@dotcms/angular": "alpha",
-    "@dotcms/client": "latest"
-  }
-}
-```
-
-**New (1.0.X):**
-```json
-{
-  "dependencies": {
-    "@dotcms/angular": "latest",
-    "@dotcms/types": "latest",
-    "@dotcms/uve": "latest"
-  }
-}
-```
-
-## Configuration Changes
-
-### 1. Image Optimization Setup
-
-**New Feature in 1.0.X:**
+**Before:**
 ```typescript
-// app.config.ts
-import { provideDotCMSImageLoader } from '@dotcms/angular';
-
-export const appConfig: ApplicationConfig = {
-    providers: [
-        // ... other providers
-        provideDotCMSImageLoader(environment.dotcmsUrl)
-    ]
-};
+const pageData = await this.client.page.get({
+    path: '/your-page-path',
+    language_id: 1, // underscore naming
+    personaId: 'optional-persona-id'
+});
 ```
 
-### 2. Proxy Configuration
-
-Update your `proxy.conf.json` to include API endpoints:
-
-**Old (Alpha):**
-```json
-{
-    "/dA": {
-        "target": "http://localhost:8080",
-        "secure": false,
-        "changeOrigin": true
-    }
-}
-```
-
-**New (1.0.X):**
-```json
-{
-    "/api": {
-        "target": "http://localhost:8080",
-        "secure": false
-    },
-    "/dA": {
-        "target": "http://localhost:8080",
-        "secure": false
-    }
-}
-```
-
-## Component Migrations
-
-### 1. Page Component Structure
-
-**Old (Alpha):**
+**After (1.0.X):**
 ```typescript
-@Component({
-    selector: 'app-pages',
-    templateUrl: './pages.component.html',
-})
+const { pageAsset } = await this.client.page.get('/your-page-path', {
+    languageId: 1, // camelCase naming
+    personaId: 'optional-persona-id'
+});
+```
+
+> [!IMPORTANT]
+> For detail information please refer to the [client documentation](https://www.npmjs.com/package/@dotcms/client) for more information.
+
+### Step 7: Update Page Service Implementation
+
+**Before:**
+```typescript
+// Custom service implementation required
 export class PagesComponent {
-    DYNAMIC_COMPONENTS: DotCMSPageComponent = {
-        Activity: import('../content-types/activity/activity.component').then(
-            (c) => c.ActivityComponent
-        ),
-    };
-
-    components = signal(this.DYNAMIC_COMPONENTS);
-    editorConfig = signal<EditorConfig>({ params: { depth: 2 } });
     pageAsset: DotCMSPageAsset;
-}
-```
-
-**New (1.0.X):**
-```typescript
-@Component({
-    selector: 'app-pages',
-    standalone: true,
-    imports: [DotCMSLayoutBody],
-    providers: [DotCMSEditablePageService],
-    template: `
-        @if (pageAsset()) {
-            <dotcms-layout-body
-                [page]="pageAsset()"
-                [components]="components()"
-            />
-        } @else {
-            <div>Loading...</div>
-        }
-    `
-})
-export class PagesComponent {
-    private readonly dotCMSClient = inject(DotCMSClient);
-    private readonly editablePageService = inject(DotCMSEditablePageService);
-
-    readonly components = signal(DYNAMIC_COMPONENTS);
-    readonly pageAsset = signal<DotCMSPageAsset | null>(null);
 
     ngOnInit() {
-        this.dotCMSClient.page
-            .get({ url: '/my-page' })
-            .then(({ pageAsset }) => {
-                if(getUVEState()) {
-                   this.#subscribeToPageUpdates(response);
-                   return;
-               }
-                this.pageAsset.set(pageAsset);
-            });
-    }
-
-    #subscribeToPageUpdates(response: DotCMSPageResponse) {
-        this.editablePageService
-            .listen(response)
-            .subscribe(({ pageAsset }) => this.pageAsset.set(pageAsset));
+        // Manual page loading and UVE setup
     }
 }
 ```
 
-### 2. Component Registration
-
-**Old (Alpha):**
-```typescript
-const DYNAMIC_COMPONENTS: DotCMSPageComponent = {
-    Activity: import('./activity.component').then(c => c.ActivityComponent),
-    Banner: import('./banner.component').then(c => c.BannerComponent)
-};
-```
-
-**New (1.0.X):**
-```typescript
-import { DynamicComponentEntity } from '@dotcms/angular';
-
-const DYNAMIC_COMPONENTS: { [key: string]: DynamicComponentEntity } = {
-    Activity: import('./activity.component').then(c => c.ActivityComponent),
-    Banner: import('./banner.component').then(c => c.BannerComponent)
-};
-```
-
-## New Features
-
-### 1. DotCMSEditableText Component
-
-**New in 1.0.X:**
-```typescript
-import { DotCMSEditableText } from '@dotcms/angular';
-
-@Component({
-    template: `
-        <h2>
-            <dotcms-editable-text
-                fieldName="title"
-                [contentlet]="contentlet()"
-                mode="full"
-                format="html"
-            />
-        </h2>
-    `
-})
-```
-
-**Props:**
-- `contentlet`: The contentlet containing the editable field
-- `fieldName`: Name of the field to edit
-- `mode`: `'plain'` or `'full'` (with styling controls)
-- `format`: `'text'` or `'html'`
-
-### 2. DotCMSBlockEditorRenderer Component
-
-**New in 1.0.X:**
-```typescript
-import { DotCMSBlockEditorRenderer } from '@dotcms/angular';
-
-@Component({
-    template: `
-        <dotcms-block-editor-renderer
-            [blocks]="contentlet.myBlockEditorField"
-            [customRenderers]="customRenderers()"
-        />
-    `
-})
-export class MyComponent {
-    readonly customRenderers = signal({
-        customBlock: import('./custom-block.component').then(c => c.CustomBlockComponent)
-    });
-}
-```
-
-### 3. DotCMSShowWhen Directive
-
-**New in 1.0.X:**
-```typescript
-import { DotCMSShowWhen, UVE_MODE } from '@dotcms/angular';
-
-@Component({
-    template: `
-        <div *dotCMSShowWhen="UVE_MODE.EDIT">
-            Only visible in edit mode
-        </div>
-        <div *dotCMSShowWhen="UVE_MODE.PREVIEW">
-            Only visible in preview mode
-        </div>
-    `
-})
-```
-
-### 4. DotCMSEditablePageService
-
-**New in 1.0.X:**
+**After:**
 ```typescript
 import { DotCMSEditablePageService } from '@dotcms/angular';
 
 @Component({
     providers: [DotCMSEditablePageService]
 })
-export class PageComponent {
+export class PagesComponent {
     private readonly editablePageService = inject(DotCMSEditablePageService);
+    readonly pageAsset = signal<DotCMSPageAsset | null>(null);
 
     ngOnInit() {
         this.client.page.get({ url: '/page' }).then((pageResponse) => {
@@ -374,140 +177,87 @@ export class PageComponent {
                     .subscribe(({ pageAsset }) => {
                         this.pageAsset.set(pageAsset);
                     });
+            } else {
+                this.pageAsset.set(pageResponse.pageAsset);
             }
         });
     }
 }
 ```
 
-## Service Changes
+### Step 8: Update Component Registration
 
-### Page Service Migration
-
-**Old (Alpha):**
+**Before:**
 ```typescript
-// Manual service implementation required
+const DYNAMIC_COMPONENTS: DotCMSPageComponent = {
+    Activity: import('./activity.component').then(c => c.ActivityComponent),
+    Banner: import('./banner.component').then(c => c.BannerComponent)
+};
 ```
 
-**New (1.0.X):**
+**After:**
 ```typescript
-// Built-in EditablePageService handles page lifecycle
-@Injectable()
-export class EditablePageService<T extends DotCMSExtendedPageResponse> {
-    initializePage(extraParams: DotCMSPageRequestParams = {}): Signal<PageState<T>> {
-        // Handles routing, loading, and UVE integration automatically
-    }
-}
+import { DynamicComponentEntity } from '@dotcms/angular';
+
+const DYNAMIC_COMPONENTS: { [key: string]: DynamicComponentEntity } = {
+    Activity: import('./activity.component').then(c => c.ActivityComponent),
+    Banner: import('./banner.component').then(c => c.BannerComponent)
+};
 ```
 
-## Best Practices
+## TypeScript Support
 
-### 1. Use Standalone Components
-
-**Recommended approach:**
-```typescript
-@Component({
-    selector: 'app-my-component',
-    standalone: true,
-    imports: [DotCMSLayoutBody, DotCMSEditableText]
-})
-export class MyComponent {}
-```
-
-### 2. Leverage Angular Signals
-
-**Use signals for reactive state:**
-```typescript
-export class PageComponent {
-    readonly pageAsset = signal<DotCMSPageAsset | null>(null);
-    readonly components = signal(DYNAMIC_COMPONENTS);
-    readonly isLoading = computed(() => !this.pageAsset());
-}
-```
-
-### 3. Implement Proper Error Handling
+The 1.0.X version provides better TypeScript support with improved type definitions. Make sure to import types from `@dotcms/types`:
 
 ```typescript
-ngOnInit() {
-    this.client.page
-        .get({ url: '/page' })
-        .then(({ pageAsset }) => {
-            this.pageAsset.set(pageAsset);
-        })
-        .catch((error) => {
-            console.error('Failed to load page:', error);
-            // Handle error appropriately
-        });
-}
+import type { DotCMSPageResponse, DotCMSPageAsset } from '@dotcms/types';
+import { UVE_MODE } from '@dotcms/types';
 ```
 
-### 4. Use Development Mode During Development
+## Common Migration Issues
 
-```typescript
-<dotcms-layout-body
-    [page]="pageAsset()"
-    [components]="components()"
-    mode="development"
-/>
+### 1. Service Not Working
+
+**Issue:** Page updates not working in edit mode.
+
+**Solution:** Use `DotCMSEditablePageService` and provide it at component level.
+
+### 2. Client Injection Errors
+
+**Issue:** `NullInjectorError` when injecting the client.
+
+**Solution:** Use `provideDotCMSClient()` in your app configuration and inject `DotCMSClient` directly.
+
+### 3. Component Registration Issues
+
+**Issue:** Components not rendering or TypeScript errors.
+
+**Solution:** Use proper typing with `DynamicComponentEntity` and ensure all components are standalone or properly declared.
+
+### 4. Types Not Found
+
+**Issue:** TypeScript errors about missing types.
+
+**Solution:** Install and import from `@dotcms/types`:
+```bash
+npm install @dotcms/types
 ```
 
-This provides:
-- Visual indicators for unmapped components
-- Console logs for debugging
-- Default components for missing mappings
+## Testing Your Migration
 
-## Troubleshooting
+1. **Development Mode:** Use `mode="development"` in `DotCMSLayoutBody` to see detailed error messages and debugging information
+2. **Edit Mode:** Test the Universal Visual Editor functionality with `DotCMSEditablePageService`
+3. **Production Mode:** Test with `mode="production"` for performance optimization
 
-### Common Migration Issues
+## Additional Resources
 
-1. **Import Errors**
-   ```typescript
-   // ❌ Old imports
-   import { DotcmsLayoutComponent } from '@dotcms/angular';
+- [dotCMS Angular SDK Documentation](https://dev.dotcms.com/docs/angular-sdk)
+- [Universal Visual Editor Guide](https://dev.dotcms.com/docs/uve-headless-config)
+- [Angular Example Project](https://github.com/dotCMS/core/tree/main/examples/angular)
 
-   // ✅ New imports
-   import { DotCMSLayoutBody } from '@dotcms/angular';
-   ```
-
-2. **Client Injection Issues**
-   ```typescript
-   // ❌ Old approach
-   private readonly client = inject(DOTCMS_CLIENT_TOKEN);
-
-   // ✅ New approach
-   private readonly client = inject(DotCMSClient);
-   ```
-
-3. **Component Registration Issues**
-   ```typescript
-   // ❌ Missing DynamicComponentEntity type
-   const COMPONENTS = { ... };
-
-   // ✅ Proper typing
-   const COMPONENTS: { [key: string]: DynamicComponentEntity } = { ... };
-   ```
-
-4. **UVE Integration Issues**
-   - Ensure `DotCMSEditablePageService` is provided at component level
-   - Check that `getUVEState()` is called to detect edit mode
-   - Verify UVE app configuration in dotCMS admin
-
-### Performance Considerations
-
-1. **Lazy Loading**: Use dynamic imports for components
-2. **Signal Usage**: Leverage Angular signals for better change detection
-3. **Image Optimization**: Use the provided image loader with `NgOptimizedImage`
-
-### Getting Help
+## Support
 
 If you encounter issues during migration:
-
-1. Check the [GitHub repository](https://github.com/dotCMS/core) for issues
-2. Review the [dotCMS documentation](https://dev.dotcms.com/docs)
-3. Join the [community forum](https://community.dotcms.com/)
-
-## Conclusion
-
-The migration to `@dotcms/angular` 1.0.X brings significant improvements in developer experience, TypeScript support, and UVE integration. While there are breaking changes, the new architecture provides a more maintainable and feature-rich foundation for your dotCMS Angular applications.
-
-Take time to test thoroughly in a development environment before deploying to production, and consider migrating incrementally if you have a large application.
+- Check the [GitHub Issues](https://github.com/dotCMS/core/issues)
+- Join the [Community Forum](https://community.dotcms.com/)
+- For enterprise customers: [dotCMS Support Portal](https://helpdesk.dotcms.com/support/)
