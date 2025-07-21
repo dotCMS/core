@@ -24,14 +24,12 @@ export class DotSidebarDirective {
     private readonly primeSidebar = inject(Sidebar, { optional: true, self: true });
 
     constructor() {
-        const primeSidebar = this.primeSidebar;
-
-        if (primeSidebar) {
-            primeSidebar.position = SIDEBAR_PLACEMENT.RIGHT;
-            primeSidebar.styleClass = SIDEBAR_SIZES.MD;
-            primeSidebar.showCloseIcon = false;
-            primeSidebar.dismissible = false;
-            primeSidebar.closeOnEscape = false;
+        if (this.primeSidebar) {
+            this.primeSidebar.position = SIDEBAR_PLACEMENT.RIGHT;
+            this.primeSidebar.styleClass = SIDEBAR_SIZES.MD;
+            this.primeSidebar.showCloseIcon = false;
+            this.primeSidebar.dismissible = false;
+            this.primeSidebar.closeOnEscape = false;
         } else {
             console.warn('DotSidebarDirective is for use with PrimeNg Sidebar');
         }

@@ -16,9 +16,7 @@ export class DotFieldRequiredDirective {
     private formGroupDirective = inject(FormGroupDirective);
 
     constructor() {
-        const renderer = this.renderer;
-
-        renderer.addClass(this.el.nativeElement, 'p-label-input-required');
+        this.renderer.addClass(this.el.nativeElement, 'p-label-input-required');
     }
 
     /**

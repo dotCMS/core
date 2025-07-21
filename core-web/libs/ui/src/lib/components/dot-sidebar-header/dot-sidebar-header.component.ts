@@ -37,9 +37,7 @@ export class DotSidebarHeaderComponent {
     actionButtonTpl?: TemplateRef<void>;
 
     constructor() {
-        const sidebarComponent = this.sidebarComponent;
-
-        if (!sidebarComponent) {
+        if (!this.sidebarComponent) {
             console.warn('DotSidebarHeaderComponent is for use inside of a PrimeNg Sidebar');
         }
     }
