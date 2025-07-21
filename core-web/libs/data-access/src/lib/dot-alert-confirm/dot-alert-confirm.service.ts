@@ -1,6 +1,6 @@
 import { Observable, Subject } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { ConfirmationService } from 'primeng/api';
 
@@ -16,14 +16,12 @@ import { DotMessageService } from '../dot-messages/dot-messages.service';
 
 @Injectable()
 export class DotAlertConfirmService {
-    alertModel: DotAlertConfirm = null;
-    confirmModel: DotAlertConfirm = null;
-    private _confirmDialogOpened$: Subject<boolean> = new Subject<boolean>();
+    confirmationService = inject(ConfirmationService);
+    private dotMessageService = inject(DotMessageService);
 
-    constructor(
-        public confirmationService: ConfirmationService,
-        private dotMessageService: DotMessageService
-    ) {}
+    alertModel: DotAlertConfirm | null = null;
+    confirmModel: DotAlertConfirm | null = null;
+    private _confirmDialogOpened$ = new Subject<boolean>();
 
     /**
      * Get the confirmDialogOpened notification as an Observable

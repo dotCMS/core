@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output, OnInit } from '@angular/core';
+import { Component, EventEmitter, Input, Output, OnInit, inject } from '@angular/core';
 
 import { LoggerService } from '@dotcms/dotcms-js';
 
@@ -44,6 +44,8 @@ import { ServerSideTypeModel } from './services/ServerSideFieldModel';
     `
 })
 export class RuleActionComponent implements OnInit {
+    private loggerService = inject(LoggerService);
+
     @Input() action: ActionModel;
     @Input() index = 0;
     @Input() actionTypePlaceholder: string;
@@ -55,8 +57,6 @@ export class RuleActionComponent implements OnInit {
     @Output() deleteRuleAction: EventEmitter<RuleActionActionEvent> = new EventEmitter(false);
 
     typeDropdown: any;
-
-    constructor(private loggerService: LoggerService) {}
 
     ngOnChanges(change): void {
         if (change.action) {
