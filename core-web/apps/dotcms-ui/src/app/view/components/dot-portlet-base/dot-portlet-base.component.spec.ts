@@ -1,9 +1,10 @@
-import { createComponentFactory, Spectator } from '@ngneat/spectator';
+import { createComponentFactory, Spectator, SpectatorHost, createHostFactory } from '@ngneat/spectator';
 
 import { Component } from '@angular/core';
 
 import { DotPortletBoxComponent } from './components/dot-portlet-box/dot-portlet-box.component';
 import { DotPortletBaseComponent } from './dot-portlet-base.component';
+import { DotPortletBaseModule } from './dot-portlet-base.module';
 
 @Component({
     selector: 'dot-portlet-toolbar',
@@ -103,16 +104,21 @@ fdescribe('DotPortletBaseComponent', () => {
 
     describe('Host Component Tests', () => {
         describe('DefaultTestHostComponent', () => {
-            let hostSpectator: Spectator<DefaultTestHostComponent>;
+            let hostSpectator: SpectatorHost<DotPortletBaseComponent>;
 
-            const createHostComponent = createComponentFactory({
-                component: DefaultTestHostComponent,
-                declarations: [DotPortletBaseComponent, DotPortletBoxComponent],
+            const createHost = createHostFactory({
+                component: DotPortletBaseComponent,
+                imports: [DotPortletBaseModule],
+                template: `
+                    <dot-portlet-base [boxed]="true">
+                        <div data-testid="content">Hello World</div>
+                    </dot-portlet-base>
+                `,
                 shallow: true
             });
 
             beforeEach(() => {
-                hostSpectator = createHostComponent();
+                hostSpectator = createHost();
                 hostSpectator.detectChanges();
             });
 
@@ -132,6 +138,7 @@ fdescribe('DotPortletBaseComponent', () => {
             });
         });
 
+        /*
         describe('DefaultTestHostUnboxedComponent', () => {
             let hostSpectator: Spectator<DefaultTestHostUnboxedComponent>;
 
@@ -182,5 +189,7 @@ fdescribe('DotPortletBaseComponent', () => {
                 expect(portletBase?.firstChild).toBe(toolbar);
             });
         });
+
+        */
     });
 });

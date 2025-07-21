@@ -1,9 +1,9 @@
-<ng-content select="dot-portlet-toolbar"></ng-content>
+<ng-content select="dot-portlet-toolbar" />
 
-@if (boxed) {
+@if ($boxed()) {
     <dot-portlet-box>
-        <ng-content></ng-content>
+        <ng-content />
     </dot-portlet-box>
 } @else {
-    <ng-content></ng-content>
+    <ng-content />
 }

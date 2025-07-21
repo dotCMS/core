@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, input } from '@angular/core';
 
 @Component({
     selector: 'dot-portlet-base',
@@ -6,6 +6,5 @@ import { Component, Input } from '@angular/core';
     styleUrls: ['./dot-portlet-base.component.scss']
 })
 export class DotPortletBaseComponent {
-    @Input()
-    boxed = true;
+    $boxed = input<boolean>(true, { alias: 'boxed' });
 }
