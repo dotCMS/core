@@ -1,4 +1,4 @@
-import { Directive, Input, Optional, Self } from '@angular/core';
+import { Directive, Input, inject } from '@angular/core';
 
 import { Sidebar } from 'primeng/sidebar';
 
@@ -21,7 +21,11 @@ export enum SIDEBAR_SIZES {
     selector: '[dotSidebar]'
 })
 export class DotSidebarDirective {
-    constructor(@Optional() @Self() private readonly primeSidebar: Sidebar) {
+    private readonly primeSidebar = inject(Sidebar, { optional: true, self: true });
+
+    constructor() {
+        const primeSidebar = this.primeSidebar;
+
         if (primeSidebar) {
             primeSidebar.position = SIDEBAR_PLACEMENT.RIGHT;
             primeSidebar.styleClass = SIDEBAR_SIZES.MD;
