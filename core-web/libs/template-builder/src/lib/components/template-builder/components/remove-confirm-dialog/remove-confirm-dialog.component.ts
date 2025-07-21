@@ -4,7 +4,8 @@ import {
     EventEmitter,
     HostListener,
     Input,
-    Output
+    Output,
+    inject
 } from '@angular/core';
 
 import { ConfirmationService } from 'primeng/api';
@@ -23,15 +24,13 @@ import { DotMessagePipe } from '@dotcms/ui';
     providers: [ConfirmationService, DotMessagePipe]
 })
 export class RemoveConfirmDialogComponent {
+    private confirmationService = inject(ConfirmationService);
+    private dotMessagePipe = inject(DotMessagePipe);
+
     @Input() skipConfirmation: boolean;
     @Output() deleteConfirmed: EventEmitter<void> = new EventEmitter();
     @Output() deleteRejected: EventEmitter<void> = new EventEmitter();
     private currentPopup: ConfirmationService;
-
-    constructor(
-        private confirmationService: ConfirmationService,
-        private dotMessagePipe: DotMessagePipe
-    ) {}
 
     @HostListener('document:keydown.escape', ['$event'])
     onEscapePress() {

@@ -1,4 +1,5 @@
 import { TiptapBubbleMenuDirective } from 'ngx-tiptap';
+import { Placement } from 'tippy.js';
 
 import { CommonModule } from '@angular/common';
 import {
@@ -35,7 +36,6 @@ interface NodeTypeOption {
 }
 
 const BUBBLE_MENU_HIDDEN_NODES = {
-    tableCell: true,
     table: true,
     youtube: true,
     dotVideo: true,
@@ -65,7 +65,7 @@ export class DotBubbleMenuComponent {
     @ViewChild('linkModal') linkModal: DotLinkEditorPopoverComponent;
     @ViewChild('imageModal') imageModal: DotImageEditorPopoverComponent;
 
-    protected readonly editor = input.required<Editor>();
+    readonly editor = input.required<Editor>();
     protected readonly cd = inject(ChangeDetectorRef);
     protected readonly domSanitizer = inject(DomSanitizer);
 
@@ -152,7 +152,7 @@ export class DotBubbleMenuComponent {
     protected readonly tippyOptions = {
         maxWidth: '100%',
         onBeforeUpdate: this.onBeforeUpdate.bind(this),
-        placement: 'top-start',
+        placement: 'top-start' as Placement,
         trigger: 'manual'
     };
 

@@ -28,7 +28,6 @@ import { Link } from '@tiptap/extension-link';
 import Placeholder from '@tiptap/extension-placeholder';
 import { Subscript } from '@tiptap/extension-subscript';
 import { Superscript } from '@tiptap/extension-superscript';
-import { TableRow } from '@tiptap/extension-table-row';
 import { TextAlign } from '@tiptap/extension-text-align';
 import { Underline } from '@tiptap/extension-underline';
 import { Youtube } from '@tiptap/extension-youtube';
@@ -52,11 +51,9 @@ import {
     BubbleFormExtension,
     DotComands,
     DotConfigExtension,
+    DotTableCellContextMenu,
     DotFloatingButton,
-    DotTableCellExtension,
-    DotTableExtension,
-    DotTableHeaderExtension,
-    DragHandler,
+    DotCMSTableExtensions,
     FREEZE_SCROLL_KEY,
     FreezeScroll,
     IndentExtension
@@ -110,11 +107,10 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
     private onTouched: () => void;
     private destroy$: Subject<boolean> = new Subject<boolean>();
     private allowedBlocks: string[] = ['paragraph']; //paragraph should be always.
-    private _customNodes: Map<string, AnyExtension> = new Map([
+    private _customNodes = new Map([
         ['dotContent', ContentletBlock(this.#injector)],
         ['image', ImageNode],
         ['video', VideoNode],
-        ['table', DotTableExtension()],
         ['aiContent', AIContentNode],
         ['loader', LoaderNode]
     ]);
@@ -123,6 +119,10 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
     private isAIPluginInstalled$: Observable<boolean>;
     readonly #dialogService = inject(DialogService);
     readonly #dotMessageService = inject(DotMessageService);
+
+    readonly dotDragHandleOptions = {
+        duration: 250
+    };
 
     constructor(
         private readonly viewContainerRef: ViewContainerRef,
@@ -189,7 +189,8 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
                         ...this.getEditorMarks(),
                         ...this.getEditorNodes(),
                         ...extensions
-                    ]
+                    ],
+                    editable: true
                 });
 
                 this.dotMarketingConfigService.setProperty(
@@ -202,6 +203,10 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
     }
 
     ngOnDestroy() {
+        if (this.editor) {
+            this.editor.destroy();
+        }
+
         this.destroy$.next(true);
         this.destroy$.complete();
     }
@@ -210,6 +215,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
         if (this.disabled) {
             return;
         }
+
         this.valueChange.emit(value);
         this.onChange?.(JSON.stringify(value));
         this.onTouched?.();
@@ -456,13 +462,9 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
             ActionsMenu(this.viewContainerRef, this.getParsedCustomBlocks(), {
                 shouldShowAIExtensions: isAIPluginInstalled
             }),
-            DragHandler(this.viewContainerRef),
             BubbleFormExtension(this.viewContainerRef),
             DotFloatingButton(this.#injector, this.viewContainerRef),
-            DotTableCellExtension(this.viewContainerRef),
             BubbleAssetFormExtension(this.viewContainerRef),
-            DotTableHeaderExtension(),
-            TableRow,
             FreezeScroll,
             CharacterCount,
             AssetUploader(this.#injector, this.viewContainerRef),
@@ -499,7 +501,9 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
                 showOnlyWhenEditable: true,
                 showOnlyCurrent: true,
                 includeChildren: false
-            })
+            }),
+            ...DotCMSTableExtensions,
+            DotTableCellContextMenu(this.viewContainerRef)
         ];
 
         if (isAIPluginInstalled) {

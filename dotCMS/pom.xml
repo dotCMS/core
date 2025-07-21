@@ -229,10 +229,6 @@
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
-            <artifactId>dot.hibernate-validator</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.httpbridge</artifactId>
         </dependency>
         <dependency>
@@ -763,6 +759,10 @@
         <dependency>
             <groupId>javax.validation</groupId>
             <artifactId>validation-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.hibernate</groupId>
+            <artifactId>hibernate-validator</artifactId>
         </dependency>
 
         <dependency>
