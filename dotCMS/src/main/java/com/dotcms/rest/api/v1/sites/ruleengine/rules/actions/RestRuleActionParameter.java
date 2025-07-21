@@ -3,7 +3,7 @@ package com.dotcms.rest.api.v1.sites.ruleengine.rules.actions;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.dotcms.repackage.javax.validation.constraints.NotNull;
+import javax.validation.constraints.NotNull;
 import com.dotcms.rest.api.Validated;
 
 
