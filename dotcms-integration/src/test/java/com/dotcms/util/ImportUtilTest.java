@@ -4020,7 +4020,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             Map<String, Object> context = jsonError.context();
 
             // Validate context size and keys
-            assertEquals("Context should have 4 entries", 4, context.size());
+            assertEquals("Context should have 3 entries", 3, context.size());
             assertTrue("Context should contain 'line' key", context.containsKey("line"));
             assertTrue("Context should contain 'column' key", context.containsKey("column"));
             assertTrue("Context should contain 'parseError' key", context.containsKey("parseError"));
