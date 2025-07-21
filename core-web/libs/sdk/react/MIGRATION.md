@@ -1,6 +1,6 @@
 # Migration Guide: @dotcms/react Alpha to 1.0.X
 
-The 1.0.X version of `@dotcms/react` introduces significant architectural changes that provide better TypeScript support, improved performance, and a more intuitive API. This guide helps you migrate from the alpha version to the 1.0.X version (`latest`) of the `@dotcms/react` SDK.
+This guide helps you migrate from the alpha version to the 1.0.X version (`latest`) of the `@dotcms/react` SDK.
 
 ## Breaking Changes Summary
 
@@ -23,7 +23,7 @@ The 1.0.X version of `@dotcms/react` introduces significant architectural change
 | `useDotCMSShowWhen` | Hook for conditional logic based on UVE mode | `const isEditMode = useDotCMSShowWhen(UVE_MODE.EDIT);` |
 | Improved TypeScript Support | Better type definitions and type safety | `import type { DotCMSPageResponse } from '@dotcms/types';` |
 
-🚨 More information in the [README](./README.md) file.
+🚨 For detail information chech the [README](./README.md) file.
 
 ## Step-by-Step Migration Process
 Before starting, if you are using the `@dotcms/client` library in your React project, please refer to the [client documentation](https://www.npmjs.com/package/@dotcms/client) for more information.
@@ -143,6 +143,10 @@ const { pageAsset } = await client.page.get('/your-page-path', {
     personaId: 'optional-persona-id'
 });
 ```
+
+> [!IMPORTANT]
+> For detail information please refer to the [client documentation](https://www.npmjs.com/package/@dotcms/client) for more information.
+
 
 ## TypeScript Support
 
