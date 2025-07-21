@@ -1,6 +1,6 @@
 import { Observable, BehaviorSubject } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { pluck, filter, map, take } from 'rxjs/operators';
 
@@ -63,6 +63,9 @@ export interface DotTimeZone {
 
 @Injectable()
 export class DotcmsConfigService {
+    private coreWebService = inject(CoreWebService);
+    private loggerService = inject(LoggerService);
+
     private configParamsSubject: BehaviorSubject<ConfigParams> = new BehaviorSubject(null);
     private configUrl: string;
 
@@ -71,10 +74,7 @@ export class DotcmsConfigService {
      *
      * @param configParams - The configuration properties for the current instance.
      */
-    constructor(
-        private coreWebService: CoreWebService,
-        private loggerService: LoggerService
-    ) {
+    constructor() {
         this.configUrl = 'v1/appconfiguration';
         this.loadConfig();
     }

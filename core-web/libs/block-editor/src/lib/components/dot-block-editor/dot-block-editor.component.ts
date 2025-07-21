@@ -28,7 +28,6 @@ import { Link } from '@tiptap/extension-link';
 import Placeholder from '@tiptap/extension-placeholder';
 import { Subscript } from '@tiptap/extension-subscript';
 import { Superscript } from '@tiptap/extension-superscript';
-import { TableRow } from '@tiptap/extension-table-row';
 import { TextAlign } from '@tiptap/extension-text-align';
 import { Underline } from '@tiptap/extension-underline';
 import { Youtube } from '@tiptap/extension-youtube';
@@ -52,10 +51,9 @@ import {
     BubbleFormExtension,
     DotComands,
     DotConfigExtension,
+    DotTableCellContextMenu,
     DotFloatingButton,
-    DotTableCellExtension,
-    DotTableExtension,
-    DotTableHeaderExtension,
+    DotCMSTableExtensions,
     FREEZE_SCROLL_KEY,
     FreezeScroll,
     IndentExtension
@@ -109,11 +107,10 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
     private onTouched: () => void;
     private destroy$: Subject<boolean> = new Subject<boolean>();
     private allowedBlocks: string[] = ['paragraph']; //paragraph should be always.
-    private _customNodes: Map<string, AnyExtension> = new Map([
+    private _customNodes = new Map([
         ['dotContent', ContentletBlock(this.#injector)],
         ['image', ImageNode],
         ['video', VideoNode],
-        ['table', DotTableExtension()],
         ['aiContent', AIContentNode],
         ['loader', LoaderNode]
     ]);
@@ -467,10 +464,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
             }),
             BubbleFormExtension(this.viewContainerRef),
             DotFloatingButton(this.#injector, this.viewContainerRef),
-            DotTableCellExtension(this.viewContainerRef),
             BubbleAssetFormExtension(this.viewContainerRef),
-            DotTableHeaderExtension(),
-            TableRow,
             FreezeScroll,
             CharacterCount,
             AssetUploader(this.#injector, this.viewContainerRef),
@@ -507,7 +501,9 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
                 showOnlyWhenEditable: true,
                 showOnlyCurrent: true,
                 includeChildren: false
-            })
+            }),
+            ...DotCMSTableExtensions,
+            DotTableCellContextMenu(this.viewContainerRef)
         ];
 
         if (isAIPluginInstalled) {

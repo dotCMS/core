@@ -1,7 +1,7 @@
 import { Observable, of } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { catchError, pluck } from 'rxjs/operators';
 
@@ -25,7 +25,7 @@ interface DotCMSResponseExperiment<T> extends DotCMSResponse<T> {
 
 @Injectable()
 export class DotExperimentsService {
-    constructor(private readonly http: HttpClient) {}
+    private readonly http = inject(HttpClient);
 
     /**
      * returns the connection status with the infrastructure of experiments

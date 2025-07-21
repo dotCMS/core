@@ -2,7 +2,7 @@ import { ComponentStore } from '@ngrx/component-store';
 import { tapResponse } from '@ngrx/operators';
 import { Observable, from } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { switchMap, tap } from 'rxjs/operators';
 
@@ -19,6 +19,9 @@ export interface DotBinaryFieldUrlModeState {
 
 @Injectable()
 export class DotBinaryFieldUrlModeStore extends ComponentStore<DotBinaryFieldUrlModeState> {
+    private readonly dotUploadService = inject(DotUploadService);
+    private readonly dotBinaryFieldValidatorService = inject(DotBinaryFieldValidatorService);
+
     private _maxFileSize: number;
     private _accept: string[];
 
@@ -28,10 +31,7 @@ export class DotBinaryFieldUrlModeStore extends ComponentStore<DotBinaryFieldUrl
 
     readonly error$ = this.select(({ error }) => error);
 
-    constructor(
-        private readonly dotUploadService: DotUploadService,
-        private readonly dotBinaryFieldValidatorService: DotBinaryFieldValidatorService
-    ) {
+    constructor() {
         super({
             tempFile: null,
             isLoading: false,

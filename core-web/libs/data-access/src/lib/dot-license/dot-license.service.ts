@@ -1,7 +1,7 @@
 import { Observable, Subject, BehaviorSubject, of } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { pluck, map, take, tap } from 'rxjs/operators';
 
@@ -84,19 +84,16 @@ const enterprisePorlets: DotUnlicensedPortletData[] = [
  */
 @Injectable()
 export class DotLicenseService {
+    private readonly http = inject(HttpClient);
+
     unlicenseData: Subject<DotUnlicensedPortletData> = new BehaviorSubject({
         icon: '',
         titleKey: '',
         url: ''
     });
-    private licenseURL: string;
+    private licenseURL = '/api/v1/appconfiguration';
 
     private license?: DotLicense;
-
-    constructor(private readonly http: HttpClient) {
-        this.licenseURL = '/api/v1/appconfiguration';
-    }
-
     /**
      * Gets if current user has an enterprise license
      *

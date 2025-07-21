@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { map, mergeMap, pluck } from 'rxjs/operators';
 
@@ -11,6 +11,9 @@ import { DotCurrentUserService } from '../dot-current-user/dot-current-user.serv
 
 @Injectable()
 export class AddToBundleService {
+    private coreWebService = inject(CoreWebService);
+    private currentUser = inject(DotCurrentUserService);
+
     private bundleUrl = `api/bundle/getunsendbundles/userid`;
 
     /*
@@ -18,11 +21,6 @@ export class AddToBundleService {
   https://github.com/dotCMS/dotcms-js/blob/master/src/core/core-web.service.ts#L169
 */
     private addToBundleUrl = `/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/addToBundle`;
-
-    constructor(
-        private coreWebService: CoreWebService,
-        private currentUser: DotCurrentUserService
-    ) {}
 
     /**
      * Get bundle items
