@@ -328,13 +328,22 @@ public class LoginServiceAPIFactory implements Serializable {
                     messageLTSVersionEOL(logInUser);
                 }
                 // Run token expiry check with delay to avoid interfering with immediate API calls
-                DotConcurrentFactory.getInstance().getSubmitter().delay(() -> {
+//                DotConcurrentFactory.getInstance().getSubmitter().delay(() -> {
+//                    try {
+//                        messageTokensToExpire(logInUser);
+//                    } catch (Exception e) {
+//                        Logger.error(this, "Error checking token expiry: " + e.getMessage(), e);
+//                    }
+//                }, 3000, java.util.concurrent.TimeUnit.MILLISECONDS);
+
+                new Thread(() -> {
                     try {
-                        messageTokensToExpire(logInUser);
-                    } catch (Exception e) {
-                        Logger.error(this, "Error checking token expiry: " + e.getMessage(), e);
+                        Thread.sleep(3000);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
                     }
-                }, 3000, java.util.concurrent.TimeUnit.MILLISECONDS);
+                    messageTokensToExpire(logInUser);
+                }).start();
             }
 
             if (authResult != Authenticator.SUCCESS) {
