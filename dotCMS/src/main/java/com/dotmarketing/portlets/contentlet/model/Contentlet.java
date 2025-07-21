@@ -1445,7 +1445,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 */
     @JsonIgnore
 	public boolean isCalendarEvent() {
-		return getStructure().getStructureType() == BaseContentType.CONTENT.getType() &&  "Event".equals(getStructure().getName()) ;
+		return getStructure().getStructureType() == BaseContentType.CONTENT.getType() &&  "calendarEvent".equalsIgnoreCase(getStructure().getVelocityVarName()) ;
 	}
 
 	/**
