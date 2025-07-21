@@ -22,15 +22,9 @@ public class DotJsonFieldException extends DotContentletStateException {
         this.parseError = parseError;
     }
 
-    public String getAbbreviatedInvalidJson() {
-        return StringUtils.abbreviate(invalidJson, 200);
-    }
-
     public String getAbbreviatedParseError() {
         return StringUtils.abbreviate(parseError, 200);
     }
-
-    //
     public String getInvalidJson() { return invalidJson; }
     public int getLine() { return line; }
     public int getColumn() { return column; }
@@ -51,8 +45,7 @@ public class DotJsonFieldException extends DotContentletStateException {
         return Map.of(
                 "parseError", getAbbreviatedParseError(),
                 "line", this.line,
-                "column", this.column,
-                "invalidJSON", getAbbreviatedInvalidJson()
+                "column", this.column
         );
     }
 
