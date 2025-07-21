@@ -29,11 +29,11 @@ import com.liferay.util.dao.hibernate.OrderByComparator;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import com.dotcms.repackage.net.sf.hibernate.HibernateException;
-import com.dotcms.repackage.net.sf.hibernate.ObjectNotFoundException;
-import com.dotcms.repackage.net.sf.hibernate.Query;
-import com.dotcms.repackage.net.sf.hibernate.ScrollableResults;
-import com.dotcms.repackage.net.sf.hibernate.Session;
+import org.hibernate.HibernateException;
+import org.hibernate.ObjectNotFoundException;
+import org.hibernate.Query;
+import org.hibernate.ScrollableResults;
+import org.hibernate.Session;
 
 /**
  * <a href="AddressPersistence.java.html"><b><i>View Source</i></b></a>
@@ -203,7 +203,7 @@ public class AddressPersistence extends BasePersistence {
 			query.append("priority ASC");
 
 			Query q = session.createQuery(query.toString());
-			int queryPos = 0;
+			int queryPos = 1;
 			q.setString(queryPos++, companyId);
 
 			Iterator itr = q.list().iterator();
@@ -254,7 +254,7 @@ public class AddressPersistence extends BasePersistence {
 			}
 
 			Query q = session.createQuery(query.toString());
-			int queryPos = 0;
+			int queryPos = 1;
 			q.setString(queryPos++, companyId);
 
 			List list = new ArrayList();
@@ -350,7 +350,7 @@ public class AddressPersistence extends BasePersistence {
 			}
 
 			Query q = session.createQuery(query.toString());
-			int queryPos = 0;
+			int queryPos = 1;
 			q.setString(queryPos++, companyId);
 
 			com.liferay.portal.model.Address[] array = new com.liferay.portal.model.Address[3];
@@ -436,7 +436,7 @@ public class AddressPersistence extends BasePersistence {
 			query.append("priority ASC");
 
 			Query q = session.createQuery(query.toString());
-			int queryPos = 0;
+			int queryPos = 1;
 			q.setString(queryPos++, userId);
 
 			Iterator itr = q.list().iterator();
@@ -487,7 +487,7 @@ public class AddressPersistence extends BasePersistence {
 			}
 
 			Query q = session.createQuery(query.toString());
-			int queryPos = 0;
+			int queryPos = 1;
 			q.setString(queryPos++, userId);
 
 			List list = new ArrayList();
@@ -583,7 +583,7 @@ public class AddressPersistence extends BasePersistence {
 			}
 
 			Query q = session.createQuery(query.toString());
-			int queryPos = 0;
+			int queryPos = 1;
 			q.setString(queryPos++, userId);
 
 			com.liferay.portal.model.Address[] array = new com.liferay.portal.model.Address[3];
@@ -672,7 +672,7 @@ public class AddressPersistence extends BasePersistence {
 			query.append("priority ASC");
 
 			Query q = session.createQuery(query.toString());
-			int queryPos = 0;
+			int queryPos = 1;
 			q.setString(queryPos++, companyId);
 			q.setString(queryPos++, className);
 
@@ -726,7 +726,7 @@ public class AddressPersistence extends BasePersistence {
 			}
 
 			Query q = session.createQuery(query.toString());
-			int queryPos = 0;
+			int queryPos = 1;
 			q.setString(queryPos++, companyId);
 			q.setString(queryPos++, className);
 
@@ -825,7 +825,7 @@ public class AddressPersistence extends BasePersistence {
 			}
 
 			Query q = session.createQuery(query.toString());
-			int queryPos = 0;
+			int queryPos = 1;
 			q.setString(queryPos++, companyId);
 			q.setString(queryPos++, className);
 
@@ -917,7 +917,7 @@ public class AddressPersistence extends BasePersistence {
 			query.append("priority ASC");
 
 			Query q = session.createQuery(query.toString());
-			int queryPos = 0;
+			int queryPos = 1;
 			q.setString(queryPos++, companyId);
 			q.setString(queryPos++, className);
 			q.setString(queryPos++, classPK);
@@ -975,7 +975,7 @@ public class AddressPersistence extends BasePersistence {
 			}
 
 			Query q = session.createQuery(query.toString());
-			int queryPos = 0;
+			int queryPos = 1;
 			q.setString(queryPos++, companyId);
 			q.setString(queryPos++, className);
 			q.setString(queryPos++, classPK);
@@ -1078,7 +1078,7 @@ public class AddressPersistence extends BasePersistence {
 			}
 
 			Query q = session.createQuery(query.toString());
-			int queryPos = 0;
+			int queryPos = 1;
 			q.setString(queryPos++, companyId);
 			q.setString(queryPos++, className);
 			q.setString(queryPos++, classPK);
@@ -1163,7 +1163,7 @@ public class AddressPersistence extends BasePersistence {
 			query.append("classPK ASC").append(", ");
 			query.append("priority ASC");
 
-			Iterator itr = session.find(query.toString()).iterator();
+			Iterator itr = session.createQuery(query.toString()).list().iterator();
 			List list = new ArrayList();
 
 			while (itr.hasNext()) {
@@ -1200,7 +1200,7 @@ public class AddressPersistence extends BasePersistence {
 			query.append("priority ASC");
 
 			Query q = session.createQuery(query.toString());
-			int queryPos = 0;
+			int queryPos = 1;
 			q.setString(queryPos++, companyId);
 
 			Iterator itr = q.list().iterator();
@@ -1239,7 +1239,7 @@ public class AddressPersistence extends BasePersistence {
 			query.append("priority ASC");
 
 			Query q = session.createQuery(query.toString());
-			int queryPos = 0;
+			int queryPos = 1;
 			q.setString(queryPos++, userId);
 
 			Iterator itr = q.list().iterator();
@@ -1281,7 +1281,7 @@ public class AddressPersistence extends BasePersistence {
 			query.append("priority ASC");
 
 			Query q = session.createQuery(query.toString());
-			int queryPos = 0;
+			int queryPos = 1;
 			q.setString(queryPos++, companyId);
 			q.setString(queryPos++, className);
 
@@ -1326,7 +1326,7 @@ public class AddressPersistence extends BasePersistence {
 			query.append("priority ASC");
 
 			Query q = session.createQuery(query.toString());
-			int queryPos = 0;
+			int queryPos = 1;
 			q.setString(queryPos++, companyId);
 			q.setString(queryPos++, className);
 			q.setString(queryPos++, classPK);
@@ -1363,13 +1363,13 @@ public class AddressPersistence extends BasePersistence {
 			query.append(" ");
 
 			Query q = session.createQuery(query.toString());
-			int queryPos = 0;
+			int queryPos = 1;
 			q.setString(queryPos++, companyId);
 
 			Iterator itr = q.list().iterator();
 
 			if (itr.hasNext()) {
-				Integer count = (Integer)itr.next();
+				Number count = (Number)itr.next();
 
 				if (count != null) {
 					return count.intValue();
@@ -1400,13 +1400,13 @@ public class AddressPersistence extends BasePersistence {
 			query.append(" ");
 
 			Query q = session.createQuery(query.toString());
-			int queryPos = 0;
+			int queryPos = 1;
 			q.setString(queryPos++, userId);
 
 			Iterator itr = q.list().iterator();
 
 			if (itr.hasNext()) {
-				Integer count = (Integer)itr.next();
+				Number count = (Number)itr.next();
 
 				if (count != null) {
 					return count.intValue();
@@ -1440,14 +1440,14 @@ public class AddressPersistence extends BasePersistence {
 			query.append(" ");
 
 			Query q = session.createQuery(query.toString());
-			int queryPos = 0;
+			int queryPos = 1;
 			q.setString(queryPos++, companyId);
 			q.setString(queryPos++, className);
 
 			Iterator itr = q.list().iterator();
 
 			if (itr.hasNext()) {
-				Integer count = (Integer)itr.next();
+				Number count = (Number)itr.next();
 
 				if (count != null) {
 					return count.intValue();
@@ -1483,7 +1483,7 @@ public class AddressPersistence extends BasePersistence {
 			query.append(" ");
 
 			Query q = session.createQuery(query.toString());
-			int queryPos = 0;
+			int queryPos = 1;
 			q.setString(queryPos++, companyId);
 			q.setString(queryPos++, className);
 			q.setString(queryPos++, classPK);
@@ -1491,7 +1491,7 @@ public class AddressPersistence extends BasePersistence {
 			Iterator itr = q.list().iterator();
 
 			if (itr.hasNext()) {
-				Integer count = (Integer)itr.next();
+				Number count = (Number)itr.next();
 
 				if (count != null) {
 					return count.intValue();

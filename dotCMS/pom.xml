@@ -222,15 +222,20 @@
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.guava</artifactId>
         </dependency>
+        <!-- Modern Hibernate 5.6.15 (last javax-compatible version) -->
         <dependency>
-            <groupId>com.dotcms.lib</groupId>
-            <artifactId>dot.hibernate</artifactId>
-            <scope>compile</scope>
+            <groupId>org.hibernate</groupId>
+            <artifactId>hibernate-core</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.dotcms.lib</groupId>
-            <artifactId>dot.hibernate-validator</artifactId>
+            <groupId>org.hibernate</groupId>
+            <artifactId>hibernate-java8</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.hibernate</groupId>
+            <artifactId>hibernate-ehcache</artifactId>
+        </dependency>
+        <!-- Keep repackaged hibernate for gradual migration -->
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.httpbridge</artifactId>
@@ -261,10 +266,6 @@
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.jazzy-core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.dotcms.lib</groupId>
-            <artifactId>dot.jboss-logging</artifactId>
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
@@ -763,6 +764,10 @@
         <dependency>
             <groupId>javax.validation</groupId>
             <artifactId>validation-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.hibernate.validator</groupId>
+            <artifactId>hibernate-validator</artifactId>
         </dependency>
 
         <dependency>
@@ -1399,9 +1404,15 @@
 
         <!-- Weld CDI -->
 
+        <!-- Explicit JBoss logging dependency to ensure correct version loads before shaded versions -->
+        <dependency>
+            <groupId>org.jboss.logging</groupId>
+            <artifactId>jboss-logging</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>org.jboss.weld.servlet</groupId>
-            <artifactId>weld-servlet-shaded</artifactId>
+            <artifactId>weld-servlet-core</artifactId>
             <version>3.1.9.Final</version>
         </dependency>
 
@@ -1416,11 +1427,6 @@
             <artifactId>jersey-cdi1x-servlet</artifactId>
         </dependency>
 
-        <dependency>
-            <groupId>org.glassfish.hk2.external</groupId>
-            <artifactId>bean-validator</artifactId>
-            <version>2.5.0-b06</version>
-        </dependency>
 
         <dependency>
             <groupId>org.glassfish.hk2</groupId>

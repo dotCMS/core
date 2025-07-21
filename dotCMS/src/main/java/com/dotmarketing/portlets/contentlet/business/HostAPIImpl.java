@@ -836,7 +836,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
         if(!workingHostName.equals(updatedHostName)) {
             HibernateUtil dh = new HibernateUtil(Link.class);
             List<Link> resultList = new ArrayList<>();
-            dh.setQuery("select asset from asset in class " + Link.class.getName() + " where asset.url like ?");
+            dh.setQuery("select asset from asset in class " + Link.class.getName() + " where asset.url like ?1");
             dh.setParam(workingHostName+"/%");
             resultList = dh.list();
             for(Link link : resultList){

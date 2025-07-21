@@ -107,7 +107,7 @@ public class PluginFactoryDBImpl extends PluginFactory {
 			return pluginProp;
 		}
 		HibernateUtil hu = new HibernateUtil(PluginProperty.class);
-		hu.setQuery("from PluginProperty where plugin_id = ? and propkey = ?");
+		hu.setQuery("from PluginProperty where plugin_id = ?1 and propkey = ?2");
 		hu.setParam(pluginId);
 		hu.setParam(key);
 		pluginProp = (PluginProperty)hu.load();

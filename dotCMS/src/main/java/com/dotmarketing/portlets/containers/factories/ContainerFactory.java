@@ -68,7 +68,7 @@ public class ContainerFactory {
         HibernateUtil dh = new HibernateUtil(Container.class);
         List<Container> list = null ;
         try {
-			dh.setQuery("from inode in class com.dotmarketing.portlets.containers.model.Container where type='containers' and friendly_name = ?");
+			dh.setQuery("from inode in class com.dotmarketing.portlets.containers.model.Container where type='containers' and friendly_name = ?1");
 			dh.setParam(friendlyName);
 			list = (java.util.List) dh.list();
 		} catch (DotHibernateException e) {
@@ -81,7 +81,7 @@ public class ContainerFactory {
         HibernateUtil dh = new HibernateUtil(Container.class);
         Container container = null ;
         try {
-			dh.setQuery("from inode in class com.dotmarketing.portlets.containers.model.Container where type='containers' and friendly_name = ? and live=" + com.dotmarketing.db.DbConnectionFactory.getDBTrue());
+			dh.setQuery("from inode in class com.dotmarketing.portlets.containers.model.Container where type='containers' and friendly_name = ?1 and live=" + com.dotmarketing.db.DbConnectionFactory.getDBTrue());
 			dh.setParam(friendlyName);
 			container = (Container) dh.load();
 		} catch (DotHibernateException e) {

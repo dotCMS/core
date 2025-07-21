@@ -15,7 +15,7 @@ import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.notifications.business.NotificationAPI;
-import com.dotcms.repackage.net.sf.hibernate.ObjectNotFoundException;
+import org.hibernate.ObjectNotFoundException;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.system.SimpleMapAppContext;
 import com.dotcms.util.CollectionsUtils;

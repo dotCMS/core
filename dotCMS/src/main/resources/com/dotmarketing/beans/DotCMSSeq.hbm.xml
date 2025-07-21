@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 2.0//EN" "http://hibernate.sourceforge.net/hibernate-mapping-2.0.dtd">
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN" "http://www.hibernate.org/dtd/hibernate-mapping-3.0.dtd">
 <hibernate-mapping>
 
 	<class name="com.dotmarketing.beans.Inode" table="inode">
@@ -26,7 +26,7 @@
 			<property column="show_on_menu" name="showOnMenu" type="boolean" />
 			<property column="title" length="255" name="title" type="string" />
 			<property column="mod_date" length="23" name="modDate" type="java.util.Date" />
-			<property column="mod_user" name="modUser" length="100" type="string">
+			<property name="modUser" length="100" type="string">
 				<column name="mod_user" index="idx_container_1" />
 			</property>
 			<property column="sort_order" length="4" name="sortOrder" type="integer" />
@@ -46,7 +46,7 @@
 			<property column="show_on_menu" name="showOnMenu" type="boolean" />
 			<property column="title" length="255" name="title" type="string" />
 			<property column="mod_date" length="23" name="modDate" type="java.util.Date" />
-			<property column="mod_user" name="modUser" length="100" type="string">
+			<property name="modUser" length="100" type="string">
 				<column name="mod_user" index="idx_links_1" />
 			</property>
 			<property column="sort_order" length="4" name="sortOrder" type="integer" />
@@ -157,10 +157,10 @@
 
 	<class name="com.dotmarketing.beans.Permission" table="permission">
 		<id name="id" column="id" type="long" unsaved-value="0">
-			<generator class="sequence">
+			<generator class="native">
 				<param name="sequence">permission_seq</param>
 			</generator>
-			<!-- generator class="native"/ -->
+			<!-- generator class="sequence"/ -->
 		</id>
 		<property name="type" type="string" not-null="true">
 			<column name="permission_type" length="500" unique-key="idx_permission_1" index="idx_permission_2"/>
@@ -178,7 +178,7 @@
 
 	<class name="com.dotmarketing.beans.PermissionReference" table="permission_reference">
 		<id name="id" column="id" type="long" unsaved-value="0">
-			<generator class="sequence">
+			<generator class="native">
 				<param name="sequence">permission_reference_seq</param>
 			</generator>
 		</id>
@@ -219,10 +219,10 @@
 
 	<class name="com.dotmarketing.beans.Clickstream" table="clickstream">
 		<id name="clickstreamId" column="clickstream_id" type="long" unsaved-value="0">
-			<generator class="sequence">
+			<generator class="native">
 				<param name="sequence">clickstream_seq</param>
 			</generator>
-			<!-- generator class="native"/ -->
+			<!-- generator class="sequence"/ -->
 		</id>
 		<property name="cookieId" type="string">
 			<column name="cookie_id" length="255" index="idx_user_clickstream_1" />
@@ -267,10 +267,10 @@
 
 	<class name="com.dotmarketing.beans.ClickstreamRequest" table="clickstream_request">
 		<id name="clickstreamRequestId" column="clickstream_request_id" type="long" unsaved-value="0">
-			<generator class="sequence">
+			<generator class="native">
 				<param name="sequence">clickstream_request_seq</param>
 			</generator>
-			<!-- generator class="native"/ -->
+			<!-- generator class="sequence"/ -->
 		</id>
 		<property name="clickstreamId" type="long">
 			<column name="clickstream_id" index="idx_user_clickstream_request_1" />
@@ -296,10 +296,10 @@
 
 	<class name="com.dotmarketing.beans.Clickstream404" table="clickstream_404">
 		<id name="clickstream404Id" column="clickstream_404_id" type="long" unsaved-value="0">
-			<generator class="sequence">
+			<generator class="native">
 				<param name="sequence">clickstream_404_seq</param>
 			</generator>
-			<!-- generator class="native"/ -->
+			<!-- generator class="sequence"/ -->
 		</id>
         <property column="referer_uri" name="refererURI" length="255" type="string" />
         <property column="query_string" name="queryString" length="123456789" type="string" />
@@ -344,8 +344,8 @@
 	</class>
 	<class name="com.dotmarketing.beans.UsersToDelete" table="users_to_delete">
 		<id name="id" column="id" type="long">
-			<!-- generator class="native"/ -->
-			<generator class="sequence">
+			<!-- generator class="sequence"/ -->
+			<generator class="native">
 				<param name="sequence">user_to_delete_seq</param>
 			</generator>
 		</id>

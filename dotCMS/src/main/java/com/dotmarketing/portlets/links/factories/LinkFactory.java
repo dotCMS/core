@@ -68,7 +68,7 @@ public class LinkFactory {
         List<Link> list =null;
         try {
 			dh.setQuery(
-			    "from inode in class com.dotmarketing.portlets.links.model.Link where ? in inode.parents.elements order by sort_order");
+			    "from inode in class com.dotmarketing.portlets.links.model.Link where ?1 in inode.parents.elements order by sort_order");
 			dh.setParam(i.getInode());
 			list = dh.list();
 		} catch (DotHibernateException e) {
@@ -95,7 +95,7 @@ public class LinkFactory {
         List<Link> list=null ;
         try {
 			dh.setQuery(
-			    "from inode in class com.dotmarketing.portlets.links.model.Link where ? in inode.parents.elements and working = " + com.dotmarketing.db.DbConnectionFactory.getDBTrue() + " or live = " + com.dotmarketing.db.DbConnectionFactory.getDBTrue() + " order by " + orderby);
+			    "from inode in class com.dotmarketing.portlets.links.model.Link where ?1 in inode.parents.elements and working = " + com.dotmarketing.db.DbConnectionFactory.getDBTrue() + " or live = " + com.dotmarketing.db.DbConnectionFactory.getDBTrue() + " order by " + orderby);
 			dh.setParam(o.getInode());
 			list = dh.list();
 		} catch (DotHibernateException e) {
@@ -156,7 +156,7 @@ public class LinkFactory {
     public static java.util.List getLinkChildren(Inode o) {
         try {
             HibernateUtil dh = new HibernateUtil(Link.class);
-            dh.setQuery("from inode in class com.dotmarketing.portlets.links.model.Link where ? in inode.parents.elements order by inode, sort_order");
+            dh.setQuery("from inode in class com.dotmarketing.portlets.links.model.Link where ?1 in inode.parents.elements order by inode, sort_order");
             dh.setParam(o.getInode());
 
             return dh.list();
@@ -170,7 +170,7 @@ public class LinkFactory {
 	public static Link getLinkByLiveAndFolderAndTitle(Inode parent , String title) {
 		try {
 			HibernateUtil dh = new HibernateUtil(Link.class);
-			dh.setQuery("from inode in class com.dotmarketing.portlets.links.model.Link where ? in inode.parents.elements and title =  ? and live = " + com.dotmarketing.db.DbConnectionFactory.getDBTrue());
+			dh.setQuery("from inode in class com.dotmarketing.portlets.links.model.Link where ?1 in inode.parents.elements and title =  ?2 and live = " + com.dotmarketing.db.DbConnectionFactory.getDBTrue());
 			dh.setParam(parent.getInode());
 			dh.setParam(title);
 			return (Link) dh.load();
@@ -185,7 +185,7 @@ public class LinkFactory {
         HibernateUtil dh = new HibernateUtil(Link.class);
         Link link =null;
         try {
-			dh.setQuery("from inode in class com.dotmarketing.portlets.links.model.Link where friendly_name = ? and type='links' and live=" + com.dotmarketing.db.DbConnectionFactory.getDBTrue());
+			dh.setQuery("from inode in class com.dotmarketing.portlets.links.model.Link where friendly_name = ?1 and type='links' and live=" + com.dotmarketing.db.DbConnectionFactory.getDBTrue());
 			dh.setParam(friendlyName);
 			link = (Link) dh.load();
 		} catch (DotHibernateException e) {

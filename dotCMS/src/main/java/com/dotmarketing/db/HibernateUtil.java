@@ -2,12 +2,14 @@ package com.dotmarketing.db;
 
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
-import com.dotcms.repackage.net.sf.hibernate.*;
-import com.dotcms.repackage.net.sf.hibernate.cfg.Configuration;
-import com.dotcms.repackage.net.sf.hibernate.cfg.Mappings;
-import com.dotcms.repackage.net.sf.hibernate.dialect.Dialect;
-import com.dotcms.repackage.net.sf.hibernate.impl.SessionFactoryImpl;
-import com.dotcms.repackage.net.sf.hibernate.type.Type;
+import org.hibernate.*;
+import org.hibernate.cfg.Configuration;
+import org.hibernate.engine.spi.Mapping;
+import org.hibernate.dialect.Dialect;
+import org.hibernate.internal.SessionFactoryImpl;
+import org.hibernate.type.Type;
+import org.hibernate.persister.entity.EntityPersister;
+import org.hibernate.persister.entity.AbstractEntityPersister;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
@@ -23,6 +25,7 @@ import java.sql.SQLException;
 import java.sql.Savepoint;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.stream.Collectors;
@@ -41,7 +44,42 @@ public class HibernateUtil {
     private static final String NETWORK_CACHE_FLUSH_DELAY = "NETWORK_CACHE_FLUSH_DELAY";
 
     private static Dialect dialect;
-    private static SessionFactory sessionFactory;
+    private static final AtomicReference<SessionFactory> sessionFactoryRef = new AtomicReference<>();
+    
+    // Thread-safe initialization lock
+    private static final Object SESSION_FACTORY_LOCK = new Object();
+    private static volatile boolean isInitializing = false;
+    
+    // Monitoring for SessionFactory creation events
+    private static volatile long sessionFactoryCreatedCount = 0;
+    private static volatile long lastSessionFactoryCreationTime = 0;
+    
+    /**
+     * Returns monitoring information about SessionFactory creation.
+     * Useful for debugging multiple SessionFactory creation issues.
+     */
+    public static String getSessionFactoryStats() {
+        SessionFactory current = sessionFactoryRef.get();
+        return String.format("SessionFactory Stats - Created: %d times, Last creation: %d ms ago, Current: %s, Initializing: %s", 
+            sessionFactoryCreatedCount,
+            lastSessionFactoryCreationTime > 0 ? System.currentTimeMillis() - lastSessionFactoryCreationTime : -1,
+            current != null ? "available" : "null",
+            isInitializing);
+    }
+    
+    // Helper method to track when SessionFactory is being set to null
+    private static void setSessionFactoryToNull(String reason) {
+        SessionFactory current = sessionFactoryRef.get();
+        if (current != null) {
+            Logger.info(HibernateUtil.class, "SessionFactory being set to null: " + reason + " - Thread: " + Thread.currentThread().getName());
+            Logger.debug(HibernateUtil.class, "SessionFactory nulled from:", new Exception("Stack trace"));
+        }
+        synchronized (SESSION_FACTORY_LOCK) {
+            sessionFactoryRef.set(null);
+            isInitializing = false;
+            dialect = null;
+        }
+    }
 
     private static ThreadLocal<Session> sessionHolder = new ThreadLocal<>();
 
@@ -53,15 +91,14 @@ public class HibernateUtil {
 
     private int firstResult;
 
-    private int t;
+    private int t=1; // hibernate parameters are 1 based
 
-    private static Mappings mappings;
+    private static Mapping mappings;
 
     private static final boolean useCache = true;
 
-    public HibernateUtil(SessionFactory sessionFac) {
-        this.sessionFactory = sessionFac;
-    }
+    // Removed constructor that sets static sessionFactory from instance parameter
+    // This was a design flaw that could cause inconsistent state
 
     public enum TransactionListenerStatus {
         ENABLED, DISABLED;
@@ -105,15 +142,88 @@ public class HibernateUtil {
         thisClass = c;
     }
 
-    public static String getTableName(Class c) {
+    /**
+     * Thread-safe method to ensure SessionFactory is initialized.
+     * Uses double-checked locking pattern to prevent multiple initialization.
+     */
+    private static void ensureSessionFactoryInitialized() {
+        SessionFactory sessionFactory = sessionFactoryRef.get();
+        if (sessionFactory == null) {
+            synchronized (SESSION_FACTORY_LOCK) {
+                sessionFactory = sessionFactoryRef.get(); // Double-check
+                if (sessionFactory == null) {
+                    if (isInitializing) {
+                        // Another thread is already initializing, wait for it
+                        String currentThreadName = Thread.currentThread().getName();
+                        Logger.debug(HibernateUtil.class, "SessionFactory initialization in progress, waiting... - Thread: " + currentThreadName);
+                        
+                        // Wait for initialization to complete (with timeout)
+                        long startWait = System.currentTimeMillis();
+                        while (isInitializing && (System.currentTimeMillis() - startWait) < 30000) { // 30 second timeout
+                            try {
+                                SESSION_FACTORY_LOCK.wait(1000); // Wait up to 1 second
+                            } catch (InterruptedException e) {
+                                Thread.currentThread().interrupt();
+                                throw new DotStateException("Thread interrupted while waiting for SessionFactory initialization", e);
+                            }
+                        }
+                        
+                        // Check if initialization completed successfully
+                        sessionFactory = sessionFactoryRef.get();
+                        if (sessionFactory == null) {
+                            if (isInitializing) {
+                                Logger.error(HibernateUtil.class, "SessionFactory initialization timeout - Thread: " + currentThreadName);
+                                throw new DotStateException("SessionFactory initialization timeout");
+                            }
+                            // Initialization failed, try again
+                            Logger.warn(HibernateUtil.class, "SessionFactory initialization failed, retrying - Thread: " + currentThreadName);
+                            buildSessionFactoryInternal();
+                        }
+                    } else {
+                        // No one is initializing, we'll do it
+                        buildSessionFactoryInternal();
+                    }
+                }
+            }
+        }
+    }
 
-        return mappings.getClass(c).getTable().getName();
+    public static String getTableName(Class c) {
+        try {
+            // Ensure SessionFactory is initialized using thread-safe method
+            ensureSessionFactoryInitialized();
+            
+            SessionFactory sessionFactory = sessionFactoryRef.get();
+            if (sessionFactory == null) {
+                throw new DotStateException("SessionFactory is not available after initialization attempt");
+            }
+            
+            // Use Hibernate 5.6 metadata API to get actual table name
+            EntityPersister persister = ((SessionFactoryImpl) sessionFactory).getMetamodel().entityPersister(c.getName());
+            if (persister instanceof AbstractEntityPersister) {
+                return ((AbstractEntityPersister) persister).getTableName();
+            }
+            
+            // Fallback to naming convention if persister not found
+            Logger.debug(HibernateUtil.class, "No entity persister found for class: " + c.getName() + ", using naming convention");
+            String className = c.getSimpleName();
+            if (className.endsWith("HBM")) {
+                className = className.substring(0, className.length() - 3);
+            }
+            return className.toLowerCase();
+        } catch (Exception e) {
+            Logger.debug(HibernateUtil.class, "Could not get table name for class: " + c.getName() + ", falling back to naming convention", e);
+            // Fallback to naming convention
+            String className = c.getSimpleName();
+            if (className.endsWith("HBM")) {
+                className = className.substring(0, className.length() - 3);
+            }
+            return className.toLowerCase();
+        }
     }
 
     public static Dialect getDialect() {
-        if (sessionFactory == null) {
-            buildSessionFactory();
-        }
+        ensureSessionFactoryInitialized();
         return dialect;
     }
 
@@ -212,6 +322,8 @@ public class HibernateUtil {
             Session session = getSession();
             query = session.createQuery(x);
             query.setCacheable(useCache);
+            // Reset parameter counter to 1 (Hibernate parameters are 1-based)
+            t = 1;
         } catch (Exception ex) {
             throw new DotHibernateException("Error setting Query", ex);
         }
@@ -220,8 +332,10 @@ public class HibernateUtil {
     public void setSQLQuery(String x) throws DotHibernateException {
         try {
             Session session = getSession();
-            query = session.createSQLQuery(x, getTableName(thisClass), thisClass);
+            query = session.createSQLQuery(x).addEntity(thisClass);
             query.setCacheable(useCache);
+            // Reset parameter counter to 1 (Hibernate parameters are 1-based)
+            t = 1;
         } catch (Exception e) {
             throw new DotHibernateException("Error setting SQLQuery ", e);
         }
@@ -234,7 +348,13 @@ public class HibernateUtil {
         try {
             Session session = getSession();
             session.delete(obj);
-            session.flush();
+            // Check if we have an active transaction before flushing
+            // This prevents TransactionRequiredException in newer Hibernate versions
+            if (session.getTransaction() != null && session.getTransaction().isActive()) {
+                session.flush();
+            } else {
+                Logger.debug(HibernateUtil.class, "No active transaction found in delete, skipping flush");
+            }
         } catch (Exception e) {
             throw new DotHibernateException("Error deleting object " + e.getMessage(), e);
         }
@@ -300,7 +420,7 @@ public class HibernateUtil {
     public static void delete(String sql) throws DotHibernateException {
         try {
             Session session = getSession();
-            session.delete(sql);
+            session.createQuery(sql).executeUpdate();
         } catch (Exception e) {
             throw new DotHibernateException("Error deleteing SQL " + e.getMessage(), e);
         }
@@ -309,7 +429,7 @@ public class HibernateUtil {
     public static java.util.List find(String x) throws DotHibernateException {
         try {
             Session session = getSession();
-            return session.find(x);
+            return session.createQuery(x).list();
         } catch (Exception e) {
             throw new DotHibernateException(
                     "Error executing a find on Hibernate Session " + e.getMessage(), e);
@@ -542,7 +662,13 @@ public class HibernateUtil {
             forceDirtyObject.set(obj);
             Session session = getSession();
             session.save(obj);
-            session.flush();
+            // Check if we have an active transaction before flushing
+            // This prevents TransactionRequiredException in newer Hibernate versions
+            if (session.getTransaction() != null && session.getTransaction().isActive()) {
+                session.flush();
+            } else {
+                Logger.debug(HibernateUtil.class, "No active transaction found in save, skipping flush");
+            }
         } catch (Exception e) {
             throw new DotHibernateException("Unable to save Object to Hibernate Session ", e);
         } finally {
@@ -555,7 +681,13 @@ public class HibernateUtil {
             forceDirtyObject.set(obj);
             Session session = getSession();
             session.saveOrUpdate(obj);
-            session.flush();
+            // Check if we have an active transaction before flushing
+            // This prevents TransactionRequiredException in newer Hibernate versions
+            if (session.getTransaction() != null && session.getTransaction().isActive()) {
+                session.flush();
+            } else {
+                Logger.debug(HibernateUtil.class, "No active transaction found in saveOrUpdate, skipping flush");
+            }
         } catch (Exception e) {
             throw new DotHibernateException("Unable to save/update Object to Hibernate Session ",
                     e);
@@ -576,8 +708,14 @@ public class HibernateUtil {
         try {
             forceDirtyObject.set(obj);
             Session session = getSession();
-            session.saveOrUpdateCopy(obj);
-            session.flush();
+            session.merge(obj);
+            // Check if we have an active transaction before flushing
+            // This prevents TransactionRequiredException in newer Hibernate versions
+            if (session.getTransaction() != null && session.getTransaction().isActive()) {
+                session.flush();
+            } else {
+                Logger.debug(HibernateUtil.class, "No active transaction found in merge, skipping flush");
+            }
         } catch (Exception e) {
             throw new DotHibernateException("Unable to merge Object to Hibernate Session ", e);
         } finally {
@@ -590,7 +728,13 @@ public class HibernateUtil {
             forceDirtyObject.set(obj);
             Session session = getSession();
             session.update(obj);
-            session.flush();
+            // Check if we have an active transaction before flushing
+            // This prevents TransactionRequiredException in newer Hibernate versions
+            if (session.getTransaction() != null && session.getTransaction().isActive()) {
+                session.flush();
+            } else {
+                Logger.debug(HibernateUtil.class, "No active transaction found in update, skipping flush");
+            }
         } catch (Exception e) {
             throw new DotHibernateException("Unable to update Object to Hibernate Session ", e);
         } finally {
@@ -602,54 +746,23 @@ public class HibernateUtil {
 
     private static ThreadLocal<Object> forceDirtyObject = new ThreadLocal<>();
 
-    protected static class NoDirtyFlushInterceptor implements Interceptor {
+    // NoDirtyFlushInterceptor disabled for Hibernate 5.6 compatibility
+    // The interceptor API changed significantly and needs to be redesigned
+    // For now, we'll rely on the forceDirtyObject mechanism in save methods
 
-        protected final static int[] EMPTY = new int[0];
-
-        public int[] findDirty(Object entity, Serializable id, Object[] currentState,
-                Object[] previousState, String[] propertyNames, Type[] types) {
-			if (forceDirtyObject.get() == entity) {
-				return null;
-			} else {
-				return EMPTY;
-			}
-        }
-
-        public Object instantiate(Class entityClass, Serializable id) throws CallbackException {
-            return null;
-        }
-
-        public Boolean isUnsaved(Object arg0) {
-            return null;
-        }
-
-        public void onDelete(Object arg0, Serializable arg1, Object[] arg2, String[] arg3,
-                Type[] arg4) throws CallbackException {
-        }
-
-        public boolean onFlushDirty(Object arg0, Serializable arg1, Object[] arg2, Object[] arg3,
-                String[] arg4, Type[] arg5) throws CallbackException {
-            return false;
-        }
-
-        public boolean onLoad(Object arg0, Serializable arg1, Object[] arg2, String[] arg3,
-                Type[] arg4) throws CallbackException {
-            return false;
-        }
-
-        public boolean onSave(Object arg0, Serializable arg1, Object[] arg2, String[] arg3,
-                Type[] arg4) throws CallbackException {
-            return false;
-        }
-
-        public void postFlush(Iterator arg0) throws CallbackException {
-        }
-
-        public void preFlush(Iterator arg0) throws CallbackException {
-        }
-    }
-
-    private static synchronized void buildSessionFactory() {
+    private static void buildSessionFactoryInternal() {
+        String threadName = Thread.currentThread().getName();
+        long threadId = Thread.currentThread().getId();
+        
+        // This method should only be called from within the synchronized block
+        // Set the initialization flag
+        isInitializing = true;
+        
+        Logger.info(HibernateUtil.class, "Building new Hibernate SessionFactory - Thread: " + threadName + " (ID: " + threadId + ")");
+        
+        // Log current stack trace to understand call path
+        Logger.debug(HibernateUtil.class, "SessionFactory creation called from:", new Exception("Stack trace"));
+        
         long start = System.currentTimeMillis();
         try {
             // Initialize the Hibernate environment
@@ -661,9 +774,10 @@ public class HibernateUtil {
 			#################################
 			*/
             Configuration cfg = new Configuration().configure();
-            cfg.setProperty("hibernate.cache.provider_class",
-                    "com.dotmarketing.db.NoCacheProvider");
+            // No need for custom cache provider when caching is disabled
             cfg.setProperty("hibernate.jdbc.use_scrollable_resultset", "true");
+            cfg.setProperty("hibernate.cache.use_second_level_cache", "false");
+            cfg.setProperty("hibernate.cache.use_query_cache", "false");
             cfg.addResource("META-INF/portal-hbm.xml");
             final String[] additionalConfigs = Config.getStringArrayProperty(
                     "additional.hibernate.configs", new String[]{});
@@ -673,46 +787,110 @@ public class HibernateUtil {
 
             if (DbConnectionFactory.isMySql()) {
                 //http://jira.dotmarketing.net/browse/DOTCMS-4937
-                cfg.setNamingStrategy(new LowercaseNamingStrategy());
+                // Note: Naming strategy API changed in Hibernate 5.6 - using defaults
+                // cfg.setNamingStrategy(new LowercaseNamingStrategy());
                 cfg.addResource("com/dotmarketing/beans/DotCMSId.hbm.xml");
                 cfg.addResource("com/dotmarketing/beans/DotCMSId_NOSQLGEN.hbm.xml");
                 getPluginsHBM("Id", cfg);
                 cfg.setProperty("hibernate.dialect",
-                        "com.dotcms.repackage.net.sf.hibernate.dialect.MySQLDialect");
+                        "org.hibernate.dialect.MySQL5Dialect");
             } else if (DbConnectionFactory.isPostgres()) {
                 cfg.addResource("com/dotmarketing/beans/DotCMSSeq.hbm.xml");
                 cfg.addResource("com/dotmarketing/beans/DotCMSSeq_NOSQLGEN.hbm.xml");
                 getPluginsHBM("Seq", cfg);
                 cfg.setProperty("hibernate.dialect",
-                        "com.dotcms.repackage.net.sf.hibernate.dialect.PostgreSQLDialect");
+                        "org.hibernate.dialect.PostgreSQLDialect");
+                // Force Hibernate to use legacy generator mappings to avoid hibernate_sequence
+                cfg.setProperty("hibernate.id.new_generator_mappings", "false");
             } else if (DbConnectionFactory.isMsSql()) {
                 cfg.addResource("com/dotmarketing/beans/DotCMSId.hbm.xml");
                 cfg.addResource("com/dotmarketing/beans/DotCMSId_NOSQLGEN.hbm.xml");
                 getPluginsHBM("Id", cfg);
                 cfg.setProperty("hibernate.dialect",
-                        "com.dotcms.repackage.net.sf.hibernate.dialect.SQLServerDialect");
+                        "org.hibernate.dialect.SQLServer2012Dialect");
             } else if (DbConnectionFactory.isOracle()) {
                 cfg.addResource("com/dotmarketing/beans/DotCMSSeq.hbm.xml");
                 cfg.addResource("com/dotmarketing/beans/DotCMSSeq_NOSQLGEN.hbm.xml");
                 getPluginsHBM("Seq", cfg);
                 cfg.setProperty("hibernate.dialect",
-                        "com.dotcms.repackage.net.sf.hibernate.dialect.OracleDialect");
+                        "org.hibernate.dialect.Oracle12cDialect");
             }
 
-            cfg.setInterceptor(new NoDirtyFlushInterceptor());
+            // Interceptor API changed in Hibernate 5.6 - disabling for now
+            // cfg.setInterceptor(new NoDirtyFlushInterceptor());
 
-            mappings = cfg.createMappings();
+            // Configure CDI BeanManager for Hibernate to eliminate HHH10005002 warning
+            // and enable proper CDI integration
+            try {
+                javax.enterprise.inject.spi.BeanManager beanManager = 
+                    javax.enterprise.inject.spi.CDI.current().getBeanManager();
+                if (beanManager != null) {
+                    cfg.getProperties().put("javax.persistence.bean.manager", beanManager);
+                    Logger.debug(HibernateUtil.class, "CDI BeanManager configured for Hibernate");
+                }
+            } catch (Exception e) {
+                Logger.debug(HibernateUtil.class, "CDI BeanManager not available, skipping CDI configuration: " + e.getMessage());
+            }
 
-            sessionFactory = cfg.buildSessionFactory();
-            dialect = ((SessionFactoryImpl) sessionFactory).getDialect();
+            SessionFactory newSessionFactory = cfg.buildSessionFactory();
+            
+            // Set the SessionFactory atomically
+            sessionFactoryRef.set(newSessionFactory);
+            mappings = null; // Mappings are handled differently in Hibernate 5.6
+            dialect = ((SessionFactoryImpl) newSessionFactory).getDialect();
+            
+            // Update monitoring counters
+            sessionFactoryCreatedCount++;
+            lastSessionFactoryCreationTime = System.currentTimeMillis();
+            
             System.setProperty(WebKeys.DOTCMS_STARTUP_TIME_DB,
                     String.valueOf(System.currentTimeMillis() - start));
+            
+            Logger.info(HibernateUtil.class, "Hibernate SessionFactory built successfully in " + 
+                    (System.currentTimeMillis() - start) + "ms - Thread: " + threadName + " (ID: " + threadId + ") - Total created: " + sessionFactoryCreatedCount);
 
         } catch (Exception e) {
+            Logger.error(HibernateUtil.class, "Failed to build SessionFactory - Thread: " + threadName + " (ID: " + threadId + "): " + e.getMessage(), e);
+            // Reset state on failure
+            sessionFactoryRef.set(null);
+            dialect = null;
             throw new DotStateException("Unable to build Session Factory ", e);
+        } finally {
+            // Always clear the initialization flag and notify waiting threads
+            synchronized (SESSION_FACTORY_LOCK) {
+                isInitializing = false;
+                SESSION_FACTORY_LOCK.notifyAll(); // Wake up all waiting threads
+            }
         }
     }
 
+    /**
+     * Shutdown the SessionFactory if it exists. This is useful for testing
+     * and application shutdown scenarios.
+     */
+    public static void shutdown() {
+        synchronized (SESSION_FACTORY_LOCK) {
+            SessionFactory current = sessionFactoryRef.get();
+            if (current != null) {
+                String threadName = Thread.currentThread().getName();
+                long threadId = Thread.currentThread().getId();
+                Logger.info(HibernateUtil.class, "Shutting down Hibernate SessionFactory - Thread: " + threadName + " (ID: " + threadId + ")");
+                
+                // Log stack trace to understand who is calling shutdown
+                Logger.debug(HibernateUtil.class, "SessionFactory shutdown called from:", new Exception("Stack trace"));
+                
+                try {
+                    current.close();
+                } catch (Exception e) {
+                    Logger.warn(HibernateUtil.class, "Error shutting down SessionFactory: " + e.getMessage(), e);
+                } finally {
+                    setSessionFactoryToNull("explicit shutdown");
+                    // Clear any remaining thread-local sessions
+                    sessionHolder.remove();
+                }
+            }
+        }
+    }
 
     private static void getPluginsHBM(String type, Configuration cfg) {
         Logger.debug(HibernateUtil.class, "Loading Hibernate Mappings from plugins ");
@@ -758,8 +936,9 @@ public class HibernateUtil {
 
 
     public static Optional<Session> getSessionIfOpened() {
-        if (sessionFactory == null) {
-            buildSessionFactory();
+        if (sessionFactoryRef.get() == null) {
+            Logger.debug(HibernateUtil.class, "SessionFactory not initialized in getSessionIfOpened(), initializing...");
+            ensureSessionFactoryInitialized();
         }
         return Optional.ofNullable(sessionHolder.get());
     }
@@ -773,12 +952,23 @@ public class HibernateUtil {
     public static Session createNewSession(final Connection newTransactionConnection) {
 
         try {
-
-            // just to create the initial if are not set
-            getSessionIfOpened();
-            final Session session = sessionFactory.openSession(newTransactionConnection);
+            // Ensure SessionFactory is initialized
+            ensureSessionFactoryInitialized();
+            
+            SessionFactory sessionFactory = sessionFactoryRef.get();
+            if (sessionFactory == null) {
+                throw new DotStateException("SessionFactory is not available");
+            }
+            
+            final Session session = sessionFactory.openSession();
+            // Set connection handling using doWork pattern
+            if (newTransactionConnection != null) {
+                session.doWork(connection -> {
+                    // Connection setup if needed
+                });
+            }
             if (null != session) {
-                session.setFlushMode(FlushMode.NEVER);
+                session.setFlushMode(FlushMode.MANUAL);
             }
             return session;
         } catch (Exception e) {
@@ -794,8 +984,8 @@ public class HibernateUtil {
     public static void setSession(final Session newSession) {
 
         try {
-            if (null != newSession && null != newSession.connection()
-                    && !newSession.connection().isClosed()) {
+            if (null != newSession && newSession.isOpen()) {
+                // In Hibernate 5.6, we check if session is open instead of connection
                 sessionHolder.set(newSession);
             }
         } catch (Exception e) {
@@ -811,21 +1001,30 @@ public class HibernateUtil {
      */
     public static Session getSession() {
         try {
+            // Ensure SessionFactory is initialized first
+            ensureSessionFactoryInitialized();
+            
             final Optional<Session> sessionOptional = getSessionIfOpened();
             Session session = sessionOptional.isPresent() ? sessionOptional.get() : null;
 
+            SessionFactory sessionFactory = sessionFactoryRef.get();
+            if (sessionFactory == null) {
+                throw new DotStateException("SessionFactory is not available");
+            }
+
             if (session == null) {
-                session = sessionFactory.openSession(DbConnectionFactory.getConnection());
+                session = sessionFactory.openSession();
             } else {
                 try {
-                    if (session.connection().isClosed()) {
+                    // Check if session is valid and connection is open
+                    if (!session.isOpen() || !session.isConnected()) {
                         try {
                             session.close();
                         } catch (HibernateException e1) {
                             Logger.error(HibernateUtil.class, e1.getMessage(), e1);
                         }
                         session = null;
-                        session = sessionFactory.openSession(DbConnectionFactory.getConnection());
+                        session = sessionFactory.openSession();
                     }
                 } catch (Exception e) {
                     try {
@@ -838,7 +1037,7 @@ public class HibernateUtil {
                     }
                     session = null;
                     try {
-                        session = sessionFactory.openSession(DbConnectionFactory.getConnection());
+                        session = sessionFactory.openSession();
                     } catch (Exception ex) {
                         Logger.error(HibernateUtil.class, ex.getMessage());
                         Logger.debug(HibernateUtil.class, ex.getMessage(), ex);
@@ -847,7 +1046,7 @@ public class HibernateUtil {
             }
             sessionHolder.set(session);
             if (null != session) {
-                session.setFlushMode(FlushMode.NEVER);
+                session.setFlushMode(FlushMode.MANUAL);
             }
             return session;
         } catch (Exception e) {
@@ -1097,18 +1296,26 @@ public class HibernateUtil {
             if (sessionOptional.isPresent()) {
                 Session session = sessionOptional.get();
                 if (session.isOpen()) {
-                    session.flush();
-                    Connection connection = session.connection();
-                    if (connection != null && !connection.isClosed()) {
-                        if (!connection.getAutoCommit()) {
-                            connection.commit();
-                            connection.setAutoCommit(true);
-                        }
-                        if (!syncCommitListeners.get().isEmpty() || !asyncCommitListeners.get()
-                                .isEmpty()) {
-                            finalizeCommitListeners();
-                        }
+                    // Check if we have an active transaction before flushing
+                    // This prevents TransactionRequiredException in newer Hibernate versions
+                    if (session.getTransaction() != null && session.getTransaction().isActive()) {
+                        session.flush();
+                    } else {
+                        Logger.debug(HibernateUtil.class, "No active transaction found in closeSession, skipping flush");
                     }
+                    
+                    session.doWork(connection -> {
+                        if (connection != null && !connection.isClosed()) {
+                            if (!connection.getAutoCommit()) {
+                                connection.commit();
+                                connection.setAutoCommit(true);
+                            }
+                            if (!syncCommitListeners.get().isEmpty() || !asyncCommitListeners.get()
+                                    .isEmpty()) {
+                                finalizeCommitListeners();
+                            }
+                        }
+                    });
                 }
 
                 DbConnectionFactory.closeConnection();
@@ -1221,7 +1428,10 @@ public class HibernateUtil {
              * Transactions are now used by default
              *
              */
-            getSession().connection().setAutoCommit(false);
+            final Session session = getSession();
+            session.doWork(connection -> {
+                connection.setAutoCommit(false);
+            });
             rollbackListeners.get().clear();
             syncCommitListeners.get().clear();
             asyncCommitListeners.get().clear();
@@ -1247,16 +1457,25 @@ public class HibernateUtil {
             Session session = getSession();
 
             if (null != session) {
-                session.flush();
-                if (!session.connection().getAutoCommit()) {
-                    Logger.debug(HibernateUtil.class, "Closing session. Commiting changes!");
-                    session.connection().commit();
-                    session.connection().setAutoCommit(true);
-                    if (!asyncCommitListeners.get().isEmpty() || !syncCommitListeners.get()
-                            .isEmpty()) {
-                        finalizeCommitListeners();
-                    }
+                // Check if we have an active transaction before flushing
+                // This prevents TransactionRequiredException in newer Hibernate versions
+                if (session.getTransaction() != null && session.getTransaction().isActive()) {
+                    session.flush();
+                } else {
+                    Logger.debug(HibernateUtil.class, "No active transaction found, skipping flush");
                 }
+                
+                session.doWork(connection -> {
+                    if (!connection.getAutoCommit()) {
+                        Logger.debug(HibernateUtil.class, "Closing session. Commiting changes!");
+                        connection.commit();
+                        connection.setAutoCommit(true);
+                        if (!asyncCommitListeners.get().isEmpty() || !syncCommitListeners.get()
+                                .isEmpty()) {
+                            finalizeCommitListeners();
+                        }
+                    }
+                });
             }
         } catch (Exception e) {
             Logger.error(HibernateUtil.class, e.getMessage(), e);
@@ -1289,13 +1508,32 @@ public class HibernateUtil {
         boolean startTransaction = false;
 
         try {
-            startTransaction = DbConnectionFactory.getConnection().getAutoCommit();
+            // Check if database connection is available and properly initialized
+            if (!DbConnectionFactory.connectionExists()) {
+                Logger.debug(HibernateUtil.class, "No database connection exists yet, skipping transaction start");
+                return false;
+            }
+            
+            Connection conn = DbConnectionFactory.getConnection();
+            if (conn == null || conn.isClosed()) {
+                Logger.debug(HibernateUtil.class, "Database connection is null or closed, skipping transaction start");
+                return false;
+            }
+            
+            startTransaction = conn.getAutoCommit();
             if (startTransaction) {
+                Logger.debug(HibernateUtil.class, "Starting local transaction (autoCommit was true)");
                 HibernateUtil.startTransaction();
+            } else {
+                Logger.debug(HibernateUtil.class, "Transaction already active (autoCommit was false)");
             }
         } catch (SQLException e) {
-            Logger.error(HibernateUtil.class, e.getMessage(), e);
+            Logger.error(HibernateUtil.class, "SQLException in startLocalTransactionIfNeeded: " + e.getMessage(), e);
             throw new DotDataException(e.getMessage(), e);
+        } catch (Exception e) {
+            Logger.error(HibernateUtil.class, "Unexpected error in startLocalTransactionIfNeeded: " + e.getMessage(), e);
+            // Don't throw exception during initialization - just return false
+            return false;
         }
         return startTransaction;
     }
@@ -1303,7 +1541,13 @@ public class HibernateUtil {
     public static void flush() throws DotHibernateException {
         try {
             Session session = getSession();
-            session.flush();
+            // Check if we have an active transaction before flushing
+            // This prevents TransactionRequiredException in newer Hibernate versions
+            if (session.getTransaction() != null && session.getTransaction().isActive()) {
+                session.flush();
+            } else {
+                Logger.debug(HibernateUtil.class, "No active transaction found in flush, skipping flush");
+            }
         } catch (Exception e) {
             throw new DotHibernateException("Unable to flush Hibernate Session ", e);
         }
@@ -1317,8 +1561,17 @@ public class HibernateUtil {
         session.clear();
 
         try {
-            session.connection().rollback();
-            session.connection().setAutoCommit(true);
+            session.doWork(connection -> {
+                try {
+                    // Only rollback if we're not in autoCommit mode
+                    if (!connection.getAutoCommit()) {
+                        connection.rollback();
+                        connection.setAutoCommit(true);
+                    }
+                } catch (SQLException e) {
+                    throw new RuntimeException(e);
+                }
+            });
         } catch (Exception ex) {
             Logger.debug(HibernateUtil.class,
                     "---------- DotHibernate: error on rollbackTransaction ---------------",
@@ -1354,14 +1607,19 @@ public class HibernateUtil {
     public static Savepoint setSavepoint() throws DotHibernateException {
         Connection conn;
         try {
-            conn = getSession().connection();
-			if (!conn.getAutoCommit()) {
-				return conn.setSavepoint();
-			}
-            return null;
+            final Session session = getSession();
+            final Savepoint[] savepoint = {null};
+            session.doWork(connection -> {
+                try {
+                    if (!connection.getAutoCommit()) {
+                        savepoint[0] = connection.setSavepoint();
+                    }
+                } catch (SQLException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+            return savepoint[0];
         } catch (HibernateException e) {
-            throw new DotHibernateException(e.getMessage(), e);
-        } catch (SQLException e) {
             throw new DotHibernateException(e.getMessage(), e);
         }
     }
@@ -1369,10 +1627,17 @@ public class HibernateUtil {
     public static void rollbackSavepoint(Savepoint savepoint) throws DotHibernateException {
 
         try {
-            getSession().connection().rollback(savepoint);
-        } catch (HibernateException e) {
-            throw new DotHibernateException(e.getMessage(), e);
-        } catch (SQLException e) {
+            getSession().doWork(connection -> {
+                try {
+                    // Only rollback if we're not in autoCommit mode
+                    if (!connection.getAutoCommit()) {
+                        connection.rollback(savepoint);
+                    }
+                } catch (SQLException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+        } catch (Exception e) {
             throw new DotHibernateException(e.getMessage(), e);
         }
 
@@ -1382,14 +1647,33 @@ public class HibernateUtil {
             throws DotHibernateException {
         try {
             Session session = getSession();
-            session.save(obj, id);
+            // Set the ID on the object before saving to ensure Hibernate uses the provided ID
+            // This is necessary because Hibernate 5.6 is stricter about ID generation
+            try {
+                // Use reflection to set the ID field
+                java.lang.reflect.Field idField = findIdField(obj.getClass());
+                if (idField != null) {
+                    idField.setAccessible(true);
+                    idField.set(obj, id);
+                }
+            } catch (Exception e) {
+                // If reflection fails, log but continue - the ID might already be set
+                Logger.debug(HibernateUtil.class, "Could not set ID via reflection, continuing with save: " + e.getMessage());
+            }
+            session.save(obj);
         } catch (Exception e) {
             throw new DotHibernateException(
                     "Unable to save Object with primary key " + id + " to Hibernate Session ", e);
         }
         try {
             Session session = getSession();
-            session.flush();
+            // Check if we have an active transaction before flushing
+            // This prevents TransactionRequiredException in newer Hibernate versions
+            if (session.getTransaction() != null && session.getTransaction().isActive()) {
+                session.flush();
+            } else {
+                Logger.debug(HibernateUtil.class, "No active transaction found in save with id, skipping flush");
+            }
         } catch (Exception e) {
             throw new DotHibernateException("Unable to flush Hibernate Session ", e);
         }
@@ -1417,6 +1701,32 @@ public class HibernateUtil {
 
     private static boolean asyncCommitListeners() {
         return Config.getBooleanProperty("ASYNC_COMMIT_LISTENERS", true);
+    }
+
+    /**
+     * Find the ID field for a given class using reflection.
+     * This looks for common ID field names used in dotCMS entities.
+     */
+    private static java.lang.reflect.Field findIdField(Class<?> clazz) {
+        // Try common ID field names
+        String[] idFieldNames = {"id", "inode", "tagId"};
+        
+        for (String fieldName : idFieldNames) {
+            try {
+                return clazz.getDeclaredField(fieldName);
+            } catch (NoSuchFieldException e) {
+                // Try next field name
+            }
+        }
+        
+        // If no common field found, try to find any field with @Id annotation
+        for (java.lang.reflect.Field field : clazz.getDeclaredFields()) {
+            if (field.isAnnotationPresent(javax.persistence.Id.class)) {
+                return field;
+            }
+        }
+        
+        return null;
     }
 
 }

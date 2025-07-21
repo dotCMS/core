@@ -44,7 +44,7 @@ public class ChallengeQuestionFactory {
 
 		try {
 			HibernateUtil dh = new HibernateUtil(ChallengeQuestion.class);
-			dh.setQuery("from challenge_question in class com.dotmarketing.beans.ChallengeQuestion where cquestionid = ?");
+			dh.setQuery("from challenge_question in class com.dotmarketing.beans.ChallengeQuestion where cquestionid = ?1");
 			dh.setParam(challengeQuestionId);
 			result = (ChallengeQuestion) dh.load();
 		} catch (Exception e) {

@@ -223,16 +223,23 @@
                 <artifactId>dot.guava</artifactId>
                 <version>11.0.1_2</version>
             </dependency>
+            <!-- Modern Hibernate 5.6.15 (last javax-compatible version) -->
             <dependency>
-                <groupId>com.dotcms.lib</groupId>
-                <artifactId>dot.hibernate</artifactId>
-                <version>2.1.7_3</version>
+                <groupId>org.hibernate</groupId>
+                <artifactId>hibernate-core</artifactId>
+                <version>5.6.15.Final</version>
             </dependency>
             <dependency>
-                <groupId>com.dotcms.lib</groupId>
-                <artifactId>dot.hibernate-validator</artifactId>
-                <version>4.3.2.Final_3</version>
+                <groupId>org.hibernate</groupId>
+                <artifactId>hibernate-java8</artifactId>
+                <version>5.6.15.Final</version>
             </dependency>
+            <dependency>
+                <groupId>org.hibernate</groupId>
+                <artifactId>hibernate-ehcache</artifactId>
+                <version>5.6.15.Final</version>
+            </dependency>
+            <!-- Keep repackaged hibernate for gradual migration -->
             <dependency>
                 <groupId>com.dotcms.lib</groupId>
                 <artifactId>dot.httpbridge</artifactId>
@@ -269,11 +276,6 @@
                 <groupId>com.dotcms.lib</groupId>
                 <artifactId>dot.jazzy-core</artifactId>
                 <version>ukv_2</version>
-            </dependency>
-            <dependency>
-                <groupId>com.dotcms.lib</groupId>
-                <artifactId>dot.jboss-logging</artifactId>
-                <version>3.3.0.Final_2</version>
             </dependency>
             <dependency>
                 <groupId>com.dotcms.lib</groupId>
@@ -884,7 +886,18 @@
             <dependency>
                 <groupId>javax.validation</groupId>
                 <artifactId>validation-api</artifactId>
-                <version>1.1.0.Final</version>
+                <version>2.0.1.Final</version>
+            </dependency>
+            <dependency>
+                <groupId>org.hibernate.validator</groupId>
+                <artifactId>hibernate-validator</artifactId>
+                <version>6.0.23.Final</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.jboss.logging</groupId>
+                        <artifactId>jboss-logging</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
 
             <dependency>
@@ -1153,6 +1166,12 @@
                 <artifactId>weld-servlet-shaded</artifactId>
                 <version>3.1.9.Final</version>
             </dependency>
+            
+            <dependency>
+                <groupId>org.jboss.weld.servlet</groupId>
+                <artifactId>weld-servlet-core</artifactId>
+                <version>3.1.9.Final</version>
+            </dependency>
 
             <dependency>
                 <groupId>org.glassfish.jersey.ext.cdi</groupId>
@@ -1164,13 +1183,6 @@
                 <groupId>org.glassfish.jersey.ext.cdi</groupId>
                 <artifactId>jersey-cdi1x-servlet</artifactId>
                 <version>${jersey.version}</version>
-            </dependency>
-
-
-            <dependency>
-                <groupId>org.glassfish.hk2.external</groupId>
-                <artifactId>bean-validator</artifactId>
-                <version>2.5.0-b06</version>
             </dependency>
 
             <dependency>

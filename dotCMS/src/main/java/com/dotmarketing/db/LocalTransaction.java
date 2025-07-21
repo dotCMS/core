@@ -1,7 +1,7 @@
 package com.dotmarketing.db;
 
 
-import com.dotcms.repackage.net.sf.hibernate.Session;
+import org.hibernate.Session;
 import com.dotcms.util.ReturnableDelegate;
 import com.dotcms.util.VoidDelegate;
 import com.dotmarketing.exception.DotDataException;

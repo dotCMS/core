@@ -208,7 +208,7 @@ public class WorkflowImportExportUtil {
 	}
 
 	private Role getAnonRole () {
-		return Try.of(()->APILocator.getRoleAPI().loadCMSAnonymousRole()).getOrElseThrow(e -> new DotRuntimeException(e));
+		return Try.of(()->APILocator.getRoleAPI().loadCMSAnonymousRole()).getOrNull();
 	}
 
 	private WorkflowAction validateAction(final WorkflowAction action) {
@@ -218,12 +218,67 @@ public class WorkflowImportExportUtil {
 		if (null == role) {
 
 			Logger.warn(this, "The role: " + nextAssign +
-					" on the action: " + action.getName() + " does not exists, replacing by current user");
-			final Role anonRole = getAnonRole();
-			action.setNextAssign(anonRole.getId());
+					" on the action: " + action.getName() + " does not exists, will try to find CMS Anonymous role");
+			
+			// Try to find the CMS Anonymous role as a fallback using direct database query
+			// This is more reliable during startup than using the RoleAPI cache
+			String cmsAnonymousRoleId = this.getCMSAnonymousRoleId();
+			if (cmsAnonymousRoleId != null) {
+				Logger.debug(this, "Using CMS Anonymous role " + cmsAnonymousRoleId + " as replacement for missing role " + nextAssign + " in action: " + action.getName());
+				action.setNextAssign(cmsAnonymousRoleId);
+			} else {
+				Logger.error(this, "CMS Anonymous role not found in database during startup.");
+				throw new DotRuntimeException("CMS Anonymous role not found during workflow import. Cannot proceed with workflow action: " + action.getName());
+			}
 		}
 
 		return action;
+	}
+	
+	private String getCMSAnonymousRoleId() {
+		try {
+			// CRITICAL: These queries ensure transaction synchronization with the database
+			// This addresses Hibernate 5.6 stricter transaction boundary enforcement
+			// where roles imported earlier may not be visible without explicit DB queries
+			
+			// Force transaction sync by checking role count first
+			List<Map<String, Object>> allRoles = new DotConnect()
+					.setSQL("select count(*) as role_count from cms_role")
+					.loadObjectResults();
+					
+			int totalRoles = allRoles.isEmpty() ? 0 : ((Number) allRoles.get(0).get("role_count")).intValue();
+			Logger.debug(this, "Total roles in database during workflow import: " + totalRoles);
+			
+			// Primary lookup by role_key/role_name
+			List<Map<String, Object>> results = new DotConnect()
+					.setSQL("select id from cms_role where role_key = ? or role_name = ?")
+					.addParam("CMS Anonymous")
+					.addParam("CMS Anonymous")
+					.loadObjectResults();
+			
+			if (!results.isEmpty()) {
+				String roleId = (String) results.get(0).get("id");
+				Logger.debug(this, "Found CMS Anonymous role by name/key: " + roleId);
+				return roleId;
+			}
+			
+			// Fallback: check if the expected starter data UUID exists
+			results = new DotConnect()
+					.setSQL("select id from cms_role where id = ?")
+					.addParam("654b0931-1027-41f7-ad4d-173115ed8ec1")
+					.loadObjectResults();
+			
+			if (!results.isEmpty()) {
+				Logger.debug(this, "Found CMS Anonymous role by UUID: 654b0931-1027-41f7-ad4d-173115ed8ec1");
+				return "654b0931-1027-41f7-ad4d-173115ed8ec1";
+			}
+			
+			Logger.error(this, "CMS Anonymous role not found in database with " + totalRoles + " total roles");
+			return null;
+		} catch (Exception e) {
+			Logger.error(this, "Error looking up CMS Anonymous role: " + e.getMessage(), e);
+			return null;
+		}
 	}
 
 	private void saveSchemeSystemActionMappings(

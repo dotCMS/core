@@ -14,7 +14,7 @@ import java.util.Date;
 import java.util.List;
 
 import com.dotcms.business.WrapInTransaction;
-import com.dotcms.repackage.net.sf.hibernate.ObjectNotFoundException;
+import org.hibernate.ObjectNotFoundException;
 import org.apache.commons.beanutils.BeanUtils;
 
 public class HostVariableFactoryImpl extends HostVariableFactory{

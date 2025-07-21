@@ -286,7 +286,7 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
 		VersionInfo auxVersionInfo;
 		Class clazz = UtilMethods.getVersionInfoType(type);
 		HibernateUtil dh = new HibernateUtil(clazz);
-		dh.setQuery("from "+clazz.getName()+" where identifier=?");
+		dh.setQuery("from "+clazz.getName()+" where identifier=?1");
 		dh.setParam(identifier);
 		Logger.debug(BaseWebAssetAPI.class, "getVersionInfo query: "+dh.getQuery());
 		auxVersionInfo=(VersionInfo)dh.load();
@@ -294,7 +294,7 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
 		if(UtilMethods.isSet(auxVersionInfo) && UtilMethods.isSet(auxVersionInfo.getIdentifier())) {
 		    clazz = InodeUtils.getClassByDBType(type);
 		    dh = new HibernateUtil(clazz);
-			dh.setQuery("from inode in class " + clazz.getName() + " where inode.identifier = ? and inode.type='"+type+"' order by mod_date desc");
+			dh.setQuery("from inode in class " + clazz.getName() + " where inode.identifier = ?1 and inode.type='"+type+"' order by mod_date desc");
 			dh.setParam(currWebAsset.getIdentifier());
 			Logger.debug(BaseWebAssetAPI.class, "findAllVersions query: " + dh.getQuery());
 			webAssetList.addAll( (List<Versionable>) dh.list() );

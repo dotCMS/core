@@ -221,8 +221,8 @@ public class DashboardFactoryImpl extends DashboardFactory {
 					" summaryPeriod in class " + DashboardSummaryPeriod.class.getName()+ ", summary404 in class " +DashboardSummary404.class.getName() +
 					" left join summary404.userPreferences as userPreferences where "+
 					" summary404.summaryPeriod.id = summaryPeriod.id "+
-			        " and summaryPeriod.fullDate > ? and summaryPeriod.fullDate < ? and summary404.hostId = ? "+
-					" and (userPreferences.userId is null or userPreferences.userId = ?)" +
+			        " and summaryPeriod.fullDate > ?1 and summaryPeriod.fullDate < ?2 and summary404.hostId = ?3 "+
+					" and (userPreferences.userId is null or userPreferences.userId = ?4)" +
 					(!showIgnored?" and userPreferences.ignored is null or userPreferences.ignored = 0 ":""));
 
 		if(!UtilMethods.isSet(sortBy)){
@@ -359,12 +359,12 @@ public class DashboardFactoryImpl extends DashboardFactory {
 		StringBuffer query = new StringBuffer();
 
 		if(viewType.equals(ViewType.DAY)){
-			query.append("select visit from visit in class "+DashboardSummaryVisits.class.getName()+"  where visit.visitTime > ? and visit.visitTime < ? and visit.hostId = ? order by visit.visitTime asc ");
+			query.append("select visit from visit in class "+DashboardSummaryVisits.class.getName()+"  where visit.visitTime > ?1 and visit.visitTime < ?2 and visit.hostId = ?3 order by visit.visitTime asc ");
 		}else{
 			query.append("select new "+DashboardSummaryVisits.class.getName()+ "(sum(visit.visits), summaryPeriod.fullDate) from  visit in class "+ DashboardSummaryVisits.class.getName() +"" +
 					" , summaryPeriod in class " + DashboardSummaryPeriod.class.getName() + " where " +
 					        " summaryPeriod.id = visit.summaryPeriod.id and "+
-							" visit.visitTime > ? and visit.visitTime < ? and visit.hostId = ? " +
+							" visit.visitTime > ?1 and visit.visitTime < ?2 and visit.hostId = ?3 " +
 							" group by summaryPeriod.day, summaryPeriod.fullDate order by summaryPeriod.fullDate asc ");
 		}
 
@@ -565,7 +565,7 @@ public class DashboardFactoryImpl extends DashboardFactory {
 					"from summaryContent in class " + DashboardSummaryContent.class.getName() + ", " +
 					"summary in class " + DashboardSummary.class.getName()+", summaryPeriod in class " + DashboardSummaryPeriod.class.getName()+" " +
 					"where summaryContent.summary.id = summary.id and summary.summaryPeriod.id = summaryPeriod.id "+
-					"and summaryPeriod.fullDate > ? and  summaryPeriod.fullDate < ? and summary.hostId = ? " +
+					"and summaryPeriod.fullDate > ?1 and  summaryPeriod.fullDate < ?2 and summary.hostId = ?3 " +
 					"group by summaryContent.inode, summaryContent.uri, summaryContent.title  " + sortBy);
 			if(UtilMethods.isSet(fromDate)){
 				dh.setParam(fromDate);
@@ -607,7 +607,7 @@ public class DashboardFactoryImpl extends DashboardFactory {
 					"from summaryPage in class " + DashboardSummaryPage.class.getName() + ", " +
 					"summary in class " + DashboardSummary.class.getName()+", summaryPeriod in class " + DashboardSummaryPeriod.class.getName()+" " +
 					"where summaryPage.summary.id = summary.id and summary.summaryPeriod.id = summaryPeriod.id "+
-					"and summaryPeriod.fullDate > ? and  summaryPeriod.fullDate < ? and summary.hostId = ? " +
+					"and summaryPeriod.fullDate > ?1 and  summaryPeriod.fullDate < ?2 and summary.hostId = ?3 " +
 					"group by summaryPage.uri  " + sortBy);
 			if(UtilMethods.isSet(fromDate)){
 				dh.setParam(fromDate);
@@ -671,7 +671,7 @@ public class DashboardFactoryImpl extends DashboardFactory {
 					"from summaryRef in class " + DashboardSummaryReferer.class.getName() + ", " +
 					"summary in class " + DashboardSummary.class.getName()+", summaryPeriod in class " + DashboardSummaryPeriod.class.getName()+" " +
 					"where summaryRef.summary.id = summary.id and summary.summaryPeriod.id = summaryPeriod.id "+
-					"and summaryPeriod.fullDate > ? and  summaryPeriod.fullDate < ? and summary.hostId = ? " +
+					"and summaryPeriod.fullDate > ?1 and  summaryPeriod.fullDate < ?2 and summary.hostId = ?3 " +
 					condition  + " group by summaryRef.uri " + sortBy);
 
 			if(UtilMethods.isSet(fromDate)){

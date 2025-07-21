@@ -36,9 +36,9 @@ public class RoleFactoryImpl extends RoleFactory {
 	@Override
 	protected List<Role> findAllAssignableRoles(final boolean showSystemRoles) throws DotDataException {
 		final HibernateUtil hu = new HibernateUtil(Role.class);
-		String query = "from com.dotmarketing.business.Role where edit_permissions = ?";
+		String query = "from com.dotmarketing.business.Role where edit_permissions = ?1";
 		if(!showSystemRoles){
-			query = query + " and system = ?";
+			query = query + " and system = ?2";
 		}
 
 		hu.setQuery(query);
@@ -63,7 +63,7 @@ public class RoleFactoryImpl extends RoleFactory {
 		r = rc.get(roleId);
 		if(r == null){
 			HibernateUtil hu = new HibernateUtil(Role.class);
-			hu.setQuery("from com.dotmarketing.business.Role where id = ?");
+			hu.setQuery("from com.dotmarketing.business.Role where id = ?1");
 			hu.setParam(roleId);
 			r = (Role)hu.load();
 			if(r == null)
@@ -167,7 +167,7 @@ public class RoleFactoryImpl extends RoleFactory {
 	@Override
 	protected  List<Role> getRolesByNameFiltered(String filter, int start, int limit) throws DotDataException {
 		HibernateUtil hu = new HibernateUtil(Role.class);
-		hu.setQuery("from " + Role.class.getName() + " where lower(role_name) like ? order by role_name");
+		hu.setQuery("from " + Role.class.getName() + " where lower(role_name) like ?1 order by role_name");
 		if(filter ==null) {
 			filter ="";
 		}
@@ -199,7 +199,7 @@ public class RoleFactoryImpl extends RoleFactory {
 	@Override
 	protected List<Role> getRolesByKeyFiltered(String filter, int start, int limit) throws DotDataException {
 		HibernateUtil hu = new HibernateUtil(Role.class);
-		hu.setQuery("from " + Role.class.getName() + " where lower(role_key) like ? order by role_key");
+		hu.setQuery("from " + Role.class.getName() + " where lower(role_key) like ?1 order by role_key");
 		if(filter ==null)filter ="";
 		filter = filter.toLowerCase();
 		hu.setParam(filter);
@@ -230,10 +230,10 @@ public class RoleFactoryImpl extends RoleFactory {
 		HibernateUtil hu = new HibernateUtil(Role.class);
 		if(parent == null) {
 
-			hu.setQuery("from " + Role.class.getName() + " as r where r.name = ? and r.parent = r.id");
+			hu.setQuery("from " + Role.class.getName() + " as r where r.name = ?1 and r.parent = r.id");
 		}else {
 
-			hu.setQuery("from " + Role.class.getName() + " as r where r.name = ? and r.parent = ? and r.parent <> r.id");
+			hu.setQuery("from " + Role.class.getName() + " as r where r.name = ?1 and r.parent = ?2 and r.parent <> r.id");
 		}
 
 		hu.setParam(rolename);
@@ -303,7 +303,7 @@ public class RoleFactoryImpl extends RoleFactory {
 
 		Role r = null;
 		if(InodeUtils.isSet(role.getId())) {
-			hu.setQuery("from com.dotmarketing.business.Role where id = ?");
+			hu.setQuery("from com.dotmarketing.business.Role where id = ?1");
 			hu.setParam(role.getId());
 			r = (Role)hu.load();
 			rc.remove(r.getId());
@@ -347,7 +347,7 @@ public class RoleFactoryImpl extends RoleFactory {
 		while(roleIdsToProcess.size()>0) {
 			String parentId = roleIdsToProcess.poll();
 			hu = new HibernateUtil(Role.class);
-			hu.setQuery("from com.dotmarketing.business.Role where id = ?");
+			hu.setQuery("from com.dotmarketing.business.Role where id = ?1");
 			hu.setParam(parentId);
 			Role parentRole = (Role)hu.load();
 			rolesToUpdate.add(parentRole);
@@ -413,7 +413,7 @@ public class RoleFactoryImpl extends RoleFactory {
 		dc.addParam(role.getId());
 		dc.loadResult();
 		HibernateUtil hu = new HibernateUtil(Role.class);
-		hu.setQuery("from com.dotmarketing.business.Role where id = ?");
+		hu.setQuery("from com.dotmarketing.business.Role where id = ?1");
 		hu.setParam(role.getId());
 		Role r = (Role)hu.load();
 
@@ -561,7 +561,7 @@ public class RoleFactoryImpl extends RoleFactory {
     @Override
 	protected List<String> findUserIdsForRole(Role role) throws DotDataException {
 		HibernateUtil hu = new HibernateUtil(Role.class);
-		hu.setQuery("from " + UsersRoles.class.getName() + " where role_id = ?");
+		hu.setQuery("from " + UsersRoles.class.getName() + " where role_id = ?1");
 		hu.setParam(role.getId());
 		List<UsersRoles> urs = (List<UsersRoles>)hu.list();
 		List<String> ret = null;
@@ -641,7 +641,7 @@ public class RoleFactoryImpl extends RoleFactory {
 		if(layouts == null){
 			layouts = new ArrayList<>();
 			HibernateUtil hu = new HibernateUtil(Role.class);
-			hu.setQuery("from " + LayoutsRoles.class.getName() + " where role_id = ?");
+			hu.setQuery("from " + LayoutsRoles.class.getName() + " where role_id = ?1");
 			hu.setParam(role.getId());
 			List<LayoutsRoles> urs = (List<LayoutsRoles>)hu.list();
 			if(urs != null){
@@ -670,7 +670,7 @@ public class RoleFactoryImpl extends RoleFactory {
 
 		try {
 
-			hu.setQuery("from " + LayoutsRoles.class.getName() + " where role_id = ? and layout_id = ?");
+			hu.setQuery("from " + LayoutsRoles.class.getName() + " where role_id = ?1 and layout_id = ?2");
 			hu.setParam(role.getId());
 			hu.setParam(layout.getId());
 			return Optional.ofNullable ((LayoutsRoles)hu.load());
@@ -724,7 +724,7 @@ public class RoleFactoryImpl extends RoleFactory {
             }
 
             final HibernateUtil hu = new HibernateUtil(Role.class);
-            hu.setQuery("from " + Role.class.getName() + " where db_fqn like ?");
+            hu.setQuery("from " + Role.class.getName() + " where db_fqn like ?1");
             hu.setParam(rFQN);
             role = (Role) hu.load();
             translateFQNFromDB(role);
@@ -740,7 +740,7 @@ public class RoleFactoryImpl extends RoleFactory {
 		r = rc.get(key);
 		if(r == null){
 			HibernateUtil hu = new HibernateUtil(Role.class);
-			hu.setQuery("from com.dotmarketing.business.Role where role_key = ?");
+			hu.setQuery("from com.dotmarketing.business.Role where role_key = ?1");
 			hu.setParam(key);
 			r = (Role)hu.load();
 			try {
@@ -863,8 +863,15 @@ public class RoleFactoryImpl extends RoleFactory {
 		dc.addParam(user.getFullName());
 		dc.addParam("");
 		dc.addParam(user.getUserId());
-		dc.addParam(parent.getId() + " --> " + roleUUID);
-		dc.addParam(parent.getId());
+		if (parent != null) {
+			dc.addParam(parent.getId() + " --> " + roleUUID);
+			dc.addParam(parent.getId());
+		} else {
+			// Handle case where parent role doesn't exist yet during initialization
+			// Use self-parent pattern (role is its own parent)
+			dc.addParam(roleUUID);
+			dc.addParam(roleUUID);
+		}
 		dc.addParam(true);
 		dc.addParam(false);
 		dc.addParam(true);

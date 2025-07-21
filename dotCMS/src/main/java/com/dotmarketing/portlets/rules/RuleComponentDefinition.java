@@ -2,7 +2,7 @@ package com.dotmarketing.portlets.rules;
 
 import com.dotcms.repackage.com.google.common.collect.ImmutableMap;
 import com.dotcms.repackage.com.google.common.collect.Maps;
-import com.dotcms.repackage.javax.validation.constraints.NotNull;
+import javax.validation.constraints.NotNull;
 import com.dotcms.rest.exception.InvalidRuleParameterException;
 import com.dotmarketing.portlets.rules.exception.RuleConstructionFailedException;
 import com.dotmarketing.portlets.rules.exception.RuleEngineException;

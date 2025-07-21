@@ -119,7 +119,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
 		}
 		if(ver == null){
 			HibernateUtil dh = new HibernateUtil(clazz);
-			dh.setQuery("from inode in class " + clazz.getName() + " where inode.inode=?");
+			dh.setQuery("from inode in class " + clazz.getName() + " where inode.inode=?1");
 			dh.setParam(vinfo.getWorkingInode());
 			Logger.debug(this.getClass(), "findWorkingVersion query: " + dh.getQuery());
 			ver =(Versionable) dh.load();
@@ -167,7 +167,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
 				}
 				if(ver==null){
 					HibernateUtil dh = new HibernateUtil(clazz);
-					dh.setQuery("from inode in class " + clazz.getName() + " where inode.inode=?");
+					dh.setQuery("from inode in class " + clazz.getName() + " where inode.inode=?1");
 					dh.setParam(vinfo.getLiveInode());
 					Logger.debug(this.getClass(), "findLiveVersion query: " + dh.getQuery());
 					ver= (Versionable) dh.load();
@@ -185,7 +185,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
 		}
 		Class<?> clazz = InodeUtils.getClassByDBType(identifier.getAssetType());
 		HibernateUtil dh = new HibernateUtil(clazz);
-		dh.setQuery("from inode in class " + clazz.getName() + " where identifier = ? and inode.type='" + identifier.getAssetType() + "' and deleted="
+		dh.setQuery("from inode in class " + clazz.getName() + " where identifier = ?1 and inode.type='" + identifier.getAssetType() + "' and deleted="
 				+ DbConnectionFactory.getDBTrue());
 		dh.setParam(id);
 		Logger.debug(this.getClass(), "findDeletedVersion query: " + dh.getQuery());
@@ -228,7 +228,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
 
             final HibernateUtil dh = new HibernateUtil(clazz);
 
-            dh.setQuery("from inode in class " + clazz.getName() + " where inode.identifier = ? and inode.type='" + identifier.getAssetType() + "' order by mod_date desc");
+            dh.setQuery("from inode in class " + clazz.getName() + " where inode.identifier = ?1 and inode.type='" + identifier.getAssetType() + "' order by mod_date desc");
             dh.setParam(id);
 
             if (maxResults.isPresent()) {
@@ -270,7 +270,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
 				vi = info.get();
 			} else {
 				HibernateUtil dh = new HibernateUtil(clazz);
-				dh.setQuery("from " + clazz.getName() + " where identifier=?");
+				dh.setQuery("from " + clazz.getName() + " where identifier=?1");
 				dh.setParam(identifier);
 				Logger.debug(this.getClass(), "getVersionInfo query: " + dh.getQuery());
 				vi = (VersionInfo) dh.load();
@@ -295,7 +295,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
             VersionInfo vi= null;
             if(clazz != null) {
 	            HibernateUtil dh = new HibernateUtil(clazz);
-	            dh.setQuery("from "+clazz.getName()+" where identifier=?");
+	            dh.setQuery("from "+clazz.getName()+" where identifier=?1");
 	            dh.setParam(identifer.getId());
 	            Logger.debug(this.getClass(), "getVersionInfo query: "+dh.getQuery());
 	            vi=(VersionInfo)dh.load();

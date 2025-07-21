@@ -30,6 +30,9 @@ public class Task00003CreateSystemRoles implements StartupTask {
 		"edit_users, edit_layouts, locked, system) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 	
 	private final String[] rolesWithUsersLocked = { "LDAP User", "CMS Owner", "CMS Anonymous" };
+	
+	// Fixed UUIDs for system roles to match starter data and workflow expectations
+	private final String CMS_ANONYMOUS_ROLE_ID = "654b0931-1027-41f7-ad4d-173115ed8ec1";
 
 	@WrapInTransaction
 	@Override
@@ -97,7 +100,14 @@ public class Task00003CreateSystemRoles implements StartupTask {
 		for(String roleName : systemRoles) {
 			if(!containsRole(roleName, currentSystemRoles)) {
 				
-				String newRoleId = UUIDGenerator.generateUuid();
+				// Use fixed UUID for CMS Anonymous role to match starter data and workflow expectations
+				String newRoleId;
+				if ("CMS Anonymous".equals(roleName.trim())) {
+					newRoleId = CMS_ANONYMOUS_ROLE_ID;
+				} else {
+					newRoleId = UUIDGenerator.generateUuid();
+				}
+				
 				dc.setSQL(insertRole);
 				dc.addParam(newRoleId); 								//id
 				dc.addParam(roleName.trim()); 							//role_name

@@ -23,9 +23,9 @@
 package com.liferay.portal.ejb;
 
 import com.dotcms.business.WrapInTransaction;
-import com.dotcms.repackage.net.sf.hibernate.HibernateException;
-import com.dotcms.repackage.net.sf.hibernate.ObjectNotFoundException;
-import com.dotcms.repackage.net.sf.hibernate.Session;
+import org.hibernate.HibernateException;
+import org.hibernate.ObjectNotFoundException;
+import org.hibernate.Session;
 import com.dotmarketing.business.DotStateException;
 import com.liferay.portal.NoSuchCompanyException;
 import com.liferay.portal.SystemException;
@@ -207,7 +207,7 @@ public class CompanyPersistence extends BasePersistence {
 			query.append(
 				"FROM Company IN CLASS com.liferay.portal.ejb.CompanyHBM ");
 
-			Iterator itr = session.find(query.toString()).iterator();
+			Iterator itr = session.createQuery(query.toString()).list().iterator();
 			List list = new ArrayList();
 
 			while (itr.hasNext()) {

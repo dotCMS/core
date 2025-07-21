@@ -2,8 +2,8 @@ package com.dotcms.workflow.form;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.dotcms.repackage.javax.validation.constraints.NotNull;
-import com.dotcms.repackage.javax.validation.constraints.Size;
+import javax.validation.constraints.NotNull;
+import org.hibernate.validator.constraints.Length;
 import com.dotcms.rest.api.Validated;
 
 @JsonDeserialize(builder = WorkflowStepAddForm.Builder.class)
@@ -14,7 +14,7 @@ public class WorkflowStepAddForm extends Validated implements IWorkflowStepForm{
     private final String schemeId;
 
     @NotNull
-    @Size(min = 2, max = 100)
+    @Length(min = 2, max = 100)
     private final String stepName;
 
     @NotNull

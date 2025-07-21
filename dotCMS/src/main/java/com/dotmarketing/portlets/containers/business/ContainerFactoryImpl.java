@@ -286,7 +286,7 @@ public class ContainerFactoryImpl implements ContainerFactory {
 		final ImmutableList.Builder<ContainerStructure> builder =
 				new ImmutableList.Builder<>();
 		final HibernateUtil dh = new HibernateUtil(ContainerStructure.class);
-		dh.setSQLQuery("select {container_structures.*} from container_structures " +
+		dh.setSQLQuery("select id, container_id, container_inode, structure_id, code from container_structures " +
 				"where container_structures.container_id = ? " +
 				"and container_structures.container_inode = ?");
 		dh.setParam(container.getIdentifier());
@@ -1120,7 +1120,7 @@ public class ContainerFactoryImpl implements ContainerFactory {
 		query.append(Container.class);
 		query.append(" WHERE  exists ( from cs in class ");
 		query.append(ContainerStructure.class.getName());
-		query.append(" where cs.containerId = c.identifier and cs.structureId = ? ");
+		query.append(" where cs.containerId = c.identifier and cs.structureId = ?1 ");
 		if (workingOrLiveOnly) {
 			query.append(" AND EXISTS ( FROM vi IN CLASS ");
 			query.append(ContainerVersionInfo.class.getName());
