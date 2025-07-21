@@ -1,195 +1,180 @@
-import { createComponentFactory, Spectator, SpectatorHost, createHostFactory } from '@ngneat/spectator';
-
-import { Component } from '@angular/core';
+import { SpectatorHost, createHostFactory, byTestId } from '@ngneat/spectator';
+import { MockComponent } from 'ng-mocks';
 
 import { DotPortletBoxComponent } from './components/dot-portlet-box/dot-portlet-box.component';
+import { DotPortletToolbarComponent } from './components/dot-portlet-toolbar/dot-portlet-toolbar.component';
 import { DotPortletBaseComponent } from './dot-portlet-base.component';
-import { DotPortletBaseModule } from './dot-portlet-base.module';
 
-@Component({
-    selector: 'dot-portlet-toolbar',
-    template: `
-        <div data-testid="toolbar-content">Toolbar</div>
-    `
-})
-class DotToolbarMockComponent {}
 
-@Component({
-    template: `
-        <dot-portlet-base data-testid="portlet-base">
-            <div data-testid="content">Hello World</div>
-        </dot-portlet-base>
-    `
-})
-class DefaultTestHostComponent {}
+describe('DotPortletBaseComponent', () => {
 
-@Component({
-    template: `
-        <dot-portlet-base data-testid="portlet-base" [boxed]="false">
-            <div data-testid="content">Hello World</div>
-        </dot-portlet-base>
-    `
-})
-class DefaultTestHostUnboxedComponent {}
-
-@Component({
-    template: `
-        <dot-portlet-base data-testid="portlet-base">
-            <dot-portlet-toolbar data-testid="toolbar"></dot-portlet-toolbar>
-            <div data-testid="content">Hello World</div>
-        </dot-portlet-base>
-    `
-})
-class DefaultTestHostWithToolbarComponent {}
-
-fdescribe('DotPortletBaseComponent', () => {
-    let spectator: Spectator<DotPortletBaseComponent>;
-
-    const createComponent = createComponentFactory({
+    let hostSpectator: SpectatorHost<DotPortletBaseComponent>;
+    const createHost = createHostFactory({
         component: DotPortletBaseComponent,
-        declarations: [DotPortletBoxComponent, DotToolbarMockComponent],
+        declarations: [
+            DotPortletBoxComponent,
+            MockComponent(DotPortletToolbarComponent),
+        ],
         shallow: true
     });
 
     describe('Boxed Content', () => {
+
         beforeEach(() => {
-            spectator = createComponent();
+            hostSpectator = createHost(`
+                <dot-portlet-base>
+                    <div data-testid="content">Hello World</div>
+                </dot-portlet-base>
+            `);
+            hostSpectator.detectChanges();
         });
 
         it('should render boxed content by default', () => {
-            spectator.setInput('boxed', true);
-            spectator.detectChanges();
-
-            const portletBox = spectator.query('dot-portlet-box');
+            const portletBox = hostSpectator.query(DotPortletBoxComponent);
             expect(portletBox).toBeTruthy();
         });
 
         it('should render content inside portlet box when boxed', () => {
-            spectator.setInput('boxed', true);
-            spectator.detectChanges();
-
-            const portletBox = spectator.query('dot-portlet-box');
-            expect(portletBox).toBeTruthy();
+            const content = hostSpectator.query(byTestId('content'));
+            expect(content?.textContent?.trim()).toBe('Hello World');
         });
     });
 
     describe('Unboxed Content', () => {
         beforeEach(() => {
-            spectator = createComponent();
+            hostSpectator = createHost(`
+                <dot-portlet-base [boxed]="false">
+                    <div data-testid="content">Hello World</div>
+                </dot-portlet-base>
+            `);
+            hostSpectator.detectChanges();
         });
 
         it('should render unboxed content when boxed is false', () => {
-            spectator.setInput('boxed', false);
-            spectator.detectChanges();
-
-            const portletBox = spectator.query('dot-portlet-box');
+            const portletBox = hostSpectator.query(DotPortletBoxComponent);
             expect(portletBox).toBeFalsy();
         });
     });
 
     describe('Toolbar Integration', () => {
         beforeEach(() => {
-            spectator = createComponent();
+            hostSpectator = createHost(`
+                <dot-portlet-base>
+                    <dot-portlet-toolbar data-testid="toolbar"></dot-portlet-toolbar>
+                    <div data-testid="content">Hello World</div>
+                </dot-portlet-base>
+            `);
+            hostSpectator.detectChanges();
         });
 
         it('should render toolbar as first child when present', () => {
-            spectator.setInput('boxed', true);
-            spectator.detectChanges();
+            const toolbar = hostSpectator.query(DotPortletToolbarComponent);
+            expect(toolbar).toBeTruthy();
+        });
 
-            // This test is covered in the host component tests below
-            // where we can properly test content projection
-            expect(spectator.component).toBeTruthy();
+        it('should render boxed content by default', () => {
+            const portletBox = hostSpectator.query(DotPortletBoxComponent);
+            expect(portletBox).toBeTruthy();
+        });
+
+        it('should render content inside portlet box when boxed', () => {
+            const content = hostSpectator.query(byTestId('content'));
+            expect(content?.textContent?.trim()).toBe('Hello World');
         });
     });
 
-    describe('Host Component Tests', () => {
-        describe('DefaultTestHostComponent', () => {
-            let hostSpectator: SpectatorHost<DotPortletBaseComponent>;
-
-            const createHost = createHostFactory({
-                component: DotPortletBaseComponent,
-                imports: [DotPortletBaseModule],
-                template: `
-                    <dot-portlet-base [boxed]="true">
-                        <div data-testid="content">Hello World</div>
-                    </dot-portlet-base>
-                `,
-                shallow: true
-            });
-
-            beforeEach(() => {
-                hostSpectator = createHost();
-                hostSpectator.detectChanges();
-            });
-
-            it('should render boxed content', () => {
-                hostSpectator.detectChanges();
-
-                console.log(hostSpectator.debugElement.nativeElement.innerHTML);
-
-                const portletBox = hostSpectator.query('dot-portlet-box');
-                const content = hostSpectator.query('[data-testid="content"]');
-                const toolbar = hostSpectator.query('dot-portlet-toolbar');
-
-                expect(portletBox).toBeTruthy();
-                expect(content).toBeTruthy();
-                expect(content?.textContent?.trim()).toBe('Hello World');
-                expect(toolbar).toBeFalsy();
-            });
+     describe('Toolbar Integration', () => {
+        beforeEach(() => {
+            hostSpectator = createHost(`
+                <dot-portlet-base>
+                    <dot-portlet-toolbar data-testid="toolbar"></dot-portlet-toolbar>
+                    <div data-testid="content">Hello World</div>
+                </dot-portlet-base>
+            `);
+            hostSpectator.detectChanges();
         });
 
-        /*
-        describe('DefaultTestHostUnboxedComponent', () => {
-            let hostSpectator: Spectator<DefaultTestHostUnboxedComponent>;
-
-            const createHostComponent = createComponentFactory({
-                component: DefaultTestHostUnboxedComponent,
-                declarations: [DotPortletBaseComponent],
-                shallow: true
-            });
-
-            beforeEach(() => {
-                hostSpectator = createHostComponent();
-                hostSpectator.detectChanges();
-            });
-
-            it('should render unboxed content', () => {
-                const portletBox = hostSpectator.query('dot-portlet-box');
-                const content = hostSpectator.query('[data-testid="content"]');
-
-                expect(portletBox).toBeFalsy();
-                expect(content).toBeTruthy();
-                expect(content?.textContent?.trim()).toBe('Hello World');
-            });
+        it('should render toolbar as first child when present', () => {
+            const toolbar = hostSpectator.query(DotPortletToolbarComponent);
+            expect(toolbar).toBeTruthy();
         });
 
-        describe('DefaultTestHostWithToolbarComponent', () => {
-            let hostSpectator: Spectator<DefaultTestHostWithToolbarComponent>;
-
-            const createHostComponent = createComponentFactory({
-                component: DefaultTestHostWithToolbarComponent,
-                declarations: [
-                    DotPortletBaseComponent,
-                    DotPortletBoxComponent,
-                    DotToolbarMockComponent
-                ],
-                shallow: true
-            });
-
-            beforeEach(() => {
-                hostSpectator = createHostComponent();
-                hostSpectator.detectChanges();
-            });
-
-            it('should render toolbar as first child', () => {
-                const portletBase = hostSpectator.query('[data-testid="portlet-base"]');
-                const toolbar = hostSpectator.query('[data-testid="toolbar"]');
-
-                expect(toolbar).toBeTruthy();
-                expect(portletBase?.firstChild).toBe(toolbar);
-            });
+        it('should render boxed content by default', () => {
+            const portletBox = hostSpectator.query(DotPortletBoxComponent);
+            expect(portletBox).toBeTruthy();
         });
 
-        */
+        it('should render content inside portlet box when boxed', () => {
+            const content = hostSpectator.query(byTestId('content'));
+            expect(content?.textContent?.trim()).toBe('Hello World');
+        });
     });
+
+    describe('DefaultTestHostComponent without toolbar', () => {
+
+        beforeEach(() => {
+            hostSpectator = createHost(`
+                <dot-portlet-base>
+                    <div data-testid="content">Hello World</div>
+                </dot-portlet-base>
+            `);
+            hostSpectator.detectChanges();
+        });
+
+        it('should render boxed content', () => {
+            hostSpectator.detectChanges();
+
+            const portletBox = hostSpectator.query(DotPortletBoxComponent);
+            const content = hostSpectator.query(byTestId('content'));
+            const toolbar = hostSpectator.query(DotPortletToolbarComponent);
+
+            expect(portletBox).toBeTruthy();
+            expect(content).toBeTruthy();
+            expect(content?.textContent?.trim()).toBe('Hello World');
+            expect(toolbar).toBeFalsy();
+        });
+    });
+
+    describe('DefaultTestHostUnboxedComponent', () => {
+
+        beforeEach(() => {
+            hostSpectator = createHost(`
+                <dot-portlet-base [boxed]="false">
+                    <div data-testid="content">Hello World</div>
+                </dot-portlet-base>
+            `);
+            hostSpectator.detectChanges();
+        });
+
+        it('should render unboxed content', () => {
+            const portletBox = hostSpectator.query(DotPortletBoxComponent);
+            const content = hostSpectator.query(byTestId('content'));
+
+            expect(portletBox).toBeFalsy();
+            expect(content).toBeTruthy();
+            expect(content?.textContent?.trim()).toBe('Hello World');
+        });
+    });
+
+    describe('DefaultTestHostWithToolbarComponent', () => {
+
+        beforeEach(() => {
+            hostSpectator = createHost(`
+                <dot-portlet-base data-testid="portlet-base">
+                    <dot-portlet-toolbar data-testid="toolbar"></dot-portlet-toolbar>
+                    <div data-testid="content">Hello World</div>
+                </dot-portlet-base>
+            `);
+            hostSpectator.detectChanges();
+        });
+
+        it('should render toolbar as first child', () => {
+            const portletBase = hostSpectator.query(byTestId('portlet-base'));
+            const toolbar = hostSpectator.query(byTestId('toolbar'));
+
+            expect(toolbar).toBeTruthy();
+            expect(portletBase.firstElementChild).toBe(toolbar);
+        });
+    });
+
 });
