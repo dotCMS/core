@@ -52,8 +52,6 @@ The `@dotcms/client` is a powerful JavaScript/TypeScript SDK designed to simplif
 
 #### Get a dotCMS Environment
 
-#### Version Compatibility
-
 -   **Recommended**: dotCMS Evergreen
 -   **Minimum**: dotCMS v25.05
 -   **Best Experience**: Latest Evergreen release
@@ -159,8 +157,18 @@ const { pageAsset } = await client.page.get('/about-us', {
 const { pageAsset, content } = await client.page.get('/about-us', {
     graphql: {
         content: {
-            blogPosts: `BlogCollection(limit: 3) { title urlTitle }`,
-            navigation: `DotNavigation(uri: "/", depth: 2) { href title }`
+            blogPosts: `
+                BlogCollection(limit: 3) {
+                    title
+                    urlTitle
+                }
+            `,
+            navigation: `
+                DotNavigation(uri: "/", depth: 2) {
+                    href
+                    title
+                }
+            `
         }
     }
 });
@@ -225,9 +233,16 @@ const { pageAsset } = await client.page.get('/blog-post', {
                 containerContentlets {
                     contentlets {
                         ... on Blog {
-                            author { title email }
-                            category { categoryName }
-                            tags { tagName }
+                            author {
+                                title
+                                email
+                            }
+                            category {
+                                categoryName
+                            }
+                            tags {
+                                tagName
+                            }
                         }
                     }
                 }
@@ -243,13 +258,19 @@ const { pageAsset } = await client.page.get('/blog-post', {
 const response = await client.page.get('/about-us', {
     graphql: {
         content: {
-            blogPosts: `BlogCollection(limit: $limit) { ...blogFragment }`
+            blogPosts: `
+                BlogCollection(limit: $limit) {
+                    ...blogFragment
+                }
+            `
         },
         fragments: [
             `fragment blogFragment on Blog {
                 title
                 urlTitle
-                blogContent { json }
+                blogContent {
+                    json
+                }
             }`
         ],
         variables: { limit: 5 }
