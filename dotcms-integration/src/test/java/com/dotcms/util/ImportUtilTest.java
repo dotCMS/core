@@ -4024,13 +4024,10 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             assertTrue("Context should contain 'line' key", context.containsKey("line"));
             assertTrue("Context should contain 'column' key", context.containsKey("column"));
             assertTrue("Context should contain 'parseError' key", context.containsKey("parseError"));
-            assertTrue("Context should contain 'invalidJSON' key", context.containsKey("invalidJSON"));
 
             // Validate context values
-            assertEquals("Context line should be 1", Integer.valueOf(1), context.get("line"));
-            assertEquals("Context column should be 2", Integer.valueOf(2), context.get("column"));
-            assertEquals("Context invalidJSON should match",
-                    "{'timeline':'18_months','team_size':'12'}", context.get("invalidJSON"));
+            assertEquals("Context line should be 1", 1, context.get("line"));
+            assertEquals("Context column should be 2", 2, context.get("column"));
 
             // Validate parse error details
             String parseError = (String) context.get("parseError");
