@@ -170,7 +170,10 @@ public class FieldHandlerStrategyFactory {
                     Try.of(() -> JsonUtil.getJsonAsString((Map<String, Object>) value))
                             .getOrElse("{}"));
         } else {
-            throw new DotJsonFieldException(field.variable(),"UNK",-1,-1,"Unknown value type");
+
+            throw new DotContentletStateException(
+                    "Invalid JSON field provided. Key Value Field variable: " +
+                            field.variable());
         }
     }
 
