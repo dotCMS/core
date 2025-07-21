@@ -1,4 +1,5 @@
-// AnalyticsChart usando PrimeFlex - CSS mínimo
+@use "variables" as *;
+
 :host {
     display: block;
     width: 100%;
@@ -7,4 +8,12 @@
 .chart-container {
     width: 100%;
     position: relative;
+}
+
+.chart-title {
+    font-size: $font-size-lmd;
+    font-weight: $font-weight-bold;
+    color: $black;
+    line-height: 140%;
+    margin: 0;
 }

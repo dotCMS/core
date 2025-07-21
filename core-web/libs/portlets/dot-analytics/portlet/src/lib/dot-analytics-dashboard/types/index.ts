@@ -1,3 +1,5 @@
+import { TimeRange } from "@dotcms/portlets/dot-analytics/data-access";
+
 /** Union type for supported chart types in the analytics dashboard */
 export type ChartType = 'line' | 'pie' | 'bar' | 'doughnut';
 
@@ -45,6 +47,24 @@ export interface ChartOptions {
             display: boolean;
             /** Legend position */
             position?: 'top' | 'bottom' | 'left' | 'right';
+            /** Legend labels configuration */
+            labels?: {
+                /** Use point style instead of rectangles */
+                usePointStyle?: boolean;
+                /** Point style type */
+                pointStyle?: 'circle' | 'cross' | 'crossRot' | 'dash' | 'line' | 'rect' | 'rectRounded' | 'rectRot' | 'star' | 'triangle';
+                /** Width of legend box */
+                boxWidth?: number;
+                /** Height of legend box */
+                boxHeight?: number;
+                /** Padding between legend items */
+                padding?: number;
+                /** Font configuration */
+                font?: {
+                    /** Font size */
+                    size?: number;
+                };
+            };
         };
     };
     /** Scale configurations for axes */
@@ -61,6 +81,8 @@ export interface TableColumn {
     type?: 'text' | 'number' | 'percentage' | 'link';
     /** Text alignment in column */
     alignment?: 'left' | 'center' | 'right';
+    /** Whether column is sortable */
+    sortable?: boolean;
 }
 
 /** Data structure for metric card display */
@@ -80,7 +102,7 @@ export interface FilterOption {
     /** Display text for the option */
     label: string;
     /** Internal value for the option */
-    value: string;
+    value: TimeRange;
 }
 
 /** Data structure for page analytics */

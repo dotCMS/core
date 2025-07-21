@@ -2,7 +2,9 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
 import { CardModule } from 'primeng/card';
+import { SkeletonModule } from 'primeng/skeleton';
 
+import { ComponentStatus } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
 /**
@@ -13,7 +15,7 @@ import { DotMessagePipe } from '@dotcms/ui';
 @Component({
     selector: 'dot-analytics-dashboard-metrics',
     standalone: true,
-    imports: [CommonModule, CardModule, DotMessagePipe],
+    imports: [CommonModule, CardModule, SkeletonModule, DotMessagePipe],
     changeDetection: ChangeDetectionStrategy.OnPush,
     templateUrl: './dot-analytics-dashboard-metrics.component.html',
     styleUrl: './dot-analytics-dashboard-metrics.component.scss'
@@ -24,13 +26,18 @@ export class DotAnalyticsDashboardMetricsComponent {
     readonly $name = input.required<string>({ alias: 'name' });
 
     /** Metric value (number will be formatted with separators) */
-    readonly $value = input.required<string | number>({ alias: 'value' });
+    readonly $value = input.required<number>({ alias: 'value' });
 
     /** Optional secondary text below the metric value */
     readonly $subtitle = input<string>('', { alias: 'subtitle' });
 
     /** PrimeIcons icon name (without 'pi-' prefix) displayed in top-right */
     readonly $icon = input<string>('', { alias: 'icon' });
+
+    /** Component status for loading/error states */
+    readonly $status = input<ComponentStatus>(ComponentStatus.INIT, { alias: 'status' });
+
+
 
     // Computed properties
     /** Formats numeric values with locale-specific separators */
@@ -48,6 +55,16 @@ export class DotAnalyticsDashboardMetricsComponent {
     protected readonly $iconClasses = computed(() => {
         const iconName = this.$icon();
 
-        return `pi ${iconName} text-xl icon-primary`;
+        return `pi ${iconName} `;
     });
+
+    /** Check if component is in loading state */
+    protected readonly $isLoading = computed(() => {
+        const status = this.$status();
+
+        return status === ComponentStatus.INIT || status === ComponentStatus.LOADING;
+    });
+
+    /** Check if component is in error state */
+    protected readonly $isError = computed(() => this.$status() === ComponentStatus.ERROR);
 }

@@ -1,4 +1,4 @@
-import { NgModule, inject } from '@angular/core';
+import { inject, NgModule } from '@angular/core';
 import {
     ActivatedRouteSnapshot,
     Route,
@@ -71,9 +71,14 @@ const PORTLETS_ANGULAR: Route[] = [
         loadChildren: () =>
             import('@dotcms/portlets/dot-locales/portlet').then((m) => m.DotLocalesRoutes)
     },
+    // TODO: We need a fix from BE to remove those redirects
     {
         path: 'analytics-search',
         redirectTo: 'analytics/search'
+    },
+    {
+        path: 'analytics-dashboard',
+        redirectTo: 'analytics/dashboard'
     },
     {
         path: 'analytics',
@@ -264,4 +269,4 @@ const appRoutes: Routes = [
     ],
     providers: [{ provide: RouteReuseStrategy, useClass: DotCustomReuseStrategyService }]
 })
-export class AppRoutingModule {}
+export class AppRoutingModule { }

@@ -1,18 +1,47 @@
 @use "variables" as *;
 
-// MetricCard usando PrimeFlex - CSS mínimo
-:host {
-    display: block;
-    width: 100%;
+.metric-title {
+    font-size: $font-size-md;
+    font-weight: $font-weight-regular-bold;
+    color: $color-palette-gray-800;
+    margin: 0;
+    text-transform: uppercase;
 }
 
-// Asegurar que no haya bordes del p-card
-::ng-deep .p-card {
-    border: none;
-    box-shadow: none;
+.metric-value {
+    font-size: $font-size-xl;
+    font-weight: $font-weight-medium-bold;
+    line-height: normal;
+    margin: 0;
+    color: $black;
 }
 
-// Color azul primario para el ícono
-.icon-primary {
-    color: $color-palette-primary;
+.metric-subtitle {
+    font-size: $font-size-sm;
+    font-weight: $font-weight-regular-bold;
+    color: $color-palette-gray-800;
+    line-height: 140%;
+    margin-top: $spacing-1;
+}
+
+.metric-icon {
+    position: absolute;
+    top: 0;
+    right: 0;
+    font-size: $icon-md;
+    width: $icon-md-box;
+    color: $color-palette-gray-600;
+    z-index: 1;
+    aspect-ratio: 1/1;
+    line-height: 1;
+    justify-content: center;
+    align-items: center;
+    display: flex;
+
+
+}
+
+.metric-error {
+    font-size: $font-size-sm;
+    color: $color-palette-red;
 }

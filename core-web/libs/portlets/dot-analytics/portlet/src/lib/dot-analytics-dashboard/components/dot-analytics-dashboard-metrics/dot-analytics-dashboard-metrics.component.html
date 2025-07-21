@@ -1,33 +1,73 @@
 <p-card
     class="h-full hover:shadow-2 transition-all transition-duration-200"
     data-testid="metric-card">
-    <div class="flex flex-column justify-content-between h-full relative">
-        <!-- Ícono en esquina superior derecha -->
-        @if ($icon()) {
-            <i
-                [class]="$iconClasses()"
-                class="absolute top-0 right-0 mt-3 mr-3"
-                data-testid="metric-icon"></i>
-        }
 
-        <!-- Contenido principal -->
-        <div class="flex flex-column">
-            <h3
-                class="text-sm font-medium text-600 uppercase m-0 letter-spacing-1"
-                data-testid="metric-title">
-                {{ $name() | dm }}
-            </h3>
-
-            <div class="text-3xl font-bold line-height-3 m-0" data-testid="metric-value">
-                {{ $formattedValue() }}
-            </div>
+    @if ($isError()) {
+        <!-- Error state -->
+        <div class="flex flex-column justify-content-center align-items-center h-full text-center p-3">
+            <i class="pi pi-exclamation-triangle text-red-500 text-2xl mb-2"></i>
+            <div class="metric-error">{{ 'analytics.metrics.error.loading' | dm }}</div>
         </div>
+    } @else if ($isLoading()) {
+        <!-- Loading state with skeleton -->
+        <div class="flex flex-column justify-content-between h-full relative">
 
-        <!-- Subtítulo -->
-        @if ($subtitle()) {
-            <div class="text-xs text-500 mt-2" data-testid="metric-subtitle">
-                {{ $subtitle()! | dm }}
+            <!-- Skeleton content -->
+            <div class="flex flex-column">
+                <!-- Skeleton title -->
+                <p-skeleton
+                    width="10rem"
+                    height="1.25rem"
+                    class="mb-3">
+                </p-skeleton>
+
+                <!-- Skeleton value -->
+                <p-skeleton
+                    width="1.5rem"
+                    height="1.5rem"
+                    class="mb-1">
+                </p-skeleton>
             </div>
-        }
-    </div>
+
+            <!-- Skeleton subtitle -->
+            <p-skeleton
+                width="10rem"
+                height="0.75rem"
+                class="mt-2">
+            </p-skeleton>
+        </div>
+    } @else {
+        <!-- Normal content - only shown when LOADED -->
+        <div class="flex flex-column justify-content-between h-full relative">
+
+            <!-- Icon in top-right corner -->
+            @if ($icon()) {
+                <i
+                    [class]="$iconClasses()"
+                    class="metric-icon pi icon-md"
+                    data-testid="metric-icon">
+                </i>
+            }
+
+            <!-- Contenido principal -->
+            <div class="flex flex-column">
+                <h3
+                    class="metric-title"
+                    data-testid="metric-title">
+                    {{ $name() | dm }}
+                </h3>
+
+                <div class="metric-value" data-testid="metric-value">
+                    {{ $formattedValue() }}
+                </div>
+            </div>
+
+            <!-- Subtítulo -->
+            @if ($subtitle()) {
+                <div class="metric-subtitle" data-testid="metric-subtitle">
+                    {{ $subtitle()! | dm }}
+                </div>
+            }
+        </div>
+    }
 </p-card>

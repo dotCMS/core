@@ -1,14 +1,20 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, effect, inject } from '@angular/core';
 
+import { ButtonModule } from 'primeng/button';
+
+import {
+    DotAnalyticsDashboardStore,
+    TimeRange
+} from '@dotcms/portlets/dot-analytics/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
+
 
 import { DotAnalyticsDashboardChartComponent } from './components/dot-analytics-dashboard-chart/dot-analytics-dashboard-chart.component';
 import { DotAnalyticsDashboardFiltersComponent } from './components/dot-analytics-dashboard-filters/dot-analytics-dashboard-filters.component';
 import { DotAnalyticsDashboardLoadingComponent } from './components/dot-analytics-dashboard-loading/dot-analytics-dashboard-loading.component';
 import { DotAnalyticsDashboardMetricsComponent } from './components/dot-analytics-dashboard-metrics/dot-analytics-dashboard-metrics.component';
 import { DotAnalyticsDashboardTableComponent } from './components/dot-analytics-dashboard-table/dot-analytics-dashboard-table.component';
-import { DASHBOARD_MOCK_DATA } from './mocks/dashboard.mocks';
 
 /**
  * Main analytics dashboard component for DotCMS.
@@ -19,8 +25,9 @@ import { DASHBOARD_MOCK_DATA } from './mocks/dashboard.mocks';
  * - Time-based line chart for pageview trends
  * - Device/browser breakdown pie chart
  * - Top performing pages table
- * - Time period filtering
+ * - Time period filtering with URL persistence
  * - Loading states with skeletons
+ * - Error handling
  *
  */
 @Component({
@@ -28,6 +35,7 @@ import { DASHBOARD_MOCK_DATA } from './mocks/dashboard.mocks';
     standalone: true,
     imports: [
         CommonModule,
+        ButtonModule,
         DotAnalyticsDashboardMetricsComponent,
         DotAnalyticsDashboardChartComponent,
         DotAnalyticsDashboardTableComponent,
@@ -39,20 +47,58 @@ import { DASHBOARD_MOCK_DATA } from './mocks/dashboard.mocks';
     styleUrl: './dot-analytics-dashboard.component.scss'
 })
 export default class DotAnalyticsDashboardComponent {
-    /** Mock data for dashboard demonstration */
-    protected readonly $mockData = DASHBOARD_MOCK_DATA;
+    private readonly store = inject(DotAnalyticsDashboardStore);
 
-    /** Loading state for showing skeleton placeholders */
-    protected readonly $isLoading = false;
+    protected readonly $currentTimeRange = this.store.timeRange;
+    protected readonly $metricsData = this.store.metricsData;
+    protected readonly $topPagesTableData = this.store.topPagesTableData;
+    protected readonly $topPagesTableStatus = this.store.topPagesTable.status;
+
+    protected readonly $pageviewsTimelineData = this.store.pageViewTimeLineData;
+    protected readonly $deviceBreakdownData = this.store.pageViewDeviceBrowsersData;
+
+    constructor() {
+        effect(() => {
+            const timeRange = this.$currentTimeRange();
+
+            this.store.loadTotalPageViews(timeRange);
+
+            this.store.loadPageViewDeviceBrowsers(timeRange);
+            this.store.loadPageViewTimeLine(timeRange);
+            this.store.loadTopPagePerformance(timeRange);
+            this.store.loadUniqueVisitors(timeRange);
+            this.store.loadTopPagesTable(timeRange);
+        }, { allowSignalWrites: true });
+    }
 
     /**
      * Handles time period filter changes.
-     * Currently logs the selection - will be connected to real data service.
+     * Updates the store and URL query parameters.
      *
-     * @param _period - Selected time period value
+     * @param period - Selected time period value
      */
-    onPeriodChange(_period: string): void {
-        // TODO: Implement period change logic
-        // This will update the data based on the selected period
+    onTimeRangeChange(timeRange: TimeRange): void {
+        this.store.setTimeRange(timeRange);
+    }
+
+    /**
+     * Refresh dashboard data
+     */
+    onRefresh(): void {
+        const timeRange = this.$currentTimeRange();
+
+        this.store.loadTotalPageViews(timeRange);
+        this.store.loadTopPagePerformance(timeRange);
+        this.store.loadUniqueVisitors(timeRange);
+        this.store.loadTopPagesTable(timeRange);
+        this.store.loadPageViewTimeLine(timeRange);
+        this.store.loadPageViewDeviceBrowsers(timeRange);
+    }
+
+    /**
+     * Reset dashboard to initial state
+     */
+    onReset(): void {
+        // TODO: Implement reset logic
     }
 }
