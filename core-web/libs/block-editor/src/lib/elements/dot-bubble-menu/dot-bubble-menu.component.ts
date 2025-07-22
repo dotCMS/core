@@ -26,7 +26,7 @@ import { take } from 'rxjs/operators';
 
 import { Editor } from '@tiptap/core';
 
-import { DotContentTypeService, DotMessageService } from '@dotcms/data-access';
+import { DotAiService, DotContentTypeService, DotMessageService } from '@dotcms/data-access';
 import { FeaturedFlags } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
