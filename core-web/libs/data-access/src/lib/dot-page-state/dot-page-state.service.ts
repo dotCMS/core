@@ -1,7 +1,7 @@
 import { BehaviorSubject, forkJoin, Observable, of, Subject } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { catchError, map, pluck, switchMap, take, tap } from 'rxjs/operators';
 
@@ -34,23 +34,21 @@ import { generateDotFavoritePageUrl } from '@dotcms/utils';
 
 @Injectable()
 export class DotPageStateService {
+    private dotContentletLockerService = inject(DotContentletLockerService);
+    private dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
+    private dotMessageService = inject(DotMessageService);
+    private dotPageRenderService = inject(DotPageRenderService);
+    private dotRouterService = inject(DotRouterService);
+    private loginService = inject(LoginService);
+    private dotFavoritePageService = inject(DotFavoritePageService);
+    private dotExperimentsService = inject(DotExperimentsService);
+    private dotLicenseService = inject(DotLicenseService);
+
     state$: Subject<DotPageRenderState> = new Subject<DotPageRenderState>();
     haveContent$ = new BehaviorSubject<boolean>(false);
-    private currentState: DotPageRenderState;
+    private currentState!: DotPageRenderState;
 
     private isInternalNavigation = false;
-
-    constructor(
-        private dotContentletLockerService: DotContentletLockerService,
-        private dotHttpErrorManagerService: DotHttpErrorManagerService,
-        private dotMessageService: DotMessageService,
-        private dotPageRenderService: DotPageRenderService,
-        private dotRouterService: DotRouterService,
-        private loginService: LoginService,
-        private dotFavoritePageService: DotFavoritePageService,
-        private dotExperimentsService: DotExperimentsService,
-        private dotLicenseService: DotLicenseService
-    ) {}
 
     get pagePersonalization() {
         const persona = this.currentState?.viewAs?.persona;

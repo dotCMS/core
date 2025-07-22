@@ -232,6 +232,11 @@ cube('request', {
       sql: 'request_id',
       type: 'countDistinct',
       title: 'Total Requests'
+    },
+    totalUsers: {
+      sql: 'context_user_id',
+      type: 'countDistinct',
+      title: 'Total Users'
     }
   }
 });

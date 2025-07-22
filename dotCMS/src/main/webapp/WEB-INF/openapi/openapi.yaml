@@ -17166,6 +17166,9 @@ components:
           type: boolean
         userId:
           type: string
+      required:
+      - password
+      - userId
     BayesianResult:
       type: object
       properties:
@@ -17536,6 +17539,8 @@ components:
         sortOrder:
           type: integer
           format: int32
+      required:
+      - categoryName
     CategoryKeysForm:
       type: object
       properties:
@@ -17703,8 +17708,6 @@ components:
           type: string
         prompt:
           type: string
-          maxLength: 4096
-          minLength: 1
         responseFormat:
           type: object
           additionalProperties:
@@ -18031,6 +18034,9 @@ components:
           type: boolean
         workflowActionId:
           type: string
+      required:
+      - contentType
+      - workflowActionId
     ContentImportParamsSchema:
       type: object
       description: Schema for content import parameters.
@@ -18118,6 +18124,8 @@ components:
           type: string
         variable:
           type: string
+      required:
+      - name
     CopyContentletForm:
       type: object
       properties:
@@ -18422,6 +18430,8 @@ components:
           type: array
           items:
             type: string
+      required:
+      - items
     DeletePPQueueElementsByIdentifierForm:
       type: object
       properties:
@@ -18441,6 +18451,10 @@ components:
           uniqueItems: true
         siteId:
           type: string
+      required:
+      - key
+      - params
+      - siteId
     DifferenceData:
       type: object
       properties:
@@ -18628,8 +18642,6 @@ components:
           minimum: 0
         query:
           type: string
-          maxLength: 4096
-          minLength: 1
         userId:
           type: string
         velocityTemplate:
@@ -18717,6 +18729,12 @@ components:
           type: string
         sending:
           type: boolean
+      required:
+      - address
+      - environmentId
+      - name
+      - port
+      - protocol
     Environment:
       type: object
       properties:
@@ -18744,6 +18762,9 @@ components:
           type: array
           items:
             type: string
+      required:
+      - name
+      - pushMode
     ErrorDetail:
       type: object
       properties:
@@ -18915,11 +18936,17 @@ components:
           type: boolean
         password:
           type: string
+      required:
+      - appKeysBySite
+      - exportAll
+      - password
     ExtraPackagesForm:
       type: object
       properties:
         packages:
           type: string
+      required:
+      - packages
     Field:
       type: object
       discriminator:
@@ -19547,6 +19574,8 @@ components:
       properties:
         userId:
           type: string
+      required:
+      - userId
     FormContentType:
       type: object
       allOf:
@@ -20481,6 +20510,9 @@ components:
           type: string
         value:
           type: string
+      required:
+      - key
+      - value
     Language:
       type: object
       properties:
@@ -20581,6 +20613,9 @@ components:
           type: string
         userId:
           type: string
+      required:
+      - password
+      - userId
     LookBackWindow:
       type: object
       properties:
@@ -21174,6 +21209,9 @@ components:
           type: string
         personaTag:
           type: string
+      required:
+      - pageId
+      - personaTag
     PublishingEndPoint:
       type: object
       properties:
@@ -21230,6 +21268,12 @@ components:
           format: int32
         orderBy:
           type: string
+      required:
+      - fieldVariable
+      - identifier
+      - limit
+      - offset
+      - orderBy
     PushPublishBean:
       type: object
       properties:
@@ -21518,6 +21562,9 @@ components:
           type: string
         token:
           type: string
+      required:
+      - password
+      - token
     ResponseContentletWorkflowStatusView:
       type: object
       properties:
@@ -23044,6 +23091,10 @@ components:
           type: object
           additionalProperties:
             $ref: "#/components/schemas/RestConditionValue"
+      required:
+      - conditionlet
+      - operator
+      - owningGroup
     RestConditionGroup:
       type: object
       properties:
@@ -23056,6 +23107,8 @@ components:
         priority:
           type: integer
           format: int32
+      required:
+      - operator
     RestConditionValue:
       type: object
       properties:
@@ -23066,6 +23119,8 @@ components:
           format: int32
         value:
           type: string
+      required:
+      - key
     RestLanguage:
       type: object
       properties:
@@ -23114,6 +23169,8 @@ components:
         priority:
           type: integer
           format: int32
+      required:
+      - owningRule
     RestTag:
       type: object
       properties:
@@ -23206,6 +23263,8 @@ components:
           type: string
         roleName:
           type: string
+      required:
+      - roleName
     RoleLayoutForm:
       type: object
       properties:
@@ -23506,6 +23565,9 @@ components:
           type: string
         value:
           type: object
+      required:
+      - key
+      - value
     SetHashForm:
       type: object
       properties:
@@ -23515,6 +23577,9 @@ components:
             type: object
         key:
           type: string
+      required:
+      - fields
+      - key
     ShortCategory:
       type: object
       properties:
@@ -23928,6 +23993,8 @@ components:
           type: object
           additionalProperties:
             $ref: "#/components/schemas/RestTag"
+      required:
+      - tags
     TagInode:
       type: object
       properties:
@@ -24011,6 +24078,8 @@ components:
           type: string
         title:
           type: string
+      required:
+      - title
     TemplateImageForm:
       type: object
       properties:
@@ -24380,11 +24449,17 @@ components:
           type: string
         tagName:
           type: string
+      required:
+      - siteId
+      - tagId
+      - tagName
     UpgradeTaskForm:
       type: object
       properties:
         upgradeTaskClass:
           type: string
+      required:
+      - upgradeTaskClass
     User:
       type: object
       properties:
@@ -24630,6 +24705,10 @@ components:
           type: string
         userId:
           type: string
+      required:
+      - email
+      - firstName
+      - lastName
     VanityUrlContentType:
       type: object
       allOf:
@@ -25000,6 +25079,14 @@ components:
           type: array
           items:
             type: string
+      required:
+      - actionAssignable
+      - actionCommentable
+      - actionName
+      - actionNextStep
+      - actionRoleHierarchyForAssign
+      - schemeId
+      - showOn
     WorkflowActionSeparatorForm:
       type: object
       properties:
@@ -25012,6 +25099,8 @@ components:
       properties:
         actionId:
           type: string
+      required:
+      - actionId
     WorkflowActionView:
       type: object
       properties:
@@ -25141,6 +25230,8 @@ components:
           type: object
           additionalProperties:
             type: string
+      required:
+      - actionletClass
     WorkflowActionletParameter:
       type: object
       properties:
@@ -25184,6 +25275,8 @@ components:
         order:
           type: integer
           format: int32
+      required:
+      - order
     WorkflowScheme:
       type: object
       properties:
@@ -25220,6 +25313,8 @@ components:
           type: string
         schemeName:
           type: string
+      required:
+      - schemeName
     WorkflowSchemeImportExportObjectView:
       type: object
       properties:
@@ -25272,6 +25367,8 @@ components:
           items:
             type: string
           uniqueItems: true
+      required:
+      - schemes
     WorkflowStep:
       type: object
       properties:
@@ -25311,6 +25408,13 @@ components:
           type: string
         stepResolved:
           type: boolean
+      required:
+      - enableEscalation
+      - escalationAction
+      - escalationTime
+      - schemeId
+      - stepName
+      - stepResolved
     WorkflowStepUpdateForm:
       type: object
       properties:
@@ -25327,6 +25431,12 @@ components:
           format: int32
         stepResolved:
           type: boolean
+      required:
+      - enableEscalation
+      - escalationTime
+      - stepName
+      - stepOrder
+      - stepResolved
     WorkflowSystemActionForm:
       type: object
       properties:
@@ -25347,6 +25457,9 @@ components:
           - UNARCHIVE
           - DELETE
           - DESTROY
+      required:
+      - actionId
+      - systemAction
     WorkflowTask:
       type: object
       properties:
