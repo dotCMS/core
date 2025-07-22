@@ -109,6 +109,11 @@ public enum ImportLineValidationCodes {
     VALIDATION_FAILED_PATTERN,
 
     /**
+     * Invalid numeric field value
+     */
+    INVALID_NUMBER_FORMAT,
+
+    /**
      * Invalid field type
      */
     INVALID_FIELD_TYPE
