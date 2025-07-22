@@ -39,15 +39,13 @@ export class DotEditPageInfoSeoComponent {
     @Input() title: string;
     @Input() url: string;
     innerApiLink: string;
-    baseUrl: string;
+    baseUrl = '';
     seoImprovements: boolean;
     previewUrl: string;
 
     constructor() {
-        const document = this.document;
-
-        this.baseUrl = document.defaultView.location.href.includes('edit-page')
-            ? document.defaultView.location.origin
+        this.baseUrl = this.document.defaultView.location.href.includes('edit-page')
+            ? this.document.defaultView.location.origin
             : '';
     }
 
