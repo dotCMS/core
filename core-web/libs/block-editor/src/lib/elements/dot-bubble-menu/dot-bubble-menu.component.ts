@@ -32,6 +32,7 @@ import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotImageEditorPopoverComponent } from './components/dot-image-editor-popover/dot-image-editor-popover.component';
 import { DotLinkEditorPopoverComponent } from './components/dot-link-editor-popover/dot-link-editor-popover.component';
+import { getContentletDataFromSelection } from './utils';
 
 import { EditorModalDirective } from '../../directive/editor-modal.directive';
 import { AI_IMAGE_PROMPT_EXTENSION_NAME } from '../../extensions/ai-image-prompt/ai-image-prompt.extension';
@@ -255,29 +256,7 @@ export class DotBubbleMenuComponent implements OnInit {
     protected goToContentlet() {
         // Validate selection exists before proceeding
 
-        // Get the selection
-        const selection = this.editor()?.state?.selection;
-
-        // Get the slice of the selection
-        const slice = selection?.content?.();
-
-        // Get the fragment of the slice
-        const fragment = slice?.content;
-
-        // Get the first node of the fragment
-        const selectionNode = fragment?.content?.[0];
-
-        if (!selectionNode) {
-            console.warn('Selection node is undefined, cannot navigate to contentlet');
-
-            return;
-        }
-
-        // Extract content type information from the selected node
-
-        const { data = {} } = selectionNode?.attrs || {};
-
-        const { contentType, inode } = data || {};
+        const { contentType, inode } = getContentletDataFromSelection(this.editor());
 
         if (!contentType) {
             console.warn('contentType is undefined, cannot navigate to contentlet');
