@@ -2,6 +2,17 @@
 
 ## 📚 Documentation Structure
 
+### 🤖 Context Strategy for AI Tools
+**Claude Integration:**
+- This CLAUDE.md file provides **always-available context**
+- Detailed `/docs/` files are read **on-demand** via Read tool
+- Use `/clear` command between tasks to manage context window
+
+**Cursor Integration:**
+- `.cursor/rules/` directory provides **context-aware guidance**
+- Critical patterns **always included** in relevant file contexts
+- Use `@docs/path/file.md` references for **detailed examples on-demand**
+
 ### 🏗️ Core Principles
 - **Architecture**: [docs/core/ARCHITECTURE_OVERVIEW.md](docs/core/ARCHITECTURE_OVERVIEW.md)
 - **Code Structure**: [docs/core/CODE_STRUCTURE.md](docs/core/CODE_STRUCTURE.md)
@@ -13,6 +24,7 @@
 ### 🎯 Backend (Java/Maven)
 - **Java Standards**: [docs/backend/JAVA_STANDARDS.md](docs/backend/JAVA_STANDARDS.md)
 - **Maven Build**: [docs/backend/MAVEN_BUILD_SYSTEM.md](docs/backend/MAVEN_BUILD_SYSTEM.md)
+- **Configuration Patterns**: [docs/backend/CONFIGURATION_PATTERNS.md](docs/backend/CONFIGURATION_PATTERNS.md)
 - **REST API Patterns**: [docs/backend/REST_API_PATTERNS.md](docs/backend/REST_API_PATTERNS.md)
 - **Database Patterns**: [docs/backend/DATABASE_PATTERNS.md](docs/backend/DATABASE_PATTERNS.md)
 - **Security Backend**: [docs/backend/SECURITY_BACKEND.md](docs/backend/SECURITY_BACKEND.md)
@@ -29,7 +41,7 @@
 
 ### 🧪 Testing
 - **Backend Unit Tests**: [docs/testing/BACKEND_UNIT_TESTS.md](docs/testing/BACKEND_UNIT_TESTS.md)
-- **Frontend Unit Tests**: [docs/testing/FRONTEND_UNIT_TESTS.md](docs/testing/FRONTEND_UNIT_TESTS.md)
+- **Frontend Testing**: [docs/frontend/TESTING_FRONTEND.md](docs/frontend/TESTING_FRONTEND.md)
 - **Integration Tests**: [docs/testing/INTEGRATION_TESTS.md](docs/testing/INTEGRATION_TESTS.md)
 - **API Testing**: [docs/testing/API_TESTING.md](docs/testing/API_TESTING.md)
 - **E2E Tests**: [docs/testing/E2E_TESTS.md](docs/testing/E2E_TESTS.md)

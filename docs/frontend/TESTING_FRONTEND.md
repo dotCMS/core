@@ -1,5 +1,31 @@
 # Frontend Testing Patterns
 
+## Tech Stack for Testing
+- **Testing Framework**: Jest
+- **Testing Library**: Spectator + @testing-library/angular
+- **Coverage Tool**: Jest Coverage
+- **Mocking**: Jest + ts-mockito
+- **E2E**: Playwright (when needed)
+
+## File Structure and Organization
+- Test files must be named with `.spec.ts` suffix
+- Place test files adjacent to the file being tested
+- Follow pattern: `[name].spec.ts` for all testable files
+- Create mock files with `.mock.ts` suffix in a `__mocks__` directory
+- Group related test files in a `__tests__` directory for complex components
+
+```
+component-name/
+├── component-name.component.ts
+├── component-name.component.html
+├── component-name.component.spec.ts
+├── __mocks__/
+│   ├── component-name.mock.ts
+│   └── service-name.mock.ts
+└── __tests__/  # For complex test scenarios
+    └── complex-scenario.spec.ts
+```
+
 ## Spectator Testing Framework (Required)
 
 ### Component Testing Setup
@@ -97,6 +123,51 @@ it('should handle user interactions', () => {
 ```
 
 ## Element Selection Patterns
+
+### Data-TestId Naming Convention (Required)
+
+**ALWAYS use data-testid for element selection following this format:**
+```
+data-testid="[what-it-is]-[what-it-does]"
+```
+
+#### HTML Template Examples
+```html
+<!-- Components -->
+<div data-testid="user-profile">
+  <!-- Form Controls -->
+  <input data-testid="user-profile-name-input" />
+  <button data-testid="user-profile-save-button">Save</button>
+  
+  <!-- Lists -->
+  <ul data-testid="user-profile-items-list">
+    <li data-testid="user-profile-item-1">Item 1</li>
+  </ul>
+</div>
+
+<!-- Forms -->
+<form data-testid="login-form">
+  <input data-testid="username-input" type="text">
+  <button data-testid="submit-button">Login</button>
+</form>
+
+<!-- States -->
+<div data-testid="error-message">Error message</div>
+<div data-testid="success-message">Success message</div>
+<div data-testid="loading-spinner">Loading...</div>
+<div data-testid="empty-state">No items found</div>
+```
+
+#### Common Element Patterns
+- **Buttons**: `data-testid="submit-button"`, `data-testid="edit-button"`
+- **Forms**: `data-testid="login-form"`, `data-testid="search-form"`
+- **Inputs**: `data-testid="username-input"`, `data-testid="search-input"`
+- **Lists**: `data-testid="users-list"`, `data-testid="items-list"`
+- **List items**: `data-testid="user-item"`, `data-testid="list-item"`
+- **Messages**: `data-testid="error-message"`, `data-testid="success-message"`
+- **Loading**: `data-testid="loading-spinner"`, `data-testid="loading-indicator"`
+- **Empty states**: `data-testid="empty-state"`, `data-testid="no-data-message"`
+- **Dialogs**: `data-testid="confirmation-dialog"`, `data-testid="delete-dialog"`
 
 ### Data-TestId Usage (Required)
 ```typescript
@@ -438,6 +509,113 @@ export const mockConfig: MyFeatureConfig = {
     sortBy: 'name'
 };
 ```
+
+## User-Centric Testing Principles (Required)
+
+### 1. Test from User Perspective
+Focus on testing what the user sees and experiences, not internal implementation:
+
+```typescript
+// ❌ Don't test implementation details
+it('should call loadData method', () => {
+    spectator.component.loadData();
+    expect(service.getData).toHaveBeenCalled();
+});
+
+// ✅ Test user interactions and outcomes
+it('should load data when user clicks refresh button', () => {
+    const spy = jest.spyOn(spectator.inject(DotService), 'getData');
+    
+    spectator.click(byTestId('refresh-button'));
+    
+    expect(spy).toHaveBeenCalled();
+    expect(spectator.query(byTestId('data-container'))).toContainText('Updated Data');
+});
+```
+
+### 2. Test Complete User Flows
+Test end-to-end user workflows instead of isolated functionality:
+
+```typescript
+// ✅ Test complete user workflow
+it('should show success message after user submits form', async () => {
+    // Arrange: Fill form as a user would
+    spectator.typeInElement('John', byTestId('name-input'));
+    spectator.typeInElement('john@email.com', byTestId('email-input'));
+
+    // Act: Submit form
+    spectator.click(byTestId('submit-button'));
+
+    // Assert: Verify what user sees
+    await spectator.fixture.whenStable();
+    expect(spectator.query(byTestId('success-message'))).toBeVisible();
+});
+```
+
+### 3. Test Error States from User Perspective
+Verify how users experience error conditions:
+
+```typescript
+// ✅ Test error states from user perspective
+it('should show error message when server fails', async () => {
+    const service = spectator.inject(DotService);
+    jest.spyOn(service, 'getData').mockReturnValue(throwError(() => new Error()));
+
+    spectator.click(byTestId('load-data-button'));
+
+    await spectator.fixture.whenStable();
+    expect(spectator.query(byTestId('error-message'))).toBeVisible();
+});
+```
+
+### 4. Dialog/Modal Testing
+Test modal interactions from user perspective:
+
+```typescript
+describe('ConfirmDialog', () => {
+    // ✅ Test modal interactions
+    it('should close modal when user clicks cancel', () => {
+        spectator.click(byTestId('open-dialog-button'));
+        expect(spectator.query(byTestId('confirm-dialog'))).toBeVisible();
+
+        spectator.click(byTestId('dialog-cancel-button'));
+        expect(spectator.query(byTestId('confirm-dialog'))).not.toBeVisible();
+    });
+});
+```
+
+### 5. Form Testing Best Practices
+Test forms as users would interact with them:
+
+```typescript
+describe('UserForm', () => {
+    // ✅ Test form validation from user perspective
+    it('should show validation errors when user submits empty form', () => {
+        spectator.click(byTestId('submit-button'));
+
+        expect(spectator.query(byTestId('name-error'))).toContainText('Name is required');
+        expect(spectator.query(byTestId('email-error'))).toContainText('Email is required');
+    });
+
+    // ✅ Test successful form submission
+    it('should submit form when all fields are valid', () => {
+        // Fill form as a user would
+        spectator.typeInElement('John Doe', byTestId('name-input'));
+        spectator.typeInElement('john@email.com', byTestId('email-input'));
+        spectator.click(byTestId('submit-button'));
+
+        expect(spectator.query(byTestId('success-message'))).toBeVisible();
+    });
+});
+```
+
+### Core Principles Summary
+1. **User-first mindset**: Test from user's perspective, not developer's
+2. **Behavior over implementation**: Test what users see and do
+3. **Real interactions**: Use spectator.click(), spectator.typeInElement(), etc.
+4. **Visual feedback**: Verify what users see as result of their actions
+5. **Error handling**: Test how users experience failures and edge cases
+6. **Complete workflows**: Test full user journeys, not isolated functions
 
 ## Testing Utilities
 

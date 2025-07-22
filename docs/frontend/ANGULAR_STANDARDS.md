@@ -1,10 +1,158 @@
 # Angular Development Standards
 
-## Stack Configuration
+## Tech Stack Configuration
 - **Angular**: 18.2.3 with standalone components
-- **Build**: Nx workspace
-- **Testing**: Spectator (required)
-- **State**: Signals (required for new components)
+- **UI Components**: PrimeNG 17.18.11
+- **State Management**: NgRx Component Store (@ngrx/component-store 18.0.2), NgRx Signals (@ngrx/signals 18.0.2)
+- **Styling**: PrimeFlex 3.3.1
+- **Build**: Nx 19.6.5
+- **Testing**: Jest + Spectator (required)
+
+## Modern Template Syntax (Required)
+Use Angular's new control flow syntax instead of structural directives:
+
+```typescript
+@Component({
+  template: `
+    <!-- Use @if instead of *ngIf -->
+    @if (isLoading()) {
+      <dot-spinner />
+    } @else {
+      <dot-content />
+    }
+
+    <!-- Use @for instead of *ngFor -->
+    @for (item of items(); track item.id) {
+      <div [data-testid]="'item-' + item.id">{{item.name}}</div>
+    } @empty {
+      <dot-empty-state />
+    }
+
+    <!-- Use @switch instead of [ngSwitch] -->
+    @switch (status()) {
+      @case ('loading') { <dot-loading /> }
+      @case ('error') { <dot-error [message]="errorMessage()" /> }
+      @default { <dot-content /> }
+    }
+
+    <!-- Use @let for reused signal values -->
+    @let user = currentUser();
+    <h1>{{ user.name }}</h1>
+    <p>Email: {{ user.email }}</p>
+    @if (user.isAdmin) {
+      <dot-admin-panel />
+    }
+
+    <!-- Use @defer for lazy loading -->
+    @defer (on viewport) {
+      <dot-data-grid [data]="gridData()" />
+    } @loading {
+      <dot-skeleton />
+    }
+  `
+})
+```
+
+## File Structure Requirements (Critical)
+Every component MUST have three separate files:
+
+```
+feature/
+├── components/
+│   └── feature-list/
+│       ├── feature-list.component.ts    # Component logic
+│       ├── feature-list.component.html  # Template
+│       └── feature-list.component.scss  # Styles
+```
+
+❌ Avoid inline templates and styles:
+```typescript
+@Component({
+  selector: "dot-feature",
+  template: `<div>Inline template</div>`,
+  styles: [`:host { display: block }`]
+})
+```
+
+✅ Use separate files:
+```typescript
+@Component({
+  selector: "dot-feature", 
+  templateUrl: "./feature.component.html",
+  styleUrls: ["./feature.component.scss"] // Note: plural styleUrls
+})
+```
+
+## Component Architecture Requirements
+
+### Component Structure Pattern
+```typescript
+@Component({
+  selector: 'dot-my-component',
+  standalone: true,
+  imports: [CommonModule, PrimeNGModule],
+  templateUrl: './my-component.component.html',
+  styleUrls: ['./my-component.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush
+})
+export class MyComponent implements OnInit, OnDestroy {
+  // 1. Private fields
+  private readonly destroy$ = new Subject<void>();
+
+  // 2. Dependency Injection
+  private readonly store = inject(MyStore);
+  private readonly service = inject(MyService);
+
+  // 3. Input/Output signals
+  name = input<string>();
+  config = input<Config>();
+  itemSelected = output<Item>();
+
+  // 4. State signals
+  protected readonly loading = signal(false);
+  protected readonly vm$ = this.store.vm$;
+
+  // 5. Computed signals
+  protected readonly state = computed(() => this.store.state());
+
+  // 6. Lifecycle hooks
+  ngOnInit(): void {
+    this.store.loadData().pipe(takeUntil(this.destroy$)).subscribe();
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  // 7. Public methods
+  onAction(item: Item): void {
+    this.itemSelected.emit(item);
+  }
+}
+```
+
+### Import Order Convention
+```typescript
+// 1. Angular Core
+import { Component, inject } from '@angular/core';
+import { CommonModule } from '@angular/common';
+
+// 2. RxJS
+import { Subject, takeUntil } from 'rxjs';
+
+// 3. Third-party Libraries
+import { ButtonModule } from 'primeng/button';
+
+// 4. Application Core (shared/common)
+import { ComponentStatus } from '@shared/models';
+import { DotHttpErrorManagerService } from '@core/services';
+
+// 5. Feature Specific
+import { MyStore } from './store/my.store';
+import { MyService } from './services/my.service';
+import type { MyConfig } from './models/my.model';
+```
 
 ## Standalone Component Pattern (Required)
 ```typescript
