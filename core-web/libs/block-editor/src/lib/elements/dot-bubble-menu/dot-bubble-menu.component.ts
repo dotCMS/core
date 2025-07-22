@@ -11,7 +11,7 @@ import {
     input,
     SecurityContext,
     signal,
-    ViewChild
+    viewChild
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer } from '@angular/platform-browser';
@@ -60,11 +60,11 @@ const BUBBLE_MENU_HIDDEN_NODES = {
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotBubbleMenuComponent {
-    @ViewChild('dropdown') dropdown: Dropdown;
-    @ViewChild('linkModal') linkModal: DotLinkEditorPopoverComponent;
-    @ViewChild('imageModal') imageModal: DotImageEditorPopoverComponent;
-    @ViewChild('editorModal') editorModal: EditorModalDirective;
-    @ViewChild('bubbleMenu', { read: ElementRef }) bubbleMenuRef: ElementRef<HTMLElement>;
+    dropdown = viewChild.required<Dropdown>('dropdown');
+    linkModal = viewChild.required<DotLinkEditorPopoverComponent>('linkModal');
+    imageModal = viewChild.required<DotImageEditorPopoverComponent>('imageModal');
+    editorModal = viewChild.required<EditorModalDirective>('editorModal');
+    bubbleMenuRef = viewChild.required<ElementRef<HTMLElement>>('bubbleMenu');
 
     readonly editor = input.required<Editor>();
     protected readonly cd = inject(ChangeDetectorRef);
@@ -158,8 +158,8 @@ export class DotBubbleMenuComponent {
         zIndex: 100,
         onClickOutside: (instance: Instance, event: MouseEvent) => {
             const target = event.target as Node;
-            const isImageElement = this.imageModal?.tippyElement.contains(target);
-            const isLinkElement = this.linkModal?.tippyElement.contains(target);
+            const isImageElement = this.imageModal()?.tippyElement.contains(target);
+            const isLinkElement = this.linkModal()?.tippyElement.contains(target);
 
             if (isImageElement || isLinkElement) {
                 return;
@@ -187,9 +187,9 @@ export class DotBubbleMenuComponent {
      */
     protected toggleLinkModal(event: MouseEvent) {
         event.stopPropagation();
-        this.linkModal?.toggle();
-        this.imageModal?.hide();
-        this.dropdown?.hide();
+        this.linkModal()?.toggle();
+        this.imageModal()?.hide();
+        this.dropdown()?.hide();
     }
 
     /**
@@ -197,16 +197,16 @@ export class DotBubbleMenuComponent {
      */
     protected toggleImageModal(event: MouseEvent) {
         event.stopPropagation();
-        this.imageModal?.toggle();
-        this.linkModal?.hide();
+        this.imageModal()?.toggle();
+        this.linkModal()?.hide();
     }
 
     /**
      * Closes any open popover components (link and image editors)
      */
     protected closePopups() {
-        this.linkModal?.hide();
-        this.imageModal?.hide();
+        this.linkModal()?.hide();
+        this.imageModal()?.hide();
     }
 
     protected imageHasLink() {
