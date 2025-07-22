@@ -7,18 +7,17 @@ alwaysApply: true
 # dotCMS Development Guide
 
 ## Primary Reference
-**ALWAYS read and follow CLAUDE.md** - Complete development guide with all standards, patterns, and workflows.
+**CLAUDE.md** provides optimized context-window efficient guidance for both Claude and Cursor.
 
-## Documentation Navigation
-For detailed patterns, reference:
-- **Backend**: @docs/backend/JAVA_STANDARDS.md, @docs/backend/MAVEN_BUILD_SYSTEM.md
-- **Frontend**: @docs/frontend/ANGULAR_STANDARDS.md, @docs/frontend/TESTING_FRONTEND.md
-- **Architecture**: @docs/core/ARCHITECTURE_OVERVIEW.md
-- **Git/CI**: @docs/core/GIT_WORKFLOWS.md, @docs/core/CICD_PIPELINE.md
+## Domain-Specific Context (Loads Automatically)
+- **Java files**: `java-context.md` - Essential Java patterns, Maven rules, build commands
+- **Angular files**: `typescript-context.md` - Modern syntax, testing, SCSS standards  
+- **Test files**: `test-context.md` - Spectator patterns, data-testid, user-centric testing
 
 ## Critical Reminders Only
 - **Java**: Use Config/Logger, never System.out/System.getProperty
 - **Maven**: Versions in bom/application/pom.xml, never in dotCMS/pom.xml
+- **Angular**: Use @if/@for, input()/output(), spectator.setInput()
 - **Testing**: Always use data-testid, run tests before completing work
 - **Security**: No secrets in code, validate all input
 
@@ -31,4 +30,4 @@ For detailed patterns, reference:
 
 **See**: [Documentation Maintenance System](documentation-maintenance.md)
 
-All detailed patterns, examples, and workflows are in CLAUDE.md and /docs/ directory.
+**Context Strategy**: Essential patterns immediately available, detailed docs loaded on-demand via `/docs/` directory.
