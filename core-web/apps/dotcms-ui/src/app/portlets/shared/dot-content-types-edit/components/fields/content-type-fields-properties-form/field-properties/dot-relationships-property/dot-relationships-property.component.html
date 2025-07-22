@@ -1,27 +1,27 @@
-<div *ngIf="!editing" class="field relationship__type">
-    <p-radioButton
-        (click)="clean()"
-        [(ngModel)]="status"
-        [label]="'contenttypes.field.properties.relationship.new.label' | dm"
-        [value]="STATUS_NEW"></p-radioButton>
-
-    <p-radioButton
-        (click)="clean()"
-        [(ngModel)]="status"
-        [label]="'contenttypes.field.properties.relationship.existing.label' | dm"
-        [value]="STATUS_EXISTING"></p-radioButton>
-</div>
+@if (!editing) {
+    <div class="field relationship__type">
+        <p-radioButton
+            (click)="clean()"
+            [(ngModel)]="status"
+            [label]="'contenttypes.field.properties.relationship.new.label' | dm"
+            [value]="STATUS_NEW" />
+        <p-radioButton
+            (click)="clean()"
+            [(ngModel)]="status"
+            [label]="'contenttypes.field.properties.relationship.existing.label' | dm"
+            [value]="STATUS_EXISTING" />
+    </div>
+}
 
 <div class="relationship__config">
-    <dot-new-relationships
-        *ngIf="status === STATUS_NEW; else existing"
-        (switch)="handleChange($event)"
-        [velocityVar]="group.get(property.name).value.velocityVar"
-        [cardinality]="group.get(property.name).value.cardinality"
-        [editing]="editing"
-        class="relationships__new"></dot-new-relationships>
-
-    <ng-template #existing>
+    @if (status === STATUS_NEW) {
+        <dot-new-relationships
+            (switch)="handleChange($event)"
+            [velocityVar]="group.get(property.name).value.velocityVar"
+            [cardinality]="group.get(property.name).value.cardinality"
+            [editing]="editing"
+            class="relationships__new" />
+    } @else {
         <div class="field">
             <label [for]="property.name" [checkIsRequiredControl]="property.name" dotFieldRequired>
                 Relationship
@@ -29,11 +29,11 @@
             <dot-edit-relationships
                 (switch)="handleChange($event)"
                 [id]="property.name"
-                class="relationships__existing"></dot-edit-relationships>
+                class="relationships__existing" />
         </div>
-    </ng-template>
+    }
 
     <dot-field-validation-message
         [message]="getValidationErrorMessage()"
-        [field]="group.controls[property.name]"></dot-field-validation-message>
+        [field]="group.controls[property.name]" />
 </div>
