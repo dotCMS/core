@@ -10,6 +10,8 @@
     @if (showShould()) {
         @if (showImageMenu()) {
             <ng-container *ngTemplateOutlet="bubbleImageMenu"></ng-container>
+        } @else if (showContentMenu()) {
+            <ng-container *ngTemplateOutlet="bubbleContentMenu"></ng-container>
         } @else {
             <ng-container *ngTemplateOutlet="bubbleTextMenu"></ng-container>
         }
@@ -174,6 +176,17 @@
         class="bubble-menu-button bubble-menu-button--icon"
         (click)="editor().chain().deleteSelection().blur().run()">
         <span class="material-icons">delete_outline</span>
+    </button>
+</ng-template>
+
+<ng-template #bubbleContentMenu>
+    <button
+        class="bubble-menu-button bubble-menu-button--icon"
+        (click)="editor().chain().deleteSelection().blur().run()">
+        <span class="material-icons">delete_outline</span>
+    </button>
+    <button class="bubble-menu-button bubble-menu-button--icon" (click)="goToContentlet()">
+        <span class="material-icons">edit</span>
     </button>
 </ng-template>
 

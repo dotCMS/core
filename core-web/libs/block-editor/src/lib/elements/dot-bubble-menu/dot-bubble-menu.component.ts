@@ -19,7 +19,12 @@ import { DomSanitizer } from '@angular/platform-browser';
 import { DropdownModule } from 'primeng/dropdown';
 import { OverlayPanelModule } from 'primeng/overlaypanel';
 
+import { take } from 'rxjs/operators';
+
 import { Editor } from '@tiptap/core';
+
+import { DotContentTypeService, DotMessageService } from '@dotcms/data-access';
+import { FeaturedFlags } from '@dotcms/dotcms-models';
 
 import { DotImageEditorPopoverComponent } from './components/dot-image-editor-popover/dot-image-editor-popover.component';
 import { DotLinkEditorPopoverComponent } from './components/dot-link-editor-popover/dot-link-editor-popover.component';
@@ -68,11 +73,14 @@ export class DotBubbleMenuComponent {
     readonly editor = input.required<Editor>();
     protected readonly cd = inject(ChangeDetectorRef);
     protected readonly domSanitizer = inject(DomSanitizer);
+    protected readonly dotMessageService = inject(DotMessageService);
+    protected readonly dotContentTypeService = inject(DotContentTypeService);
 
     protected readonly dropdownItem = signal<NodeTypeOption | null>(null);
     protected readonly placeholder = signal<string>('Paragraph');
     protected readonly showShould = signal<boolean>(true);
     protected readonly showImageMenu = signal<boolean>(false);
+    protected readonly showContentMenu = signal<boolean>(false);
 
     protected readonly nodeTypeOptions: NodeTypeOption[] = [
         {
@@ -199,10 +207,88 @@ export class DotBubbleMenuComponent {
 
         return !!image?.href;
     }
+    protected goToContentlet() {
+        // Validate selection exists before proceeding
+
+        // Get the selection
+        const selection = this.editor()?.state?.selection;
+
+        // Get the slice of the selection
+        const slice = selection?.content?.();
+
+        // Get the fragment of the slice
+        const fragment = slice?.content;
+
+        // Get the first node of the fragment
+        const selectionNode = fragment?.content?.[0];
+
+        if (!selectionNode) {
+            console.warn('Selection node is undefined, cannot navigate to contentlet');
+
+            return;
+        }
+
+        // Extract content type information from the selected node
+
+        const { data = {} } = selectionNode.attrs;
+
+        const { contentType, inode } = data;
+
+        // Confirm navigation with user to prevent accidental data loss
+
+        if (!confirm(this.dotMessageService.get('message.contentlet.lose.unsaved.changes'))) {
+            return;
+        }
+
+        // Query content type service to determine editor capabilities and preferences
+        this.dotContentTypeService
+            .getContentType(contentType)
+            .pipe(take(1))
+            .subscribe((contentTypeInfo) => {
+                // Determine which editor to use based on feature flag in content type metadata
+
+                const shouldUseOldEditor =
+                    !contentTypeInfo?.metadata?.[
+                        FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED
+                    ];
+
+                // Prepare return navigation data
+
+                // Extract current page title removing any suffix after the dash
+
+                const title = window.parent
+                    ? window.parent.document.title.split(' - ')[0]
+                    : document.title.split(' - ')[0] ||
+                      this.dotMessageService.get('message.contentlet.back.to.content');
+
+                // Store navigation state in localStorage for returning to first editor
+                const relationshipReturnValue = {
+                    title,
+                    blockEditorBackUrl: shouldUseOldEditor
+                        ? this.generateBackUrl(inode)
+                        : window.location.href,
+                    inode: this.extractInodeFromUrl(shouldUseOldEditor) // is not needed but I am seeing it, to follow the logic edit_contentlet_basic_properties.jsp
+                };
+
+                localStorage.setItem(
+                    'dotcms.relationships.relationshipReturnValue',
+                    JSON.stringify(relationshipReturnValue)
+                );
+
+                // Navigate to the appropriate editor based on feature flag
+                if (shouldUseOldEditor) {
+                    // Legacy approach - direct page navigation to old editor
+                    window.parent.location.href = `/dotAdmin/#/c/content/${inode}`;
+                } else {
+                    window.parent.location.href = `/dotAdmin/#/content/${inode}`;
+                }
+            });
+    }
 
     private onBeforeUpdate() {
         this.checkIfShowBubbleMenu();
         this.checkIfShowImageMenu();
+        this.checkIfIsContentlet();
         this.setCurrentSelectedNode();
         this.detectChanges();
     }
@@ -226,5 +312,81 @@ export class DotBubbleMenuComponent {
     private checkIfShowImageMenu() {
         const currentNodeType = getCurrentNodeType(this.editor());
         this.showImageMenu.set(currentNodeType === 'dotImage');
+    }
+
+    private checkIfIsContentlet() {
+        const currentNodeType = getCurrentNodeType(this.editor());
+        this.showContentMenu.set(currentNodeType === 'dotContent');
+    }
+
+    /**
+     * This is needed because the iframe refresh the inode when switch between languages,
+     * and needs to be updated to generete the correct back url.
+     *
+     * @param {string} contentletInode - The inode to use if no query parameter is found
+     * @returns {string} The modified URL with the replaced inode
+     */
+    private generateBackUrl(contentletInode: string): string {
+        const currentUrl = window.parent.location.href;
+
+        // Get inode from query params
+
+        const params = new URLSearchParams(window.location.search);
+
+        const inode = params.get('inode') || contentletInode;
+
+        // Pattern to match the inode in the URL
+
+        const inodePattern = /\/c\/content\/([a-f0-9-]+)/i;
+
+        // Replace the inode in the URL with the inode from query params
+
+        return currentUrl.replace(inodePattern, `/c/content/${inode}`);
+    }
+
+    /**
+     * Extracts the inode from the current URL based on the editor type.
+     *
+     * This helper method parses the current URL to extract the inode identifier,
+     * handling different URL formats between the legacy and new editor systems.
+     * It supports two common DotCMS URL patterns for content:
+     *
+     * @param {boolean} isOldEditor - Flag indicating whether to extract from parent window (legacy editor)
+     *                                or current window (new editor)
+     *
+     * @returns {string|null} The extracted inode string if found, or null if not found
+     *
+     * @example
+     * // For URL: /dotAdmin/#/content/123abc456def
+     * extractInodeFromUrl(false) // returns "123abc456def"
+     *
+     * @example
+     * // For URL: /dotAdmin/#/c/content/789xyz123abc
+     * extractInodeFromUrl(true) // returns "789xyz123abc"
+     */
+    private extractInodeFromUrl(isOldEditor: boolean): string | null {
+        // Determine which window location to use based on editor type
+        const url = isOldEditor ? window.parent.location.href : window.location.href;
+
+        // Define regex patterns for both URL formats
+        // Pattern 1: /dotAdmin/#/content/[inode] - Used by new editor
+        const contentPattern = /\/content\/([a-f0-9-]+)/i;
+        // Pattern 2: /dotAdmin/#/c/content/[inode] - Used by legacy editor
+        const legacyPattern = /\/c\/content\/([a-f0-9-]+)/i;
+
+        // Try matching the new editor pattern first
+        const contentMatch = url.match(contentPattern);
+        if (contentMatch && contentMatch[1]) {
+            return contentMatch[1];
+        }
+
+        // Fall back to legacy pattern if new pattern didn't match
+        const legacyMatch = url.match(legacyPattern);
+        if (legacyMatch && legacyMatch[1]) {
+            return legacyMatch[1];
+        }
+
+        // Return null if no pattern matched
+        return null;
     }
 }
