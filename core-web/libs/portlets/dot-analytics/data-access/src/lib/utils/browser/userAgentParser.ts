@@ -88,7 +88,11 @@ class UserAgentParser {
         return { name: 'Unknown', version: 'Unknown' };
     }
 
-    private parseDevice(): { type: 'mobile' | 'tablet' | 'desktop'; vendor?: string; model?: string; } {
+    private parseDevice(): {
+        type: 'mobile' | 'tablet' | 'desktop';
+        vendor?: string;
+        model?: string;
+    } {
         const ua = this.userAgent;
 
         // Mobile patterns
@@ -135,11 +139,11 @@ class UserAgentParser {
         }
 
         // Check device type
-        if (tabletPatterns.some(pattern => pattern.test(ua))) {
+        if (tabletPatterns.some((pattern) => pattern.test(ua))) {
             return { type: 'tablet', vendor, model };
         }
 
-        if (mobilePatterns.some(pattern => pattern.test(ua))) {
+        if (mobilePatterns.some((pattern) => pattern.test(ua))) {
             return { type: 'mobile', vendor, model };
         }
 

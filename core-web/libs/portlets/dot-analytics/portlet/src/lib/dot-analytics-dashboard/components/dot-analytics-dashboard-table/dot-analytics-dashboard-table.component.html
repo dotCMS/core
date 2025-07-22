@@ -36,15 +36,14 @@
             }
 
             <!-- Skeleton Pagination -->
-            <div class="flex justify-content-center align-items-center p-3 ">
+            <div class="flex justify-content-center align-items-center p-3">
                 <p-skeleton height="1.5rem" width="250px"></p-skeleton>
             </div>
         </div>
     } @else {
         <!-- Loaded State -->
 
-            <h3 class="table-title">{{ title | dm }}</h3>
-
+        <h3 class="table-title">{{ title | dm }}</h3>
 
         <!-- Real Table -->
         <p-table
@@ -57,11 +56,11 @@
             [paginator]="true"
             [dataKey]="tableConfig.DATA_KEY"
             [sortMode]="tableConfig.SORT_MODE">
-
             <ng-template pTemplate="header" let-columns>
                 <tr>
                     @for (column of columns; track column.field) {
-                        <th [class]="'text-' + (column.alignment || 'left')"
+                        <th
+                            [class]="'text-' + (column.alignment || 'left')"
                             [pSortableColumn]="column.sortable ? column.field : null">
                             {{ column.header | dm }}
                             @if (column.sortable) {
@@ -78,15 +77,21 @@
                         <td [class]="'text-' + (column.alignment || 'left')">
                             @switch (column.type) {
                                 @case ('link') {
-                                    <a [href]="row[column.field]" class="font-medium hover:underline">
+                                    <a
+                                        href="javascript:void(0)"
+                                        class="font-medium hover:underline">
                                         {{ row[column.field] }}
                                     </a>
                                 }
                                 @case ('number') {
-                                    <span class="font-semibold">{{ row[column.field] | number }}</span>
+                                    <span class="font-semibold">
+                                        {{ row[column.field] | number }}
+                                    </span>
                                 }
                                 @case ('percentage') {
-                                    <span class="text-600 font-medium">{{ row[column.field] }}%</span>
+                                    <span class="text-600 font-medium">
+                                        {{ row[column.field] }}%
+                                    </span>
                                 }
                                 @default {
                                     {{ row[column.field] }}

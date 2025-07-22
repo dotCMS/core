@@ -1,5 +1,10 @@
-import { CubeJSQuery, CubeJSTimeDimension, DimensionField, MeasureField, OrderField } from "../../types";
-
+import {
+    CubeJSQuery,
+    CubeJSTimeDimension,
+    DimensionField,
+    MeasureField,
+    OrderField
+} from '../../types';
 
 /**
  * Simple CubeJS Query Builder for the 6 specific analytics requests
@@ -15,7 +20,9 @@ export class CubeQueryBuilder {
      * Add measures to the query
      */
     measures(measures: MeasureField[]): CubeQueryBuilder {
-        const prefixedMeasures = measures.map(m => m.startsWith('request.') ? m : `request.${m}`);
+        const prefixedMeasures = measures.map((m) =>
+            m.startsWith('request.') ? m : `request.${m}`
+        );
         this.query.measures = prefixedMeasures;
 
         return this;
@@ -25,7 +32,9 @@ export class CubeQueryBuilder {
      * Add dimensions to the query
      */
     dimensions(dimensions: DimensionField[]): CubeQueryBuilder {
-        const prefixedDimensions = dimensions.map(d => d.startsWith('request.') ? d : `request.${d}`);
+        const prefixedDimensions = dimensions.map((d) =>
+            d.startsWith('request.') ? d : `request.${d}`
+        );
         this.query.dimensions = prefixedDimensions;
 
         return this;
@@ -35,11 +44,13 @@ export class CubeQueryBuilder {
      * Add pageview filter (common for all 6 requests)
      */
     pageviews(): CubeQueryBuilder {
-        this.query.filters = [{
-            member: 'request.eventType',
-            operator: 'equals',
-            values: ['pageview']
-        }];
+        this.query.filters = [
+            {
+                member: 'request.eventType',
+                operator: 'equals',
+                values: ['pageview']
+            }
+        ];
 
         return this;
     }
@@ -47,8 +58,14 @@ export class CubeQueryBuilder {
     /**
      * Add time range
      */
-    timeRange(dimension: DimensionField, dateRange: string, granularity?: 'day' | 'week' | 'month'): CubeQueryBuilder {
-        const prefixedDimension = dimension.startsWith('request.') ? dimension : `request.${dimension}`;
+    timeRange(
+        dimension: DimensionField,
+        dateRange: string,
+        granularity?: 'day' | 'week' | 'month'
+    ): CubeQueryBuilder {
+        const prefixedDimension = dimension.startsWith('request.')
+            ? dimension
+            : `request.${dimension}`;
         const timeDimension: CubeJSTimeDimension = { dimension: prefixedDimension, dateRange };
         if (granularity) {
             timeDimension.granularity = granularity;

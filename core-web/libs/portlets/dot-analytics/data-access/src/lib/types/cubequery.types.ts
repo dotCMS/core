@@ -35,26 +35,10 @@ export interface CubeJSQuery {
 /**
  * Field types for the query builder
  */
-export type DimensionField =
-    | 'path'
-    | 'pageTitle'
-    | 'userAgent'
-    | 'createdAt'
-    | 'eventType';
+export type DimensionField = 'path' | 'pageTitle' | 'userAgent' | 'createdAt' | 'eventType';
 
-export type MeasureField =
-    | 'totalRequest'
-    | 'totalSessions'
-    | 'totalUser';
+export type MeasureField = 'totalRequest' | 'totalSessions' | 'totalUser';
 
-export type FilterField =
-    | 'eventType'
-    | 'path'
-    | 'userAgent';
+export type FilterField = 'eventType' | 'path' | 'userAgent';
 
-export type OrderField =
-    | 'totalRequest'
-    | 'totalSessions'
-    | 'createdAt'
-    | 'path'
-    | 'pageTitle';
+export type OrderField = 'totalRequest' | 'totalSessions' | 'createdAt' | 'path' | 'pageTitle';

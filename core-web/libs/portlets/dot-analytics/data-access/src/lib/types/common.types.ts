@@ -5,10 +5,7 @@
 /**
  * Time range type for analytics queries
  */
-export type TimeRange =
-    | 'from 7 days ago to now'
-    | 'from 30 days ago to now'
-    | 'this week';
+export type TimeRange = 'from 7 days ago to now' | 'from 30 days ago to now' | 'this week';
 
 /**
  * API Response type with generic entity

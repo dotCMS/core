@@ -1,6 +1,12 @@
-import { PageViewDeviceBrowsersEntity, PageViewTimeLineEntity, TopPagePerformanceEntity, TopPerformaceTableEntity, TotalPageViewsEntity, UniqueVisitorsEntity } from '../../types';
+import {
+    PageViewDeviceBrowsersEntity,
+    PageViewTimeLineEntity,
+    TopPagePerformanceEntity,
+    TopPerformaceTableEntity,
+    TotalPageViewsEntity,
+    UniqueVisitorsEntity
+} from '../../types';
 import { parseUserAgent } from '../browser/userAgentParser';
-
 
 /**
  * Analytics entity field keys
@@ -55,7 +61,9 @@ export interface TablePageData {
 /**
  * Transforms TopPerformaceTableEntity array to table-friendly format
  */
-export const transformTopPagesTableData = (data: TopPerformaceTableEntity[] | null): TablePageData[] => {
+export const transformTopPagesTableData = (
+    data: TopPerformaceTableEntity[] | null
+): TablePageData[] => {
     if (!data || !Array.isArray(data)) {
         return [];
     }
@@ -90,25 +98,28 @@ export const transformPageViewTimeLineData = (data: PageViewTimeLineEntity[] | n
     if (!data || !Array.isArray(data)) {
         return {
             labels: [],
-            datasets: [{
-                label: 'analytics.charts.pageviews-timeline.dataset-label',
-                data: [],
-                borderColor: '#3B82F6',
-                backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                borderWidth: 2,
-                fill: true,
-                tension: 0.4
-            }]
+            datasets: [
+                {
+                    label: 'analytics.charts.pageviews-timeline.dataset-label',
+                    data: [],
+                    borderColor: '#3B82F6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4
+                }
+            ]
         };
     }
 
     // Sort by date to ensure correct order
-    const sortedData = [...data].sort((a, b) =>
-        new Date(a[ANALYTICS_KEYS.CREATED_AT]).getTime() -
-        new Date(b[ANALYTICS_KEYS.CREATED_AT]).getTime()
+    const sortedData = [...data].sort(
+        (a, b) =>
+            new Date(a[ANALYTICS_KEYS.CREATED_AT]).getTime() -
+            new Date(b[ANALYTICS_KEYS.CREATED_AT]).getTime()
     );
 
-    const labels = sortedData.map(item => {
+    const labels = sortedData.map((item) => {
         const date = new Date(item[ANALYTICS_KEYS.CREATED_AT]);
 
         // Format as short weekday + date (e.g., "Mon 21", "Tue 22")
@@ -118,43 +129,47 @@ export const transformPageViewTimeLineData = (data: PageViewTimeLineEntity[] | n
         });
     });
 
-    const chartData = sortedData.map(item =>
-        Number(item[ANALYTICS_KEYS.TOTAL_REQUEST]) || 0
-    );
+    const chartData = sortedData.map((item) => Number(item[ANALYTICS_KEYS.TOTAL_REQUEST]) || 0);
 
     return {
         labels,
-        datasets: [{
-            label: 'analytics.charts.pageviews-timeline.dataset-label',
-            data: chartData,
-            borderColor: '#3B82F6',
-            backgroundColor: 'rgba(59, 130, 246, 0.1)',
-            borderWidth: 2,
-            fill: true,
-            tension: 0.4
-        }]
+        datasets: [
+            {
+                label: 'analytics.charts.pageviews-timeline.dataset-label',
+                data: chartData,
+                borderColor: '#3B82F6',
+                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.4
+            }
+        ]
     };
 };
 
 /**
  * Transforms PageViewDeviceBrowsersEntity array to pie chart ChartData format
  */
-export const transformDeviceBrowsersData = (data: PageViewDeviceBrowsersEntity[] | null): ChartData => {
+export const transformDeviceBrowsersData = (
+    data: PageViewDeviceBrowsersEntity[] | null
+): ChartData => {
     if (!data || data.length === 0) {
         return {
             labels: [],
-            datasets: [{
-                label: 'analytics.charts.device-breakdown.dataset-label',
-                data: [],
-                backgroundColor: []
-            }]
+            datasets: [
+                {
+                    label: 'analytics.charts.device-breakdown.dataset-label',
+                    data: [],
+                    backgroundColor: []
+                }
+            ]
         };
     }
 
     // Group data by browser + device type combination
     const browserDeviceGroups = new Map<string, number>();
 
-    data.forEach(item => {
+    data.forEach((item) => {
         const userAgent = item[ANALYTICS_KEYS.USER_AGENT];
         const totalRequests = parseInt(item[ANALYTICS_KEYS.TOTAL_REQUEST] || '0', 10);
 
@@ -165,8 +180,8 @@ export const transformDeviceBrowsersData = (data: PageViewDeviceBrowsersEntity[]
 
             // Create combined label: "Chrome (Mobile)", "Safari (Desktop)", etc.
             // Note: Device labels are hardcoded as they go directly to chart library
-            const deviceLabel = deviceType === 'mobile' ? 'Mobile' :
-                deviceType === 'tablet' ? 'Tablet' : 'Desktop';
+            const deviceLabel =
+                deviceType === 'mobile' ? 'Mobile' : deviceType === 'tablet' ? 'Tablet' : 'Desktop';
             const combinedLabel = `${browserName} (${deviceLabel})`;
 
             const currentTotal = browserDeviceGroups.get(combinedLabel) || 0;
@@ -182,11 +197,13 @@ export const transformDeviceBrowsersData = (data: PageViewDeviceBrowsersEntity[]
     if (sortedBrowserDevices.length === 0) {
         return {
             labels: ['No Data'],
-            datasets: [{
-                label: 'analytics.charts.device-breakdown.dataset-label',
-                data: [1],
-                backgroundColor: ['#E5E7EB']
-            }]
+            datasets: [
+                {
+                    label: 'analytics.charts.device-breakdown.dataset-label',
+                    data: [1],
+                    backgroundColor: ['#E5E7EB']
+                }
+            ]
         };
     }
 
@@ -209,15 +226,17 @@ export const transformDeviceBrowsersData = (data: PageViewDeviceBrowsersEntity[]
         '#FBBF24', // Edge Tablet - Light Orange
         '#EF4444', // Others Desktop - Red
         '#DC2626', // Others Mobile - Dark Red
-        '#F87171'  // Others Tablet - Light Red
+        '#F87171' // Others Tablet - Light Red
     ];
 
     return {
         labels,
-        datasets: [{
-            label: 'analytics.charts.device-breakdown.dataset-label',
-            data: chartData,
-            backgroundColor: colorPalette.slice(0, labels.length)
-        }]
+        datasets: [
+            {
+                label: 'analytics.charts.device-breakdown.dataset-label',
+                data: chartData,
+                backgroundColor: colorPalette.slice(0, labels.length)
+            }
+        ]
     };
 };

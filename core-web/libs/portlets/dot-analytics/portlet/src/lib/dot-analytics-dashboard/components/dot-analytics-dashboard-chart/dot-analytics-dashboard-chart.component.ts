@@ -3,40 +3,39 @@ import { ChangeDetectionStrategy, Component, computed, inject, input } from '@an
 
 import { CardModule } from 'primeng/card';
 import { ChartModule } from 'primeng/chart';
+import { SkeletonModule } from 'primeng/skeleton';
 
 import { DotMessageService } from '@dotcms/data-access';
+import { ComponentStatus } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { ChartData, ChartOptions, ChartType } from '../../types';
 
 /**
  * Reusable chart component for analytics dashboard.
- * Supports multiple chart types (line, pie, bar, doughnut) with configurable options.
- *
+ * Supports line, pie, doughnut, and bar chart types with loading states.
  */
 @Component({
     selector: 'dot-analytics-dashboard-chart',
     standalone: true,
-    imports: [CommonModule, CardModule, ChartModule],
+    imports: [CommonModule, CardModule, ChartModule, SkeletonModule, DotMessagePipe],
     changeDetection: ChangeDetectionStrategy.OnPush,
     templateUrl: './dot-analytics-dashboard-chart.component.html',
     styleUrl: './dot-analytics-dashboard-chart.component.scss'
 })
 export class DotAnalyticsDashboardChartComponent {
+    private readonly messageService = inject(DotMessageService);
 
-    private readonly dotMessageService = inject(DotMessageService);
-
-    // Inputs
-    /** Optional chart title displayed in card header */
-    readonly $title = input<string>('', { alias: 'title' });
-
-    /** Chart type (line, pie, bar, doughnut) */
+    // Required inputs
+    /** Chart type (line, pie, doughnut, bar, etc.) */
     readonly $type = input.required<ChartType>({ alias: 'type' });
 
-    /** Chart data including labels and datasets */
+    /** Chart data with labels and datasets */
     readonly $data = input.required<ChartData>({ alias: 'data' });
 
-    /** Custom chart options to override defaults */
-    readonly $options = input<ChartOptions>({}, { alias: 'options' });
+    // Optional inputs
+    /** Chart title displayed in header */
+    readonly $title = input<string>('', { alias: 'title' });
 
     /** Chart width as CSS value */
     readonly $width = input<string>('100%', { alias: 'width' });
@@ -44,26 +43,17 @@ export class DotAnalyticsDashboardChartComponent {
     /** Chart height as CSS value */
     readonly $height = input<string>('300px', { alias: 'height' });
 
+    /** Custom chart options to merge with defaults */
+    readonly $options = input<Partial<ChartOptions>>({}, { alias: 'options' });
+
+    /** Component status for loading/error states */
+    readonly $status = input<ComponentStatus>(ComponentStatus.INIT, { alias: 'status' });
+
     // Computed properties
-    /** Returns the chart data for PrimeNG Chart component with translated labels */
-    protected readonly $chartData = computed(() => {
-        const originalData = this.$data();
-
-        // Clone the data and translate any translation keys in dataset labels only
-        const translatedData: ChartData = {
-            ...originalData,
-            datasets: originalData.datasets.map(dataset => ({
-                ...dataset,
-                label: dataset.label ? this.dotMessageService.get(dataset.label) : dataset.label
-            }))
-        };
-
-        return translatedData;
-    });
-
-    /** Merges default options with custom options for chart configuration */
-    protected readonly $chartOptions = computed(() => {
+    /** Complete chart configuration merging defaults with custom options */
+    protected readonly $chartOptions = computed((): ChartOptions => {
         const chartType = this.$type();
+        const customOptions = this.$options();
 
         const defaultOptions: ChartOptions = {
             responsive: true,
@@ -107,8 +97,32 @@ export class DotAnalyticsDashboardChartComponent {
         };
 
         // Merge with custom options
-        const customOptions = this.$options() || {};
-
         return { ...defaultOptions, ...customOptions };
     });
+
+    /** Combined chart data ready for Chart.js with translated labels */
+    protected readonly $chartData = computed(() => {
+        const originalData = this.$data();
+
+        // Clone the data and translate any translation keys in dataset labels
+        const translatedData: ChartData = {
+            ...originalData,
+            datasets: originalData.datasets.map((dataset) => ({
+                ...dataset,
+                label: dataset.label ? this.messageService.get(dataset.label) : dataset.label
+            }))
+        };
+
+        return translatedData;
+    });
+
+    /** Check if component is in loading state */
+    protected readonly $isLoading = computed(() => {
+        const status = this.$status();
+
+        return status === ComponentStatus.INIT || status === ComponentStatus.LOADING;
+    });
+
+    /** Check if component is in error state */
+    protected readonly $isError = computed(() => this.$status() === ComponentStatus.ERROR);
 }

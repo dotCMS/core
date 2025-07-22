@@ -22,7 +22,7 @@ describe('CubeQueryBuilder', () => {
 
         it('should not duplicate request prefix if already present', () => {
             const query = builder.measures(['totalRequest']).build();
-            expect(query.measures).toEqual(['totalRequest']);
+            expect(query.measures).toEqual(['request.totalRequest']);
         });
     });
 
@@ -34,37 +34,43 @@ describe('CubeQueryBuilder', () => {
 
         it('should not duplicate request prefix if already present', () => {
             const query = builder.dimensions(['path']).build();
-            expect(query.dimensions).toEqual(['path']);
+            expect(query.dimensions).toEqual(['request.path']);
         });
     });
 
     describe('Pageviews Filter', () => {
         it('should add pageview filter', () => {
             const query = builder.pageviews().build();
-            expect(query.filters).toEqual([{
-                member: 'request.eventType',
-                operator: 'equals',
-                values: ['pageview']
-            }]);
+            expect(query.filters).toEqual([
+                {
+                    member: 'request.eventType',
+                    operator: 'equals',
+                    values: ['pageview']
+                }
+            ]);
         });
     });
 
     describe('Time Range', () => {
         it('should add time range with string date range', () => {
             const query = builder.timeRange('createdAt', 'last 1 week').build();
-            expect(query.timeDimensions).toEqual([{
-                dimension: 'request.createdAt',
-                dateRange: 'last 1 week'
-            }]);
+            expect(query.timeDimensions).toEqual([
+                {
+                    dimension: 'request.createdAt',
+                    dateRange: 'last 1 week'
+                }
+            ]);
         });
 
         it('should add time range with granularity', () => {
             const query = builder.timeRange('createdAt', 'last 12 weeks', 'week').build();
-            expect(query.timeDimensions).toEqual([{
-                dimension: 'request.createdAt',
-                dateRange: 'last 12 weeks',
-                granularity: 'week'
-            }]);
+            expect(query.timeDimensions).toEqual([
+                {
+                    dimension: 'request.createdAt',
+                    dateRange: 'last 12 weeks',
+                    granularity: 'week'
+                }
+            ]);
         });
     });
 
@@ -97,15 +103,19 @@ describe('CubeQueryBuilder', () => {
 
             expect(query).toEqual({
                 measures: ['request.totalRequest'],
-                filters: [{
-                    member: 'request.eventType',
-                    operator: 'equals',
-                    values: ['pageview']
-                }],
-                timeDimensions: [{
-                    dimension: 'request.createdAt',
-                    dateRange: 'last 1 week'
-                }]
+                filters: [
+                    {
+                        member: 'request.eventType',
+                        operator: 'equals',
+                        values: ['pageview']
+                    }
+                ],
+                timeDimensions: [
+                    {
+                        dimension: 'request.createdAt',
+                        dateRange: 'last 1 week'
+                    }
+                ]
             });
         });
 
@@ -118,15 +128,19 @@ describe('CubeQueryBuilder', () => {
 
             expect(query).toEqual({
                 measures: ['request.totalSessions'],
-                filters: [{
-                    member: 'request.eventType',
-                    operator: 'equals',
-                    values: ['pageview']
-                }],
-                timeDimensions: [{
-                    dimension: 'request.createdAt',
-                    dateRange: 'last 1 week'
-                }]
+                filters: [
+                    {
+                        member: 'request.eventType',
+                        operator: 'equals',
+                        values: ['pageview']
+                    }
+                ],
+                timeDimensions: [
+                    {
+                        dimension: 'request.createdAt',
+                        dateRange: 'last 1 week'
+                    }
+                ]
             });
         });
 
@@ -141,16 +155,20 @@ describe('CubeQueryBuilder', () => {
 
             expect(query).toEqual({
                 measures: ['request.totalRequest'],
-                filters: [{
-                    member: 'request.eventType',
-                    operator: 'equals',
-                    values: ['pageview']
-                }],
+                filters: [
+                    {
+                        member: 'request.eventType',
+                        operator: 'equals',
+                        values: ['pageview']
+                    }
+                ],
                 order: { 'request.totalRequest': 'desc' },
-                timeDimensions: [{
-                    dimension: 'request.createdAt',
-                    dateRange: 'last 1 week'
-                }],
+                timeDimensions: [
+                    {
+                        dimension: 'request.createdAt',
+                        dateRange: 'last 1 week'
+                    }
+                ],
                 limit: 1
             });
         });
@@ -165,17 +183,21 @@ describe('CubeQueryBuilder', () => {
 
             expect(query).toEqual({
                 measures: ['request.totalRequest'],
-                filters: [{
-                    member: 'request.eventType',
-                    operator: 'equals',
-                    values: ['pageview']
-                }],
+                filters: [
+                    {
+                        member: 'request.eventType',
+                        operator: 'equals',
+                        values: ['pageview']
+                    }
+                ],
                 order: { 'request.createdAt': 'asc' },
-                timeDimensions: [{
-                    dimension: 'request.createdAt',
-                    dateRange: 'last 1 week',
-                    granularity: 'day'
-                }]
+                timeDimensions: [
+                    {
+                        dimension: 'request.createdAt',
+                        dateRange: 'last 1 week',
+                        granularity: 'day'
+                    }
+                ]
             });
         });
 
@@ -192,16 +214,20 @@ describe('CubeQueryBuilder', () => {
             expect(query).toEqual({
                 dimensions: ['request.userAgent'],
                 measures: ['request.totalRequest'],
-                filters: [{
-                    member: 'request.eventType',
-                    operator: 'equals',
-                    values: ['pageview']
-                }],
+                filters: [
+                    {
+                        member: 'request.eventType',
+                        operator: 'equals',
+                        values: ['pageview']
+                    }
+                ],
                 order: { 'request.totalRequest': 'desc' },
-                timeDimensions: [{
-                    dimension: 'request.createdAt',
-                    dateRange: 'last 1 week'
-                }],
+                timeDimensions: [
+                    {
+                        dimension: 'request.createdAt',
+                        dateRange: 'last 1 week'
+                    }
+                ],
                 limit: 10
             });
         });
@@ -219,16 +245,20 @@ describe('CubeQueryBuilder', () => {
             expect(query).toEqual({
                 dimensions: ['request.path', 'request.pageTitle'],
                 measures: ['request.totalRequest'],
-                filters: [{
-                    member: 'request.eventType',
-                    operator: 'equals',
-                    values: ['pageview']
-                }],
+                filters: [
+                    {
+                        member: 'request.eventType',
+                        operator: 'equals',
+                        values: ['pageview']
+                    }
+                ],
                 order: { 'request.totalRequest': 'desc' },
-                timeDimensions: [{
-                    dimension: 'request.createdAt',
-                    dateRange: 'last 1 week'
-                }],
+                timeDimensions: [
+                    {
+                        dimension: 'request.createdAt',
+                        dateRange: 'last 1 week'
+                    }
+                ],
                 limit: 50
             });
         });

@@ -25,41 +25,46 @@ export class DotAnalyticsService {
     #BASE_URL = '/api/v1/analytics/content/_query/cube';
     #http = inject(HttpClient);
 
-
     /**
      * Total de pageviews en el período especificado
      */
-    totalPageViews(timeRange: TimeRange = 'from 7 days ago to now'): Observable<TotalPageViewsEntity> {
+    totalPageViews(
+        timeRange: TimeRange = 'from 7 days ago to now'
+    ): Observable<TotalPageViewsEntity> {
         const query = createCubeQuery()
             .measures(['totalRequest'])
             .pageviews()
             .timeRange('createdAt', timeRange)
             .build();
 
-        return this.#http.post<AnalyticsApiResponse<TotalPageViewsEntity>>(this.#BASE_URL, query).pipe(
-            map((response) => response.entity[0])
-        );
+        return this.#http
+            .post<AnalyticsApiResponse<TotalPageViewsEntity>>(this.#BASE_URL, query)
+            .pipe(map((response) => response.entity[0]));
     }
 
     /**
      * Visitantes únicos (sesiones únicas) en el período especificado
      */
-    uniqueVisitors(timeRange: TimeRange = 'from 7 days ago to now'): Observable<UniqueVisitorsEntity> {
+    uniqueVisitors(
+        timeRange: TimeRange = 'from 7 days ago to now'
+    ): Observable<UniqueVisitorsEntity> {
         const query = createCubeQuery()
             .measures(['totalUser'])
             .pageviews()
             .timeRange('createdAt', timeRange)
             .build();
 
-        return this.#http.post<AnalyticsApiResponse<UniqueVisitorsEntity>>(this.#BASE_URL, query).pipe(
-            map((response) => response.entity[0])
-        );
+        return this.#http
+            .post<AnalyticsApiResponse<UniqueVisitorsEntity>>(this.#BASE_URL, query)
+            .pipe(map((response) => response.entity[0]));
     }
 
     /**
      * Top page performance metric (total requests from the most visited page)
      */
-    topPagePerformance(timeRange: TimeRange = 'from 7 days ago to now'): Observable<TopPagePerformanceEntity> {
+    topPagePerformance(
+        timeRange: TimeRange = 'from 7 days ago to now'
+    ): Observable<TopPagePerformanceEntity> {
         const query = createCubeQuery()
             .dimensions(['path', 'pageTitle'])
             .measures(['totalRequest'])
@@ -69,17 +74,17 @@ export class DotAnalyticsService {
             .limit(1)
             .build();
 
-        return this.#http.post<AnalyticsApiResponse<TopPagePerformanceEntity>>(this.#BASE_URL, query).pipe(
-            map((response) => response.entity[0])
-        );
+        return this.#http
+            .post<AnalyticsApiResponse<TopPagePerformanceEntity>>(this.#BASE_URL, query)
+            .pipe(map((response) => response.entity[0]));
     }
-
-
 
     /**
      * Get page view timeline data
      */
-    pageViewTimeLine(timeRange: TimeRange = 'from 7 days ago to now'): Observable<PageViewTimeLineEntity[]> {
+    pageViewTimeLine(
+        timeRange: TimeRange = 'from 7 days ago to now'
+    ): Observable<PageViewTimeLineEntity[]> {
         // Determinar granularidad basada en el timeRange
         let granularity: 'day' | 'week' | 'month' = 'day';
         if (timeRange.includes('week')) {
@@ -94,15 +99,17 @@ export class DotAnalyticsService {
             .timeRange('createdAt', timeRange, granularity)
             .build();
 
-        return this.#http.post<AnalyticsApiResponse<PageViewTimeLineEntity>>(this.#BASE_URL, query).pipe(
-            map((response) => response.entity)
-        );
+        return this.#http
+            .post<AnalyticsApiResponse<PageViewTimeLineEntity>>(this.#BASE_URL, query)
+            .pipe(map((response) => response.entity));
     }
 
     /**
      * Pageviews by device/browser for distribution chart
      */
-    pageViewDeviceBrowsers(timeRange: TimeRange = 'from 7 days ago to now'): Observable<PageViewDeviceBrowsersEntity[]> {
+    pageViewDeviceBrowsers(
+        timeRange: TimeRange = 'from 7 days ago to now'
+    ): Observable<PageViewDeviceBrowsersEntity[]> {
         const query = createCubeQuery()
             .dimensions(['userAgent'])
             .measures(['totalRequest'])
@@ -112,17 +119,18 @@ export class DotAnalyticsService {
             .limit(10)
             .build();
 
-        return this.#http.post<AnalyticsApiResponse<PageViewDeviceBrowsersEntity>>(this.#BASE_URL, query).pipe(
-            map((response) => response.entity)
-        );
+        return this.#http
+            .post<AnalyticsApiResponse<PageViewDeviceBrowsersEntity>>(this.#BASE_URL, query)
+            .pipe(map((response) => response.entity));
     }
-
-
 
     /**
      * Top pages table with title and pageviews
      */
-    getTopPagePerformanceTable(timeRange: TimeRange = 'from 7 days ago to now', limit = 50): Observable<TopPerformaceTableEntity[]> {
+    getTopPagePerformanceTable(
+        timeRange: TimeRange = 'from 7 days ago to now',
+        limit = 50
+    ): Observable<TopPerformaceTableEntity[]> {
         const query = createCubeQuery()
             .dimensions(['path', 'pageTitle'])
             .measures(['totalRequest'])
@@ -132,9 +140,8 @@ export class DotAnalyticsService {
             .limit(limit)
             .build();
 
-        return this.#http.post<AnalyticsApiResponse<TopPerformaceTableEntity>>(this.#BASE_URL, query).pipe(
-            map((response) => response.entity)
-        );
+        return this.#http
+            .post<AnalyticsApiResponse<TopPerformaceTableEntity>>(this.#BASE_URL, query)
+            .pipe(map((response) => response.entity));
     }
-
 }

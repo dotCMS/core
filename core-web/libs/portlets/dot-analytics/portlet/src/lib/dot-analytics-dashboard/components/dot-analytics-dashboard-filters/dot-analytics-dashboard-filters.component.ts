@@ -34,7 +34,6 @@ import { DEFAULT_TIME_PERIOD, FilterOption, TIME_PERIOD_OPTIONS } from '../../co
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotAnalyticsDashboardFiltersComponent {
-
     private readonly dotMessageService = inject(DotMessageService);
 
     /** Currently selected time period value */
@@ -50,8 +49,7 @@ export class DotAnalyticsDashboardFiltersComponent {
 
     constructor() {
         effect(() => {
-            const selectedTimeRange = this.$selected();
-            this.$selectedTimeRange.set(selectedTimeRange);
+            this.$selectedTimeRange.set(this.$selected());
         });
     }
 

@@ -37,8 +37,6 @@ export class DotAnalyticsDashboardMetricsComponent {
     /** Component status for loading/error states */
     readonly $status = input<ComponentStatus>(ComponentStatus.INIT, { alias: 'status' });
 
-
-
     // Computed properties
     /** Formats numeric values with locale-specific separators */
     protected readonly $formattedValue = computed(() => {

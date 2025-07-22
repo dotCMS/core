@@ -1,4 +1,4 @@
-import { TimeRange } from "@dotcms/portlets/dot-analytics/data-access";
+import { TimeRange } from '@dotcms/portlets/dot-analytics/data-access';
 
 /** Union type for supported chart types in the analytics dashboard */
 export type ChartType = 'line' | 'pie' | 'bar' | 'doughnut';
@@ -52,7 +52,17 @@ export interface ChartOptions {
                 /** Use point style instead of rectangles */
                 usePointStyle?: boolean;
                 /** Point style type */
-                pointStyle?: 'circle' | 'cross' | 'crossRot' | 'dash' | 'line' | 'rect' | 'rectRounded' | 'rectRot' | 'star' | 'triangle';
+                pointStyle?:
+                    | 'circle'
+                    | 'cross'
+                    | 'crossRot'
+                    | 'dash'
+                    | 'line'
+                    | 'rect'
+                    | 'rectRounded'
+                    | 'rectRot'
+                    | 'star'
+                    | 'triangle';
                 /** Width of legend box */
                 boxWidth?: number;
                 /** Height of legend box */

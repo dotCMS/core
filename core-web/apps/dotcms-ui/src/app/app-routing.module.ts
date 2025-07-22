@@ -269,4 +269,4 @@ const appRoutes: Routes = [
     ],
     providers: [{ provide: RouteReuseStrategy, useClass: DotCustomReuseStrategyService }]
 })
-export class AppRoutingModule { }
+export class AppRoutingModule {}

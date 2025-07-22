@@ -3,16 +3,11 @@ import { Component, effect, inject } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 
-import {
-    DotAnalyticsDashboardStore,
-    TimeRange
-} from '@dotcms/portlets/dot-analytics/data-access';
+import { DotAnalyticsDashboardStore, TimeRange } from '@dotcms/portlets/dot-analytics/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
-
 
 import { DotAnalyticsDashboardChartComponent } from './components/dot-analytics-dashboard-chart/dot-analytics-dashboard-chart.component';
 import { DotAnalyticsDashboardFiltersComponent } from './components/dot-analytics-dashboard-filters/dot-analytics-dashboard-filters.component';
-import { DotAnalyticsDashboardLoadingComponent } from './components/dot-analytics-dashboard-loading/dot-analytics-dashboard-loading.component';
 import { DotAnalyticsDashboardMetricsComponent } from './components/dot-analytics-dashboard-metrics/dot-analytics-dashboard-metrics.component';
 import { DotAnalyticsDashboardTableComponent } from './components/dot-analytics-dashboard-table/dot-analytics-dashboard-table.component';
 
@@ -40,7 +35,6 @@ import { DotAnalyticsDashboardTableComponent } from './components/dot-analytics-
         DotAnalyticsDashboardChartComponent,
         DotAnalyticsDashboardTableComponent,
         DotAnalyticsDashboardFiltersComponent,
-        DotAnalyticsDashboardLoadingComponent,
         DotMessagePipe
     ],
     templateUrl: './dot-analytics-dashboard.component.html',
@@ -55,20 +49,26 @@ export default class DotAnalyticsDashboardComponent {
     protected readonly $topPagesTableStatus = this.store.topPagesTable.status;
 
     protected readonly $pageviewsTimelineData = this.store.pageViewTimeLineData;
+    protected readonly $pageviewsTimelineStatus = this.store.pageViewTimeLine.status;
+
     protected readonly $deviceBreakdownData = this.store.pageViewDeviceBrowsersData;
+    protected readonly $deviceBreakdownStatus = this.store.pageViewDeviceBrowsers.status;
 
     constructor() {
-        effect(() => {
-            const timeRange = this.$currentTimeRange();
+        effect(
+            () => {
+                const timeRange = this.$currentTimeRange();
 
-            this.store.loadTotalPageViews(timeRange);
+                this.store.loadTotalPageViews(timeRange);
 
-            this.store.loadPageViewDeviceBrowsers(timeRange);
-            this.store.loadPageViewTimeLine(timeRange);
-            this.store.loadTopPagePerformance(timeRange);
-            this.store.loadUniqueVisitors(timeRange);
-            this.store.loadTopPagesTable(timeRange);
-        }, { allowSignalWrites: true });
+                this.store.loadPageViewDeviceBrowsers(timeRange);
+                this.store.loadPageViewTimeLine(timeRange);
+                this.store.loadTopPagePerformance(timeRange);
+                this.store.loadUniqueVisitors(timeRange);
+                this.store.loadTopPagesTable(timeRange);
+            },
+            { allowSignalWrites: true }
+        );
     }
 
     /**

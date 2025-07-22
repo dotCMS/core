@@ -5,8 +5,7 @@ import { FilterOption } from '../types';
 /** Available time period options for analytics data filtering */
 export const TIME_PERIOD_OPTIONS: FilterOption[] = [
     { label: 'analytics.filters.time-period.1week', value: 'from 7 days ago to now' },
-    { label: 'analytics.filters.time-period.1month', value: 'from 30 days ago to now' },
-    { label: 'analytics.filters.time-period.this-week', value: 'this week' }
+    { label: 'analytics.filters.time-period.1month', value: 'from 30 days ago to now' }
 ];
 
 /** Default time period selection (1 week) */
