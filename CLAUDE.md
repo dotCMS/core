@@ -5,8 +5,8 @@
 ### Build Optimization (Choose Right Command)
 ```bash
 # For test-only changes (target specific tests!):
-./mvnw verify -pl :dotcms-integration -Dit.test=MyTestClass  # Specific test class (~2-10 min)
-./mvnw verify -pl :dotcms-postman                           # OR: just test-postman (~1-3 min)
+./mvnw verify -pl :dotcms-integration -Dcoreit.test.skip=false -Dit.test=MyTestClass  # Specific test class (~2-10 min)
+./mvnw verify -pl :dotcms-postman -Dpostman.test.skip=false         # OR: just test-postman (~1-3 min)
 
 # For simple code changes in dotcms-core only:
 ./mvnw install -pl :dotcms-core -DskipTests    # OR: just build-quicker (~2-3 min)
@@ -32,7 +32,7 @@ UserAPI userAPI = APILocator.getUserAPI();
 # Instead, target specific test classes or methods:
 
 # Option 1: Command line with specific test class (2-10 min)
-./mvnw verify -pl :dotcms-integration -Dit.test=ContentTypeAPIImplTest
+./mvnw verify -pl :dotcms-integration -Dcoreit.test.skip=false -Dit.test=ContentTypeAPIImplTest
 
 # Option 2: IDE debugging with services (fastest iteration)
 just test-integration-ide          # Starts PostgreSQL + Elasticsearch + dotCMS
@@ -50,9 +50,12 @@ spectator.setInput('prop', value);     // Testing CRITICAL
 ```bash
 # Test Commands (fastest - no core rebuild needed!)
 # ⚠️ IMPORTANT: Target specific test classes, NOT full suite (full suite = 60+ min)
-./mvnw verify -pl :dotcms-integration -Dit.test=ContentTypeAPIImplTest  # Specific test class (2-10 min)
+./mvnw verify -pl :dotcms-integration -Dcoreit.test.skip=false -Dit.test=ContentTypeAPIImplTest  # Specific test class (2-10 min)
 just test-postman ai                                  # Specific Postman collection 
-./mvnw verify -pl :dotcms-integration -Dit.test=MyTest#testMethod      # Specific test method
+./mvnw verify -pl :dotcms-integration -Dcoreit.test.skip=false -Dit.test=MyTest#testMethod      # Specific test method
+
+# ⚠️ CRITICAL: All test modules need explicit skip=false flags or tests are silently skipped!
+# -Dcoreit.test.skip=false (integration) | -Dpostman.test.skip=false | -Dkarate.test.skip=false
 
 # IDE Testing (start services manually, then run tests in IDE)
 just test-integration-ide                             # Start DB/ES services for IDE debugging

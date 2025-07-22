@@ -248,7 +248,7 @@ ENTRYPOINT ["/srv/entrypoint.sh"]
 
 | Change Type | Maven Command | Just Command | Why | Build Time |
 |-------------|---------------|--------------|-----|------------|
-| **Test code changes only** | `./mvnw verify -pl :dotcms-integration -Dit.test=YourTestClass` | *(use Maven with -Dit.test)* | Target specific test class (auto-starts Docker services) | ~2-10 min ⚠️ |
+| **Test code changes only** | `./mvnw verify -pl :dotcms-integration -Dcoreit.test.skip=false -Dit.test=YourTestClass` | *(use Maven with -Dit.test)* | Target specific test class (auto-starts Docker services) | ~2-10 min ⚠️ |
 | **Simple code changes** in dotcms-core only | `./mvnw install -pl :dotcms-core -DskipTests` | `just build-quicker` | Fastest - only builds core module | ~2-3 min |
 | **Core changes affecting dependencies** | `./mvnw install -pl :dotcms-core --am -DskipTests` | *(use Maven)* | Builds core + upstream dependencies | ~3-5 min |
 | **Major changes or clean start** | `./mvnw clean install -DskipTests` | `just build` | Full clean build of all modules | ~8-15 min |
@@ -277,6 +277,27 @@ ENTRYPOINT ["/srv/entrypoint.sh"]
 
 ⚠️ **PERFORMANCE WARNING**: The **FULL** integration test suite takes 30+ minutes to complete. Always target specific test classes during development!
 
+⚠️ **CRITICAL**: All test modules require explicit skip flags to run:
+- **Integration tests**: `-Dcoreit.test.skip=false`
+- **Postman tests**: `-Dpostman.test.skip=false` 
+- **Karate tests**: `-Dkarate.test.skip=false`
+- **E2E tests**: `-De2e.test.skip=false`
+- **Without these flags, tests will be silently skipped!**
+
+**✅ CORRECT (tests will run):**
+```bash
+./mvnw verify -pl :dotcms-integration -Dcoreit.test.skip=false -Dit.test=MyTest
+./mvnw verify -pl :dotcms-postman -Dpostman.test.skip=false -Dpostman.collections=ai
+./mvnw verify -pl :dotcms-test-karate -Dkarate.test.skip=false -Dit.test=ContentAPITest
+```
+
+**❌ INCORRECT (tests will be silently skipped):**
+```bash
+./mvnw verify -pl :dotcms-integration -Dit.test=MyTest          # NO tests run!
+./mvnw verify -pl :dotcms-postman -Dpostman.collections=ai     # NO tests run!
+./mvnw verify -pl :dotcms-test-karate -Dit.test=ContentAPITest # NO tests run!
+```
+
 💡 **For IDE debugging**: Use `just test-integration-ide` to start services manually, then run tests in your IDE.
 
 ### Integration Test Performance Guide
@@ -288,7 +309,7 @@ ENTRYPOINT ["/srv/entrypoint.sh"]
 # ❌ DON'T run full suite during development (60+ minutes)
 just test-integration  # Runs ALL integration tests - very slow!
 
-# ✅ DO target specific test classes (2-10 minutes)
+# ✅ DO target specific test classes (2-10 minutes) 
 ./mvnw verify -pl :dotcms-integration -Dcoreit.test.skip=false -Dit.test=ContentTypeAPIImplTest
 ./mvnw verify -pl :dotcms-integration -Dcoreit.test.skip=false -Dit.test=WorkflowAPIImplTest  
 ./mvnw verify -pl :dotcms-integration -Dcoreit.test.skip=false -Dit.test=UserAPIImplTest
@@ -310,29 +331,29 @@ just test-integration-ide  # Start services once
 **Common test classes to target:**
 ```bash
 # Content management
--Dit.test=ContentTypeAPIImplTest
--Dit.test=ContentletAPIImplTest  
--Dit.test=StructureAPIImplTest
+./mvnw verify -pl :dotcms-integration -Dcoreit.test.skip=false -Dit.test=ContentTypeAPIImplTest
+./mvnw verify -pl :dotcms-integration -Dcoreit.test.skip=false -Dit.test=ContentletAPIImplTest  
+./mvnw verify -pl :dotcms-integration -Dcoreit.test.skip=false -Dit.test=StructureAPIImplTest
 
 # User and permissions
--Dit.test=UserAPIImplTest
--Dit.test=RoleAPIImplTest
--Dit.test=PermissionAPIImplTest
+./mvnw verify -pl :dotcms-integration -Dcoreit.test.skip=false -Dit.test=UserAPIImplTest
+./mvnw verify -pl :dotcms-integration -Dcoreit.test.skip=false -Dit.test=RoleAPIImplTest
+./mvnw verify -pl :dotcms-integration -Dcoreit.test.skip=false -Dit.test=PermissionAPIImplTest
 
 # Workflow
--Dit.test=WorkflowAPIImplTest
--Dit.test=WorkflowTaskAPIImplTest
+./mvnw verify -pl :dotcms-integration -Dcoreit.test.skip=false -Dit.test=WorkflowAPIImplTest
+./mvnw verify -pl :dotcms-integration -Dcoreit.test.skip=false -Dit.test=WorkflowTaskAPIImplTest
 
 # File and asset management
--Dit.test=FileAssetAPIImplTest
--Dit.test=FolderAPIImplTest
+./mvnw verify -pl :dotcms-integration -Dcoreit.test.skip=false -Dit.test=FileAssetAPIImplTest
+./mvnw verify -pl :dotcms-integration -Dcoreit.test.skip=false -Dit.test=FolderAPIImplTest
 
 # Search and indexing
--Dit.test=ContentletIndexAPIImplTest
--Dit.test=ESIndexAPIImplTest
+./mvnw verify -pl :dotcms-integration -Dcoreit.test.skip=false -Dit.test=ContentletIndexAPIImplTest
+./mvnw verify -pl :dotcms-integration -Dcoreit.test.skip=false -Dit.test=ESIndexAPIImplTest
 ```
 
-💡 **Key insight**: If you're only changing test code in `dotcms-integration/src/test/`, you can run just `./mvnw verify -pl :dotcms-integration` without rebuilding the core!
+💡 **Key insight**: If you're only changing test code in `dotcms-integration/src/test/`, you can run just `./mvnw verify -pl :dotcms-integration -Dcoreit.test.skip=false -Dit.test=YourTestClass` without rebuilding the core!
 
 #### Test Services and Docker Dependencies
 
@@ -426,7 +447,7 @@ NOT included with -pl :dotcms-core:
 **Ask yourself these questions to choose the optimal build:**
 
 1. **Did you ONLY change test source code?**
-   - Yes → `./mvnw verify -pl :dotcms-integration -Dit.test=YourTestClass` (target specific test class!)
+   - Yes → `./mvnw verify -pl :dotcms-integration -Dcoreit.test.skip=false -Dit.test=YourTestClass` (target specific test class!)
    - **⚠️ Don't run full test suite** - it takes 60+ minutes
    - **Skip all other questions - you're done!**
 
@@ -608,280 +629,5 @@ vim environments/dev/user-dev.properties
 ```
 
 **Example Configuration**:
-```properties
-# Personal development settings
-docker.dotcms-core.ext-master_latest_SNAPSHOT.dotcms.envRun.DOT_FEATURE_FLAG_EXPERIMENTS=true
-docker.dotcms-core.ext-master_latest_SNAPSHOT.dotcms.envRun.DOT_FEATURE_FLAG_GRAPHQL_PROVIDER=true
-docker.dotcms-core.ext-master_latest_SNAPSHOT.dotcms.envRun.DOT_DOTCMS_DEV_MODE=true
-docker.dotcms-core.ext-master_latest_SNAPSHOT.dotcms.envRun.DOT_DOTCMS_LOGGING_LEVEL=DEBUG
-docker.dotcms-core.ext-master_latest_SNAPSHOT.dotcms.envRun.DOT_STARTER_DATA_LOAD=true
 ```
-
-## Docker Image Usage in Test Modules
-
-### dotcms-postman Module
-**Purpose**: API testing using Newman/Postman collections
-
-**Configuration**:
-```xml
-<image>
-    <name>dotcms/dotcms</name>
-    <run>
-        <ports>
-            <port>8080:8080</port>
-        </ports>
-        <env>
-            <DOT_DOTCMS_DEV_MODE>true</DOT_DOTCMS_DEV_MODE>
-            <DOT_FEATURE_FLAG_EXPERIMENTS>true</DOT_FEATURE_FLAG_EXPERIMENTS>
-        </env>
-        <wait>
-            <http>
-                <url>http://localhost:8080/api/v1/health</url>
-            </http>
-            <time>300000</time>
-        </wait>
-    </run>
-</image>
 ```
-
-**Services**:
-- dotCMS container with test-specific environment variables
-- WireMock container for API mocking
-- PostgreSQL database
-- OpenSearch
-
-### dotcms-integration Module
-**Purpose**: Integration testing with TestContainers
-
-**Configuration**:
-```xml
-<image>
-    <name>dotcms/dotcms</name>
-    <run>
-        <ports>
-            <port>8080:8080</port>
-        </ports>
-        <env>
-            <DOT_DOTCMS_DEV_MODE>true</DOT_DOTCMS_DEV_MODE>
-            <DOT_DATASOURCE_PROVIDER_STRATEGY_CLASS>SystemEnvDataSourceStrategy</DOT_DATASOURCE_PROVIDER_STRATEGY_CLASS>
-        </env>
-        <links>
-            <link>db:db</link>
-            <link>opensearch:opensearch</link>
-        </links>
-    </run>
-</image>
-```
-
-**Usage**:
-```bash
-# Run integration tests
-./mvnw -pl :dotcms-integration verify -Dcoreit.test.skip=false
-```
-
-### test-karate Module
-**Purpose**: Karate BDD API testing
-
-**Configuration**:
-```xml
-<image>
-    <name>dotcms/dotcms</name>
-    <run>
-        <ports>
-            <port>8080:8080</port>
-        </ports>
-        <env>
-            <DOT_DOTCMS_DEV_MODE>true</DOT_DOTCMS_DEV_MODE>
-            <DOT_FEATURE_FLAG_EXPERIMENTS>true</DOT_FEATURE_FLAG_EXPERIMENTS>
-        </env>
-        <wait>
-            <http>
-                <url>http://localhost:8080/api/v1/health</url>
-            </http>
-            <time>300000</time>
-        </wait>
-    </run>
-</image>
-```
-
-**Usage**:
-```bash
-# Run Karate tests
-./mvnw verify -Dkarate.test.skip=false -pl :dotcms-test-karate
-```
-
-## CI/CD Integration & Consistency
-
-### GitHub Actions Integration
-**Workflow Files**: `.github/workflows/cicd_*.yml`
-
-**Key Principles**:
-- Same Docker images used in development and CI/CD
-- Consistent environment variables and configurations
-- Same Maven commands and profiles
-- Docker layer caching for performance
-
-**Example CI/CD Docker Usage**:
-```yaml
-- name: Build Docker Image
-  run: |
-    ./mvnw clean package -pl :dotcms-core
-    docker build -t dotcms/dotcms:ci .
-
-- name: Run Integration Tests
-  run: |
-    ./mvnw -pl :dotcms-integration verify -Dcoreit.test.skip=false
-```
-
-### Maintaining Consistency
-
-#### 1. "Works on My Machine" Prevention
-```bash
-# Always use Docker for development
-./mvnw -pl :dotcms-core -Pdocker-start
-
-# Use same Java version as CI/CD
-docker run --rm dotcms/java-base:latest java -version
-
-# Use same database version
-docker run --rm ankane/pgvector:latest psql --version
-```
-
-#### 2. Environment Parity
-```properties
-# Development environment should match CI/CD
-docker.dotcms-core.ext-master_latest_SNAPSHOT.dotcms.envRun.DOT_DOTCMS_DEV_MODE=true
-docker.dotcms-core.ext-master_latest_SNAPSHOT.dotcms.envRun.DOT_FEATURE_FLAG_EXPERIMENTS=true
-
-# Same database configuration
-docker.dotcms-core.ext-master_latest_SNAPSHOT.dotcms.envRun.DOT_DATASOURCE_PROVIDER_STRATEGY_CLASS=SystemEnvDataSourceStrategy
-```
-
-#### 3. Debugging CI/CD Issues
-```bash
-# Run locally with CI/CD environment
-./mvnw -pl :dotcms-core -Pdocker-start -Denv=ci
-
-# Check environment variables
-docker exec dotcms-container env | grep DOT_
-
-# Compare logs
-docker logs dotcms-container
-```
-
-#### 4. Version Consistency
-```xml
-<!-- Parent POM ensures version consistency -->
-<properties>
-    <docker.image.version>master_latest_SNAPSHOT</docker.image.version>
-    <java.base.image.version>21-2023-10-24</java.base.image.version>
-    <postgres.version>13-pgvector</postgres.version>
-    <opensearch.version>1.3.6</opensearch.version>
-</properties>
-```
-
-## Advanced Development Options
-
-### Debug Configuration
-```bash
-# Enable debug mode
-./mvnw -pl :dotcms-core -Pdocker-start -Ddebug.enable=true
-
-# Debug with suspend (wait for debugger)
-./mvnw -pl :dotcms-core -Pdocker-start -Ddebug.enable=true -Ddebug.suspend=true
-
-# Custom debug port
-./mvnw -pl :dotcms-core -Pdocker-start -Ddebug.enable=true -Ddebug.port=5006
-```
-
-### Profiling with Glowroot
-```bash
-# Enable Glowroot profiler
-./mvnw -pl :dotcms-core -Pdocker-start -Ddocker.glowroot.enabled=true
-
-# Access profiler at http://localhost:4000
-```
-
-### Custom JVM Options
-```properties
-# In user-dev.properties
-docker.dotcms-core.ext-master_latest_SNAPSHOT.dotcms.envRun.DOT_JAVA_OPTS=-Xmx4g -XX:+UseG1GC -Dlog4j.configurationFile=log4j2-debug.xml
-```
-
-### Volume Mounting for Development
-```bash
-# Mount local source code
-./mvnw -pl :dotcms-core -Pdocker-start -Ddocker.mount.source=true
-
-# Mount specific directories
-./mvnw -pl :dotcms-core -Pdocker-start -Ddocker.mount.webapps=true
-```
-
-## Troubleshooting Common Issues
-
-### 1. Docker Build Failures
-```bash
-# Clean Docker cache
-docker system prune -a
-
-# Rebuild from scratch
-./mvnw clean package -pl :dotcms-core -Ddocker.noCache=true
-```
-
-### 2. Port Conflicts
-```bash
-# Check port usage
-netstat -tulpn | grep 8080
-
-# Use different ports
-./mvnw -pl :dotcms-core -Pdocker-start -Ddocker.port.http=8081
-```
-
-### 3. Memory Issues
-```bash
-# Increase Docker memory
-docker system info | grep Memory
-
-# Increase JVM heap
-export MAVEN_OPTS="-Xmx4g"
-```
-
-### 4. Environment Variable Issues
-```bash
-# Check environment variables
-docker exec dotcms-container env | grep DOT_
-
-# Verify configuration loading
-docker exec dotcms-container cat /srv/dotserver/tomcat/webapps/ROOT/WEB-INF/classes/application.properties
-```
-
-## Best Practices
-
-### ✅ Development Standards
-- **Always use Docker**: Never run dotCMS directly on host machine
-- **Use consistent versions**: Match CI/CD environment versions
-- **Environment parity**: Keep development and production environments similar
-- **Configuration management**: Use user-dev.properties for personal settings
-- **Regular updates**: Keep Docker images updated
-
-### ✅ Performance Optimization
-- **Layer caching**: Use Docker layer caching for faster builds
-- **Parallel builds**: Use Maven parallel build options
-- **Resource limits**: Set appropriate CPU and memory limits
-- **Volume mounting**: Use volumes for persistent data
-
-### ✅ Security Considerations
-- **Non-root user**: Run containers as non-root user
-- **Network isolation**: Use Docker networks for service isolation
-- **Secret management**: Use environment variables for sensitive data
-- **Image scanning**: Regularly scan images for vulnerabilities
-
-## Location Information
-- **Main Dockerfile**: `dotCMS/src/main/docker/original/Dockerfile`
-- **Docker Assembly**: `dotCMS/src/main/docker/original/docker-descriptor.xml`
-- **Entrypoint Script**: `dotCMS/src/main/docker/original/ROOT/srv/entrypoint.sh`
-- **Environment Config**: `environments/dev/user-dev.properties.example`
-- **Docker Compose Examples**: `docker/docker-compose-examples/`
-- **Maven Plugin Config**: `dotCMS/pom.xml` (docker-maven-plugin)
-- **Parent Config**: `parent/pom.xml` (base Docker configuration)
-- **CI/CD Workflows**: `.github/workflows/cicd_*.yml`
