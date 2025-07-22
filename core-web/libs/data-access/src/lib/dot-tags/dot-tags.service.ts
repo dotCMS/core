@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { map, pluck } from 'rxjs/operators';
 
@@ -14,7 +14,7 @@ import { DotTag } from '@dotcms/dotcms-models';
  */
 @Injectable()
 export class DotTagsService {
-    constructor(private coreWebService: CoreWebService) {}
+    private coreWebService = inject(CoreWebService);
 
     /**
      * Get tags suggestions

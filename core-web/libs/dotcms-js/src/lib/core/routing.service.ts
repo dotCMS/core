@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 import { Subject } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { CoreWebService } from './core-web.service';
 import { DotRouterService } from './dot-router.service';
@@ -10,6 +10,9 @@ import { LoginService } from './login.service';
 
 @Injectable()
 export class RoutingService {
+    private router = inject(DotRouterService);
+    private coreWebService = inject(CoreWebService);
+
     private _menusChange$: Subject<Menu[]> = new Subject();
     private menus: Menu[];
     private urlMenus: string;
@@ -20,12 +23,10 @@ export class RoutingService {
     private _currentPortlet$ = new Subject<string>();
 
     // TODO: I think we should be able to remove the routing injection
-    constructor(
-        loginService: LoginService,
-        private router: DotRouterService,
-        private coreWebService: CoreWebService,
-        dotcmsEventsService: DotcmsEventsService
-    ) {
+    constructor() {
+        const loginService = inject(LoginService);
+        const dotcmsEventsService = inject(DotcmsEventsService);
+
         this.urlMenus = 'v1/CORE_WEB/menu';
         this.portlets = new Map();
 

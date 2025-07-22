@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { DotGlobalMessage } from '@dotcms/dotcms-models';
 
@@ -12,12 +12,10 @@ import { DotMessageService } from '../dot-messages/dot-messages.service';
  */
 @Injectable()
 export class DotGlobalMessageService {
-    private messageLife = 3000;
+    private dotMessageService = inject(DotMessageService);
+    private dotEventsService = inject(DotEventsService);
 
-    constructor(
-        private dotMessageService: DotMessageService,
-        private dotEventsService: DotEventsService
-    ) {}
+    private messageLife = 3000;
 
     /**
      * Display text messages.
