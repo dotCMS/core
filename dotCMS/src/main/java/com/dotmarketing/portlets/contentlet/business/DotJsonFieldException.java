@@ -1,6 +1,9 @@
 package com.dotmarketing.portlets.contentlet.business;
 
+import com.liferay.util.StringPool;
 import java.util.Map;
+import java.util.Objects;
+import javax.validation.constraints.NotNull;
 import org.apache.commons.lang3.StringUtils;
 
 public class DotJsonFieldException extends DotContentletStateException {
@@ -12,14 +15,16 @@ public class DotJsonFieldException extends DotContentletStateException {
     private final String parseError;
     private final String field;
 
-    public DotJsonFieldException(String field, String invalidJson,
-            int line, int column, String parseError) {
+    public DotJsonFieldException(
+            @NotNull String field, @NotNull String invalidJson,
+            int line, int column, @NotNull String parseError) {
         super(INVALID_JSON_FIELD_PROVIDED_KEY_VALUE_FIELD_VARIABLE + field);
-        this.field = field;
-        this.invalidJson = invalidJson;
-        this.line = line;
-        this.column = column;
-        this.parseError = parseError;
+        // Null-safe assignments with meaningful defaults
+        this.field = StringUtils.defaultIfBlank(field, StringPool.UNKNOWN);
+        this.invalidJson = Objects.requireNonNullElse(invalidJson, "{}");
+        this.line = Math.max(line, 0); // Ensure non-negative line numbers
+        this.column = Math.max(column, 0); // Ensure non-negative column numbers
+        this.parseError = StringUtils.defaultIfBlank(parseError, StringPool.UNKNOWN);
     }
 
     public String getAbbreviatedParseError() {
