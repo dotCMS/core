@@ -1,6 +1,6 @@
 import md5 from 'md5';
 
-import { ChangeDetectorRef, Directive, input, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Directive, input, OnInit, inject } from '@angular/core';
 
 import { Avatar } from 'primeng/avatar';
 
@@ -16,16 +16,16 @@ const DEFAULT_AVATAR_SHAPE = 'circle';
     standalone: true
 })
 export class DotGravatarDirective implements OnInit {
+    private avatar = inject(Avatar);
+    private cd = inject(ChangeDetectorRef);
+
     email = input<string>('');
 
     private readonly GRAVATAR_URL = 'https://www.gravatar.com/avatar/';
     private readonly DEFAULT_SIZE = 48;
     private readonly DEFAULT_RATING = 'g';
 
-    constructor(
-        private avatar: Avatar,
-        private cd: ChangeDetectorRef
-    ) {
+    constructor() {
         this.avatar.shape = DEFAULT_AVATAR_SHAPE;
     }
 
