@@ -208,9 +208,231 @@ ENTRYPOINT ["/srv/entrypoint.sh"]
 
 ## Development Startup: docker-start Profile
 
+⚠️ **IMPORTANT**: The `docker-start` profile is for RUNNING pre-built Docker images, NOT for building them. All dotCMS builds automatically create docker-ready builds unless explicitly skipped with `-Ddocker.skip`.
+
+### Build vs Run Distinction
+
+**Building dotCMS (creates Docker images)**:
+```bash
+# Full clean build (use when starting fresh or major changes)
+./mvnw clean install -DskipTests
+
+# Fast core-only build (use for simple code changes in dotcms-core)
+./mvnw install -pl :dotcms-core -DskipTests
+
+# Build core with dependencies (use when core changes affect dependencies)
+./mvnw install -pl :dotcms-core --am -DskipTests
+
+# Skip Docker image creation (faster when you don't need containers)
+./mvnw install -pl :dotcms-core -DskipTests -Ddocker.skip
+```
+
+**Running dotCMS (uses built images)**:
+```bash
+# This CANNOT be combined with build commands like clean install
+./mvnw -pl :dotcms-core -Pdocker-start
+```
+
+**❌ INCORRECT - These commands will NOT work**:
+```bash
+# DON'T DO THIS - mixing build and run profiles doesn't work
+./mvnw clean install -Pdocker-start -DskipTests
+./mvnw install -Pdocker-start -DskipTests
+```
+
+## Build Optimization Strategies
+
+### When to Use Different Build Commands
+
+**Choose the right build command based on your changes:**
+
+| Change Type | Maven Command | Just Command | Why | Build Time |
+|-------------|---------------|--------------|-----|------------|
+| **Test code changes only** | `./mvnw verify -pl :dotcms-integration` | `just test-integration` | Only rebuilds/runs test module (auto-starts Docker services) | ~30 sec - 2 min |
+| **Simple code changes** in dotcms-core only | `./mvnw install -pl :dotcms-core -DskipTests` | `just build-quicker` | Fastest - only builds core module | ~2-3 min |
+| **Core changes affecting dependencies** | `./mvnw install -pl :dotcms-core --am -DskipTests` | *(use Maven)* | Builds core + upstream dependencies | ~3-5 min |
+| **Major changes or clean start** | `./mvnw clean install -DskipTests` | `just build` | Full clean build of all modules | ~8-15 min |
+| **Quick iteration without Docker** | `./mvnw install -pl :dotcms-core -DskipTests -Ddocker.skip` | `just build-no-docker` | Fastest - skips Docker image creation | ~1-2 min |
+| **No tests, no Docker** | `./mvnw install -pl :dotcms-core -DskipTests -Ddocker.skip` | *(use Maven)* | Ultimate speed for unit test cycles | ~1-2 min |
+
+### Maven Reactor Flags Explained
+
+- **`-pl :dotcms-core`** - Only build the dotcms-core module
+- **`--am` (also-make)** - Also build any modules that dotcms-core depends on
+- **`-DskipTests`** - Skip running tests (much faster)
+- **`-Ddocker.skip`** - Skip Docker image creation entirely
+- **`clean`** - Delete previous build artifacts (forces complete rebuild)
+
+### Test Module Optimization
+
+**When you ONLY change test source code, don't rebuild core!**
+
+| Test Module | Maven Command | Just Command | Purpose | Build Time |
+|------------|---------------|--------------|---------|------------|
+| **Integration Tests** | `./mvnw verify -pl :dotcms-integration -Dcoreit.test.skip=false` | `just test-integration` | JUnit integration tests (auto-starts DB/ES) | ~30 sec - 2 min |
+| **Postman Tests** | `./mvnw verify -pl :dotcms-postman -Dpostman.test.skip=false` | `just test-postman` | API testing with Postman/Newman (auto-starts services) | ~1-3 min |
+| **Karate Tests** | `./mvnw verify -pl :dotcms-test-karate -Dkarate.test.skip=false` | `just test-karate` | BDD API testing (auto-starts services) | ~1-2 min |
+| **E2E Node Tests** | `./mvnw verify -pl :dotcms-e2e-node -De2e.test.skip=false` | *(use Maven)* | Playwright E2E tests (full Docker environment) | ~2-5 min |
+| **E2E Java Tests** | `./mvnw verify -pl :dotcms-e2e-java -De2e.test.skip=false` | *(use Maven)* | Selenium E2E tests (full Docker environment) | ~3-8 min |
+
+💡 **For IDE debugging**: Use `just test-integration-ide` to start services manually, then run tests in your IDE.
+
+💡 **Key insight**: If you're only changing test code in `dotcms-integration/src/test/`, you can run just `./mvnw verify -pl :dotcms-integration` without rebuilding the core!
+
+#### Test Services and Docker Dependencies
+
+⚠️ **IMPORTANT**: Integration tests automatically start Docker services (PostgreSQL, Elasticsearch, dotCMS application). These services are required for tests to run.
+
+**Services started for integration tests:**
+- **PostgreSQL database** (port 5432) - Test data storage
+- **Elasticsearch/OpenSearch** (port 9200) - Search functionality  
+- **dotCMS application** (port 8080) - Main application for API testing
+- **Additional services** may be started based on specific test requirements
+
+**For automated test execution (services start/stop automatically):**
+```bash
+# Run specific integration test class
+./mvnw verify -pl :dotcms-integration -Dcoreit.test.skip=false -Dit.test=ContentTypeAPIImplTest
+
+# Run specific test method
+./mvnw verify -pl :dotcms-integration -Dcoreit.test.skip=false -Dit.test=ContentTypeAPIImplTest#testCreateContentType
+
+# Run specific Postman collection
+./mvnw verify -pl :dotcms-postman -Dpostman.test.skip=false -Dpostman.collections=ai
+
+# Run specific Karate test
+./mvnw verify -pl :dotcms-test-karate -Dkarate.test.skip=false -Dit.test=ContentAPITest
+
+# Run E2E test with specific spec
+./mvnw verify -pl :dotcms-e2e-node -De2e.test.skip=false -De2e.test.specific=login.spec.ts
+```
+
+**For IDE-based testing (start services manually, then run tests in IDE):**
+```bash
+# Start integration test services (PostgreSQL, Elasticsearch) without running tests
+./mvnw -pl :dotcms-integration pre-integration-test -Dcoreit.test.skip=false -Dtomcat.port=8080
+just test-integration-ide  # Same as above, shorter command
+
+# Start Postman test services
+./mvnw -pl :dotcms-postman pre-integration-test -Dpostman.test.skip=false -Dtomcat.port=8080
+just test-postman-ide  # Same as above, shorter command
+
+# Start Karate test services  
+./mvnw -pl :dotcms-test-karate pre-integration-test -Dkarate.test.skip=false -Dtomcat.port=8080
+just test-karate-ide  # Same as above, shorter command
+
+# Then run individual tests in your IDE (IntelliJ, Eclipse, VS Code)
+# Services will remain running until you stop them
+
+# Stop test services when done
+./mvnw -pl :dotcms-integration -Pdocker-stop -Dcoreit.test.skip=false
+just test-integration-stop  # Same as above, shorter command
+```
+
+#### Typical IDE Testing Workflow
+```bash
+# 1. Make sure you have a built core (only needed once)
+just build-quicker  # Build core if not already built
+
+# 2. Start test services for IDE debugging
+just test-integration-ide
+
+# 3. In your IDE (IntelliJ/Eclipse/VS Code):
+#    - Set breakpoints in your test code
+#    - Right-click on individual test methods and run them
+#    - Debug step through your test logic
+#    - Services remain running between test executions
+
+# 4. Make test changes, re-run tests in IDE (fast iteration)
+#    - No need to restart services for test code changes
+#    - Services stay running for quick iteration
+
+# 5. When finished with testing session
+just test-integration-stop
+```
+
+### Module Dependencies
+```
+dotcms-core depends on:
+├── parent (build configuration)
+├── bom/application (dependency versions)
+└── osgi-base/* (OSGI bundles)
+
+NOT included with -pl :dotcms-core:
+├── dotcms-integration (test module)
+├── dotcms-postman (test module)  
+├── tools/dotcms-cli (separate tool)
+├── core-web (frontend)
+└── e2e/* (end-to-end tests)
+```
+
+### Development Workflow Decision Tree
+
+**Ask yourself these questions to choose the optimal build:**
+
+1. **Did you ONLY change test source code?**
+   - Yes → `./mvnw verify -pl :dotcms-integration` (or appropriate test module)
+   - **Skip all other questions - you're done!**
+
+2. **Is this your first build or after major changes?**
+   - Yes → `./mvnw clean install -DskipTests` or `just build`
+
+3. **Did you only change code in dotCMS/src/ (no dependency changes)?**
+   - Yes → `./mvnw install -pl :dotcms-core -DskipTests` or `just build-quicker`
+
+4. **Did you change dependencies or need upstream modules rebuilt?**
+   - Yes → `./mvnw install -pl :dotcms-core --am -DskipTests`
+
+5. **Are you only running unit tests (no Docker needed)?**
+   - Yes → Add `-Ddocker.skip` to any command above
+
+6. **Are you working on frontend only?**
+   - Yes → `cd core-web && npm install && nx build dotcms-ui`
+
+### Test Execution Modes
+
+**🤖 Automated Test Execution (Command Line)**
+- **How**: `just test-integration` or `./mvnw verify -pl :dotcms-integration`
+- **Services**: Docker services start automatically, run tests, then stop automatically
+- **Use case**: CI/CD, quick validation, running full test suites
+- **Pros**: Fully automated, no manual setup
+- **Cons**: Services restart for each run (slightly slower for multiple runs)
+
+**🛠️ IDE-Based Test Execution (Manual Services)**
+- **How**: `just test-integration-ide` → start services, then run tests in IDE
+- **Services**: Start Docker services manually, keep running while you debug
+- **Use case**: Test debugging, iterative development, running individual tests
+- **Pros**: Services stay running, faster iteration, full IDE debugging capabilities
+- **Cons**: Manual service lifecycle management
+
+### When Do You Need to Rebuild Core?
+
+**✅ NO need to rebuild core when:**
+- Only changing test source code in test modules (`**/src/test/**`)
+- Only changing test resources (`**/src/test/resources/**`)
+- Only changing test configurations (test-specific properties, Docker configs for tests)
+- Only changing documentation or README files
+
+**⚠️ REBUILD core needed when:**
+- Changing any source code in `dotCMS/src/main/`
+- Adding/changing dependencies in any `pom.xml`
+- Changing configuration that affects runtime behavior
+- Changing Docker configurations that affect the main image
+
+### Performance Tips
+- **Development workflow**: Use `install` (not `clean install`) for faster rebuilds
+- **Test-first optimization**: If only changing tests, skip core rebuild entirely
+- **Docker optional**: Add `-Ddocker.skip` if you're only running unit tests  
+- **Parallel builds**: Add `-T 1C` for multi-threaded builds on powerful machines
+- **Incremental compilation**: Maven only recompiles changed files
+- **Watch for dependencies**: If your build fails, you might need `--am` flag
+
 ### Basic Usage
 ```bash
-# Start development environment
+# FIRST: Build dotCMS (this automatically creates docker-ready build unless docker is skipped)
+./mvnw clean install -pl :dotcms-core -DskipTests
+
+# THEN: Start development environment (runs the built image)
 ./mvnw -pl :dotcms-core -Pdocker-start
 
 # With Glowroot profiler

@@ -2,12 +2,36 @@
 
 ## 🎯 Quick Start Context
 
+### Build Optimization (Choose Right Command)
+```bash
+# For test-only changes (fastest!):
+./mvnw verify -pl :dotcms-integration          # OR: just test-integration (~30 sec)
+./mvnw verify -pl :dotcms-postman              # OR: just test-postman
+
+# For simple code changes in dotcms-core only:
+./mvnw install -pl :dotcms-core -DskipTests    # OR: just build-quicker (~2-3 min)
+
+# If core changes affect dependencies:  
+./mvnw install -pl :dotcms-core --am -DskipTests (~3-5 min)
+
+# For major changes or starting fresh:
+./mvnw clean install -DskipTests               # OR: just build (~8-15 min)
+```
+
 ### Essential Patterns
 ```java
 // Java (ALWAYS use these)
 import com.dotmarketing.util.Config;   // Config.getStringProperty("key", "default")
 import com.dotmarketing.util.Logger;   // Logger.info(this, "message")
 UserAPI userAPI = APILocator.getUserAPI();
+```
+
+### Test Development Workflow
+```bash
+# For test debugging: Start services, then use IDE
+just test-integration-ide          # Starts PostgreSQL + Elasticsearch + dotCMS
+# → Run/debug individual tests in IDE with breakpoints
+just test-integration-stop         # Clean up when done
 ```
 
 ```typescript
@@ -18,11 +42,33 @@ spectator.setInput('prop', value);     // Testing CRITICAL
 ```
 
 ```bash
-# Build Commands
-./mvnw clean install -DskipTests                      # Full clean build
-./mvnw install -pl :dotcms-core -DskipTests           # Fast build
-./mvnw -pl :dotcms-core -Pdocker-start -Dtomcat.port=8080  # Docker dev
-cd core-web && nx run dotcms-ui:serve                 # Frontend dev
+# Test Commands (fastest - no core rebuild needed!)
+just test-integration                                  # Auto-starts DB/ES + runs tests (~30 sec - 2 min)
+just test-postman ai                                  # Specific Postman collection 
+./mvnw verify -pl :dotcms-integration -Dit.test=MyTest # Specific integration test
+
+# IDE Testing (start services manually, then run tests in IDE)
+just test-integration-ide                             # Start DB/ES services for IDE debugging
+# → Now run individual tests in your IDE with breakpoints
+just test-integration-stop                            # Stop services when done
+
+# Build Commands (choose based on your changes)
+./mvnw install -pl :dotcms-core -DskipTests           # Fast: simple core changes (~2-3 min)
+just build-quicker                                     # Same as above, shorter command
+
+./mvnw install -pl :dotcms-core --am -DskipTests      # Medium: core + dependencies (~3-5 min)  
+
+./mvnw clean install -DskipTests                      # Full: major changes/clean start (~8-15 min)
+just build                                             # Same as above, shorter command
+
+./mvnw install -pl :dotcms-core -DskipTests -Ddocker.skip  # Fastest: no Docker (~1-2 min)
+just build-no-docker                                  # Full build without Docker
+
+# Run Commands (use AFTER building)
+./mvnw -pl :dotcms-core -Pdocker-start -Dtomcat.port=8080  -Ddocker.glowroot.enabled=true # Run dotCMS in Docker
+just dev-run                                          # Start with Glowroot profiler enabled
+
+cd core-web && nx run dotcms-ui:serve                 # Separate Frontend dev server only
 ```
 
 ### Tech Stack
@@ -61,7 +107,7 @@ cd core-web && nx run dotcms-ui:serve                 # Frontend dev
 - [E2E Tests](docs/testing/E2E_TESTS.md) - Playwright, user workflows
 
 ### Infrastructure & Build
-- [Docker Build Process](docs/infrastructure/DOCKER_BUILD_PROCESS.md) - Container setup
+- [Docker Build Process](docs/infrastructure/DOCKER_BUILD_PROCESS.md) - **BUILD OPTIMIZATION**, container setup
 - [GitHub Issue Management](docs/core/GITHUB_ISSUE_MANAGEMENT.md) - Issues, PRs, epics
 
 ## 🔄 Context Management Strategy
