@@ -15,7 +15,9 @@
             <div class="h-full w-full flex align-items-center gap-3">
                 <span>
                     {{ value.language }}
-                    <ng-container *ngIf="value.countryCode">({{ value.countryCode }})</ng-container>
+                    @if (value.countryCode) {
+                        ({{ value.countryCode }})
+                    }
                 </span>
             </div>
         }
