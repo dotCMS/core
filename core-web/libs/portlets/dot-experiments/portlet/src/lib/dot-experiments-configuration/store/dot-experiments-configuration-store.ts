@@ -980,10 +980,10 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
 
         super({
             ...initialState,
-            dotPageRenderState,
-            configProps,
             hasEnterpriseLicense,
-            pushPublishEnvironments
+            configProps,
+            pushPublishEnvironments,
+            dotPageRenderState
         });
     }
 
