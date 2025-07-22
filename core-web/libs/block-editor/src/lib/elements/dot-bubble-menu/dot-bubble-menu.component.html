@@ -9,188 +9,176 @@
     [updateDelay]="250">
     @if (showShould()) {
         @if (showImageMenu()) {
-            <ng-container *ngTemplateOutlet="bubbleImageMenu"></ng-container>
+            <button class="bubble-menu-button" (click)="toggleImageModal($event)">
+                {{ 'block-editor.bubble-menu.image.properties' | dm }}
+            </button>
+            <div class="divider"></div>
+            <button
+                class="bubble-menu-button bubble-menu-button--icon"
+                (click)="editor().chain().focus().setTextAlign('left').run()"
+                [class.is-active]="editor().isActive({ textAlign: 'left' })">
+                <span class="material-icons">format_align_left</span>
+            </button>
+            <button
+                class="bubble-menu-button bubble-menu-button--icon"
+                (click)="editor().chain().focus().setTextAlign('center').run()"
+                [class.is-active]="editor().isActive({ textAlign: 'center' })">
+                <span class="material-icons">format_align_center</span>
+            </button>
+            <button
+                class="bubble-menu-button bubble-menu-button--icon"
+                (click)="editor().chain().focus().setTextAlign('right').run()"
+                [class.is-active]="editor().isActive({ textAlign: 'right' })">
+                <span class="material-icons">format_align_right</span>
+            </button>
+
+            <div class="divider"></div>
+            <button
+                class="bubble-menu-button bubble-menu-button--icon"
+                [class.is-active]="imageHasLink()"
+                (click)="toggleLinkModal($event)">
+                <span class="material-icons">link</span>
+            </button>
+            <button
+                class="bubble-menu-button bubble-menu-button--icon"
+                (click)="editor().chain().deleteSelection().blur().run()">
+                <span class="material-icons">delete_outline</span>
+            </button>
         } @else if (showContentMenu()) {
-            <ng-container *ngTemplateOutlet="bubbleContentMenu"></ng-container>
+            <button class="bubble-menu-button bubble-menu-button--icon" (click)="goToContentlet()">
+                <span class="material-icons">edit</span>
+            </button>
+            <button
+                class="bubble-menu-button bubble-menu-button--icon"
+                (click)="editor().chain().deleteSelection().blur().run()">
+                <span class="material-icons">delete_outline</span>
+            </button>
         } @else {
-            <ng-container *ngTemplateOutlet="bubbleTextMenu"></ng-container>
+            <p-dropdown
+                styleClass="bubble-menu-dropdown"
+                [(ngModel)]="dropdownItem"
+                [options]="nodeTypeOptions"
+                (onChange)="runConvertToCommand($event.value)"
+                optionLabel="name"
+                scrollHeight="300px"
+                appendTo="body"
+                panelStyleClass="bubble-menu-dropdown-panel">
+                <ng-template let-item pTemplate="item">
+                    <div class="dropdown-item-content">
+                        <div class="dropdown-item-icon">
+                            <img [src]="sanitizeHtml(item.icon)" />
+                        </div>
+                        <span class="dropdown-item-label">{{ item.name }}</span>
+                    </div>
+                </ng-template>
+            </p-dropdown>
+            <div class="divider"></div>
+            <button
+                class="bubble-menu-button bubble-menu-button--char"
+                (click)="editor().chain().focus().toggleBold().run()"
+                [class.is-active]="editor().isActive('bold')">
+                <b>B</b>
+            </button>
+            <button
+                class="bubble-menu-button bubble-menu-button--char"
+                (click)="editor().chain().focus().toggleUnderline().run()"
+                [class.is-active]="editor().isActive('underline')">
+                <u>U</u>
+            </button>
+            <button
+                class="bubble-menu-button bubble-menu-button--char"
+                (click)="editor().chain().focus().toggleItalic().run()"
+                [class.is-active]="editor().isActive('italic')">
+                <i>I</i>
+            </button>
+            <button
+                class="bubble-menu-button bubble-menu-button--char"
+                (click)="editor().chain().focus().toggleStrike().run()"
+                [class.is-active]="editor().isActive('strike')">
+                <s>S</s>
+            </button>
+            <button
+                class="bubble-menu-button bubble-menu-button--icon"
+                (click)="editor().chain().focus().toggleSuperscript().run()"
+                [class.is-active]="editor().isActive('superscript')">
+                <span class="material-icons">superscript</span>
+            </button>
+            <button
+                class="bubble-menu-button bubble-menu-button--icon"
+                (click)="editor().chain().focus().toggleSubscript().run()"
+                [class.is-active]="editor().isActive('subscript')">
+                <span class="material-icons">subscript</span>
+            </button>
+            <div class="divider"></div>
+            <button
+                class="bubble-menu-button bubble-menu-button--icon"
+                (click)="editor().chain().focus().setTextAlign('left').run()"
+                [class.is-active]="editor().isActive({ textAlign: 'left' })">
+                <span class="material-icons">format_align_left</span>
+            </button>
+            <button
+                class="bubble-menu-button bubble-menu-button--icon"
+                (click)="editor().chain().focus().setTextAlign('center').run()"
+                [class.is-active]="editor().isActive({ textAlign: 'center' })">
+                <span class="material-icons">format_align_center</span>
+            </button>
+            <button
+                class="bubble-menu-button bubble-menu-button--icon"
+                (click)="editor().chain().focus().setTextAlign('right').run()"
+                [class.is-active]="editor().isActive({ textAlign: 'right' })">
+                <span class="material-icons">format_align_right</span>
+            </button>
+            <button
+                class="bubble-menu-button bubble-menu-button--icon"
+                (click)="editor().chain().focus().setTextAlign('justify').run()"
+                [class.is-active]="editor().isActive({ textAlign: 'justify' })">
+                <span class="material-icons">format_align_justify</span>
+            </button>
+            <div class="divider"></div>
+            <button
+                class="bubble-menu-button bubble-menu-button--icon"
+                (click)="editor().chain().focus().toggleBulletList().run()"
+                [class.is-active]="editor().isActive('bulletList')">
+                <span class="material-icons">format_list_bulleted</span>
+            </button>
+            <button
+                class="bubble-menu-button bubble-menu-button--icon"
+                (click)="editor().chain().focus().toggleOrderedList().run()"
+                [class.is-active]="editor().isActive('orderedList')">
+                <span class="material-icons">format_list_numbered</span>
+            </button>
+            <button
+                class="bubble-menu-button bubble-menu-button--icon"
+                (click)="editor().chain().focus().sinkListItem('listItem').run()"
+                [disabled]="!editor().can().sinkListItem('listItem')">
+                <span class="material-icons">format_indent_increase</span>
+            </button>
+            <button
+                class="bubble-menu-button bubble-menu-button--icon"
+                (click)="editor().chain().focus().liftListItem('listItem').run()"
+                [disabled]="!editor().can().liftListItem('listItem')">
+                <span class="material-icons">format_indent_decrease</span>
+            </button>
+            <div class="divider"></div>
+            <button
+                class="bubble-menu-button bubble-menu-button--icon"
+                [class.is-active]="editor().isActive('link')"
+                (click)="toggleLinkModal($event)">
+                <span class="material-icons">link</span>
+            </button>
+            <button
+                class="bubble-menu-button bubble-menu-button--icon"
+                (click)="editor().chain().focus().unsetAllMarks().run()">
+                <span class="material-icons">format_clear</span>
+            </button>
+            <button
+                class="bubble-menu-button bubble-menu-button--icon"
+                (click)="editor().chain().deleteSelection().blur().run()">
+                <span class="material-icons">delete_outline</span>
+            </button>
         }
     }
 </div>
-
-<ng-template #bubbleTextMenu>
-    <p-dropdown
-        styleClass="bubble-menu-dropdown"
-        [(ngModel)]="dropdownItem"
-        [options]="nodeTypeOptions"
-        (onChange)="runConvertToCommand($event.value)"
-        optionLabel="name"
-        scrollHeight="300px"
-        appendTo="body"
-        panelStyleClass="bubble-menu-dropdown-panel">
-        <ng-template let-item pTemplate="item">
-            <div class="dropdown-item-content">
-                <div class="dropdown-item-icon">
-                    <img [src]="sanitizeHtml(item.icon)" />
-                </div>
-                <span class="dropdown-item-label">{{ item.name }}</span>
-            </div>
-        </ng-template>
-    </p-dropdown>
-    <div class="divider"></div>
-    <button
-        class="bubble-menu-button bubble-menu-button--char"
-        (click)="editor().chain().focus().toggleBold().run()"
-        [class.is-active]="editor().isActive('bold')">
-        <b>B</b>
-    </button>
-    <button
-        class="bubble-menu-button bubble-menu-button--char"
-        (click)="editor().chain().focus().toggleUnderline().run()"
-        [class.is-active]="editor().isActive('underline')">
-        <u>U</u>
-    </button>
-    <button
-        class="bubble-menu-button bubble-menu-button--char"
-        (click)="editor().chain().focus().toggleItalic().run()"
-        [class.is-active]="editor().isActive('italic')">
-        <i>I</i>
-    </button>
-    <button
-        class="bubble-menu-button bubble-menu-button--char"
-        (click)="editor().chain().focus().toggleStrike().run()"
-        [class.is-active]="editor().isActive('strike')">
-        <s>S</s>
-    </button>
-    <button
-        class="bubble-menu-button bubble-menu-button--icon"
-        (click)="editor().chain().focus().toggleSuperscript().run()"
-        [class.is-active]="editor().isActive('superscript')">
-        <span class="material-icons">superscript</span>
-    </button>
-    <button
-        class="bubble-menu-button bubble-menu-button--icon"
-        (click)="editor().chain().focus().toggleSubscript().run()"
-        [class.is-active]="editor().isActive('subscript')">
-        <span class="material-icons">subscript</span>
-    </button>
-    <div class="divider"></div>
-    <button
-        class="bubble-menu-button bubble-menu-button--icon"
-        (click)="editor().chain().focus().setTextAlign('left').run()"
-        [class.is-active]="editor().isActive({ textAlign: 'left' })">
-        <span class="material-icons">format_align_left</span>
-    </button>
-    <button
-        class="bubble-menu-button bubble-menu-button--icon"
-        (click)="editor().chain().focus().setTextAlign('center').run()"
-        [class.is-active]="editor().isActive({ textAlign: 'center' })">
-        <span class="material-icons">format_align_center</span>
-    </button>
-    <button
-        class="bubble-menu-button bubble-menu-button--icon"
-        (click)="editor().chain().focus().setTextAlign('right').run()"
-        [class.is-active]="editor().isActive({ textAlign: 'right' })">
-        <span class="material-icons">format_align_right</span>
-    </button>
-    <button
-        class="bubble-menu-button bubble-menu-button--icon"
-        (click)="editor().chain().focus().setTextAlign('justify').run()"
-        [class.is-active]="editor().isActive({ textAlign: 'justify' })">
-        <span class="material-icons">format_align_justify</span>
-    </button>
-    <div class="divider"></div>
-    <button
-        class="bubble-menu-button bubble-menu-button--icon"
-        (click)="editor().chain().focus().toggleBulletList().run()"
-        [class.is-active]="editor().isActive('bulletList')">
-        <span class="material-icons">format_list_bulleted</span>
-    </button>
-    <button
-        class="bubble-menu-button bubble-menu-button--icon"
-        (click)="editor().chain().focus().toggleOrderedList().run()"
-        [class.is-active]="editor().isActive('orderedList')">
-        <span class="material-icons">format_list_numbered</span>
-    </button>
-    <button
-        class="bubble-menu-button bubble-menu-button--icon"
-        (click)="editor().chain().focus().sinkListItem('listItem').run()"
-        [disabled]="!editor().can().sinkListItem('listItem')">
-        <span class="material-icons">format_indent_increase</span>
-    </button>
-    <button
-        class="bubble-menu-button bubble-menu-button--icon"
-        (click)="editor().chain().focus().liftListItem('listItem').run()"
-        [disabled]="!editor().can().liftListItem('listItem')">
-        <span class="material-icons">format_indent_decrease</span>
-    </button>
-    <div class="divider"></div>
-    <button
-        class="bubble-menu-button bubble-menu-button--icon"
-        [class.is-active]="editor().isActive('link')"
-        (click)="toggleLinkModal($event)">
-        <span class="material-icons">link</span>
-    </button>
-    <button
-        class="bubble-menu-button bubble-menu-button--icon"
-        (click)="editor().chain().focus().unsetAllMarks().run()">
-        <span class="material-icons">format_clear</span>
-    </button>
-    <button
-        class="bubble-menu-button bubble-menu-button--icon"
-        (click)="editor().chain().deleteSelection().blur().run()">
-        <span class="material-icons">delete_outline</span>
-    </button>
-</ng-template>
-
-<ng-template #bubbleImageMenu>
-    <button class="bubble-menu-button" (click)="toggleImageModal($event)">
-        {{ 'block-editor.bubble-menu.image.properties' | dm }}
-    </button>
-    <div class="divider"></div>
-    <button
-        class="bubble-menu-button bubble-menu-button--icon"
-        (click)="editor().chain().focus().setTextAlign('left').run()"
-        [class.is-active]="editor().isActive({ textAlign: 'left' })">
-        <span class="material-icons">format_align_left</span>
-    </button>
-    <button
-        class="bubble-menu-button bubble-menu-button--icon"
-        (click)="editor().chain().focus().setTextAlign('center').run()"
-        [class.is-active]="editor().isActive({ textAlign: 'center' })">
-        <span class="material-icons">format_align_center</span>
-    </button>
-    <button
-        class="bubble-menu-button bubble-menu-button--icon"
-        (click)="editor().chain().focus().setTextAlign('right').run()"
-        [class.is-active]="editor().isActive({ textAlign: 'right' })">
-        <span class="material-icons">format_align_right</span>
-    </button>
-
-    <div class="divider"></div>
-    <button
-        class="bubble-menu-button bubble-menu-button--icon"
-        [class.is-active]="imageHasLink()"
-        (click)="toggleLinkModal($event)">
-        <span class="material-icons">link</span>
-    </button>
-    <button
-        class="bubble-menu-button bubble-menu-button--icon"
-        (click)="editor().chain().deleteSelection().blur().run()">
-        <span class="material-icons">delete_outline</span>
-    </button>
-</ng-template>
-
-<ng-template #bubbleContentMenu>
-    <button class="bubble-menu-button bubble-menu-button--icon" (click)="goToContentlet()">
-        <span class="material-icons">edit</span>
-    </button>
-    <button
-        class="bubble-menu-button bubble-menu-button--icon"
-        (click)="editor().chain().deleteSelection().blur().run()">
-        <span class="material-icons">delete_outline</span>
-    </button>
-</ng-template>
 
 <dot-link-editor-popover #linkModal [editor]="editor()" />
 <dot-image-editor-popover #imageModal [editor]="editor()" />
