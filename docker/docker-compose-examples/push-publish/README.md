@@ -31,7 +31,7 @@ To reference the receiver service (`dotcms-receiver`), use the `HTTP` protocol w
 3. A custom starter can be set through this line (uncomment and change the starter URL accordingly):
 
    ```yaml
-   #"CUSTOM_STARTER_URL": 'https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20250318/starter-20250318.zip'
+   #"CUSTOM_STARTER_URL": 'https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20250722/starter-20250722.zip'
    ```
 
 ### Deploying Nodes
