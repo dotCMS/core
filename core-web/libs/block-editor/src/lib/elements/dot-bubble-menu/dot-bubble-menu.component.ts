@@ -270,8 +270,8 @@ export class DotBubbleMenuComponent {
                 // Extract current page title removing any suffix after the dash
 
                 const title = window.parent
-                    ? window.parent.document.title.split(' - ')[0]
-                    : document.title.split(' - ')[0] ||
+                    ? window.parent.document?.title?.split(' - ')?.[0]
+                    : document?.title?.split(' - ')?.[0] ||
                       this.dotMessageService.get('message.contentlet.back.to.content');
 
                 // Store navigation state in localStorage for returning to first editor
