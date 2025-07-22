@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
 import { pluck, take } from 'rxjs/operators';
@@ -14,18 +14,16 @@ import { DotKeyValue } from '@shared/models/dot-key-value-ng/dot-key-value-ng.mo
     styleUrls: ['./dot-apps-configuration-detail.component.scss']
 })
 export class DotAppsConfigurationDetailComponent implements OnInit {
+    private route = inject(ActivatedRoute);
+    private dotRouterService = inject(DotRouterService);
+    private dotAppsService = inject(DotAppsService);
+
     apps: DotApp;
 
     dynamicVariables: DotKeyValue[] = [];
     formData: { [key: string]: string };
     formFields: DotAppsSecret[];
     formValid = false;
-
-    constructor(
-        private route: ActivatedRoute,
-        private dotRouterService: DotRouterService,
-        private dotAppsService: DotAppsService
-    ) {}
 
     ngOnInit() {
         this.route.data.pipe(pluck('data'), take(1)).subscribe((app: DotApp) => {

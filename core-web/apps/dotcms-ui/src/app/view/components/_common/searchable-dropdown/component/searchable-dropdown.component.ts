@@ -16,7 +16,8 @@ import {
     SimpleChange,
     SimpleChanges,
     TemplateRef,
-    ViewChild
+    ViewChild,
+    inject
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
@@ -47,6 +48,8 @@ import { debounceTime, tap } from 'rxjs/operators';
 export class SearchableDropdownComponent
     implements ControlValueAccessor, OnChanges, AfterContentInit, AfterViewInit
 {
+    private cd = inject(ChangeDetectorRef);
+
     @Input()
     data: Record<string, unknown>[];
 
@@ -158,8 +161,6 @@ export class SearchableDropdownComponent
         'ArrowLeft',
         'ArrowRight'
     ];
-
-    constructor(private cd: ChangeDetectorRef) {}
 
     propagateChange = (_: unknown) => {
         /**/

@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, OnInit, Output, ViewChild } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output, ViewChild, inject } from '@angular/core';
 
 import { delay, take } from 'rxjs/operators';
 
@@ -26,6 +26,10 @@ export const DEFAULT_PERSONA_IDENTIFIER_BY_BACKEND = 'modes.persona.no.persona';
     templateUrl: 'dot-persona-selector.component.html'
 })
 export class DotPersonaSelectorComponent implements OnInit {
+    paginationService = inject(PaginatorService);
+    iframeOverlayService = inject(IframeOverlayService);
+    private dotSessionStorageService = inject(DotSessionStorageService);
+
     @Input() disabled: boolean;
     @Input() readonly: boolean;
 
@@ -46,12 +50,6 @@ export class DotPersonaSelectorComponent implements OnInit {
     value: DotPersona;
     defaultPersonaIdentifier = DEFAULT_PERSONA_IDENTIFIER_BY_BACKEND;
     private personaSeachQuery: string;
-
-    constructor(
-        public paginationService: PaginatorService,
-        public iframeOverlayService: IframeOverlayService,
-        private dotSessionStorageService: DotSessionStorageService
-    ) {}
 
     private _pageState: DotPageRenderState;
 

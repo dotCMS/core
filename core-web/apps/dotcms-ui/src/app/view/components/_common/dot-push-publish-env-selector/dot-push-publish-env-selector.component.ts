@@ -1,4 +1,4 @@
-import { Component, forwardRef, Input, OnInit, ViewEncapsulation } from '@angular/core';
+import { Component, forwardRef, Input, OnInit, ViewEncapsulation, inject } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 import { take } from 'rxjs/operators';
@@ -20,6 +20,8 @@ import { DotEnvironment } from '@dotcms/dotcms-models';
     ]
 })
 export class PushPublishEnvSelectorComponent implements OnInit, ControlValueAccessor {
+    private pushPublishService = inject(PushPublishService);
+
     @Input()
     assetIdentifier: string;
     @Input()
@@ -28,8 +30,6 @@ export class PushPublishEnvSelectorComponent implements OnInit, ControlValueAcce
     selectedEnvironments: DotEnvironment[];
     selectedEnvironmentIds: string[] = [];
     value: string[];
-
-    constructor(private pushPublishService: PushPublishService) {}
 
     ngOnInit() {
         this.pushPublishService
