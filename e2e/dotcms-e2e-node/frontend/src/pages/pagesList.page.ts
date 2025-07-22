@@ -11,6 +11,13 @@ export class PagesListPage {
   }
 
   getPageListItems() {
-    return this.page.getByTestId("pages-listing-panel").getByRole("row");
+    return this.page.getByTestId("pages-listing-panel")
+    .locator("tbody")
+    .getByRole("row");
+  }
+
+  getRowByTitle(title: string) {
+    const rows = this.getPageListItems();
+    return rows.filter({ hasText: title });
   }
 }
