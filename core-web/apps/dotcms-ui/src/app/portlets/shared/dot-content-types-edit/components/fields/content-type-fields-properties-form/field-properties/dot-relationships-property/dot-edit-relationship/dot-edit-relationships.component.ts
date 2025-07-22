@@ -1,6 +1,6 @@
 import { Observable, of as observableOf } from 'rxjs';
 
-import { Component, EventEmitter, OnInit, Output } from '@angular/core';
+import { Component, EventEmitter, OnInit, Output, inject } from '@angular/core';
 
 import { flatMap, map, switchMap, toArray } from 'rxjs/operators';
 
@@ -35,18 +35,16 @@ interface CardinalitySorted {
     templateUrl: './dot-edit-relationships.component.html'
 })
 export class DotEditRelationshipsComponent implements OnInit {
+    dotPaginatorService = inject(PaginatorService);
+    private dotEditContentTypeCacheService = inject(DotEditContentTypeCacheService);
+    private dotRelationshipService = inject(DotRelationshipService);
+
     @Output()
     switch: EventEmitter<DotRelationshipsPropertyValue> = new EventEmitter();
 
     currentPage: Observable<{ label: string; relationship: DotRelationship }[]>;
 
     private cardinalities: CardinalitySorted;
-
-    constructor(
-        public dotPaginatorService: PaginatorService,
-        private dotEditContentTypeCacheService: DotEditContentTypeCacheService,
-        private dotRelationshipService: DotRelationshipService
-    ) {}
 
     ngOnInit() {
         this.dotPaginatorService.url = 'v1/relationships';

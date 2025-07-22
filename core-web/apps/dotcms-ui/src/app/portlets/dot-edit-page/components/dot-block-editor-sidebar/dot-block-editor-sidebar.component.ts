@@ -1,7 +1,7 @@
 import { Observable, of, Subject } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { Component, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
 
 import { switchMap, take, takeUntil } from 'rxjs/operators';
 
@@ -30,20 +30,18 @@ export interface BlockEditorInput {
     styleUrls: ['./dot-block-editor-sidebar.component.scss']
 })
 export class DotBlockEditorSidebarComponent implements OnInit, OnDestroy {
+    private dotWorkflowActionsFireService = inject(DotWorkflowActionsFireService);
+    private dotEventsService = inject(DotEventsService);
+    private dotMessageService = inject(DotMessageService);
+    private dotAlertConfirmService = inject(DotAlertConfirmService);
+    private dotContentTypeService = inject(DotContentTypeService);
+
     @ViewChild('blockEditor') blockEditor: DotBlockEditorComponent;
 
     blockEditorInput: BlockEditorInput;
     showVideoThumbnail: boolean;
     saving = false;
     private destroy$: Subject<boolean> = new Subject<boolean>();
-
-    constructor(
-        private dotWorkflowActionsFireService: DotWorkflowActionsFireService,
-        private dotEventsService: DotEventsService,
-        private dotMessageService: DotMessageService,
-        private dotAlertConfirmService: DotAlertConfirmService,
-        private dotContentTypeService: DotContentTypeService
-    ) {}
 
     ngOnInit(): void {
         const content$ = this.dotEventsService.listen<HTMLDivElement>('edit-block-editor').pipe(

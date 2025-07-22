@@ -1,6 +1,6 @@
 import { Observable, of, Subject } from 'rxjs';
 
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
 
 import { SelectItem } from 'primeng/api';
@@ -29,6 +29,11 @@ const DOWNLOAD_URL = '/api/bundle/_generate';
     styleUrls: ['./dot-download-bundle-dialog.component.scss']
 })
 export class DotDownloadBundleDialogComponent implements OnInit, OnDestroy {
+    fb = inject(UntypedFormBuilder);
+    private dotMessageService = inject(DotMessageService);
+    private dotPushPublishFiltersService = inject(DotPushPublishFiltersService);
+    private dotDownloadBundleDialogService = inject(DotDownloadBundleDialogService);
+
     downloadOptions: SelectItem[];
     filterOptions: SelectItem[];
     dialogActions: DotDialogActions;
@@ -39,13 +44,6 @@ export class DotDownloadBundleDialogComponent implements OnInit, OnDestroy {
     private currentFilterKey: string;
     private destroy$: Subject<boolean> = new Subject<boolean>();
     private filters: SelectItem[] = null;
-
-    constructor(
-        public fb: UntypedFormBuilder,
-        private dotMessageService: DotMessageService,
-        private dotPushPublishFiltersService: DotPushPublishFiltersService,
-        private dotDownloadBundleDialogService: DotDownloadBundleDialogService
-    ) {}
 
     ngOnInit() {
         this.dotDownloadBundleDialogService.showDialog$

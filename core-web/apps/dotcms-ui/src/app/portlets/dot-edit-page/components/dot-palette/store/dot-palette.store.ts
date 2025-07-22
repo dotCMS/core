@@ -1,7 +1,7 @@
 import { ComponentStore } from '@ngrx/component-store';
 import { forkJoin, Observable, of } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { LazyLoadEvent } from 'primeng/api';
 
@@ -40,6 +40,12 @@ const CONTENTLET_VIEW_OUT = 'contentlet:out';
 
 @Injectable()
 export class DotPaletteStore extends ComponentStore<DotPaletteState> {
+    private dotContentTypeService = inject(DotContentTypeService);
+    private paginatorESService = inject(DotESContentService);
+    private paginationService = inject(PaginatorService);
+    private dotSessionStorageService = inject(DotSessionStorageService);
+    private dotConfigurationService = inject(DotPropertiesService);
+
     readonly vm$ = this.state$;
 
     readonly setFilter = this.updater((state: DotPaletteState, data: string) => {
@@ -162,13 +168,7 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
         return { ...state, totalRecords: data };
     });
 
-    constructor(
-        private dotContentTypeService: DotContentTypeService,
-        private paginatorESService: DotESContentService,
-        private paginationService: PaginatorService,
-        private dotSessionStorageService: DotSessionStorageService,
-        private dotConfigurationService: DotPropertiesService
-    ) {
+    constructor() {
         super({
             contentlets: null,
             contentTypes: null,

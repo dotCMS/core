@@ -1,5 +1,5 @@
 import { CommonModule, DOCUMENT } from '@angular/common';
-import { Component, Inject, Input } from '@angular/core';
+import { Component, Input, inject } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 
@@ -35,6 +35,8 @@ import {
     providers: [{ provide: LOCATION_TOKEN, useValue: window.location }]
 })
 export class DotEditPageInfoSeoComponent {
+    private document = inject<Document>(DOCUMENT);
+
     @Input() title: string;
     @Input() url: string;
     innerApiLink: string;
@@ -42,7 +44,9 @@ export class DotEditPageInfoSeoComponent {
     seoImprovements: boolean;
     previewUrl: string;
 
-    constructor(@Inject(DOCUMENT) private document: Document) {
+    constructor() {
+        const document = this.document;
+
         this.baseUrl = document.defaultView.location.href.includes('edit-page')
             ? document.defaultView.location.origin
             : '';

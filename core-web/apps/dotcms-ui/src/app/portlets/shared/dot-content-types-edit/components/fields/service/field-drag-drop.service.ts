@@ -1,7 +1,7 @@
 import { DragulaService } from 'ng2-dragula';
 import { merge, Observable } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { filter, map, tap } from 'rxjs/operators';
 
@@ -51,6 +51,10 @@ export interface DropFieldData {
 
 @Injectable()
 export class FieldDragDropService {
+    private dragulaService = inject(DragulaService);
+    private dotAlertConfirmService = inject(DotAlertConfirmService);
+    private dotMessageService = inject(DotMessageService);
+
     private static readonly FIELD_BAG_NAME = 'fields-bag';
     private static readonly FIELD_ROW_BAG_NAME = 'fields-row-bag';
     private static readonly FIELD_ROW_BAG_CLASS_OVER = 'row-columns__item--over';
@@ -62,11 +66,9 @@ export class FieldDragDropService {
     private currentFullRowEl: HTMLElement = null;
     private currentColumnOvered: Element;
 
-    constructor(
-        private dragulaService: DragulaService,
-        private dotAlertConfirmService: DotAlertConfirmService,
-        private dotMessageService: DotMessageService
-    ) {
+    constructor() {
+        const dragulaService = this.dragulaService;
+
         const dragulaOver$ = dragulaService.over();
         const dragulaDropModel$ = dragulaService.dropModel();
 

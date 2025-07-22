@@ -1,4 +1,4 @@
-import { Injectable, Type } from '@angular/core';
+import { Injectable, Type, inject } from '@angular/core';
 import { ValidationErrors } from '@angular/forms';
 
 import { DotDynamicFieldComponent } from '@dotcms/dotcms-models';
@@ -16,7 +16,9 @@ import { FieldType } from '../models';
 export class FieldPropertyService {
     private fieldTypes = new Map<string, FieldType>();
 
-    constructor(fieldService: FieldService) {
+    constructor() {
+        const fieldService = inject(FieldService);
+
         fieldService.loadFieldTypes().subscribe((fieldTypes) => {
             fieldTypes.forEach((fieldType) => {
                 this.fieldTypes.set(fieldType.clazz, fieldType);

@@ -9,7 +9,8 @@ import {
     OnDestroy,
     OnInit,
     Output,
-    ViewChild
+    ViewChild,
+    inject
 } from '@angular/core';
 
 import { debounceTime, filter, takeUntil } from 'rxjs/operators';
@@ -28,6 +29,15 @@ import { IframeOverlayService } from '../service/iframe-overlay.service';
     templateUrl: 'iframe.component.html'
 })
 export class IframeComponent implements OnInit, OnDestroy {
+    private dotIframeService = inject(DotIframeService);
+    private dotRouterService = inject(DotRouterService);
+    private dotUiColorsService = inject(DotUiColorsService);
+    private dotcmsEventsService = inject(DotcmsEventsService);
+    private ngZone = inject(NgZone);
+    dotLoadingIndicatorService = inject(DotLoadingIndicatorService);
+    iframeOverlayService = inject(IframeOverlayService);
+    loggerService = inject(LoggerService);
+
     @ViewChild('iframeElement') iframeElement: ElementRef;
 
     @Input() src: string;
@@ -43,17 +53,6 @@ export class IframeComponent implements OnInit, OnDestroy {
     showOverlay = false;
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
-
-    constructor(
-        private dotIframeService: DotIframeService,
-        private dotRouterService: DotRouterService,
-        private dotUiColorsService: DotUiColorsService,
-        private dotcmsEventsService: DotcmsEventsService,
-        private ngZone: NgZone,
-        public dotLoadingIndicatorService: DotLoadingIndicatorService,
-        public iframeOverlayService: IframeOverlayService,
-        public loggerService: LoggerService
-    ) {}
 
     ngOnInit(): void {
         this.iframeOverlayService.overlay

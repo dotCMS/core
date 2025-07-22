@@ -1,4 +1,4 @@
-import { Directive, ElementRef, HostBinding, HostListener, Renderer2 } from '@angular/core';
+import { Directive, ElementRef, HostBinding, HostListener, Renderer2, inject } from '@angular/core';
 
 import { ColorUtil } from '../../../api/util/ColorUtil';
 
@@ -13,6 +13,10 @@ import { ColorUtil } from '../../../api/util/ColorUtil';
     selector: '[dotMdRipple]'
 })
 export class DotRippleEffectDirective {
+    private host = inject(ElementRef);
+    private renderer2 = inject(Renderer2);
+    private colorUtil = inject(ColorUtil);
+
     private static readonly WHITE_COLOR = 'rgba(255, 255, 255, 0.4)';
     private static readonly EFFECT_DEFAULT_COLOR = 'rgba(0, 0, 0, 0.2)';
 
@@ -26,11 +30,9 @@ export class DotRippleEffectDirective {
     private rippleSize: RippleSize;
     private hostNativeElement: HTMLElement;
 
-    constructor(
-        private host: ElementRef,
-        private renderer2: Renderer2,
-        private colorUtil: ColorUtil
-    ) {
+    constructor() {
+        const host = this.host;
+
         this.hostNativeElement = host.nativeElement;
     }
 
