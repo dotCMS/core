@@ -21,7 +21,7 @@ public class DotJsonFieldException extends DotContentletStateException {
         super(INVALID_JSON_FIELD_PROVIDED_KEY_VALUE_FIELD_VARIABLE + field);
         // Null-safe assignments with meaningful defaults
         this.field = StringUtils.defaultIfBlank(field, StringPool.UNKNOWN);
-        this.invalidJson = Objects.requireNonNullElse(invalidJson, "{}");
+        this.invalidJson = Objects.requireNonNullElse(invalidJson, StringPool.BLANK);
         this.line = Math.max(line, 0); // Ensure non-negative line numbers
         this.column = Math.max(column, 0); // Ensure non-negative column numbers
         this.parseError = StringUtils.defaultIfBlank(parseError, StringPool.UNKNOWN);
