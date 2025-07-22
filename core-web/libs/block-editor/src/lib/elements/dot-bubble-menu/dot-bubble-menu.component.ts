@@ -25,6 +25,7 @@ import { Editor } from '@tiptap/core';
 
 import { DotContentTypeService, DotMessageService } from '@dotcms/data-access';
 import { FeaturedFlags } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotImageEditorPopoverComponent } from './components/dot-image-editor-popover/dot-image-editor-popover.component';
 import { DotLinkEditorPopoverComponent } from './components/dot-link-editor-popover/dot-link-editor-popover.component';
@@ -59,7 +60,8 @@ const BUBBLE_MENU_HIDDEN_NODES = {
         DropdownModule,
         DotLinkEditorPopoverComponent,
         DotImageEditorPopoverComponent,
-        OverlayPanelModule
+        OverlayPanelModule,
+        DotMessagePipe
     ],
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -230,12 +232,23 @@ export class DotBubbleMenuComponent {
 
         // Extract content type information from the selected node
 
-        const { data = {} } = selectionNode.attrs;
+        const { data = {} } = selectionNode?.attrs || {};
 
-        const { contentType, inode } = data;
+        const { contentType, inode } = data || {};
+
+        if (!contentType) {
+            console.warn('contentType is undefined, cannot navigate to contentlet');
+
+            return;
+        }
+
+        if (!inode) {
+            console.warn('inode is undefined, cannot navigate to contentlet');
+
+            return;
+        }
 
         // Confirm navigation with user to prevent accidental data loss
-
         if (!confirm(this.dotMessageService.get('message.contentlet.lose.unsaved.changes'))) {
             return;
         }

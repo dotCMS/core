@@ -144,7 +144,9 @@
 </ng-template>
 
 <ng-template #bubbleImageMenu>
-    <button class="bubble-menu-button" (click)="toggleImageModal($event)">Image Properties</button>
+    <button class="bubble-menu-button" (click)="toggleImageModal($event)">
+        {{ 'block-editor.bubble-menu.image.properties' | dm }}
+    </button>
     <div class="divider"></div>
     <button
         class="bubble-menu-button bubble-menu-button--icon"
@@ -180,13 +182,14 @@
 </ng-template>
 
 <ng-template #bubbleContentMenu>
+    <button class="bubble-menu-button bubble-menu-button--icon" (click)="goToContentlet()">
+        <span class="material-icons">edit</span>
+        <!-- {{ 'block-editor.bubble-menu.contentlet.edit' | dm }} -->
+    </button>
     <button
         class="bubble-menu-button bubble-menu-button--icon"
         (click)="editor().chain().deleteSelection().blur().run()">
         <span class="material-icons">delete_outline</span>
-    </button>
-    <button class="bubble-menu-button bubble-menu-button--icon" (click)="goToContentlet()">
-        <span class="material-icons">edit</span>
     </button>
 </ng-template>
 
