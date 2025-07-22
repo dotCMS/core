@@ -48,7 +48,7 @@ services:
         DOT_DOT_PUBSUB_PROVIDER_OVERRIDE: 'com.dotcms.dotpubsub.RedisPubSubImpl'
         DOT_REDIS_LETTUCECLIENT_URLS: 'redis://MY_SECRET_P4SS@redis'
         DOT_CACHE_DEFAULT_CHAIN: 'com.dotmarketing.business.cache.provider.caffine.CaffineCache,com.dotcms.cache.lettuce.RedisCache'
-        #CUSTOM_STARTER_URL: 'https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20250318/starter-20250318.zip'
+        #CUSTOM_STARTER_URL: 'https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20250722/starter-20250722.zip'
     depends_on:
       - opensearch
       - db
