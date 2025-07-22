@@ -74,6 +74,21 @@ export interface ChartOptions {
                     /** Font size */
                     size?: number;
                 };
+                /** Custom label generation function */
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                generateLabels?: (chart: any) => any[];
+            };
+        };
+        /** Tooltip configuration */
+        tooltip?: {
+            /** Tooltip callback functions */
+            callbacks?: {
+                /** Custom label callback */
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                label?: (context: any) => string;
+                /** Custom title callback */
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                title?: (context: any) => string;
             };
         };
     };

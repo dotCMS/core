@@ -80,11 +80,4 @@ export default class DotAnalyticsDashboardComponent {
         // Refresh all dashboard data using the coordinated method
         this.store.loadAllDashboardData(timeRange);
     }
-
-    /**
-     * Reset dashboard to initial state
-     */
-    onReset(): void {
-        // TODO: Implement reset logic
-    }
 }

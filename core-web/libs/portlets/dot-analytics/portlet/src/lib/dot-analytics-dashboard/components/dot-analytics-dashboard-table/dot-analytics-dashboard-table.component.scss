@@ -4,7 +4,7 @@
     font-size: $font-size-lmd;
     font-weight: $font-weight-bold;
     color: $black;
-    line-height: 140%;
+    line-height: $line-height-relative;
     margin: 0;
     margin-bottom: $spacing-3;
 }

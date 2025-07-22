@@ -282,12 +282,6 @@ describe('DotAnalyticsDashboardComponent', () => {
                 expect(mockStore.loadAllDashboardData).toHaveBeenCalledWith(currentTimeRange);
             });
         });
-
-        describe('onReset', () => {
-            it('should exist but not throw error (pending implementation)', () => {
-                expect(() => spectator.component.onReset()).not.toThrow();
-            });
-        });
     });
 
     describe('Store Integration', () => {
@@ -295,7 +289,6 @@ describe('DotAnalyticsDashboardComponent', () => {
             // Verificar que el componente tiene acceso a los métodos del store
             expect(typeof spectator.component.onTimeRangeChange).toBe('function');
             expect(typeof spectator.component.onRefresh).toBe('function');
-            expect(typeof spectator.component.onReset).toBe('function');
         });
 
         it('should handle different time ranges', () => {

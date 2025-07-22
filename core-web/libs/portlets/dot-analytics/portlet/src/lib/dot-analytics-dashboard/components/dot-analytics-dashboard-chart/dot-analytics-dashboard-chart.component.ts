@@ -92,6 +92,53 @@ export class DotAnalyticsDashboardChartComponent {
                             }
                         })
                     }
+                },
+                tooltip: {
+                    // Custom tooltip callbacks to ensure translation
+                    callbacks: {
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        label: (context: any) => {
+                            const chartType = this.$type();
+                            const dataset = context.dataset;
+                            const parsedValue = context.parsed;
+
+                            if (chartType === 'pie' || chartType === 'doughnut') {
+                                // For pie/doughnut charts, parsed value is a number directly
+                                const value = parsedValue;
+                                const label = context.label
+                                    ? this.messageService.get(context.label)
+                                    : '';
+                                const total = dataset.data.reduce(
+                                    (sum: number, val: number) => sum + val,
+                                    0
+                                );
+                                const percentage = ((value / total) * 100).toFixed(1);
+
+                                return `${label}: ${value} (${percentage}%)`;
+                            } else {
+                                // For line/bar charts, parsed value is an object with x, y properties
+                                const value = parsedValue.y ?? parsedValue;
+                                const datasetLabel = dataset.label
+                                    ? this.messageService.get(dataset.label)
+                                    : '';
+
+                                return `${datasetLabel}: ${value}`;
+                            }
+                        },
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        title: (context: any) => {
+                            const chartType = this.$type();
+                            if (chartType === 'pie' || chartType === 'doughnut') {
+                                // For pie charts, translate the title if it's a translation key
+                                const title = context[0]?.label;
+
+                                return title ? this.messageService.get(title) : title;
+                            }
+
+                            // For other charts, return the label as is (usually dates/times)
+                            return context[0]?.label || '';
+                        }
+                    }
                 }
             }
         };
@@ -104,9 +151,13 @@ export class DotAnalyticsDashboardChartComponent {
     protected readonly $chartData = computed(() => {
         const originalData = this.$data();
 
-        // Clone the data and translate any translation keys in dataset labels
+        // Clone the data and translate any translation keys in dataset labels AND main labels
         const translatedData: ChartData = {
             ...originalData,
+            // Translate main chart labels (used in pie chart segments and tooltips)
+            labels: originalData.labels?.map((label) =>
+                typeof label === 'string' ? this.messageService.get(label) : label
+            ),
             datasets: originalData.datasets.map((dataset) => ({
                 ...dataset,
                 label: dataset.label ? this.messageService.get(dataset.label) : dataset.label

@@ -2,9 +2,11 @@ import {
     CubeJSQuery,
     CubeJSTimeDimension,
     DimensionField,
+    Granularity,
     MeasureField,
-    OrderField
-} from '../../types';
+    OrderField,
+    SortDirection
+} from '../../types/cubequery.types';
 
 /**
  * Simple CubeJS Query Builder for the 6 specific analytics requests
@@ -61,7 +63,7 @@ export class CubeQueryBuilder {
     timeRange(
         dimension: DimensionField,
         dateRange: string,
-        granularity?: 'day' | 'week' | 'month'
+        granularity?: Granularity
     ): CubeQueryBuilder {
         const prefixedDimension = dimension.startsWith('request.')
             ? dimension
@@ -79,7 +81,7 @@ export class CubeQueryBuilder {
     /**
      * Add ordering
      */
-    orderBy(field: OrderField, direction: 'asc' | 'desc' = 'desc'): CubeQueryBuilder {
+    orderBy(field: OrderField, direction: SortDirection = 'desc'): CubeQueryBuilder {
         const prefixedField = field.startsWith('request.') ? field : `request.${field}`;
         this.query.order = { [prefixedField]: direction };
 

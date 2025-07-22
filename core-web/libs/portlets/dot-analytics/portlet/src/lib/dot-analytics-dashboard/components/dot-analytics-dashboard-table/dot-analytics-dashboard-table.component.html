@@ -1,7 +1,7 @@
 <p-card class="h-full">
     @if ($isLoading()) {
         <!-- Loading State -->
-        <p-skeleton height="1.5rem" width="200px"></p-skeleton>
+        <p-skeleton height="1.5rem" width="12.5rem"></p-skeleton>
 
         <!-- Custom Table Skeleton -->
         <div class="p-datatable p-datatable-sm">
@@ -37,7 +37,7 @@
 
             <!-- Skeleton Pagination -->
             <div class="flex justify-content-center align-items-center p-3">
-                <p-skeleton height="1.5rem" width="250px"></p-skeleton>
+                <p-skeleton height="1.5rem" width="15.625rem"></p-skeleton>
             </div>
         </div>
     } @else {
@@ -77,11 +77,9 @@
                         <td [class]="'text-' + (column.alignment || 'left')">
                             @switch (column.type) {
                                 @case ('link') {
-                                    <a
-                                        href="javascript:void(0)"
-                                        class="font-medium hover:underline">
+                                    <span>
                                         {{ row[column.field] }}
-                                    </a>
+                                    </span>
                                 }
                                 @case ('number') {
                                     <span class="font-semibold">

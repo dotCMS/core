@@ -9,6 +9,7 @@ import { createCubeQuery } from '../utils/cube/cube-query-builder.util';
 
 import type {
     AnalyticsApiResponse,
+    Granularity,
     PageViewDeviceBrowsersEntity,
     PageViewTimeLineEntity,
     TimeRange,
@@ -86,7 +87,7 @@ export class DotAnalyticsService {
         timeRange: TimeRange = 'from 7 days ago to now'
     ): Observable<PageViewTimeLineEntity[]> {
         // Determinar granularidad basada en el timeRange
-        let granularity: 'day' | 'week' | 'month' = 'day';
+        let granularity: Granularity = 'day';
         if (timeRange.includes('week')) {
             granularity = timeRange.includes('1 week') ? 'day' : 'week';
         } else if (timeRange.includes('month')) {

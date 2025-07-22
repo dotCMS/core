@@ -12,7 +12,7 @@
     &__filters-row {
         width: 100%;
         background: $color-palette-gray-100;
-        border-bottom: 1px solid $color-palette-gray-300;
+        border-bottom: $field-border-size solid $color-palette-gray-300;
         padding: $spacing-3 $spacing-4;
     }
 
@@ -22,16 +22,6 @@
         justify-content: space-between;
         align-items: center;
         max-width: 100%;
-    }
-
-    // Element: filters
-    &__filters {
-        // Inherited styles from component
-    }
-
-    // Element: refresh-button
-    &__refresh-button {
-        // Inherited styles from PrimeNG
     }
 
     // Element: dashboard-row (white background)
@@ -65,8 +55,8 @@
 
         // Override PrimeNG card styles to add border
         ::ng-deep .p-card {
-            border: 1px solid $color-palette-gray-400;
-            border-radius: 12px; // Exactly as shown in the image
+            border: $field-border-size solid $color-palette-gray-400;
+            border-radius: $border-radius-lg;
         }
     }
 
@@ -83,8 +73,8 @@
 
         // Override PrimeNG card styles
         ::ng-deep .p-card {
-            border: 1px solid $color-palette-gray-400;
-            border-radius: 12px;
+            border: $field-border-size solid $color-palette-gray-400;
+            border-radius: $border-radius-lg;
         }
     }
 
@@ -102,8 +92,8 @@
 
         // Override PrimeNG card styles
         ::ng-deep .p-card {
-            border: 1px solid $color-palette-gray-400;
-            border-radius: 12px;
+            border: $field-border-size solid $color-palette-gray-400;
+            border-radius: $border-radius-lg;
         }
     }
 
@@ -114,8 +104,8 @@
 
         // Override PrimeNG card styles
         ::ng-deep .p-card {
-            border: 1px solid $color-palette-gray-400;
-            border-radius: 12px;
+            border: $field-border-size solid $color-palette-gray-400;
+            border-radius: $border-radius-lg;
         }
     }
 }

@@ -1,25 +1,14 @@
 import {
+    ChartData,
     PageViewDeviceBrowsersEntity,
     PageViewTimeLineEntity,
+    TablePageData,
     TopPagePerformanceEntity,
     TopPerformaceTableEntity,
     TotalPageViewsEntity,
     UniqueVisitorsEntity
 } from '../../types';
 import { parseUserAgent } from '../browser/userAgentParser';
-
-/**
- * Analytics entity field keys
- */
-const ANALYTICS_KEYS = {
-    TOTAL_REQUEST: 'request.totalRequest',
-    TOTAL_SESSIONS: 'request.totalSessions',
-    TOTAL_USER: 'request.totalUser',
-    PAGE_TITLE: 'request.pageTitle',
-    CREATED_AT: 'request.createdAt',
-    CREATED_AT_DAY: 'request.createdAt.day',
-    USER_AGENT: 'request.userAgent'
-} as const;
 
 /**
  * Helper functions to extract numeric values from analytics entities
@@ -29,34 +18,25 @@ const ANALYTICS_KEYS = {
  * Extracts page views count from TotalPageViewsEntity
  */
 export const extractPageViews = (data: TotalPageViewsEntity | null): number =>
-    data ? Number(data[ANALYTICS_KEYS.TOTAL_REQUEST]) : 0;
+    data ? Number(data['request.totalRequest']) : 0;
 
 /**
  * Extracts unique sessions from UniqueVisitorsEntity
  */
 export const extractSessions = (data: UniqueVisitorsEntity | null): number =>
-    data ? Number(data[ANALYTICS_KEYS.TOTAL_USER]) : 0;
+    data ? Number(data['request.totalUser']) : 0;
 
 /**
  * Extracts top page performance value from TopPagePerformanceEntity
  */
 export const extractTopPageValue = (data: TopPagePerformanceEntity | null): number =>
-    data ? Number(data[ANALYTICS_KEYS.TOTAL_REQUEST]) : 0;
+    data ? Number(data['request.totalRequest']) : 0;
 
 /**
  * Extracts page title from TopPagePerformanceEntity
  */
 export const extractPageTitle = (data: TopPagePerformanceEntity | null): string =>
-    data?.[ANALYTICS_KEYS.PAGE_TITLE] || 'analytics.metrics.pageTitle.not-available';
-
-/**
- * Table data transformation interfaces
- */
-export interface TablePageData {
-    pageTitle: string;
-    path: string;
-    views: number;
-}
+    data?.['request.pageTitle'] || 'analytics.metrics.pageTitle.not-available';
 
 /**
  * Transforms TopPerformaceTableEntity array to table-friendly format
@@ -74,22 +54,6 @@ export const transformTopPagesTableData = (
         views: Number(item['request.totalRequest']) || 0
     }));
 };
-
-/**
- * Chart data interface compatible with Chart.js
- */
-export interface ChartData {
-    labels: string[];
-    datasets: {
-        label: string;
-        data: number[];
-        borderColor?: string;
-        backgroundColor?: string | string[];
-        borderWidth?: number;
-        fill?: boolean;
-        tension?: number;
-    }[];
-}
 
 /**
  * Transforms PageViewTimeLineEntity array to Chart.js compatible format
@@ -115,12 +79,11 @@ export const transformPageViewTimeLineData = (data: PageViewTimeLineEntity[] | n
     // Sort by date to ensure correct order
     const sortedData = [...data].sort(
         (a, b) =>
-            new Date(a[ANALYTICS_KEYS.CREATED_AT]).getTime() -
-            new Date(b[ANALYTICS_KEYS.CREATED_AT]).getTime()
+            new Date(a['request.createdAt']).getTime() - new Date(b['request.createdAt']).getTime()
     );
 
     const labels = sortedData.map((item) => {
-        const date = new Date(item[ANALYTICS_KEYS.CREATED_AT]);
+        const date = new Date(item['request.createdAt']);
 
         // Format as short weekday + date (e.g., "Mon 21", "Tue 22")
         return date.toLocaleDateString('en-US', {
@@ -129,7 +92,7 @@ export const transformPageViewTimeLineData = (data: PageViewTimeLineEntity[] | n
         });
     });
 
-    const chartData = sortedData.map((item) => Number(item[ANALYTICS_KEYS.TOTAL_REQUEST]) || 0);
+    const chartData = sortedData.map((item) => Number(item['request.totalRequest']) || 0);
 
     return {
         labels,
@@ -170,8 +133,8 @@ export const transformDeviceBrowsersData = (
     const browserDeviceGroups = new Map<string, number>();
 
     data.forEach((item) => {
-        const userAgent = item[ANALYTICS_KEYS.USER_AGENT];
-        const totalRequests = parseInt(item[ANALYTICS_KEYS.TOTAL_REQUEST] || '0', 10);
+        const userAgent = item['request.userAgent'];
+        const totalRequests = parseInt(item['request.totalRequest'] || '0', 10);
 
         if (userAgent && totalRequests > 0) {
             const parsed = parseUserAgent(userAgent);

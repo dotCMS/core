@@ -15,7 +15,6 @@ import { computed, effect, inject } from '@angular/core';
 
 import { switchMap, tap } from 'rxjs/operators';
 
-import { DotHttpErrorManagerService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
 
 import { DotAnalyticsService } from '../services/dot-analytics.service';
@@ -158,275 +157,263 @@ export const DotAnalyticsDashboardStore = signalStore(
     ),
 
     // All methods in a single withMethods
-    withMethods(
-        (
-            store,
-            analyticsService = inject(DotAnalyticsService),
-            dotHttpErrorManagerService = inject(DotHttpErrorManagerService)
-        ) => ({
-            setTimeRange: (timeRange: TimeRange) => {
-                patchState(store, { timeRange });
-            },
+    withMethods((store, analyticsService = inject(DotAnalyticsService)) => ({
+        setTimeRange: (timeRange: TimeRange) => {
+            patchState(store, { timeRange });
+        },
 
-            // Total Page Views
-            loadTotalPageViews: rxMethod<TimeRange>(
-                pipe(
-                    tap(() =>
-                        patchState(store, {
-                            totalPageViews: {
-                                status: ComponentStatus.LOADING,
-                                data: null,
-                                error: null
+        // Total Page Views
+        loadTotalPageViews: rxMethod<TimeRange>(
+            pipe(
+                tap(() =>
+                    patchState(store, {
+                        totalPageViews: {
+                            status: ComponentStatus.LOADING,
+                            data: null,
+                            error: null
+                        }
+                    })
+                ),
+                switchMap((timeRange) =>
+                    analyticsService.totalPageViews(timeRange).pipe(
+                        tapResponse(
+                            (data: TotalPageViewsEntity) => {
+                                patchState(store, {
+                                    totalPageViews: {
+                                        status: ComponentStatus.LOADED,
+                                        data,
+                                        error: null
+                                    },
+                                    lastUpdated: new Date()
+                                });
+                            },
+                            (error: HttpErrorResponse) => {
+                                const errorMessage =
+                                    error.message || 'Failed to load total page views';
+                                patchState(store, {
+                                    totalPageViews: {
+                                        status: ComponentStatus.ERROR,
+                                        data: null,
+                                        error: errorMessage
+                                    }
+                                });
                             }
-                        })
-                    ),
-                    switchMap((timeRange) =>
-                        analyticsService.totalPageViews(timeRange).pipe(
-                            tapResponse(
-                                (data: TotalPageViewsEntity) => {
-                                    patchState(store, {
-                                        totalPageViews: {
-                                            status: ComponentStatus.LOADED,
-                                            data,
-                                            error: null
-                                        },
-                                        lastUpdated: new Date()
-                                    });
-                                },
-                                (error: HttpErrorResponse) => {
-                                    const errorMessage =
-                                        error.message || 'Failed to load total page views';
-                                    patchState(store, {
-                                        totalPageViews: {
-                                            status: ComponentStatus.ERROR,
-                                            data: null,
-                                            error: errorMessage
-                                        }
-                                    });
-                                    dotHttpErrorManagerService.handle(error);
-                                }
-                            )
-                        )
-                    )
-                )
-            ),
-
-            // Unique Visitors
-            loadUniqueVisitors: rxMethod<TimeRange>(
-                pipe(
-                    tap(() =>
-                        patchState(store, {
-                            uniqueVisitors: {
-                                status: ComponentStatus.LOADING,
-                                data: null,
-                                error: null
-                            }
-                        })
-                    ),
-                    switchMap((timeRange) =>
-                        analyticsService.uniqueVisitors(timeRange).pipe(
-                            tapResponse(
-                                (data: UniqueVisitorsEntity) => {
-                                    patchState(store, {
-                                        uniqueVisitors: {
-                                            status: ComponentStatus.LOADED,
-                                            data,
-                                            error: null
-                                        },
-                                        lastUpdated: new Date()
-                                    });
-                                },
-                                (error: HttpErrorResponse) => {
-                                    const errorMessage =
-                                        error.message || 'Failed to load unique visitors';
-                                    patchState(store, {
-                                        uniqueVisitors: {
-                                            status: ComponentStatus.ERROR,
-                                            data: null,
-                                            error: errorMessage
-                                        }
-                                    });
-                                    dotHttpErrorManagerService.handle(error);
-                                }
-                            )
-                        )
-                    )
-                )
-            ),
-
-            // Top Page Performance
-            loadTopPagePerformance: rxMethod<TimeRange>(
-                pipe(
-                    tap(() =>
-                        patchState(store, {
-                            topPagePerformance: {
-                                status: ComponentStatus.LOADING,
-                                data: null,
-                                error: null
-                            }
-                        })
-                    ),
-                    switchMap((timeRange) =>
-                        analyticsService.topPagePerformance(timeRange).pipe(
-                            tapResponse(
-                                (data: TopPagePerformanceEntity) => {
-                                    patchState(store, {
-                                        topPagePerformance: {
-                                            status: ComponentStatus.LOADED,
-                                            data,
-                                            error: null
-                                        },
-                                        lastUpdated: new Date()
-                                    });
-                                },
-                                (error: HttpErrorResponse) => {
-                                    const errorMessage =
-                                        error.message || 'Failed to load top page performance';
-                                    patchState(store, {
-                                        topPagePerformance: {
-                                            status: ComponentStatus.ERROR,
-                                            data: null,
-                                            error: errorMessage
-                                        }
-                                    });
-                                    dotHttpErrorManagerService.handle(error);
-                                }
-                            )
-                        )
-                    )
-                )
-            ),
-
-            // Page View Timeline
-            loadPageViewTimeLine: rxMethod<TimeRange>(
-                pipe(
-                    tap(() =>
-                        patchState(store, {
-                            pageViewTimeLine: {
-                                status: ComponentStatus.LOADING,
-                                data: null,
-                                error: null
-                            }
-                        })
-                    ),
-                    switchMap((timeRange) =>
-                        analyticsService.pageViewTimeLine(timeRange).pipe(
-                            tapResponse(
-                                (data: PageViewTimeLineEntity[]) => {
-                                    patchState(store, {
-                                        pageViewTimeLine: {
-                                            status: ComponentStatus.LOADED,
-                                            data,
-                                            error: null
-                                        },
-                                        lastUpdated: new Date()
-                                    });
-                                },
-                                (error: HttpErrorResponse) => {
-                                    const errorMessage =
-                                        error.message || 'Failed to load page view timeline';
-                                    patchState(store, {
-                                        pageViewTimeLine: {
-                                            status: ComponentStatus.ERROR,
-                                            data: null,
-                                            error: errorMessage
-                                        }
-                                    });
-                                    dotHttpErrorManagerService.handle(error);
-                                }
-                            )
-                        )
-                    )
-                )
-            ),
-
-            // Page View Device Browsers
-            loadPageViewDeviceBrowsers: rxMethod<TimeRange>(
-                pipe(
-                    tap(() =>
-                        patchState(store, {
-                            pageViewDeviceBrowsers: {
-                                status: ComponentStatus.LOADING,
-                                data: null,
-                                error: null
-                            }
-                        })
-                    ),
-                    switchMap((timeRange) =>
-                        analyticsService.pageViewDeviceBrowsers(timeRange).pipe(
-                            tapResponse(
-                                (data: PageViewDeviceBrowsersEntity[]) => {
-                                    patchState(store, {
-                                        pageViewDeviceBrowsers: {
-                                            status: ComponentStatus.LOADED,
-                                            data,
-                                            error: null
-                                        },
-                                        lastUpdated: new Date()
-                                    });
-                                },
-                                (error: HttpErrorResponse) => {
-                                    const errorMessage =
-                                        error.message || 'Failed to load device browsers data';
-                                    patchState(store, {
-                                        pageViewDeviceBrowsers: {
-                                            status: ComponentStatus.ERROR,
-                                            data: null,
-                                            error: errorMessage
-                                        }
-                                    });
-                                    dotHttpErrorManagerService.handle(error);
-                                }
-                            )
-                        )
-                    )
-                )
-            ),
-
-            // Top Pages Table
-            loadTopPagesTable: rxMethod<TimeRange>(
-                pipe(
-                    tap(() =>
-                        patchState(store, {
-                            topPagesTable: {
-                                status: ComponentStatus.LOADING,
-                                data: null,
-                                error: null
-                            }
-                        })
-                    ),
-                    switchMap((timeRange) =>
-                        analyticsService.getTopPagePerformanceTable(timeRange, 50).pipe(
-                            tapResponse(
-                                (data: TopPerformaceTableEntity[]) => {
-                                    patchState(store, {
-                                        topPagesTable: {
-                                            status: ComponentStatus.LOADED,
-                                            data,
-                                            error: null
-                                        },
-                                        lastUpdated: new Date()
-                                    });
-                                },
-                                (error: HttpErrorResponse) => {
-                                    const errorMessage =
-                                        error.message || 'Failed to load top pages table';
-                                    patchState(store, {
-                                        topPagesTable: {
-                                            status: ComponentStatus.ERROR,
-                                            data: null,
-                                            error: errorMessage
-                                        }
-                                    });
-                                    dotHttpErrorManagerService.handle(error);
-                                }
-                            )
                         )
                     )
                 )
             )
-        })
-    ),
+        ),
+
+        // Unique Visitors
+        loadUniqueVisitors: rxMethod<TimeRange>(
+            pipe(
+                tap(() =>
+                    patchState(store, {
+                        uniqueVisitors: {
+                            status: ComponentStatus.LOADING,
+                            data: null,
+                            error: null
+                        }
+                    })
+                ),
+                switchMap((timeRange) =>
+                    analyticsService.uniqueVisitors(timeRange).pipe(
+                        tapResponse(
+                            (data: UniqueVisitorsEntity) => {
+                                patchState(store, {
+                                    uniqueVisitors: {
+                                        status: ComponentStatus.LOADED,
+                                        data,
+                                        error: null
+                                    },
+                                    lastUpdated: new Date()
+                                });
+                            },
+                            (error: HttpErrorResponse) => {
+                                const errorMessage =
+                                    error.message || 'Failed to load unique visitors';
+                                patchState(store, {
+                                    uniqueVisitors: {
+                                        status: ComponentStatus.ERROR,
+                                        data: null,
+                                        error: errorMessage
+                                    }
+                                });
+                            }
+                        )
+                    )
+                )
+            )
+        ),
+
+        // Top Page Performance
+        loadTopPagePerformance: rxMethod<TimeRange>(
+            pipe(
+                tap(() =>
+                    patchState(store, {
+                        topPagePerformance: {
+                            status: ComponentStatus.LOADING,
+                            data: null,
+                            error: null
+                        }
+                    })
+                ),
+                switchMap((timeRange) =>
+                    analyticsService.topPagePerformance(timeRange).pipe(
+                        tapResponse(
+                            (data: TopPagePerformanceEntity) => {
+                                patchState(store, {
+                                    topPagePerformance: {
+                                        status: ComponentStatus.LOADED,
+                                        data,
+                                        error: null
+                                    },
+                                    lastUpdated: new Date()
+                                });
+                            },
+                            (error: HttpErrorResponse) => {
+                                const errorMessage =
+                                    error.message || 'Failed to load top page performance';
+                                patchState(store, {
+                                    topPagePerformance: {
+                                        status: ComponentStatus.ERROR,
+                                        data: null,
+                                        error: errorMessage
+                                    }
+                                });
+                            }
+                        )
+                    )
+                )
+            )
+        ),
+
+        // Page View Timeline
+        loadPageViewTimeLine: rxMethod<TimeRange>(
+            pipe(
+                tap(() =>
+                    patchState(store, {
+                        pageViewTimeLine: {
+                            status: ComponentStatus.LOADING,
+                            data: null,
+                            error: null
+                        }
+                    })
+                ),
+                switchMap((timeRange) =>
+                    analyticsService.pageViewTimeLine(timeRange).pipe(
+                        tapResponse(
+                            (data: PageViewTimeLineEntity[]) => {
+                                patchState(store, {
+                                    pageViewTimeLine: {
+                                        status: ComponentStatus.LOADED,
+                                        data,
+                                        error: null
+                                    },
+                                    lastUpdated: new Date()
+                                });
+                            },
+                            (error: HttpErrorResponse) => {
+                                const errorMessage =
+                                    error.message || 'Failed to load page view timeline';
+                                patchState(store, {
+                                    pageViewTimeLine: {
+                                        status: ComponentStatus.ERROR,
+                                        data: null,
+                                        error: errorMessage
+                                    }
+                                });
+                            }
+                        )
+                    )
+                )
+            )
+        ),
+
+        // Page View Device Browsers
+        loadPageViewDeviceBrowsers: rxMethod<TimeRange>(
+            pipe(
+                tap(() =>
+                    patchState(store, {
+                        pageViewDeviceBrowsers: {
+                            status: ComponentStatus.LOADING,
+                            data: null,
+                            error: null
+                        }
+                    })
+                ),
+                switchMap((timeRange) =>
+                    analyticsService.pageViewDeviceBrowsers(timeRange).pipe(
+                        tapResponse(
+                            (data: PageViewDeviceBrowsersEntity[]) => {
+                                patchState(store, {
+                                    pageViewDeviceBrowsers: {
+                                        status: ComponentStatus.LOADED,
+                                        data,
+                                        error: null
+                                    },
+                                    lastUpdated: new Date()
+                                });
+                            },
+                            (error: HttpErrorResponse) => {
+                                const errorMessage =
+                                    error.message || 'Failed to load device browsers data';
+                                patchState(store, {
+                                    pageViewDeviceBrowsers: {
+                                        status: ComponentStatus.ERROR,
+                                        data: null,
+                                        error: errorMessage
+                                    }
+                                });
+                            }
+                        )
+                    )
+                )
+            )
+        ),
+
+        // Top Pages Table
+        loadTopPagesTable: rxMethod<TimeRange>(
+            pipe(
+                tap(() =>
+                    patchState(store, {
+                        topPagesTable: {
+                            status: ComponentStatus.LOADING,
+                            data: null,
+                            error: null
+                        }
+                    })
+                ),
+                switchMap((timeRange) =>
+                    analyticsService.getTopPagePerformanceTable(timeRange, 50).pipe(
+                        tapResponse(
+                            (data: TopPerformaceTableEntity[]) => {
+                                patchState(store, {
+                                    topPagesTable: {
+                                        status: ComponentStatus.LOADED,
+                                        data,
+                                        error: null
+                                    },
+                                    lastUpdated: new Date()
+                                });
+                            },
+                            (error: HttpErrorResponse) => {
+                                const errorMessage =
+                                    error.message || 'Failed to load top pages table';
+                                patchState(store, {
+                                    topPagesTable: {
+                                        status: ComponentStatus.ERROR,
+                                        data: null,
+                                        error: errorMessage
+                                    }
+                                });
+                            }
+                        )
+                    )
+                )
+            )
+        )
+    })),
 
     withMethods((store) => ({
         /**

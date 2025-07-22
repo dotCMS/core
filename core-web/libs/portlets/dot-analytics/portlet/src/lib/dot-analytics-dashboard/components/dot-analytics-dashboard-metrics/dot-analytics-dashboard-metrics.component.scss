@@ -2,7 +2,11 @@
 
 .metric-card {
     ::ng-deep .p-card-body {
-        padding: 1rem;
+        padding: $spacing-3;
+        min-height: 114px;
+    }
+    ::ng-deep .p-card-content {
+        height: 100%;
     }
 }
 
@@ -26,7 +30,7 @@
     font-size: $font-size-sm;
     font-weight: $font-weight-regular-bold;
     color: $color-palette-gray-800;
-    line-height: 140%;
+    line-height: $line-height-relative;
     margin: 0;
 }
 

@@ -3,7 +3,6 @@ import {
     extractPageViews,
     extractSessions,
     extractTopPageValue,
-    TablePageData,
     transformDeviceBrowsersData,
     transformPageViewTimeLineData,
     transformTopPagesTableData
@@ -12,6 +11,7 @@ import {
 import type {
     PageViewDeviceBrowsersEntity,
     PageViewTimeLineEntity,
+    TablePageData,
     TopPagePerformanceEntity,
     TopPerformaceTableEntity,
     TotalPageViewsEntity,
