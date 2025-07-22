@@ -1,5 +1,5 @@
 import { TiptapBubbleMenuDirective } from 'ngx-tiptap';
-import { Placement } from 'tippy.js';
+import { Instance, Placement, Props } from 'tippy.js';
 
 import { CommonModule } from '@angular/common';
 import {
@@ -16,7 +16,7 @@ import {
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer } from '@angular/platform-browser';
 
-import { DropdownModule } from 'primeng/dropdown';
+import { Dropdown, DropdownModule } from 'primeng/dropdown';
 import { OverlayPanelModule } from 'primeng/overlaypanel';
 
 import { Editor } from '@tiptap/core';
@@ -60,10 +60,11 @@ const BUBBLE_MENU_HIDDEN_NODES = {
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotBubbleMenuComponent {
-    @ViewChild('editorModal') editorModal: EditorModalDirective;
-    @ViewChild('bubbleMenu', { read: ElementRef }) bubbleMenuRef: ElementRef<HTMLElement>;
+    @ViewChild('dropdown') dropdown: Dropdown;
     @ViewChild('linkModal') linkModal: DotLinkEditorPopoverComponent;
     @ViewChild('imageModal') imageModal: DotImageEditorPopoverComponent;
+    @ViewChild('editorModal') editorModal: EditorModalDirective;
+    @ViewChild('bubbleMenu', { read: ElementRef }) bubbleMenuRef: ElementRef<HTMLElement>;
 
     readonly editor = input.required<Editor>();
     protected readonly cd = inject(ChangeDetectorRef);
@@ -149,11 +150,24 @@ export class DotBubbleMenuComponent {
         }
     ];
 
-    protected readonly tippyOptions = {
+    protected readonly tippyOptions: Partial<Props> = {
         maxWidth: '100%',
         onBeforeUpdate: this.onBeforeUpdate.bind(this),
         placement: 'top-start' as Placement,
-        trigger: 'manual'
+        trigger: 'manual',
+        zIndex: 100,
+        onClickOutside: (instance: Instance, event: MouseEvent) => {
+            const target = event.target as Node;
+            const isImageElement = this.imageModal?.tippyElement.contains(target);
+            const isLinkElement = this.linkModal?.tippyElement.contains(target);
+
+            if (isImageElement || isLinkElement) {
+                return;
+            }
+
+            instance.hide();
+            this.closePopups();
+        }
     };
 
     protected runConvertToCommand(option: NodeTypeOption) {
@@ -175,6 +189,7 @@ export class DotBubbleMenuComponent {
         event.stopPropagation();
         this.linkModal?.toggle();
         this.imageModal?.hide();
+        this.dropdown?.hide();
     }
 
     /**

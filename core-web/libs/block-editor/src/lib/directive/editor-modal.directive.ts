@@ -19,6 +19,13 @@ export class EditorModalDirective implements OnInit, OnDestroy {
 
     private editorElement: HTMLElement;
 
+    /**
+     * The native element of the Tippy instance.
+     */
+    get nativeElement() {
+        return this.elRef.nativeElement;
+    }
+
     ngOnInit(): void {
         const { element: editorElement } = this.editor().options;
         const editorIsAttached = !!editorElement.parentElement;

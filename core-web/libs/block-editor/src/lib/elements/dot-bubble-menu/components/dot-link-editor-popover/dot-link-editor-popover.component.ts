@@ -116,6 +116,13 @@ export class DotLinkEditorPopoverComponent implements OnDestroy {
         }
     }
 
+    /**
+     * The native element of the Tippy instance.
+     */
+    get tippyElement() {
+        return this.popover?.nativeElement;
+    }
+
     constructor() {
         this.searchInputSubject
             .pipe(debounceTime(250), distinctUntilChanged(), takeUntil(this.componentDestroy$))
