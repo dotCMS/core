@@ -248,7 +248,7 @@ ENTRYPOINT ["/srv/entrypoint.sh"]
 
 | Change Type | Maven Command | Just Command | Why | Build Time |
 |-------------|---------------|--------------|-----|------------|
-| **Test code changes only** | `./mvnw verify -pl :dotcms-integration` | `just test-integration` | Only rebuilds/runs test module (auto-starts Docker services) | ~30 sec - 2 min |
+| **Test code changes only** | `./mvnw verify -pl :dotcms-integration -Dit.test=YourTestClass` | *(use Maven with -Dit.test)* | Target specific test class (auto-starts Docker services) | ~2-10 min ⚠️ |
 | **Simple code changes** in dotcms-core only | `./mvnw install -pl :dotcms-core -DskipTests` | `just build-quicker` | Fastest - only builds core module | ~2-3 min |
 | **Core changes affecting dependencies** | `./mvnw install -pl :dotcms-core --am -DskipTests` | *(use Maven)* | Builds core + upstream dependencies | ~3-5 min |
 | **Major changes or clean start** | `./mvnw clean install -DskipTests` | `just build` | Full clean build of all modules | ~8-15 min |
@@ -269,13 +269,68 @@ ENTRYPOINT ["/srv/entrypoint.sh"]
 
 | Test Module | Maven Command | Just Command | Purpose | Build Time |
 |------------|---------------|--------------|---------|------------|
-| **Integration Tests** | `./mvnw verify -pl :dotcms-integration -Dcoreit.test.skip=false` | `just test-integration` | JUnit integration tests (auto-starts DB/ES) | ~30 sec - 2 min |
+| **Integration Tests** | `./mvnw verify -pl :dotcms-integration -Dcoreit.test.skip=false` | `just test-integration` | JUnit integration tests (auto-starts DB/ES) | **Full suite: 60+ min** ⚠️ |
 | **Postman Tests** | `./mvnw verify -pl :dotcms-postman -Dpostman.test.skip=false` | `just test-postman` | API testing with Postman/Newman (auto-starts services) | ~1-3 min |
 | **Karate Tests** | `./mvnw verify -pl :dotcms-test-karate -Dkarate.test.skip=false` | `just test-karate` | BDD API testing (auto-starts services) | ~1-2 min |
 | **E2E Node Tests** | `./mvnw verify -pl :dotcms-e2e-node -De2e.test.skip=false` | *(use Maven)* | Playwright E2E tests (full Docker environment) | ~2-5 min |
 | **E2E Java Tests** | `./mvnw verify -pl :dotcms-e2e-java -De2e.test.skip=false` | *(use Maven)* | Selenium E2E tests (full Docker environment) | ~3-8 min |
 
+⚠️ **PERFORMANCE WARNING**: The **FULL** integration test suite takes 30+ minutes to complete. Always target specific test classes during development!
+
 💡 **For IDE debugging**: Use `just test-integration-ide` to start services manually, then run tests in your IDE.
+
+### Integration Test Performance Guide
+
+**Full Suite Runtime**: 60+ minutes (thousands of tests)
+**Recommended approach**: Target specific test classes (2-10 minutes)
+
+```bash
+# ❌ DON'T run full suite during development (60+ minutes)
+just test-integration  # Runs ALL integration tests - very slow!
+
+# ✅ DO target specific test classes (2-10 minutes)
+./mvnw verify -pl :dotcms-integration -Dcoreit.test.skip=false -Dit.test=ContentTypeAPIImplTest
+./mvnw verify -pl :dotcms-integration -Dcoreit.test.skip=false -Dit.test=WorkflowAPIImplTest  
+./mvnw verify -pl :dotcms-integration -Dcoreit.test.skip=false -Dit.test=UserAPIImplTest
+
+# ✅ DO run specific test methods for focused debugging
+./mvnw verify -pl :dotcms-integration -Dcoreit.test.skip=false -Dit.test=ContentTypeAPIImplTest#testCreateContentType
+
+# ✅ DO use IDE testing for fastest iteration
+just test-integration-ide  # Start services once
+# → Run individual tests/methods in IDE repeatedly
+```
+
+**When to run full suite:**
+- Before submitting major PRs
+- In CI/CD pipelines  
+- Final validation before release
+- Never during active development iteration
+
+**Common test classes to target:**
+```bash
+# Content management
+-Dit.test=ContentTypeAPIImplTest
+-Dit.test=ContentletAPIImplTest  
+-Dit.test=StructureAPIImplTest
+
+# User and permissions
+-Dit.test=UserAPIImplTest
+-Dit.test=RoleAPIImplTest
+-Dit.test=PermissionAPIImplTest
+
+# Workflow
+-Dit.test=WorkflowAPIImplTest
+-Dit.test=WorkflowTaskAPIImplTest
+
+# File and asset management
+-Dit.test=FileAssetAPIImplTest
+-Dit.test=FolderAPIImplTest
+
+# Search and indexing
+-Dit.test=ContentletIndexAPIImplTest
+-Dit.test=ESIndexAPIImplTest
+```
 
 💡 **Key insight**: If you're only changing test code in `dotcms-integration/src/test/`, you can run just `./mvnw verify -pl :dotcms-integration` without rebuilding the core!
 
@@ -371,7 +426,8 @@ NOT included with -pl :dotcms-core:
 **Ask yourself these questions to choose the optimal build:**
 
 1. **Did you ONLY change test source code?**
-   - Yes → `./mvnw verify -pl :dotcms-integration` (or appropriate test module)
+   - Yes → `./mvnw verify -pl :dotcms-integration -Dit.test=YourTestClass` (target specific test class!)
+   - **⚠️ Don't run full test suite** - it takes 60+ minutes
    - **Skip all other questions - you're done!**
 
 2. **Is this your first build or after major changes?**
@@ -422,10 +478,20 @@ NOT included with -pl :dotcms-core:
 ### Performance Tips
 - **Development workflow**: Use `install` (not `clean install`) for faster rebuilds
 - **Test-first optimization**: If only changing tests, skip core rebuild entirely
+- **⚠️ CRITICAL: Target specific test classes** - Full integration suite = 60+ minutes!
 - **Docker optional**: Add `-Ddocker.skip` if you're only running unit tests  
 - **Parallel builds**: Add `-T 1C` for multi-threaded builds on powerful machines
 - **Incremental compilation**: Maven only recompiles changed files
 - **Watch for dependencies**: If your build fails, you might need `--am` flag
+
+### Integration Test Time Savings
+
+| Approach | Time | Use Case |
+|----------|------|----------|
+| **Full integration suite** | 60+ minutes | ❌ Never during development |
+| **Specific test class** | 2-10 minutes | ✅ Development iteration |
+| **Single test method** | 30 seconds - 2 minutes | ✅ Focused debugging |
+| **IDE with running services** | 10-30 seconds | ✅ Rapid iteration |
 
 ### Basic Usage
 ```bash

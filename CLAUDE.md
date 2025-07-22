@@ -4,9 +4,9 @@
 
 ### Build Optimization (Choose Right Command)
 ```bash
-# For test-only changes (fastest!):
-./mvnw verify -pl :dotcms-integration          # OR: just test-integration (~30 sec)
-./mvnw verify -pl :dotcms-postman              # OR: just test-postman
+# For test-only changes (target specific tests!):
+./mvnw verify -pl :dotcms-integration -Dit.test=MyTestClass  # Specific test class (~2-10 min)
+./mvnw verify -pl :dotcms-postman                           # OR: just test-postman (~1-3 min)
 
 # For simple code changes in dotcms-core only:
 ./mvnw install -pl :dotcms-core -DskipTests    # OR: just build-quicker (~2-3 min)
@@ -28,9 +28,15 @@ UserAPI userAPI = APILocator.getUserAPI();
 
 ### Test Development Workflow
 ```bash
-# For test debugging: Start services, then use IDE
+# ⚠️ CRITICAL: Never run full integration suite during development (60+ min)
+# Instead, target specific test classes or methods:
+
+# Option 1: Command line with specific test class (2-10 min)
+./mvnw verify -pl :dotcms-integration -Dit.test=ContentTypeAPIImplTest
+
+# Option 2: IDE debugging with services (fastest iteration)
 just test-integration-ide          # Starts PostgreSQL + Elasticsearch + dotCMS
-# → Run/debug individual tests in IDE with breakpoints
+# → Run/debug individual tests in IDE with breakpoints (10-30 sec per test)
 just test-integration-stop         # Clean up when done
 ```
 
@@ -43,9 +49,10 @@ spectator.setInput('prop', value);     // Testing CRITICAL
 
 ```bash
 # Test Commands (fastest - no core rebuild needed!)
-just test-integration                                  # Auto-starts DB/ES + runs tests (~30 sec - 2 min)
+# ⚠️ IMPORTANT: Target specific test classes, NOT full suite (full suite = 60+ min)
+./mvnw verify -pl :dotcms-integration -Dit.test=ContentTypeAPIImplTest  # Specific test class (2-10 min)
 just test-postman ai                                  # Specific Postman collection 
-./mvnw verify -pl :dotcms-integration -Dit.test=MyTest # Specific integration test
+./mvnw verify -pl :dotcms-integration -Dit.test=MyTest#testMethod      # Specific test method
 
 # IDE Testing (start services manually, then run tests in IDE)
 just test-integration-ide                             # Start DB/ES services for IDE debugging
