@@ -1,10 +1,17 @@
 import { tapResponse } from '@ngrx/operators';
-import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
+import {
+    patchState,
+    signalStore,
+    withComputed,
+    withHooks,
+    withMethods,
+    withState
+} from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { pipe } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { computed, inject } from '@angular/core';
+import { computed, effect, inject } from '@angular/core';
 
 import { switchMap, tap } from 'rxjs/operators';
 
@@ -36,7 +43,7 @@ import type {
 /**
  * Individual request state interface
  */
-interface RequestState<T = number> {
+export interface RequestState<T = number> {
     status: ComponentStatus;
     data: T | null;
     error: string | null;
@@ -419,5 +426,33 @@ export const DotAnalyticsDashboardStore = signalStore(
                 )
             )
         })
-    )
+    ),
+
+    withMethods((store) => ({
+        /**
+         * Coordinated method to load all dashboard data.
+         * Calls all individual load methods while maintaining their independent states.
+         */
+        loadAllDashboardData: (timeRange: TimeRange) => {
+            store.loadTotalPageViews(timeRange);
+            store.loadUniqueVisitors(timeRange);
+            store.loadTopPagePerformance(timeRange);
+            store.loadPageViewTimeLine(timeRange);
+            store.loadPageViewDeviceBrowsers(timeRange);
+            store.loadTopPagesTable(timeRange);
+        }
+    })),
+
+    withHooks({
+        onInit: (store) => {
+            // Auto-load data when timeRange changes
+            effect(
+                () => {
+                    const timeRange = store.timeRange();
+                    store.loadAllDashboardData(timeRange);
+                },
+                { allowSignalWrites: true }
+            );
+        }
+    })
 );

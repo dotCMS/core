@@ -13,6 +13,69 @@ describe('DotAnalyticsDashboardComponent', () => {
 
     const mockStoreSignals = {
         timeRange: jest.fn().mockReturnValue('from 7 days ago to now' as TimeRange),
+
+        // Direct resource signals
+        totalPageViews: jest.fn().mockReturnValue({
+            status: ComponentStatus.LOADED,
+            data: { 'request.totalRequest': '1250' },
+            error: null
+        }),
+        uniqueVisitors: jest.fn().mockReturnValue({
+            status: ComponentStatus.LOADED,
+            data: { 'request.totalUser': '342' },
+            error: null
+        }),
+        topPagePerformance: jest.fn().mockReturnValue({
+            status: ComponentStatus.LOADED,
+            data: {
+                'request.totalRequest': '89',
+                'request.pageTitle': 'Home Page',
+                'request.path': '/home'
+            },
+            error: null
+        }),
+        pageViewTimeLine: jest.fn().mockReturnValue({
+            status: ComponentStatus.LOADED,
+            data: [
+                {
+                    'request.totalRequest': '10',
+                    'request.createdAt': '2024-01-01T00:00:00Z',
+                    'request.createdAt.day': '2024-01-01'
+                },
+                {
+                    'request.totalRequest': '20',
+                    'request.createdAt': '2024-01-02T00:00:00Z',
+                    'request.createdAt.day': '2024-01-02'
+                }
+            ],
+            error: null
+        }),
+        pageViewDeviceBrowsers: Object.assign(
+            () => ({
+                status: ComponentStatus.LOADED,
+                data: [
+                    { 'request.totalRequest': '60', 'request.userAgent': 'Chrome' },
+                    { 'request.totalRequest': '40', 'request.userAgent': 'Firefox' }
+                ],
+                error: null
+            }),
+            {
+                status: jest.fn().mockReturnValue(ComponentStatus.LOADED)
+            }
+        ),
+        topPagesTable: jest.fn().mockReturnValue({
+            status: ComponentStatus.LOADED,
+            data: [
+                {
+                    'request.pageTitle': 'Home',
+                    'request.path': '/home',
+                    'request.totalRequest': '100'
+                }
+            ],
+            error: null
+        }),
+
+        // Computed/transformed data
         metricsData: jest.fn().mockReturnValue([
             {
                 name: 'analytics.metrics.total-pageviews',
@@ -42,15 +105,6 @@ describe('DotAnalyticsDashboardComponent', () => {
         topPagesTableData: jest
             .fn()
             .mockReturnValue([{ pageTitle: 'Home', path: '/home', views: 100 }]),
-        topPagesTable: {
-            status: jest.fn().mockReturnValue(ComponentStatus.LOADED)
-        },
-        pageViewTimeLine: {
-            status: jest.fn().mockReturnValue(ComponentStatus.LOADED)
-        },
-        pageViewDeviceBrowsers: {
-            status: jest.fn().mockReturnValue(ComponentStatus.LOADED)
-        },
         pageViewTimeLineData: jest.fn().mockReturnValue({
             labels: ['Jan', 'Feb'],
             datasets: [{ label: 'Page Views', data: [10, 20] }]
@@ -69,7 +123,8 @@ describe('DotAnalyticsDashboardComponent', () => {
         loadPageViewTimeLine: jest.fn(),
         loadTopPagePerformance: jest.fn(),
         loadUniqueVisitors: jest.fn(),
-        loadTopPagesTable: jest.fn()
+        loadTopPagesTable: jest.fn(),
+        loadAllDashboardData: jest.fn()
     };
 
     const createComponent = createComponentFactory({
@@ -126,19 +181,83 @@ describe('DotAnalyticsDashboardComponent', () => {
 
     describe('Component State', () => {
         it('should expose store signals correctly', () => {
+            // Time range
             expect(spectator.component['$currentTimeRange']()).toBe('from 7 days ago to now');
+
+            // Direct resource signals
+            expect(spectator.component['$totalPageViews']()).toEqual({
+                status: ComponentStatus.LOADED,
+                data: { 'request.totalRequest': '1250' },
+                error: null
+            });
+
+            expect(spectator.component['$uniqueVisitors']()).toEqual({
+                status: ComponentStatus.LOADED,
+                data: { 'request.totalUser': '342' },
+                error: null
+            });
+
+            expect(spectator.component['$topPagePerformance']()).toEqual({
+                status: ComponentStatus.LOADED,
+                data: {
+                    'request.totalRequest': '89',
+                    'request.pageTitle': 'Home Page',
+                    'request.path': '/home'
+                },
+                error: null
+            });
+
+            expect(spectator.component['$pageViewTimeLine']()).toEqual({
+                status: ComponentStatus.LOADED,
+                data: [
+                    {
+                        'request.totalRequest': '10',
+                        'request.createdAt': '2024-01-01T00:00:00Z',
+                        'request.createdAt.day': '2024-01-01'
+                    },
+                    {
+                        'request.totalRequest': '20',
+                        'request.createdAt': '2024-01-02T00:00:00Z',
+                        'request.createdAt.day': '2024-01-02'
+                    }
+                ],
+                error: null
+            });
+
+            expect(spectator.component['$pageViewDeviceBrowsers']()).toEqual({
+                status: ComponentStatus.LOADED,
+                data: [
+                    { 'request.totalRequest': '60', 'request.userAgent': 'Chrome' },
+                    { 'request.totalRequest': '40', 'request.userAgent': 'Firefox' }
+                ],
+                error: null
+            });
+
+            expect(spectator.component['$topPagesTable']()).toEqual({
+                status: ComponentStatus.LOADED,
+                data: [
+                    {
+                        'request.pageTitle': 'Home',
+                        'request.path': '/home',
+                        'request.totalRequest': '100'
+                    }
+                ],
+                error: null
+            });
+
+            // Computed/transformed data
             expect(spectator.component['$metricsData']()).toHaveLength(3);
             expect(spectator.component['$topPagesTableData']()).toHaveLength(1);
-            expect(spectator.component['$topPagesTableStatus']()).toBe(ComponentStatus.LOADED);
             expect(spectator.component['$pageviewsTimelineData']()).toEqual({
                 labels: ['Jan', 'Feb'],
                 datasets: [{ label: 'Page Views', data: [10, 20] }]
             });
-            expect(spectator.component['$pageviewsTimelineStatus']()).toBe(ComponentStatus.LOADED);
             expect(spectator.component['$deviceBreakdownData']()).toEqual({
                 labels: ['Chrome', 'Firefox'],
                 datasets: [{ label: 'Device Usage', data: [60, 40] }]
             });
+
+            // Status signal (the one the user kept)
             expect(spectator.component['$deviceBreakdownStatus']()).toBe(ComponentStatus.LOADED);
         });
     });
@@ -155,17 +274,12 @@ describe('DotAnalyticsDashboardComponent', () => {
         });
 
         describe('onRefresh', () => {
-            it('should call all store load methods with current time range', () => {
+            it('should call loadAllDashboardData with current time range', () => {
                 const currentTimeRange = 'from 7 days ago to now';
 
                 spectator.component.onRefresh();
 
-                expect(mockStore.loadTotalPageViews).toHaveBeenCalledWith(currentTimeRange);
-                expect(mockStore.loadTopPagePerformance).toHaveBeenCalledWith(currentTimeRange);
-                expect(mockStore.loadUniqueVisitors).toHaveBeenCalledWith(currentTimeRange);
-                expect(mockStore.loadTopPagesTable).toHaveBeenCalledWith(currentTimeRange);
-                expect(mockStore.loadPageViewTimeLine).toHaveBeenCalledWith(currentTimeRange);
-                expect(mockStore.loadPageViewDeviceBrowsers).toHaveBeenCalledWith(currentTimeRange);
+                expect(mockStore.loadAllDashboardData).toHaveBeenCalledWith(currentTimeRange);
             });
         });
 
@@ -198,12 +312,22 @@ describe('DotAnalyticsDashboardComponent', () => {
         it('should have all required signal properties', () => {
             // Verificar que el componente tiene todas las propiedades signals esperadas
             expect(spectator.component['$currentTimeRange']).toBeDefined();
+
+            // Direct resource signals
+            expect(spectator.component['$totalPageViews']).toBeDefined();
+            expect(spectator.component['$uniqueVisitors']).toBeDefined();
+            expect(spectator.component['$topPagePerformance']).toBeDefined();
+            expect(spectator.component['$pageViewTimeLine']).toBeDefined();
+            expect(spectator.component['$pageViewDeviceBrowsers']).toBeDefined();
+            expect(spectator.component['$topPagesTable']).toBeDefined();
+
+            // Computed/transformed data
             expect(spectator.component['$metricsData']).toBeDefined();
             expect(spectator.component['$topPagesTableData']).toBeDefined();
-            expect(spectator.component['$topPagesTableStatus']).toBeDefined();
             expect(spectator.component['$pageviewsTimelineData']).toBeDefined();
-            expect(spectator.component['$pageviewsTimelineStatus']).toBeDefined();
             expect(spectator.component['$deviceBreakdownData']).toBeDefined();
+
+            // Status signal (the one the user kept)
             expect(spectator.component['$deviceBreakdownStatus']).toBeDefined();
         });
     });

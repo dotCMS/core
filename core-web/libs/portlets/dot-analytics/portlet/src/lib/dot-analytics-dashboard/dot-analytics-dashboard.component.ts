@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, effect, inject } from '@angular/core';
+import { Component, inject } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 
@@ -43,33 +43,23 @@ import { DotAnalyticsDashboardTableComponent } from './components/dot-analytics-
 export default class DotAnalyticsDashboardComponent {
     private readonly store = inject(DotAnalyticsDashboardStore);
 
+    // Direct access to raw store signals - flexible and powerful
     protected readonly $currentTimeRange = this.store.timeRange;
+
+    // Individual resource signals - you can access .data(), .status(), .error()
+    protected readonly $totalPageViews = this.store.totalPageViews;
+    protected readonly $uniqueVisitors = this.store.uniqueVisitors;
+    protected readonly $topPagePerformance = this.store.topPagePerformance;
+    protected readonly $pageViewTimeLine = this.store.pageViewTimeLine;
+    protected readonly $pageViewDeviceBrowsers = this.store.pageViewDeviceBrowsers;
+    protected readonly $topPagesTable = this.store.topPagesTable;
+
+    // Computed/transformed data from store
     protected readonly $metricsData = this.store.metricsData;
     protected readonly $topPagesTableData = this.store.topPagesTableData;
-    protected readonly $topPagesTableStatus = this.store.topPagesTable.status;
-
     protected readonly $pageviewsTimelineData = this.store.pageViewTimeLineData;
-    protected readonly $pageviewsTimelineStatus = this.store.pageViewTimeLine.status;
-
     protected readonly $deviceBreakdownData = this.store.pageViewDeviceBrowsersData;
     protected readonly $deviceBreakdownStatus = this.store.pageViewDeviceBrowsers.status;
-
-    constructor() {
-        effect(
-            () => {
-                const timeRange = this.$currentTimeRange();
-
-                this.store.loadTotalPageViews(timeRange);
-
-                this.store.loadPageViewDeviceBrowsers(timeRange);
-                this.store.loadPageViewTimeLine(timeRange);
-                this.store.loadTopPagePerformance(timeRange);
-                this.store.loadUniqueVisitors(timeRange);
-                this.store.loadTopPagesTable(timeRange);
-            },
-            { allowSignalWrites: true }
-        );
-    }
 
     /**
      * Handles time period filter changes.
@@ -87,12 +77,8 @@ export default class DotAnalyticsDashboardComponent {
     onRefresh(): void {
         const timeRange = this.$currentTimeRange();
 
-        this.store.loadTotalPageViews(timeRange);
-        this.store.loadTopPagePerformance(timeRange);
-        this.store.loadUniqueVisitors(timeRange);
-        this.store.loadTopPagesTable(timeRange);
-        this.store.loadPageViewTimeLine(timeRange);
-        this.store.loadPageViewDeviceBrowsers(timeRange);
+        // Refresh all dashboard data using the coordinated method
+        this.store.loadAllDashboardData(timeRange);
     }
 
     /**

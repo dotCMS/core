@@ -45,7 +45,7 @@
                         [title]="'analytics.charts.pageviews-timeline.title' | dm"
                         type="line"
                         [data]="$pageviewsTimelineData()"
-                        [status]="$pageviewsTimelineStatus()"
+                        [status]="$pageViewTimeLine().status"
                         height="350px"
                         data-testid="analytics-timeline-chart" />
                 </div>
@@ -59,7 +59,7 @@
                         [title]="'analytics.charts.device-breakdown.title' | dm"
                         type="pie"
                         [data]="$deviceBreakdownData()"
-                        [status]="$deviceBreakdownStatus()"
+                        [status]="$pageViewDeviceBrowsers().status"
                         height="370px"
                         data-testid="analytics-device-chart" />
                 </div>
@@ -68,7 +68,7 @@
                 <div class="analytics-dashboard__table">
                     <dot-analytics-dashboard-table
                         [data]="$topPagesTableData()"
-                        [status]="$topPagesTableStatus()"
+                        [status]="$topPagesTable().status"
                         data-testid="analytics-table" />
                 </div>
             </div>
