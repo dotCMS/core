@@ -41,14 +41,13 @@ describe('DotSafeUrlPipe', () => {
             hostProps: { value: 'test' }
         });
         sanitizer = spectator.inject(DomSanitizer);
-        sanitizer.bypassSecurityTrustResourceUrl.and.returnValue(`test${URL_WITH_PARAMS}`);
-
+        const sanitizedUrl = 'sanitized-test-url';
+        sanitizer.bypassSecurityTrustResourceUrl.and.returnValue(sanitizedUrl);
         spectator.detectChanges();
-
         expect(sanitizer.bypassSecurityTrustResourceUrl).toHaveBeenCalledWith(
             `test${URL_WITH_PARAMS}`
         );
-        expect(spectator.element.textContent).toBe(`test${URL_WITH_PARAMS}`);
+        expect(spectator.element.textContent).toBe(sanitizedUrl);
     });
 
     it('should return empty url', () => {

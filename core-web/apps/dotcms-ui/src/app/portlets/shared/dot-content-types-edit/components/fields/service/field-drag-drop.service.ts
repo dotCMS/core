@@ -67,15 +67,13 @@ export class FieldDragDropService {
     private currentColumnOvered: Element;
 
     constructor() {
-        const dragulaService = this.dragulaService;
-
-        const dragulaOver$ = dragulaService.over();
-        const dragulaDropModel$ = dragulaService.dropModel();
+        const dragulaOver$ = this.dragulaService.over();
+        const dragulaDropModel$ = this.dragulaService.dropModel();
 
         const isRowFull = () => !!this.currentFullRowEl;
         const wasDrop = (target) => target === null;
 
-        merge(dragulaService.drop(), dragulaOver$)
+        merge(this.dragulaService.drop(), dragulaOver$)
             .pipe(filter(isRowFull))
             .subscribe(({ target }: DragulaCustomEvent) => {
                 this.clearCurrentFullRowEl();
@@ -123,7 +121,7 @@ export class FieldDragDropService {
                 }
             );
 
-        dragulaService
+        this.dragulaService
             .dragend()
             .pipe(filter(() => !!this.currentColumnOvered))
             .subscribe(() => {

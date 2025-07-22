@@ -28,13 +28,7 @@ export class DotRippleEffectDirective {
 
     private rippleElement: HTMLElement;
     private rippleSize: RippleSize;
-    private hostNativeElement: HTMLElement;
-
-    constructor() {
-        const host = this.host;
-
-        this.hostNativeElement = host.nativeElement;
-    }
+    private hostNativeElement: HTMLElement = this.host.nativeElement;
 
     @HostListener('click', ['$event'])
     onClick(event: MouseEvent): void {
