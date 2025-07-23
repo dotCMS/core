@@ -1,4 +1,4 @@
-import { Component, EventEmitter, HostListener, Input, Output } from '@angular/core';
+import { Component, EventEmitter, HostListener, Input, Output, inject } from '@angular/core';
 
 import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
 import { DotAppsSite } from '@dotcms/dotcms-models';
@@ -9,16 +9,14 @@ import { DotAppsSite } from '@dotcms/dotcms-models';
     styleUrls: ['./dot-apps-configuration-item.component.scss']
 })
 export class DotAppsConfigurationItemComponent {
+    private dotMessageService = inject(DotMessageService);
+    private dotAlertConfirmService = inject(DotAlertConfirmService);
+
     @Input() site: DotAppsSite;
 
     @Output() edit = new EventEmitter<DotAppsSite>();
     @Output() export = new EventEmitter<DotAppsSite>();
     @Output() delete = new EventEmitter<DotAppsSite>();
-
-    constructor(
-        private dotMessageService: DotMessageService,
-        private dotAlertConfirmService: DotAlertConfirmService
-    ) {}
 
     @HostListener('click', ['$event'])
     public onClick(event: MouseEvent): void {

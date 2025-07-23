@@ -8,7 +8,8 @@ import {
     OnChanges,
     OnInit,
     Output,
-    SimpleChanges
+    SimpleChanges,
+    inject
 } from '@angular/core';
 
 import { filter, map, flatMap, take, toArray } from 'rxjs/operators';
@@ -23,18 +24,16 @@ import { DotDevice } from '@dotcms/dotcms-models';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotDeviceSelectorComponent implements OnInit, OnChanges {
+    private dotDevicesService = inject(DotDevicesService);
+    private dotMessageService = inject(DotMessageService);
+    private readonly cd = inject(ChangeDetectorRef);
+
     @Input() value: DotDevice;
     @Output() selected = new EventEmitter<DotDevice>();
     @HostBinding('class.disabled') disabled: boolean;
 
     options: DotDevice[] = [];
     placeholder = '';
-
-    constructor(
-        private dotDevicesService: DotDevicesService,
-        private dotMessageService: DotMessageService,
-        private readonly cd: ChangeDetectorRef
-    ) {}
 
     ngOnInit() {
         this.loadOptions();

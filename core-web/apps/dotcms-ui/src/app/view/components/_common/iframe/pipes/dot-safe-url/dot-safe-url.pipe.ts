@@ -1,4 +1,4 @@
-import { Pipe, PipeTransform } from '@angular/core';
+import { Pipe, PipeTransform, inject } from '@angular/core';
 import { DomSanitizer } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
 
@@ -6,11 +6,9 @@ import { DotRouterService } from '@dotcms/data-access';
 
 @Pipe({ name: 'dotSafeUrl', standalone: true })
 export class DotSafeUrlPipe implements PipeTransform {
-    constructor(
-        private sanitizer: DomSanitizer,
-        private dotRouterService: DotRouterService,
-        private activatedRoute: ActivatedRoute
-    ) {}
+    private sanitizer = inject(DomSanitizer);
+    private dotRouterService = inject(DotRouterService);
+    private activatedRoute = inject(ActivatedRoute);
 
     transform(url) {
         if (url) {

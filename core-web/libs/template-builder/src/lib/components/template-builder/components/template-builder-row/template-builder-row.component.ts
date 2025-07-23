@@ -1,7 +1,7 @@
 import { GridItemHTMLElement } from 'gridstack';
 
 import { NgStyle } from '@angular/common';
-import { ChangeDetectionStrategy, Component, ElementRef, Input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, Input, inject } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { DialogService } from 'primeng/dynamicdialog';
@@ -30,16 +30,14 @@ import { TemplateBuilderBackgroundColumnsComponent } from '../template-builder-b
     ]
 })
 export class TemplateBuilderRowComponent {
+    private el = inject(ElementRef);
+    private store = inject(DotTemplateBuilderStore);
+    private dialogService = inject(DialogService);
+    private dotMessage = inject(DotMessageService);
+
     @Input() row: DotGridStackWidget;
 
     @Input() isResizing = false;
-
-    constructor(
-        private el: ElementRef,
-        private store: DotTemplateBuilderStore,
-        private dialogService: DialogService,
-        private dotMessage: DotMessageService
-    ) {}
 
     get nativeElement(): GridItemHTMLElement {
         return this.el.nativeElement;

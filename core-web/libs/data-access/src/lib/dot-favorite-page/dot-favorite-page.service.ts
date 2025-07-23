@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { DotESContentService, ESOrderDirection } from '@dotcms/data-access';
 import { ESContent } from '@dotcms/dotcms-models';
@@ -14,7 +14,7 @@ const FAVORITE_PAGES_ES_QUERY = `+contentType:dotFavoritePage +deleted:false +wo
  */
 @Injectable()
 export class DotFavoritePageService {
-    constructor(private dotESContentService: DotESContentService) {}
+    private dotESContentService = inject(DotESContentService);
 
     /**
      * Return a list of DotFavoritePage.

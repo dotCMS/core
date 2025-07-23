@@ -1,7 +1,7 @@
 import { Subject } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, Input, OnChanges, OnDestroy, SimpleChanges } from '@angular/core';
+import { Component, Input, OnChanges, OnDestroy, SimpleChanges, inject } from '@angular/core';
 
 import { take, takeUntil } from 'rxjs/operators';
 
@@ -17,6 +17,9 @@ import { DotFieldVariablesService } from './services/dot-field-variables.service
     templateUrl: './dot-content-type-fields-variables.component.html'
 })
 export class DotContentTypeFieldsVariablesComponent implements OnChanges, OnDestroy {
+    private dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
+    private fieldVariablesService = inject(DotFieldVariablesService);
+
     @Input() field: DotCMSContentTypeField;
     @Input() showTable = true;
 
@@ -33,11 +36,6 @@ export class DotContentTypeFieldsVariablesComponent implements OnChanges, OnDest
     };
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
-
-    constructor(
-        private dotHttpErrorManagerService: DotHttpErrorManagerService,
-        private fieldVariablesService: DotFieldVariablesService
-    ) {}
 
     ngOnChanges(changes: SimpleChanges): void {
         if (changes.field?.currentValue) {

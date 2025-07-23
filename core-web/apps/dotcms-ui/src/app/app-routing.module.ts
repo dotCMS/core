@@ -73,8 +73,10 @@ const PORTLETS_ANGULAR: Route[] = [
     },
     {
         path: 'analytics-search',
-        canActivate: [MenuGuardService],
-        canActivateChild: [MenuGuardService],
+        redirectTo: 'analytics/search'
+    },
+    {
+        path: 'analytics',
         providers: [DotEnterpriseLicenseResolver, DotExperimentsService],
         resolve: {
             isEnterprise: DotEnterpriseLicenseResolver,
@@ -83,10 +85,8 @@ const PORTLETS_ANGULAR: Route[] = [
         data: {
             reuseRoute: false
         },
-        loadComponent: () =>
-            import('@dotcms/portlets/dot-analytics-search/portlet').then(
-                (m) => m.DotAnalyticsSearchComponent
-            )
+        loadChildren: () =>
+            import('@dotcms/portlets/dot-analytics/portlet').then((m) => m.DotAnalyticsRoutes)
     },
     {
         path: 'forms',

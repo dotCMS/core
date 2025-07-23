@@ -9,7 +9,8 @@ import {
     Input,
     OnInit,
     Output,
-    ViewChild
+    ViewChild,
+    inject
 } from '@angular/core';
 import {
     UntypedFormBuilder,
@@ -32,6 +33,10 @@ import { DotCMSAssetDialogCopyFields } from '@portlets/shared/dot-content-types-
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotContentTypeCopyDialogComponent implements OnInit, AfterViewChecked {
+    private readonly fb = inject(UntypedFormBuilder);
+    private readonly dotMessageService = inject(DotMessageService);
+    private readonly cd = inject(ChangeDetectorRef);
+
     @ViewChild('dot-site-selector-field') siteSelector;
     dialogActions: DotDialogActions;
     inputNameWithType = '';
@@ -48,11 +53,7 @@ export class DotContentTypeCopyDialogComponent implements OnInit, AfterViewCheck
     validFormFields = new EventEmitter<DotCopyContentTypeDialogFormFields>();
     form!: UntypedFormGroup;
 
-    constructor(
-        private readonly fb: UntypedFormBuilder,
-        private readonly dotMessageService: DotMessageService,
-        private readonly cd: ChangeDetectorRef
-    ) {
+    constructor() {
         this.initForm();
     }
 
