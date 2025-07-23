@@ -40,7 +40,7 @@ export class EditorModalDirective implements OnInit, OnDestroy {
             content: this.elRef.nativeElement,
             interactive: true,
             trigger: 'manual',
-            placement: 'bottom-start',
+            placement: 'auto-start',
             hideOnClick: 'toggle',
             getReferenceClientRect: this.getReferenceClientRect.bind(this),
             ...this.tippyOptions()
