@@ -169,7 +169,7 @@ const sortedResponse = await client.content
 ```javascript
 const blogs = await client.content
     .getCollection('Blog')
-    .sortBy([{ field: 'title', direction: 'asc' }]); // 'order' changed to 'direction'
+    .sortBy([{ field: 'title', order: 'asc' }]);
 ```
 
 ## Troubleshooting
@@ -285,7 +285,6 @@ Use this checklist to ensure you've completed all necessary migration steps:
 - [ ] **Content Collections**: Remove `.fetch()` calls from content collection queries
 - [ ] **Parameter Names**: Update parameter names from snake_case to camelCase
 - [ ] **Response Handling**: Update response destructuring (especially for page requests)
-- [ ] **Sorting**: Update sort parameter from `order` to `direction`
 - [ ] **TypeScript**: Install and configure TypeScript types if using TypeScript
 - [ ] **Testing**: Test all API calls to ensure they work correctly
 - [ ] **Documentation**: Update any internal documentation or comments
