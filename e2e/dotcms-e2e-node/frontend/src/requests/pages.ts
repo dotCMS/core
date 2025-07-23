@@ -4,11 +4,11 @@ import { generateBase64Credentials } from "@utils/generateBase64Credential";
 
 export interface Page {
   identifier: string;
-  contentType: 'htmlpageasset';
+  contentType: "htmlpageasset";
   title: string;
   url: string;
-  hostFolder: 'default';
-  template: 'SYSTEM_TEMPLATE';
+  hostFolder: "default";
+  template: "SYSTEM_TEMPLATE";
   friendlyName: string;
   cachettl: number;
   inode: string;
@@ -16,10 +16,7 @@ export interface Page {
 
 type CreatePage = Omit<Page, "identifier" | "inode">;
 
-export async function createPage(
-  request: APIRequestContext,
-  data: CreatePage,
-) {
+export async function createPage(request: APIRequestContext, data: CreatePage) {
   const endpoint = `/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR`;
   const response = await request.post(endpoint, {
     data: {
@@ -83,15 +80,13 @@ export async function getActionsByContentlet(
   return responseData.entity as Action[];
 }
 
-export async function deletePageWorkflow(
+export async function actionsPageWorkflow(
   request: APIRequestContext,
   inode: string,
+  steps: string[],
 ) {
-  const steps = ['Unpublish', 'Archive', 'Destroy'];
-
   for (const step of steps) {
     const actions = await getActionsByContentlet(request, inode);
-    console.log(actions);
     const action = actions.find((a) => a.name === step);
     if (action) {
       await executeAction(request, action.id, inode);
