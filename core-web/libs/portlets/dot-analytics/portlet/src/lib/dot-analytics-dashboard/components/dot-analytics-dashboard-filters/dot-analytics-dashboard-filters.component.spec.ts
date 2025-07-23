@@ -68,18 +68,14 @@ describe('DotAnalyticsDashboardFiltersComponent', () => {
             const timeRangeChangedSpy = jest.fn();
             spectator.output('$timeRangeChanged').subscribe(timeRangeChangedSpy);
 
-            const timeRanges: TimeRange[] = [
-                'from 7 days ago to now',
-                'from 30 days ago to now',
-                'this week'
-            ];
+            const timeRanges: TimeRange[] = ['from 7 days ago to now', 'from 30 days ago to now'];
 
             timeRanges.forEach((timeRange) => {
                 spectator.component.onTimeRangeChange(timeRange);
                 expect(timeRangeChangedSpy).toHaveBeenCalledWith(timeRange);
             });
 
-            expect(timeRangeChangedSpy).toHaveBeenCalledTimes(3);
+            expect(timeRangeChangedSpy).toHaveBeenCalledTimes(2);
         });
     });
 

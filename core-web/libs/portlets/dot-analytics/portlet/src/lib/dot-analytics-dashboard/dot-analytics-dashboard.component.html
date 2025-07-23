@@ -1,7 +1,8 @@
-<div class="analytics-dashboard" data-testid="analytics-dashboard">
+<div class="analytics-dashboard flex flex-column" data-testid="analytics-dashboard">
     <!-- Filters Row - Gray Background -->
     <div class="analytics-dashboard__filters-row">
-        <div class="analytics-dashboard__filters-container">
+        <div
+            class="analytics-dashboard__filters-container flex justify-content-between align-items-center">
             <dot-analytics-dashboard-filters
                 class="analytics-dashboard__filters"
                 [selectedTimeRange]="$currentTimeRange()"
@@ -22,9 +23,9 @@
 
     <!-- Dashboard Row - White Background -->
     <div class="analytics-dashboard__dashboard-row">
-        <div class="analytics-dashboard__dashboard-container">
+        <div class="analytics-dashboard__dashboard-container flex flex-column gap-4">
             <!-- Metrics Section -->
-            <div class="analytics-dashboard__metrics">
+            <div class="analytics-dashboard__metrics flex gap-3 flex-wrap">
                 @for (metric of $metricsData(); track metric.name) {
                     <dot-analytics-dashboard-metrics
                         class="analytics-dashboard__metric-card"
@@ -38,7 +39,7 @@
             </div>
 
             <!-- Charts Section -->
-            <div class="analytics-dashboard__charts">
+            <div class="analytics-dashboard__charts flex gap-3">
                 <!-- Line Chart -->
                 <div class="analytics-dashboard__timeline-chart">
                     <dot-analytics-dashboard-chart
@@ -52,7 +53,7 @@
             </div>
 
             <!-- Table and Pie Chart Section -->
-            <div class="analytics-dashboard__bottom-section">
+            <div class="analytics-dashboard__bottom-section flex gap-3 align-items-stretch">
                 <!-- Pie Chart -->
                 <div class="analytics-dashboard__device-chart">
                     <dot-analytics-dashboard-chart

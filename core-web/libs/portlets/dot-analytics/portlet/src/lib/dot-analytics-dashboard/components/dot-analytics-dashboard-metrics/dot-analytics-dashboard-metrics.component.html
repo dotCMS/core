@@ -1,3 +1,6 @@
+@let icon = $icon();
+@let subtitle = $subtitle();
+
 <p-card
     class="h-full hover:shadow-2 transition-all transition-duration-200 metric-card"
     data-testid="metric-card">
@@ -27,7 +30,7 @@
         <!-- Normal content - only shown when LOADED -->
         <div class="flex flex-column justify-content-between h-full relative">
             <!-- Icon in top-right corner -->
-            @if ($icon()) {
+            @if (icon) {
                 <i
                     [class]="$iconClasses()"
                     class="metric-icon pi icon-md"
@@ -46,9 +49,9 @@
             </div>
 
             <!-- Subtítulo -->
-            @if ($subtitle()) {
+            @if (subtitle) {
                 <div class="metric-subtitle" data-testid="metric-subtitle">
-                    {{ $subtitle()! | dm }}
+                    {{ subtitle | dm }}
                 </div>
             }
         </div>

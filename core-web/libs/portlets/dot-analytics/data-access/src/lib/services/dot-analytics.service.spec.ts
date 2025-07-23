@@ -72,7 +72,7 @@ describe('DotAnalyticsService', () => {
             });
 
             it('should make POST request with custom timeRange', () => {
-                const timeRange: TimeRange = 'this week';
+                const timeRange: TimeRange = 'from 30 days ago to now';
                 spectator.service.uniqueVisitors(timeRange).subscribe();
 
                 const req = spectator.expectOne(ANALYTICS_API_ENDPOINT, HttpMethod.POST);
@@ -142,7 +142,7 @@ describe('DotAnalyticsService', () => {
             });
 
             it('should make POST request with custom timeRange', () => {
-                spectator.service.pageViewTimeLine('this week').subscribe();
+                spectator.service.pageViewTimeLine('from 30 days ago to now').subscribe();
 
                 const req = spectator.expectOne(ANALYTICS_API_ENDPOINT, HttpMethod.POST);
                 expect(req.request.body).toBeDefined();
@@ -277,11 +277,7 @@ describe('DotAnalyticsService', () => {
 
     describe('Service Behavior', () => {
         it('should handle different timeRange formats', () => {
-            const timeRanges: TimeRange[] = [
-                'from 7 days ago to now',
-                'from 30 days ago to now',
-                'this week'
-            ];
+            const timeRanges: TimeRange[] = ['from 7 days ago to now', 'from 30 days ago to now'];
 
             timeRanges.forEach((timeRange) => {
                 spectator.service.totalPageViews(timeRange).subscribe();

@@ -18,7 +18,7 @@ describe('DotAnalyticsDashboardMetricsComponent', () => {
 
         // Setup the mock return value
         const messageService = spectator.inject(DotMessageService);
-        (messageService.get as jest.Mock).mockReturnValue('Translated Message');
+        messageService.get.mockReturnValue('Translated Message');
     });
 
     describe('Component Inputs', () => {

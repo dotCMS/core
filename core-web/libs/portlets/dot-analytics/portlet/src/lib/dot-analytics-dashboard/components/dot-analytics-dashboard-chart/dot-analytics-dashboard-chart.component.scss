@@ -1,11 +1,11 @@
 @use "variables" as *;
 
 // Local variables for chart component
-$chart-pie-size: 200px;
-$chart-y-axis-width: 50px;
-$chart-x-axis-height: 30px;
-$chart-border-width: 2px;
-$chart-grid-padding: 10px;
+$chart-pie-size: 12.5rem; // 200px
+$chart-y-axis-width: 3.125rem; // 50px
+$chart-x-axis-height: 1.875rem; // 30px
+$chart-border-width: 0.125rem; // 2px
+$chart-grid-padding: 0.625rem; // 10px
 $chart-grid-opacity: 0.6;
 
 :host {

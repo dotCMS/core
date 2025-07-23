@@ -1,5 +1,5 @@
 {
-    "name": "analytics-data-access",
+    "name": "portlets-dot-analytics-data-access",
     "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
     "sourceRoot": "libs/portlets/dot-analytics/data-access/src",
     "prefix": "lib",

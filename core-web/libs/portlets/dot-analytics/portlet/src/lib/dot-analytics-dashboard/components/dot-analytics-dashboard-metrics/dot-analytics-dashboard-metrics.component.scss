@@ -3,7 +3,7 @@
 .metric-card {
     ::ng-deep .p-card-body {
         padding: $spacing-3;
-        min-height: 114px;
+        min-height: 7.125rem; // 114px
     }
     ::ng-deep .p-card-content {
         height: 100%;

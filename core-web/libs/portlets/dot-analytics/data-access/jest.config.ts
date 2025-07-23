@@ -1,6 +1,6 @@
 /* eslint-disable */
 export default {
-    displayName: 'analytics-data-access',
+    displayName: 'portlets-dot-analytics-data-access',
     preset: '../../../../jest.preset.js',
     setupFilesAfterEnv: ['<rootDir>/src/test-setup.ts'],
     coverageDirectory: '../../../../coverage/libs/portlets/dot-analytics/data-access',

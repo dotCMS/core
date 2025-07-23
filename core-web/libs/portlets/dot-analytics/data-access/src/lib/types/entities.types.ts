@@ -68,18 +68,10 @@ const ChartType = {
     PIE: 'pie'
 } as const;
 
-export type ChartType = (typeof ChartType)[keyof typeof ChartType];
-
 /**
- * Time period options for analytics filtering.
- * Using const assertion for time period management.
+ * Chart type options available for visualization.
  */
-const TimePeriod = {
-    LAST_7_DAYS: 'from 7 days ago to now',
-    LAST_30_DAYS: 'from 30 days ago to now'
-} as const;
-
-export type TimePeriod = (typeof TimePeriod)[keyof typeof TimePeriod];
+export type ChartType = (typeof ChartType)[keyof typeof ChartType];
 
 /**
  * API dimension fields for analytics responses.
@@ -141,4 +133,12 @@ const AnalyticsKeys = {
     USER_AGENT: 'request.userAgent'
 } as const;
 
+/**
+ * Analytics entity field keys for data extraction.
+ */
 export type AnalyticsKeys = (typeof AnalyticsKeys)[keyof typeof AnalyticsKeys];
+
+/**
+ * Default count limit for analytics queries.
+ */
+export const DEFAULT_COUNT_LIMIT = 50;

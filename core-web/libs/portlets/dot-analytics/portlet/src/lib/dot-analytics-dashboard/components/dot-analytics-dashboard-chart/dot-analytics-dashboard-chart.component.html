@@ -1,23 +1,29 @@
+@let type = $type();
+@let height = $height();
+@let title = $title();
+@let isError = $isError();
+@let isLoading = $isLoading();
+
 <p-card class="h-full chart-card" data-testid="analytics-chart">
-    @if ($title()) {
+    @if (title) {
         <ng-template pTemplate="header">
-            <h3 class="chart-title">{{ $title() }}</h3>
+            <h3 class="chart-title">{{ title }}</h3>
         </ng-template>
     }
 
-    @if ($isError()) {
+    @if (isError) {
         <!-- Error state -->
-        <div class="chart-container chart-error" [style.height]="$height()">
+        <div class="chart-container chart-error" [style.height]="height">
             <div
                 class="flex flex-column justify-content-center align-items-center h-full text-center gap-3">
                 <i class="pi pi-exclamation-triangle text-red-500 text-2xl"></i>
                 <div class="error-message">{{ 'analytics.charts.error.loading' | dm }}</div>
             </div>
         </div>
-    } @else if ($isLoading()) {
+    } @else if (isLoading) {
         <!-- Loading state with skeletons -->
-        <div class="chart-container" [style.height]="$height()">
-            @if ($type() === 'line') {
+        <div class="chart-container" [style.height]="height">
+            @if (type === 'line') {
                 <!-- Line chart skeleton -->
                 <div class="chart-skeleton chart-skeleton--line">
                     <div class="line-chart-skeleton">
@@ -58,7 +64,7 @@
                         </div>
                     </div>
                 </div>
-            } @else if ($type() === 'pie' || $type() === 'doughnut') {
+            } @else if (type === 'pie' || type === 'doughnut') {
                 <!-- Pie/Doughnut chart skeleton -->
                 <div class="chart-skeleton chart-skeleton--pie">
                     <p-skeleton shape="circle" size="21.875rem" class="mx-auto"></p-skeleton>
@@ -72,13 +78,13 @@
         </div>
     } @else {
         <!-- Normal chart content -->
-        <div class="chart-container" [style.height]="$height()">
+        <div class="chart-container" [style.height]="height">
             <p-chart
-                [type]="$type()"
+                [type]="type"
                 [data]="$chartData()"
                 [options]="$chartOptions()"
                 [width]="$width()"
-                [height]="$height()"
+                [height]="height"
                 data-testid="chart"></p-chart>
         </div>
     }
