@@ -91,6 +91,9 @@ export async function actionsPageWorkflow(
     if (action) {
       await executeAction(request, action.id, inode);
     } else {
+      console.warn(
+        `Action not found for workflow step: ${step}. Skipping remaining steps.`,
+      );
       break;
     }
   }
