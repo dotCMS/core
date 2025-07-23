@@ -15,6 +15,9 @@ import { DotCurrentUser, DotPermissionsType, PermissionsType } from '@dotcms/dot
     styleUrls: ['./dot-starter.component.scss']
 })
 export class DotStarterComponent implements OnInit {
+    private route = inject(ActivatedRoute);
+    private dotAccountService = inject(DotAccountService);
+
     userData$: Observable<{
         username: string;
         showCreateContentLink: boolean;
@@ -29,11 +32,6 @@ export class DotStarterComponent implements OnInit {
     showCreateTemplateLink: boolean;
 
     readonly #destroyRef = inject(DestroyRef);
-
-    constructor(
-        private route: ActivatedRoute,
-        private dotAccountService: DotAccountService
-    ) {}
 
     ngOnInit() {
         this.userData$ = this.route.data.pipe(

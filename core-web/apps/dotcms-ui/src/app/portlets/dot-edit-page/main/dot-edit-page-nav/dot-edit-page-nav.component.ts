@@ -1,7 +1,7 @@
 import { Observable, of as observableOf } from 'rxjs';
 
 import { DOCUMENT } from '@angular/common';
-import { Component, Inject, Input, OnChanges, ViewChild } from '@angular/core';
+import { Component, Input, OnChanges, ViewChild, inject } from '@angular/core';
 import { ActivatedRoute, Params } from '@angular/router';
 
 import { map } from 'rxjs/operators';
@@ -41,6 +41,12 @@ interface DotEditPageNavItem {
     styleUrls: ['./dot-edit-page-nav.component.scss']
 })
 export class DotEditPageNavComponent implements OnChanges {
+    private dotLicenseService = inject(DotLicenseService);
+    private dotContentletEditorService = inject(DotContentletEditorService);
+    private dotMessageService = inject(DotMessageService);
+    private readonly route = inject(ActivatedRoute);
+    private document = inject<Document>(DOCUMENT);
+
     @ViewChild('pageTools') pageTools: DotPageToolsSeoComponent;
     @Input() pageState: DotPageRenderState;
 
@@ -51,14 +57,6 @@ export class DotEditPageNavComponent implements OnChanges {
     queryParams: Params;
 
     isVariantMode = false;
-
-    constructor(
-        private dotLicenseService: DotLicenseService,
-        private dotContentletEditorService: DotContentletEditorService,
-        private dotMessageService: DotMessageService,
-        private readonly route: ActivatedRoute,
-        @Inject(DOCUMENT) private document: Document
-    ) {}
 
     ngOnChanges(): void {
         this.model = !this.model

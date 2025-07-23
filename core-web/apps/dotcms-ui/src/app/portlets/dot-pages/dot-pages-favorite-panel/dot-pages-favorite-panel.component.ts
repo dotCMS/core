@@ -27,6 +27,11 @@ import { DotActionsMenuEventParams } from '../dot-pages.component';
     styleUrls: ['./dot-pages-favorite-panel.component.scss']
 })
 export class DotPagesFavoritePanelComponent implements OnInit {
+    private dotMessageService = inject(DotMessageService);
+    private dialogService = inject(DialogService);
+    private dotPageRenderService = inject(DotPageRenderService);
+    private dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
+
     readonly #store = inject(DotPageStore);
 
     @Output() goToUrl = new EventEmitter<string>();
@@ -37,13 +42,6 @@ export class DotPagesFavoritePanelComponent implements OnInit {
     timeStamp = this.getTimeStamp();
 
     private currentLimitSize = FAVORITE_PAGE_LIMIT;
-
-    constructor(
-        private dotMessageService: DotMessageService,
-        private dialogService: DialogService,
-        private dotPageRenderService: DotPageRenderService,
-        private dotHttpErrorManagerService: DotHttpErrorManagerService
-    ) {}
 
     ngOnInit(): void {
         this.#store.getFavoritePages(this.currentLimitSize);

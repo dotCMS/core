@@ -2,7 +2,7 @@ import { createFakeEvent } from '@ngneat/spectator';
 import { Observable, of as observableOf } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
-import { Component, DebugElement, Injectable } from '@angular/core';
+import { Component, DebugElement, Injectable, inject } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import {
     FormsModule,
@@ -99,9 +99,11 @@ class MockDotPageSelectorService {
     `
 })
 class FakeFormComponent {
+    private fb = inject(UntypedFormBuilder);
+
     form: UntypedFormGroup;
 
-    constructor(private fb: UntypedFormBuilder) {
+    constructor() {
         /*
         This should go in the ngOnInit but I don't want to detectChanges everytime for
         this fake test component

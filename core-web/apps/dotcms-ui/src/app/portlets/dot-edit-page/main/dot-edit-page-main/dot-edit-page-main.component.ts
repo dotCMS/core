@@ -21,6 +21,13 @@ import { DotPageRenderState } from '@dotcms/dotcms-models';
     styleUrls: ['./dot-edit-page-main.component.scss']
 })
 export class DotEditPageMainComponent implements OnInit, OnDestroy {
+    private route = inject(ActivatedRoute);
+    private dotContentletEditorService = inject(DotContentletEditorService);
+    private dotPageStateService = inject(DotPageStateService);
+    private dotRouterService = inject(DotRouterService);
+    private dotCustomEventHandlerService = inject(DotCustomEventHandlerService);
+    private titleService = inject(Title);
+
     pageState$: Observable<DotPageRenderState>;
     private dotSessionStorageService: DotSessionStorageService = inject(DotSessionStorageService);
     private pageUrl: string;
@@ -29,14 +36,7 @@ export class DotEditPageMainComponent implements OnInit, OnDestroy {
     private destroy$: Subject<boolean> = new Subject<boolean>();
     private readonly customEventsHandler;
 
-    constructor(
-        private route: ActivatedRoute,
-        private dotContentletEditorService: DotContentletEditorService,
-        private dotPageStateService: DotPageStateService,
-        private dotRouterService: DotRouterService,
-        private dotCustomEventHandlerService: DotCustomEventHandlerService,
-        private titleService: Title
-    ) {
+    constructor() {
         if (!this.customEventsHandler) {
             this.customEventsHandler = {
                 'save-page': ({ detail: { payload } }: CustomEvent) => {
