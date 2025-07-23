@@ -1,8 +1,10 @@
-# dotCMS backend onboarding
+# dotCMS Backend Onboarding
 
 ## Get Started
 
-Welcome to the onboarding guide for the dotCMS Core project. This document is designed to help new developers quickly get up to speed with our Java Maven multi-module project hosted on GitHub. By following this guide, you'll learn how to install, configure, compile, and run the project efficiently. Let's get started!
+Welcome to the onboarding guide for the dotCMS Core project. This document is designed to help new developers quickly get up to speed with our Java Maven multi-module project hosted on GitHub. By following this guide, you'll learn how to install, configure, compile, and run the project efficiently.
+
+> **📚 Important**: After completing this onboarding, refer to the comprehensive documentation in the `/docs/` directory for detailed development patterns, coding standards, and architectural guidance. Start with [Java Standards](docs/backend/JAVA_STANDARDS.md) and [Maven Build System](docs/backend/MAVEN_BUILD_SYSTEM.md) for backend development.
 
 ## Prerequisites
 
@@ -89,19 +91,45 @@ After compiling the project, the next step is to run it. This section provides d
 
 ## Testing
 
-Testing is a crucial part of the development process to ensure the stability and reliability of the application. In this section, you'll learn how to run **Unit** tests,  **Integration** tests and **Postman** tests of the project. We will cover the commands needed to execute these tests and provide guidance on how to interpret the results. Proper testing helps identify and fix issues early, ensuring a more robust and error-free application.
+Testing is crucial for ensuring stability and reliability. **IMPORTANT**: Never run full integration test suites during development (60+ minutes). Always target specific test classes or methods.
 
-1. **Integration** and **Postman** tests
+### Efficient Testing Strategy
 
-	| Type | Just | Maven |
-	|--|--|--|
-	| all | `just build-test-full` | `./mvnw clean install -Dcoreit.test.skip=false -Dpostman.test.skip=false` |
-	| test-integration | `just test-integration`| `./mvnw -pl :dotcms-integration verify -Dcoreit.test.skip=false`  |
-	| test-postman | `just test-postman <collections>`| `./mvnw -pl :dotcms-postman verify -Dpostman.test.skip=false -Pdebug -Dpostman.collections={{ collections }}`  |
+1. **Targeted Integration Tests (RECOMMENDED - 2-10 minutes)**:
+	```bash
+	# Target specific test class
+	./mvnw verify -pl :dotcms-integration -Dcoreit.test.skip=false -Dit.test=ContentTypeAPIImplTest
+	
+	# Target specific test method  
+	./mvnw verify -pl :dotcms-integration -Dcoreit.test.skip=false -Dit.test=MyTest#testMethod
+	```
 
-	> ⚠️ Note that the command `just build-test-full` can consume a lot of machine resources and may take a long time to be completed. Its use is more recommended in the _**cloud environment**_.
+2. **IDE Testing Workflow (FASTEST - 10-30 seconds per test)**:
+	```bash
+	# Start services for IDE debugging
+	just test-integration-ide
+	# → Now run/debug individual tests in your IDE with breakpoints
+	just test-integration-stop  # Clean up when done
+	```
 
-	> 💡**Tip**:  If you don't provide any collections the command `just test-postman` will run **page** collection tests by default.
+3. **Postman Tests**:
+	```bash
+	# Specific collection (recommended)
+	just test-postman ai                                    # AI collection only
+	./mvnw -pl :dotcms-postman verify -Dpostman.test.skip=false -Dpostman.collections=ai
+	
+	# All postman tests (slower)
+	just test-postman all
+	```
+
+4. **Full Test Suite (CI/Cloud Only - 60+ minutes)**:
+	```bash
+	# ⚠️ WARNING: Only for final validation or CI environment
+	just build-test-full
+	./mvnw clean install -Dcoreit.test.skip=false -Dpostman.test.skip=false
+	```
+
+> **📚 Next Steps**: After onboarding, see the comprehensive documentation in `/docs/backend/` for detailed Java development patterns, Maven configuration, REST API design, and database access patterns.
 
 ## Debugging
 

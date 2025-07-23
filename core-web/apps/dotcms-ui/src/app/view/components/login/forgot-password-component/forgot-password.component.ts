@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { Component, OnInit, ViewEncapsulation } from '@angular/core';
+import { Component, OnInit, ViewEncapsulation, inject } from '@angular/core';
 import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
 import { NavigationExtras } from '@angular/router';
 
@@ -18,19 +18,17 @@ import { DotLoginInformation } from '@dotcms/dotcms-models';
     styleUrls: ['./forgot-password.component.scss']
 })
 export class ForgotPasswordComponent implements OnInit {
+    private fb = inject(UntypedFormBuilder);
+    loginPageStateService = inject(DotLoginPageStateService);
+    private dotRouterService = inject(DotRouterService);
+    private loginService = inject(LoginService);
+
     message = '';
 
     forgotPasswordForm: UntypedFormGroup;
     loginInfo$: Observable<DotLoginInformation>;
 
     private forgotPasswordConfirmationMessage = '';
-
-    constructor(
-        private fb: UntypedFormBuilder,
-        public loginPageStateService: DotLoginPageStateService,
-        private dotRouterService: DotRouterService,
-        private loginService: LoginService
-    ) {}
 
     ngOnInit(): void {
         this.loginInfo$ = this.loginPageStateService.get().pipe(

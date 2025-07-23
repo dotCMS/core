@@ -1,5 +1,12 @@
 import { DecimalPipe } from '@angular/common';
-import { Component, Input, Output, EventEmitter, ChangeDetectionStrategy } from '@angular/core';
+import {
+    Component,
+    Input,
+    Output,
+    EventEmitter,
+    ChangeDetectionStrategy,
+    inject
+} from '@angular/core';
 import { UntypedFormControl } from '@angular/forms';
 
 import { LoggerService } from '@dotcms/dotcms-js';
@@ -74,6 +81,9 @@ const UNITS = {
     `
 })
 export class VisitorsLocationComponent {
+    decimalPipe = inject(DecimalPipe);
+    private loggerService = inject(LoggerService);
+
     @Input() circle: GCircle = { center: { lat: 38.89, lng: -77.04 }, radius: 10000 };
     @Input() comparisonValue: string;
     @Input() comparisonControl: UntypedFormControl;
@@ -88,10 +98,9 @@ export class VisitorsLocationComponent {
     showingMap = false;
     comparisonDropdown: any;
 
-    constructor(
-        public decimalPipe: DecimalPipe,
-        private loggerService: LoggerService
-    ) {
+    constructor() {
+        const loggerService = this.loggerService;
+
         loggerService.info('VisitorsLocationComponent', 'constructor');
     }
 

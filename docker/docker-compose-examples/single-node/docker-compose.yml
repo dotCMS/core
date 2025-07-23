@@ -61,7 +61,7 @@ services:
       GLOWROOT_WEB_UI_ENABLED: 'true' # Enable glowroot web ui on localhost.  do not use in production
       #CMS_SSL_CERTIFICATE_FILE: '/certs/localhost.pem'    # Can create cert with mkcert tool
       #CMS_SSL_CERTIFICATE_KEY_FILE: '/certs/localhost-key.pem'
-      #CUSTOM_STARTER_URL: 'https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20250318/starter-20250318.zip'
+      #CUSTOM_STARTER_URL: 'https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20250722/starter-20250722.zip'
     depends_on:
       - db
       - opensearch      

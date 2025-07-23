@@ -1,6 +1,6 @@
 import { fromEvent as observableFromEvent, Subject } from 'rxjs';
 
-import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { Component, ElementRef, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
 import { debounceTime, pluck, take, takeUntil } from 'rxjs/operators';
@@ -17,6 +17,10 @@ import { DotAppsImportExportDialogComponent } from '../dot-apps-import-export-di
     styleUrls: ['./dot-apps-list.component.scss']
 })
 export class DotAppsListComponent implements OnInit, OnDestroy {
+    private route = inject(ActivatedRoute);
+    private dotRouterService = inject(DotRouterService);
+    private dotAppsService = inject(DotAppsService);
+
     @ViewChild('searchInput') searchInput: ElementRef;
     @ViewChild('importExportDialog') importExportDialog: DotAppsImportExportDialogComponent;
     apps: DotApp[];
@@ -26,12 +30,6 @@ export class DotAppsListComponent implements OnInit, OnDestroy {
     showDialog = false;
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
-
-    constructor(
-        private route: ActivatedRoute,
-        private dotRouterService: DotRouterService,
-        private dotAppsService: DotAppsService
-    ) {}
 
     ngOnInit() {
         this.route.data

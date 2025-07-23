@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
 import { pluck, take } from 'rxjs/operators';
@@ -12,11 +12,10 @@ import { DotContainerEntity } from '@dotcms/dotcms-models';
     styleUrls: ['./dot-container-create.component.scss']
 })
 export class DotContainerCreateComponent implements OnInit {
+    private activatedRoute = inject(ActivatedRoute);
+    private dotRouterService = inject(DotRouterService);
+
     containerId = '';
-    constructor(
-        private activatedRoute: ActivatedRoute,
-        private dotRouterService: DotRouterService
-    ) {}
 
     ngOnInit() {
         this.activatedRoute.data

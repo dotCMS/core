@@ -3,13 +3,13 @@ import { of, Observable, from } from 'rxjs';
 import {
     Component,
     EventEmitter,
-    Optional,
     OnChanges,
     SimpleChanges,
     ViewChild,
     Output,
     Input,
-    ChangeDetectionStrategy
+    ChangeDetectionStrategy,
+    inject
 } from '@angular/core';
 import { ControlValueAccessor, NgControl } from '@angular/forms';
 
@@ -73,7 +73,9 @@ export class Dropdown implements ControlValueAccessor, OnChanges {
     modelValue: string;
     dropdownOptions: Observable<SelectItem[]>;
 
-    constructor(@Optional() control: NgControl) {
+    constructor() {
+        const control = inject(NgControl, { optional: true });
+
         if (control && !control.valueAccessor) {
             control.valueAccessor = this;
         }

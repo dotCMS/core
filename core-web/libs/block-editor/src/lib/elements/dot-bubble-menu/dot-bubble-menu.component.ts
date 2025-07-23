@@ -11,8 +11,11 @@ import {
     input,
     SecurityContext,
     signal,
-    ViewChild
+    ViewChild,
+    OnInit,
+    DestroyRef
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer } from '@angular/platform-browser';
 
@@ -21,11 +24,23 @@ import { OverlayPanelModule } from 'primeng/overlaypanel';
 
 import { Editor } from '@tiptap/core';
 
+import { DotAiService } from '@dotcms/data-access';
+
 import { DotImageEditorPopoverComponent } from './components/dot-image-editor-popover/dot-image-editor-popover.component';
 import { DotLinkEditorPopoverComponent } from './components/dot-link-editor-popover/dot-link-editor-popover.component';
 
 import { EditorModalDirective } from '../../directive/editor-modal.directive';
-import { codeIcon, headerIcons, olIcon, pIcon, quoteIcon, ulIcon } from '../../utils/icons';
+import { AI_IMAGE_PROMPT_EXTENSION_NAME } from '../../extensions/ai-image-prompt/ai-image-prompt.extension';
+import {
+    codeIcon,
+    headerIcons,
+    listStarsIcon,
+    mountsStarsIcon,
+    olIcon,
+    pIcon,
+    quoteIcon,
+    ulIcon
+} from '../../utils/icons';
 import { getCurrentNodeType } from '../../utils/prosemirror';
 
 interface NodeTypeOption {
@@ -36,7 +51,6 @@ interface NodeTypeOption {
 }
 
 const BUBBLE_MENU_HIDDEN_NODES = {
-    tableCell: true,
     table: true,
     youtube: true,
     dotVideo: true,
@@ -60,7 +74,7 @@ const BUBBLE_MENU_HIDDEN_NODES = {
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotBubbleMenuComponent {
+export class DotBubbleMenuComponent implements OnInit {
     @ViewChild('editorModal') editorModal: EditorModalDirective;
     @ViewChild('bubbleMenu', { read: ElementRef }) bubbleMenuRef: ElementRef<HTMLElement>;
     @ViewChild('linkModal') linkModal: DotLinkEditorPopoverComponent;
@@ -69,13 +83,14 @@ export class DotBubbleMenuComponent {
     readonly editor = input.required<Editor>();
     protected readonly cd = inject(ChangeDetectorRef);
     protected readonly domSanitizer = inject(DomSanitizer);
+    protected readonly dotAiService = inject(DotAiService);
 
     protected readonly dropdownItem = signal<NodeTypeOption | null>(null);
     protected readonly placeholder = signal<string>('Paragraph');
     protected readonly showShould = signal<boolean>(true);
     protected readonly showImageMenu = signal<boolean>(false);
 
-    protected readonly nodeTypeOptions: NodeTypeOption[] = [
+    protected nodeTypeOptions = [
         {
             name: 'Paragraph',
             value: 'paragraph',
@@ -157,6 +172,35 @@ export class DotBubbleMenuComponent {
         trigger: 'manual'
     };
 
+    destroyRef = inject(DestroyRef);
+
+    ngOnInit() {
+        this.dotAiService
+            .checkPluginInstallation()
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe((isInstalled) => {
+                if (isInstalled) {
+                    this.nodeTypeOptions = [
+                        {
+                            name: 'AI Content',
+                            value: 'aiContent',
+                            icon: listStarsIcon,
+                            command: () =>
+                                this.editor().chain().focus().clearNodes().openAIPrompt().run()
+                        },
+                        {
+                            name: 'AI Image',
+                            value: AI_IMAGE_PROMPT_EXTENSION_NAME,
+                            icon: mountsStarsIcon,
+                            command: () =>
+                                this.editor().chain().focus().clearNodes().openImagePrompt().run()
+                        },
+                        ...this.nodeTypeOptions
+                    ];
+                }
+            });
+    }
+
     protected runConvertToCommand(option: NodeTypeOption) {
         option.command();
     }
@@ -215,8 +259,12 @@ export class DotBubbleMenuComponent {
 
     private setCurrentSelectedNode() {
         const currentNodeType = getCurrentNodeType(this.editor());
-        const option = this.nodeTypeOptions.find((option) => option.value === currentNodeType);
-        this.dropdownItem.set(option || this.nodeTypeOptions[0]);
+
+        // CRITICAL: Always use the exact reference from nodeTypeOptions
+        const foundOption = this.nodeTypeOptions.find((option) => option.value === currentNodeType);
+
+        // Use the found reference or the first item's reference
+        this.dropdownItem.set(foundOption ?? this.nodeTypeOptions[0]);
     }
 
     private checkIfShowBubbleMenu() {

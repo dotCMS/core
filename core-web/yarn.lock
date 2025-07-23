@@ -6101,10 +6101,10 @@
   resolved "https://registry.npmjs.org/@tiptap/extension-table-row/-/extension-table-row-2.14.0.tgz"
   integrity sha512-a1GvCIju9xETIQu664lVQNftHqpPdRmwYp+1QzY82v3zHClso+tTLPeBSlbDdUscSmv3yZXgGML20IiOoR2l2Q==
 
-"@tiptap/extension-table@^2.14.0":
-  version "2.14.0"
-  resolved "https://registry.npmjs.org/@tiptap/extension-table/-/extension-table-2.14.0.tgz"
-  integrity sha512-X/wH3XKxi5+G7cB+lHt3fPMWIJ30IBkzrJZYapJ8d4p2JxMNIU1Nyu+8K6204d0hF6SVWY8hvb/Jq/WgHtoCFA==
+"@tiptap/extension-table@^3.0.7":
+  version "3.0.7"
+  resolved "https://registry.npmjs.org/@tiptap/extension-table/-/extension-table-3.0.7.tgz#e25c91d4bfb0151fcaa8810057d33382dd3b2f46"
+  integrity sha512-S4tvIgagzWnvXLHfltXucgS9TlBwPcQTjQR4llbxmKHAQM4+e77+NGcXXDcQ7E1TdAp3Tk8xRGerGIP7kjCFRA==
 
 "@tiptap/extension-text-align@^2.14.0":
   version "2.14.0"
@@ -22533,10 +22533,9 @@ stylus-loader@^7.1.0:
     fast-glob "^3.2.12"
     normalize-path "^3.0.0"
 
-stylus@^0.59.0:
+stylus@^0.59.0, "stylus@github:stylus/stylus#0.59.0":
   version "0.59.0"
-  resolved "https://registry.npmjs.org/stylus/-/stylus-0.59.0.tgz"
-  integrity sha512-lQ9w/XIOH5ZHVNuNbWW8D822r+/wBSO/d6XvtyHLF7LW4KaCIDeVbvn5DF8fGCJAUCwVhVi/h6J0NUcnylUEjg==
+  resolved "https://codeload.github.com/stylus/stylus/tar.gz/8e29ff39fb563f91ef4eaff9b2c9f29e2a1910ec"
   dependencies:
     "@adobe/css-tools" "^4.0.1"
     debug "^4.3.2"

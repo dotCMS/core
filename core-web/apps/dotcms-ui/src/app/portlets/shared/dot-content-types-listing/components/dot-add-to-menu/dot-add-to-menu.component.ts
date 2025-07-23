@@ -8,7 +8,8 @@ import {
     OnDestroy,
     OnInit,
     Output,
-    ViewChild
+    ViewChild,
+    inject
 } from '@angular/core';
 import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
 
@@ -27,6 +28,11 @@ import { DotCMSContentType, DotDialogActions, DotMenu } from '@dotcms/dotcms-mod
     templateUrl: 'dot-add-to-menu.component.html'
 })
 export class DotAddToMenuComponent implements OnInit, OnDestroy {
+    fb = inject(UntypedFormBuilder);
+    private dotMessageService = inject(DotMessageService);
+    private dotMenuService = inject(DotMenuService);
+    private dotAddToMenuService = inject(DotAddToMenuService);
+
     form: UntypedFormGroup;
     menu$: Observable<DotMenu[]>;
     placeholder = '';
@@ -39,13 +45,6 @@ export class DotAddToMenuComponent implements OnInit, OnDestroy {
     @ViewChild('titleName', { static: true }) titleName: ElementRef;
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
-
-    constructor(
-        public fb: UntypedFormBuilder,
-        private dotMessageService: DotMessageService,
-        private dotMenuService: DotMenuService,
-        private dotAddToMenuService: DotAddToMenuService
-    ) {}
 
     ngOnInit() {
         this.initForm();

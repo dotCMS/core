@@ -4,28 +4,40 @@
 <div class="field-properties">
     <div class="field-properties__info-container">
         <span class="info-container__name">{{ field.name }}</span>
-        <p-button
-            *ngIf="!field.fixed"
-            (click)="removeItem($event)"
-            id="info-container__delete"
-            styleClass="p-button-text p-button-sm p-button-danger p-button-rounded"
-            icon="pi pi-trash"></p-button>
+        @if (!field.fixed) {
+            <p-button
+                (click)="removeItem($event)"
+                id="info-container__delete"
+                styleClass="p-button-text p-button-sm p-button-danger p-button-rounded"
+                icon="pi pi-trash"></p-button>
+        }
     </div>
     <div class="field-properties__actions-container">
-        <dot-copy-link
-            *ngIf="field.variable"
-            [label]="field.variable"
-            [copy]="field.variable"></dot-copy-link>
+        @if (field.variable) {
+            <dot-copy-link [label]="field.variable" [copy]="field.variable"></dot-copy-link>
+        }
 
-        <div *ngIf="isSmall; else attributes">
-            <p-button
-                *ngIf="true"
-                (click)="openAttr($event)"
-                [class.open]="open"
-                data-testid="field-info-button"
-                styleClass="p-button-text p-button-sm  p-button-rounded"
-                icon="pi pi-info-circle"></p-button>
-        </div>
+        @if (isSmall) {
+            <div>
+                @if (true) {
+                    <p-button
+                        (click)="openAttr($event)"
+                        [class.open]="open"
+                        data-testid="field-info-button"
+                        styleClass="p-button-text p-button-sm  p-button-rounded"
+                        icon="pi pi-info-circle"></p-button>
+                }
+            </div>
+        } @else {
+            <div class="field-properties__attributes-container">
+                <p class="attributes-container__field-name">{{ fieldTypeLabel }}</p>
+                @for (field of fieldAttributesArray; track field; let index = $index) {
+                    <p class="attributes-container__attribute">
+                        {{ field }}
+                    </p>
+                }
+            </div>
+        }
     </div>
 </div>
 
@@ -37,21 +49,10 @@
     styleClass="contentType__overlayPanel">
     <div class="field-properties__overlay-attributes-container">
         <p class="overlay-attributes-container__field-name">{{ fieldTypeLabel }}</p>
-        <p
-            *ngIf="fieldAttributesString.length"
-            class="overlay-attributes-container__attributes-text">
-            {{ fieldAttributesString }}
-        </p>
+        @if (fieldAttributesString.length) {
+            <p class="overlay-attributes-container__attributes-text">
+                {{ fieldAttributesString }}
+            </p>
+        }
     </div>
 </p-overlayPanel>
-
-<ng-template #attributes>
-    <div class="field-properties__attributes-container">
-        <p class="attributes-container__field-name">{{ fieldTypeLabel }}</p>
-        <p
-            *ngFor="let field of fieldAttributesArray; let index = index"
-            class="attributes-container__attribute">
-            {{ field }}
-        </p>
-    </div>
-</ng-template>

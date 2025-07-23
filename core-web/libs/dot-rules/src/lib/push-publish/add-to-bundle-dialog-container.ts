@@ -6,7 +6,8 @@ import {
     Input,
     Output,
     EventEmitter,
-    OnChanges
+    OnChanges,
+    inject
 } from '@angular/core';
 
 import { BundleService, IBundle } from '../services/bundle-service';
@@ -25,6 +26,8 @@ import { BundleService, IBundle } from '../services/bundle-service';
 })
 // tslint:disable-next-line:component-class-suffix
 export class AddToBundleDialogContainer implements OnChanges {
+    bundleService = inject(BundleService);
+
     @Input() assetId: string;
     @Input() hidden = false;
 
@@ -32,8 +35,6 @@ export class AddToBundleDialogContainer implements OnChanges {
     @Output() cancel: EventEmitter<boolean> = new EventEmitter(false);
 
     errorMessage: BehaviorSubject<string> = new BehaviorSubject(null);
-
-    constructor(public bundleService: BundleService) {}
 
     ngOnChanges(change): void {
         if (change.hidden && !this.hidden) {
