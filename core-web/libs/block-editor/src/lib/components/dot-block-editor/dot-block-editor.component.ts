@@ -1,5 +1,6 @@
 import { combineLatest, from, Observable, Subject } from 'rxjs';
 import { array, assert, object, optional, string } from 'superstruct';
+import tippy from 'tippy.js';
 
 import {
     ChangeDetectorRef,
@@ -176,6 +177,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
     }
 
     ngOnInit() {
+        tippy.setDefaultProps({ zIndex: 5 });
         this.setFieldVariable(); // Set the field variables - Before the editor is created
         combineLatest([
             this.showVideoThumbnail$(),

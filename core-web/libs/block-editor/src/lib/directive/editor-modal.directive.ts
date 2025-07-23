@@ -46,7 +46,6 @@ export class EditorModalDirective implements OnInit, OnDestroy {
         this.editorElement = editorElement as HTMLElement;
         this.tippy = tippy(editorElement, {
             duration: 0,
-            zIndex: 5,
             content: this.elRef.nativeElement,
             interactive: true,
             trigger: 'manual',
