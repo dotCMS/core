@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 
 import { pluck, take } from 'rxjs/operators';
 
@@ -14,7 +14,7 @@ import { DotLoginUserSystemInformation } from '@dotcms/dotcms-models';
  * The login component allows set the background image and background color.
  */
 export class DotLoginPageComponent implements OnInit {
-    constructor(public loginPageStateService: DotLoginPageStateService) {}
+    loginPageStateService = inject(DotLoginPageStateService);
 
     ngOnInit(): void {
         this.loginPageStateService

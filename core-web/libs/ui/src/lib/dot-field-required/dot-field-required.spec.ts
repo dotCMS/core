@@ -1,4 +1,4 @@
-import { Component, DebugElement } from '@angular/core';
+import { Component, DebugElement, inject } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import {
     ReactiveFormsModule,
@@ -29,7 +29,8 @@ import { DotFieldRequiredDirective } from './dot-field-required.directive';
     `
 })
 class TestHostComponent {
-    constructor(private fb: UntypedFormBuilder) {}
+    private fb = inject(UntypedFormBuilder);
+
     form: UntypedFormGroup = this.fb.group({
         name: new UntypedFormControl('', Validators.required),
         text: new UntypedFormControl('')

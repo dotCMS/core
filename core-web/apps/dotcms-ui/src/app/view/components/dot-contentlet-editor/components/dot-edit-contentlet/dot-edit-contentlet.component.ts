@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
 
 import { DotContentletEditorService } from '../../services/dot-contentlet-editor.service';
 
@@ -17,6 +17,8 @@ import { DotContentletEditorService } from '../../services/dot-contentlet-editor
     styleUrls: ['./dot-edit-contentlet.component.scss']
 })
 export class DotEditContentletComponent implements OnInit {
+    private dotContentletEditorService = inject(DotContentletEditorService);
+
     @Input()
     inode: string;
     @Output()
@@ -25,8 +27,6 @@ export class DotEditContentletComponent implements OnInit {
     custom: EventEmitter<unknown> = new EventEmitter();
 
     url$: Observable<string>;
-
-    constructor(private dotContentletEditorService: DotContentletEditorService) {}
 
     ngOnInit() {
         this.url$ = this.dotContentletEditorService.editUrl$;

@@ -2,7 +2,15 @@ import { createFakeEvent } from '@ngneat/spectator';
 import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { Component, DebugElement, EventEmitter, forwardRef, Input, Output } from '@angular/core';
+import {
+    Component,
+    DebugElement,
+    EventEmitter,
+    forwardRef,
+    Input,
+    Output,
+    inject as inject_1
+} from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
 import {
     ControlValueAccessor,
@@ -90,10 +98,12 @@ const mockContentTypes: DotCMSContentType[] = [
     `
 })
 class HostTestComponent {
+    private fb = inject_1(FormBuilder);
+
     form: FormGroup;
     contentTypes = mockContentTypes;
 
-    constructor(private fb: FormBuilder) {
+    constructor() {
         this.form = this.fb.group({
             containerStructures: this.fb.array([], [Validators.required, Validators.minLength(1)])
         });

@@ -36,6 +36,12 @@ import { DotFormModel } from '@models/dot-form/dot-form.model';
 export class DotPushPublishFormComponent
     implements OnInit, OnDestroy, DotFormModel<DotPushPublishDialogData, DotPushPublishData>
 {
+    private dotPushPublishFiltersService = inject(DotPushPublishFiltersService);
+    private dotParseHtmlService = inject(DotParseHtmlService);
+    private dotcmsConfigService = inject(DotcmsConfigService);
+    private httpErrorManagerService = inject(DotHttpErrorManagerService);
+    fb = inject(UntypedFormBuilder);
+
     readonly #dotMessageService = inject(DotMessageService);
 
     dateFieldMinDate = new Date();
@@ -59,14 +65,6 @@ export class DotPushPublishFormComponent
     private defaultFilterKey: string;
     private _filterOptions: SelectItem[] = null;
     private destroy$: Subject<boolean> = new Subject<boolean>();
-
-    constructor(
-        private dotPushPublishFiltersService: DotPushPublishFiltersService,
-        private dotParseHtmlService: DotParseHtmlService,
-        private dotcmsConfigService: DotcmsConfigService,
-        private httpErrorManagerService: DotHttpErrorManagerService,
-        public fb: UntypedFormBuilder
-    ) {}
 
     ngOnInit() {
         if (this.data) {

@@ -14,6 +14,7 @@
             class="ai-content__form">
             @if (vm.status === ComponentStatus.LOADING) {
                 <p-skeleton width="100%" height="22rem" />
+                <p-skeleton class="flex justify-content-center" width="7rem" height="2rem" />
             } @else if (vm.generatedContent[vm.activeIndex]?.error) {
                 <dot-empty-container
                     (buttonAction)="store.generateContent(form.value.textPrompt)"
@@ -22,13 +23,17 @@
                     [secondaryButton]="true"
                     [configuration]="emptyConfiguration" />
             } @else {
-                <div class="ai-content__generated-text-wrapper">
+                <div
+                    class="ai-content__generated-text-wrapper"
+                    [style]="{
+                        display: generatedText.value ? 'flex' : 'none'
+                    }">
                     <textarea
                         [placeholder]="'block-editor.extension.ai-content.placeholder' | dm"
-                        [readOnly]="true"
                         class="ai-content__generated-text"
-                        #generatedText
                         formControlName="generatedText"
+                        #generatedText
+                        [readOnly]="true"
                         pInputTextarea></textarea>
 
                     @if (generatedText.value) {
@@ -37,11 +42,12 @@
                             customClass="p-button-rounded" />
                     }
                 </div>
-            }
-            @if (vm.status === ComponentStatus.LOADING) {
-                <p-skeleton class="flex justify-content-center" width="7rem" height="2rem" />
-            } @else {
-                <div class="ai-content__pagination">
+
+                <div
+                    class="ai-content__pagination"
+                    [style]="{
+                        display: generatedText.value ? 'flex' : 'none'
+                    }">
                     <button
                         (click)="store.updateActiveIndex(vm.activeIndex - 1)"
                         [disabled]="vm.activeIndex === 0 || vm.generatedContent?.length === 0"
@@ -50,7 +56,8 @@
                         icon="pi pi-chevron-left"
                         pButton></button>
                     <span>
-                        {{ vm.generatedContent?.length ? vm.activeIndex + 1 : 0 }} {{ 'of' | dm }}
+                        {{ vm.generatedContent?.length ? vm.activeIndex + 1 : 0 }}
+                        {{ 'of' | dm }}
                         {{ vm.generatedContent?.length }}
                     </span>
                     <button

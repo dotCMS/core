@@ -2,7 +2,7 @@ import { from as observableFrom, empty as observableEmpty, Subject } from 'rxjs'
 import { Observable } from 'rxjs';
 
 import { HttpResponse } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { mergeMap, reduce, catchError, map } from 'rxjs/operators';
 
@@ -23,6 +23,9 @@ import { ServerSideTypeModel } from './ServerSideFieldModel';
 
 @Injectable()
 export class ActionService {
+    private coreWebService = inject(CoreWebService);
+    private loggerService = inject(LoggerService);
+
     private _typeName = 'Action';
 
     private _actionsEndpointUrl: string;
@@ -52,11 +55,9 @@ export class ActionService {
         return json;
     }
 
-    constructor(
-        apiRoot: ApiRoot,
-        private coreWebService: CoreWebService,
-        private loggerService: LoggerService
-    ) {
+    constructor() {
+        const apiRoot = inject(ApiRoot);
+
         this._actionsEndpointUrl = `/api/v1/sites/${apiRoot.siteId}/ruleengine/actions/`;
     }
 

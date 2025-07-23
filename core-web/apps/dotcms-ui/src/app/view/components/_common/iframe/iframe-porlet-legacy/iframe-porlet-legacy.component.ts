@@ -1,6 +1,6 @@
 import { BehaviorSubject, Subject } from 'rxjs';
 
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { ActivatedRoute, UrlSegment } from '@angular/router';
 
 import { map, mergeMap, pluck, skip, takeUntil, withLatestFrom } from 'rxjs/operators';
@@ -18,24 +18,22 @@ import { DotLoadingIndicatorService } from '@dotcms/utils';
     templateUrl: 'iframe-porlet-legacy.component.html'
 })
 export class IframePortletLegacyComponent implements OnInit, OnDestroy {
+    private contentletService = inject(DotContentTypeService);
+    private dotLoadingIndicatorService = inject(DotLoadingIndicatorService);
+    private dotMenuService = inject(DotMenuService);
+    private dotRouterService = inject(DotRouterService);
+    private route = inject(ActivatedRoute);
+    private dotCustomEventHandlerService = inject(DotCustomEventHandlerService);
+    loggerService = inject(LoggerService);
+    siteService = inject(SiteService);
+    private dotcmsEventsService = inject(DotcmsEventsService);
+    private dotIframeService = inject(DotIframeService);
+
     canAccessPortlet: boolean;
     url: BehaviorSubject<string> = new BehaviorSubject('');
     isLoading = false;
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
-
-    constructor(
-        private contentletService: DotContentTypeService,
-        private dotLoadingIndicatorService: DotLoadingIndicatorService,
-        private dotMenuService: DotMenuService,
-        private dotRouterService: DotRouterService,
-        private route: ActivatedRoute,
-        private dotCustomEventHandlerService: DotCustomEventHandlerService,
-        public loggerService: LoggerService,
-        public siteService: SiteService,
-        private dotcmsEventsService: DotcmsEventsService,
-        private dotIframeService: DotIframeService
-    ) {}
 
     ngOnInit(): void {
         this.dotRouterService.portletReload$.subscribe((portletId: string) => {

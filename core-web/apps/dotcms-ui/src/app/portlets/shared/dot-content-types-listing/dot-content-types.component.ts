@@ -1,6 +1,6 @@
 import { forkJoin, Subject } from 'rxjs';
 
-import { Component, OnDestroy, OnInit, ViewChild, ViewContainerRef } from '@angular/core';
+import { Component, OnDestroy, OnInit, ViewChild, ViewContainerRef, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { map, pluck, take, takeUntil } from 'rxjs/operators';
@@ -52,6 +52,19 @@ type DotRowActions = {
     providers: [DotContentTypeStore]
 })
 export class DotContentTypesPortletComponent implements OnInit, OnDestroy {
+    private contentTypesInfoService = inject(DotContentTypesInfoService);
+    private crudService = inject(DotCrudService);
+    private dotContentTypeService = inject(DotContentTypeService);
+    private dotDialogService = inject(DotAlertConfirmService);
+    private dotLicenseService = inject(DotLicenseService);
+    private httpErrorManagerService = inject(DotHttpErrorManagerService);
+    private pushPublishService = inject(PushPublishService);
+    private route = inject(ActivatedRoute);
+    private router = inject(Router);
+    private dotMessageService = inject(DotMessageService);
+    private dotPushPublishDialogService = inject(DotPushPublishDialogService);
+    private dotContentTypeStore = inject(DotContentTypeStore);
+
     @ViewChild('listing', { static: false })
     listing: DotListingDataTableComponent;
     filterBy: string;
@@ -67,21 +80,6 @@ export class DotContentTypesPortletComponent implements OnInit, OnDestroy {
     public dotDynamicDialog: ViewContainerRef;
     private destroy$: Subject<boolean> = new Subject<boolean>();
     private dialogDestroy$: Subject<boolean> = new Subject<boolean>();
-
-    constructor(
-        private contentTypesInfoService: DotContentTypesInfoService,
-        private crudService: DotCrudService,
-        private dotContentTypeService: DotContentTypeService,
-        private dotDialogService: DotAlertConfirmService,
-        private dotLicenseService: DotLicenseService,
-        private httpErrorManagerService: DotHttpErrorManagerService,
-        private pushPublishService: PushPublishService,
-        private route: ActivatedRoute,
-        private router: Router,
-        private dotMessageService: DotMessageService,
-        private dotPushPublishDialogService: DotPushPublishDialogService,
-        private dotContentTypeStore: DotContentTypeStore
-    ) {}
 
     ngOnInit() {
         forkJoin(

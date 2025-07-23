@@ -2,7 +2,7 @@
 
 import { of } from 'rxjs';
 
-import { Component, DebugElement, Input } from '@angular/core';
+import { Component, DebugElement, Input, inject as inject_1 } from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
 import {
     FormsModule,
@@ -58,9 +58,11 @@ class MockDotSiteSelectorComponent {
     `
 })
 class TestHostFilledComponent {
+    private fb = inject_1(UntypedFormBuilder);
+
     form: UntypedFormGroup;
 
-    constructor(private fb: UntypedFormBuilder) {
+    constructor() {
         this.form = this.fb.group({
             theme: '123'
         });
@@ -76,9 +78,11 @@ class TestHostFilledComponent {
     `
 })
 class TestHostEmtpyComponent {
+    private fb = inject_1(UntypedFormBuilder);
+
     form: UntypedFormGroup;
 
-    constructor(private fb: UntypedFormBuilder) {
+    constructor() {
         this.form = this.fb.group({
             theme: ''
         });

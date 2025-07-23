@@ -8,30 +8,32 @@
     #sidebar
     data-testid="sidebar"
     position="right">
-    <div *ngIf="blockEditorInput" class="container">
-        <dot-block-editor
-            [contentletIdentifier]="blockEditorInput.contentletIdentifier"
-            [field]="blockEditorInput.field"
-            [languageId]="blockEditorInput.languageId"
-            [showVideoThumbnail]="showVideoThumbnail"
-            [value]="blockEditorInput.content"
-            #blockEditor></dot-block-editor>
-        <footer>
-            <button
-                (click)="closeSidebar()"
-                [label]="'Cancel' | dm"
-                class="p-button-outlined"
-                data-testid="cancelBtn"
-                pButton
-                type="button"></button>
-            <button
-                (click)="saveEditorChanges()"
-                [disabled]="saving"
-                [label]="'Update' | dm"
-                [loading]="saving"
-                data-testid="updateBtn"
-                pButton
-                type="button"></button>
-        </footer>
-    </div>
+    @if (blockEditorInput) {
+        <div class="container">
+            <dot-block-editor
+                [contentletIdentifier]="blockEditorInput.contentletIdentifier"
+                [field]="blockEditorInput.field"
+                [languageId]="blockEditorInput.languageId"
+                [showVideoThumbnail]="showVideoThumbnail"
+                [value]="blockEditorInput.content"
+                #blockEditor></dot-block-editor>
+            <footer>
+                <button
+                    (click)="closeSidebar()"
+                    [label]="'Cancel' | dm"
+                    class="p-button-outlined"
+                    data-testid="cancelBtn"
+                    pButton
+                    type="button"></button>
+                <button
+                    (click)="saveEditorChanges()"
+                    [disabled]="saving"
+                    [label]="'Update' | dm"
+                    [loading]="saving"
+                    data-testid="updateBtn"
+                    pButton
+                    type="button"></button>
+            </footer>
+        </div>
+    }
 </p-sidebar>
