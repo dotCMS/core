@@ -69,19 +69,21 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         
+      - name: Parse test configuration
+        id: parse-config
+        uses: mikefarah/yq@master
+        with:
+          cmd: yq -o=json '.github/test-matrix.yml' > config.json
+
       - name: Generate test matrix
         id: generate-matrix
         uses: actions/github-script@v7
         with:
           script: |
             const fs = require('fs');
-            const path = require('path');
-            const yaml = require('js-yaml');
             
-            // Read the test configuration
-            const configPath = path.join(process.env.GITHUB_WORKSPACE, '.github/test-matrix.yml');
-            const configYaml = fs.readFileSync(configPath, 'utf8');
-            const config = yaml.load(configYaml);
+            // Read the parsed JSON configuration
+            const config = JSON.parse(fs.readFileSync('config.json', 'utf8'));
             
             // Build matrix from configuration
             const matrix = [];
