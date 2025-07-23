@@ -115,8 +115,11 @@ dotcms-postman/
 
 ### Running Postman Tests
 ```bash
-# Run all Postman tests
-./mvnw verify -Dpostman.test.skip=false -pl :dotcms-postman
+# Run all Postman tests (requires -Dpostman.collections=all to execute all collections)
+./mvnw verify -Dpostman.test.skip=false -pl :dotcms-postman -Dpostman.collections=all
+
+# Run specific collection group (see config.json for available groups)
+./mvnw verify -Dpostman.test.skip=false -pl :dotcms-postman -Dpostman.collections=ai
 
 # Run specific collection
 ./mvnw verify -Dpostman.test.skip=false -pl :dotcms-postman -Dpostman.collection=ContentResource

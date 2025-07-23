@@ -287,7 +287,8 @@ ENTRYPOINT ["/srv/entrypoint.sh"]
 **✅ CORRECT (tests will run):**
 ```bash
 ./mvnw verify -pl :dotcms-integration -Dcoreit.test.skip=false -Dit.test=MyTest
-./mvnw verify -pl :dotcms-postman -Dpostman.test.skip=false -Dpostman.collections=ai
+./mvnw verify -pl :dotcms-postman -Dpostman.test.skip=false -Dpostman.collections=all     # Run ALL postman tests
+./mvnw verify -pl :dotcms-postman -Dpostman.test.skip=false -Dpostman.collections=ai      # Run specific collection group
 ./mvnw verify -pl :dotcms-test-karate -Dkarate.test.skip=false -Dit.test=ContentAPITest
 ```
 

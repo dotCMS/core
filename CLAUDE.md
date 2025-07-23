@@ -6,7 +6,7 @@
 ```bash
 # For test-only changes (target specific tests!):
 ./mvnw verify -pl :dotcms-integration -Dcoreit.test.skip=false -Dit.test=MyTestClass  # Specific test class (~2-10 min)
-./mvnw verify -pl :dotcms-postman -Dpostman.test.skip=false         # OR: just test-postman (~1-3 min)
+./mvnw verify -pl :dotcms-postman -Dpostman.test.skip=false -Dpostman.collections=all  # OR: just test-postman (~1-3 min)
 
 # For simple code changes in dotcms-core only:
 ./mvnw install -pl :dotcms-core -DskipTests    # OR: just build-quicker (~2-3 min)
