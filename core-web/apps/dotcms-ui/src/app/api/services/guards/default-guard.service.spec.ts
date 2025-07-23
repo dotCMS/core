@@ -14,8 +14,8 @@ describe('ValidDefaultGuardService', () => {
             providers: [DefaultGuardService]
         });
 
-        defaultGuardService = TestBed.get(DefaultGuardService);
-        dotRouterService = TestBed.get(DotRouterService);
+        defaultGuardService = TestBed.inject(DefaultGuardService);
+        dotRouterService = TestBed.inject(DotRouterService);
     });
 
     it('should redirect to to Main Portlet always', () => {

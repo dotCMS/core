@@ -5,7 +5,7 @@ import { DotPushPublishDialogService } from './dot-push-publish-dialog.service';
 const mockEventData = { assetIdentifier: 'test', title: 'Title' };
 
 describe('DotPushPublishDialogService', () => {
-    const dotPushPublishDialogService = TestBed.get(DotPushPublishDialogService);
+    const dotPushPublishDialogService = TestBed.inject(DotPushPublishDialogService);
     let data;
 
     beforeEach(() => {
