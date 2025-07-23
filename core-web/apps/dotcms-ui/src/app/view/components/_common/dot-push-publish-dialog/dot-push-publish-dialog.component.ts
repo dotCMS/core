@@ -1,6 +1,6 @@
 import { Subject } from 'rxjs';
 
-import { Component, EventEmitter, OnDestroy, OnInit, Output } from '@angular/core';
+import { Component, EventEmitter, OnDestroy, OnInit, Output, inject } from '@angular/core';
 
 import { takeUntil } from 'rxjs/operators';
 
@@ -19,6 +19,10 @@ import {
     templateUrl: 'dot-push-publish-dialog.component.html'
 })
 export class DotPushPublishDialogComponent implements OnInit, OnDestroy {
+    private pushPublishService = inject(PushPublishService);
+    private dotMessageService = inject(DotMessageService);
+    private dotPushPublishDialogService = inject(DotPushPublishDialogService);
+
     dialogActions: DotDialogActions;
     dialogShow = false;
     eventData: DotPushPublishDialogData;
@@ -29,12 +33,6 @@ export class DotPushPublishDialogComponent implements OnInit, OnDestroy {
     @Output() cancel = new EventEmitter<boolean>();
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
-
-    constructor(
-        private pushPublishService: PushPublishService,
-        private dotMessageService: DotMessageService,
-        private dotPushPublishDialogService: DotPushPublishDialogService
-    ) {}
 
     ngOnInit() {
         this.dotPushPublishDialogService.showDialog$

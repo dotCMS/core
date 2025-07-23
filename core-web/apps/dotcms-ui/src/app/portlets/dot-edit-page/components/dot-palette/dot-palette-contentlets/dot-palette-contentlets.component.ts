@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output, ViewChild } from '@angular/core';
+import { Component, EventEmitter, Input, Output, ViewChild, inject } from '@angular/core';
 
 import { LazyLoadEvent } from 'primeng/api';
 
@@ -13,6 +13,8 @@ import { DotPaletteInputFilterComponent } from '../dot-palette-input-filter/dot-
     styleUrls: ['./dot-palette-contentlets.component.scss']
 })
 export class DotPaletteContentletsComponent {
+    private dotContentletEditorService = inject(DotContentletEditorService);
+
     @Input() items: DotCMSContentlet[];
     @Input() loading: boolean;
     @Input() totalRecords: number;
@@ -24,8 +26,6 @@ export class DotPaletteContentletsComponent {
     itemsPerPage = 25;
 
     @ViewChild('inputFilter') inputFilter: DotPaletteInputFilterComponent;
-
-    constructor(private dotContentletEditorService: DotContentletEditorService) {}
 
     /**
      * Loads data with a specific page

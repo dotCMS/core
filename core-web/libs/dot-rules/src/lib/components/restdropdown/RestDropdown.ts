@@ -4,11 +4,11 @@ import {
     Component,
     EventEmitter,
     OnChanges,
-    Optional,
     AfterViewInit,
     Output,
     Input,
-    ChangeDetectionStrategy
+    ChangeDetectionStrategy,
+    inject
 } from '@angular/core';
 import { NgControl, ControlValueAccessor } from '@angular/forms';
 
@@ -35,6 +35,9 @@ import { Verify } from '../../services/validation/Verify';
     `
 })
 export class RestDropdown implements AfterViewInit, OnChanges, ControlValueAccessor {
+    private coreWebService = inject(CoreWebService);
+    control = inject(NgControl, { optional: true });
+
     @Input() placeholder: string;
     @Input() allowAdditions: boolean;
     @Input() minSelections: number;
@@ -50,10 +53,9 @@ export class RestDropdown implements AfterViewInit, OnChanges, ControlValueAcces
     private _modelValue: string[] | string;
     private _options: Observable<any[]>;
 
-    constructor(
-        private coreWebService: CoreWebService,
-        @Optional() public control: NgControl
-    ) {
+    constructor() {
+        const control = this.control;
+
         if (control) {
             control.valueAccessor = this;
         }

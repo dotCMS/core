@@ -23,6 +23,7 @@ import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import com.liferay.util.Xss;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
@@ -37,6 +38,7 @@ import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -267,7 +269,7 @@ public class CMSUrlUtil {
 	public boolean isFileAsset(String uri, Host host, Long languageId) {
 		Logger.debug(this.getClass(), "CMSUrlUtil_isFileAsset");
 		Logger.debug(this.getClass(), "CMSUrlUtil_isFileAsset URI = " + uri);
-		Logger.debug(this.getClass(), "CMSUrlUtil_isFileAsset site = " + host.getIdentifier());
+		Logger.debug(this.getClass(), "CMSUrlUtil_isFileAsset site = " + (Objects.nonNull(host)?host.getIdentifier(): StringPool.UNKNOWN));
 		Logger.debug(this.getClass(), "CMSUrlUtil_isFileAsset lang = " + languageId);
 
 		// languageId is not used now, but will be used in future functionality. Issue #7141

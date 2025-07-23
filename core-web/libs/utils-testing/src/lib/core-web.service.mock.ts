@@ -9,7 +9,7 @@ import {
     HttpParams,
     HttpHeaders
 } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { map, filter } from 'rxjs/operators';
 
@@ -17,7 +17,7 @@ import { ResponseView, DotCMSResponse, DotRequestOptionsArgs } from '@dotcms/dot
 
 @Injectable()
 export class CoreWebServiceMock {
-    constructor(private _http: HttpClient) {}
+    private _http = inject(HttpClient);
 
     request<T = unknown>(
         options: DotRequestOptionsArgs

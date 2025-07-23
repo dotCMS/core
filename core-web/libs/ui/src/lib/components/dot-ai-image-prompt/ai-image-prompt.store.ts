@@ -2,7 +2,7 @@ import { ComponentStore } from '@ngrx/component-store';
 import { tapResponse } from '@ngrx/operators';
 import { Observable, of } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { switchMap, withLatestFrom } from 'rxjs/operators';
 
@@ -54,6 +54,8 @@ const initialState: DotAiImagePromptComponentState = {
 
 @Injectable({ providedIn: 'root' })
 export class DotAiImagePromptStore extends ComponentStore<DotAiImagePromptComponentState> {
+    private dotAiService = inject(DotAiService);
+
     //Selectors
     readonly isOpenDialog$ = this.select(this.state$, ({ showDialog }) => showDialog);
     readonly isLoading$ = this.select(
@@ -201,7 +203,7 @@ export class DotAiImagePromptStore extends ComponentStore<DotAiImagePromptCompon
         });
     }
 
-    constructor(private dotAiService: DotAiService) {
+    constructor() {
         super(initialState);
     }
 }

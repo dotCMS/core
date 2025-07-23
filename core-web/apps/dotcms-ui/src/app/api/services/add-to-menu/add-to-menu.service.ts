@@ -1,7 +1,7 @@
 import { Observable, of } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { catchError, map, pluck, take } from 'rxjs/operators';
 
@@ -29,10 +29,8 @@ export interface DotCustomToolToLayout {
  */
 @Injectable()
 export class DotAddToMenuService {
-    constructor(
-        private coreWebService: CoreWebService,
-        private httpErrorManagerService: DotHttpErrorManagerService
-    ) {}
+    private coreWebService = inject(CoreWebService);
+    private httpErrorManagerService = inject(DotHttpErrorManagerService);
 
     /**
      * Cleans the portletId string from special chars and replaces then with a dash

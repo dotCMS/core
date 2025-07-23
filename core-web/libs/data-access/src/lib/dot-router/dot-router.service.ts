@@ -1,6 +1,6 @@
 import { BehaviorSubject, Observable, Subject } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import {
     ActivatedRoute,
     Event,
@@ -17,6 +17,9 @@ import { DotAppsSite, DotNavigateToOptions, PortletNav } from '@dotcms/dotcms-mo
 
 @Injectable()
 export class DotRouterService {
+    private router = inject(Router);
+    private route = inject(ActivatedRoute);
+
     portletReload$ = new Subject();
     private _storedRedirectUrl: string;
     private _routeHistory: PortletNav = { url: '' };
@@ -24,10 +27,7 @@ export class DotRouterService {
     private _routeCanBeDeactivated = new BehaviorSubject(true);
     private _pageLeaveRequest = new Subject<void>();
 
-    constructor(
-        private router: Router,
-        private route: ActivatedRoute
-    ) {
+    constructor() {
         this._routeHistory.url = this.router.url;
         this.router.events
             .pipe(filter((event: Event) => event instanceof NavigationEnd))

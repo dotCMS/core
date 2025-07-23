@@ -1,16 +1,16 @@
 {
-    "name": "portlets-dot-analytics-search",
+    "name": "portlets-dot-analytics",
     "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
-    "sourceRoot": "libs/portlets/dot-analytics-search/portlet/src",
+    "sourceRoot": "libs/portlets/dot-analytics/portlet/src",
     "prefix": "dot",
     "projectType": "library",
-    "tags": ["type:feature", "scope:dotcms-ui", "portlet:analytics-search"],
+    "tags": ["type:feature", "scope:dotcms-ui", "portlet:analytics"],
     "targets": {
         "test": {
             "executor": "@nx/jest:jest",
             "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
             "options": {
-                "jestConfig": "libs/portlets/dot-analytics-search/portlet/jest.config.ts"
+                "jestConfig": "libs/portlets/dot-analytics/portlet/jest.config.ts"
             },
             "configurations": {
                 "ci": {

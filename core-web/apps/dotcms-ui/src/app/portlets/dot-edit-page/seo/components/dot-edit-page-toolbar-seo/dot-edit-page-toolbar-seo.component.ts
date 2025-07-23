@@ -8,7 +8,8 @@ import {
     OnChanges,
     OnDestroy,
     OnInit,
-    Output
+    Output,
+    inject
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -74,6 +75,9 @@ import { DotEditPageViewAsControllerSeoComponent } from '../dot-edit-page-view-a
     ]
 })
 export class DotEditPageToolbarSeoComponent implements OnInit, OnChanges, OnDestroy {
+    private dotLicenseService = inject(DotLicenseService);
+    private dotConfigurationService = inject(DotPropertiesService);
+
     @Input() pageState: DotPageRenderState;
     @Input() variant: DotVariantData | null = null;
     @Input() runningExperiment: DotExperiment | null = null;
@@ -91,11 +95,6 @@ export class DotEditPageToolbarSeoComponent implements OnInit, OnChanges, OnDest
     runningUntilDateFormat = RUNNING_UNTIL_DATE_FORMAT;
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
-
-    constructor(
-        private dotLicenseService: DotLicenseService,
-        private dotConfigurationService: DotPropertiesService
-    ) {}
 
     ngOnInit() {
         // TODO: Remove next line when total functionality of Favorite page is done for release

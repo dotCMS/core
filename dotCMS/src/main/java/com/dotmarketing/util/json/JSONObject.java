@@ -1,7 +1,9 @@
 package com.dotmarketing.util.json;
 
+import com.dotcms.util.jackson.JSONObjectNullSerializer;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.io.IOException;
 import java.io.Serializable;
 import java.io.Writer;
@@ -75,6 +77,9 @@ public class JSONObject implements Serializable, Map {
      * whilst Java's null is equivalent to the value that JavaScript calls
      * undefined.
      */
+
+     // Jackson does not know anything about this Null Marker So...
+     @JsonSerialize(using = JSONObjectNullSerializer.class)
      private static final class Null implements Serializable{
          private static final long serialVersionUID = 1L;
         /**

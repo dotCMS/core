@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
 
 import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentTypeField, DotCMSContentTypeLayoutRow } from '@dotcms/dotcms-models';
@@ -16,6 +16,9 @@ import { FieldUtil } from '@dotcms/utils-testing';
     templateUrl: './content-type-fields-row.component.html'
 })
 export class ContentTypeFieldsRowComponent implements OnInit {
+    private dotMessageService = inject(DotMessageService);
+    private dotDialogService = inject(DotAlertConfirmService);
+
     @Input()
     fieldRow: DotCMSContentTypeLayoutRow;
 
@@ -27,11 +30,6 @@ export class ContentTypeFieldsRowComponent implements OnInit {
 
     @Output()
     removeRow: EventEmitter<DotCMSContentTypeLayoutRow> = new EventEmitter();
-
-    constructor(
-        private dotMessageService: DotMessageService,
-        private dotDialogService: DotAlertConfirmService
-    ) {}
 
     ngOnInit() {
         document
