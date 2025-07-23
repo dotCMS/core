@@ -2412,13 +2412,25 @@ public class ImportUtil {
                     .invalidValue(value)
                     .build();
         }
-        if (UtilMethods.isSet(value) && !tempFileAPI.validUrl(value)) {
-            throw ImportLineException.builder()
-                    .message("URL is syntactically valid but returned a non-success HTTP response")
-                    .code(ImportLineValidationCodes.UNREACHABLE_URL_CONTENT.name())
-                    .field(field.getVelocityVarName())
-                    .invalidValue(value)
-                    .build();
+        if (UtilMethods.isSet(value)) {
+            try {
+                if (!tempFileAPI.validUrl(value)) {
+                    throw ImportLineException.builder()
+                            .message("URL is syntactically valid but returned a non-success HTTP response")
+                            .code(ImportLineValidationCodes.UNREACHABLE_URL_CONTENT.name())
+                            .field(field.getVelocityVarName())
+                            .invalidValue(value)
+                            .build();
+                }
+            } catch (DotRuntimeException e) {
+                Logger.warn(ImportUtil.class, "Unreachable url or invalid config",e);
+                throw ImportLineException.builder()
+                        .message("URL validation failed: " + e.getMessage())
+                        .code(ImportLineValidationCodes.UNREACHABLE_URL_CONTENT.name())
+                        .field(field.getVelocityVarName())
+                        .invalidValue(value)
+                        .build();
+            }
         }
         return value;
     }

@@ -111,7 +111,6 @@ public interface AbstractImportResult extends Serializable {
      * @return an {@code Optional<Integer>} representing the last line were the error occurred or an empty
      * Optional empty if no error occurred or if
      */
-    @JsonIgnore
     Optional<Integer> stoppedOnErrorAtLine();
 
     /**
