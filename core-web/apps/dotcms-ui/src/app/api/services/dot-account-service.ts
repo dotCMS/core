@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { catchError, map, pluck, take } from 'rxjs/operators';
 
@@ -10,10 +10,8 @@ import { CoreWebService, ResponseView } from '@dotcms/dotcms-js';
 
 @Injectable()
 export class DotAccountService {
-    constructor(
-        private coreWebService: CoreWebService,
-        private httpErrorManagerService: DotHttpErrorManagerService
-    ) {}
+    private coreWebService = inject(CoreWebService);
+    private httpErrorManagerService = inject(DotHttpErrorManagerService);
 
     /**
      * Updates user data

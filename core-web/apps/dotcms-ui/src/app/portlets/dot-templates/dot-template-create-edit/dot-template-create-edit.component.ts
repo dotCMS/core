@@ -22,19 +22,17 @@ import { DotTemplateItem, DotTemplateStore, VM } from './store/dot-template.stor
     providers: [DotTemplateStore]
 })
 export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
+    private fb = inject(UntypedFormBuilder);
+    private dialogService = inject(DialogService);
+    private dotMessageService = inject(DotMessageService);
+    private dotSiteService = inject(SiteService);
+
     readonly #store = inject(DotTemplateStore);
 
     vm$: Observable<VM>;
 
     form: UntypedFormGroup;
     private destroy$: Subject<boolean> = new Subject<boolean>();
-
-    constructor(
-        private fb: UntypedFormBuilder,
-        private dialogService: DialogService,
-        private dotMessageService: DotMessageService,
-        private dotSiteService: SiteService
-    ) {}
 
     ngOnInit() {
         this.vm$ = this.#store.vm$.pipe(

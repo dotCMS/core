@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, inject } from '@angular/core';
 
 import { DotRouterService } from '@dotcms/data-access';
 import { DotApp } from '@dotcms/dotcms-models';
@@ -9,11 +9,11 @@ import { DotApp } from '@dotcms/dotcms-models';
     styleUrls: ['./dot-apps-configuration-header.component.scss']
 })
 export class DotAppsConfigurationHeaderComponent {
+    private dotRouterService = inject(DotRouterService);
+
     showMore: boolean;
 
     @Input() app: DotApp;
-
-    constructor(private dotRouterService: DotRouterService) {}
 
     /**
      * Redirects to app configuration listing page

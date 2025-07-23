@@ -1,6 +1,6 @@
 import { BehaviorSubject, Observable, Subject, of } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { ActivatedRoute, Data, NavigationEnd, Router } from '@angular/router';
 
 import { filter, map, switchMap, take } from 'rxjs/operators';
@@ -14,6 +14,9 @@ import {
 
 @Injectable()
 export class DotCrumbtrailService {
+    dotNavigationService = inject(DotNavigationService);
+    private activeRoute = inject(ActivatedRoute);
+
     private URL_EXCLUDES = ['/content-types-angular/create/content'];
     private crumbTrail: Subject<DotCrumb[]> = new BehaviorSubject([]);
 
@@ -24,11 +27,9 @@ export class DotCrumbtrailService {
         templates: 'template.title'
     };
 
-    constructor(
-        public dotNavigationService: DotNavigationService,
-        router: Router,
-        private activeRoute: ActivatedRoute
-    ) {
+    constructor() {
+        const router = inject(Router);
+
         this.dotNavigationService
             .onNavigationEnd()
             .pipe(

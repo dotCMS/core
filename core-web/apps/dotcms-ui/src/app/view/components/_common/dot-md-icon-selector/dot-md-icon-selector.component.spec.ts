@@ -1,4 +1,4 @@
-import { Component, CUSTOM_ELEMENTS_SCHEMA, DebugElement } from '@angular/core';
+import { Component, CUSTOM_ELEMENTS_SCHEMA, DebugElement, inject } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import {
     FormsModule,
@@ -19,9 +19,11 @@ import { DotMdIconSelectorComponent } from './dot-md-icon-selector.component';
     `
 })
 class DotTestHostComponent {
+    private fb = inject(UntypedFormBuilder);
+
     form: UntypedFormGroup;
 
-    constructor(private fb: UntypedFormBuilder) {
+    constructor() {
         this.form = this.fb.group({
             icon: '123'
         });
