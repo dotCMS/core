@@ -24,7 +24,7 @@ test_types:
       needs_node: false
     suites:
       - name: "JVM Unit Tests"
-        maven_args: "-Dprod test -pl :dotcms-core"
+        maven_args: "test -Dprod -pl :dotcms-core"
         stage_name: "JVM Tests"
 
   cli:
@@ -35,7 +35,7 @@ test_types:
       needs_node: false
     suites:
       - name: "CLI Tests"
-        maven_args: "-pl :dotcms-api-data-model,:dotcms-cli verify"
+        maven_args: "verify -pl :dotcms-api-data-model,:dotcms-cli"
         stage_name: "CLI Tests"
 
   frontend:
@@ -46,7 +46,7 @@ test_types:
       needs_node: false
     suites:
       - name: "Frontend Unit Tests"
-        maven_args: "-pl :dotcms-core-web test"
+        maven_args: "test -pl :dotcms-core-web"
         stage_name: "Frontend Tests"
 
   # === MULTI-SUITE TESTS ===
@@ -59,7 +59,7 @@ test_types:
       needs_node: false
       # Base command for all integration tests
       base_maven_args: >-
-        -Dit.test.forkcount=1 verify -pl :dotcms-integration 
+        verify -Dit.test.forkcount=1 -pl :dotcms-integration 
         -Dcoreit.test.skip=false
     suites:
       - name: "Integration Tests - MainSuite 1a"
@@ -148,9 +148,9 @@ test_types:
     suites:
       - name: "E2E Tests - JVM Suite"
         maven_args: >-
-          -Dci=true -Dit.test=E2eTestSuite 
+          verify -Dci=true -Dit.test=E2eTestSuite 
           -De2e.test.forkCount=1 -pl :dotcms-e2e-java
         stage_name: "E2E JVM E2E Suite"
       - name: "E2E Tests - Node Suite"
-        maven_args: "-De2e.test.env=ci -pl :dotcms-e2e-node"
+        maven_args: "verify -De2e.test.env=ci -pl :dotcms-e2e-node"
         stage_name: "E2E Node E2E Suite" 
