@@ -1384,6 +1384,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         Logger.debug(this, "search - respectFrontendRoles: " + respectFrontendRoles);
         Logger.debug(this, "search - requiredPermission: " + requiredPermission);
 
+
         PaginatedArrayList<Contentlet> contents = new PaginatedArrayList<>();
         ArrayList<String> inodes = new ArrayList<>();
 
@@ -1555,10 +1556,43 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     }
 
+    String[] unboundStringReplacements = Config.getStringArrayProperty("ELASTICSEARCH_UNBOUND_STRING_REPLACEMENTS", new String[]{
+        "live:",
+        "working:",
+        " + ",
+        " : ",
+        ":[]",
+        ":{}",
+        " :?",
+        ":*"
+    });
+
+    @VisibleForTesting
+    void validateESQueryProperlyBound(String luceneQuery) throws DotSecurityException {
+        if(Config.getBooleanProperty("ELASTICSEARCH_PREVENT_UNBOUNDED_QUERIES", true)){
+            String testString = luceneQuery;
+            for(String unboundStringReplacement : unboundStringReplacements){
+                testString=testString.replace(unboundStringReplacement, "");
+            }
+            if(!testString.contains(":") || !testString.contains("+")){
+                throw new DotSecurityException("Unbound queries are not allowed");
+            }
+        }
+    }
+
     @Override
     public List<ContentletSearch> searchIndex(String luceneQuery, int limit, int offset,
             String sortBy, User user, boolean respectFrontendRoles)
             throws DotSecurityException, DotDataException {
+
+
+
+
+
+        validateESQueryProperlyBound(luceneQuery);
+
+
+
         boolean isAdmin = false;
         List<Role> roles = new ArrayList<>();
         if (user == null && !respectFrontendRoles) {
@@ -9876,6 +9910,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     public long indexCount(String luceneQuery, User user, boolean respectFrontendRoles)
             throws DotDataException, DotSecurityException {
         boolean isAdmin = false;
+        validateESQueryProperlyBound(luceneQuery);
         List<Role> roles = new ArrayList<>();
         if (user == null && !respectFrontendRoles) {
             throw new DotSecurityException(

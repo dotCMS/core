@@ -4889,4 +4889,54 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
 
     }
 
+    String[] unboundESQueries = {
+        "Here%20is%20an%20example%20of%20an%20unbound%20es%20query%20with%20many%20clauses",
+        "+catchall:*",
+        "+host:*",
+        "+live:true",
+        "+working:true",
+    };
+
+    String[] boundESQueries = {
+        "+host:SYSTEM_HOST",
+        "+catchall:doesThisWork",
+        "+live:false +contentType:anyContentType",
+    };
+
+
+    @Test
+    public void test_validateESQueryProperlyBound() throws Exception{
+    ESContentletAPIImpl impl = new ESContentletAPIImpl();
+
+        for(String query: unboundESQueries){
+            try {
+                impl.validateESQueryProperlyBound(query);
+                fail("Should have thrown an exception");
+            }catch (DotSecurityException e){
+                assertTrue(e.getMessage().contains("Unbound queries"));
+            }
+            catch (Exception e){
+                fail("Should have thrown a DotSecurityException");
+            }
+        }
+        for(String query: boundESQueries){
+            try {
+                impl.validateESQueryProperlyBound(query);
+
+                // no exception
+                assertTrue(true);
+            }
+            catch (Exception e){
+                fail("Should not have thrown a DotSecurityException");
+            }
+        }
+
+
+
+    }
+
+
+
+
+
 }
