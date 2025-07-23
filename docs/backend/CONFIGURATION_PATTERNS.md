@@ -1,35 +1,30 @@
----
-description: 
-globs: 
-alwaysApply: false
----
-# dotCMS Configuration Conventions
+# dotCMS Configuration Patterns
 
 ## Property File Hierarchy
 
 ### Main Configuration File
-- **Primary file**: [dotmarketing-config.properties](mdc:dotCMS/src/main/resources/dotmarketing-config.properties)
+- **Primary file**: `dotCMS/src/main/resources/dotmarketing-config.properties`
 - **Use for**: General application configuration, new features, most properties
 
 ### Specialized Configuration Files  
 For properties related to specific domains that already have dedicated files:
 
-- **Cluster config**: [dotcms-config-cluster.properties](mdc:dotCMS/src/main/resources/dotcms-config-cluster.properties)
+- **Cluster config**: `dotCMS/src/main/resources/dotcms-config-cluster.properties`
   - Use for: Clustering, ES endpoints, reindexing, heartbeat settings
   - Example properties: `ES_ENDPOINTS`, `HEARTBEAT_TIMEOUT`, `REINDEX_THREAD_*`
 
-- **SAML config**: [dotcms-saml-default.properties](mdc:dotCMS/src/main/resources/dotcms-saml-default.properties)  
+- **SAML config**: `dotCMS/src/main/resources/dotcms-saml-default.properties`  
   - Use for: SAML authentication configuration
 
-- **Database config**: [db.properties](mdc:dotCMS/src/main/resources/db.properties)
+- **Database config**: `dotCMS/src/main/resources/db.properties`
   - Use for: Database connection settings
 
-- **Portal config**: [portal.properties](mdc:dotCMS/src/main/resources/portal.properties)
+- **Portal config**: `dotCMS/src/main/resources/portal.properties`
   - Use for: Portal/legacy configuration
 
 ### Decision Rules
 1. **Check existing files first**: If your property relates to functionality already configured in a specialized file, add it there
-2. **Use main config for new domains**: For new features or general configuration, use [dotmarketing-config.properties](mdc:dotCMS/src/main/resources/dotmarketing-config.properties)
+2. **Use main config for new domains**: For new features or general configuration, use `dotmarketing-config.properties`
 3. **Don't create new specialized files**: Avoid creating new `.properties` files unless absolutely necessary
 
 ## Property Naming Convention
@@ -154,6 +149,6 @@ dotCMS/src/main/resources/my-feature.properties  # Bad
 - Use `Config.getProperty()` for all configuration access
 - Properties use lowercase dot-separated naming in code
 - Environment variables automatically get `DOT_` prefix and uppercase conversion
-- Add general properties to [dotmarketing-config.properties](mdc:dotCMS/src/main/resources/dotmarketing-config.properties)
+- Add general properties to `dotmarketing-config.properties`
 - Add domain-specific properties to existing specialized files
 - Document environment variable names in comments
