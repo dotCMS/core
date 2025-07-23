@@ -105,9 +105,8 @@ export class DotLinkEditorPopoverComponent implements OnDestroy {
         placement: 'bottom',
         onClickOutside: (instance: Instance, event: MouseEvent) => {
             const target = event.target as HTMLElement;
-            // Check if user is clicking on the link popover options
-            const isLinkPopover = target.closest('[data-link-popover]');
-            if (isLinkPopover) {
+            const isLinkOption = target.closest('[data-link-option]');
+            if (isLinkOption) {
                 return;
             }
 

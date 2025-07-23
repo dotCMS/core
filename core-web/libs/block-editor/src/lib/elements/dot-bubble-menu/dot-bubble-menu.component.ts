@@ -166,7 +166,7 @@ export class DotBubbleMenuComponent implements OnInit {
     ];
 
     protected readonly tippyOptions: Partial<Props> = {
-        zIndex: 100,
+        zIndex: 5,
         maxWidth: '100%',
         placement: 'top-start',
         trigger: 'manual',
