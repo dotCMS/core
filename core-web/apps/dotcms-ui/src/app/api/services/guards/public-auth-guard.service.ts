@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { ActivatedRouteSnapshot, CanActivate, RouterStateSnapshot } from '@angular/router';
 
 import { map } from 'rxjs/operators';
@@ -13,10 +13,8 @@ import { LoginService } from '@dotcms/dotcms-js';
  */
 @Injectable()
 export class PublicAuthGuardService implements CanActivate {
-    constructor(
-        private router: DotRouterService,
-        private loginService: LoginService
-    ) {}
+    private router = inject(DotRouterService);
+    private loginService = inject(LoginService);
 
     /**
      * Guard checks is the User is logged in to redirect to the First Portlet otherwise approve the route request.

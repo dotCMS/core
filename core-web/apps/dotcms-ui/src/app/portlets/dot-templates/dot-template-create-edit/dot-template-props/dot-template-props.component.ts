@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
 
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
@@ -13,15 +13,13 @@ import { map, startWith } from 'rxjs/operators';
     styleUrls: ['./dot-template-props.component.scss']
 })
 export class DotTemplatePropsComponent implements OnInit {
+    private ref = inject(DynamicDialogRef);
+    private config = inject(DynamicDialogConfig);
+    private fb = inject(UntypedFormBuilder);
+
     form: UntypedFormGroup;
 
     isFormValid$: Observable<boolean>;
-
-    constructor(
-        private ref: DynamicDialogRef,
-        private config: DynamicDialogConfig,
-        private fb: UntypedFormBuilder
-    ) {}
 
     ngOnInit(): void {
         const { template } = this.config.data;

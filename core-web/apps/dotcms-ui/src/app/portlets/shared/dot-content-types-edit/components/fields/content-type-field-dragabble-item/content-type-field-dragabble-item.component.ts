@@ -6,7 +6,8 @@ import {
     Input,
     OnInit,
     Output,
-    ViewChild
+    ViewChild,
+    inject
 } from '@angular/core';
 
 import { OverlayPanel } from 'primeng/overlaypanel';
@@ -28,6 +29,9 @@ import { FieldService } from '../service';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ContentTypesFieldDragabbleItemComponent implements OnInit {
+    private dotMessageService = inject(DotMessageService);
+    fieldService = inject(FieldService);
+
     @Input()
     isSmall = false;
     @Input()
@@ -46,11 +50,6 @@ export class ContentTypesFieldDragabbleItemComponent implements OnInit {
     fieldTypeLabel: string;
     fieldAttributesString: string;
     icon: string;
-
-    constructor(
-        private dotMessageService: DotMessageService,
-        public fieldService: FieldService
-    ) {}
 
     ngOnInit(): void {
         this.fieldTypeLabel = this.field.fieldTypeLabel ? this.field.fieldTypeLabel : null;

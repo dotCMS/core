@@ -1,4 +1,4 @@
-import { Component, forwardRef, Input, OnInit, ViewChild } from '@angular/core';
+import { Component, forwardRef, Input, OnInit, ViewChild, inject } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 import { AutoComplete, AutoCompleteUnselectEvent } from 'primeng/autocomplete';
@@ -27,6 +27,8 @@ import { DotTag } from '@dotcms/dotcms-models';
     ]
 })
 export class DotAutocompleteTagsComponent implements OnInit, ControlValueAccessor {
+    private dotTagsService = inject(DotTagsService);
+
     @Input() placeholder: string;
 
     value: DotTag[] = [];
@@ -36,8 +38,6 @@ export class DotAutocompleteTagsComponent implements OnInit, ControlValueAccesso
     @ViewChild('autoComplete', { static: true }) autoComplete: AutoComplete;
 
     private lastDeletedTag: DotTag;
-
-    constructor(private dotTagsService: DotTagsService) {}
 
     propagateChange = (_: unknown) => {
         /* empty */

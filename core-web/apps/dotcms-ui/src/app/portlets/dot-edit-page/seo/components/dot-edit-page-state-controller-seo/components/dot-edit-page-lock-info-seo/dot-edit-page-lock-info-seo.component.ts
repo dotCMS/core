@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { Component, ElementRef, Input, ViewChild } from '@angular/core';
 
 import { InputSwitchModule } from 'primeng/inputswitch';
@@ -18,7 +17,7 @@ import { DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
     templateUrl: './dot-edit-page-lock-info-seo.component.html',
     styleUrls: ['./dot-edit-page-lock-info-seo.component.scss'],
     standalone: true,
-    imports: [CommonModule, InputSwitchModule, DotSafeHtmlPipe, DotMessagePipe]
+    imports: [InputSwitchModule, DotSafeHtmlPipe, DotMessagePipe]
 })
 export class DotEditPageLockInfoSeoComponent {
     @ViewChild('lockedPageMessage') lockedPageMessage: ElementRef;

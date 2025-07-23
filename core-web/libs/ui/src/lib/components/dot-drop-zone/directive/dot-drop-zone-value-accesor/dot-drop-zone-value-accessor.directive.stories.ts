@@ -2,7 +2,7 @@ import { action } from '@storybook/addon-actions';
 import { moduleMetadata, StoryObj, Meta } from '@storybook/angular';
 
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 import { DotDropZoneValueAccessorDirective } from './dot-drop-zone-value-accessor.directive';
@@ -60,6 +60,8 @@ import { DotDropZoneComponent } from '../../dot-drop-zone.component';
     `
 })
 class DotDropZoneValueAccessorTestComponent implements OnInit {
+    private fb = inject(FormBuilder);
+
     @Input() accept: string[];
     @Input() maxFileSize: number;
 
@@ -67,8 +69,6 @@ class DotDropZoneValueAccessorTestComponent implements OnInit {
     @Output() formErrors = new EventEmitter();
 
     myForm: FormGroup;
-
-    constructor(private fb: FormBuilder) {}
 
     ngOnInit() {
         this.myForm = this.fb.group({

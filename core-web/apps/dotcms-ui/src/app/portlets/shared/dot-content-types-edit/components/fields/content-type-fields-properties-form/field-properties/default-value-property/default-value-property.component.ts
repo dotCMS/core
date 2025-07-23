@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { UntypedFormGroup } from '@angular/forms';
 
 import { DotMessageService } from '@dotcms/data-access';
@@ -10,12 +10,12 @@ import { FieldProperty } from '../field-properties.model';
     templateUrl: './default-value-property.component.html'
 })
 export class DefaultValuePropertyComponent implements OnInit {
+    private dotMessageService = inject(DotMessageService);
+
     property: FieldProperty;
     group: UntypedFormGroup;
     errorLabel: string;
     private errorLabelsMap = new Map<string, string>();
-
-    constructor(private dotMessageService: DotMessageService) {}
 
     ngOnInit(): void {
         this.setErrorLabelMap();
