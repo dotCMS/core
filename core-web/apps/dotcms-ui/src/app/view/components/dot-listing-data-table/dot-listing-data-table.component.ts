@@ -9,7 +9,8 @@ import {
     Output,
     QueryList,
     TemplateRef,
-    ViewChild
+    ViewChild,
+    inject
 } from '@angular/core';
 
 import { LazyLoadEvent, MenuItem, PrimeTemplate } from 'primeng/api';
@@ -41,6 +42,9 @@ function tableFactory(dotListingDataTableComponent: DotListingDataTableComponent
     templateUrl: 'dot-listing-data-table.component.html'
 })
 export class DotListingDataTableComponent implements OnInit {
+    loggerService = inject(LoggerService);
+    paginatorService = inject(PaginatorService);
+
     @Input() columns: DataTableColumn[];
     @Input() url: string;
     @Input() actionHeaderOptions: ActionHeaderOptions;
@@ -81,10 +85,7 @@ export class DotListingDataTableComponent implements OnInit {
     maxLinksPage: number;
     totalRecords: number;
 
-    constructor(
-        public loggerService: LoggerService,
-        public paginatorService: PaginatorService
-    ) {
+    constructor() {
         this.paginatorService.url = this.url;
     }
 

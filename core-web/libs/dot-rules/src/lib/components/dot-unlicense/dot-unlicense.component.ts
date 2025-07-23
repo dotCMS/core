@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 
 import { I18nService } from '../../services/system/locale/I18n';
 
@@ -8,13 +8,13 @@ import { I18nService } from '../../services/system/locale/I18n';
     styleUrls: ['./dot-unlicense.component.scss']
 })
 export class DotUnlicenseComponent implements OnInit {
+    private resources = inject(I18nService);
+
     rulesTitle: string;
     onlyEnterpriseLabel: string;
     learnMoreEnterpriseLabel: string;
     contactUsLabel: string;
     requestTrialLabel: string;
-
-    constructor(private resources: I18nService) {}
 
     ngOnInit() {
         this.resources.get('com.dotcms.repackage.javax.portlet.title.rules').subscribe((label) => {

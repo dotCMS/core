@@ -6,8 +6,11 @@ import {
     effect,
     inject,
     input,
-    viewChild
+    viewChild,
+    ChangeDetectorRef,
+    DestroyRef
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ControlContainer, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { TreeSelect, TreeSelectModule } from 'primeng/treeselect';
@@ -43,6 +46,8 @@ export class DotEditContentHostFolderFieldComponent implements OnInit {
     $treeSelect = viewChild<TreeSelect>(TreeSelect);
 
     readonly #controlContainer = inject(ControlContainer);
+    readonly #cdr = inject(ChangeDetectorRef);
+    readonly #destroyRef = inject(DestroyRef);
     readonly store = inject(HostFolderFiledStore);
 
     pathControl = new FormControl();
@@ -56,6 +61,7 @@ export class DotEditContentHostFolderFieldComponent implements OnInit {
                 treeSelect.cd.detectChanges();
             }
         });
+
         effect(() => {
             const nodeSelected = this.store.nodeSelected();
             this.pathControl.setValue(nodeSelected);
@@ -74,6 +80,15 @@ export class DotEditContentHostFolderFieldComponent implements OnInit {
         this.store.loadSites({
             path: currentPath,
             isRequired
+        });
+
+        // Subscribe to form control status changes to sync disabled state
+        this.formControl.statusChanges.pipe(takeUntilDestroyed(this.#destroyRef)).subscribe(() => {
+            if (this.formControl.disabled && !this.pathControl.disabled) {
+                this.pathControl.disable({ emitEvent: false });
+            } else if (!this.formControl.disabled && this.pathControl.disabled) {
+                this.pathControl.enable({ emitEvent: false });
+            }
         });
     }
 

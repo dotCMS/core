@@ -1,6 +1,6 @@
 import { fromEvent as observableFromEvent, Subject } from 'rxjs';
 
-import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { Component, ElementRef, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
 import { LazyLoadEvent } from 'primeng/api';
@@ -24,6 +24,13 @@ import { DotAppsImportExportDialogComponent } from '../dot-apps-import-export-di
     styleUrls: ['./dot-apps-configuration.component.scss']
 })
 export class DotAppsConfigurationComponent implements OnInit, OnDestroy {
+    private dotAlertConfirmService = inject(DotAlertConfirmService);
+    private dotAppsService = inject(DotAppsService);
+    private dotMessageService = inject(DotMessageService);
+    private dotRouterService = inject(DotRouterService);
+    private route = inject(ActivatedRoute);
+    paginationService = inject(PaginatorService);
+
     @ViewChild('searchInput', { static: true }) searchInput: ElementRef;
     @ViewChild('importExportDialog') importExportDialog: DotAppsImportExportDialogComponent;
     apps: DotApp;
@@ -36,15 +43,6 @@ export class DotAppsConfigurationComponent implements OnInit, OnDestroy {
     totalRecords: number;
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
-
-    constructor(
-        private dotAlertConfirmService: DotAlertConfirmService,
-        private dotAppsService: DotAppsService,
-        private dotMessageService: DotMessageService,
-        private dotRouterService: DotRouterService,
-        private route: ActivatedRoute,
-        public paginationService: PaginatorService
-    ) {}
 
     ngOnInit() {
         this.route.data.pipe(pluck('data'), take(1)).subscribe((app: DotApp) => {

@@ -13,8 +13,9 @@
             {{ field.label }}
         </label>
     </ng-template>
+
     <div class="dot-apps-configuration-detail__form" #formContainer>
-        @for (field of formFields; track field) {
+        @for (field of $formFields(); track field) {
             <div [attr.data-testid]="field.name" class="field">
                 @switch (field.type) {
                     @case ('BUTTON') {
@@ -23,28 +24,26 @@
                                 labelField;
                                 context: { field: field }
                             "></ng-container>
-                        <button
-                            (click)="onIntegrate(field.value)"
-                            [id]="field.name"
-                            [label]="field.label"
-                            [disabled]="!appConfigured"
-                            pButton
-                            type="button"></button>
-                        <ng-container
-                            *ngTemplateOutlet="
-                                warningIcon;
-                                context: { field: field }
-                            "></ng-container>
+                        <div>
+                            <button
+                                (click)="onIntegrate(field.value)"
+                                [id]="field.name"
+                                [label]="field.label"
+                                [disabled]="!$appConfigured()"
+                                pButton
+                                type="button"></button>
+                            <ng-container
+                                *ngTemplateOutlet="
+                                    warningIcon;
+                                    context: { field: field }
+                                "></ng-container>
+                        </div>
                         <span class="form__group-hint">
                             <markdown>{{ field.hint }}</markdown>
                         </span>
                     }
                     @case ('STRING') {
-                        <ng-container
-                            *ngTemplateOutlet="
-                                labelField;
-                                context: { field: field }
-                            "></ng-container>
+                        <ng-container *ngTemplateOutlet="labelField; context: { field: field }" />
                         <ng-container
                             *ngTemplateOutlet="
                                 warningIcon;
@@ -60,6 +59,13 @@
                         <span class="p-field-hint">
                             <markdown>{{ field.hint }}</markdown>
                         </span>
+                    }
+                    @case ('GENERATED_STRING') {
+                        <ng-container *ngTemplateOutlet="labelField; context: { field: field }" />
+                        <dot-apps-configuration-detail-generated-string-field
+                            data-testid="generated-string-field"
+                            [formControlName]="field.name"
+                            [field]="field" />
                     }
                     @case ('BOOL') {
                         <p-checkbox
@@ -81,11 +87,7 @@
                         </span>
                     }
                     @case ('SELECT') {
-                        <ng-container
-                            *ngTemplateOutlet="
-                                labelField;
-                                context: { field: field }
-                            "></ng-container>
+                        <ng-container *ngTemplateOutlet="labelField; context: { field: field }" />
                         <ng-container
                             *ngTemplateOutlet="
                                 warningIcon;

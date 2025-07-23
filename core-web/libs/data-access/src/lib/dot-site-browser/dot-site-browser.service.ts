@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { take } from 'rxjs/operators';
 
@@ -13,7 +13,7 @@ import { CoreWebService, ResponseView } from '@dotcms/dotcms-js';
  */
 @Injectable()
 export class DotSiteBrowserService {
-    constructor(private coreWebService: CoreWebService) {}
+    private coreWebService = inject(CoreWebService);
 
     /**
      * Set the selected folder in the Site Browser portlet.

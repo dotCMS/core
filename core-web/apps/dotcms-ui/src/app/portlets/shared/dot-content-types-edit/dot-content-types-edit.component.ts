@@ -1,7 +1,7 @@
 import { Subject } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { Component, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { MenuItem } from 'primeng/api';
@@ -42,6 +42,17 @@ import { ContentTypesFormComponent } from './components/form';
     styleUrls: ['./dot-content-types-edit.component.scss']
 })
 export class DotContentTypesEditComponent implements OnInit, OnDestroy {
+    private contentTypesInfoService = inject(DotContentTypesInfoService);
+    private crudService = inject(DotCrudService);
+    private dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
+    private dotEventsService = inject(DotEventsService);
+    private dotRouterService = inject(DotRouterService);
+    private fieldService = inject(FieldService);
+    private route = inject(ActivatedRoute);
+    private dotMessageService = inject(DotMessageService);
+    router = inject(Router);
+    private dotEditContentTypeCacheService = inject(DotEditContentTypeCacheService);
+
     @ViewChild('form')
     contentTypesForm: ContentTypesFormComponent;
 
@@ -62,19 +73,6 @@ export class DotContentTypesEditComponent implements OnInit, OnDestroy {
     loadingFields = false;
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
-
-    constructor(
-        private contentTypesInfoService: DotContentTypesInfoService,
-        private crudService: DotCrudService,
-        private dotHttpErrorManagerService: DotHttpErrorManagerService,
-        private dotEventsService: DotEventsService,
-        private dotRouterService: DotRouterService,
-        private fieldService: FieldService,
-        private route: ActivatedRoute,
-        private dotMessageService: DotMessageService,
-        public router: Router,
-        private dotEditContentTypeCacheService: DotEditContentTypeCacheService
-    ) {}
 
     ngOnInit(): void {
         this.route.data

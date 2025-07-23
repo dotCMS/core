@@ -1,6 +1,5 @@
 import { from, Observable, of } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
 import {
     Component,
     EventEmitter,
@@ -9,7 +8,8 @@ import {
     OnInit,
     Output,
     SimpleChanges,
-    ViewChild
+    ViewChild,
+    inject
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
@@ -56,7 +56,6 @@ enum DotConfirmationType {
     styleUrls: ['./dot-edit-page-state-controller-seo.component.scss'],
     standalone: true,
     imports: [
-        CommonModule,
         FormsModule,
         InputSwitchModule,
         SelectButtonModule,
@@ -71,6 +70,13 @@ enum DotConfirmationType {
     ]
 })
 export class DotEditPageStateControllerSeoComponent implements OnInit, OnChanges {
+    private dotAlertConfirmService = inject(DotAlertConfirmService);
+    private dotMessageService = inject(DotMessageService);
+    private dotPageStateService = inject(DotPageStateService);
+    private dotPersonalizeService = inject(DotPersonalizeService);
+    private dotContentletEditor = inject(DotContentletEditorService);
+    private dotPropertiesService = inject(DotPropertiesService);
+
     @ViewChild('pageLockInfo', { static: true })
     pageLockInfo: DotEditPageLockInfoSeoComponent;
     @ViewChild('deviceSelector') deviceSelector: DotDeviceSelectorSeoComponent;
@@ -106,15 +112,6 @@ export class DotEditPageStateControllerSeoComponent implements OnInit, OnChanges
     };
 
     private readonly featureFlagEditURLContentMap = FeaturedFlags.FEATURE_FLAG_EDIT_URL_CONTENT_MAP;
-
-    constructor(
-        private dotAlertConfirmService: DotAlertConfirmService,
-        private dotMessageService: DotMessageService,
-        private dotPageStateService: DotPageStateService,
-        private dotPersonalizeService: DotPersonalizeService,
-        private dotContentletEditor: DotContentletEditorService,
-        private dotPropertiesService: DotPropertiesService
-    ) {}
 
     ngOnChanges(changes: SimpleChanges) {
         const pageState = changes.pageState?.currentValue;

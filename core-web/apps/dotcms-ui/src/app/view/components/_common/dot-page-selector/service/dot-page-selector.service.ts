@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { flatMap, map, pluck } from 'rxjs/operators';
 
@@ -39,7 +39,7 @@ const MAX_RESULTS_SIZE = 20;
 
 @Injectable()
 export class DotPageSelectorService {
-    constructor(private coreWebService: CoreWebService) {}
+    private coreWebService = inject(CoreWebService);
 
     /**
      * Get page asset by identifier

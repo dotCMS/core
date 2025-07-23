@@ -76,7 +76,7 @@
         <docker.jacoco.skip>true</docker.jacoco.skip>
         <!-- starter -->
         <starter.download.folder>${project.build.directory}/starter</starter.download.folder>
-        <starter.deploy.version>empty_20250528</starter.deploy.version>
+        <starter.deploy.version>empty_20250714</starter.deploy.version>
         <starter.deploy.filename>starter.zip</starter.deploy.filename>
         <starter.run.version>${starter.deploy.version}</starter.run.version>
         <starter.run.filename>starter-${starter.run.version}.zip</starter.run.filename>
@@ -127,6 +127,7 @@
         <version.surefire.plugin>3.2.5</version.surefire.plugin>
         <version.failsafe.plugin>${version.surefire.plugin}</version.failsafe.plugin>
         <version.findbugs.plugin>3.0.5</version.findbugs.plugin>
+        <version.swagger-maven.plugin>2.2.34</version.swagger-maven.plugin>
         <version.gpg.plugin>3.1.0</version.gpg.plugin>
         <version.help.plugin>3.4.0</version.help.plugin>
         <version.install.plugin>3.1.1</version.install.plugin>
@@ -977,6 +978,11 @@
                     <groupId>${quarkus.platform.group-id}</groupId>
                     <artifactId>quarkus-maven-plugin</artifactId>
                     <version>${quarkus.platform.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>io.swagger.core.v3</groupId>
+                    <artifactId>swagger-maven-plugin</artifactId>
+                    <version>${version.swagger-maven.plugin}</version>
                 </plugin>
             </plugins>
         </pluginManagement>

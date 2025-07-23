@@ -2,7 +2,8 @@
     <div
         [ngClass]="{
             'binary-field__container--uploading': vm.status === BinaryFieldStatus.UPLOADING,
-            'binary-field__container--empty': vm.status === BinaryFieldStatus.INIT
+            'binary-field__container--empty': vm.status === BinaryFieldStatus.INIT,
+            'binary-field__container--disabled': $disabled()
         }"
         class="binary-field__container">
         @switch (vm.status) {
@@ -16,10 +17,14 @@
                         (fileDropped)="handleFileDrop($event)"
                         [accept]="accept"
                         [maxFileSize]="maxFileSize"
+                        [disabled]="$disabled()"
                         data-testId="dropzone">
-                        <dot-binary-field-ui-message [uiMessage]="vm.uiMessage">
+                        <dot-binary-field-ui-message
+                            [uiMessage]="vm.uiMessage"
+                            [disabled]="$disabled()">
                             <button
                                 (click)="openFilePicker()"
+                                [disabled]="$disabled()"
                                 class="binary-field__drop-zone-btn"
                                 data-testId="choose-file-btn"
                                 type="button">
@@ -30,6 +35,7 @@
                     <input
                         (change)="handleFileSelection($event)"
                         [accept]="accept.join(',')"
+                        [disabled]="$disabled()"
                         #inputFile
                         data-testId="binary-field__file-input"
                         type="file" />
@@ -39,6 +45,7 @@
                     @if (systemOptions().allowURLImport) {
                         <p-button
                             (click)="openDialog(BinaryFieldMode.URL)"
+                            [disabled]="$disabled()"
                             [label]="'dot.binary.field.action.import.from.url' | dm"
                             data-testId="action-url-btn"
                             icon="pi pi-link"
@@ -47,6 +54,7 @@
                     @if (systemOptions().allowCodeWrite) {
                         <p-button
                             (click)="openDialog(BinaryFieldMode.EDITOR)"
+                            [disabled]="$disabled()"
                             [label]="'dot.binary.field.action.create.new.file' | dm"
                             data-testId="action-editor-btn"
                             icon="pi pi-code"
@@ -54,7 +62,7 @@
                     }
                     @if (systemOptions().allowGenerateImg) {
                         <p-button
-                            [disabled]="!$isAIPluginInstalled()"
+                            [disabled]="!$isAIPluginInstalled() || $disabled()"
                             tooltipPosition="bottom"
                             [pTooltip]="$tooltipTextAIBtn()"
                             (click)="openDialog(BinaryFieldMode.AI)"
@@ -92,6 +100,7 @@
                     (editImage)="onEditImage()"
                     (removeFile)="removeFile()"
                     [contentlet]="vm.contentlet"
+                    [disabled]="$disabled()"
                     [editableImage]="vm.isEnterprise && imageEditor"
                     [tempFile]="vm.tempFile"
                     [fieldVariable]="$variable()"

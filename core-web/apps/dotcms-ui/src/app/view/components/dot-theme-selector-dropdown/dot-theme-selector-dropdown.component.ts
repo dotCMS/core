@@ -7,7 +7,8 @@ import {
     forwardRef,
     OnDestroy,
     OnInit,
-    ViewChild
+    ViewChild,
+    inject
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
@@ -36,6 +37,10 @@ import { DotTheme } from '@dotcms/dotcms-models';
 export class DotThemeSelectorDropdownComponent
     implements OnInit, OnDestroy, ControlValueAccessor, AfterViewInit
 {
+    readonly paginatorService = inject(PaginatorService);
+    private readonly siteService = inject(SiteService);
+    private readonly themesService = inject(DotThemesService);
+
     themes: DotTheme[] = [];
     value: DotTheme = null;
     totalRecords = 0;
@@ -67,12 +72,6 @@ export class DotThemeSelectorDropdownComponent
 
     private initialLoad = true;
     private destroy$: Subject<boolean> = new Subject<boolean>();
-
-    constructor(
-        public readonly paginatorService: PaginatorService,
-        private readonly siteService: SiteService,
-        private readonly themesService: DotThemesService
-    ) {}
 
     ngOnInit(): void {
         const interval = setInterval(() => {

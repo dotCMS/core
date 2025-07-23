@@ -189,6 +189,7 @@ cube('request', {
     }
   },*/
   dimensions: {
+    eventType: { sql: 'event_type', type: `string` },
     userAgent: { sql: 'user_agent', type: `string` },
     referer: { sql: 'referer', type: `string` },
     url: { sql: 'url', type: `string` },
@@ -215,7 +216,8 @@ cube('request', {
     userId: { sql: 'context_user_id', type: `string` },
     requestId: { sql: 'request_id', type: `string` },
     clusterId: { sql: 'cluster_id', type: `string` },
-    customerId: { sql: 'customer_id', type: `string` }
+    customerId: { sql: 'customer_id', type: `string` },
+    createdAt: { sql: 'utc_time', type: `time`, },
   },
   measures: {
     count: {
@@ -230,6 +232,11 @@ cube('request', {
       sql: 'request_id',
       type: 'countDistinct',
       title: 'Total Requests'
+    },
+    totalUsers: {
+      sql: 'context_user_id',
+      type: 'countDistinct',
+      title: 'Total Users'
     }
   }
 });
