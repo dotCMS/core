@@ -29,7 +29,6 @@ import { DotAiService } from '@dotcms/data-access';
 import { DotImageEditorPopoverComponent } from './components/dot-image-editor-popover/dot-image-editor-popover.component';
 import { DotLinkEditorPopoverComponent } from './components/dot-link-editor-popover/dot-link-editor-popover.component';
 
-import { EditorModalDirective } from '../../directive/editor-modal.directive';
 import { AI_IMAGE_PROMPT_EXTENSION_NAME } from '../../extensions/ai-image-prompt/ai-image-prompt.extension';
 import {
     codeIcon,
@@ -75,10 +74,9 @@ const BUBBLE_MENU_HIDDEN_NODES = {
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotBubbleMenuComponent implements OnInit {
-    dropdown = viewChild.required<Dropdown>('dropdown');
+    dropdown = viewChild<Dropdown>('dropdown');
     linkModal = viewChild.required<DotLinkEditorPopoverComponent>('linkModal');
     imageModal = viewChild.required<DotImageEditorPopoverComponent>('imageModal');
-    editorModal = viewChild.required<EditorModalDirective>('editorModal');
     bubbleMenuRef = viewChild.required<ElementRef<HTMLElement>>('bubbleMenu');
 
     readonly editor = input.required<Editor>();
@@ -175,8 +173,8 @@ export class DotBubbleMenuComponent implements OnInit {
         zIndex: 100,
         onClickOutside: (instance: Instance, event: MouseEvent) => {
             const target = event.target as Node;
-            const isImageElement = this.imageModal()?.tippyElement.contains(target);
-            const isLinkElement = this.linkModal()?.tippyElement.contains(target);
+            const isImageElement = this.imageModal().tippyElement?.contains(target);
+            const isLinkElement = this.linkModal().tippyElement?.contains(target);
 
             if (isImageElement || isLinkElement) {
                 return;
