@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { ActivatedRouteSnapshot, CanActivateChild, RouterStateSnapshot } from '@angular/router';
 
 import { map } from 'rxjs/operators';
@@ -13,10 +13,8 @@ import { DotContentTypeService } from '@dotcms/data-access';
  */
 @Injectable()
 export class ContentletGuardService implements CanActivateChild {
-    constructor(
-        private dotContentTypeService: DotContentTypeService,
-        private dotNavigationService: DotNavigationService
-    ) {}
+    private dotContentTypeService = inject(DotContentTypeService);
+    private dotNavigationService = inject(DotNavigationService);
 
     canActivateChild(
         route: ActivatedRouteSnapshot,

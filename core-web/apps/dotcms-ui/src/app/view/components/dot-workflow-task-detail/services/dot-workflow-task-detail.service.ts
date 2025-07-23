@@ -1,6 +1,6 @@
 import { BehaviorSubject, Observable, of } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { map, mergeMap } from 'rxjs/operators';
 
@@ -19,10 +19,10 @@ export interface DotTaskAction {
  */
 @Injectable()
 export class DotWorkflowTaskDetailService {
+    private dotMenuService = inject(DotMenuService);
+
     private data: BehaviorSubject<DotTaskAction> = new BehaviorSubject(null);
     private _header: BehaviorSubject<string> = new BehaviorSubject('');
-
-    constructor(private dotMenuService: DotMenuService) {}
 
     get viewUrl$(): Observable<string> {
         return this.data.pipe(mergeMap((action: DotTaskAction) => this.getViewUrl(action)));

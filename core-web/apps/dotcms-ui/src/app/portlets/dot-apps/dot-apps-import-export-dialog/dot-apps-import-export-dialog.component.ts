@@ -9,7 +9,8 @@ import {
     OnDestroy,
     Output,
     SimpleChanges,
-    ViewChild
+    ViewChild,
+    inject
 } from '@angular/core';
 import {
     UntypedFormBuilder,
@@ -37,6 +38,10 @@ import {
     styleUrls: ['./dot-apps-import-export-dialog.component.scss']
 })
 export class DotAppsImportExportDialogComponent implements OnChanges, OnDestroy {
+    private dotAppsService = inject(DotAppsService);
+    private dotMessageService = inject(DotMessageService);
+    private fb = inject(UntypedFormBuilder);
+
     @ViewChild('importFile') importFile: ElementRef;
     @Input() action?: string;
     @Input() app?: DotApp;
@@ -51,12 +56,6 @@ export class DotAppsImportExportDialogComponent implements OnChanges, OnDestroy 
     dialogHeaderKey = '';
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
-
-    constructor(
-        private dotAppsService: DotAppsService,
-        private dotMessageService: DotMessageService,
-        private fb: UntypedFormBuilder
-    ) {}
 
     ngOnChanges(changes: SimpleChanges): void {
         if (changes?.action?.currentValue) {

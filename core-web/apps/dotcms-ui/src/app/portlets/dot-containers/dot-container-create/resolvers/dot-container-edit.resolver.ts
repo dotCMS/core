@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { ActivatedRouteSnapshot, Resolve, RouterStateSnapshot } from '@angular/router';
 
 import { DotContainerEntity } from '@dotcms/dotcms-models';
@@ -8,7 +8,7 @@ import { DotContainersService } from '@services/dot-containers/dot-containers.se
 
 @Injectable()
 export class DotContainerEditResolver implements Resolve<DotContainerEntity> {
-    constructor(private service: DotContainersService) {}
+    private service = inject(DotContainersService);
 
     resolve(
         route: ActivatedRouteSnapshot,

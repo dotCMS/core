@@ -8,7 +8,8 @@ import {
     HostBinding,
     Input,
     OnInit,
-    Output
+    Output,
+    inject
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { DomSanitizer, SafeStyle } from '@angular/platform-browser';
@@ -29,6 +30,8 @@ import { SelectItem } from 'primeng/api';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotTextareaContentComponent implements OnInit, ControlValueAccessor {
+    private sanitizer = inject(DomSanitizer);
+
     @Input()
     code = {
         mode: 'text',
@@ -94,8 +97,6 @@ export class DotTextareaContentComponent implements OnInit, ControlValueAccessor
         { label: 'Plain', value: 'plain' },
         { label: 'Code', value: 'code' }
     ];
-
-    constructor(private sanitizer: DomSanitizer) {}
 
     propagateChange = (_: string) => {
         /**/

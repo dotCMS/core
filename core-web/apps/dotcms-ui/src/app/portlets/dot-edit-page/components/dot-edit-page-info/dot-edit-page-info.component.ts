@@ -1,5 +1,5 @@
 import { DOCUMENT } from '@angular/common';
-import { ChangeDetectionStrategy, Component, Inject, Input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Input, inject } from '@angular/core';
 
 /**
  * Basic page information for edit mode
@@ -14,13 +14,17 @@ import { ChangeDetectionStrategy, Component, Inject, Input } from '@angular/core
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotEditPageInfoComponent {
+    private document = inject<Document>(DOCUMENT);
+
     @Input() title: string;
     @Input() url: string;
     innerApiLink: string;
     previewUrl: string;
     baseUrl: string;
 
-    constructor(@Inject(DOCUMENT) private document: Document) {
+    constructor() {
+        const document = this.document;
+
         this.baseUrl = document.defaultView.location.href.includes('edit-page')
             ? document.defaultView.location.origin
             : '';

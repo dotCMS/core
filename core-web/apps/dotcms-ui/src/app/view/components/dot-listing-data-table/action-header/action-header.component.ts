@@ -1,4 +1,11 @@
-import { Component, Input, OnChanges, SimpleChanges, ViewEncapsulation } from '@angular/core';
+import {
+    Component,
+    Input,
+    OnChanges,
+    SimpleChanges,
+    ViewEncapsulation,
+    inject
+} from '@angular/core';
 
 import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
 import { ActionHeaderOptions, ButtonAction } from '@models/action-header';
@@ -10,16 +17,14 @@ import { ActionHeaderOptions, ButtonAction } from '@models/action-header';
     templateUrl: 'action-header.component.html'
 })
 export class ActionHeaderComponent implements OnChanges {
+    private dotMessageService = inject(DotMessageService);
+    private dotDialogService = inject(DotAlertConfirmService);
+
     @Input() selectedItems = [];
 
     @Input() options: ActionHeaderOptions;
 
     public dynamicOverflow = 'visible';
-
-    constructor(
-        private dotMessageService: DotMessageService,
-        private dotDialogService: DotAlertConfirmService
-    ) {}
 
     ngOnChanges(changes: SimpleChanges): void {
         if (changes.selected) {

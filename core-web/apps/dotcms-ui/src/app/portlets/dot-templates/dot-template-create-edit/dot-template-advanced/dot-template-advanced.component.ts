@@ -8,7 +8,8 @@ import {
     OnDestroy,
     OnInit,
     Output,
-    SimpleChanges
+    SimpleChanges,
+    inject
 } from '@angular/core';
 import { UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
 
@@ -42,6 +43,9 @@ interface MonacoEditor {
     styleUrls: ['./dot-template-advanced.scss']
 })
 export class DotTemplateAdvancedComponent implements OnInit, OnDestroy, OnChanges {
+    private fb = inject(UntypedFormBuilder);
+    private dotMessageService = inject(DotMessageService);
+
     @Output() updateTemplate = new EventEmitter<DotTemplateItem>();
     @Output() save = new EventEmitter<DotTemplateItem>();
     @Output() cancel = new EventEmitter();
@@ -54,11 +58,6 @@ export class DotTemplateAdvancedComponent implements OnInit, OnDestroy, OnChange
     form: UntypedFormGroup;
     actions: DotPortletToolbarActions;
     private destroy$: Subject<boolean> = new Subject<boolean>();
-
-    constructor(
-        private fb: UntypedFormBuilder,
-        private dotMessageService: DotMessageService
-    ) {}
 
     ngOnInit(): void {
         this.form = this.fb.group({ body: this.body });

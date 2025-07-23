@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 
 import { MessageService } from 'primeng/api';
 
@@ -20,10 +20,8 @@ import { DotMessage } from '@dotcms/dotcms-models';
     templateUrl: 'dot-message-display.component.html'
 })
 export class DotMessageDisplayComponent implements OnInit, OnDestroy {
-    constructor(
-        private dotMessageDisplayService: DotMessageDisplayService,
-        private messageService: MessageService
-    ) {}
+    private dotMessageDisplayService = inject(DotMessageDisplayService);
+    private messageService = inject(MessageService);
 
     ngOnInit() {
         this.dotMessageDisplayService.messages().subscribe((dotMessage: DotMessage) => {
