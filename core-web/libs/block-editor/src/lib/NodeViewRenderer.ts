@@ -55,7 +55,7 @@ class AngularNodeView extends NodeView<
             editor: this.editor,
             node: this.node,
             decorations: this.decorations as readonly DecorationWithType[],
-            selected: true,
+            selected: false,
             extension: this.extension,
             getPos: () => this.getPos(),
             updateAttributes: (attributes = {}) => this.updateAttributes(attributes),
