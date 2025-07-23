@@ -89,7 +89,7 @@ export const DotAnalyticsSearchStore = signalStore(
                     switchMap(() => {
                         const query = isValidJson(store.query().value) as JsonObject;
 
-                        return analyticsSearchService.get(query, store.query.type()).pipe(
+                        return analyticsSearchService.get(query, store.query().type).pipe(
                             tapResponse({
                                 next: (results: JsonObject[]) => {
                                     patchState(store, {
