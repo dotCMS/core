@@ -1,5 +1,5 @@
 import { Observable, Subject } from 'rxjs';
-import { Placement } from 'tippy.js';
+import { Instance, Props } from 'tippy.js';
 
 import { HttpClient } from '@angular/common/http';
 import {
@@ -98,11 +98,21 @@ export class DotLinkEditorPopoverComponent implements OnDestroy {
         }
     });
 
-    readonly tippyModalOptions = {
+    readonly tippyModalOptions: Partial<Props> = {
         onShow: this.initializeExistingLinkData.bind(this),
         onShown: this.focusSearchInput.bind(this),
         onHide: this.clearEditorHighlight.bind(this),
-        placement: 'bottom' as Placement
+        placement: 'bottom',
+        onClickOutside: (instance: Instance, event: MouseEvent) => {
+            const target = event.target as HTMLElement;
+            // Check if user is clicking on the link popover options
+            const isLinkPopover = target.closest('[data-link-popover]');
+            if (isLinkPopover) {
+                return;
+            }
+
+            instance.hide();
+        }
     };
 
     /**

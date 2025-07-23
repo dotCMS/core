@@ -167,6 +167,7 @@
     <div class="divider"></div>
     <button
         class="bubble-menu-button bubble-menu-button--icon"
+        [attr.data-link-popover]="true"
         [class.is-active]="imageHasLink()"
         (click)="toggleLinkModal($event)">
         <span class="material-icons">link</span>

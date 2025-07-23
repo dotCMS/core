@@ -1,5 +1,5 @@
 import { TiptapBubbleMenuDirective } from 'ngx-tiptap';
-import { Instance, Placement, Props } from 'tippy.js';
+import { Instance, Props } from 'tippy.js';
 
 import { CommonModule } from '@angular/common';
 import {
@@ -166,11 +166,11 @@ export class DotBubbleMenuComponent implements OnInit {
     ];
 
     protected readonly tippyOptions: Partial<Props> = {
-        maxWidth: '100%',
-        onBeforeUpdate: this.onBeforeUpdate.bind(this),
-        placement: 'top-start' as Placement,
-        trigger: 'manual',
         zIndex: 100,
+        maxWidth: '100%',
+        placement: 'top-start',
+        trigger: 'manual',
+        onBeforeUpdate: this.onBeforeUpdate.bind(this),
         onClickOutside: (instance: Instance, event: MouseEvent) => {
             const target = event.target as Node;
             const isImageElement = this.imageModal().tippyElement?.contains(target);
