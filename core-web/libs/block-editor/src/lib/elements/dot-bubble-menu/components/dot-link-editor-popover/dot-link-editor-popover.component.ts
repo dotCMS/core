@@ -103,15 +103,7 @@ export class DotLinkEditorPopoverComponent implements OnDestroy {
         onShown: this.focusSearchInput.bind(this),
         onHide: this.clearEditorHighlight.bind(this),
         placement: 'bottom',
-        onClickOutside: (instance: Instance, event: MouseEvent) => {
-            const target = event.target as HTMLElement;
-            const isLinkOption = target.closest('[data-link-option]');
-            if (isLinkOption) {
-                return;
-            }
-
-            instance.hide();
-        }
+        onClickOutside: this.onClickOutside.bind(this)
     };
 
     /**
@@ -321,5 +313,21 @@ export class DotLinkEditorPopoverComponent implements OnDestroy {
                 limit: 5
             })
             .pipe(pluck('entity', 'jsonObjectView', 'contentlets'));
+    }
+
+    /**
+     * Handles clicks outside the link editor popover.
+     * If the click is on a link option, it does not hide the popover.
+     * @param instance - The Tippy instance.
+     * @param event - The mouse event.
+     */
+    private onClickOutside(instance: Instance, event: MouseEvent) {
+        const target = event.target as HTMLElement;
+        const clickedOnBubbleMenu = target?.closest('[tiptapbubblemenu]');
+        if (clickedOnBubbleMenu) {
+            return;
+        }
+
+        instance.hide();
     }
 }

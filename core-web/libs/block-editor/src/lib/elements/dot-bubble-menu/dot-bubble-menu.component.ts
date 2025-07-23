@@ -171,18 +171,7 @@ export class DotBubbleMenuComponent implements OnInit {
         placement: 'top-start',
         trigger: 'manual',
         onBeforeUpdate: this.onBeforeUpdate.bind(this),
-        onClickOutside: (instance: Instance, event: MouseEvent) => {
-            const target = event.target as Node;
-            const isImageElement = this.imageModal().tippyElement?.contains(target);
-            const isLinkElement = this.linkModal().tippyElement?.contains(target);
-
-            if (isImageElement || isLinkElement) {
-                return;
-            }
-
-            instance.hide();
-            this.closePopups();
-        }
+        onClickOutside: this.onClickOutside.bind(this)
     };
 
     ngOnInit() {
@@ -287,5 +276,18 @@ export class DotBubbleMenuComponent implements OnInit {
     private checkIfShowImageMenu() {
         const currentNodeType = getCurrentNodeType(this.editor());
         this.showImageMenu.set(currentNodeType === 'dotImage');
+    }
+
+    private onClickOutside(instance: Instance, event: MouseEvent) {
+        const target = event.target as HTMLElement;
+        const isImageElement = this.imageModal().tippyElement?.contains(target);
+        const isLinkElement = this.linkModal().tippyElement?.contains(target);
+
+        if (isImageElement || isLinkElement) {
+            return;
+        }
+
+        instance.hide();
+        this.closePopups();
     }
 }

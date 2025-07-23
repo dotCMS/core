@@ -127,7 +127,6 @@
     <button
         class="bubble-menu-button bubble-menu-button--icon"
         [class.is-active]="editor().isActive('link')"
-        [attr.data-link-option]="true"
         (click)="toggleLinkModal($event)">
         <span class="material-icons">link</span>
     </button>
@@ -168,7 +167,6 @@
     <div class="divider"></div>
     <button
         class="bubble-menu-button bubble-menu-button--icon"
-        [attr.data-link-option]="true"
         [class.is-active]="imageHasLink()"
         (click)="toggleLinkModal($event)">
         <span class="material-icons">link</span>
