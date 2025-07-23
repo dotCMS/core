@@ -64,9 +64,9 @@ export interface Action {
 
 export async function getActionsByContentlet(
   request: APIRequestContext,
-  identifier: string,
+  inode: string,
 ) {
-  const endpoint = `/api/v1/workflow/contentlet/${identifier}/actions?renderMode=LISTING`;
+  const endpoint = `/api/v1/workflow/contentlet/${inode}/actions?renderMode=LISTING`;
   const response = await request.get(endpoint, {
     headers: {
       Authorization: generateBase64Credentials(
