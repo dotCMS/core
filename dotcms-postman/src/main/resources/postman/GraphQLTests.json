@@ -1110,6 +1110,7 @@
 											"    pm.expect(page[\"canEdit\"], 'FAILED:[canEdit]').equal(true);",
 											"    pm.expect(page[\"canLock\"], 'FAILED:[canLock]').equal(true);",
 											"    pm.expect(page[\"canRead\"], 'FAILED:[canRead]').equal(true);",
+											"    pm.expect(page[\"canSeeRules\"], 'FAILED:[canSeeRules]').equal(true);",
 											"    pm.expect(page[\"deleted\"], 'FAILED:[deleted]').equal(false);",
 											"    pm.expect(page[\"extension\"]).equal(\"page\");",
 											"    pm.expect(page[\"folder\"]).equal(\"6c8a2ac4-36a7-4b01-b9c0-c2c1d91ddfdb\");",
@@ -1232,6 +1233,7 @@
 											"    pm.expect(page[\"canEdit\"], 'FAILED:[canEdit]').equal(true);",
 											"    pm.expect(page[\"canLock\"], 'FAILED:[canLock]').equal(true);",
 											"    pm.expect(page[\"canRead\"], 'FAILED:[canRead]').equal(true);",
+											"    pm.expect(page[\"canSeeRules\"], 'FAILED:[canSeeRules]').equal(true);",
 											"    pm.expect(page[\"deleted\"], 'FAILED:[deleted]').equal(false);",
 											"    pm.expect(page[\"extension\"]).equal(\"page\");",
 											"    pm.expect(page[\"folder\"].folderId).equal(\"6c8a2ac4-36a7-4b01-b9c0-c2c1d91ddfdb\");",
@@ -1304,7 +1306,7 @@
 								"body": {
 									"mode": "graphql",
 									"graphql": {
-										"query": "{\n  page(url:\"/destinations/costa-rica\") {\n    archived\n    baseType\n    cachettl\n    canEdit\n    canLock\n    canRead\n    contentType\n    deleted\n    description\n    extension\n    friendlyName\n    folder {\n      folderId\n      folderName\n    }\n    hasLiveVersion\n    hasTitleImage\n    host {\n      identifier\n      hostName\n    }\n    httpsRequired\n    identifier\n    image\n    imageContentAsset\n    imageVersion\n    inode\n    isContentlet\n    conLanguage {\n      id\n    }\n    live\n    liveInode\n    locked\n    mimeType\n    modDate\n    modUser {\n      userId\n      firstName\n      lastName\n    }\n    name\n    owner {\n      userId\n    }\n    pageURI\n    pageUrl\n    path\n    publishDate\n    seoTitle\n    seodescription\n    shortDescription\n    shortyLive\n    shortyWorking\n    sortOrder\n    stInode \n    statusIcons\n    tags\n    title\n    titleImage {\n      name\n      idPath\n      versionPath\n    }\n    type\n    url\n    working\n    workingInode\n  }\n}",
+										"query": "{\n  page(url:\"/destinations/costa-rica\") {\n    archived\n    baseType\n    cachettl\n    canEdit\n    canLock\n    canRead\n    canSeeRules\n    contentType\n    deleted\n    description\n    extension\n    friendlyName\n    folder {\n      folderId\n      folderName\n    }\n    hasLiveVersion\n    hasTitleImage\n    host {\n      identifier\n      hostName\n    }\n    httpsRequired\n    identifier\n    image\n    imageContentAsset\n    imageVersion\n    inode\n    isContentlet\n    conLanguage {\n      id\n    }\n    live\n    liveInode\n    locked\n    mimeType\n    modDate\n    modUser {\n      userId\n      firstName\n      lastName\n    }\n    name\n    owner {\n      userId\n    }\n    pageURI\n    pageUrl\n    path\n    publishDate\n    seoTitle\n    seodescription\n    shortDescription\n    shortyLive\n    shortyWorking\n    sortOrder\n    stInode \n    statusIcons\n    tags\n    title\n    titleImage {\n      name\n      idPath\n      versionPath\n    }\n    type\n    url\n    working\n    workingInode\n  }\n}",
 										"variables": ""
 									}
 								},
