@@ -6,7 +6,8 @@ import {
     HostListener,
     Input,
     Output,
-    ViewChild
+    ViewChild,
+    inject
 } from '@angular/core';
 
 import { DotMenu, DotMenuItem } from '@dotcms/dotcms-models';
@@ -20,6 +21,8 @@ import { DotSubNavComponent } from '../dot-sub-nav/dot-sub-nav.component';
     styleUrls: ['./dot-nav-item.component.scss']
 })
 export class DotNavItemComponent {
+    private hostElRef = inject(ElementRef);
+
     @ViewChild('subnav', { static: true }) subnav: DotSubNavComponent;
 
     @Input() data: DotMenu;
@@ -39,8 +42,6 @@ export class DotNavItemComponent {
 
     private windowHeight = window.innerHeight;
     labelImportantIcon = LABEL_IMPORTANT_ICON;
-
-    constructor(private hostElRef: ElementRef) {}
 
     @HostListener('mouseleave', ['$event'])
     menuUnhovered() {

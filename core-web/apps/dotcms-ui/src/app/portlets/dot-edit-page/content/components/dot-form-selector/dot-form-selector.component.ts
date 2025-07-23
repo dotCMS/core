@@ -6,7 +6,8 @@ import {
     OnInit,
     Output,
     SimpleChanges,
-    ViewChild
+    ViewChild,
+    inject
 } from '@angular/core';
 
 import { LazyLoadEvent } from 'primeng/api';
@@ -25,6 +26,8 @@ import { DotDialogComponent } from '@dotcms/ui';
     providers: [PaginatorService]
 })
 export class DotFormSelectorComponent implements OnInit, OnChanges {
+    paginatorService = inject(PaginatorService);
+
     @Input() show = false;
 
     @Output() pick = new EventEmitter<DotCMSContentType>();
@@ -37,8 +40,6 @@ export class DotFormSelectorComponent implements OnInit, OnChanges {
 
     items: DotCMSContentType[];
     contentMinHeight: string;
-
-    constructor(public paginatorService: PaginatorService) {}
 
     ngOnInit() {
         this.paginatorService.paginationPerPage = 5;

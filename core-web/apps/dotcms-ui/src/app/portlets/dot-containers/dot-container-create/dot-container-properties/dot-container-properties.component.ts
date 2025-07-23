@@ -26,6 +26,10 @@ import {
     providers: [DotContainerPropertiesStore]
 })
 export class DotContainerPropertiesComponent implements OnInit, AfterViewInit {
+    private dotMessageService = inject(DotMessageService);
+    private fb = inject(FormBuilder);
+    private dotAlertConfirmService = inject(DotAlertConfirmService);
+
     readonly #store = inject(DotContainerPropertiesStore);
     readonly #dotRouterService = inject(DotRouterService);
 
@@ -33,12 +37,6 @@ export class DotContainerPropertiesComponent implements OnInit, AfterViewInit {
     editor: MonacoEditor;
     form: FormGroup;
     private destroy$: Subject<boolean> = new Subject<boolean>();
-
-    constructor(
-        private dotMessageService: DotMessageService,
-        private fb: FormBuilder,
-        private dotAlertConfirmService: DotAlertConfirmService
-    ) {}
 
     ngOnInit(): void {
         this.#store.containerAndStructure$

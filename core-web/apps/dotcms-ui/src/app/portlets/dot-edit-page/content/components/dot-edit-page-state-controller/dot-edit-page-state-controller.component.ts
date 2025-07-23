@@ -8,7 +8,8 @@ import {
     OnInit,
     Output,
     SimpleChanges,
-    ViewChild
+    ViewChild,
+    inject
 } from '@angular/core';
 
 import { MenuItem, SelectItem } from 'primeng/api';
@@ -46,6 +47,13 @@ enum DotConfirmationType {
     styleUrls: ['./dot-edit-page-state-controller.component.scss']
 })
 export class DotEditPageStateControllerComponent implements OnChanges, OnInit {
+    private dotAlertConfirmService = inject(DotAlertConfirmService);
+    private dotMessageService = inject(DotMessageService);
+    private dotPageStateService = inject(DotPageStateService);
+    private dotPersonalizeService = inject(DotPersonalizeService);
+    private dotContentletEditor = inject(DotContentletEditorService);
+    private dotPropertiesService = inject(DotPropertiesService);
+
     @ViewChild('pageLockInfo', { static: true }) pageLockInfo: DotEditPageLockInfoComponent;
     @ViewChild('menu') menu: Menu;
 
@@ -68,15 +76,6 @@ export class DotEditPageStateControllerComponent implements OnChanges, OnInit {
             this.menu.toggle(event);
         }
     };
-
-    constructor(
-        private dotAlertConfirmService: DotAlertConfirmService,
-        private dotMessageService: DotMessageService,
-        private dotPageStateService: DotPageStateService,
-        private dotPersonalizeService: DotPersonalizeService,
-        private dotContentletEditor: DotContentletEditorService,
-        private dotPropertiesService: DotPropertiesService
-    ) {}
 
     ngOnChanges(changes: SimpleChanges) {
         const pageState = changes.pageState?.currentValue;

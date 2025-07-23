@@ -1,6 +1,6 @@
 import { Subject } from 'rxjs';
 
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
 import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
 
 import { SelectItem } from 'primeng/api';
@@ -38,6 +38,9 @@ interface DotCommentAndAssignValue {
 export class DotCommentAndAssignFormComponent
     implements OnInit, DotFormModel<DotCommentAndAssignData, DotCommentAndAssignValue>
 {
+    private dotRolesService = inject(DotRolesService);
+    fb = inject(UntypedFormBuilder);
+
     @Input() data: DotCommentAndAssignData;
     @Output() value = new EventEmitter<DotCommentAndAssignValue>();
     @Output() valid = new EventEmitter<boolean>();
@@ -45,11 +48,6 @@ export class DotCommentAndAssignFormComponent
     dotRoles: SelectItem[];
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
-
-    constructor(
-        private dotRolesService: DotRolesService,
-        public fb: UntypedFormBuilder
-    ) {}
 
     ngOnInit() {
         if (this.data) {
