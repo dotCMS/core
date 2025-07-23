@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import DRAGULA_CSS from '@dotcms/app/portlets/dot-edit-page/content/services/html/libraries/dragula.css';
 import EDIT_PAGE_DRAG_DROP, {
@@ -13,7 +13,7 @@ import { DotDOMHtmlUtilService } from './dot-dom-html-util.service';
  */
 @Injectable()
 export class DotDragDropAPIHtmlService {
-    constructor(private dotDOMHtmlUtilService: DotDOMHtmlUtilService) {}
+    private dotDOMHtmlUtilService = inject(DotDOMHtmlUtilService);
 
     /**
      * Inject all the drag and drop code

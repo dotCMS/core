@@ -2,7 +2,7 @@ import { ComponentStore } from '@ngrx/component-store';
 import { Observable, of } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { catchError, switchMap, tap } from 'rxjs/operators';
 
@@ -22,12 +22,12 @@ export interface DotAddVariableState {
 
 @Injectable()
 export class DotAddVariableStore extends ComponentStore<DotAddVariableState> {
-    constructor(
-        private dotContentTypeService: DotContentTypeService,
-        private dotGlobalMessageService: DotGlobalMessageService,
-        private dotHttpErrorManagerService: DotHttpErrorManagerService,
-        private dotFieldsService: DotFieldsService
-    ) {
+    private dotContentTypeService = inject(DotContentTypeService);
+    private dotGlobalMessageService = inject(DotGlobalMessageService);
+    private dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
+    private dotFieldsService = inject(DotFieldsService);
+
+    constructor() {
         super({
             fields: []
         });

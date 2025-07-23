@@ -1,6 +1,6 @@
 import { Observable, of as observableOf } from 'rxjs';
 
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
 import { combineLatest, switchMap } from 'rxjs/operators';
@@ -12,12 +12,10 @@ import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
     templateUrl: './dot-legacy-template-additional-actions-iframe.component.html'
 })
 export class DotLegacyTemplateAdditionalActionsComponent implements OnInit {
-    url: Observable<string>;
+    private route = inject(ActivatedRoute);
+    private dotMenuService = inject(DotMenuService);
 
-    constructor(
-        private route: ActivatedRoute,
-        private dotMenuService: DotMenuService
-    ) {}
+    url: Observable<string>;
 
     ngOnInit(): void {
         this.url = this.route.params.pipe(

@@ -294,7 +294,8 @@
     },
     "resolutions": {
         "http-cache-semantics": "^4.1.1",
-        "pdfjs-dist": "^4.2.67"
+        "pdfjs-dist": "^4.2.67",
+        "stylus": "github:stylus/stylus#0.59.0"
     },
     "nx": {
         "includedScripts": []

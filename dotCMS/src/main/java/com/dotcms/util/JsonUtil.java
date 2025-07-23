@@ -1,6 +1,7 @@
 package com.dotcms.util;
 
 import com.fasterxml.jackson.core.JacksonException;
+import com.fasterxml.jackson.core.JsonLocation;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.util.StringPool;
@@ -77,5 +78,78 @@ public class JsonUtil {
                 () -> JSON_MAPPER.writeValueAsString(object)).getOrElse(StringPool.BLANK);
 
         return json;
+    }
+
+    /**
+     * DTO for the Json Validation Error to travel and make it to the surface
+     */
+    public static class JSONValidationResult {
+        public final String errorMessage;
+        public final int line;
+        public final int column;
+        public final JsonNode node;
+
+        /**
+         * Constructor
+         * @param errorMessage
+         * @param line
+         * @param column
+         * @param node
+         */
+        public JSONValidationResult(String errorMessage, int line, int column, JsonNode node) {
+            this.errorMessage = errorMessage;
+            this.line = line;
+            this.column = column;
+            this.node = node;
+        }
+
+        /**
+         * Constructor
+         * @param errorMessage
+         * @param line
+         * @param column
+         */
+        public JSONValidationResult(String errorMessage, int line, int column) {
+            this(errorMessage, line, column, null);
+        }
+
+        /**
+         * Constructor
+         * @param node
+         */
+        public JSONValidationResult(JsonNode node) {
+            this(null, -1, -1, node);
+        }
+
+        /**
+         * Quick way to know if the json is valid
+         * @return
+         */
+        public boolean isValid() {
+            return node != null && !node.isMissingNode();
+        }
+    }
+
+    /**
+     * This validation method provides more info and tells you right out of the box if the json is valid or not
+     * @param fieldValue
+     * @return
+     */
+    public static JSONValidationResult validateJSON(final String fieldValue) {
+        try {
+            JsonNode node = JSON_MAPPER.readTree(fieldValue);
+            if (node != null && !node.isMissingNode()) {
+                return new JSONValidationResult(node);
+            } else {
+                return new JSONValidationResult("Json Node is null or missing", -1, -1);
+            }
+        } catch (final JacksonException e) {
+            JsonLocation location = e.getLocation();
+            return new JSONValidationResult(
+                    e.getMessage(),
+                    location != null ? location.getLineNr() : -1,
+                    location != null ? location.getColumnNr() : -1
+            );
+        }
     }
 }

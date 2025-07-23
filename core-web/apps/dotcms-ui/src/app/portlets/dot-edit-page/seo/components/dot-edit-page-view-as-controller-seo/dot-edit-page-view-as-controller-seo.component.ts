@@ -58,6 +58,12 @@ import { DotIconModule, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotEditPageViewAsControllerSeoComponent implements OnInit {
+    private dotAlertConfirmService = inject(DotAlertConfirmService);
+    private dotMessageService = inject(DotMessageService);
+    private dotLicenseService = inject(DotLicenseService);
+    private dotPersonalizeService = inject(DotPersonalizeService);
+    private router = inject(Router);
+
     isEnterpriseLicense$: Observable<boolean>;
     showEditJSPDialog = signal(false);
     urlEditPageIframeDialog = signal('');
@@ -69,13 +75,7 @@ export class DotEditPageViewAsControllerSeoComponent implements OnInit {
     private readonly customEventsHandler;
     dotPageStateService = inject(DotPageStateService);
 
-    constructor(
-        private dotAlertConfirmService: DotAlertConfirmService,
-        private dotMessageService: DotMessageService,
-        private dotLicenseService: DotLicenseService,
-        private dotPersonalizeService: DotPersonalizeService,
-        private router: Router
-    ) {
+    constructor() {
         this.customEventsHandler = {
             close: ({ detail: { data } }: CustomEvent) => {
                 this.showEditJSPDialog.set(false);
