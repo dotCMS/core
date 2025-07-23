@@ -177,7 +177,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
     }
 
     ngOnInit() {
-        tippy.setDefaultProps({ zIndex: 5 });
+        tippy.setDefaultProps({ zIndex: 10 });
         this.setFieldVariable(); // Set the field variables - Before the editor is created
         combineLatest([
             this.showVideoThumbnail$(),
