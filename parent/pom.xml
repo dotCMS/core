@@ -144,7 +144,6 @@
         <version.rewrite-maven-plugin>5.21.0</version.rewrite-maven-plugin>
         <version.shade.plugin>3.2.1</version.shade.plugin>
         <version.site.plugin>4.0.0-M8</version.site.plugin>
-        <version.sonar.plugin>3.10.0.2594</version.sonar.plugin>
         <version.source.plugin>3.1.0</version.source.plugin>
         <version.frontend.plugin>1.12.1</version.frontend.plugin>
         <version.properties.plugin>1.2.1</version.properties.plugin>
@@ -155,16 +154,6 @@
         <version.docker-maven.plugin>0.43.4</version.docker-maven.plugin>
         <test.working.dir>${project.build.directory}/testdata</test.working.dir>
         <test.temp.dir>${test.working.dir}/temp</test.temp.dir>
-        <sonar.projectKey>core-maven:${project.groupId}:${project.artifactId}</sonar.projectKey>
-        <sonar.projectName>core-maven</sonar.projectName>
-        <sonar.sourceEncoding>UTF-8</sonar.sourceEncoding>
-        <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
-        <sonar.dynamicAnalysis>reuseReports</sonar.dynamicAnalysis>
-        <sonar.coverage.jacoco.xmlReportPaths>${maven.multiModuleProjectDirectory}/reports/target/**/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
-        <!--<sonar.java.checkstyle.reportPaths>target/checkstyle-result.xml</sonar.java.checkstyle.reportPaths>
-        <sonar.java.pmd.reportPaths>target/pmd.xml,target/cpd.xml</sonar.java.pmd.reportPaths> -->
-        <sonar.exclusions>.idea/**</sonar.exclusions>
-
 
         <surefireArgline/>
         <integrationTestCoverageAgent/>
@@ -937,11 +926,6 @@
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>license-maven-plugin</artifactId>
                     <version>${version.license.plugin}</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.sonarsource.scanner.maven</groupId>
-                    <artifactId>sonar-maven-plugin</artifactId>
-                    <version>${version.sonar.plugin}</version>
                 </plugin>
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
