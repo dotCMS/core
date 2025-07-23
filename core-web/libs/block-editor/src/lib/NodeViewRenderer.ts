@@ -55,7 +55,7 @@ class AngularNodeView extends NodeView<
             editor: this.editor,
             node: this.node,
             decorations: this.decorations as readonly DecorationWithType[],
-            selected: false,
+            selected: true,
             extension: this.extension,
             getPos: () => this.getPos(),
             updateAttributes: (attributes = {}) => this.updateAttributes(attributes),
@@ -146,10 +146,13 @@ class AngularNodeView extends NodeView<
 
     selectNode() {
         this.renderer.updateProps({ selected: true });
+
+        this.renderer.elementRef.nativeElement.classList.add('ProseMirror-selectednode');
     }
 
     deselectNode() {
         this.renderer.updateProps({ selected: false });
+        this.renderer.elementRef.nativeElement.classList.remove('ProseMirror-selectednode');
     }
 
     destroy() {

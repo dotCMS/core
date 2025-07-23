@@ -17,19 +17,19 @@
                 class="bubble-menu-button bubble-menu-button--icon"
                 (click)="editor().chain().focus().setTextAlign('left').run()"
                 [class.is-active]="editor().isActive({ textAlign: 'left' })">
-                <span class="material-icons">format_align_left</span>
+                <i class="pi pi-align-left"></i>
             </button>
             <button
                 class="bubble-menu-button bubble-menu-button--icon"
                 (click)="editor().chain().focus().setTextAlign('center').run()"
                 [class.is-active]="editor().isActive({ textAlign: 'center' })">
-                <span class="material-icons">format_align_center</span>
+                <i class="pi pi-align-center"></i>
             </button>
             <button
                 class="bubble-menu-button bubble-menu-button--icon"
                 (click)="editor().chain().focus().setTextAlign('right').run()"
                 [class.is-active]="editor().isActive({ textAlign: 'right' })">
-                <span class="material-icons">format_align_right</span>
+                <i class="pi pi-align-right"></i>
             </button>
 
             <div class="divider"></div>
@@ -37,21 +37,11 @@
                 class="bubble-menu-button bubble-menu-button--icon"
                 [class.is-active]="imageHasLink()"
                 (click)="toggleLinkModal($event)">
-                <span class="material-icons">link</span>
-            </button>
-            <button
-                class="bubble-menu-button bubble-menu-button--icon"
-                (click)="editor().chain().deleteSelection().blur().run()">
-                <span class="material-icons">delete_outline</span>
+                <i class="pi pi-link"></i>
             </button>
         } @else if (showContentMenu()) {
             <button class="bubble-menu-button bubble-menu-button--icon" (click)="goToContentlet()">
-                <span class="material-icons">edit</span>
-            </button>
-            <button
-                class="bubble-menu-button bubble-menu-button--icon"
-                (click)="editor().chain().deleteSelection().blur().run()">
-                <span class="material-icons">delete_outline</span>
+                <i class="pi pi-pencil"></i>
             </button>
         } @else {
             <p-dropdown
@@ -114,32 +104,32 @@
                 class="bubble-menu-button bubble-menu-button--icon"
                 (click)="editor().chain().focus().setTextAlign('left').run()"
                 [class.is-active]="editor().isActive({ textAlign: 'left' })">
-                <span class="material-icons">format_align_left</span>
+                <i class="pi pi-align-left"></i>
             </button>
             <button
                 class="bubble-menu-button bubble-menu-button--icon"
                 (click)="editor().chain().focus().setTextAlign('center').run()"
                 [class.is-active]="editor().isActive({ textAlign: 'center' })">
-                <span class="material-icons">format_align_center</span>
+                <i class="pi pi-align-center"></i>
             </button>
             <button
                 class="bubble-menu-button bubble-menu-button--icon"
                 (click)="editor().chain().focus().setTextAlign('right').run()"
                 [class.is-active]="editor().isActive({ textAlign: 'right' })">
-                <span class="material-icons">format_align_right</span>
+                <i class="pi pi-align-right"></i>
             </button>
             <button
                 class="bubble-menu-button bubble-menu-button--icon"
                 (click)="editor().chain().focus().setTextAlign('justify').run()"
                 [class.is-active]="editor().isActive({ textAlign: 'justify' })">
-                <span class="material-icons">format_align_justify</span>
+                <i class="pi pi-align-justify"></i>
             </button>
             <div class="divider"></div>
             <button
                 class="bubble-menu-button bubble-menu-button--icon"
                 (click)="editor().chain().focus().toggleBulletList().run()"
                 [class.is-active]="editor().isActive('bulletList')">
-                <span class="material-icons">format_list_bulleted</span>
+                <i class="pi pi-list"></i>
             </button>
             <button
                 class="bubble-menu-button bubble-menu-button--icon"
@@ -164,17 +154,12 @@
                 class="bubble-menu-button bubble-menu-button--icon"
                 [class.is-active]="editor().isActive('link')"
                 (click)="toggleLinkModal($event)">
-                <span class="material-icons">link</span>
+                <i class="pi pi-link"></i>
             </button>
             <button
                 class="bubble-menu-button bubble-menu-button--icon"
                 (click)="editor().chain().focus().unsetAllMarks().run()">
-                <span class="material-icons">format_clear</span>
-            </button>
-            <button
-                class="bubble-menu-button bubble-menu-button--icon"
-                (click)="editor().chain().deleteSelection().blur().run()">
-                <span class="material-icons">delete_outline</span>
+                <i class="pi pi-eraser"></i>
             </button>
         }
     }
