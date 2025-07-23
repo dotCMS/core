@@ -116,6 +116,11 @@ public enum ImportLineValidationCodes {
     /**
      * Invalid field type
      */
-    INVALID_FIELD_TYPE
+    INVALID_FIELD_TYPE,
+
+    /**
+     * Invalid Json
+     */
+    INVALID_JSON
 
 }

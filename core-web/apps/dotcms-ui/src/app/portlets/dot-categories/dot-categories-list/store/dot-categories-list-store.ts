@@ -1,7 +1,7 @@
 import { ComponentStore } from '@ngrx/component-store';
 import { Observable } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { LazyLoadEvent, MenuItem } from 'primeng/api';
 
@@ -28,6 +28,9 @@ export interface DotCategoriesListState {
 
 @Injectable()
 export class DotCategoriesListStore extends ComponentStore<DotCategoriesListState> {
+    private dotMessageService = inject(DotMessageService);
+    private categoryService = inject(DotCategoriesService);
+
     readonly vm$ = this.select((state: DotCategoriesListState) => state);
     /**
      * Get categories breadcrumbs
@@ -143,10 +146,7 @@ export class DotCategoriesListStore extends ComponentStore<DotCategoriesListStat
         );
     });
 
-    constructor(
-        private dotMessageService: DotMessageService,
-        private categoryService: DotCategoriesService
-    ) {
+    constructor() {
         super();
         this.setState({
             categoriesBulkActions: this.getCategoriesBulkActions(),

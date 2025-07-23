@@ -34,6 +34,16 @@ export const DEBOUNCE_TIME = 5000;
     styleUrls: ['./dot-edit-layout.component.scss']
 })
 export class DotEditLayoutComponent implements OnInit, OnDestroy {
+    private route = inject(ActivatedRoute);
+    private dotRouterService = inject(DotRouterService);
+    private dotGlobalMessageService = inject(DotGlobalMessageService);
+    private dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
+    private dotPageLayoutService = inject(DotPageLayoutService);
+    private dotMessageService = inject(DotMessageService);
+    private templateContainersCacheService = inject(DotTemplateContainersCacheService);
+    private dotSessionStorageService = inject(DotSessionStorageService);
+    private router = inject(Router);
+
     pageState: DotPageRender | DotPageRenderState;
     apiLink: string;
 
@@ -49,18 +59,6 @@ export class DotEditLayoutComponent implements OnInit, OnDestroy {
     private pageStateStore = inject(DotPageStateService);
 
     templateIdentifier = signal('');
-
-    constructor(
-        private route: ActivatedRoute,
-        private dotRouterService: DotRouterService,
-        private dotGlobalMessageService: DotGlobalMessageService,
-        private dotHttpErrorManagerService: DotHttpErrorManagerService,
-        private dotPageLayoutService: DotPageLayoutService,
-        private dotMessageService: DotMessageService,
-        private templateContainersCacheService: DotTemplateContainersCacheService,
-        private dotSessionStorageService: DotSessionStorageService,
-        private router: Router
-    ) {}
 
     ngOnInit() {
         this.route.parent.parent.data

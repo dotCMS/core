@@ -50,6 +50,14 @@ export interface DotActionsMenuEventParams {
     templateUrl: './dot-pages.component.html'
 })
 export class DotPagesComponent implements AfterViewInit, OnDestroy {
+    private dotRouterService = inject(DotRouterService);
+    private dotMessageDisplayService = inject(DotMessageDisplayService);
+    private dotEventsService = inject(DotEventsService);
+    private dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
+    private dotPageRenderService = inject(DotPageRenderService);
+    private element = inject(ElementRef);
+    private dotSiteService = inject(SiteService);
+
     readonly #store = inject(DotPageStore);
 
     @ViewChild('menu') menu: Menu;
@@ -58,15 +66,7 @@ export class DotPagesComponent implements AfterViewInit, OnDestroy {
     private domIdMenuAttached = '';
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
-    constructor(
-        private dotRouterService: DotRouterService,
-        private dotMessageDisplayService: DotMessageDisplayService,
-        private dotEventsService: DotEventsService,
-        private dotHttpErrorManagerService: DotHttpErrorManagerService,
-        private dotPageRenderService: DotPageRenderService,
-        private element: ElementRef,
-        private dotSiteService: SiteService
-    ) {
+    constructor() {
         this.#store.setInitialStateData(FAVORITE_PAGE_LIMIT);
     }
 

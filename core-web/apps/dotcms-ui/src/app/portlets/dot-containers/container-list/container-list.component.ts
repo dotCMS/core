@@ -37,6 +37,11 @@ import { DotContainerListStore } from '@portlets/dot-containers/container-list/s
     providers: [DotContainerListStore]
 })
 export class ContainerListComponent implements OnDestroy {
+    private dotMessageService = inject(DotMessageService);
+    private dotMessageDisplayService = inject(DotMessageDisplayService);
+    private dialogService = inject(DialogService);
+    private siteService = inject(SiteService);
+
     @ViewChild('actionsMenu')
     actionsMenu: Menu;
     @ViewChildren('tableRow')
@@ -51,12 +56,7 @@ export class ContainerListComponent implements OnDestroy {
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
-    constructor(
-        private dotMessageService: DotMessageService,
-        private dotMessageDisplayService: DotMessageDisplayService,
-        private dialogService: DialogService,
-        private siteService: SiteService
-    ) {
+    constructor() {
         this.notify$.pipe(takeUntil(this.destroy$)).subscribe(({ payload, message, failsInfo }) => {
             this.notifyResult(payload, failsInfo, message);
             this.selectedContainers = [];

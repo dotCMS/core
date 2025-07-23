@@ -37,6 +37,7 @@ import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.action.ImportAuditUtil;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.business.DotJsonFieldException;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
@@ -795,7 +796,7 @@ public class ImportUtil {
     private static void handleException(Exception ex, int lineNumber,
             List<ValidationMessage> messages) {
 
-        ValidationMessage.Builder messageBuilder = ValidationMessage.builder()
+        final ValidationMessage.Builder messageBuilder = ValidationMessage.builder()
                 .type(ValidationMessageType.ERROR)
                 .lineNumber(lineNumber);
 
@@ -806,6 +807,14 @@ public class ImportUtil {
                     .field(validationMessageException.getField())
                     .invalidValue(validationMessageException.getInvalidValue())
                     .context(validationMessageException.getContext());
+        }
+        if (ex instanceof DotJsonFieldException) {
+            final var jsonFieldException = (DotJsonFieldException) ex;
+            messageBuilder
+                    .code(ImportLineValidationCodes.INVALID_JSON.name())
+                    .field(jsonFieldException.getField())
+                    .invalidValue(jsonFieldException.getInvalidJson())
+                    .context(jsonFieldException.getContext());
         }
 
         if(ex instanceof ImportLineErrorAware){

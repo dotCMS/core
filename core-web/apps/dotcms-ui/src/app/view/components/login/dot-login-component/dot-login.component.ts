@@ -1,7 +1,7 @@
 import { Observable, Subject } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormControl, UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Params } from '@angular/router';
 
@@ -25,6 +25,16 @@ import { DotLoadingIndicatorService } from '@dotcms/utils';
  * the info required to log in the dotCMS angular backend
  */
 export class DotLoginComponent implements OnInit, OnDestroy {
+    private loginService = inject(LoginService);
+    private fb = inject(UntypedFormBuilder);
+    private dotRouterService = inject(DotRouterService);
+    private dotLoadingIndicatorService = inject(DotLoadingIndicatorService);
+    private loggerService = inject(LoggerService);
+    private route = inject(ActivatedRoute);
+    loginPageStateService = inject(DotLoginPageStateService);
+    private dotMessageService = inject(DotMessageService);
+    private dotFormatDateService = inject(DotFormatDateService);
+
     message = '';
     isError = false;
     loginForm: UntypedFormGroup;
@@ -32,18 +42,6 @@ export class DotLoginComponent implements OnInit, OnDestroy {
     loginInfo$: Observable<DotLoginInformation>;
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
-
-    constructor(
-        private loginService: LoginService,
-        private fb: UntypedFormBuilder,
-        private dotRouterService: DotRouterService,
-        private dotLoadingIndicatorService: DotLoadingIndicatorService,
-        private loggerService: LoggerService,
-        private route: ActivatedRoute,
-        public loginPageStateService: DotLoginPageStateService,
-        private dotMessageService: DotMessageService,
-        private dotFormatDateService: DotFormatDateService
-    ) {}
 
     ngOnInit() {
         this.loginForm = this.fb.group({
