@@ -1,11 +1,11 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { CanLoad, Route, UrlSegment } from '@angular/router';
 
 import { DotRouterService } from '@dotcms/data-access';
 
 @Injectable()
 export class DotTemplateGuard implements CanLoad {
-    constructor(private dotRouterService: DotRouterService) {}
+    private dotRouterService = inject(DotRouterService);
 
     canLoad(_route: Route, segments: UrlSegment[]): boolean {
         const [{ path }] = segments;

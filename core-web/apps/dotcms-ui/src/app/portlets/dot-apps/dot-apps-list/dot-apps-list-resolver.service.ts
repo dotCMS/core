@@ -1,6 +1,6 @@
 import { Observable, of } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { ActivatedRouteSnapshot, Resolve, RouterStateSnapshot } from '@angular/router';
 
 import { map, mergeMap, take } from 'rxjs/operators';
@@ -18,10 +18,8 @@ import { DotApp, DotAppsListResolverData } from '@dotcms/dotcms-models';
  */
 @Injectable()
 export class DotAppsListResolver implements Resolve<DotAppsListResolverData> {
-    constructor(
-        private dotLicenseService: DotLicenseService,
-        private dotAppsService: DotAppsService
-    ) {}
+    private dotLicenseService = inject(DotLicenseService);
+    private dotAppsService = inject(DotAppsService);
 
     resolve(
         _route: ActivatedRouteSnapshot,

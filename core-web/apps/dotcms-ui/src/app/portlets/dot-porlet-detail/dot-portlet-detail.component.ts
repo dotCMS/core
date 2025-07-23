@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
 @Component({
@@ -7,9 +7,10 @@ import { ActivatedRoute } from '@angular/router';
     styleUrls: ['./dot-portlet-detail.component.scss']
 })
 export class DotPortletDetailComponent implements OnInit {
+    private route = inject(ActivatedRoute);
+
     isWorkflow = false;
     isContent = false;
-    constructor(private route: ActivatedRoute) {}
 
     ngOnInit() {
         const currentPortlet: string = this.route.parent.parent.snapshot.params.id;

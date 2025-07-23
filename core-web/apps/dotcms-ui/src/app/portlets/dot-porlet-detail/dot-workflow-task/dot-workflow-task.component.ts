@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
 import { DotWorkflowTaskDetailService } from '@components/dot-workflow-task-detail/services/dot-workflow-task-detail.service';
@@ -12,14 +12,12 @@ import { DotMessageService, DotRouterService, DotIframeService } from '@dotcms/d
         '<dot-workflow-task-detail (shutdown)="onCloseWorkflowTaskEditor()" (custom)="onCustomEvent($event)"></dot-workflow-task-detail>'
 })
 export class DotWorkflowTaskComponent implements OnInit {
-    constructor(
-        private dotWorkflowTaskDetailService: DotWorkflowTaskDetailService,
-        private dotMessageService: DotMessageService,
-        private dotRouterService: DotRouterService,
-        private route: ActivatedRoute,
-        private dotIframeService: DotIframeService,
-        private dotCustomEventHandlerService: DotCustomEventHandlerService
-    ) {}
+    private dotWorkflowTaskDetailService = inject(DotWorkflowTaskDetailService);
+    private dotMessageService = inject(DotMessageService);
+    private dotRouterService = inject(DotRouterService);
+    private route = inject(ActivatedRoute);
+    private dotIframeService = inject(DotIframeService);
+    private dotCustomEventHandlerService = inject(DotCustomEventHandlerService);
 
     ngOnInit() {
         this.dotWorkflowTaskDetailService.view({

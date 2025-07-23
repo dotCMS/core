@@ -1,6 +1,6 @@
 import { forkJoin, Observable } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { Resolve } from '@angular/router';
 
 import { map, take } from 'rxjs/operators';
@@ -10,10 +10,8 @@ import { DotEnvironment } from '@dotcms/dotcms-models';
 
 @Injectable()
 export class DotTemplateListResolver implements Resolve<[boolean, boolean]> {
-    constructor(
-        public dotLicenseService: DotLicenseService,
-        public pushPublishService: PushPublishService
-    ) {}
+    dotLicenseService = inject(DotLicenseService);
+    pushPublishService = inject(PushPublishService);
 
     resolve(): Observable<[boolean, boolean]> {
         return forkJoin([
