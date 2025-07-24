@@ -49,7 +49,7 @@ public class SiteKeyValidator implements AnalyticsValidator {
         Host currentSite = new Host();
         try {
             if (null != request) {
-                currentSite = this.getSiteFromRequest(request);
+                currentSite = ContentAnalyticsUtil.getSiteFromRequest(request);
                 final Optional<AppSecrets> secretsOpt =
                         APILocator.getAppsAPI().getSecrets(ContentAnalyticsUtil.CONTENT_ANALYTICS_APP_KEY, false, currentSite, APILocator.systemUser());
                 if (secretsOpt.isPresent()) {
@@ -74,67 +74,4 @@ public class SiteKeyValidator implements AnalyticsValidator {
             throw new AnalyticsValidationException("Invalid Site Key", INVALID_SITE_KEY);
         }
     }
-
-    /**
-     * Determines the Site that the Event is being sent to. This method looks for the current Site
-     * in the HTTP Request object.
-     *
-     * @param request The current instance of the {@link HttpServletRequest}.
-     *
-     * @return The Site that the Event is being sent to.
-     */
-    public static Host getSiteFromRequest(final HttpServletRequest request) throws AnalyticsValidationException {
-        final Optional<String> siteFromRequestOpt = getSiteNameOrAlias(request);
-        if (siteFromRequestOpt.isEmpty()) {
-            throw new AnalyticsValidationException("Site could not be retrieved from Origin or Referer HTTP Headers",
-                    INVALID_SITE_KEY);
-        }
-        final HostAPI hostAPI = APILocator.getHostAPI();
-        try {
-            Host currentSite = hostAPI.findByName(siteFromRequestOpt.get(), APILocator.systemUser(), DONT_RESPECT_FRONT_END_ROLES);
-            if (null == currentSite) {
-                currentSite = hostAPI.findByAlias(siteFromRequestOpt.get(), APILocator.systemUser(), DONT_RESPECT_FRONT_END_ROLES);
-                if (null == currentSite) {
-                    throw new AnalyticsValidationException(String.format("Site with name/alias '%s' was not found",
-                            siteFromRequestOpt.get()), INVALID_SITE_KEY);
-                }
-            }
-            return currentSite;
-        } catch (final DotDataException | DotSecurityException e) {
-            final String errorMsg = String.format("Failed to retrieve Site with name/alias '%s': %s",
-                    siteFromRequestOpt.get(), ExceptionUtil.getErrorMessage(e));
-            Logger.error(SiteKeyValidator.class, errorMsg, e);
-            throw new AnalyticsValidationException(errorMsg, INVALID_SITE_KEY);
-        }
-    }
-
-    /**
-     * Extracts the site alias (domain) from the HTTP request.
-     * First tries to get it from the Origin header, then falls back to the Referer header.
-     * If a URL is found, it extracts just the host/domain part.
-     *
-     * @param request The HTTP request to extract the site alias from
-     * @return The extracted site alias (domain) or null if not found
-     */
-    public static Optional<String> getSiteNameOrAlias(final HttpServletRequest request) {
-        String siteUrl = request.getHeader(HttpHeaders.ORIGIN);
-        if (UtilMethods.isNotSet(siteUrl)) {
-            siteUrl = request.getHeader(HttpHeaders.REFERER);
-        }
-        // If we have a URL, extract just the host/domain part
-        if (UtilMethods.isSet(siteUrl)) {
-            try {
-                final URLUtils.ParsedURL parsedUrl = URLUtils.parseURL(siteUrl);
-                if (parsedUrl != null && UtilMethods.isSet(parsedUrl.getHost())) {
-                    return Optional.of(parsedUrl.getHost());
-                }
-                Logger.debug(SiteKeyValidator.class, String.format("Site Name or Alias could not be retrieved from '%s'", siteUrl));
-            } catch (final IllegalArgumentException e) {
-                Logger.warn(SiteKeyValidator.class, String.format("Site Alias could not be retrieved from HTTP Request: " +
-                        "%s", ExceptionUtil.getErrorMessage(e)));
-            }
-        }
-        return Optional.empty();
-    }
-
 }

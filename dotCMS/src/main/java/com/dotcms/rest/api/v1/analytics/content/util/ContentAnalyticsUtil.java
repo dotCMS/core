@@ -3,6 +3,7 @@ package com.dotcms.rest.api.v1.analytics.content.util;
 import com.dotcms.analytics.track.collectors.Collector;
 import com.dotcms.analytics.track.collectors.EventSource;
 import com.dotcms.analytics.track.collectors.EventType;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.jitsu.EventLogSubmitter;
 import com.dotcms.jitsu.ValidAnalyticsEventPayload;
 import com.dotcms.jitsu.ValidAnalyticsEventPayloadAttributes;
@@ -10,27 +11,27 @@ import com.dotcms.jitsu.validators.AnalyticsValidator;
 import com.dotcms.jitsu.validators.AnalyticsValidatorUtil;
 import com.dotcms.jitsu.validators.SiteKeyValidator;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.UUIDUtil;
-import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.util.*;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
+import com.liferay.util.HttpHeaders;
 import io.vavr.Lazy;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.Serializable;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.dotcms.jitsu.ValidAnalyticsEventPayloadAttributes.*;
+import static com.dotcms.jitsu.validators.ValidationErrorCode.INVALID_SITE_KEY;
+import static com.dotmarketing.util.Constants.DONT_RESPECT_FRONT_END_ROLES;
 
 /**
  * This utility class provides different methods for interacting with Content Analytics features.
@@ -132,7 +133,7 @@ public class ContentAnalyticsUtil {
             userEventPayload.put(URL_ATTRIBUTE_NAME, "");
         }
 
-        final Host siteFromRequest = getSiteFromRequest(request);
+        final Host siteFromRequest = getSiteFromRequestSilently(request);
         final Map<String, Object> contextSection = (Map<String, Object>) userEventPayload.get(CONTEXT_ATTRIBUTE_NAME);
         contextSection.put(SITE_ID_ATTRIBUTE_NAME, siteFromRequest.getIdentifier());
 
@@ -140,9 +141,9 @@ public class ContentAnalyticsUtil {
         userEventPayload.put("isTargetPage", false);
     }
 
-    private static Host getSiteFromRequest(HttpServletRequest request)  {
+    private static Host getSiteFromRequestSilently(HttpServletRequest request)  {
         try {
-            return SiteKeyValidator.getSiteFromRequest(request);
+            return getSiteFromRequest(request);
         } catch (AnalyticsValidator.AnalyticsValidationException e) {
             throw new RuntimeException(e);
         }
@@ -212,4 +213,65 @@ public class ContentAnalyticsUtil {
         return String.format(SITE_KEY_FORMAT.get(), siteId, KeyGenerator.generateSiteKey());
     }
 
+    /**
+     * Determines the Site that the Event is being sent to. This method looks for the current Site
+     * in the HTTP Request object.
+     *
+     * @param request The current instance of the {@link HttpServletRequest}.
+     *
+     * @return The Site that the Event is being sent to.
+     */
+    public static Host getSiteFromRequest(final HttpServletRequest request) throws AnalyticsValidator.AnalyticsValidationException {
+        final Optional<String> siteFromRequestOpt = getSiteNameOrAlias(request);
+        if (siteFromRequestOpt.isEmpty()) {
+            throw new AnalyticsValidator.AnalyticsValidationException("Site could not be retrieved from Origin or Referer HTTP Headers",
+                    INVALID_SITE_KEY);
+        }
+        final HostAPI hostAPI = APILocator.getHostAPI();
+        try {
+            Host currentSite = hostAPI.findByName(siteFromRequestOpt.get(), APILocator.systemUser(), DONT_RESPECT_FRONT_END_ROLES);
+            if (null == currentSite) {
+                currentSite = hostAPI.findByAlias(siteFromRequestOpt.get(), APILocator.systemUser(), DONT_RESPECT_FRONT_END_ROLES);
+                if (null == currentSite) {
+                    throw new AnalyticsValidator.AnalyticsValidationException(String.format("Site with name/alias '%s' was not found",
+                            siteFromRequestOpt.get()), INVALID_SITE_KEY);
+                }
+            }
+            return currentSite;
+        } catch (final DotDataException | DotSecurityException e) {
+            final String errorMsg = String.format("Failed to retrieve Site with name/alias '%s': %s",
+                    siteFromRequestOpt.get(), ExceptionUtil.getErrorMessage(e));
+            Logger.error(SiteKeyValidator.class, errorMsg, e);
+            throw new AnalyticsValidator.AnalyticsValidationException(errorMsg, INVALID_SITE_KEY);
+        }
+    }
+
+    /**
+     * Extracts the site alias (domain) from the HTTP request.
+     * First tries to get it from the Origin header, then falls back to the Referer header.
+     * If a URL is found, it extracts just the host/domain part.
+     *
+     * @param request The HTTP request to extract the site alias from
+     * @return The extracted site alias (domain) or null if not found
+     */
+    private static Optional<String> getSiteNameOrAlias(final HttpServletRequest request) {
+        String siteUrl = request.getHeader(HttpHeaders.ORIGIN);
+        if (UtilMethods.isNotSet(siteUrl)) {
+            siteUrl = request.getHeader(HttpHeaders.REFERER);
+        }
+        // If we have a URL, extract just the host/domain part
+        if (UtilMethods.isSet(siteUrl)) {
+            try {
+                final URLUtils.ParsedURL parsedUrl = URLUtils.parseURL(siteUrl);
+                if (parsedUrl != null && UtilMethods.isSet(parsedUrl.getHost())) {
+                    return Optional.of(parsedUrl.getHost());
+                }
+                Logger.debug(SiteKeyValidator.class, String.format("Site Name or Alias could not be retrieved from '%s'", siteUrl));
+            } catch (final IllegalArgumentException e) {
+                Logger.warn(SiteKeyValidator.class, String.format("Site Alias could not be retrieved from HTTP Request: " +
+                        "%s", ExceptionUtil.getErrorMessage(e)));
+            }
+        }
+        return Optional.empty();
+    }
 }
