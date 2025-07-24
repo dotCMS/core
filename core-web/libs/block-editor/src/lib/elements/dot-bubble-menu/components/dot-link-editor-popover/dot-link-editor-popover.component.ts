@@ -1,5 +1,5 @@
 import { Observable, Subject } from 'rxjs';
-import { Placement } from 'tippy.js';
+import { Instance, Props } from 'tippy.js';
 
 import { HttpClient } from '@angular/common/http';
 import {
@@ -98,11 +98,12 @@ export class DotLinkEditorPopoverComponent implements OnDestroy {
         }
     });
 
-    readonly tippyModalOptions = {
+    readonly tippyModalOptions: Partial<Props> = {
         onShow: this.initializeExistingLinkData.bind(this),
         onShown: this.focusSearchInput.bind(this),
         onHide: this.clearEditorHighlight.bind(this),
-        placement: 'bottom' as Placement
+        placement: 'bottom',
+        onClickOutside: this.onClickOutside.bind(this)
     };
 
     /**
@@ -114,6 +115,13 @@ export class DotLinkEditorPopoverComponent implements OnDestroy {
         if (event.key === 'Escape') {
             this.popover.hide();
         }
+    }
+
+    /**
+     * The native element of the Tippy instance.
+     */
+    get tippyElement() {
+        return this.popover?.nativeElement;
     }
 
     constructor() {
@@ -305,5 +313,21 @@ export class DotLinkEditorPopoverComponent implements OnDestroy {
                 limit: 5
             })
             .pipe(pluck('entity', 'jsonObjectView', 'contentlets'));
+    }
+
+    /**
+     * Handles clicks outside the link editor popover.
+     * If the click is on a link option, it does not hide the popover.
+     * @param instance - The Tippy instance.
+     * @param event - The mouse event.
+     */
+    private onClickOutside(instance: Instance, event: MouseEvent) {
+        const target = event.target as HTMLElement;
+        const clickedOnBubbleMenu = target?.closest('[tiptapbubblemenu]');
+        if (clickedOnBubbleMenu) {
+            return;
+        }
+
+        instance.hide();
     }
 }

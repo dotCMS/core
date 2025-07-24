@@ -65,8 +65,6 @@
         <!-- <docker.platforms>linux/arm64,linux/amd64</docker.platforms>-->
         <tomcat.run.data.folder>${project.build.directory}/tomcat-run-data/${context.name}</tomcat.run.data.folder>
         <cleanup.data.folder>false</cleanup.data.folder>
-        <!-- Add enterprise to sonar sources -->
-        <sonar.sources>src/main/java,src/enterprise/java</sonar.sources>
     </properties>
     <dependencies>
         <!-- Force dependency resolution when using also-make option even though these do not provide jar dependencies -->

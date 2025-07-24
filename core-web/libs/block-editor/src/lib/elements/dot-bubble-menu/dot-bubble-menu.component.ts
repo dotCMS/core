@@ -1,5 +1,5 @@
 import { TiptapBubbleMenuDirective } from 'ngx-tiptap';
-import { Placement } from 'tippy.js';
+import { Instance, Props } from 'tippy.js';
 
 import { CommonModule } from '@angular/common';
 import {
@@ -11,7 +11,7 @@ import {
     input,
     SecurityContext,
     signal,
-    ViewChild,
+    viewChild,
     OnInit,
     DestroyRef
 } from '@angular/core';
@@ -19,7 +19,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer } from '@angular/platform-browser';
 
-import { DropdownModule } from 'primeng/dropdown';
+import { Dropdown, DropdownModule } from 'primeng/dropdown';
 import { OverlayPanelModule } from 'primeng/overlaypanel';
 
 import { take } from 'rxjs/operators';
@@ -34,7 +34,6 @@ import { DotImageEditorPopoverComponent } from './components/dot-image-editor-po
 import { DotLinkEditorPopoverComponent } from './components/dot-link-editor-popover/dot-link-editor-popover.component';
 import { getContentletDataFromSelection } from './utils';
 
-import { EditorModalDirective } from '../../directive/editor-modal.directive';
 import { AI_IMAGE_PROMPT_EXTENSION_NAME } from '../../extensions/ai-image-prompt/ai-image-prompt.extension';
 import {
     codeIcon,
@@ -81,10 +80,10 @@ const BUBBLE_MENU_HIDDEN_NODES = {
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotBubbleMenuComponent implements OnInit {
-    @ViewChild('editorModal') editorModal: EditorModalDirective;
-    @ViewChild('bubbleMenu', { read: ElementRef }) bubbleMenuRef: ElementRef<HTMLElement>;
-    @ViewChild('linkModal') linkModal: DotLinkEditorPopoverComponent;
-    @ViewChild('imageModal') imageModal: DotImageEditorPopoverComponent;
+    dropdown = viewChild<Dropdown>('dropdown');
+    linkModal = viewChild.required<DotLinkEditorPopoverComponent>('linkModal');
+    imageModal = viewChild.required<DotImageEditorPopoverComponent>('imageModal');
+    bubbleMenuRef = viewChild.required<ElementRef<HTMLElement>>('bubbleMenu');
 
     readonly editor = input.required<Editor>();
     protected readonly cd = inject(ChangeDetectorRef);
@@ -92,6 +91,7 @@ export class DotBubbleMenuComponent implements OnInit {
     protected readonly dotMessageService = inject(DotMessageService);
     protected readonly dotContentTypeService = inject(DotContentTypeService);
     protected readonly dotAiService = inject(DotAiService);
+    private readonly destroyRef = inject(DestroyRef);
 
     protected readonly dropdownItem = signal<NodeTypeOption | null>(null);
     protected readonly placeholder = signal<string>('Paragraph');
@@ -174,14 +174,13 @@ export class DotBubbleMenuComponent implements OnInit {
         }
     ];
 
-    protected readonly tippyOptions = {
+    protected readonly tippyOptions: Partial<Props> = {
         maxWidth: '100%',
+        placement: 'top-start',
+        trigger: 'manual',
         onBeforeUpdate: this.onBeforeUpdate.bind(this),
-        placement: 'top-start' as Placement,
-        trigger: 'manual'
+        onClickOutside: this.onClickOutside.bind(this)
     };
-
-    destroyRef = inject(DestroyRef);
 
     ngOnInit() {
         this.dotAiService
@@ -227,8 +226,9 @@ export class DotBubbleMenuComponent implements OnInit {
      */
     protected toggleLinkModal(event: MouseEvent) {
         event.stopPropagation();
-        this.linkModal?.toggle();
-        this.imageModal?.hide();
+        this.linkModal()?.toggle();
+        this.imageModal()?.hide();
+        this.dropdown()?.hide();
     }
 
     /**
@@ -236,16 +236,16 @@ export class DotBubbleMenuComponent implements OnInit {
      */
     protected toggleImageModal(event: MouseEvent) {
         event.stopPropagation();
-        this.imageModal?.toggle();
-        this.linkModal?.hide();
+        this.imageModal()?.toggle();
+        this.linkModal()?.hide();
     }
 
     /**
      * Closes any open popover components (link and image editors)
      */
     protected closePopups() {
-        this.linkModal?.hide();
-        this.imageModal?.hide();
+        this.linkModal()?.hide();
+        this.imageModal()?.hide();
     }
 
     protected imageHasLink() {
@@ -427,5 +427,18 @@ export class DotBubbleMenuComponent implements OnInit {
 
         // Return null if no pattern matched
         return null;
+    }
+
+    private onClickOutside(instance: Instance, event: MouseEvent) {
+        const target = event.target as HTMLElement;
+        const isImageElement = this.imageModal().tippyElement?.contains(target);
+        const isLinkElement = this.linkModal().tippyElement?.contains(target);
+
+        if (isImageElement || isLinkElement) {
+            return;
+        }
+
+        instance.hide();
+        this.closePopups();
     }
 }
