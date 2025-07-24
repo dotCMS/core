@@ -75,9 +75,8 @@ public class InfrastructureManagementFilterTest extends UnitTestBase {
         // Execute
         filter.doFilter(request, response, chain);
 
-        // Verify request is blocked
-        verify(response).setStatus(HttpServletResponse.SC_NOT_FOUND);
-        verify(writer).write(InfrastructureConstants.Responses.ACCESS_DENIED_MESSAGE);
+        // Verify request is blocked with 404 error
+        verify(response).sendError(HttpServletResponse.SC_NOT_FOUND);
         verify(chain, never()).doFilter(request, response);
     }
 
