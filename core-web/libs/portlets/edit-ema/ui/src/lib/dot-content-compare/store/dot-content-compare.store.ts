@@ -2,7 +2,7 @@ import { ComponentStore } from '@ngrx/component-store';
 import { Observable, of } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { catchError, map, switchMap, take } from 'rxjs/operators';
 
@@ -64,6 +64,11 @@ export enum FieldWhiteList {
 
 @Injectable()
 export class DotContentCompareStore extends ComponentStore<DotContentCompareState> {
+    private dotContentTypeService = inject(DotContentTypeService);
+    private dotContentletService = inject(DotContentletService);
+    private dotFormatDateService = inject(DotFormatDateService);
+    private httpErrorManagerService = inject(DotHttpErrorManagerService);
+
     systemTime;
     readonly vm$ = this.state$;
     readonly updateCompare = this.updater((state, compare: DotCMSContentlet) => {
@@ -152,12 +157,7 @@ export class DotContentCompareStore extends ComponentStore<DotContentCompareStat
         );
     });
 
-    constructor(
-        private dotContentTypeService: DotContentTypeService,
-        private dotContentletService: DotContentletService,
-        private dotFormatDateService: DotFormatDateService,
-        private httpErrorManagerService: DotHttpErrorManagerService
-    ) {
+    constructor() {
         super({
             data: null,
             showDiff: true

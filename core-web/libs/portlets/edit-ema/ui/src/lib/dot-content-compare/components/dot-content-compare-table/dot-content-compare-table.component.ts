@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output, inject } from '@angular/core';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
@@ -11,6 +11,8 @@ import { DotContentCompareTableData } from '../../store/dot-content-compare.stor
     styleUrls: ['./dot-content-compare-table.component.scss']
 })
 export class DotContentCompareTableComponent {
+    private dotMessageService = inject(DotMessageService);
+
     @Input() data: DotContentCompareTableData;
     @Input() showDiff: boolean;
 
@@ -22,6 +24,4 @@ export class DotContentCompareTableComponent {
         { label: this.dotMessageService.get('diff'), value: true },
         { label: this.dotMessageService.get('plain'), value: false }
     ];
-
-    constructor(private dotMessageService: DotMessageService) {}
 }
