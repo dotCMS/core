@@ -3,7 +3,10 @@ import { Component, inject } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 
-import { DotAnalyticsDashboardStore, TimeRange } from '@dotcms/portlets/dot-analytics/data-access';
+import {
+    DotAnalyticsDashboardStore,
+    TimeRangeInput
+} from '@dotcms/portlets/dot-analytics/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotAnalyticsDashboardChartComponent } from './components/dot-analytics-dashboard-chart/dot-analytics-dashboard-chart.component';
@@ -67,8 +70,12 @@ export default class DotAnalyticsDashboardComponent {
      *
      * @param period - Selected time period value
      */
-    onTimeRangeChange(timeRange: TimeRange): void {
+    onTimeRangeChange(timeRange: TimeRangeInput): void {
         this.store.setTimeRange(timeRange);
+    }
+
+    onCustomDateRangeChange(dateRange: TimeRangeInput): void {
+        this.store.setTimeRange(dateRange);
     }
 
     /**

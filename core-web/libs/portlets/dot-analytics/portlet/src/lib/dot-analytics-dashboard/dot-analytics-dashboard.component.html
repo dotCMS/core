@@ -5,8 +5,8 @@
             class="analytics-dashboard__filters-container flex justify-content-between align-items-center">
             <dot-analytics-dashboard-filters
                 class="analytics-dashboard__filters"
-                [selectedTimeRange]="$currentTimeRange()"
                 (timeRangeChanged)="onTimeRangeChange($event)"
+                (customDateRangeChanged)="onCustomDateRangeChange($event)"
                 data-testid="analytics-filters" />
 
             <p-button
