@@ -1,6 +1,6 @@
 import { Observable, Subject } from 'rxjs';
 
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 
 import { map, pluck, takeUntil, tap } from 'rxjs/operators';
 
@@ -15,11 +15,11 @@ const COMPARE_CUSTOM_EVENT = 'compare-contentlet';
     styleUrls: ['./dot-content-compare-dialog.component.scss']
 })
 export class DotContentCompareDialogComponent implements OnInit, OnDestroy {
+    private dotEventsService = inject(DotEventsService);
+
     show = false;
     data$: Observable<DotContentCompareEvent>;
     private destroy$: Subject<boolean> = new Subject<boolean>();
-
-    constructor(private dotEventsService: DotEventsService) {}
 
     ngOnInit(): void {
         this.data$ = this.dotEventsService.listen(COMPARE_CUSTOM_EVENT).pipe(
