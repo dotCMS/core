@@ -1,0 +1,104 @@
+<p-card class="h-full">
+    @if ($isLoading()) {
+        <!-- Loading State -->
+        <p-skeleton height="1.5rem" width="12.5rem"></p-skeleton>
+
+        <!-- Custom Table Skeleton -->
+        <div class="p-datatable p-datatable-sm">
+            <!-- Skeleton Header -->
+            <div class="p-datatable-header-row flex p-3">
+                @for (column of columns; track column.field) {
+                    <div class="flex-1" [class]="'text-' + (column.alignment || 'left')">
+                        <p-skeleton height="1.2rem" width="80%"></p-skeleton>
+                    </div>
+                }
+            </div>
+
+            <!-- Skeleton Rows -->
+            @for (row of skeletonRows; track row) {
+                <div class="flex p-3 hover:bg-gray-50">
+                    @for (column of columns; track column.field) {
+                        <div class="flex-1" [class]="'text-' + (column.alignment || 'left')">
+                            @switch (column.type) {
+                                @case ('number') {
+                                    <p-skeleton height="1rem" width="60%"></p-skeleton>
+                                }
+                                @case ('link') {
+                                    <p-skeleton height="1rem" width="70%"></p-skeleton>
+                                }
+                                @default {
+                                    <p-skeleton height="1rem" width="85%"></p-skeleton>
+                                }
+                            }
+                        </div>
+                    }
+                </div>
+            }
+
+            <!-- Skeleton Pagination -->
+            <div class="flex justify-content-center align-items-center p-3">
+                <p-skeleton height="1.5rem" width="15.625rem"></p-skeleton>
+            </div>
+        </div>
+    } @else {
+        <!-- Loaded State -->
+
+        <h3 class="table-title">{{ title | dm }}</h3>
+
+        <!-- Real Table -->
+        <p-table
+            [value]="$data()"
+            [columns]="columns"
+            [attr.data-testid]="'analytics-top-pages-table'"
+            class="p-datatable-sm"
+            [rows]="tableConfig.DEFAULT_ROWS"
+            [rowsPerPageOptions]="tableConfig.ROWS_PER_PAGE_OPTIONS"
+            [paginator]="true"
+            [dataKey]="tableConfig.DATA_KEY"
+            [sortMode]="tableConfig.SORT_MODE">
+            <ng-template pTemplate="header" let-columns>
+                <tr>
+                    @for (column of columns; track column.field) {
+                        <th
+                            [class]="'text-' + (column.alignment || 'left')"
+                            [pSortableColumn]="column.sortable ? column.field : null">
+                            {{ column.header | dm }}
+                            @if (column.sortable) {
+                                <p-sortIcon [field]="column.field"></p-sortIcon>
+                            }
+                        </th>
+                    }
+                </tr>
+            </ng-template>
+
+            <ng-template pTemplate="body" let-row let-columns="columns">
+                <tr>
+                    @for (column of columns; track column.field) {
+                        <td [class]="'text-' + (column.alignment || 'left')">
+                            @switch (column.type) {
+                                @case ('link') {
+                                    <span>
+                                        {{ row[column.field] }}
+                                    </span>
+                                }
+                                @case ('number') {
+                                    <span class="font-semibold">
+                                        {{ row[column.field] | number }}
+                                    </span>
+                                }
+                                @case ('percentage') {
+                                    <span class="text-600 font-medium">
+                                        {{ row[column.field] }}%
+                                    </span>
+                                }
+                                @default {
+                                    {{ row[column.field] }}
+                                }
+                            }
+                        </td>
+                    }
+                </tr>
+            </ng-template>
+        </p-table>
+    }
+</p-card>
