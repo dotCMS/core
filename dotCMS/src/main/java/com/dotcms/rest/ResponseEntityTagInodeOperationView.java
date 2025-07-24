@@ -2,6 +2,7 @@ package com.dotcms.rest;
 
 import com.dotmarketing.tag.model.TagInode;
 
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -11,7 +12,7 @@ import java.util.List;
  * @author Steve Bolton
  */
 public class ResponseEntityTagInodeOperationView extends ResponseEntityView<List<TagInode>> {
-    public ResponseEntityTagInodeOperationView(final List<ErrorEntity> errors, final List<TagInode> tagInodes) {
-        super(errors, tagInodes);
+    public ResponseEntityTagInodeOperationView(final List<TagInode> tagInodes, final List<ErrorEntity> errors) {
+        super(tagInodes, errors, Collections.emptyList());
     }
 }

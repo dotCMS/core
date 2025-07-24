@@ -3,6 +3,7 @@ package com.dotcms.rest;
 import com.dotcms.rest.tag.RestTag;
 import com.google.common.collect.ImmutableList;
 
+import java.util.Collections;
 import java.util.Map;
 
 /**
@@ -12,7 +13,7 @@ import java.util.Map;
  * @author Steve Bolton
  */
 public class ResponseEntityTagOperationView extends ResponseEntityView<Map<String, Object>> {
-    public ResponseEntityTagOperationView(final ImmutableList<ErrorEntity> errors, final Map<String, Object> additionalData) {
-        super(errors, additionalData);
+    public ResponseEntityTagOperationView(final Map<String, Object> additionalData, final ImmutableList<ErrorEntity> errors) {
+        super(additionalData, errors, Collections.emptyList());
     }
 }
