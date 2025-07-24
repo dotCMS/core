@@ -3,6 +3,7 @@ package com.dotcms.management.filters;
 import com.dotcms.UnitTestBase;
 import com.dotcms.management.config.InfrastructureConstants;
 import com.dotcms.health.config.HealthEndpointConstants;
+import com.dotmarketing.util.Config;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.After;
@@ -14,8 +15,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.lang.reflect.Field;
-import java.util.Map;
 
 import static org.mockito.Mockito.*;
 
@@ -52,14 +51,14 @@ public class InfrastructureManagementFilterEnvironmentTest extends UnitTestBase 
 
     @After
     public void cleanup() {
-        // Clean up any environment variable changes
-        clearEnvironmentVariable("CMS_MANAGEMENT_PORT");
+        // Clean up any Config property changes
+        Config.setProperty(InfrastructureConstants.Ports.MANAGEMENT_PORT_PROPERTY, null);
     }
 
     @Test
     public void testUsesEnvironmentVariableFromServerXml() throws IOException, ServletException {
-        // Setup - Set the same environment variable that server.xml uses
-        setEnvironmentVariable("CMS_MANAGEMENT_PORT", "9090");
+        // Setup - Set the same property that the filter reads as fallback from Config
+        Config.setProperty(InfrastructureConstants.Ports.MANAGEMENT_PORT_PROPERTY, "9090");
         
         // Reset mocks for this test
         reset(request, response, chain, writer);
@@ -68,7 +67,7 @@ public class InfrastructureManagementFilterEnvironmentTest extends UnitTestBase 
         // Setup - Request on the environment-configured port
         String requestURI = HealthEndpointConstants.Endpoints.LIVENESS;
         when(request.getRequestURI()).thenReturn(requestURI);
-        when(request.getServerPort()).thenReturn(9090); // Port from environment variable
+        when(request.getServerPort()).thenReturn(9090); // Port from configuration
 
         // Execute
         filter.doFilter(request, response, chain);
@@ -80,14 +79,14 @@ public class InfrastructureManagementFilterEnvironmentTest extends UnitTestBase 
 
     @Test
     public void testBlocksWhenNotOnEnvironmentConfiguredPort() throws IOException, ServletException {
-        // Setup - Set custom port via environment variable
-        setEnvironmentVariable("CMS_MANAGEMENT_PORT", "9090");
+        // Setup - Set custom port via Config property
+        Config.setProperty(InfrastructureConstants.Ports.MANAGEMENT_PORT_PROPERTY, "9090");
         
         // Reset mocks for this test
         reset(request, response, chain, writer);
         when(response.getWriter()).thenReturn(writer);
         
-        // Setup - Request on different port than environment-configured
+        // Setup - Request on different port than configured
         String requestURI = HealthEndpointConstants.Endpoints.LIVENESS;
         when(request.getRequestURI()).thenReturn(requestURI);
         when(request.getServerPort()).thenReturn(8080); // Not the management port
@@ -104,14 +103,14 @@ public class InfrastructureManagementFilterEnvironmentTest extends UnitTestBase 
 
     @Test
     public void testFallsBackToDefaultWhenEnvironmentVariableInvalid() throws IOException, ServletException {
-        // Setup - Invalid environment variable value
-        setEnvironmentVariable("CMS_MANAGEMENT_PORT", "invalid");
+        // Setup - Invalid Config property value
+        Config.setProperty(InfrastructureConstants.Ports.MANAGEMENT_PORT_PROPERTY, "invalid");
         
         // Reset mocks for this test
         reset(request, response, chain, writer);
         when(response.getWriter()).thenReturn(writer);
         
-        // Setup - Request on default port (should work despite invalid env var)
+        // Setup - Request on default port (should work despite invalid config)
         String requestURI = HealthEndpointConstants.Endpoints.HEALTH;
         when(request.getRequestURI()).thenReturn(requestURI);
         when(request.getServerPort()).thenReturn(InfrastructureConstants.Ports.DEFAULT_MANAGEMENT_PORT); // Default port
@@ -126,8 +125,8 @@ public class InfrastructureManagementFilterEnvironmentTest extends UnitTestBase 
 
     @Test
     public void testFallsBackToDefaultWhenEnvironmentVariableNotSet() throws IOException, ServletException {
-        // Setup - No environment variable set (normal default case)
-        clearEnvironmentVariable("CMS_MANAGEMENT_PORT");
+        // Setup - No Config property set (normal default case)
+        Config.setProperty(InfrastructureConstants.Ports.MANAGEMENT_PORT_PROPERTY, null);
         
         // Reset mocks for this test
         reset(request, response, chain, writer);
@@ -144,34 +143,5 @@ public class InfrastructureManagementFilterEnvironmentTest extends UnitTestBase 
         // Verify request continues (uses default)
         verify(chain).doFilter(request, response);
         verify(response, never()).setStatus(HttpServletResponse.SC_NOT_FOUND);
-    }
-
-    /**
-     * Helper method to set environment variables for testing.
-     * Uses reflection to modify the environment map.
-     */
-    private void setEnvironmentVariable(String key, String value) {
-        try {
-            Map<String, String> env = System.getenv();
-            Field field = env.getClass().getDeclaredField("m");
-            field.setAccessible(true);
-            ((Map<String, String>) field.get(env)).put(key, value);
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to set environment variable for testing", e);
-        }
-    }
-
-    /**
-     * Helper method to clear environment variables for testing.
-     */
-    private void clearEnvironmentVariable(String key) {
-        try {
-            Map<String, String> env = System.getenv();
-            Field field = env.getClass().getDeclaredField("m");
-            field.setAccessible(true);
-            ((Map<String, String>) field.get(env)).remove(key);
-        } catch (Exception e) {
-            // Ignore cleanup failures
-        }
     }
 } 

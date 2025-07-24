@@ -113,10 +113,10 @@ public class InfrastructureManagementFilter implements Filter {
      * This ensures we use the exact same port configuration without duplication.
      * 
      * server.xml uses: port="${CMS_MANAGEMENT_PORT:-8090}"
-     * We read the same variable here to stay in sync.
+     * We check both the direct environment variable and Config system for testing.
      */
     private int getManagementPortFromEnvironment() {
-        // Read the exact same environment variable that server.xml uses
+        // First check the exact same environment variable that server.xml uses
         String portEnv = System.getenv(InfrastructureConstants.Ports.MANAGEMENT_PORT_PROPERTY);
         if (portEnv != null && !portEnv.trim().isEmpty()) {
             try {
@@ -127,14 +127,16 @@ public class InfrastructureManagementFilter implements Filter {
             }
         }
         
-        // Fallback: Check if it's available through Config (in case Config is enhanced later)
-        int configPort = Config.getIntProperty(InfrastructureConstants.Ports.MANAGEMENT_PORT_PROPERTY, -1);
-        if (configPort != -1) {
-            return configPort;
+        // Fallback to Config system (handles DOT_ prefixed env vars and properties for testing)
+        try {
+            return Config.getIntProperty(InfrastructureConstants.Ports.MANAGEMENT_PORT_PROPERTY, 
+                                       InfrastructureConstants.Ports.DEFAULT_MANAGEMENT_PORT);
+        } catch (Exception e) {
+            // Handle ConversionException or other Config exceptions gracefully
+            Logger.warn(this, "Invalid CMS_MANAGEMENT_PORT configuration: " + e.getMessage() + 
+                      ", using default: " + InfrastructureConstants.Ports.DEFAULT_MANAGEMENT_PORT);
+            return InfrastructureConstants.Ports.DEFAULT_MANAGEMENT_PORT;
         }
-        
-        // Final fallback: Use default (same as server.xml default)
-        return InfrastructureConstants.Ports.DEFAULT_MANAGEMENT_PORT;
     }
 
     /**
