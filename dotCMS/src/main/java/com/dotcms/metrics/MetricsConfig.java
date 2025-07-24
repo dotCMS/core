@@ -226,6 +226,27 @@ public final class MetricsConfig {
     public static final boolean TOMCAT_METRICS_ENABLED = 
         Config.getBooleanProperty("metrics.tomcat.enabled", true);
     
+    /**
+     * Whether to collect search/Elasticsearch metrics.
+     * Default: true
+     */
+    public static final boolean SEARCH_METRICS_ENABLED =
+        Config.getBooleanProperty("metrics.search.enabled", true);
+    
+    /**
+     * Whether to collect user session and authentication metrics.
+     * Default: true
+     */
+    public static final boolean USER_SESSION_METRICS_ENABLED =
+        Config.getBooleanProperty("metrics.user_session.enabled", true);
+    
+    /**
+     * Whether to collect file asset and storage metrics.
+     * Default: true
+     */
+    public static final boolean FILE_ASSET_METRICS_ENABLED =
+        Config.getBooleanProperty("metrics.file_asset.enabled", true);
+    
     // ====================================================================
     // PERFORMANCE SETTINGS
     // ====================================================================
@@ -250,6 +271,34 @@ public final class MetricsConfig {
      */
     public static final int PUBLISH_BUFFER_SIZE = 
         Config.getIntProperty("metrics.publish.buffer-size", 1000);
+    
+    /**
+     * Whether to enable detailed metrics (may have performance impact).
+     * Default: false (for production safety)
+     */
+    public static final boolean DETAILED_METRICS_ENABLED = 
+        Config.getBooleanProperty("metrics.detailed.enabled", false);
+    
+    /**
+     * Sampling rate for high-frequency metrics (0.0 to 1.0).
+     * Default: 1.0 (no sampling)
+     */
+    public static final double SAMPLING_RATE = 
+        Config.getFloatProperty("metrics.sampling.rate", 1.0f);
+    
+    /**
+     * Cache TTL for expensive metric calculations (seconds).
+     * Default: 30 seconds
+     */
+    public static final int METRIC_CACHE_TTL_SECONDS = 
+        Config.getIntProperty("metrics.cache.ttl-seconds", 30);
+    
+    /**
+     * Maximum database query timeout for metric collection (seconds).
+     * Default: 5 seconds
+     */
+    public static final int METRIC_QUERY_TIMEOUT_SECONDS = 
+        Config.getIntProperty("metrics.query.timeout-seconds", 5);
     
     // ====================================================================
     // UTILITY METHODS

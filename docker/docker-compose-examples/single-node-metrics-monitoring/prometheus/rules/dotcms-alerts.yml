@@ -1,0 +1,164 @@
+groups:
+  - name: dotcms.critical
+    interval: 30s
+    rules:
+    
+    # === Infrastructure Critical Alerts ===
+    
+    - alert: DotCMSDown
+      expr: up{job="dotcms"} == 0
+      for: 1m
+      labels:
+        severity: critical
+        service: dotcms
+      annotations:
+        summary: "dotCMS instance is down"
+        description: "dotCMS instance {{ $labels.instance }} has been down for more than 1 minute"
+        runbook_url: "https://docs.dotcms.com/troubleshooting"
+
+    - alert: DatabaseConnectionPoolExhaustion
+      expr: (dotcms_database_hikari_connections_active / dotcms_database_hikari_connections_max) * 100 > 90
+      for: 2m
+      labels:
+        severity: critical
+        service: database
+      annotations:
+        summary: "Database connection pool nearly exhausted"
+        description: "Database connection pool utilization is {{ $value }}% for pool {{ $labels.pool }}"
+        runbook_url: "https://docs.dotcms.com/database-troubleshooting"
+
+    - alert: TomcatThreadPoolExhaustion
+      expr: (dotcms_tomcat_threads_active / dotcms_tomcat_threads_max) * 100 > 95
+      for: 1m
+      labels:
+        severity: critical
+        service: tomcat
+      annotations:
+        summary: "Tomcat thread pool nearly exhausted"
+        description: "Tomcat thread pool {{ $labels.pool }} utilization is {{ $value }}%"
+
+    - alert: SearchClusterDown
+      expr: dotcms_search_cluster_available == 0
+      for: 1m
+      labels:
+        severity: critical
+        service: search
+      annotations:
+        summary: "Search cluster unavailable"
+        description: "Elasticsearch/OpenSearch cluster is not available"
+
+    # === Performance Warning Alerts ===
+    
+    - alert: CacheHitRateLow
+      expr: dotcms_cache_hit_rate_overall < 70
+      for: 5m
+      labels:
+        severity: warning
+        service: cache
+      annotations:
+        summary: "Cache hit rate below optimal threshold"
+        description: "Overall cache hit rate is {{ $value }}% (should be > 70%)"
+
+    - alert: HighErrorRate
+      expr: dotcms_http_responses_error_rate > 10
+      for: 5m
+      labels:
+        severity: warning
+        service: http
+      annotations:
+        summary: "HTTP error rate above threshold"
+        description: "HTTP error rate is {{ $value }}% (should be < 10%)"
+
+    - alert: PublishingQueueBacklog
+      expr: dotcms_content_publishing_queue_size > 100
+      for: 10m
+      labels:
+        severity: warning
+        service: publishing
+      annotations:
+        summary: "Content publishing queue backing up"
+        description: "Publishing queue has {{ $value }} items (should be < 100)"
+
+    - alert: HighStorageUtilization
+      expr: dotcms_files_storage_utilization_percent > 85
+      for: 5m
+      labels:
+        severity: warning
+        service: storage
+      annotations:
+        summary: "File storage utilization high"
+        description: "Storage utilization is {{ $value }}% (should be < 85%)"
+
+    # === System Resource Alerts ===
+    
+    - alert: HighMemoryUsage
+      expr: (dotcms_jvm_memory_used_bytes / dotcms_jvm_memory_max_bytes) * 100 > 90
+      for: 3m
+      labels:
+        severity: warning
+        service: jvm
+      annotations:
+        summary: "JVM memory usage high"
+        description: "JVM memory usage is {{ $value }}% in area {{ $labels.area }}"
+
+    - alert: HighGCTime
+      expr: rate(dotcms_jvm_gc_pause_seconds_sum[5m]) > 0.1
+      for: 3m
+      labels:
+        severity: warning
+        service: jvm
+      annotations:
+        summary: "High garbage collection time"
+        description: "GC pause time rate is {{ $value }}s/s (> 10% of time in GC)"
+
+  - name: dotcms.business
+    interval: 60s
+    rules:
+
+    # === Business Metrics Alerts ===
+
+    - alert: NoContentActivity
+      expr: increase(dotcms_content_count_published[1h]) == 0 and dotcms_content_count_published > 100
+      for: 2h
+      labels:
+        severity: info
+        service: content
+      annotations:
+        summary: "No content publishing activity"
+        description: "No content has been published in the last 2 hours"
+
+    - alert: LowUserActivity
+      expr: dotcms_users_sessions_active < 1
+      for: 30m
+      labels:
+        severity: info
+        service: users
+      annotations:
+        summary: "No active user sessions"
+        description: "No users are currently logged in"
+
+  - name: dotcms.performance
+    interval: 60s
+    rules:
+
+    # === Performance Monitoring ===
+
+    - alert: SlowResponseTime
+      expr: dotcms_http_requests_duration_avg_ms > 5000
+      for: 5m
+      labels:
+        severity: warning
+        service: performance
+      annotations:
+        summary: "Slow HTTP response times"
+        description: "Average response time is {{ $value }}ms (should be < 5000ms)"
+
+    - alert: MetricsCollectionSlow
+      expr: dotcms_metrics_scrape_duration_ms > 10000
+      for: 2m
+      labels:
+        severity: warning
+        service: metrics
+      annotations:
+        summary: "Metrics collection taking too long"
+        description: "Metrics scrape duration is {{ $value }}ms (should be < 10000ms)" 

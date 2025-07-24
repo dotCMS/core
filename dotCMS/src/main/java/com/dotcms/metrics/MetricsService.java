@@ -2,7 +2,12 @@ package com.dotcms.metrics;
 
 import com.dotcms.metrics.binders.CacheMetrics;
 import com.dotcms.metrics.binders.ContentletMetrics;
+import com.dotcms.metrics.binders.DatabaseMetrics;
+import com.dotcms.metrics.binders.FileAssetMetrics;
+import com.dotcms.metrics.binders.HttpRequestMetrics;
+import com.dotcms.metrics.binders.SearchMetrics;
 import com.dotcms.metrics.binders.TomcatMetrics;
+import com.dotcms.metrics.binders.UserSessionMetrics;
 import com.dotmarketing.util.Logger;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Metrics;
@@ -159,9 +164,19 @@ public class MetricsService {
         if (MetricsConfig.APPLICATION_METRICS_ENABLED) {
             try {
                 new ContentletMetrics().bindTo(globalRegistry);
-                Logger.debug(this, "Contentlet metrics registered");
+                Logger.debug(this, "Content metrics registered");
             } catch (Exception e) {
-                Logger.error(this, "Failed to register contentlet metrics: " + e.getMessage(), e);
+                Logger.error(this, "Failed to register content metrics: " + e.getMessage(), e);
+            }
+        }
+        
+        // Database Metrics
+        if (MetricsConfig.DATABASE_METRICS_ENABLED) {
+            try {
+                new DatabaseMetrics().bindTo(globalRegistry);
+                Logger.debug(this, "Database metrics registered");
+            } catch (Exception e) {
+                Logger.error(this, "Failed to register database metrics: " + e.getMessage(), e);
             }
         }
         
@@ -172,6 +187,46 @@ public class MetricsService {
                 Logger.debug(this, "Cache metrics registered");
             } catch (Exception e) {
                 Logger.error(this, "Failed to register cache metrics: " + e.getMessage(), e);
+            }
+        }
+        
+        // Search Metrics
+        if (MetricsConfig.SEARCH_METRICS_ENABLED) {
+            try {
+                new SearchMetrics().bindTo(globalRegistry);
+                Logger.debug(this, "Search metrics registered");
+            } catch (Exception e) {
+                Logger.error(this, "Failed to register search metrics: " + e.getMessage(), e);
+            }
+        }
+        
+        // HTTP Request Metrics
+        if (MetricsConfig.HTTP_METRICS_ENABLED) {
+            try {
+                new HttpRequestMetrics().bindTo(globalRegistry);
+                Logger.debug(this, "HTTP request metrics registered");
+            } catch (Exception e) {
+                Logger.error(this, "Failed to register HTTP request metrics: " + e.getMessage(), e);
+            }
+        }
+        
+        // User Session Metrics
+        if (MetricsConfig.USER_SESSION_METRICS_ENABLED) {
+            try {
+                new UserSessionMetrics().bindTo(globalRegistry);
+                Logger.debug(this, "User session metrics registered");
+            } catch (Exception e) {
+                Logger.error(this, "Failed to register user session metrics: " + e.getMessage(), e);
+            }
+        }
+        
+        // File Asset Metrics
+        if (MetricsConfig.FILE_ASSET_METRICS_ENABLED) {
+            try {
+                new FileAssetMetrics().bindTo(globalRegistry);
+                Logger.debug(this, "File asset metrics registered");
+            } catch (Exception e) {
+                Logger.error(this, "Failed to register file asset metrics: " + e.getMessage(), e);
             }
         }
         
