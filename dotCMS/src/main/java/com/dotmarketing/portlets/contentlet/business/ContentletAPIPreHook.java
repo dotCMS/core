@@ -1312,7 +1312,17 @@ public interface ContentletAPIPreHook {
 	public default boolean setContentletProperty(Contentlet contentlet, Field field, Object value){
       return true;
     }
-	
+
+	/**
+	 * Use to set contentlet properties.  The value should be String, the proper type of the property
+	 * @param contentlet
+	 * @param field
+	 * @param value
+	 */
+	public default boolean setContentletProperty(Contentlet contentlet, com.dotcms.contenttype.model.field.Field field, Object value){
+		return true;
+	}
+
 	/**
 	 * Use to validate your contentlet.
 	 * @param contentlet
