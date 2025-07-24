@@ -1000,7 +1000,6 @@ paths:
             schema:
               type: string
         description: "Content data in JSON, XML, or form format"
-        required: true
       responses:
         "200":
           content:
@@ -1043,7 +1042,6 @@ paths:
             schema:
               type: string
         description: "Content data in JSON, XML, or form format"
-        required: true
       responses:
         "200":
           content:

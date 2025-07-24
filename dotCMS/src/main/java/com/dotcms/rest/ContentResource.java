@@ -1585,13 +1585,20 @@ public class ContentResource {
 
     /**
      * This method has been deprecated in favor of {@link com.dotcms.rest.api.v1.workflow.WorkflowResource#fireActionDefault(HttpServletRequest, HttpServletResponse, String, String, long, SystemAction, FireActionForm)}
-     * @param request
-     * @param response
-     * @param params
+     * 
+     * Note: The requestBody parameter is for OpenAPI documentation only and is not used in the implementation.
+     * The actual request body is processed from request.getInputStream() in the singlePUTandPOST method.
+     * The @RequestBody annotation uses required=false to maintain backward compatibility with clients
+     * that may not send a request body, as per OpenAPI 3.0.3 specification (default is false).
+     * 
+     * @param request HTTP servlet request
+     * @param response HTTP servlet response
+     * @param params URL parameters for content update
+     * @param requestBody Request body parameter for OpenAPI documentation only (not used in implementation)
      * @deprecated
      * @see  {@link com.dotcms.rest.api.v1.workflow.WorkflowResource#fireActionDefault(HttpServletRequest, HttpServletResponse, String, String, long, SystemAction, FireActionForm)}
-     * @return
-     * @throws URISyntaxException
+     * @return Response containing the operation result
+     * @throws URISyntaxException if URL parameters are malformed
      */
     @Operation(
         summary = "Update content with JSON/XML/form data (deprecated)",
@@ -1619,7 +1626,7 @@ public class ContentResource {
             @Context HttpServletResponse response, 
             @Parameter(description = "URL parameters for content update", required = true)
             @PathParam("params") String params,
-            @RequestBody(description = "Content data in JSON, XML, or form format", required = true,
+            @RequestBody(description = "Content data in JSON, XML, or form format", required = false,
                         content = {@Content(mediaType = "application/json"), 
                                   @Content(mediaType = "application/xml"),
                                   @Content(mediaType = "application/x-www-form-urlencoded")})
@@ -1630,14 +1637,21 @@ public class ContentResource {
 
     /**
      * This method has been deprecated in favor of {@link com.dotcms.rest.api.v1.workflow.WorkflowResource#fireActionDefault(HttpServletRequest, HttpServletResponse, String, String, long, SystemAction, FireActionForm)}
-     * @param request
-     * @param response
-     * @param params
+     * 
+     * Note: The requestBody parameter is for OpenAPI documentation only and is not used in the implementation.
+     * The actual request body is processed from request.getInputStream() in the singlePUTandPOST method.
+     * The @RequestBody annotation uses required=false to maintain backward compatibility with clients
+     * that may not send a request body, as per OpenAPI 3.0.3 specification (default is false).
+     * 
+     * @param request HTTP servlet request
+     * @param response HTTP servlet response
+     * @param params URL parameters for content creation
+     * @param requestBody Request body parameter for OpenAPI documentation only (not used in implementation)
      * @deprecated
      * @see  {@link com.dotcms.rest.api.v1.workflow.WorkflowResource#fireActionDefault(HttpServletRequest, HttpServletResponse, String, String, long, SystemAction, FireActionForm)}
      *
-     * @return
-     * @throws URISyntaxException
+     * @return Response containing the operation result
+     * @throws URISyntaxException if URL parameters are malformed
      */
     @Operation(
         summary = "Create content with JSON/XML/form data (deprecated)",
@@ -1665,7 +1679,7 @@ public class ContentResource {
             @Context HttpServletResponse response, 
             @Parameter(description = "URL parameters for content creation", required = true)
             @PathParam("params") String params,
-            @RequestBody(description = "Content data in JSON, XML, or form format", required = true,
+            @RequestBody(description = "Content data in JSON, XML, or form format", required = false,
                         content = {@Content(mediaType = "application/json"), 
                                   @Content(mediaType = "application/xml"),
                                   @Content(mediaType = "application/x-www-form-urlencoded")})

@@ -1142,7 +1142,7 @@ public class ContentResourceTest extends IntegrationTestBase {
             final String jsonPayload1 = String.format(payLoadTemplate,contentType.inode(),"0","lol");
             final HttpServletRequest request1 = createHttpRequest(jsonPayload1);
             final HttpServletResponse response1 = mock(HttpServletResponse.class);
-            final Response endpointResponse1 = contentResource.singlePOST(request1, response1, "/save/1");
+            final Response endpointResponse1 = contentResource.singlePOST(request1, response1, "/save/1", jsonPayload1);
             assertEquals(Status.OK.getStatusCode(), endpointResponse1.getStatus());
             assertNotNull(endpointResponse1.getHeaders().get("inode"));
             assertEquals(endpointResponse1.getHeaders().get("inode").size(), 1);
@@ -1163,7 +1163,7 @@ public class ContentResourceTest extends IntegrationTestBase {
             final String jsonPayload2 = String.format(payLoadTemplate2,contentType.inode(),inode1,"1");
             final HttpServletRequest request2 = createHttpRequest(jsonPayload2);
             final HttpServletResponse response2 = mock(HttpServletResponse.class);
-            final Response endpointResponse2 = contentResource.singlePOST(request2, response2, "/save/1");
+            final Response endpointResponse2 = contentResource.singlePOST(request2, response2, "/save/1", jsonPayload2);
             assertEquals(Status.OK.getStatusCode(), endpointResponse2.getStatus());
             assertNotNull(endpointResponse2.getHeaders().get("inode"));
             assertEquals(endpointResponse2.getHeaders().get("inode").size(), 1);
@@ -1214,7 +1214,7 @@ public class ContentResourceTest extends IntegrationTestBase {
             final String jsonPayload1 = String.format(payLoadTemplate,contentType.inode(),"0","lol");
             final HttpServletRequest request1 = createHttpRequest(jsonPayload1);
             final HttpServletResponse response1 = mock(HttpServletResponse.class);
-            final Response endpointResponse1 = contentResource.singlePOST(request1, response1, "/save/1");
+            final Response endpointResponse1 = contentResource.singlePOST(request1, response1, "/save/1", jsonPayload1);
             assertEquals(Status.OK.getStatusCode(), endpointResponse1.getStatus());
             assertNotNull(endpointResponse1.getHeaders().get("inode"));
             assertEquals(endpointResponse1.getHeaders().get("inode").size(), 1);
@@ -1234,7 +1234,7 @@ public class ContentResourceTest extends IntegrationTestBase {
             final String jsonPayload2 = String.format(payLoadTemplate2, contentType.inode(), inode1);
             final HttpServletRequest request2 = createHttpRequest(jsonPayload2);
             final HttpServletResponse response2 = mock(HttpServletResponse.class);
-            final Response endpointResponse2 = contentResource.singlePOST(request2, response2, "/save/1");
+            final Response endpointResponse2 = contentResource.singlePOST(request2, response2, "/save/1", jsonPayload2);
             assertEquals(Status.BAD_REQUEST.getStatusCode(), endpointResponse2.getStatus());
 
             //The Endpoint can only handle the entire set of fields.. You can not use this endpoint to only update 1 field.
@@ -1265,7 +1265,7 @@ public class ContentResourceTest extends IntegrationTestBase {
             final String jsonPayload1 = String.format(payLoadTemplate,contentType.inode(),"This isn't a numeric value","imageName");
             final HttpServletRequest request1 = createHttpRequest(jsonPayload1);
             final HttpServletResponse response1 = mock(HttpServletResponse.class);
-            final Response endpointResponse1 = contentResource.singlePOST(request1, response1, "/save/1");
+            final Response endpointResponse1 = contentResource.singlePOST(request1, response1, "/save/1", jsonPayload1);
             assertEquals(Status.BAD_REQUEST.getStatusCode(), endpointResponse1.getStatus());
             final String message = (String)((Map)endpointResponse1.getEntity()).get("message");
             assertEquals("Unable to set string value 'This isn't a numeric value' as a Long for the field: numeric", message);
@@ -1296,7 +1296,7 @@ public class ContentResourceTest extends IntegrationTestBase {
             final String jsonPayload1 = String.format(payLoadTemplate,contentType.inode(),"imageName");
             final HttpServletRequest request1 = createHttpRequest(jsonPayload1);
             final HttpServletResponse response1 = mock(HttpServletResponse.class);
-            final Response endpointResponse1 = contentResource.singlePOST(request1, response1, "/save/1");
+            final Response endpointResponse1 = contentResource.singlePOST(request1, response1, "/save/1", jsonPayload1);
             assertEquals(Status.BAD_REQUEST.getStatusCode(), endpointResponse1.getStatus());
             /// No Detailed Message is shown here. Explaining that the field is required
         }finally {
@@ -1346,7 +1346,7 @@ public class ContentResourceTest extends IntegrationTestBase {
             //Create an instance of the CT
             final HttpServletRequest request1 = createHttpRequest(testCase._1);
             final HttpServletResponse response1 = mock(HttpServletResponse.class);
-            final Response endpointResponse1 = contentResource.singlePOST(request1, response1, "/save/1");
+            final Response endpointResponse1 = contentResource.singlePOST(request1, response1, "/save/1", testCase._1);
             assertEquals(Status.BAD_REQUEST.getStatusCode(), endpointResponse1.getStatus());
         }finally {
             if(null != contentType){
