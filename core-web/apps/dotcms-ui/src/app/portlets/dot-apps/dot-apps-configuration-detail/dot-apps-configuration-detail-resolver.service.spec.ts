@@ -25,7 +25,7 @@ describe('DotAppsConfigurationDetailResolver', () => {
     let dotAppsConfigurationDetailResolver: DotAppsConfigurationDetailResolver;
 
     beforeEach(waitForAsync(() => {
-        const testbed = TestBed.configureTestingModule({
+        TestBed.configureTestingModule({
             providers: [
                 DotAppsConfigurationDetailResolver,
                 { provide: DotAppsService, useClass: AppsServicesMock },
@@ -35,8 +35,8 @@ describe('DotAppsConfigurationDetailResolver', () => {
                 }
             ]
         });
-        dotAppsServices = testbed.get(DotAppsService);
-        dotAppsConfigurationDetailResolver = testbed.get(DotAppsConfigurationDetailResolver);
+        dotAppsServices = TestBed.inject(DotAppsService);
+        dotAppsConfigurationDetailResolver = TestBed.inject(DotAppsConfigurationDetailResolver);
     }));
 
     it('should get and return app with configurations', () => {
