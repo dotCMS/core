@@ -1,4 +1,5 @@
 import {
+    determineGranularityForTimeRange,
     extractPageTitle,
     extractPageViews,
     extractSessions,
@@ -9,9 +10,11 @@ import {
 } from './analytics-data.utils';
 
 import type {
+    Granularity,
     PageViewDeviceBrowsersEntity,
     PageViewTimeLineEntity,
     TablePageData,
+    TimeRange,
     TopPagePerformanceEntity,
     TopPerformaceTableEntity,
     TotalPageViewsEntity,
@@ -414,6 +417,62 @@ describe('Analytics Data Utils', () => {
 
                 expect(result.labels).toEqual(['No Data']);
                 expect(result.datasets[0].data).toEqual([1]);
+            });
+        });
+    });
+
+    describe('determineGranularityForTimeRange', () => {
+        it('should return hour granularity for today', () => {
+            const result = determineGranularityForTimeRange('today' as TimeRange);
+            expect(result).toBe('hour' as Granularity);
+        });
+
+        it('should return hour granularity for yesterday', () => {
+            const result = determineGranularityForTimeRange('yesterday' as TimeRange);
+            expect(result).toBe('hour' as Granularity);
+        });
+
+        it('should return day granularity for last 7 days', () => {
+            const result = determineGranularityForTimeRange('from 7 days ago to now' as TimeRange);
+            expect(result).toBe('day' as Granularity);
+        });
+
+        it('should return day granularity for last 30 days', () => {
+            const result = determineGranularityForTimeRange('from 30 days ago to now' as TimeRange);
+            expect(result).toBe('day' as Granularity);
+        });
+
+        it('should return day granularity for CUSTOM_TIME_RANGE (default for custom ranges)', () => {
+            const result = determineGranularityForTimeRange('CUSTOM_TIME_RANGE' as TimeRange);
+            expect(result).toBe('day' as Granularity);
+        });
+
+        describe('all valid TimeRange values', () => {
+            it('should handle all dropdown options correctly', () => {
+                const testCases = [
+                    { value: 'today', expected: 'hour' },
+                    { value: 'yesterday', expected: 'hour' },
+                    { value: 'from 7 days ago to now', expected: 'day' },
+                    { value: 'from 30 days ago to now', expected: 'day' },
+                    { value: 'CUSTOM_TIME_RANGE', expected: 'day' }
+                ];
+
+                testCases.forEach(({ value, expected }) => {
+                    const result = determineGranularityForTimeRange(value as TimeRange);
+                    expect(result).toBe(expected as Granularity);
+                });
+            });
+        });
+
+        describe('edge cases (fallback behavior)', () => {
+            it('should return day granularity for unknown patterns', () => {
+                // These would only occur in edge cases or custom implementations
+                const edgeCases = ['invalid format', 'from custom date to custom date', ''];
+
+                edgeCases.forEach((timeRange) => {
+                    const result = determineGranularityForTimeRange(timeRange as TimeRange);
+                    expect(result).toBe('day' as Granularity);
+                });
             });
         });
     });

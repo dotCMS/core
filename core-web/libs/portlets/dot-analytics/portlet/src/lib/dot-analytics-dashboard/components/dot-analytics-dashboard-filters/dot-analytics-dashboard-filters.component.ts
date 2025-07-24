@@ -59,15 +59,18 @@ export class DotAnalyticsDashboardFiltersComponent {
 
     constructor() {
         // Effect to clear custom date range when switching away from custom
-        effect(() => {
-            const selectedTimeRange = this.$selectedTimeRange();
+        effect(
+            () => {
+                const selectedTimeRange = this.$selectedTimeRange();
 
-            // Clear custom date range when switching to non-custom options
-            if (selectedTimeRange !== 'CUSTOM_TIME_RANGE') {
-                this.$customDateRange.set(null);
-                this.$timeRangeChanged.emit(selectedTimeRange);
-            }
-        });
+                // Clear custom date range when switching to non-custom options
+                if (selectedTimeRange !== 'CUSTOM_TIME_RANGE') {
+                    this.$customDateRange.set(null);
+                    this.$timeRangeChanged.emit(selectedTimeRange);
+                }
+            },
+            { allowSignalWrites: true }
+        );
 
         // Effect to handle custom date range changes
         effect(() => {
