@@ -37,7 +37,6 @@ import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.action.ImportAuditUtil;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
-import com.dotmarketing.portlets.contentlet.business.DotJsonFieldException;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
@@ -807,14 +806,6 @@ public class ImportUtil {
                     .field(validationMessageException.getField())
                     .invalidValue(validationMessageException.getInvalidValue())
                     .context(validationMessageException.getContext());
-        }
-        if (ex instanceof DotJsonFieldException) {
-            final var jsonFieldException = (DotJsonFieldException) ex;
-            messageBuilder
-                    .code(ImportLineValidationCodes.INVALID_JSON.name())
-                    .field(jsonFieldException.getField())
-                    .invalidValue(jsonFieldException.getInvalidJson())
-                    .context(jsonFieldException.getContext());
         }
 
         if(ex instanceof ImportLineErrorAware){
@@ -2379,8 +2370,8 @@ public class ImportUtil {
         Pair<Host, Folder> siteAndFolder = getSiteAndFolderFromIdOrName(value, user);
         if (siteAndFolder == null) {
             throw ImportLineException.builder()
-                    .message("Invalid site/folder inode found")
-                    .code(ImportLineValidationCodes.INVALID_LOCATION.name())
+                    .message("Invalid Site or Folder reference: the provided inode/path does not exist or is not associated with a valid SiteFolder.")
+                    .code(ImportLineValidationCodes.INVALID_SITE_FOLDER_REF.name())
                     .field(field.getVelocityVarName())
                     .invalidValue(value)
                     .build();
@@ -2413,19 +2404,10 @@ public class ImportUtil {
                     .build();
         }
         if (UtilMethods.isSet(value)) {
-            try {
-                if (!tempFileAPI.validUrl(value)) {
-                    throw ImportLineException.builder()
-                            .message("URL is syntactically valid but returned a non-success HTTP response")
-                            .code(ImportLineValidationCodes.UNREACHABLE_URL_CONTENT.name())
-                            .field(field.getVelocityVarName())
-                            .invalidValue(value)
-                            .build();
-                }
-            } catch (DotRuntimeException e) {
-                Logger.warn(ImportUtil.class, "Unreachable url or invalid config",e);
+            final boolean validUrl = Try.of(()->tempFileAPI.validUrl(value)).getOrElse(false);
+            if (!validUrl) {
                 throw ImportLineException.builder()
-                        .message("URL validation failed: " + e.getMessage())
+                        .message("URL is syntactically valid but returned a non-success HTTP response")
                         .code(ImportLineValidationCodes.UNREACHABLE_URL_CONTENT.name())
                         .field(field.getVelocityVarName())
                         .invalidValue(value)
@@ -3689,7 +3671,7 @@ public class ImportUtil {
                     Logger.error(ImportUtil.class, "Error setting image field", e);
                     throw ImportLineException.builder()
                             .message("Error processing file asset from URL: " + uriOrIdentifier + " under site: " + siteId)
-                            .code(ImportLineValidationCodes.INVALID_LOCATION.name())
+                            .code(ImportLineValidationCodes.INVALID_SITE_FOLDER_REF.name())
                             .invalidValue(uriOrIdentifier)
                             .build();
                 }

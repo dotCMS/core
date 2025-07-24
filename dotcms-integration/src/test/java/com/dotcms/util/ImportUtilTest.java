@@ -6,7 +6,8 @@ import static com.dotmarketing.util.importer.ImportLineValidationCodes.INVALID_B
 import static com.dotmarketing.util.importer.ImportLineValidationCodes.INVALID_CATEGORY_KEY;
 import static com.dotmarketing.util.importer.ImportLineValidationCodes.INVALID_DATE_FORMAT;
 import static com.dotmarketing.util.importer.ImportLineValidationCodes.INVALID_FILE_PATH;
-import static com.dotmarketing.util.importer.ImportLineValidationCodes.INVALID_LOCATION;
+import static com.dotmarketing.util.importer.ImportLineValidationCodes.INVALID_SITE_FOLDER_REF;
+import static com.dotmarketing.util.importer.ImportLineValidationCodes.INVALID_NUMBER_FORMAT;
 import static com.dotmarketing.util.importer.ImportLineValidationCodes.REQUIRED_FIELD_MISSING;
 import static com.dotmarketing.util.importer.ImportLineValidationCodes.UNREACHABLE_URL_CONTENT;
 import static org.junit.Assert.assertEquals;
@@ -14,6 +15,8 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.*;
 
 import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
@@ -110,6 +113,7 @@ import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -892,7 +896,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             fieldAPI.save(hostField, user);
 
             workflowAPI.saveSchemesForStruct(new StructureTransformer(type).asStructure(),
-                    Arrays.asList(schemeStepActionResult1.getScheme()));
+                    Collections.singletonList(schemeStepActionResult1.getScheme()));
 
             //Creating csv
             reader = createTempFile("languageCode, countryCode, testTitle, testHost" + "\r\n" +
@@ -963,7 +967,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             fieldAPI.save(hostField, user);
 
             workflowAPI.saveSchemesForStruct(new StructureTransformer(type).asStructure(),
-                    Arrays.asList(schemeStepActionResult1.getScheme()));
+                    Collections.singletonList(schemeStepActionResult1.getScheme()));
 
             //Creating csv
             reader = createTempFile("languageCode, countryCode, testNumber, testHost" + "\r\n" +
@@ -3236,7 +3240,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             assertEquals(0, data.summary().updatedContent());
 
             final var error = result.error().get(0);
-            assertEquals(INVALID_LOCATION.name(), error.code().orElse(null));
+            assertEquals(INVALID_SITE_FOLDER_REF.name(), error.code().orElse(null));
             assertEquals(SITE_FIELD_NAME, error.field().orElse(null));
 
 
@@ -4178,8 +4182,8 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
     @DataProvider
     public static Object[][] fieldTestCases() {
         return new Object[][]{
+
                 // Required TextField - Missing value
-                /*
                 {new FieldTestCase(
                         "RequiredTextField",
                         TextField.class,
@@ -4188,11 +4192,11 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                         "Valid text value",
                         "", // Empty required field
                         REQUIRED_FIELD_MISSING.name(),
-                        false, false,
+                        false,
+                        false,
                         "required",
                         REQUIRED_FIELD_ASSERTION
-                )}
-                ,
+                )},
                 // DateTimeField - Invalid date format
                 {new FieldTestCase(
                         "DateTimeField",
@@ -4202,11 +4206,11 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                         "2023-12-25",
                         "invalid-date-format",
                         INVALID_DATE_FORMAT.name(),
-                        false, false,
+                        false,
+                        false,
                         null,
                         INVALID_DATE_ASSERTION
-                )}
-                ,
+                )},
                 // Integer TextField - Invalid number
                 {new FieldTestCase(
                         "IntegerField",
@@ -4215,12 +4219,12 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                         DataTypes.INTEGER,
                         "123",
                         "not-a-number",
-                        "INVALID_NUMBER_FORMAT", // This might be the actual error code
-                        false, false,
+                        INVALID_NUMBER_FORMAT.name(),
+                        false,
+                        false,
                         null,
                         INVALID_INT_NUMBER_ASSERTION
-                )}
-                ,
+                )},
                 // Float TextField - Invalid decimal
                 {new FieldTestCase(
                         "FloatField",
@@ -4229,12 +4233,12 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                         DataTypes.FLOAT,
                         "123.45",
                         "not-a-decimal",
-                        "INVALID_NUMBER_FORMAT", // This might be the actual error code
-                        false, false,
+                        INVALID_NUMBER_FORMAT.name(),
+                        false,
+                        false,
                         null,
                         INVALID_INT_NUMBER_ASSERTION
                 )},
-
                 // BinaryField - Unreachable URL
                 {new FieldTestCase(
                         "BinaryField",
@@ -4244,13 +4248,11 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                         "", // Empty is valid for optional binary
                         "https://www.dotcms.com/invalid-url-does-not-exist-" + System.currentTimeMillis() + ".com/file.pdf",
                         UNREACHABLE_URL_CONTENT.name(),
-                        false, false,
+                        false,
+                        false,
                         null,
                         INVALID_BINARY_ASSERTION
                 )},
-                */
-
-
                 // ImageField - Invalid file path
                 {new FieldTestCase(
                         "ImageField",
@@ -4260,10 +4262,25 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                         "", // Empty is valid for optional image
                         "/invalid/path/to/image.jpg",
                         INVALID_FILE_PATH.name(),
-                        false, false, null, INVALID_IMAGE_ASSERTION
-                )}
-                /*
-                ,
+                        false,
+                        false,
+                        null,
+                        INVALID_IMAGE_PATH_ASSERTION
+                )},
+                // ImageField - Invalid file path
+                {new FieldTestCase(
+                        "ImageField",
+                        ImageField.class,
+                        "imageField",
+                        DataTypes.TEXT,
+                        "", // Empty is valid for optional image
+                        "https://www.dotcms.com/invalid-url-does-not-exist-" + System.currentTimeMillis() + ".com/file.pdf",
+                        UNREACHABLE_URL_CONTENT.name(),
+                        false,
+                        false,
+                        null,
+                        INVALID_IMAGE_URL_ASSERTION
+                )},
 
                 // HostFolderField - Invalid location
                 {new FieldTestCase(
@@ -4273,8 +4290,11 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                         DataTypes.TEXT,
                         "", // Will be set to valid host in test
                         "invalid-host-identifier-" + System.currentTimeMillis(),
-                        INVALID_LOCATION.name(),
-                        false, true, null
+                        INVALID_SITE_FOLDER_REF.name(),
+                        false,
+                        true,
+                        null,
+                        INVALID_HOST_FOLDER_ASSERTION
                 )},
 
                 // CategoryField - Invalid category key
@@ -4286,9 +4306,12 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                         "", // Will be set to valid category in test
                         "invalid-category-key-" + System.currentTimeMillis(),
                         INVALID_CATEGORY_KEY.name(),
-                        true, false, null
+                        true,
+                        false,
+                        null,
+                        INVALID_CATEGORY_ASSERTION
                 )},
-
+/*
                 // KeyValueField (JSON) - Invalid JSON
                 {new FieldTestCase(
                         "JSONField",
@@ -4298,9 +4321,9 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                         "{\"valid\":\"json\"}",
                         "{'invalid':'json'}", // Single quotes make it invalid
                         "INVALID_JSON",
-                        false, false, null
+                        false, false, null, null
                 )}
-                 */
+*/
         };
     }
 
@@ -4323,17 +4346,27 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                 testSite = new SiteDataGen().nextPersisted();
             }
 
+            Category parent = null;
             if (testCase.requiresCategory) {
+
+                parent = new CategoryDataGen()
+                        .setCategoryName("ParentTestCat_" + time)
+                        .setKey("parent-test-cat-" + time)
+                        .setCategoryVelocityVarName("parentTestCatVar")
+                        .setSortOrder(1)
+                        .nextPersisted();
+
                 testCategory = new CategoryDataGen()
                         .setCategoryName("TestCat_" + time)
                         .setKey("test-cat-" + time)
                         .setCategoryVelocityVarName("testCatVar")
+                        .parent(parent)
                         .setSortOrder(1)
                         .nextPersisted();
             }
 
             // Create fields for this test case
-            List<com.dotcms.contenttype.model.field.Field> fields = createFieldsForTestCase(testCase, testCategory);
+            List<com.dotcms.contenttype.model.field.Field> fields = createFieldsForTestCase(testCase, parent);
 
             // Create content type
             contentType = new ContentTypeDataGen()
@@ -4419,7 +4452,8 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         // Adjust values based on field requirements
         if (testCase.requiresHost && testSite != null) {
             validValue = defaultSite.getIdentifier();
-        } else if (testCase.requiresCategory && testCategory != null) {
+        }
+        if (testCase.requiresCategory && testCategory != null) {
             validValue = testCategory.getKey();
         }
 
@@ -4438,6 +4472,17 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         final ValidationMessage error = result.error().get(0);
         assertTrue(error.field().isPresent());
         assertEquals("Test expected required field label is present", "required: requiredText\n",error.field().get());
+
+        assertThat(error.message().trim(), allOf(
+                startsWith("Contentlet with ID"),
+                containsString("has invalid/missing field(s)"),
+                containsString("Fields: [REQUIRED]"),
+                containsString(testCase.fieldVariable),
+                containsString("(" + testCase.fieldVariable  + ")")
+        ));
+
+        assertTrue(error.code().isPresent());
+        assertEquals("Expected Error Code does not match!", REQUIRED_FIELD_MISSING.name(), error.code().get());
     };
 
     public static final AssertionsStrategy INVALID_DATE_ASSERTION = (result, testCase, contentType) -> {
@@ -4445,8 +4490,21 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         assertTrue(error.field().isPresent());
         assertTrue(error.invalidValue().isPresent());
 
-        assertEquals("Test expected required field label is present",testCase.fieldVariable,error.field().get());
-        assertEquals("Test expected required field label is present",testCase.invalidValue,error.invalidValue().get());
+        assertEquals("Test expected required field label is present",testCase.fieldVariable, error.field().get());
+        assertEquals("Test expected required field label is present",testCase.invalidValue, error.invalidValue().get());
+
+        assertThat(error.message().trim(), allOf(
+                startsWith("Value couldn't be parsed"),
+                containsString("supported formats:"),
+                containsString("d-MMM-yy"),
+                containsString("MM/dd/yyyy"),
+                containsString("yyyy-MM-dd"),
+                containsString("["),
+                endsWith("]")
+        ));
+
+        assertTrue(error.code().isPresent());
+        assertEquals("Expected Error Code does not match!", INVALID_DATE_FORMAT.name(), error.code().get());
     };
 
     public static final AssertionsStrategy INVALID_INT_NUMBER_ASSERTION = (result, testCase, contentType) -> {
@@ -4456,6 +4514,15 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
 
         assertEquals("Test expected required field label is present",testCase.fieldVariable,error.field().get());
         assertEquals("Test expected required field label is present",testCase.invalidValue,error.invalidValue().get());
+
+        assertThat(error.message().trim(), allOf(
+                startsWith("Unable to set string value as a Float"),
+                containsString("for the field:"),
+                endsWith(testCase.fieldVariable)
+        ));
+
+        assertTrue(error.code().isPresent());
+        assertEquals("Expected Error Code does not match!", INVALID_NUMBER_FORMAT.name(), error.code().get());
     };
 
     public static final AssertionsStrategy INVALID_BINARY_ASSERTION = (result, testCase, contentType) -> {
@@ -4463,17 +4530,84 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         assertTrue(error.field().isPresent());
         assertTrue(error.invalidValue().isPresent());
 
-        assertEquals("Test expected required field label is present",testCase.fieldVariable,error.field().get());
-        assertEquals("Test expected required field label is present",testCase.invalidValue,error.invalidValue().get());
+        assertEquals("Test expected required field label is present", testCase.fieldVariable, error.field().get());
+        assertEquals("Test expected required field label is present", testCase.invalidValue, error.invalidValue().get());
+        assertEquals("Test expected error message is present","URL is syntactically valid but returned a non-success HTTP response", error.message());
+
+        assertTrue(error.code().isPresent());
+        assertEquals("Expected Error Code does not match!", UNREACHABLE_URL_CONTENT.name(), error.code().get());
     };
 
-    public static final AssertionsStrategy INVALID_IMAGE_ASSERTION = (result, testCase, contentType) -> {
+    public static final AssertionsStrategy INVALID_IMAGE_PATH_ASSERTION = (result, testCase, contentType) -> {
         final ValidationMessage error = result.error().get(0);
         assertTrue(error.field().isPresent());
         assertTrue(error.invalidValue().isPresent());
 
         assertEquals("Test expected required field label is present",testCase.fieldVariable,error.field().get());
         assertEquals("Test expected required field label is present",testCase.invalidValue,error.invalidValue().get());
+
+        assertEquals("","Unable to match the given path with a file stored in dotCMS",error.message());
+        assertTrue(error.code().isPresent());
+        assertEquals("Expected Error Code does not match!", INVALID_FILE_PATH.name(), error.code().get());
+    };
+
+    public static final AssertionsStrategy INVALID_IMAGE_URL_ASSERTION = (result, testCase, contentType) -> {
+        final ValidationMessage error = result.error().get(0);
+        assertTrue(error.field().isPresent());
+        assertTrue(error.invalidValue().isPresent());
+
+        assertEquals("Test expected required field label is present",testCase.fieldVariable,error.field().get());
+        assertEquals("Test expected required field label is present",testCase.invalidValue,error.invalidValue().get());
+
+        assertEquals("Test expected error is for the url","URL is syntactically valid but returned a non-success HTTP response", error.message());
+        assertTrue(error.code().isPresent());
+        assertEquals("Expected Error Code does not match!", UNREACHABLE_URL_CONTENT.name(), error.code().get());
+    };
+
+    public static final AssertionsStrategy INVALID_HOST_FOLDER_ASSERTION = (result, testCase, contentType) -> {
+        final ValidationMessage error = result.error().get(0);
+        assertTrue(error.field().isPresent());
+        assertTrue(error.invalidValue().isPresent());
+
+        assertEquals("Test expected required field label is present",testCase.fieldVariable,error.field().get());
+        assertEquals("Test expected required field label is present",testCase.invalidValue,error.invalidValue().get());
+
+        assertEquals("Test expected error is for the url","Invalid Site or Folder reference: the provided inode/path does not exist or is not associated with a valid SiteFolder.", error.message());
+        assertTrue(error.code().isPresent());
+        assertEquals("Expected Error Code does not match!", INVALID_SITE_FOLDER_REF.name(), error.code().get());
+    };
+
+    public static final AssertionsStrategy INVALID_CATEGORY_ASSERTION = (result, testCase, contentType) -> {
+        final ValidationMessage error = result.error().get(0);
+        assertTrue(error.field().isPresent());
+        assertTrue(error.invalidValue().isPresent());
+
+        assertEquals("Test expected required field label is present",testCase.fieldVariable,error.field().get());
+        assertEquals("Test expected required field label is present",testCase.invalidValue,error.invalidValue().get());
+
+        assertThat(error.message().trim(), allOf(
+                startsWith("Invalid category key found:"),
+                containsString("It must exist and be a child of")
+        ));
+        assertTrue(error.code().isPresent());
+        assertEquals("Expected Error Code does not match!", INVALID_CATEGORY_KEY.name(), error.code().get());
+    };
+
+
+    public static final AssertionsStrategy KEY_VALUE_ASSERTION = (result, testCase, contentType) -> {
+        final ValidationMessage error = result.error().get(0);
+        assertTrue(error.field().isPresent());
+        assertTrue(error.invalidValue().isPresent());
+
+        assertEquals("Test expected required field label is present",testCase.fieldVariable,error.field().get());
+        assertEquals("Test expected required field label is present",testCase.invalidValue,error.invalidValue().get());
+
+        assertThat(error.message().trim(), allOf(
+                startsWith("Invalid category key found:"),
+                containsString("It must exist and be a child of")
+        ));
+        assertTrue(error.code().isPresent());
+        assertEquals("Expected Error Code does not match!", INVALID_CATEGORY_KEY.name(), error.code().get());
     };
 
     /**

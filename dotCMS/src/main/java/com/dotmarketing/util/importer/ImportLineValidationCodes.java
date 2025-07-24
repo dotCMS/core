@@ -31,7 +31,7 @@ public enum ImportLineValidationCodes {
     /**
      * Invalid site/folder reference
      */
-    INVALID_LOCATION,
+    INVALID_SITE_FOLDER_REF,
 
     /**
      * Invalid binary field URL
