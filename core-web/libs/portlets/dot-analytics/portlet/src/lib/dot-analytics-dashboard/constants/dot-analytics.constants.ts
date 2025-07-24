@@ -1,15 +1,18 @@
-import { TimeRange } from '@dotcms/portlets/dot-analytics/data-access';
+import { TimeRange, TimeRangeOptions } from '@dotcms/portlets/dot-analytics/data-access';
 
 import { FilterOption } from '../types';
 
 /** Available time period options for analytics data filtering */
 export const TIME_PERIOD_OPTIONS: FilterOption[] = [
-    { label: 'analytics.filters.time-period.1week', value: 'from 7 days ago to now' },
-    { label: 'analytics.filters.time-period.1month', value: 'from 30 days ago to now' }
+    { label: 'analytics.filters.time-period.today', value: 'today' },
+    { label: 'analytics.filters.time-period.yesterday', value: 'yesterday' },
+    { label: 'analytics.filters.time-period.last-7-days', value: 'from 7 days ago to now' },
+    { label: 'analytics.filters.time-period.last-30-days', value: 'from 30 days ago to now' },
+    { label: 'analytics.filters.time-period.custom', value: 'CUSTOM_TIME_RANGE' }
 ];
 
 /** Default time period selection (1 week) */
-export const DEFAULT_TIME_PERIOD: TimeRange = 'from 7 days ago to now';
+export const DEFAULT_TIME_PERIOD: TimeRange = TimeRangeOptions.LAST_7_DAYS;
 
 /** Analytics entity field keys */
 export const ANALYTICS_KEYS = {

@@ -18,6 +18,7 @@ export type SortDirection = (typeof SortDirection)[keyof typeof SortDirection];
  * Using const assertion for granularity management.
  */
 const Granularity = {
+    HOUR: 'hour',
     DAY: 'day',
     WEEK: 'week',
     MONTH: 'month'
@@ -65,7 +66,7 @@ export type DimensionField = (typeof DimensionField)[keyof typeof DimensionField
 const MeasureField = {
     TOTAL_REQUEST: 'totalRequest',
     TOTAL_SESSIONS: 'totalSessions',
-    TOTAL_USER: 'totalUser'
+    TOTAL_USERS: 'totalUsers'
 } as const;
 
 export type MeasureField = (typeof MeasureField)[keyof typeof MeasureField];

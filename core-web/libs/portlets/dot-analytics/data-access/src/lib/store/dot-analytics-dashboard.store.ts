@@ -23,14 +23,13 @@ import {
     PageViewDeviceBrowsersEntity,
     PageViewTimeLineEntity,
     RequestState,
-    TimeRange,
+    TimeRangeInput,
     TopPagePerformanceEntity,
     TopPerformaceTableEntity,
     TotalPageViewsEntity,
     UniqueVisitorsEntity
 } from '../../index';
 import { DotAnalyticsService } from '../services/dot-analytics.service';
-// Import types and utils from index
 import {
     extractPageTitle,
     extractPageViews,
@@ -45,8 +44,7 @@ import {
  * Main dashboard store state
  */
 export interface DotAnalyticsDashboardState {
-    // Global time range
-    timeRange: TimeRange;
+    timeRange: TimeRangeInput;
 
     // Individual request states
     totalPageViews: RequestState<TotalPageViewsEntity>;
@@ -135,12 +133,12 @@ export const DotAnalyticsDashboardStore = signalStore(
             analyticsService = inject(DotAnalyticsService),
             dotMessageService = inject(DotMessageService)
         ) => ({
-            setTimeRange: (timeRange: TimeRange) => {
+            setTimeRange: (timeRange: TimeRangeInput) => {
                 patchState(store, { timeRange });
             },
 
             // Total Page Views
-            loadTotalPageViews: rxMethod<TimeRange>(
+            loadTotalPageViews: rxMethod<TimeRangeInput>(
                 pipe(
                     tap(() =>
                         patchState(store, {
@@ -185,7 +183,7 @@ export const DotAnalyticsDashboardStore = signalStore(
             ),
 
             // Unique Visitors
-            loadUniqueVisitors: rxMethod<TimeRange>(
+            loadUniqueVisitors: rxMethod<TimeRangeInput>(
                 pipe(
                     tap(() =>
                         patchState(store, {
@@ -230,7 +228,7 @@ export const DotAnalyticsDashboardStore = signalStore(
             ),
 
             // Top Page Performance
-            loadTopPagePerformance: rxMethod<TimeRange>(
+            loadTopPagePerformance: rxMethod<TimeRangeInput>(
                 pipe(
                     tap(() =>
                         patchState(store, {
@@ -275,7 +273,7 @@ export const DotAnalyticsDashboardStore = signalStore(
             ),
 
             // Page View Timeline
-            loadPageViewTimeLine: rxMethod<TimeRange>(
+            loadPageViewTimeLine: rxMethod<TimeRangeInput>(
                 pipe(
                     tap(() =>
                         patchState(store, {
@@ -320,7 +318,7 @@ export const DotAnalyticsDashboardStore = signalStore(
             ),
 
             // Page View Device Browsers
-            loadPageViewDeviceBrowsers: rxMethod<TimeRange>(
+            loadPageViewDeviceBrowsers: rxMethod<TimeRangeInput>(
                 pipe(
                     tap(() =>
                         patchState(store, {
@@ -365,7 +363,7 @@ export const DotAnalyticsDashboardStore = signalStore(
             ),
 
             // Top Pages Table
-            loadTopPagesTable: rxMethod<TimeRange>(
+            loadTopPagesTable: rxMethod<TimeRangeInput>(
                 pipe(
                     tap(() =>
                         patchState(store, {
@@ -416,7 +414,7 @@ export const DotAnalyticsDashboardStore = signalStore(
          * Coordinated method to load all dashboard data.
          * Calls all individual load methods while maintaining their independent states.
          */
-        loadAllDashboardData: (timeRange: TimeRange) => {
+        loadAllDashboardData: (timeRange: TimeRangeInput) => {
             store.loadTotalPageViews(timeRange);
             store.loadUniqueVisitors(timeRange);
             store.loadTopPagePerformance(timeRange);
@@ -432,6 +430,7 @@ export const DotAnalyticsDashboardStore = signalStore(
             effect(
                 () => {
                     const timeRange = store.timeRange();
+
                     store.loadAllDashboardData(timeRange);
                 },
                 { allowSignalWrites: true }

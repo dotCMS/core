@@ -1,8 +1,10 @@
 import {
     ChartData,
+    Granularity,
     PageViewDeviceBrowsersEntity,
     PageViewTimeLineEntity,
     TablePageData,
+    TimeRange,
     TopPagePerformanceEntity,
     TopPerformaceTableEntity,
     TotalPageViewsEntity,
@@ -13,6 +15,52 @@ import { parseUserAgent } from '../browser/userAgentParser';
 /**
  * Helper functions to extract numeric values from analytics entities
  */
+
+/**
+ * Determines the appropriate granularity for analytics queries based on the time range.
+ *
+ * This utility centralizes the logic for selecting granularity levels to ensure
+ * optimal data visualization and performance across different time periods.
+ *
+ * @param timeRange - The time range for the analytics query
+ * @returns The appropriate granularity level for the given time range
+ */
+export function determineGranularityForTimeRange(timeRange: TimeRange): Granularity {
+    switch (timeRange) {
+        case 'today':
+
+        // falls through
+        case 'yesterday':
+            // For today/yesterday, use hourly granularity for detailed intraday analysis
+            return 'hour';
+
+        case 'from 7 days ago to now':
+            // For last 7 days, use daily granularity
+            return 'day';
+
+        case 'from 30 days ago to now':
+            // For last 30 days, use daily granularity
+            return 'day';
+
+        default: {
+            // For custom ranges or other periods, extract days and decide
+            const daysMatch = timeRange.match(/from (\d+) days ago to now/);
+            if (daysMatch) {
+                const numDays = parseInt(daysMatch[1], 10);
+                if (numDays > 90) {
+                    return 'month';
+                } else if (numDays > 30) {
+                    return 'week';
+                } else {
+                    return 'day';
+                }
+            } else {
+                // For custom date ranges, default to day
+                return 'day';
+            }
+        }
+    }
+}
 
 /**
  * Extracts page views count from TotalPageViewsEntity
