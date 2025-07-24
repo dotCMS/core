@@ -48,4 +48,18 @@ describe('RowComponent', () => {
         const columns = spectator.queryAll('dotcms-column');
         expect(columns.length).toBe(2);
     });
+
+    it('should render row with styleClass', () => {
+        spectator.setInput({
+            row: {
+                columns: [],
+                styleClass: 'custom-class',
+                identifier: 1
+            }
+        });
+        spectator.detectChanges();
+        const rowElement = spectator.query(byTestId('dotcms-row'));
+
+        expect(rowElement?.classList.contains('custom-class')).toBe(true);
+    });
 });
