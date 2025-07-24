@@ -1,4 +1,5 @@
 import { TiptapBubbleMenuDirective } from 'ngx-tiptap';
+import { catchError, of, take } from 'rxjs';
 import { Instance, Props } from 'tippy.js';
 
 import { CommonModule } from '@angular/common';
@@ -22,12 +23,10 @@ import { DomSanitizer } from '@angular/platform-browser';
 import { Dropdown, DropdownModule } from 'primeng/dropdown';
 import { OverlayPanelModule } from 'primeng/overlaypanel';
 
-import { take } from 'rxjs/operators';
-
 import { Editor } from '@tiptap/core';
 
 import { DotAiService, DotContentTypeService, DotMessageService } from '@dotcms/data-access';
-import { FeaturedFlags } from '@dotcms/dotcms-models';
+import { DotCMSContentType, FeaturedFlags } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotImageEditorPopoverComponent } from './components/dot-image-editor-popover/dot-image-editor-popover.component';
@@ -278,10 +277,12 @@ export class DotBubbleMenuComponent implements OnInit {
         // Query content type service to determine editor capabilities and preferences
         this.dotContentTypeService
             .getContentType(contentType)
-            .pipe(take(1))
-            .subscribe((contentTypeInfo) => {
+            .pipe(
+                take(1),
+                catchError(() => of(null))
+            )
+            .subscribe((contentTypeInfo: DotCMSContentType | null) => {
                 // Determine which editor to use based on feature flag in content type metadata
-
                 const shouldUseOldEditor =
                     !contentTypeInfo?.metadata?.[
                         FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED
