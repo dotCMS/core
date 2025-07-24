@@ -369,7 +369,7 @@ public class CacheResource {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Action(s) returned successfully",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseEntityWorkflowHistoryCommentsView.class)
+                                    schema = @Schema(implementation = ResponseEntityStringView.class)
                             )
                     ),
                     @ApiResponse(responseCode = "500", description = "General Error")
