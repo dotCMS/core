@@ -129,6 +129,9 @@ jobs:
                   // For postman tests with collection
                   testEntry.maven_args = `${testEntry.base_maven_args} -Dpostman.collections=${testEntry.collection}`;
                   testEntry.stage_name = `Postman ${testEntry.collection}`;
+                } else if (testEntry.maven_args && testEntry.base_maven_args) {
+                  // Combine base_maven_args first, then suite-specific maven_args
+                  testEntry.maven_args = `${testEntry.base_maven_args} ${testEntry.maven_args}`;
                 } else if (!testEntry.maven_args && testEntry.base_maven_args) {
                   // Use base_maven_args if no specific maven_args
                   testEntry.maven_args = testEntry.base_maven_args;
@@ -180,13 +183,5 @@ jobs:
           needs-docker-image: ${{ matrix.needs_docker == true }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           artifacts-from: ${{ env.ARTIFACT_RUN_ID }}
-          
-      # Upload Karate reports if this is a karate test
-      - name: Upload Karate-report
-        if: matrix.test_type == 'karate'
-        uses: actions/upload-artifact@v4
-        with:
-          name: karate-reports
-          path: dotCMS/target/karate-reports
 
 
