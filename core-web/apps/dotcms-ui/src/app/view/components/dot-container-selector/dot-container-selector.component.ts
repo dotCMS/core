@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
 
 import { map, take } from 'rxjs/operators';
 
@@ -16,17 +16,15 @@ import { DotContainer } from '@dotcms/dotcms-models';
     styleUrls: ['./dot-container-selector.component.scss']
 })
 export class DotContainerSelectorComponent implements OnInit {
+    paginationService = inject(PaginatorService);
+    private templateContainersCacheService = inject(DotTemplateContainersCacheService);
+
     @Output() swap: EventEmitter<DotContainer> = new EventEmitter();
 
     @Input() innerClass = '';
 
     totalRecords: number;
     currentContainers: Observable<DotContainer[]>;
-
-    constructor(
-        public paginationService: PaginatorService,
-        private templateContainersCacheService: DotTemplateContainersCacheService
-    ) {}
 
     ngOnInit(): void {
         this.paginationService.url = 'v1/containers';

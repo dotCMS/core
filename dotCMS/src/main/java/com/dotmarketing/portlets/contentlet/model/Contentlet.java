@@ -190,6 +190,8 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 
   public static final String SKIP_RELATIONSHIPS_VALIDATION = "__skipRelationshipValidation__";
 
+  public static final String EVENT_VAR_NAME = "calendarEvent";
+
   private transient ContentType contentType;
   protected Map<String, Object> map;
 
@@ -1445,7 +1447,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 */
     @JsonIgnore
 	public boolean isCalendarEvent() {
-		return getStructure().getStructureType() == BaseContentType.CONTENT.getType() &&  "Event".equals(getStructure().getName()) ;
+		return getStructure().getStructureType() == BaseContentType.CONTENT.getType() &&  EVENT_VAR_NAME.equalsIgnoreCase(getStructure().getVelocityVarName()) ;
 	}
 
 	/**

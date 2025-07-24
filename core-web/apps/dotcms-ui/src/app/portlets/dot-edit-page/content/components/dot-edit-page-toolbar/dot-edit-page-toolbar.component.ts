@@ -7,7 +7,8 @@ import {
     OnChanges,
     OnDestroy,
     OnInit,
-    Output
+    Output,
+    inject
 } from '@angular/core';
 
 import { DotLicenseService, DotPropertiesService } from '@dotcms/data-access';
@@ -27,6 +28,9 @@ import {
     styleUrls: ['./dot-edit-page-toolbar.component.scss']
 })
 export class DotEditPageToolbarComponent implements OnInit, OnChanges, OnDestroy {
+    private dotLicenseService = inject(DotLicenseService);
+    private dotConfigurationService = inject(DotPropertiesService);
+
     @Input() pageState: DotPageRenderState;
     @Input() variant: DotVariantData | null = null;
     @Input() runningExperiment: DotExperiment | null = null;
@@ -44,11 +48,6 @@ export class DotEditPageToolbarComponent implements OnInit, OnChanges, OnDestroy
     runningUntilDateFormat = RUNNING_UNTIL_DATE_FORMAT;
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
-
-    constructor(
-        private dotLicenseService: DotLicenseService,
-        private dotConfigurationService: DotPropertiesService
-    ) {}
 
     ngOnInit() {
         // TODO: Remove next line when total functionality of Favorite page is done for release

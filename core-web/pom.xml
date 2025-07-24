@@ -21,10 +21,6 @@
         <cargo.server.port>8084</cargo.server.port>
         <yarn.install.cmd>--frozen-lockfile</yarn.install.cmd>
         <skip.npm.install>false</skip.npm.install>
-        <sonar.sources>apps,libs</sonar.sources>
-        <sonar.exclusions>**/node_modules/**,**/*.spec.ts</sonar.exclusions>
-        <sonar.tests>apps,libs</sonar.tests>
-        <sonar.test.inclusions>**/*.spec.ts</sonar.test.inclusions>
         <skip.core-web.updates>false</skip.core-web.updates>
         <skip.validate>true</skip.validate>
         <git.origin.branch>origin/main</git.origin.branch>

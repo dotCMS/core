@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewEncapsulation } from '@angular/core';
+import { Component, OnInit, ViewEncapsulation, inject } from '@angular/core';
 
 import { DotCustomEventHandlerService } from '@dotcms/app/api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 
@@ -10,7 +10,7 @@ import { DotCustomEventHandlerService } from '@dotcms/app/api/services/dot-custo
     templateUrl: './main-legacy.component.html'
 })
 export class MainComponentLegacyComponent implements OnInit {
-    constructor(private dotCustomEventHandlerService: DotCustomEventHandlerService) {}
+    private dotCustomEventHandlerService = inject(DotCustomEventHandlerService);
 
     ngOnInit(): void {
         document.body.style.backgroundColor = '';

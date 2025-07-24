@@ -1,7 +1,7 @@
 import { fromEvent, Observable, of, Subject } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { Component, ElementRef, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
 
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { InputTextModule } from 'primeng/inputtext';
@@ -32,17 +32,15 @@ import { DotAutofocusDirective, DotIconModule, DotMessagePipe } from '@dotcms/ui
     styleUrls: ['./dot-pages-create-page-dialog.component.scss']
 })
 export class DotPagesCreatePageDialogComponent implements OnInit, OnDestroy {
+    private dotRouterService = inject(DotRouterService);
+    private ref = inject(DynamicDialogRef);
+    config = inject(DynamicDialogConfig);
+
     @ViewChild('searchInput', { static: true }) searchInput: ElementRef;
 
     pageTypes$: Observable<DotCMSContentType[]>;
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
-
-    constructor(
-        private dotRouterService: DotRouterService,
-        private ref: DynamicDialogRef,
-        public config: DynamicDialogConfig
-    ) {}
 
     /**
      * Redirect to Create content page
