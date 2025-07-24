@@ -71,7 +71,7 @@ jobs:
         
       - name: Parse test configuration
         id: parse-config
-        uses: mikefarah/yq@master
+        uses: mikefarah/yq@v4.47.1
         with:
           cmd: yq -o=json '.github/test-matrix.yml' > config.json
 
