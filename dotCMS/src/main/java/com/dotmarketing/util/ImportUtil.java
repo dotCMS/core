@@ -64,6 +64,7 @@ import com.dotmarketing.util.importer.HeaderValidationCodes;
 import com.dotmarketing.util.importer.ImportLineValidationCodes;
 import com.dotmarketing.util.importer.ImportResultConverter;
 import com.dotmarketing.util.importer.exception.HeaderValidationException;
+import com.dotmarketing.util.importer.exception.ImportLineErrorAware;
 import com.dotmarketing.util.importer.exception.ImportLineException;
 import com.dotmarketing.util.importer.exception.ValidationMessageException;
 import com.dotmarketing.util.importer.model.AbstractImportResult.OperationType;
@@ -324,6 +325,8 @@ public class ImportUtil {
         int failedRows = 0;
         int lineNumber = 0;
 
+        int stoppedOnErrorAtLine = -1;
+
         // Track successful imports separately from line number for consistent commit granularity
         int successfulImports = 0;
 
@@ -515,6 +518,7 @@ public class ImportUtil {
                             // Stop on first error if configured
                             if (params.stopOnError()) {
                                 Logger.info(ImportUtil.class, "Per given configuration the Import process Stopped on Error at line " + lineNumber);
+                                stoppedOnErrorAtLine = lineNumber;
                                 break;
                             }
 
@@ -587,7 +591,7 @@ public class ImportUtil {
         );
 
         // Preparing the response
-        return generateImportResult(params, lineNumber, failedRows,
+        return generateImportResult(params, lineNumber, failedRows, stoppedOnErrorAtLine,
                 messages, fileInfoBuilder, counters, chosenKeyFields, contentType);
     }
 
@@ -607,8 +611,10 @@ public class ImportUtil {
      * @return an {@link ImportResult} object containing details about the operation, processed
      * data, validation messages, and summary information
      */
-    private static ImportResult generateImportResult(final ImportFileParams params, final int lineNumber,
-            final int failedRows, final List<ValidationMessage> messages,
+    private static ImportResult generateImportResult(
+            final ImportFileParams params, final int lineNumber,
+            final int failedRows, final int stoppedOnErrorAtLine,
+            final List<ValidationMessage> messages,
             final Builder fileInfoBuilder, final Counters counters,
             final Set<String> chosenKeyFields, final Structure contentType) {
 
@@ -663,6 +669,7 @@ public class ImportUtil {
                 .contentTypeVariableName(contentType.getVelocityVarName())
                 .lastInode(Optional.ofNullable(counters.getLastInode()))
                 .fileInfo(fileInfo)
+                .stoppedOnErrorAtLine( stoppedOnErrorAtLine > 0 ? Optional.of(stoppedOnErrorAtLine) : Optional.empty() )
                 .data(ResultData.builder()
                         .processed(ProcessedData.builder()
                                 .parsedRows(lineNumber)
@@ -808,6 +815,15 @@ public class ImportUtil {
                     .field(jsonFieldException.getField())
                     .invalidValue(jsonFieldException.getInvalidJson())
                     .context(jsonFieldException.getContext());
+        }
+
+        if(ex instanceof ImportLineErrorAware){
+            final var importCodeErrorAware = (ImportLineErrorAware) ex;
+            messageBuilder
+                    .code(importCodeErrorAware.getCode())
+                    .field(importCodeErrorAware.getField())
+                    .invalidValue(importCodeErrorAware.getValue())
+                    .context(importCodeErrorAware.getContext().orElseGet(Map::of));
         }
 
         messageBuilder.message(ex.getMessage());
@@ -2396,13 +2412,25 @@ public class ImportUtil {
                     .invalidValue(value)
                     .build();
         }
-        if (UtilMethods.isSet(value) && !tempFileAPI.validUrl(value)) {
-            throw ImportLineException.builder()
-                    .message("URL is syntactically valid but returned a non-success HTTP response")
-                    .code(ImportLineValidationCodes.UNREACHABLE_URL_CONTENT.name())
-                    .field(field.getVelocityVarName())
-                    .invalidValue(value)
-                    .build();
+        if (UtilMethods.isSet(value)) {
+            try {
+                if (!tempFileAPI.validUrl(value)) {
+                    throw ImportLineException.builder()
+                            .message("URL is syntactically valid but returned a non-success HTTP response")
+                            .code(ImportLineValidationCodes.UNREACHABLE_URL_CONTENT.name())
+                            .field(field.getVelocityVarName())
+                            .invalidValue(value)
+                            .build();
+                }
+            } catch (DotRuntimeException e) {
+                Logger.warn(ImportUtil.class, "Unreachable url or invalid config",e);
+                throw ImportLineException.builder()
+                        .message("URL validation failed: " + e.getMessage())
+                        .code(ImportLineValidationCodes.UNREACHABLE_URL_CONTENT.name())
+                        .field(field.getVelocityVarName())
+                        .invalidValue(value)
+                        .build();
+            }
         }
         return value;
     }

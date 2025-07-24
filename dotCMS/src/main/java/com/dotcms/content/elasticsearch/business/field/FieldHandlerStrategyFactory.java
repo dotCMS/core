@@ -8,6 +8,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.portlets.contentlet.business.DotJsonFieldException;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
+import com.dotmarketing.portlets.contentlet.business.DotNumericFieldException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotmarketing.util.DateUtil;
@@ -16,6 +17,7 @@ import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
 
+import java.io.Serializable;
 import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.IOException;
@@ -307,7 +309,7 @@ public class FieldHandlerStrategyFactory {
                 if (value != null && value.toString().length() != 0) {
                     contentlet.getMap().put(field.variable(), (String) value);
                 }
-                throw new DotContentletStateException("Unable to set string value as a Float for the field: " + field.variable());
+                throw new DotNumericFieldException(field.variable(), value);
             }
         }
     }
@@ -332,10 +334,10 @@ public class FieldHandlerStrategyFactory {
         } else if (value instanceof String) {
             try {
                 contentlet.setLongProperty(field.variable(),
-                        Long.valueOf((String)value));
+                        Long.parseLong((String)value));
             } catch (Exception e) {
                 //If we throw this exception here.. the contentlet will never get to the validateContentlet Method
-                throw new DotContentletStateException("Unable to set string value as a Long for the field: " + field.variable());
+                throw new DotNumericFieldException(field.variable(), value);
             }
         }
     }
