@@ -90,7 +90,6 @@ const initTranslations = (dotMessageService: DotMessageService) => {
         DotContentSearchService,
         DotLanguagesService,
         DotContentTypeService,
-
         DotWorkflowActionsFireService,
         {
             provide: APP_INITIALIZER,

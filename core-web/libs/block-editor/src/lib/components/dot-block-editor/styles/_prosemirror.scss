@@ -22,7 +22,15 @@ tiptap-editor ::ng-deep .ProseMirror {
         &.dot-image,
         .dot-image {
             outline: 2px solid $color-palette-primary;
+
+            &:hover {
+                outline: 2px solid $color-palette-primary;
+            }
         }
+    }
+
+    .dot-image:hover {
+        outline: 2px solid $color-palette-primary-400;
     }
 
     .is-empty::before {
