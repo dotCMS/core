@@ -83,12 +83,17 @@ export class DotAnalyticsService {
     pageViewTimeLine(
         timeRange: TimeRange = DEFAULT_TIME_RANGE
     ): Observable<PageViewTimeLineEntity[]> {
-        // Determinar granularidad basada en el timeRange
+        // Determine granularity based on the number of days in timeRange
         let granularity: Granularity = 'day';
-        if (timeRange.includes('week')) {
-            granularity = timeRange.includes('1 week') ? 'day' : 'week';
-        } else if (timeRange.includes('month')) {
-            granularity = 'week';
+
+        // Extract number of days from timeRange string (e.g., "from 7 days ago to now" -> 7)
+        const daysMatch = timeRange.match(/from (\d+) days ago to now/);
+        if (daysMatch) {
+            const numDays = parseInt(daysMatch[1], 10);
+            // Use weekly granularity for periods longer than 14 days
+            if (numDays > 14) {
+                granularity = 'week';
+            }
         }
 
         const query = createCubeQuery()
