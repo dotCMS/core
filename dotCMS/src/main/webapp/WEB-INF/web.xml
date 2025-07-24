@@ -409,6 +409,12 @@
 		<load-on-startup>1</load-on-startup>
 	</servlet>
 
+	<servlet>
+		<servlet-name>ManagementMetricsServlet</servlet-name>
+		<servlet-class>com.dotcms.metrics.servlet.ManagementMetricsServlet</servlet-class>
+		<load-on-startup>1</load-on-startup>
+	</servlet>
+
     
 	<!--END DOTMARKETING SERVLETS-->
 	
@@ -560,6 +566,16 @@
 	<servlet-mapping>
 		<servlet-name>HealthProbeServlet</servlet-name>
 		<url-pattern>/dotmgt/health</url-pattern>
+	</servlet-mapping>
+
+	<!-- Metrics service endpoint mappings
+	     These paths must match MetricsEndpointConstants.Endpoints values:
+	     - METRICS = /dotmgt/metrics (Prometheus metrics scraping)
+	     
+	     See: com.dotcms.metrics.config.MetricsEndpointConstants for validation -->
+	<servlet-mapping>
+		<servlet-name>ManagementMetricsServlet</servlet-name>
+		<url-pattern>/dotmgt/metrics</url-pattern>
 	</servlet-mapping>
 
 

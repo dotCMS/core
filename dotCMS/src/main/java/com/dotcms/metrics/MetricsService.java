@@ -86,6 +86,7 @@ public class MetricsService {
         // Configure Prometheus registry
         if (MetricsConfig.PROMETHEUS_ENABLED) {
             try {
+                // Use default config - no automatic servlet registration
                 prometheusRegistry = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT);
                 
                 // Add common tags

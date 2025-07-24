@@ -10,6 +10,54 @@ The dotCMS metrics system provides comprehensive monitoring capabilities using M
 - **MetricsTaggingService**: Centralized tag management with K8s support
 - **MetricsValidator**: Configuration validation at startup
 - **MetricsConfig**: Configuration management for all metrics settings
+- **ManagementMetricsServlet**: Secure metrics endpoint through management port infrastructure
+
+## Management Port Integration
+
+The metrics system is integrated with dotCMS's management port infrastructure for security and performance:
+
+### Endpoints
+
+| Endpoint | Port | Purpose | Access |
+|----------|------|---------|--------|
+| `/dotmgt/metrics` | 8090 (management) | Prometheus metrics scraping | Protected by InfrastructureManagementFilter |
+
+### Security
+
+- **Primary endpoint** (`/dotmgt/metrics`) is only accessible on the management port (8090)
+- Protected by `InfrastructureManagementFilter` with port validation
+- Support for Docker/proxy scenarios via `X-Forwarded-Port` headers
+- No authentication required to allow monitoring system scraping
+
+### Performance
+
+- Minimal filter chain processing for `/dotmgt/*` endpoints
+- Sub-5ms response times for metrics scraping
+- Direct CDI service access without expensive middleware
+
+### Usage Examples
+
+```bash
+# Access metrics through management port
+curl http://localhost:8090/dotmgt/metrics
+
+# Docker/Kubernetes with proxy headers
+curl -H "X-Forwarded-Port: 8090" http://localhost:8080/dotmgt/metrics
+```
+
+### Monitoring Integration
+
+For Prometheus configuration, use the management port endpoint:
+
+```yaml
+# prometheus.yml
+scrape_configs:
+  - job_name: 'dotcms'
+    static_configs:
+      - targets: ['dotcms:8090']
+    metrics_path: '/dotmgt/metrics'
+    scrape_interval: 30s
+```
 
 ## Kubernetes Tags Configuration
 

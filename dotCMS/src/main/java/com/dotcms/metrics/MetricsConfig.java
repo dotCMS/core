@@ -27,11 +27,20 @@ import com.dotmarketing.util.Logger;
  * - metrics.prefix: Prefix for all metric names (default: "dotcms")
  * - metrics.collection.interval-seconds: How often to collect metrics (default: 30)
  * - metrics.prometheus.enabled: Enable Prometheus registry (default: true)
- * - metrics.prometheus.endpoint: Prometheus metrics endpoint (default: "/metrics")
+ * - metrics.prometheus.endpoint: Prometheus metrics endpoint (default: "/dotmgt/metrics")
  * - metrics.jmx.enabled: Enable JMX registry (default: true)
  * - metrics.jvm.enabled: Enable JVM metrics (default: true)
  * - metrics.system.enabled: Enable system metrics (default: true)
  * - metrics.application.enabled: Enable application-specific metrics (default: true)
+ * 
+ * Management Port Integration:
+ * Metrics are served exclusively through the management port infrastructure at /dotmgt/metrics.
+ * This ensures proper security isolation and high-performance access for monitoring tools.
+ * The endpoint is protected by InfrastructureManagementFilter and only accessible on the
+ * management port (8090 by default) or through proper proxy headers.
+ * 
+ * No automatic servlet registration occurs - metrics are only available through the 
+ * ManagementMetricsServlet mapped to /dotmgt/metrics.
  */
 public final class MetricsConfig {
     
@@ -134,10 +143,10 @@ public final class MetricsConfig {
     
     /**
      * Endpoint path for Prometheus metrics scraping.
-     * Default: "/metrics"
+     * Default: "/dotmgt/metrics" (management port endpoint)
      */
     public static final String PROMETHEUS_ENDPOINT = 
-        Config.getStringProperty("metrics.prometheus.endpoint", "/metrics");
+        Config.getStringProperty("metrics.prometheus.endpoint", "/dotmgt/metrics");
     
     /**
      * Whether Prometheus endpoint requires authentication.
