@@ -3,14 +3,21 @@
 
 <p-card
     class="h-full hover:shadow-2 transition-all transition-duration-200 metric-card"
+    [ngClass]="{
+        'metric-card--empty': $isEmpty(),
+        'metric-card--error': $isError()
+    }"
     data-testid="metric-card">
     @if ($isError()) {
         <!-- Error state -->
-        <div
-            class="flex flex-column justify-content-center align-items-center h-full text-center gap-3 pt-3">
-            <i class="pi pi-exclamation-triangle text-red-500 text-2xl"></i>
-            <div class="metric-error">{{ 'analytics.metrics.error.loading' | dm }}</div>
-        </div>
+        <dot-analytics-state-message
+            message="analytics.metrics.error.reload"
+            icon="pi-exclamation-triangle" />
+    } @else if ($isEmpty()) {
+        <!-- Empty state -->
+        <dot-analytics-state-message
+            message="analytics.metrics.empty.insufficient-data"
+            icon="pi-info-circle" />
     } @else if ($isLoading()) {
         <!-- Loading state with skeleton -->
         <div class="flex flex-column justify-content-between h-full relative gap-3">

@@ -41,7 +41,7 @@
         // Override PrimeNG card styles to add border
         ::ng-deep .p-card {
             border: $field-border-size solid $color-palette-gray-400;
-            border-radius: $border-radius-lg;
+            border-radius: $border-radius-xl;
         }
     }
 
@@ -53,7 +53,7 @@
         // Override PrimeNG card styles
         ::ng-deep .p-card {
             border: $field-border-size solid $color-palette-gray-400;
-            border-radius: $border-radius-lg;
+            border-radius: $border-radius-xl;
         }
     }
 
@@ -65,7 +65,7 @@
         // Override PrimeNG card styles
         ::ng-deep .p-card {
             border: $field-border-size solid $color-palette-gray-400;
-            border-radius: $border-radius-lg;
+            border-radius: $border-radius-xl;
         }
     }
 
@@ -77,7 +77,7 @@
         // Override PrimeNG card styles
         ::ng-deep .p-card {
             border: $field-border-size solid $color-palette-gray-400;
-            border-radius: $border-radius-lg;
+            border-radius: $border-radius-xl;
         }
     }
 }
