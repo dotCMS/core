@@ -72,9 +72,9 @@ describe('IframeComponent', () => {
         comp = fixture.componentInstance;
         de = fixture.debugElement;
 
-        dotIframeService = TestBed.get(DotIframeService);
-        dotUiColorsService = TestBed.get(DotUiColorsService);
-        dotRouterService = TestBed.get(DotRouterService);
+        dotIframeService = TestBed.inject(DotIframeService);
+        dotUiColorsService = TestBed.inject(DotUiColorsService);
+        dotRouterService = TestBed.inject(DotRouterService);
         spyOn(dotUiColorsService, 'setColors');
 
         comp.isLoading = false;

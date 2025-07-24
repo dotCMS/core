@@ -33,9 +33,9 @@ describe('ValidPublicAuthGuardService', () => {
             ]
         });
 
-        publicAuthGuardService = TestBed.get(PublicAuthGuardService);
-        dotRouterService = TestBed.get(DotRouterService);
-        loginService = TestBed.get(LoginService);
+        publicAuthGuardService = TestBed.inject(PublicAuthGuardService);
+        dotRouterService = TestBed.inject(DotRouterService);
+        loginService = TestBed.inject(LoginService);
         mockRouterStateSnapshot = jasmine.createSpyObj<RouterStateSnapshot>('RouterStateSnapshot', [
             'toString'
         ]);

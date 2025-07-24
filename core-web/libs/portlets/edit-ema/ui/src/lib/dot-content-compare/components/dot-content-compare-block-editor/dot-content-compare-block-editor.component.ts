@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { AfterViewInit, Component, Input, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, Input, ViewChild, inject } from '@angular/core';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
 import { map } from 'rxjs/operators';
@@ -14,6 +14,8 @@ import { DotContentCompareTableData } from '../../store/dot-content-compare.stor
     templateUrl: './dot-content-compare-block-editor.component.html'
 })
 export class DotContentCompareBlockEditorComponent implements AfterViewInit {
+    private sanitizer = inject(DomSanitizer);
+
     @ViewChild('blockEditor') blockEditor: DotBlockEditorComponent;
     @ViewChild('blockEditorCompare') blockEditorCompare: DotBlockEditorComponent;
 
@@ -24,8 +26,6 @@ export class DotContentCompareBlockEditorComponent implements AfterViewInit {
 
     htmlCompareValue$: Observable<SafeHtml>;
     htmlWorkingValue$: Observable<SafeHtml>;
-
-    constructor(private sanitizer: DomSanitizer) {}
 
     ngAfterViewInit(): void {
         this.htmlCompareValue$ = this.blockEditorCompare?.valueChange.pipe(
