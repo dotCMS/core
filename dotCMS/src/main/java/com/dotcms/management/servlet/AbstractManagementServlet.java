@@ -64,7 +64,7 @@ public abstract class AbstractManagementServlet extends HttpServlet {
         String servletPath = request.getServletPath();
         
         // Check if request is on management path
-        boolean isManagementPath = (requestURI != null && requestURI.contains(InfrastructureConstants.MANAGEMENT_PATH_PREFIX)) ||
+        boolean isManagementPath = (requestURI != null && requestURI.startsWith(InfrastructureConstants.MANAGEMENT_PATH_PREFIX)) ||
                                   (servletPath != null && servletPath.startsWith(InfrastructureConstants.MANAGEMENT_PATH_PREFIX));
         
         if (!isManagementPath) {

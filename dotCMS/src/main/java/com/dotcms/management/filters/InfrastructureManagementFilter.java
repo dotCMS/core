@@ -41,7 +41,7 @@ public class InfrastructureManagementFilter implements Filter {
         String requestURI = httpRequest.getRequestURI();
 
         // Only process management requests - let everything else pass through
-        if (requestURI != null && requestURI.contains(InfrastructureConstants.MANAGEMENT_PATH_PREFIX)) {
+        if (requestURI != null && requestURI.startsWith(InfrastructureConstants.MANAGEMENT_PATH_PREFIX)) {
             Logger.debug(this, "Management endpoint detected: " + requestURI);
             
             if (isManagementAccessAuthorized(httpRequest)) {
