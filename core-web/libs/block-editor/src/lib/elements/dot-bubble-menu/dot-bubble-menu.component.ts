@@ -1,5 +1,5 @@
 import { TiptapBubbleMenuDirective } from 'ngx-tiptap';
-import { catchError, of, take } from 'rxjs';
+import { of } from 'rxjs';
 import { Instance, Props } from 'tippy.js';
 
 import { CommonModule } from '@angular/common';
@@ -22,6 +22,8 @@ import { DomSanitizer } from '@angular/platform-browser';
 
 import { Dropdown, DropdownModule } from 'primeng/dropdown';
 import { OverlayPanelModule } from 'primeng/overlaypanel';
+
+import { catchError, take } from 'rxjs/operators';
 
 import { Editor } from '@tiptap/core';
 
@@ -288,18 +290,20 @@ export class DotBubbleMenuComponent implements OnInit {
                         FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED
                     ];
 
+                const titleFallback = this.dotMessageService.get(
+                    'message.contentlet.back.to.content'
+                );
+
                 // Prepare return navigation data
 
                 // Extract current page title removing any suffix after the dash
-
                 const title = window.parent
                     ? window.parent.document?.title?.split(' - ')?.[0]
-                    : document?.title?.split(' - ')?.[0] ||
-                      this.dotMessageService.get('message.contentlet.back.to.content');
+                    : document?.title?.split(' - ')?.[0];
 
                 // Store navigation state in localStorage for returning to first editor
                 const relationshipReturnValue = {
-                    title,
+                    title: title || titleFallback,
                     blockEditorBackUrl: shouldUseOldEditor
                         ? this.generateBackUrl(inode)
                         : window.location.href,
