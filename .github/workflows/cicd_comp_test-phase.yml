@@ -73,7 +73,7 @@ jobs:
         id: parse-config
         uses: mikefarah/yq@v4.47.1
         with:
-          cmd: yq -o=json '.github/test-matrix.yml' > config.json
+          cmd: yq -o=json .github/test-matrix.yml > config.json
 
       - name: Generate test matrix
         id: generate-matrix
