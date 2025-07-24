@@ -21,7 +21,7 @@ export interface ParsedUserAgent {
 class UserAgentParser {
     private userAgent: string;
 
-    constructor(userAgent: string = navigator?.userAgent || '') {
+    constructor(userAgent: string) {
         this.userAgent = userAgent.toLowerCase();
     }
 
@@ -215,7 +215,13 @@ class UserAgentParser {
 
 // Export main function
 export function parseUserAgent(userAgent?: string): ParsedUserAgent {
-    const parser = new UserAgentParser(userAgent);
+    // Use navigator.userAgent only when no arguments are provided
+    // If undefined is explicitly passed, treat it as empty string for testing
+    const ua =
+        arguments.length === 0 && typeof navigator !== 'undefined'
+            ? navigator?.userAgent || ''
+            : userAgent || '';
+    const parser = new UserAgentParser(ua);
 
     return parser.parse();
 }
