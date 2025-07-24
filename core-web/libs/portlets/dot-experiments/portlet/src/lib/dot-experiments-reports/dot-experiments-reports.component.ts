@@ -8,7 +8,7 @@ import {
     PercentPipe,
     TitleCasePipe
 } from '@angular/common';
-import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { ConfirmationService } from 'primeng/api';
@@ -63,6 +63,12 @@ import { DotExperimentsUiHeaderComponent } from '../shared/ui/dot-experiments-he
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsReportsComponent implements OnInit {
+    private readonly store = inject(DotExperimentsReportsStore);
+    private readonly router = inject(Router);
+    private readonly route = inject(ActivatedRoute);
+    private readonly confirmationService = inject(ConfirmationService);
+    private readonly dotMessageService = inject(DotMessageService);
+
     vm$: Observable<VmReportExperiment> = this.store.vm$;
     readonly axisLabelsProbabilityChart: { xAxisLabel: string; yAxisLabel: string } = {
         xAxisLabel: this.dotMessageService.get('experiments.chart.xAxisLabel'),
@@ -72,14 +78,6 @@ export class DotExperimentsReportsComponent implements OnInit {
         xAxisLabel: this.dotMessageService.get('experiments.chart.xAxisLabel.bayesian'),
         yAxisLabel: this.dotMessageService.get('experiments.chart.yAxisLabel.bayesian')
     };
-
-    constructor(
-        private readonly store: DotExperimentsReportsStore,
-        private readonly router: Router,
-        private readonly route: ActivatedRoute,
-        private readonly confirmationService: ConfirmationService,
-        private readonly dotMessageService: DotMessageService
-    ) {}
 
     ngOnInit(): void {
         this.loadExperimentsResults();
