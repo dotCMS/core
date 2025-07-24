@@ -83,8 +83,8 @@ public class SiteKeyValidator implements AnalyticsValidator {
      *
      * @return The Site that the Event is being sent to.
      */
-    private Host getSiteFromRequest(final HttpServletRequest request) throws AnalyticsValidationException {
-        final Optional<String> siteFromRequestOpt = this.getSiteNameOrAlias(request);
+    public static Host getSiteFromRequest(final HttpServletRequest request) throws AnalyticsValidationException {
+        final Optional<String> siteFromRequestOpt = getSiteNameOrAlias(request);
         if (siteFromRequestOpt.isEmpty()) {
             throw new AnalyticsValidationException("Site could not be retrieved from Origin or Referer HTTP Headers",
                     INVALID_SITE_KEY);
@@ -103,7 +103,7 @@ public class SiteKeyValidator implements AnalyticsValidator {
         } catch (final DotDataException | DotSecurityException e) {
             final String errorMsg = String.format("Failed to retrieve Site with name/alias '%s': %s",
                     siteFromRequestOpt.get(), ExceptionUtil.getErrorMessage(e));
-            Logger.error(this, errorMsg, e);
+            Logger.error(SiteKeyValidator.class, errorMsg, e);
             throw new AnalyticsValidationException(errorMsg, INVALID_SITE_KEY);
         }
     }
@@ -116,7 +116,7 @@ public class SiteKeyValidator implements AnalyticsValidator {
      * @param request The HTTP request to extract the site alias from
      * @return The extracted site alias (domain) or null if not found
      */
-    private Optional<String> getSiteNameOrAlias(final HttpServletRequest request) {
+    public static Optional<String> getSiteNameOrAlias(final HttpServletRequest request) {
         String siteUrl = request.getHeader(HttpHeaders.ORIGIN);
         if (UtilMethods.isNotSet(siteUrl)) {
             siteUrl = request.getHeader(HttpHeaders.REFERER);
@@ -128,9 +128,9 @@ public class SiteKeyValidator implements AnalyticsValidator {
                 if (parsedUrl != null && UtilMethods.isSet(parsedUrl.getHost())) {
                     return Optional.of(parsedUrl.getHost());
                 }
-                Logger.debug(this, String.format("Site Name or Alias could not be retrieved from '%s'", siteUrl));
+                Logger.debug(SiteKeyValidator.class, String.format("Site Name or Alias could not be retrieved from '%s'", siteUrl));
             } catch (final IllegalArgumentException e) {
-                Logger.warn(this, String.format("Site Alias could not be retrieved from HTTP Request: " +
+                Logger.warn(SiteKeyValidator.class, String.format("Site Alias could not be retrieved from HTTP Request: " +
                         "%s", ExceptionUtil.getErrorMessage(e)));
             }
         }

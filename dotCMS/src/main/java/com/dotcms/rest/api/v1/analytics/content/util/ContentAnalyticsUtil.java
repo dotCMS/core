@@ -6,7 +6,9 @@ import com.dotcms.analytics.track.collectors.EventType;
 import com.dotcms.jitsu.EventLogSubmitter;
 import com.dotcms.jitsu.ValidAnalyticsEventPayload;
 import com.dotcms.jitsu.ValidAnalyticsEventPayloadAttributes;
+import com.dotcms.jitsu.validators.AnalyticsValidator;
 import com.dotcms.jitsu.validators.AnalyticsValidatorUtil;
+import com.dotcms.jitsu.validators.SiteKeyValidator;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -28,9 +30,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import static com.dotcms.jitsu.ValidAnalyticsEventPayloadAttributes.REFERER_ATTRIBUTE_NAME;
-import static com.dotcms.jitsu.ValidAnalyticsEventPayloadAttributes.URL_ATTRIBUTE_NAME;
-import static com.dotcms.jitsu.ValidAnalyticsEventPayloadAttributes.USER_AGENT_ATTRIBUTE_NAME;
+import static com.dotcms.jitsu.ValidAnalyticsEventPayloadAttributes.*;
 
 /**
  * This utility class provides different methods for interacting with Content Analytics features.
@@ -132,8 +132,20 @@ public class ContentAnalyticsUtil {
             userEventPayload.put(URL_ATTRIBUTE_NAME, "");
         }
 
+        final Host siteFromRequest = getSiteFromRequest(request);
+        final Map<String, Object> contextSection = (Map<String, Object>) userEventPayload.get(CONTEXT_ATTRIBUTE_NAME);
+        contextSection.put(SITE_ID_ATTRIBUTE_NAME, siteFromRequest.getIdentifier());
+
         userEventPayload.put("isExperimentPage", false);
         userEventPayload.put("isTargetPage", false);
+    }
+
+    private static Host getSiteFromRequest(HttpServletRequest request)  {
+        try {
+            return SiteKeyValidator.getSiteFromRequest(request);
+        } catch (AnalyticsValidator.AnalyticsValidationException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
