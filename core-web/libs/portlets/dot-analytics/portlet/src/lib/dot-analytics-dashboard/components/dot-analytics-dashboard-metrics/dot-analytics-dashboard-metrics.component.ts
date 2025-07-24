@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+import { NgClass } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
 import { CardModule } from 'primeng/card';
@@ -6,6 +6,8 @@ import { SkeletonModule } from 'primeng/skeleton';
 
 import { ComponentStatus } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
+
+import { DotAnalyticsStateMessageComponent } from '../dot-analytics-state-message/dot-analytics-state-message.component';
 
 /**
  * Metric card component for displaying key analytics metrics.
@@ -15,7 +17,13 @@ import { DotMessagePipe } from '@dotcms/ui';
 @Component({
     selector: 'dot-analytics-dashboard-metrics',
     standalone: true,
-    imports: [CommonModule, CardModule, SkeletonModule, DotMessagePipe],
+    imports: [
+        NgClass,
+        CardModule,
+        SkeletonModule,
+        DotMessagePipe,
+        DotAnalyticsStateMessageComponent
+    ],
     changeDetection: ChangeDetectionStrategy.OnPush,
     templateUrl: './dot-analytics-dashboard-metrics.component.html',
     styleUrl: './dot-analytics-dashboard-metrics.component.scss'
@@ -65,4 +73,22 @@ export class DotAnalyticsDashboardMetricsComponent {
 
     /** Check if component is in error state */
     protected readonly $isError = computed(() => this.$status() === ComponentStatus.ERROR);
+
+    /** Check if metric data is empty or insufficient */
+    protected readonly $isEmpty = computed(() => {
+        const value = this.$value();
+        const status = this.$status();
+
+        // Don't show empty state if we're loading or have an error
+        if (
+            status === ComponentStatus.LOADING ||
+            status === ComponentStatus.INIT ||
+            status === ComponentStatus.ERROR
+        ) {
+            return false;
+        }
+
+        // Show empty state when we have no data or insufficient data
+        return value === null || value === undefined || value === 0;
+    });
 }

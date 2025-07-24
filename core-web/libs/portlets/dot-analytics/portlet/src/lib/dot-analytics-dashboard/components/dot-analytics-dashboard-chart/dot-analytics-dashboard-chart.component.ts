@@ -10,6 +10,7 @@ import { ComponentStatus } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { ChartData, ChartOptions, ChartType } from '../../types';
+import { DotAnalyticsStateMessageComponent } from '../dot-analytics-state-message/dot-analytics-state-message.component';
 
 /**
  * Reusable chart component for analytics dashboard.
@@ -18,7 +19,14 @@ import { ChartData, ChartOptions, ChartType } from '../../types';
 @Component({
     selector: 'dot-analytics-dashboard-chart',
     standalone: true,
-    imports: [CommonModule, CardModule, ChartModule, SkeletonModule, DotMessagePipe],
+    imports: [
+        CommonModule,
+        CardModule,
+        ChartModule,
+        SkeletonModule,
+        DotMessagePipe,
+        DotAnalyticsStateMessageComponent
+    ],
     changeDetection: ChangeDetectionStrategy.OnPush,
     templateUrl: './dot-analytics-dashboard-chart.component.html',
     styleUrl: './dot-analytics-dashboard-chart.component.scss'
@@ -176,4 +184,26 @@ export class DotAnalyticsDashboardChartComponent {
 
     /** Check if component is in error state */
     protected readonly $isError = computed(() => this.$status() === ComponentStatus.ERROR);
+
+    /** Check if chart data is empty */
+    protected readonly $isEmpty = computed(() => {
+        const data = this.$data();
+
+        if (!data || !data.datasets) {
+            return true;
+        }
+
+        // Check if all datasets are empty or have no data
+        return (
+            data.datasets.length === 0 ||
+            data.datasets.every(
+                (dataset) =>
+                    !dataset.data ||
+                    dataset.data.length === 0 ||
+                    dataset.data.every(
+                        (value) => value === 0 || value === null || value === undefined
+                    )
+            )
+        );
+    });
 }

@@ -1,5 +1,5 @@
-<p-card class="h-full">
-    @if ($isLoading()) {
+@if ($isLoading()) {
+    <p-card class="h-full">
         <!-- Loading State -->
         <p-skeleton height="1.5rem" width="12.5rem"></p-skeleton>
 
@@ -40,7 +40,22 @@
                 <p-skeleton height="1.5rem" width="15.625rem"></p-skeleton>
             </div>
         </div>
-    } @else {
+    </p-card>
+} @else if ($isEmpty()) {
+    <div class="table-empty-state h-full">
+        <p-card class="h-full">
+            <!-- Empty State -->
+            <div class="flex flex-column gap-3 h-full">
+                <h3 class="table-title">{{ title | dm }}</h3>
+
+                <dot-analytics-state-message
+                    message="analytics.table.empty.description"
+                    icon="pi-info-circle" />
+            </div>
+        </p-card>
+    </div>
+} @else {
+    <p-card class="h-full">
         <!-- Loaded State -->
 
         <h3 class="table-title">{{ title | dm }}</h3>
@@ -100,5 +115,5 @@
                 </tr>
             </ng-template>
         </p-table>
-    }
-</p-card>
+    </p-card>
+}
