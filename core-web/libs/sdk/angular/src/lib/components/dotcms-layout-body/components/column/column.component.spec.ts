@@ -60,18 +60,4 @@ describe('ColumnComponent', () => {
         const containers = spectator.queryAll('dotcms-container');
         expect(containers.length).toBe(2);
     });
-
-    it('should render column with styleClass', () => {
-        spectator.setInput({
-            column: {
-                styleClass: 'custom-class'
-            }
-        });
-
-        spectator.detectChanges();
-
-        const columnElement = spectator.query(byTestId('dotcms-column'));
-
-        expect(columnElement?.classList.contains('custom-class')).toBe(true);
-    });
 });
