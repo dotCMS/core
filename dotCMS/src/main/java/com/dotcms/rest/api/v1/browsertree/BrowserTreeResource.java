@@ -2,9 +2,10 @@ package com.dotcms.rest.api.v1.browsertree;
 
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.InitDataObject;
-import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.ResponseEntityMapView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.annotation.SwaggerCompliant;
 import com.dotcms.rest.api.v1.browser.BrowserQueryForm;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
@@ -15,6 +16,12 @@ import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import com.liferay.util.LocaleUtil;
 import org.glassfish.jersey.server.JSONP;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import javax.servlet.http.HttpServletRequest;
@@ -36,9 +43,10 @@ import java.util.stream.Collectors;
  * Created by jasontesser on 9/28/16.
  * @deprecated see {@link com.dotcms.rest.api.v1.browser.BrowserResource#getFolderContent(HttpServletRequest, HttpServletResponse, BrowserQueryForm)}
  */
+@SwaggerCompliant(value = "Site architecture and template management APIs", batch = 3)
 @Deprecated
 @Path("/v1/browsertree")
-@Tag(name = "Browser Tree", description = "File and folder browser tree operations")
+@Tag(name = "Browser Tree")
 public class BrowserTreeResource implements Serializable {
     private final WebResource webResource;
     private final BrowserTreeHelper browserTreeHelper;
@@ -60,23 +68,36 @@ public class BrowserTreeResource implements Serializable {
         this.i18NUtil    = i18NUtil;
     }
 
-    /**
-     * @deprecated see {@link com.dotcms.rest.api.v1.browser.BrowserResource#getFolderContent(HttpServletRequest, HttpServletResponse, BrowserQueryForm)}
-     * @param httpRequest
-     * @param httpResponse
-     * @param sitename
-     * @return
-     */
+    @Operation(
+        summary = "Load assets under site root (deprecated)",
+        description = "Loads all treeable assets under the root directory of a specified site. This method is deprecated - use BrowserResource.getFolderContent instead.",
+        deprecated = true
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Assets loaded successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityMapView.class))),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @Deprecated
     @GET
     @Path ("/sitename/{sitename}/uri/")
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces(MediaType.APPLICATION_JSON)
     public final Response loadAssetsUnder(
             @Context final HttpServletRequest  httpRequest,
             @Context final HttpServletResponse httpResponse,
-            @PathParam("sitename")   final String sitename) {
+            @Parameter(description = "Name of the site to load assets from", required = true) @PathParam("sitename")   final String sitename) {
 
         Response response = null;
         final InitDataObject initData = this.webResource.init(null, httpRequest, httpResponse, true, null);
@@ -98,7 +119,7 @@ public class BrowserTreeResource implements Serializable {
                     })
                     .collect(Collectors.toList());;
 
-            response = Response.ok(new ResponseEntityView
+            response = Response.ok(new ResponseEntityMapView
                     (Map.of(   "result",         assetResults
                     ),
                             this.i18NUtil.getMessagesMap(locale, "Invalid-option-selected",
@@ -113,25 +134,37 @@ public class BrowserTreeResource implements Serializable {
         return response;
     }
 
-    /**
-     * @deprecated see {@link com.dotcms.rest.api.v1.browser.BrowserResource#getFolderContent(HttpServletRequest, HttpServletResponse, BrowserQueryForm)}
-     * @param httpRequest
-     * @param httpResponse
-     * @param sitename
-     * @param uri
-     * @return
-     */
+    @Operation(
+        summary = "Load assets under specific URI (deprecated)",
+        description = "Loads all treeable assets under a specific URI path within a site. This method is deprecated - use BrowserResource.getFolderContent instead.",
+        deprecated = true
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Assets loaded successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityMapView.class))),
+        @ApiResponse(responseCode = "401", 
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403", 
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500", 
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @Deprecated
     @GET
     @Path ("/sitename/{sitename}/uri/{uri : .+}")
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces(MediaType.APPLICATION_JSON)
     public final Response loadAssetsUnder(
             @Context final HttpServletRequest httpRequest,
             @Context final HttpServletResponse httpResponse,
-            @PathParam("sitename")   final String sitename,
-            @PathParam("uri") final String uri
+            @Parameter(description = "Name of the site to load assets from", required = true) @PathParam("sitename")   final String sitename,
+            @Parameter(description = "URI path within the site to load assets from", required = true) @PathParam("uri") final String uri
     ) {
 
         Response response = null;
@@ -154,7 +187,7 @@ public class BrowserTreeResource implements Serializable {
                     })
                     .collect(Collectors.toList());
 
-            response = Response.ok(new ResponseEntityView
+            response = Response.ok(new ResponseEntityMapView
                     (Map.of(   "result",         assetResults
                     ),
                             this.i18NUtil.getMessagesMap(locale, "Invalid-option-selected",
