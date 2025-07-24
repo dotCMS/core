@@ -140,13 +140,12 @@ public class InfrastructureManagementFilter implements Filter {
     }
 
     /**
-     * Sends a standardized access denied response for management endpoints.
+     * Sends a 404 response for unauthorized management endpoint access.
+     * Returns a generic 404 to avoid information disclosure about the existence
+     * of management endpoints or system architecture details.
      */
     private void sendManagementAccessDenied(HttpServletResponse response) throws IOException {
-        response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-        response.setContentType(InfrastructureConstants.Responses.CONTENT_TYPE_TEXT);
-        response.setCharacterEncoding(InfrastructureConstants.Responses.CHARSET_UTF8);
-        response.getWriter().write(InfrastructureConstants.Responses.ACCESS_DENIED_MESSAGE);
+        response.sendError(HttpServletResponse.SC_NOT_FOUND);
     }
 
     @Override

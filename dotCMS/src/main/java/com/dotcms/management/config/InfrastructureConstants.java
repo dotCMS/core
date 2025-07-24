@@ -54,14 +54,4 @@ public final class InfrastructureConstants {
         public static final String X_ORIGINAL_PORT = "X-Original-Port";
     }
     
-    /**
-     * Standard management filter responses.
-     */
-    public static final class Responses {
-        private Responses() {}
-        
-        public static final String CONTENT_TYPE_TEXT = "text/plain";
-        public static final String CHARSET_UTF8 = "UTF-8";
-        public static final String ACCESS_DENIED_MESSAGE = "Management endpoints are only available on the management port";
-    }
 } 
