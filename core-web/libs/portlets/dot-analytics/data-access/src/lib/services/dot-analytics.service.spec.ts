@@ -81,7 +81,7 @@ describe('DotAnalyticsService', () => {
 
             it('should return unique visitors entity from response', (done) => {
                 const mockResponse: AnalyticsApiResponse<UniqueVisitorsEntity> = {
-                    entity: [{ 'request.totalUser': '342' }],
+                    entity: [{ 'request.totalUsers': '342' }],
                     errors: [],
                     i18nMessagesMap: {},
                     messages: [],
@@ -381,7 +381,7 @@ describe('DotAnalyticsService', () => {
             spectator.service.uniqueVisitors().subscribe();
             const req2 = spectator.expectOne(ANALYTICS_API_ENDPOINT, HttpMethod.POST);
             req2.flush({
-                entity: [{ 'request.totalUser': '50' }],
+                entity: [{ 'request.totalUsers': '50' }],
                 errors: [],
                 i18nMessagesMap: {},
                 messages: [],

@@ -58,7 +58,7 @@ describe('Analytics Data Utils', () => {
         describe('extractSessions', () => {
             it('should extract sessions from valid data', () => {
                 const mockData: UniqueVisitorsEntity = {
-                    'request.totalUser': '342'
+                    'request.totalUsers': '342'
                 };
 
                 const result = extractSessions(mockData);
@@ -70,7 +70,7 @@ describe('Analytics Data Utils', () => {
                 expect(result).toBe(0);
             });
 
-            it('should return NaN when totalUser is missing', () => {
+            it('should return NaN when totalUsers is missing', () => {
                 const mockData: Partial<UniqueVisitorsEntity> = {};
 
                 const result = extractSessions(mockData as UniqueVisitorsEntity);

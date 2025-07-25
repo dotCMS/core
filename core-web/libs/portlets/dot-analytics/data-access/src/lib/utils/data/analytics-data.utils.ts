@@ -72,7 +72,7 @@ export const extractPageViews = (data: TotalPageViewsEntity | null): number =>
  * Extracts unique sessions from UniqueVisitorsEntity
  */
 export const extractSessions = (data: UniqueVisitorsEntity | null): number =>
-    data ? Number(data['request.totalUser']) : 0;
+    data ? Number(data['request.totalUsers']) : 0;
 
 /**
  * Extracts top page performance value from TopPagePerformanceEntity

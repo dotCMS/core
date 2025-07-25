@@ -118,6 +118,8 @@ export interface TableColumn {
     alignment?: 'left' | 'center' | 'right';
     /** Whether column is sortable */
     sortable?: boolean;
+    /** Column width (CSS value: %, px, rem, etc.) */
+    width?: string;
 }
 
 /** Data structure for metric card display */

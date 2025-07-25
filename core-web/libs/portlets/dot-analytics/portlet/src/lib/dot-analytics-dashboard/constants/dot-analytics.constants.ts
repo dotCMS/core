@@ -23,10 +23,11 @@ export const ANALYTICS_KEYS = {
 
 /** Table configuration constants */
 export const TABLE_CONFIG = {
-    DEFAULT_ROWS: 10,
-    ROWS_PER_PAGE_OPTIONS: [10, 25, 50],
     SORT_MODE: 'multiple',
-    DATA_KEY: 'path'
+    DATA_KEY: 'path',
+    // Virtual scroll configuration
+    VIRTUAL_SCROLL_ITEM_SIZE: 46,
+    SCROLL_HEIGHT: '23.125rem'
 } as const;
 
 /** Table column configuration for top pages analytics table */
@@ -36,20 +37,23 @@ export const TOP_PAGES_TABLE_COLUMNS = [
         header: 'analytics.table.headers.title',
         type: 'text',
         alignment: 'left',
-        sortable: true
+        sortable: true,
+        width: '50%'
     },
     {
         field: 'path',
         header: 'analytics.table.headers.page-url',
         type: 'link',
         alignment: 'left',
-        sortable: true
+        sortable: true,
+        width: '35%'
     },
     {
         field: 'views',
         header: 'analytics.table.headers.pageviews',
         type: 'number',
         alignment: 'center',
-        sortable: true
+        sortable: true,
+        width: '15%'
     }
 ] as const;

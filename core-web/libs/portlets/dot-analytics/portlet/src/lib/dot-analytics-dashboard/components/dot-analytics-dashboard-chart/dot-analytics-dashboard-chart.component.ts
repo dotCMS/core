@@ -7,7 +7,6 @@ import { SkeletonModule } from 'primeng/skeleton';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
 
 import { ChartData, ChartOptions, ChartType } from '../../types';
 import { DotAnalyticsStateMessageComponent } from '../dot-analytics-state-message/dot-analytics-state-message.component';
@@ -24,7 +23,6 @@ import { DotAnalyticsStateMessageComponent } from '../dot-analytics-state-messag
         CardModule,
         ChartModule,
         SkeletonModule,
-        DotMessagePipe,
         DotAnalyticsStateMessageComponent
     ],
     changeDetection: ChangeDetectionStrategy.OnPush,
@@ -49,7 +47,7 @@ export class DotAnalyticsDashboardChartComponent {
     readonly $width = input<string>('100%', { alias: 'width' });
 
     /** Chart height as CSS value */
-    readonly $height = input<string>('300px', { alias: 'height' });
+    readonly $height = input<string>('100%', { alias: 'height' });
 
     /** Custom chart options to merge with defaults */
     readonly $options = input<Partial<ChartOptions>>({}, { alias: 'options' });
