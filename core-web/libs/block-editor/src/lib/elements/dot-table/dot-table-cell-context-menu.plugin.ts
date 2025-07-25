@@ -169,7 +169,10 @@ function initializeComponent(options: TableContextMenuOptions): {
     const tippyInstance = tippy(editorElement as HTMLElement, {
         ...TIPPY_OPTIONS,
         content: element,
-        onShow: () => handleComponentSetup(editor, component)
+        onShow: () => handleComponentSetup(editor, component),
+        onHide: () => {
+            editor.commands.freezeScroll(false);
+        }
     });
 
     // Configure component instance
