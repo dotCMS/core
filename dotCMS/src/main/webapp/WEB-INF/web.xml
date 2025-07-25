@@ -28,6 +28,11 @@
 		<async-supported>true</async-supported>
 	</filter>
 	<filter>
+		<filter-name>RequestTrackingFilter</filter-name>
+		<filter-class>com.dotcms.filters.RequestTrackingFilter</filter-class>
+		<async-supported>true</async-supported>
+	</filter>
+	<filter>
 		<filter-name>InterceptorFilter</filter-name>
 		<filter-class>com.dotmarketing.filters.InterceptorFilter</filter-class>
 		<async-supported>true</async-supported>
@@ -130,6 +135,12 @@
 	<!-- Essential security and HTTP compliance filters run first -->
 	<filter-mapping>
 		<filter-name>NormalizationFilter</filter-name>
+		<url-pattern>/*</url-pattern>
+	</filter-mapping>
+
+	<!-- Request tracking filter runs early to capture all requests for metrics and shutdown coordination -->
+	<filter-mapping>
+		<filter-name>RequestTrackingFilter</filter-name>
 		<url-pattern>/*</url-pattern>
 	</filter-mapping>
 

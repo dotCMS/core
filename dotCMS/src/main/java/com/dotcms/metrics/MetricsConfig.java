@@ -190,14 +190,7 @@ public final class MetricsConfig {
      */
     public static final boolean SYSTEM_METRICS_ENABLED = 
         Config.getBooleanProperty("metrics.system.enabled", true);
-    
-    /**
-     * Whether to collect application-specific metrics (requests, cache, etc.).
-     * Default: true
-     */
-    public static final boolean APPLICATION_METRICS_ENABLED = 
-        Config.getBooleanProperty("metrics.application.enabled", true);
-    
+
     /**
      * Whether to collect database metrics (connection pool, query performance).
      * Default: true
@@ -225,14 +218,7 @@ public final class MetricsConfig {
      */
     public static final boolean TOMCAT_METRICS_ENABLED = 
         Config.getBooleanProperty("metrics.tomcat.enabled", true);
-    
-    /**
-     * Whether to collect search/Elasticsearch metrics.
-     * Default: true
-     */
-    public static final boolean SEARCH_METRICS_ENABLED =
-        Config.getBooleanProperty("metrics.search.enabled", true);
-    
+
     /**
      * Whether to collect user session and authentication metrics.
      * Default: true
@@ -355,7 +341,6 @@ public final class MetricsConfig {
         Logger.debug(MetricsConfig.class, "    Deployment: " + K8S_DEPLOYMENT_TAG);
         Logger.debug(MetricsConfig.class, "  JVM Metrics: " + JVM_METRICS_ENABLED);
         Logger.debug(MetricsConfig.class, "  System Metrics: " + SYSTEM_METRICS_ENABLED);
-        Logger.debug(MetricsConfig.class, "  Application Metrics: " + APPLICATION_METRICS_ENABLED);
         Logger.debug(MetricsConfig.class, "  Database Metrics: " + DATABASE_METRICS_ENABLED);
         Logger.debug(MetricsConfig.class, "  Cache Metrics: " + CACHE_METRICS_ENABLED);
         Logger.debug(MetricsConfig.class, "  HTTP Metrics: " + HTTP_METRICS_ENABLED);

@@ -1,17 +1,13 @@
 package com.dotcms.metrics;
 
 import com.dotcms.metrics.binders.CacheMetrics;
-import com.dotcms.metrics.binders.ContentletMetrics;
 import com.dotcms.metrics.binders.DatabaseMetrics;
-import com.dotcms.metrics.binders.FileAssetMetrics;
 import com.dotcms.metrics.binders.HttpRequestMetrics;
-import com.dotcms.metrics.binders.SearchMetrics;
 import com.dotcms.metrics.binders.TomcatMetrics;
 import com.dotcms.metrics.binders.UserSessionMetrics;
 import com.dotmarketing.util.Logger;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Metrics;
-import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.binder.jvm.JvmGcMetrics;
 import io.micrometer.core.instrument.binder.jvm.JvmMemoryMetrics;
 import io.micrometer.core.instrument.binder.jvm.JvmThreadMetrics;
@@ -159,16 +155,7 @@ public class MetricsService {
                 Logger.error(this, "Failed to register system metrics: " + e.getMessage(), e);
             }
         }
-        
-        // dotCMS Application Metrics
-        if (MetricsConfig.APPLICATION_METRICS_ENABLED) {
-            try {
-                new ContentletMetrics().bindTo(globalRegistry);
-                Logger.debug(this, "Content metrics registered");
-            } catch (Exception e) {
-                Logger.error(this, "Failed to register content metrics: " + e.getMessage(), e);
-            }
-        }
+
         
         // Database Metrics
         if (MetricsConfig.DATABASE_METRICS_ENABLED) {
@@ -189,16 +176,7 @@ public class MetricsService {
                 Logger.error(this, "Failed to register cache metrics: " + e.getMessage(), e);
             }
         }
-        
-        // Search Metrics
-        if (MetricsConfig.SEARCH_METRICS_ENABLED) {
-            try {
-                new SearchMetrics().bindTo(globalRegistry);
-                Logger.debug(this, "Search metrics registered");
-            } catch (Exception e) {
-                Logger.error(this, "Failed to register search metrics: " + e.getMessage(), e);
-            }
-        }
+
         
         // HTTP Request Metrics
         if (MetricsConfig.HTTP_METRICS_ENABLED) {
@@ -219,16 +197,7 @@ public class MetricsService {
                 Logger.error(this, "Failed to register user session metrics: " + e.getMessage(), e);
             }
         }
-        
-        // File Asset Metrics
-        if (MetricsConfig.FILE_ASSET_METRICS_ENABLED) {
-            try {
-                new FileAssetMetrics().bindTo(globalRegistry);
-                Logger.debug(this, "File asset metrics registered");
-            } catch (Exception e) {
-                Logger.error(this, "Failed to register file asset metrics: " + e.getMessage(), e);
-            }
-        }
+
         
         // Tomcat Metrics
         if (MetricsConfig.TOMCAT_METRICS_ENABLED) {

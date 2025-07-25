@@ -84,58 +84,32 @@ public class DatabaseMetrics implements MeterBinder {
     
     /**
      * Register HikariCP connection pool metrics if available.
-     * HikariCP is commonly used in dotCMS deployments.
+     * HikariCP separates metrics into two MBean types:
+     * - Pool MBean: Runtime metrics (active/idle connections, threads awaiting)
+     * - PoolConfig MBean: Configuration parameters (max/min pool size, timeouts)
      */
     private void registerHikariMetrics(MeterRegistry registry) {
         try {
             Set<ObjectName> hikariPools = mBeanServer.queryNames(
                 new ObjectName("com.zaxxer.hikari:type=Pool*"), null);
+            if (hikariPools.isEmpty()) {
+                Logger.info(this, "Hikari MBean pools not found");
+                return;
+            }
             
-            for (ObjectName pool : hikariPools) {
-                String poolName = pool.getKeyProperty("Pool");
-                if (poolName == null) poolName = "default";
+            for (ObjectName poolMBean : hikariPools) {
+                String poolName = extractPoolName(poolMBean);
                 
-                // Active connections
-                Gauge.builder(METRIC_PREFIX + ".hikari.connections.active", this,
-                    metrics -> getHikariAttribute(pool, "ActiveConnections"))
-                    .description("Number of active HikariCP connections")
-                    .tag("pool", poolName)
-                    .register(registry);
+                // Register Pool MBean metrics (runtime metrics)
+                registerPoolMetrics(registry, poolMBean, poolName);
                 
-                // Idle connections
-                Gauge.builder(METRIC_PREFIX + ".hikari.connections.idle", this,
-                    metrics -> getHikariAttribute(pool, "IdleConnections"))
-                    .description("Number of idle HikariCP connections")
-                    .tag("pool", poolName)
-                    .register(registry);
-                
-                // Total connections
-                Gauge.builder(METRIC_PREFIX + ".hikari.connections.total", this,
-                    metrics -> getHikariAttribute(pool, "TotalConnections"))
-                    .description("Total number of HikariCP connections")
-                    .tag("pool", poolName)
-                    .register(registry);
-                
-                // Max pool size
-                Gauge.builder(METRIC_PREFIX + ".hikari.connections.max", this,
-                    metrics -> getHikariAttribute(pool, "MaximumPoolSize"))
-                    .description("Maximum HikariCP pool size")
-                    .tag("pool", poolName)
-                    .register(registry);
-                
-                // Min pool size
-                Gauge.builder(METRIC_PREFIX + ".hikari.connections.min", this,
-                    metrics -> getHikariAttribute(pool, "MinimumIdle"))
-                    .description("Minimum HikariCP idle connections")
-                    .tag("pool", poolName)
-                    .register(registry);
-                
-                // Threads awaiting connection
-                Gauge.builder(METRIC_PREFIX + ".hikari.threads.awaiting", this,
-                    metrics -> getHikariAttribute(pool, "ThreadsAwaitingConnection"))
-                    .description("Number of threads awaiting HikariCP connections")
-                    .tag("pool", poolName)
-                    .register(registry);
+                // Find and register corresponding PoolConfig MBean metrics
+                ObjectName poolConfigMBean = findPoolConfigMBean(poolMBean);
+                if (poolConfigMBean != null) {
+                    registerPoolConfigMetrics(registry, poolConfigMBean, poolName);
+                } else {
+                    Logger.warn(this, "PoolConfig MBean not found for pool: " + poolName);
+                }
             }
             
             if (!hikariPools.isEmpty()) {
@@ -144,6 +118,136 @@ public class DatabaseMetrics implements MeterBinder {
             
         } catch (Exception e) {
             Logger.debug(this, "HikariCP metrics not available: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Register Pool MBean metrics (runtime connection metrics).
+     */
+    private void registerPoolMetrics(MeterRegistry registry, ObjectName poolMBean, String poolName) {
+        // Active connections
+        Gauge.builder(METRIC_PREFIX + ".hikari.connections.active", this,
+            metrics -> getHikariAttribute(poolMBean, "ActiveConnections"))
+            .description("Number of active HikariCP connections")
+            .tag("pool", poolName)
+            .register(registry);
+        
+        // Idle connections
+        Gauge.builder(METRIC_PREFIX + ".hikari.connections.idle", this,
+            metrics -> getHikariAttribute(poolMBean, "IdleConnections"))
+            .description("Number of idle HikariCP connections")
+            .tag("pool", poolName)
+            .register(registry);
+        
+        // Total connections
+        Gauge.builder(METRIC_PREFIX + ".hikari.connections.total", this,
+            metrics -> getHikariAttribute(poolMBean, "TotalConnections"))
+            .description("Total number of HikariCP connections")
+            .tag("pool", poolName)
+            .register(registry);
+        
+        // Threads awaiting connection
+        Gauge.builder(METRIC_PREFIX + ".hikari.threads.awaiting", this,
+            metrics -> getHikariAttribute(poolMBean, "ThreadsAwaitingConnection"))
+            .description("Number of threads awaiting HikariCP connections")
+            .tag("pool", poolName)
+            .register(registry);
+    }
+    
+    /**
+     * Register PoolConfig MBean metrics (configuration parameters).
+     */
+    private void registerPoolConfigMetrics(MeterRegistry registry, ObjectName poolConfigMBean, String poolName) {
+        // Maximum pool size
+        Gauge.builder(METRIC_PREFIX + ".hikari.config.max_pool_size", this,
+            metrics -> getHikariAttribute(poolConfigMBean, "MaximumPoolSize"))
+            .description("Maximum HikariCP pool size")
+            .tag("pool", poolName)
+            .register(registry);
+        
+        // Minimum idle connections
+        Gauge.builder(METRIC_PREFIX + ".hikari.config.min_idle", this,
+            metrics -> getHikariAttribute(poolConfigMBean, "MinimumIdle"))
+            .description("Minimum HikariCP idle connections")
+            .tag("pool", poolName)
+            .register(registry);
+        
+        // Connection timeout
+        Gauge.builder(METRIC_PREFIX + ".hikari.config.connection_timeout", this,
+            metrics -> getHikariAttribute(poolConfigMBean, "ConnectionTimeout"))
+            .description("HikariCP connection timeout (ms)")
+            .tag("pool", poolName)
+            .register(registry);
+        
+        // Idle timeout
+        Gauge.builder(METRIC_PREFIX + ".hikari.config.idle_timeout", this,
+            metrics -> getHikariAttribute(poolConfigMBean, "IdleTimeout"))
+            .description("HikariCP idle connection timeout (ms)")
+            .tag("pool", poolName)
+            .register(registry);
+        
+        // Max lifetime
+        Gauge.builder(METRIC_PREFIX + ".hikari.config.max_lifetime", this,
+            metrics -> getHikariAttribute(poolConfigMBean, "MaxLifetime"))
+            .description("HikariCP connection max lifetime (ms)")
+            .tag("pool", poolName)
+            .register(registry);
+        
+        // Validation timeout
+        Gauge.builder(METRIC_PREFIX + ".hikari.config.validation_timeout", this,
+            metrics -> getHikariAttribute(poolConfigMBean, "ValidationTimeout"))
+            .description("HikariCP connection validation timeout (ms)")
+            .tag("pool", poolName)
+            .register(registry);
+        
+        // Leak detection threshold
+        Gauge.builder(METRIC_PREFIX + ".hikari.config.leak_detection_threshold", this,
+            metrics -> getHikariAttribute(poolConfigMBean, "LeakDetectionThreshold"))
+            .description("HikariCP leak detection threshold (ms)")
+            .tag("pool", poolName)
+            .register(registry);
+    }
+    
+    /**
+     * Extract pool name from Pool MBean ObjectName.
+     */
+    private String extractPoolName(ObjectName poolMBean) {
+        String poolName = poolMBean.getKeyProperty("Pool");
+        if (poolName == null) {
+            // Fallback: extract from full ObjectName string
+            String objectNameStr = poolMBean.toString();
+            if (objectNameStr.contains("(") && objectNameStr.contains(")")) {
+                int start = objectNameStr.indexOf("(") + 1;
+                int end = objectNameStr.indexOf(")", start);
+                poolName = objectNameStr.substring(start, end);
+            } else {
+                poolName = "default";
+            }
+        }
+        return poolName;
+    }
+    
+    /**
+     * Find the corresponding PoolConfig MBean for a given Pool MBean.
+     */
+    private ObjectName findPoolConfigMBean(ObjectName poolMBean) {
+        try {
+            String poolName = extractPoolName(poolMBean);
+            
+            // Construct the PoolConfig MBean name
+            String poolConfigName = "com.zaxxer.hikari:type=PoolConfig (" + poolName + ")";
+            ObjectName poolConfigMBean = new ObjectName(poolConfigName);
+            
+            // Verify the MBean exists
+            if (mBeanServer.isRegistered(poolConfigMBean)) {
+                return poolConfigMBean;
+            } else {
+                Logger.debug(this, "PoolConfig MBean not found: " + poolConfigName);
+                return null;
+            }
+        } catch (Exception e) {
+            Logger.debug(this, "Error finding PoolConfig MBean: " + e.getMessage());
+            return null;
         }
     }
     
