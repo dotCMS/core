@@ -1,6 +1,6 @@
 {
   "id": 6,
-  "title": "dotCMS System Infrastructure",
+  "title": "dotCMS System Infrastructure (Filterable)",
   "tags": ["dotcms", "infrastructure", "system"],
   "timezone": "browser",
   "refresh": "5s",
@@ -12,17 +12,27 @@
   "fiscalYearStartMonth": 0,
   "panels": [
     {
+      "id": 10,
+      "title": "Instance Filtering",
+      "type": "text",
+      "gridPos": {"h": 3, "w": 24, "x": 0, "y": 0},
+      "options": {
+        "content": "📊 **Instance Selection**: Use the dropdown filters above to select specific Host, Deployment, or Environment. Select \"All\" to aggregate data across all instances, or choose a specific instance to view its individual metrics.",
+        "mode": "markdown"
+      }
+    },
+    {
       "id": 1,
       "title": "System Resources Overview",
       "type": "row",
       "collapsed": false,
-      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 0}
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 3}
     },
     {
       "id": 2,
       "title": "Disk Usage %",
       "type": "gauge",
-      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 1},
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 4},
       "options": {
         "reduceOptions": {
           "values": false,
@@ -52,8 +62,8 @@
       },
       "targets": [
         {
-          "expr": "((disk_total_bytes - disk_free_bytes) / disk_total_bytes) * 100",
-          "legendFormat": "Used %",
+          "expr": "((disk_total_bytes{host=~\"$host\", deployment=~\"$deployment\", env=~\"$env\"} - disk_free_bytes{host=~\"$host\", deployment=~\"$deployment\", env=~\"$env\"}) / disk_total_bytes{host=~\"$host\", deployment=~\"$deployment\", env=~\"$env\"}) * 100",
+          "legendFormat": "",
           "refId": "A"
         }
       ],
@@ -63,7 +73,7 @@
       "id": 3,
       "title": "Free Disk Space",
       "type": "stat",
-      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 1},
+      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 4},
       "options": {
         "reduceOptions": {
           "values": false,
@@ -93,8 +103,8 @@
       },
       "targets": [
         {
-          "expr": "disk_free_bytes",
-          "legendFormat": "Free Space",
+          "expr": "disk_free_bytes{host=~\"$host\", deployment=~\"$deployment\", env=~\"$env\"}",
+          "legendFormat": "",
           "refId": "A"
         }
       ],
@@ -104,7 +114,7 @@
       "id": 4,
       "title": "Total Disk Space",
       "type": "stat",
-      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 1},
+      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 4},
       "options": {
         "reduceOptions": {
           "values": false,
@@ -132,8 +142,8 @@
       },
       "targets": [
         {
-          "expr": "disk_total_bytes",
-          "legendFormat": "Total Space",
+          "expr": "disk_total_bytes{host=~\"$host\", deployment=~\"$deployment\", env=~\"$env\"}",
+          "legendFormat": "",
           "refId": "A"
         }
       ],
@@ -143,7 +153,7 @@
       "id": 5,
       "title": "Disk Space Trends",
       "type": "timeseries",
-      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 9},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 12},
       "fieldConfig": {
         "defaults": {
           "custom": {
@@ -184,12 +194,12 @@
       },
       "targets": [
         {
-          "expr": "disk_free_bytes",
+          "expr": "disk_free_bytes{host=~\"$host\", deployment=~\"$deployment\", env=~\"$env\"}",
           "legendFormat": "Free Space",
           "refId": "A"
         },
         {
-          "expr": "disk_total_bytes - disk_free_bytes",
+          "expr": "disk_total_bytes{host=~\"$host\", deployment=~\"$deployment\", env=~\"$env\"} - disk_free_bytes{host=~\"$host\", deployment=~\"$deployment\", env=~\"$env\"}",
           "legendFormat": "Used Space",
           "refId": "B"
         }
@@ -200,7 +210,7 @@
       "id": 6,
       "title": "System Load Average",
       "type": "timeseries",
-      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 9},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 12},
       "fieldConfig": {
         "defaults": {
           "custom": {
@@ -242,7 +252,7 @@
       },
       "targets": [
         {
-          "expr": "system_load_average_1m",
+          "expr": "system_load_average_1m{host=~\"$host\", deployment=~\"$deployment\", env=~\"$env\"}",
           "legendFormat": "1m avg",
           "refId": "A"
         }
@@ -253,7 +263,7 @@
       "id": 7,
       "title": "File Descriptors",
       "type": "timeseries",
-      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 17},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 20},
       "fieldConfig": {
         "defaults": {
           "custom": {
@@ -295,12 +305,12 @@
       },
       "targets": [
         {
-          "expr": "process_open_fds",
+          "expr": "process_open_fds{host=~\"$host\", deployment=~\"$deployment\", env=~\"$env\"}",
           "legendFormat": "Open FDs",
           "refId": "A"
         },
         {
-          "expr": "process_max_fds",
+          "expr": "process_max_fds{host=~\"$host\", deployment=~\"$deployment\", env=~\"$env\"}",
           "legendFormat": "Max FDs",
           "refId": "B"
         }
@@ -311,7 +321,7 @@
       "id": 8,
       "title": "CPU Usage",
       "type": "timeseries",
-      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 17},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 20},
       "fieldConfig": {
         "defaults": {
           "custom": {
@@ -355,12 +365,12 @@
       },
       "targets": [
         {
-          "expr": "system_cpu_usage * 100",
+          "expr": "system_cpu_usage{host=~\"$host\", deployment=~\"$deployment\", env=~\"$env\"} * 100",
           "legendFormat": "System CPU",
           "refId": "A"
         },
         {
-          "expr": "process_cpu_usage * 100",
+          "expr": "process_cpu_usage{host=~\"$host\", deployment=~\"$deployment\", env=~\"$env\"} * 100",
           "legendFormat": "Process CPU",
           "refId": "B"
         }
@@ -371,7 +381,7 @@
       "id": 9,
       "title": "Environment Information",
       "type": "table",
-      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 25},
+      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 28},
       "fieldConfig": {
         "defaults": {
           "custom": {
@@ -422,7 +432,89 @@
     }
   ],
   "templating": {
-    "list": []
+    "list": [
+      {
+        "current": {
+          "selected": false,
+          "text": "All",
+          "value": "$__all"
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "definition": "label_values(disk_total_bytes, host)",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Host",
+        "multi": false,
+        "name": "host",
+        "options": [],
+        "query": {
+          "query": "label_values(disk_total_bytes, host)",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "All",
+          "value": "$__all"
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "definition": "label_values(disk_total_bytes, deployment)",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Deployment",
+        "multi": false,
+        "name": "deployment",
+        "options": [],
+        "query": {
+          "query": "label_values(disk_total_bytes, deployment)",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "All",
+          "value": "$__all"
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "definition": "label_values(disk_total_bytes, env)",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Environment",
+        "multi": false,
+        "name": "env",
+        "options": [],
+        "query": {
+          "query": "label_values(disk_total_bytes, env)",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
+      }
+    ]
   },
   "annotations": {
     "list": [

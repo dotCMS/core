@@ -53,8 +53,8 @@
       },
       "targets": [
         {
-          "expr": "dotcms_database_connection_available",
-          "legendFormat": "DB Status",
+          "expr": "max(dotcms_database_connection_available)",
+          "legendFormat": "",
           "refId": "A"
         }
       ],
@@ -95,8 +95,8 @@
       },
       "targets": [
         {
-          "expr": "dotcms_database_factory_available",
-          "legendFormat": "Factory Status",
+          "expr": "max(dotcms_database_factory_available)",
+          "legendFormat": "",
           "refId": "A"
         }
       ],
@@ -137,8 +137,8 @@
       },
       "targets": [
         {
-          "expr": "dotcms_database_health_query_test",
-          "legendFormat": "Query Test",
+          "expr": "max(dotcms_database_health_query_test)",
+          "legendFormat": "",
           "refId": "A"
         }
       ],
@@ -178,8 +178,8 @@
       },
       "targets": [
         {
-          "expr": "(dotcms_database_connection_available + dotcms_database_factory_available + dotcms_database_health_query_test + dotcms_database_health_system_query) / 4",
-          "legendFormat": "Health Score",
+          "expr": "(max(dotcms_database_connection_available) + max(dotcms_database_factory_available) + max(dotcms_database_health_query_test) + max(dotcms_database_health_system_query)) / 4",
+          "legendFormat": "",
           "refId": "A"
         }
       ],
@@ -223,7 +223,7 @@
       "targets": [
         {
           "expr": "dotcms_database_hikari_connections{pool=\"jdbc/dotCMSPool\"}",
-          "legendFormat": "Total",
+          "legendFormat": "",
           "refId": "A"
         }
       ],
@@ -260,7 +260,7 @@
       "targets": [
         {
           "expr": "dotcms_database_hikari_connections_active{pool=\"jdbc/dotCMSPool\"}",
-          "legendFormat": "Active",
+          "legendFormat": "",
           "refId": "A"
         }
       ],
@@ -297,7 +297,7 @@
       "targets": [
         {
           "expr": "dotcms_database_hikari_connections_idle{pool=\"jdbc/dotCMSPool\"}",
-          "legendFormat": "Idle",
+          "legendFormat": "",
           "refId": "A"
         }
       ],
@@ -334,7 +334,7 @@
       "targets": [
         {
           "expr": "dotcms_database_hikari_threads_awaiting{pool=\"jdbc/dotCMSPool\"}",
-          "legendFormat": "Waiting",
+          "legendFormat": "",
           "refId": "A"
         }
       ],
