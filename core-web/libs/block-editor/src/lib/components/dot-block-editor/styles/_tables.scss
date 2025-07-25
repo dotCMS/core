@@ -22,7 +22,6 @@ table {
         border-right: 1px solid $color-palette-gray-400;
         border-bottom: 1px solid $color-palette-gray-400;
         box-sizing: border-box;
-        min-width: 120px;
         padding: $spacing-2 $spacing-4;
         position: relative;
         vertical-align: top;
@@ -97,7 +96,7 @@ table {
             left: 0;
             right: 0;
             bottom: 0;
-            border: 2px solid $color-palette-primary;
+            border: 1px solid $color-palette-primary;
             pointer-events: none;
             z-index: 1;
         }
@@ -134,7 +133,7 @@ table {
         height: 1.25rem;
         background: $color-palette-gray-100;
         border: 1px solid $color-palette-gray-500;
-        border-radius: 3px;
+        border-radius: $border-radius-sm;
         cursor: pointer;
         z-index: 15;
         transition: all 0.15s ease;
@@ -145,7 +144,7 @@ table {
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            font-size: 1.2rem;
+            font-size: $font-size-lg;
             color: $color-palette-gray-600;
             line-height: 1;
         }
@@ -162,27 +161,6 @@ table {
     th.focus {
         .dot-cell-arrow {
             display: block;
-        }
-    }
-
-    // Table wrapper for scroll
-    .tableWrapper {
-        margin: $spacing-3 0;
-        overflow-x: auto;
-        border-radius: $spacing-1;
-
-        // Add subtle scrollbar styling
-        &::-webkit-scrollbar {
-            height: 8px;
-        }
-
-        &::-webkit-scrollbar-track {
-            background: $color-palette-gray-100;
-        }
-
-        &::-webkit-scrollbar-thumb {
-            background: $color-palette-gray-300;
-            border-radius: 4px;
         }
     }
 }
