@@ -3,7 +3,7 @@ import { tapResponse } from '@ngrx/operators';
 import { Observable, throwError } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { Title } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
 
@@ -105,6 +105,14 @@ export interface ConfigurationTrafficStepViewModel {
 
 @Injectable()
 export class DotExperimentsConfigurationStore extends ComponentStore<DotExperimentsConfigurationState> {
+    private readonly dotExperimentsService = inject(DotExperimentsService);
+    private readonly dotMessageService = inject(DotMessageService);
+    private readonly dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
+    private readonly messageService = inject(MessageService);
+    private readonly title = inject(Title);
+    private readonly confirmationService = inject(ConfirmationService);
+    private readonly dotPushPublishDialogService = inject(DotPushPublishDialogService);
+
     // Selectors
     readonly isLoading$: Observable<boolean> = this.select(
         ({ status }) => status === ComponentStatus.LOADING
@@ -963,16 +971,8 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         })
     );
 
-    constructor(
-        private readonly dotExperimentsService: DotExperimentsService,
-        private readonly dotMessageService: DotMessageService,
-        private readonly dotHttpErrorManagerService: DotHttpErrorManagerService,
-        private readonly messageService: MessageService,
-        private readonly title: Title,
-        private readonly route: ActivatedRoute,
-        private readonly confirmationService: ConfirmationService,
-        private readonly dotPushPublishDialogService: DotPushPublishDialogService
-    ) {
+    constructor() {
+        const route = inject(ActivatedRoute);
         const dotPageRenderState = route.parent.parent.parent.snapshot.data['content'];
         const configProps = route.snapshot.data['config'];
         const hasEnterpriseLicense = route.parent.snapshot.data['isEnterprise'];

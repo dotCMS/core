@@ -335,7 +335,7 @@ public class FieldHandlerStrategyFactory {
                         Long.valueOf((String)value));
             } catch (Exception e) {
                 //If we throw this exception here.. the contentlet will never get to the validateContentlet Method
-                throw new DotContentletStateException("Unable to set string value as a Long for the field: " + field.variable());
+                throw new DotContentletStateException("Unable to set string value as a Long for the field: " + field.variable() + ", msg: " + e.getMessage());
             }
         }
     }

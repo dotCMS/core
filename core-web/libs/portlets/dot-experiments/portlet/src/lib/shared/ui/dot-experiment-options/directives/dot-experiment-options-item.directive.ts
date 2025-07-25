@@ -1,4 +1,4 @@
-import { ContentChild, Directive, Host, Input, Optional } from '@angular/core';
+import { ContentChild, Directive, Input, inject } from '@angular/core';
 
 import { DotExperimentOptionContentDirective } from './dot-experiment-option-content.directive';
 
@@ -12,6 +12,8 @@ import { DotExperimentOptionsComponent } from '../dot-experiment-options.compone
     selector: 'dot-experiment-options-item'
 })
 export class DotExperimentOptionsItemDirective {
+    private _select = inject(DotExperimentOptionsComponent, { optional: true, host: true });
+
     val!: string;
 
     @Input()
@@ -23,8 +25,6 @@ export class DotExperimentOptionsItemDirective {
 
     @ContentChild(DotExperimentOptionContentDirective)
     content: DotExperimentOptionContentDirective;
-
-    constructor(@Optional() @Host() private _select: DotExperimentOptionsComponent) {}
 
     get value() {
         return this.val;

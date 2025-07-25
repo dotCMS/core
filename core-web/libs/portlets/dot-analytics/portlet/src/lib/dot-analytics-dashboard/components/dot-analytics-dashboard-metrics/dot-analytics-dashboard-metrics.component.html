@@ -1,0 +1,59 @@
+@let icon = $icon();
+@let subtitle = $subtitle();
+
+<p-card
+    class="h-full hover:shadow-2 transition-all transition-duration-200 metric-card"
+    data-testid="metric-card">
+    @if ($isError()) {
+        <!-- Error state -->
+        <div
+            class="flex flex-column justify-content-center align-items-center h-full text-center gap-3 pt-3">
+            <i class="pi pi-exclamation-triangle text-red-500 text-2xl"></i>
+            <div class="metric-error">{{ 'analytics.metrics.error.loading' | dm }}</div>
+        </div>
+    } @else if ($isLoading()) {
+        <!-- Loading state with skeleton -->
+        <div class="flex flex-column justify-content-between h-full relative gap-3">
+            <!-- Skeleton content -->
+            <div class="flex flex-column gap-3">
+                <!-- Skeleton title -->
+                <p-skeleton width="10rem" height="1.25rem"></p-skeleton>
+
+                <!-- Skeleton value -->
+                <p-skeleton width="1.5rem" height="1.5rem"></p-skeleton>
+            </div>
+
+            <!-- Skeleton subtitle -->
+            <p-skeleton width="10rem" height="0.75rem"></p-skeleton>
+        </div>
+    } @else {
+        <!-- Normal content - only shown when LOADED -->
+        <div class="flex flex-column justify-content-between h-full relative">
+            <!-- Icon in top-right corner -->
+            @if (icon) {
+                <i
+                    [class]="$iconClasses()"
+                    class="metric-icon pi icon-md"
+                    data-testid="metric-icon"></i>
+            }
+
+            <!-- Contenido principal -->
+            <div class="flex flex-column gap-3">
+                <h3 class="metric-title" data-testid="metric-title">
+                    {{ $name() | dm }}
+                </h3>
+
+                <div class="metric-value" data-testid="metric-value">
+                    {{ $formattedValue() }}
+                </div>
+            </div>
+
+            <!-- Subtítulo -->
+            @if (subtitle) {
+                <div class="metric-subtitle" data-testid="metric-subtitle">
+                    {{ subtitle | dm }}
+                </div>
+            }
+        </div>
+    }
+</p-card>

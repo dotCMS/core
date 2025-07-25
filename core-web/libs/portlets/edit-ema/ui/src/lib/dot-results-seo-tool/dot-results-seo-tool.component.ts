@@ -11,7 +11,14 @@ import {
     NgSwitchDefault,
     TitleCasePipe
 } from '@angular/common';
-import { ChangeDetectionStrategy, Component, Input, OnChanges, OnInit } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    Input,
+    OnChanges,
+    OnInit,
+    inject
+} from '@angular/core';
 
 import { CardModule } from 'primeng/card';
 
@@ -56,14 +63,14 @@ import { DotSeoImagePreviewComponent } from '../dot-seo-image-preview/dot-seo-im
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotResultsSeoToolComponent implements OnInit, OnChanges {
+    private dotSeoMetaTagsUtilService = inject(DotSeoMetaTagsUtilService);
+
     @Input() hostName: string;
     @Input() seoMedia: string;
     @Input() seoOGTags?: SeoMetaTags;
     @Input() seoOGTagsResults?: Observable<SeoMetaTagsResult[]>;
     currentResults$: Observable<SeoMetaTagsResult[]>;
     readMoreValues: Record<SEO_MEDIA_TYPES, string[]>;
-
-    constructor(private dotSeoMetaTagsUtilService: DotSeoMetaTagsUtilService) {}
     allPreview: MetaTagsPreview[];
     mainPreview: MetaTagsPreview;
     seoMediaTypes = SEO_MEDIA_TYPES;

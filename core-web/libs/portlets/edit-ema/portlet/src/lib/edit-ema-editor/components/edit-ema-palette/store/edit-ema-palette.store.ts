@@ -56,12 +56,12 @@ export interface DotPaletteState {
 
 @Injectable()
 export class DotPaletteStore extends ComponentStore<DotPaletteState> {
+    private dotContentTypeService = inject(DotContentTypeService);
+    private dotESContentService = inject(DotESContentService);
+
     private readonly dotConfigurationService = inject(DotPropertiesService);
 
-    constructor(
-        private dotContentTypeService: DotContentTypeService,
-        private dotESContentService: DotESContentService
-    ) {
+    constructor() {
         super({
             contentlets: {
                 items: [],

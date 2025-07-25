@@ -2171,6 +2171,22 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 	}
 
 	@Override
+	public void setContentletProperty(Contentlet contentlet, com.dotcms.contenttype.model.field.Field field, Object value) throws DotContentletStateException {
+		for(ContentletAPIPreHook pre : preHooks){
+			boolean preResult = pre.setContentletProperty(contentlet, field, value);
+			if(!preResult){
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
+			}
+		}
+		conAPI.setContentletProperty(contentlet, field, value);
+		for(ContentletAPIPostHook post : postHooks){
+			post.setContentletProperty(contentlet, field, value);
+		}
+	}
+
+	@Override
 	public void unarchive(List<Contentlet> contentlets, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.unarchive(contentlets, user, respectFrontendRoles);

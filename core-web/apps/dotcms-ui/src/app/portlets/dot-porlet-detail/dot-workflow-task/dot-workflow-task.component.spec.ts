@@ -147,10 +147,10 @@ describe('DotWorkflowTaskComponent', () => {
         fixture = TestBed.createComponent(DotWorkflowTaskComponent);
         de = fixture.debugElement;
         component = de.componentInstance;
-        dotWorkflowTaskDetailService = TestBed.get(DotWorkflowTaskDetailService);
-        dotRouterService = TestBed.get(DotRouterService);
-        dotIframeService = TestBed.get(DotIframeService);
-        dotCustomEventHandlerService = TestBed.get(DotCustomEventHandlerService);
+        dotWorkflowTaskDetailService = TestBed.inject(DotWorkflowTaskDetailService);
+        dotRouterService = TestBed.inject(DotRouterService);
+        dotIframeService = TestBed.inject(DotIframeService);
+        dotCustomEventHandlerService = TestBed.inject(DotCustomEventHandlerService);
         spyOn(dotIframeService, 'reloadData');
         fixture.detectChanges();
         taskDetail = de.query(By.css('dot-workflow-task-detail'));

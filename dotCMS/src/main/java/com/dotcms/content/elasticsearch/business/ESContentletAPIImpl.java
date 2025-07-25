@@ -38,6 +38,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeIf;
 import com.dotcms.contenttype.transform.contenttype.ContentTypeTransformer;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
+import com.dotcms.contenttype.transform.field.FieldTransformer;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.featureflag.FeatureFlagName;
@@ -205,6 +206,7 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -282,6 +284,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
     private final LocalSystemEventsAPI localSystemEventsAPI;
     private final BaseTypeToContentTypeStrategyResolver baseTypeToContentTypeStrategyResolver =
             BaseTypeToContentTypeStrategyResolver.getInstance();
+
+    private final static Lazy<Boolean> SET_DEFAULT_VALUES = Lazy.of(()-> Config.getBooleanProperty("CONTENT_API_SET_DEFAULT_VALUES", true));
 
 
     private  final Lazy<UniqueFieldValidationStrategyResolver> uniqueFieldValidationStrategyResolver;
@@ -5696,6 +5700,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
 
             contentlet = applyNullProperties(contentlet);
+            contentlet = SET_DEFAULT_VALUES.get() && isNewContent? setDefaultValues(contentlet):contentlet;
 
             //This is executed first hand to create the inode-contentlet relationship.
             if (InodeUtils.isSet(existingInode)) {
@@ -5835,6 +5840,30 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             bubbleUpException(e);
         }
+        return contentlet;
+    }
+
+    private Contentlet setDefaultValues(final Contentlet contentlet) {
+
+        final List<com.dotcms.contenttype.model.field.Field> fields = Try.of(()->contentlet.getContentType().fields()).getOrElse(Collections.emptyList());
+        final Map<String, Object> map = contentlet.getMap();
+        Logger.debug(this, ()-> "Setting default values for the contentlet: " + contentlet.getIdentifier());
+        // check default values for fields not coming on the map
+        for (final com.dotcms.contenttype.model.field.Field field : fields) {
+
+            if (!map.containsKey(field.variable()) && UtilMethods.isSet(field.defaultValue())) {
+
+                try {
+                    this.setContentletProperty(contentlet, field, field.defaultValue());
+                } catch (Exception e) {
+
+
+                    Logger.error(this, "Can not set the default value: " + field.defaultValue() +
+                            " to the field: " + field.variable() + ", on the ct: " + Try.of(()->contentlet.getContentType().variable()).getOrElse("Unknown"));
+                }
+            }
+        }
+
         return contentlet;
     }
 
@@ -7419,6 +7448,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
 
+    @WrapInTransaction
     @Override
     public void setContentletProperty(Contentlet contentlet, Field field, Object value)
             throws DotContentletStateException {
@@ -7441,6 +7471,29 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 field);
 
         FieldHandlerStrategyFactory.getInstance().get(newField).apply(contentlet, newField, value);
+    }
+
+    @WrapInTransaction
+    @Override
+    public void setContentletProperty(final Contentlet contentlet,
+                                      final com.dotcms.contenttype.model.field.Field field, final Object value)
+            throws DotContentletStateException {
+
+        if (contentlet == null) {
+            throw new DotContentletValidationException("The contentlet must not be null");
+        }
+
+        final String contentTypeInode = contentlet.getContentTypeId();
+        if (!InodeUtils.isSet(contentTypeInode)) {
+            throw new DotContentletValidationException("The contentlet's Content Type Inode must be set");
+        }
+
+        if (value == null || !UtilMethods.isSet(value.toString())) {
+            contentlet.setProperty(field.variable(), null);
+            return;
+        }
+
+        FieldHandlerStrategyFactory.getInstance().get(field).apply(contentlet, field, value);
     }
 
     /**

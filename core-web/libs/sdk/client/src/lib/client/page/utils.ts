@@ -152,6 +152,7 @@ export const buildPageQuery = ({
       footer
       body {
         rows {
+          styleClass
           columns {
             leftOffset
             styleClass

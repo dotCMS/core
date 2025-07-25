@@ -30,9 +30,9 @@ describe('ValidAuthGuardService', () => {
             providers: [AuthGuardService, { provide: LoginService, useClass: MockLoginService }]
         });
 
-        authGuardService = TestBed.get(AuthGuardService);
-        dotRouterService = TestBed.get(DotRouterService);
-        loginService = TestBed.get(LoginService);
+        authGuardService = TestBed.inject(AuthGuardService);
+        dotRouterService = TestBed.inject(DotRouterService);
+        loginService = TestBed.inject(LoginService);
         mockRouterStateSnapshot = jasmine.createSpyObj<RouterStateSnapshot>('RouterStateSnapshot', [
             'toString'
         ]);
