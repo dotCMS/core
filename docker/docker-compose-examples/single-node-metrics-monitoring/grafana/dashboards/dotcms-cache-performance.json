@@ -54,7 +54,7 @@
       },
       "targets": [
         {
-          "expr": "dotcms_cache_hit_rate_overall * 100",
+          "expr": "dotcms_cache_region_hit_rate * 100",
           "legendFormat": "Hit Rate %",
           "refId": "A"
         }
@@ -95,7 +95,7 @@
       },
       "targets": [
         {
-          "expr": "dotcms_cache_estimated_size_total",
+          "expr": "sum(dotcms_cache_region_estimated_size)",
           "legendFormat": "Total Objects",
           "refId": "A"
         }
@@ -134,7 +134,7 @@
       },
       "targets": [
         {
-          "expr": "count(count by (provider)(dotcms_cache_estimated_size{provider!=\"\"}))",
+          "expr": "count(count by (provider)(dotcms_cache_region_estimated_size{provider!=\"\"}))",
           "legendFormat": "Active Providers",
           "refId": "A"
         }
@@ -173,7 +173,7 @@
       },
       "targets": [
         {
-          "expr": "count(count by (region)(dotcms_cache_estimated_size{region!=\"\"}))",
+          "expr": "count(count by (region)(dotcms_cache_region_estimated_size{region!=\"\"}))",
           "legendFormat": "Active Regions",
           "refId": "A"
         }
@@ -227,8 +227,8 @@
       },
       "targets": [
         {
-          "expr": "dotcms_cache_hit_rate_overall * 100",
-          "legendFormat": "Overall Hit Rate",
+          "expr": "avg(dotcms_cache_region_hit_rate) * 100",
+          "legendFormat": "Average Hit Rate",
           "refId": "A"
         }
       ],
@@ -252,7 +252,7 @@
       },
       "targets": [
         {
-          "expr": "sum by (provider)(dotcms_cache_estimated_size)",
+          "expr": "sum by (provider)(dotcms_cache_region_estimated_size)",
           "legendFormat": "{{provider}}",
           "refId": "A"
         }
@@ -319,7 +319,7 @@
       ],
       "targets": [
         {
-          "expr": "topk(10, dotcms_cache_hit_rate * 100)",
+          "expr": "topk(10, dotcms_cache_region_hit_rate * 100)",
           "format": "table",
           "legendFormat": "__auto",
           "refId": "A"
@@ -381,7 +381,7 @@
       ],
       "targets": [
         {
-          "expr": "topk(10, dotcms_cache_estimated_size)",
+          "expr": "topk(10, dotcms_cache_region_estimated_size)",
           "format": "table",
           "legendFormat": "__auto",
           "refId": "A"
@@ -443,7 +443,7 @@
       ],
       "targets": [
         {
-          "expr": "topk(10, dotcms_cache_average_load_penalty / 1000000)",
+          "expr": "topk(10, dotcms_cache_region_avg_load_time_ms > 0)",
           "format": "table",
           "legendFormat": "__auto",
           "refId": "A"
@@ -505,7 +505,7 @@
       ],
       "targets": [
         {
-          "expr": "dotcms_cache_eviction_count > 0",
+          "expr": "dotcms_cache_region_eviction_count > 0",
           "format": "table",
           "legendFormat": "__auto",
           "refId": "A"
