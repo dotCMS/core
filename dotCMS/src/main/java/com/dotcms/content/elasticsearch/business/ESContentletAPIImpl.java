@@ -1594,8 +1594,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
 
         if(!validateESQueryProperlyBound(luceneQuery)){
-            Logger.warn(this, "Unbound lucene query: " + luceneQuery);
-            return List.of();
+            Logger.debug(this, "Unbound lucene query: " + luceneQuery);
+            PaginatedArrayList<ContentletSearch> list = new PaginatedArrayList<>();
+            list.setTotalResults(0);
+            return list;
         }
 
 
