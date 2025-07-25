@@ -3,54 +3,6 @@ import { Node } from 'prosemirror-model';
 import { Editor } from '@tiptap/core';
 
 /**
- * Gets the current outermost block node type at the cursor position in the editor.
- *
- * This function analyzes the current selection in the editor and determines
- * what type of node the cursor is positioned on. It handles various scenarios:
- * - Block-level nodes (paragraphs, headings, etc.)
- * - Text nodes within block elements
- * - List items and their parent list types
- * - Headings with their level information
- *
- * @param editor - The TipTap editor instance
- * @returns The node type as a string. For headings, returns format "heading-{level}" (e.g., "heading-1", "heading-2")
- *
- * @example
- * ```typescript
- * const nodeType = getCurrentBlockNodeType(editor);
- * // Returns: "paragraph", "heading-1", "bulletList", "orderedList", etc.
- * ```
- */
-export const getCurrentBlockNodeType = (editor: Editor) => {
-    const state = editor.view.state;
-    const { selection } = state;
-    const { anchor } = selection;
-
-    let deepestNode = null;
-    let deepestDepth = -1;
-
-    state.doc.descendants((node, pos, parent) => {
-        const hasAnchor = anchor >= pos && anchor <= pos + node.nodeSize;
-
-        if (hasAnchor && node.type.name !== 'doc') {
-            const currentDepth = parent ? parent.childCount : 0;
-            if (currentDepth > deepestDepth) {
-                deepestNode = node;
-                deepestDepth = currentDepth;
-            }
-        }
-
-        return true;
-    });
-
-    if (deepestNode?.type.name === 'heading') {
-        return getNodeTypeWithLevel(deepestNode);
-    }
-
-    return deepestNode?.type.name || 'text';
-};
-
-/**
  * Gets the deepest block-level node at the cursor position in the editor.
  *
  * This function finds the deepest block-level container node that contains the cursor.
