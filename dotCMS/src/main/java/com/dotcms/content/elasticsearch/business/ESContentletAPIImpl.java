@@ -1593,9 +1593,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
 
 
-
-
         if(!validateESQueryProperlyBound(luceneQuery)){
+            Logger.warn(this, "Unbound lucene query: " + luceneQuery);
             return List.of();
         }
 
