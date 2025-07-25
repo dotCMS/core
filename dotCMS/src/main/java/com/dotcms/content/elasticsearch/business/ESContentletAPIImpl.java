@@ -185,6 +185,7 @@ import com.thoughtworks.xstream.XStream;
 import io.vavr.Lazy;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
+import javax.annotation.Nonnull;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
@@ -1572,16 +1573,17 @@ public class ESContentletAPIImpl implements ContentletAPI {
     });
 
     @VisibleForTesting
-    void validateESQueryProperlyBound(String luceneQuery) throws DotSecurityException {
-        if(Config.getBooleanProperty("ELASTICSEARCH_PREVENT_UNBOUNDED_QUERIES", true)){
-            String testString = luceneQuery;
-            for(String unboundStringReplacement : unboundStringReplacements){
-                testString=testString.replace(unboundStringReplacement, "");
-            }
-            if(!testString.contains(":") || !testString.contains("+")){
-                throw new DotSecurityException("Unbound queries are not allowed");
-            }
+    boolean validateESQueryProperlyBound(@Nonnull String luceneQuery)  {
+        if(!Config.getBooleanProperty("ELASTICSEARCH_PREVENT_UNBOUNDED_QUERIES", true)) {
+            return true;
         }
+
+        String testString = luceneQuery;
+        for(String unboundStringReplacement : unboundStringReplacements){
+            testString=testString.replace(unboundStringReplacement, "");
+        }
+        return (testString.contains(":") && testString.contains("+"));
+
     }
 
     @Override
@@ -1593,7 +1595,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
 
 
-        validateESQueryProperlyBound(luceneQuery);
+        if(!validateESQueryProperlyBound(luceneQuery)){
+            return List.of();
+        }
 
 
 
@@ -9963,7 +9967,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
     public long indexCount(String luceneQuery, User user, boolean respectFrontendRoles)
             throws DotDataException, DotSecurityException {
         boolean isAdmin = false;
-        validateESQueryProperlyBound(luceneQuery);
+        if(!validateESQueryProperlyBound(luceneQuery)){
+            return 0;
+        }
         List<Role> roles = new ArrayList<>();
         if (user == null && !respectFrontendRoles) {
             throw new DotSecurityException(

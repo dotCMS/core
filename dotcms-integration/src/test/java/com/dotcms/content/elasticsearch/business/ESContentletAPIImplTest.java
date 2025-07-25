@@ -139,6 +139,7 @@ import static com.dotcms.datagen.TestDataUtils.getNewsLikeContentType;
 import static com.dotcms.datagen.TestDataUtils.relateContentTypes;
 import static com.dotcms.util.CollectionsUtils.list;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -4909,26 +4910,10 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
     ESContentletAPIImpl impl = new ESContentletAPIImpl();
 
         for(String query: unboundESQueries){
-            try {
-                impl.validateESQueryProperlyBound(query);
-                fail("Should have thrown an exception");
-            }catch (DotSecurityException e){
-                assertTrue(e.getMessage().contains("Unbound queries"));
-            }
-            catch (Exception e){
-                fail("Should have thrown a DotSecurityException");
-            }
+            assertFalse(impl.validateESQueryProperlyBound(query));
         }
         for(String query: boundESQueries){
-            try {
-                impl.validateESQueryProperlyBound(query);
-
-                // no exception
-                assertTrue(true);
-            }
-            catch (Exception e){
-                fail("Should not have thrown a DotSecurityException");
-            }
+            assertTrue(impl.validateESQueryProperlyBound(query));
         }
 
 
