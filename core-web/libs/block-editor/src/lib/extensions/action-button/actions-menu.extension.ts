@@ -394,8 +394,7 @@ export const ActionsMenu = (
 
     return Extension.create<FloatingMenuOptions>({
         name: 'actionsMenu',
-        // If the context menu is open, we need to give priority on the keyboard events
-        priority: 1000,
+        priority: 1000, // If open, give priority on events
 
         addOptions() {
             return {

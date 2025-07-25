@@ -10,7 +10,7 @@ table {
     margin: $spacing-4 0;
     table-layout: fixed;
     width: 100%;
-    border: 1px solid $color-palette-gray-300;
+    border: 1px solid $color-palette-gray-400;
     border-radius: $spacing-1;
     overflow: hidden;
     background: $white;
@@ -19,8 +19,8 @@ table {
     td,
     th {
         border: none;
-        border-right: 1px solid $color-palette-gray-300;
-        border-bottom: 1px solid $color-palette-gray-300;
+        border-right: 1px solid $color-palette-gray-400;
+        border-bottom: 1px solid $color-palette-gray-400;
         box-sizing: border-box;
         min-width: 120px;
         padding: $spacing-2 $spacing-4;
@@ -49,17 +49,16 @@ table {
 
     // Header styling - modern and clean
     th {
-        background: $color-palette-gray-100;
+        background: $color-palette-gray-200;
         font-weight: 600;
         font-size: $font-size-sm;
         color: $color-palette-gray-700;
         text-align: left;
-        border-bottom: 2px solid $color-palette-gray-300;
+        border-bottom: 1px solid $color-palette-gray-400;
         position: sticky;
         top: 0;
         z-index: 10;
     }
-
     // Remove bottom border from last row
     tr:last-child {
         td {
@@ -71,6 +70,10 @@ table {
     tr:hover {
         td {
             background: $color-palette-gray-100;
+        }
+
+        th {
+            background: $color-palette-gray-300;
         }
     }
 

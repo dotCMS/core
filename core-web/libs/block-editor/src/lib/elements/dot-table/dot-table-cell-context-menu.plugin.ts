@@ -1,5 +1,5 @@
 import { Plugin, PluginKey } from 'prosemirror-state';
-import { Decoration, DecorationSet } from 'prosemirror-view';
+import { Decoration, DecorationSet, EditorView } from 'prosemirror-view';
 import tippy, { Instance, Props } from 'tippy.js';
 
 import { ComponentRef, ViewContainerRef } from '@angular/core';
@@ -184,15 +184,13 @@ function initializeComponent(options: TableContextMenuOptions): {
     return { component, tippyInstance };
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function getGrandparentNode(view: any): TableNode | null {
+function getGrandparentNode(view: EditorView): TableNode | null {
     const { selection } = view.state;
 
     return selection.$from.node(selection.$from.depth - GRANDPARENT_DEPTH_OFFSET) || null;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function shouldShowTableOptions(view: any): boolean {
+function shouldShowTableOptions(view: EditorView): boolean {
     const grandpaSelectedNode = getGrandparentNode(view);
 
     return isNodeRelatedToTable(grandpaSelectedNode);
@@ -201,6 +199,7 @@ function shouldShowTableOptions(view: any): boolean {
 // Main Plugin
 const TableCellContextMenuPlugin = (options: TableContextMenuOptions) => {
     let tippyCellOptions: Instance | null = null;
+    let componentRef: ComponentRef<SuggestionsComponent> | null = null;
 
     return new Plugin({
         key: new PluginKey('dotTableCell'),
@@ -210,7 +209,8 @@ const TableCellContextMenuPlugin = (options: TableContextMenuOptions) => {
             },
             init: () => {
                 try {
-                    const { tippyInstance } = initializeComponent(options);
+                    const { tippyInstance, component } = initializeComponent(options);
+                    componentRef = component;
                     tippyCellOptions = tippyInstance;
                 } catch (error) {
                     console.error('Failed to initialize table cell context menu:', error);
@@ -230,8 +230,37 @@ const TableCellContextMenuPlugin = (options: TableContextMenuOptions) => {
 
                 return null;
             },
+            handleKeyDown(_, event) {
+                const { key } = event;
+                const isVisible = tippyCellOptions?.state.isVisible;
+
+                if (!isVisible) {
+                    return false;
+                }
+
+                if (key === 'Escape') {
+                    event.stopImmediatePropagation();
+                    tippyCellOptions?.hide();
+
+                    return true;
+                }
+
+                if (key === 'Enter') {
+                    componentRef.instance.execCommand();
+
+                    return true;
+                }
+
+                if (key === 'ArrowDown' || key === 'ArrowUp') {
+                    componentRef.instance.updateSelection(event);
+
+                    return true;
+                }
+
+                return false;
+            },
             handleDOMEvents: {
-                contextmenu: (view, event) => {
+                contextmenu: (view: EditorView, event) => {
                     if (shouldShowTableOptions(view)) {
                         displayTableOptions(event, tippyCellOptions);
                     }
@@ -257,6 +286,7 @@ const TableCellContextMenuPlugin = (options: TableContextMenuOptions) => {
 export const DotTableCellContextMenu = (viewContainerRef: ViewContainerRef) => {
     return Extension.create({
         name: 'dotTableCellContextMenu',
+        priority: 800,
         addProseMirrorPlugins() {
             return [
                 TableCellContextMenuPlugin({
