@@ -52,8 +52,8 @@
       },
       "targets": [
         {
-          "expr": "dotcms_http_requests_rate_rps",
-          "legendFormat": "Requests/sec",
+          "expr": "sum(dotcms_http_requests_rate_rps)",
+          "legendFormat": "Total RPS",
           "refId": "A"
         }
       ],
@@ -93,7 +93,7 @@
       },
       "targets": [
         {
-          "expr": "dotcms_http_requests_duration_avg_ms",
+          "expr": "avg(dotcms_http_requests_duration_avg_ms > 0)",
           "legendFormat": "Avg Response Time",
           "refId": "A"
         }
@@ -132,7 +132,7 @@
       },
       "targets": [
         {
-          "expr": "dotcms_http_requests",
+          "expr": "sum(dotcms_http_requests)",
           "legendFormat": "Total Requests",
           "refId": "A"
         }
@@ -173,8 +173,8 @@
       },
       "targets": [
         {
-          "expr": "dotcms_http_requests_error_rate_tracked",
-          "legendFormat": "Error Rate",
+          "expr": "avg(dotcms_http_requests_error_rate_tracked)",
+          "legendFormat": "Avg Error Rate",
           "refId": "A"
         }
       ],
@@ -182,7 +182,7 @@
     },
     {
       "id": 6,
-      "title": "HTTP Request Rate by Processor",
+      "title": "HTTP Endpoint Requests",
       "type": "timeseries",
       "gridPos": {"h": 8, "w": 12, "x": 0, "y": 7},
       "fieldConfig": {
