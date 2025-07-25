@@ -26,7 +26,6 @@ import {
 } from '@dotcms/ui';
 
 @Component({
-    standalone: true,
     selector: 'dot-experiments-list-table',
     imports: [
         NgIf,

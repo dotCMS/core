@@ -25,7 +25,6 @@ import { decodeFilters } from '../utils/functions';
 
 @Component({
     selector: 'dot-content-drive-shell',
-    standalone: true,
     imports: [DotFolderListViewComponent],
     providers: [DotContentDriveStore, DotSiteService],
     templateUrl: './dot-content-drive-shell.component.html',

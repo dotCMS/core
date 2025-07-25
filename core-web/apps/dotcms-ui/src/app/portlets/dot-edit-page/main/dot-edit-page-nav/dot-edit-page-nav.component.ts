@@ -38,7 +38,8 @@ interface DotEditPageNavItem {
 @Component({
     selector: 'dot-edit-page-nav',
     templateUrl: './dot-edit-page-nav.component.html',
-    styleUrls: ['./dot-edit-page-nav.component.scss']
+    styleUrls: ['./dot-edit-page-nav.component.scss'],
+    standalone: false
 })
 export class DotEditPageNavComponent implements OnChanges {
     private dotLicenseService = inject(DotLicenseService);

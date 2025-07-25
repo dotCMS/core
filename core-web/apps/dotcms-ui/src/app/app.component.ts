@@ -12,7 +12,8 @@ import { DotNavLogoService } from './api/services/dot-nav-logo/dot-nav-logo.serv
 @Component({
     selector: 'dot-root',
     templateUrl: './app.component.html',
-    styleUrls: ['./app.component.scss']
+    styleUrls: ['./app.component.scss'],
+    standalone: false
 })
 export class AppComponent implements OnInit {
     private dotCmsConfigService = inject(DotcmsConfigService);

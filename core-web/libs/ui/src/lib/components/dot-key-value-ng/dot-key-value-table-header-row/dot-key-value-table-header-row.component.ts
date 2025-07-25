@@ -20,7 +20,6 @@ import { DotKeyValue } from '../dot-key-value-ng.component';
     selector: 'dot-key-value-table-header-row',
     styleUrls: ['./dot-key-value-table-header-row.component.scss'],
     templateUrl: './dot-key-value-table-header-row.component.html',
-    standalone: true,
     imports: [
         ButtonModule,
         InputSwitchModule,

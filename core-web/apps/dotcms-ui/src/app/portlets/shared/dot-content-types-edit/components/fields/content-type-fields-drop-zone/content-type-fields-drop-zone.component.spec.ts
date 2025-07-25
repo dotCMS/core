@@ -82,7 +82,8 @@ const fakeContentType: DotCMSContentType = {
 
 @Component({
     selector: 'dot-content-type-fields-row',
-    template: ''
+    template: '',
+    standalone: false
 })
 class TestContentTypeFieldsRowComponent {
     @Input()
@@ -95,7 +96,8 @@ class TestContentTypeFieldsRowComponent {
 
 @Component({
     selector: 'dot-content-type-fields-properties-form',
-    template: ''
+    template: '',
+    standalone: false
 })
 class TestContentTypeFieldsPropertiesFormComponent {
     @Output()
@@ -114,7 +116,8 @@ class TestContentTypeFieldsPropertiesFormComponent {
 
 @Component({
     selector: 'dot-content-type-fields-tab',
-    template: ''
+    template: '',
+    standalone: false
 })
 class TestDotContentTypeFieldsTabComponent {
     @Input()
@@ -128,7 +131,8 @@ class TestDotContentTypeFieldsTabComponent {
 
 @Component({
     selector: 'dot-loading-indicator ',
-    template: ''
+    template: '',
+    standalone: false
 })
 class TestDotLoadingIndicatorComponent {
     @Input()
@@ -407,8 +411,8 @@ let fakeFields: DotCMSContentTypeLayoutRow[];
 
 @Component({
     selector: 'dot-test-host-component',
-    template:
-        '<dot-content-type-fields-drop-zone [layout]="layout" [loading]="loading"></dot-content-type-fields-drop-zone>'
+    template: '<dot-content-type-fields-drop-zone [layout]="layout" [loading]="loading"></dot-content-type-fields-drop-zone>',
+    standalone: false
 })
 class TestHostComponent {
     layout: DotCMSContentTypeLayoutRow[];
@@ -434,7 +438,8 @@ const BLOCK_EDITOR_FIELD = {
 
 @Component({
     selector: 'dot-block-editor-settings',
-    template: ''
+    template: '',
+    standalone: false
 })
 class TestDotBlockEditorSettingsComponent {
     @Output() changeControls = new EventEmitter<DotDialogActions>();

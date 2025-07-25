@@ -11,7 +11,8 @@ import { DotAutofocusDirective } from './dot-autofocus.directive';
         } @else {
             <input type="text" dotAutofocus />
         }
-    `
+    `,
+    standalone: false
 })
 class TestHostComponent {
     disabled = false;

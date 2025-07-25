@@ -33,7 +33,6 @@ import { INPUT_TEXT_OPTIONS } from '../dot-edit-content-text-field/utils';
  */
 @Component({
     selector: 'dot-edit-content-custom-field',
-    standalone: true,
     imports: [
         SafeUrlPipe,
         DotIconModule,

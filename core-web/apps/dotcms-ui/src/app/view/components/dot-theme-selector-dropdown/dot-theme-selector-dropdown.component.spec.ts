@@ -36,7 +36,8 @@ const messageServiceMock = new MockDotMessageService({
         <select>
             <option>Fake site selector</option>
         </select>
-    `
+    `,
+    standalone: false
 })
 class MockDotSiteSelectorComponent {
     @Input() system;
@@ -55,7 +56,8 @@ class MockDotSiteSelectorComponent {
         <form [formGroup]="form">
             <dot-theme-selector-dropdown formControlName="theme"></dot-theme-selector-dropdown>
         </form>
-    `
+    `,
+    standalone: false
 })
 class TestHostFilledComponent {
     private fb = inject_1(UntypedFormBuilder);
@@ -75,7 +77,8 @@ class TestHostFilledComponent {
         <form [formGroup]="form">
             <dot-theme-selector-dropdown formControlName="theme"></dot-theme-selector-dropdown>
         </form>
-    `
+    `,
+    standalone: false
 })
 class TestHostEmtpyComponent {
     private fb = inject_1(UntypedFormBuilder);

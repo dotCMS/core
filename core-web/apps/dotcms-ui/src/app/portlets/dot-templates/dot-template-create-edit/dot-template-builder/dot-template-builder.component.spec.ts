@@ -38,7 +38,8 @@ import {
     template: `
         <ng-content select="[toolbar-left]"></ng-content>
         <ng-content select="[toolbar-actions-right]"></ng-content>
-    `
+    `,
+    standalone: false
 })
 class TemplateBuilderMockComponent {
     @Input() layout: DotLayout;
@@ -48,7 +49,8 @@ class TemplateBuilderMockComponent {
 
 @Component({
     selector: 'dot-template-advanced',
-    template: ``
+    template: ``,
+    standalone: false
 })
 class DotTemplateAdvancedMockComponent {
     @Input() url;
@@ -66,7 +68,8 @@ class DotTemplateAdvancedMockComponent {
 
 @Component({
     selector: 'dot-iframe',
-    template: ''
+    template: '',
+    standalone: false
 })
 export class IframeMockComponent {
     @Input() src: string;
@@ -77,7 +80,8 @@ export class IframeMockComponent {
 @Component({
     // eslint-disable-next-line @angular-eslint/component-selector
     selector: 'p-tabView',
-    template: '<ng-content></ng-content>'
+    template: '<ng-content></ng-content>',
+    standalone: false
 })
 export class TabViewMockComponent {
     @Input() styleClass: string;
@@ -86,8 +90,8 @@ export class TabViewMockComponent {
 @Component({
     // eslint-disable-next-line @angular-eslint/component-selector
     selector: 'p-tabPanel',
-    template:
-        '<ng-content></ng-content><ng-container *ngTemplateOutlet="contentTemplate"></ng-container>'
+    template: '<ng-content></ng-content><ng-container *ngTemplateOutlet="contentTemplate"></ng-container>',
+    standalone: false
 })
 export class TabPanelMockComponent implements AfterContentInit {
     @Input() header: string;
@@ -103,7 +107,8 @@ export class TabPanelMockComponent implements AfterContentInit {
 
 @Component({
     selector: 'dot-test-host-component',
-    template: '<dot-template-builder #builder [item]="item"></dot-template-builder> '
+    template: '<dot-template-builder #builder [item]="item"></dot-template-builder> ',
+    standalone: false
 })
 class DotTestHostComponent {
     @ViewChild('builder') builder: DotTemplateBuilderComponent;

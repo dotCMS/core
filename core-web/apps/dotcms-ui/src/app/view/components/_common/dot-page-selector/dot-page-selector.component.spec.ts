@@ -96,7 +96,8 @@ class MockDotPageSelectorService {
                 [style]="{ width: '100%' }"
                 formControlName="page"></dot-page-selector>
         </form>
-    `
+    `,
+    standalone: false
 })
 class FakeFormComponent {
     private fb = inject(UntypedFormBuilder);

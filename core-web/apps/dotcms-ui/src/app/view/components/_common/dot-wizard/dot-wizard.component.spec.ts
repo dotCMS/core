@@ -64,8 +64,8 @@ const wizardInput: DotWizardInput = {
 
 @Component({
     selector: 'dot-form-one',
-    template:
-        '<form><span>name: </span><input class="formOneFirst" /><br><span>last Name:</span><input/></form>'
+    template: '<form><span>name: </span><input class="formOneFirst" /><br><span>last Name:</span><input/></form>',
+    standalone: false
 })
 class FormOneComponent {
     @Input() data: DotPushPublishDialogData;
@@ -75,7 +75,8 @@ class FormOneComponent {
 
 @Component({
     selector: 'dot-form-two',
-    template: '<form><input class="formTwoFirst"/></form>'
+    template: '<form><input class="formTwoFirst"/></form>',
+    standalone: false
 })
 class FormTwoComponent {
     @Input() data: DotPushPublishDialogData;

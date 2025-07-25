@@ -16,7 +16,8 @@ import { DotSiteSelectorFieldComponent } from './dot-site-selector-field.compone
             <dot-site-selector-field formControlName="site"></dot-site-selector-field>
             {{ form.value | json }}
         </form>
-    `
+    `,
+    standalone: false
 })
 class FakeFormComponent {
     private fb = inject(UntypedFormBuilder);
@@ -36,7 +37,8 @@ class FakeFormComponent {
 
 @Component({
     selector: 'dot-site-selector',
-    template: ''
+    template: '',
+    standalone: false
 })
 export class SiteSelectorComponent {
     @Input()

@@ -6,7 +6,6 @@ import { DotMessagePipe } from '@dotcms/ui';
 
 @Component({
     selector: 'dot-link',
-    standalone: true,
     imports: [ButtonModule, DotMessagePipe],
     templateUrl: './dot-link.component.html',
     styleUrls: ['./dot-link.component.scss']

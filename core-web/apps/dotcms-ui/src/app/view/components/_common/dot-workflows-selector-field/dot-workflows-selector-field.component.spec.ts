@@ -30,7 +30,8 @@ const messageServiceMock = new MockDotMessageService({
                 formControlName="workflows"></dot-workflows-selector-field>
             {{ form.value | json }}
         </form>
-    `
+    `,
+    standalone: false
 })
 class FakeFormComponent {
     private fb = inject(UntypedFormBuilder);

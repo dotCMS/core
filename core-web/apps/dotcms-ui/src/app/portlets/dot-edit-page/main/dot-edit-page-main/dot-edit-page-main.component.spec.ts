@@ -90,7 +90,8 @@ class MockDotPageStateService {
 
 @Component({
     selector: 'dot-edit-contentlet',
-    template: ''
+    template: '',
+    standalone: false
 })
 class MockDotEditContentletComponent {
     @Output() custom = new EventEmitter<any>();

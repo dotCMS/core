@@ -54,7 +54,8 @@ import { DotContentTypesEditComponent } from './dot-content-types-edit.component
 
 @Component({
     selector: 'dot-content-type-fields-drop-zone',
-    template: ''
+    template: '',
+    standalone: false
 })
 class TestContentTypeFieldsDropZoneComponent {
     @Input() layout: DotCMSContentTypeLayoutRow[];
@@ -68,7 +69,8 @@ class TestContentTypeFieldsDropZoneComponent {
 
 @Component({
     selector: 'dot-content-type-layout',
-    template: '<ng-content></ng-content>'
+    template: '<ng-content></ng-content>',
+    standalone: false
 })
 class TestContentTypeLayoutComponent {
     @Input() contentType: DotCMSContentType;
@@ -78,7 +80,8 @@ class TestContentTypeLayoutComponent {
 
 @Component({
     selector: 'dot-content-types-form',
-    template: ''
+    template: '',
+    standalone: false
 })
 class TestContentTypesFormComponent {
     @Input() data: DotCMSContentType;
@@ -92,7 +95,8 @@ class TestContentTypesFormComponent {
 
 @Component({
     selector: 'dot-menu',
-    template: ''
+    template: '',
+    standalone: false
 })
 export class TestDotMenuComponent {
     @Input() icon: string;

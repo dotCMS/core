@@ -23,7 +23,8 @@ export const DEFAULT_PERSONA_IDENTIFIER_BY_BACKEND = 'modes.persona.no.persona';
 @Component({
     selector: 'dot-persona-selector',
     styleUrls: ['./dot-persona-selector.component.scss'],
-    templateUrl: 'dot-persona-selector.component.html'
+    templateUrl: 'dot-persona-selector.component.html',
+    standalone: false
 })
 export class DotPersonaSelectorComponent implements OnInit {
     paginationService = inject(PaginatorService);

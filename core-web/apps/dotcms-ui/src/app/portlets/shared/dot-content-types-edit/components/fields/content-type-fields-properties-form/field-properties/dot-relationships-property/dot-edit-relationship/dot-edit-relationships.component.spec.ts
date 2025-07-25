@@ -45,7 +45,8 @@ const cardinalities = [
 
 @Component({
     selector: 'dot-searchable-dropdown',
-    template: ''
+    template: '',
+    standalone: false
 })
 class MockSearchableDropdownComponent {
     @Input()

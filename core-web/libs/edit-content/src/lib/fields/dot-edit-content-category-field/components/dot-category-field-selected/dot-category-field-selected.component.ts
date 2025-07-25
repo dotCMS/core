@@ -17,19 +17,15 @@ import { DotCategoryFieldKeyValueObj } from '../../models/dot-category-field.mod
  */
 @Component({
     selector: 'dot-category-field-selected',
-    standalone: true,
     imports: [ButtonModule, DotMessagePipe, ChipModule, TooltipModule],
     templateUrl: './dot-category-field-selected.component.html',
     styleUrl: './dot-category-field-selected.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,
     animations: [
         trigger('fadeAnimation', [
-            state(
-                'void',
-                style({
-                    opacity: 0
-                })
-            ),
+            state('void', style({
+                opacity: 0
+            })),
             transition(':enter, :leave', [animate('50ms ease-in-out')])
         ])
     ]

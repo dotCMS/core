@@ -46,7 +46,6 @@ type FileInfo = UploadedFile & {
 
 @Component({
     selector: 'dot-file-field-preview',
-    standalone: true,
     imports: [
         DotTempFileThumbnailComponent,
         DotFileSizeFormatPipe,

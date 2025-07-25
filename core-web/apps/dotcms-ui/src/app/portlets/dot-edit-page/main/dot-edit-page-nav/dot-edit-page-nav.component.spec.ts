@@ -69,7 +69,8 @@ export class MockDotPropertiesService {
     selector: 'dot-test-host-component',
     template: `
         <dot-edit-page-nav [pageState]="pageState"></dot-edit-page-nav>
-    `
+    `,
+    standalone: false
 })
 class TestHostComponent {
     @Input()

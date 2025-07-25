@@ -49,7 +49,8 @@ type DotRowActions = {
     selector: 'dot-content-types',
     styleUrls: ['./dot-content-types.component.scss'],
     templateUrl: 'dot-content-types.component.html',
-    providers: [DotContentTypeStore]
+    providers: [DotContentTypeStore],
+    standalone: false
 })
 export class DotContentTypesPortletComponent implements OnInit, OnDestroy {
     private contentTypesInfoService = inject(DotContentTypesInfoService);

@@ -36,8 +36,8 @@ const mockDFormFieldData = {
 
 @Component({
     selector: 'dot-host-tester',
-    template:
-        '<dot-content-type-fields-properties-form [formFieldData]="mockDFormFieldData"></dot-content-type-fields-properties-form>'
+    template: '<dot-content-type-fields-properties-form [formFieldData]="mockDFormFieldData"></dot-content-type-fields-properties-form>',
+    standalone: false
 })
 class DotHostTesterComponent {
     mockDFormFieldData: DotCMSContentTypeField = {
@@ -46,7 +46,8 @@ class DotHostTesterComponent {
 }
 
 @Directive({
-    selector: '[dotDynamicFieldProperty]'
+    selector: '[dotDynamicFieldProperty]',
+    standalone: false
 })
 class TestDynamicFieldPropertyDirective {
     @Input()

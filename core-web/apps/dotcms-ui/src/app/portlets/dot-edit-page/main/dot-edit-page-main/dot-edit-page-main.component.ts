@@ -18,7 +18,8 @@ import { DotPageRenderState } from '@dotcms/dotcms-models';
 @Component({
     selector: 'dot-edit-page-main',
     templateUrl: './dot-edit-page-main.component.html',
-    styleUrls: ['./dot-edit-page-main.component.scss']
+    styleUrls: ['./dot-edit-page-main.component.scss'],
+    standalone: false
 })
 export class DotEditPageMainComponent implements OnInit, OnDestroy {
     private route = inject(ActivatedRoute);

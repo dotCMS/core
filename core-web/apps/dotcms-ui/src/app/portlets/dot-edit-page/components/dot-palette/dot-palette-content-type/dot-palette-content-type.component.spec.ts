@@ -62,7 +62,8 @@ export const contentTypeDataMock = [
             [items]="items"
             [loading]="loading"
             [viewContentlet]="viewContentlet"></dot-palette-content-type>
-    `
+    `,
+    standalone: false
 })
 class TestHostComponent {
     @Input() items: any[];

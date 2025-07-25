@@ -39,7 +39,8 @@ function tableFactory(dotListingDataTableComponent: DotListingDataTableComponent
     ],
     selector: 'dot-listing-data-table',
     styleUrls: ['./dot-listing-data-table.component.scss'],
-    templateUrl: 'dot-listing-data-table.component.html'
+    templateUrl: 'dot-listing-data-table.component.html',
+    standalone: false
 })
 export class DotListingDataTableComponent implements OnInit {
     loggerService = inject(LoggerService);

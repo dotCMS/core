@@ -29,7 +29,8 @@ const fakeHtmlEl = {
 
 @Component({
     selector: 'dot-loading-indicator',
-    template: ''
+    template: '',
+    standalone: false
 })
 class MockDotLoadingIndicatorComponent {}
 

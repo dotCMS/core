@@ -14,7 +14,6 @@ import { DotMessagePipe } from '@dotcms/ui';
  */
 @Component({
     selector: 'dot-analytics-dashboard-metrics',
-    standalone: true,
     imports: [CommonModule, CardModule, SkeletonModule, DotMessagePipe],
     changeDetection: ChangeDetectionStrategy.OnPush,
     templateUrl: './dot-analytics-dashboard-metrics.component.html',

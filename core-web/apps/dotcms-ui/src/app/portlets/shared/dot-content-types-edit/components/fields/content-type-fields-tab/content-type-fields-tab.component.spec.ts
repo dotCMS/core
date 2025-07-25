@@ -24,7 +24,8 @@ const mockFieldTab: DotCMSContentTypeLayoutRow = {
 
 @Component({
     selector: 'dot-test-host',
-    template: '<dot-content-type-fields-tab [fieldTab]="data"></dot-content-type-fields-tab>'
+    template: '<dot-content-type-fields-tab [fieldTab]="data"></dot-content-type-fields-tab>',
+    standalone: false
 })
 class DotTestHostComponent {
     data: DotCMSContentTypeLayoutRow;

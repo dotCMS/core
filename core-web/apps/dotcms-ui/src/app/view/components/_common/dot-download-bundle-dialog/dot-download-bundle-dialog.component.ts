@@ -26,7 +26,8 @@ const DOWNLOAD_URL = '/api/bundle/_generate';
 @Component({
     selector: 'dot-download-bundle-dialog',
     templateUrl: './dot-download-bundle-dialog.component.html',
-    styleUrls: ['./dot-download-bundle-dialog.component.scss']
+    styleUrls: ['./dot-download-bundle-dialog.component.scss'],
+    standalone: false
 })
 export class DotDownloadBundleDialogComponent implements OnInit, OnDestroy {
     fb = inject(UntypedFormBuilder);

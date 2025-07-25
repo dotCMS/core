@@ -25,7 +25,8 @@
                         "style": "kebab-case"
                     }
                 ],
-                "@typescript-eslint/no-duplicate-enum-values": "off"
+                "@typescript-eslint/no-duplicate-enum-values": "off",
+                "@angular-eslint/prefer-standalone": "off"
             }
         },
         {

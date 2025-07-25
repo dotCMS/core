@@ -11,7 +11,8 @@ import { DotLegacyTemplateAdditionalActionsComponent } from './dot-legacy-templa
 
 @Component({
     selector: 'dot-iframe',
-    template: ''
+    template: '',
+    standalone: false
 })
 class MockDotIframeComponent {
     @Input()

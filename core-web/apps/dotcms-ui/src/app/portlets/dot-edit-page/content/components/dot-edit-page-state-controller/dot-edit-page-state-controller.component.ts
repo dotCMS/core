@@ -44,7 +44,8 @@ enum DotConfirmationType {
 @Component({
     selector: 'dot-edit-page-state-controller',
     templateUrl: './dot-edit-page-state-controller.component.html',
-    styleUrls: ['./dot-edit-page-state-controller.component.scss']
+    styleUrls: ['./dot-edit-page-state-controller.component.scss'],
+    standalone: false
 })
 export class DotEditPageStateControllerComponent implements OnChanges, OnInit {
     private dotAlertConfirmService = inject(DotAlertConfirmService);

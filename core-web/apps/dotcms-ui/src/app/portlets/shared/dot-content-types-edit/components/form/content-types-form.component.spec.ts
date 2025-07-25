@@ -71,7 +71,8 @@ import { ContentTypesFormComponent } from './content-types-form.component';
             provide: NG_VALUE_ACCESSOR,
             useExisting: forwardRef(() => DotSiteSelectorComponent)
         }
-    ]
+    ],
+    standalone: false
 })
 class DotSiteSelectorComponent implements ControlValueAccessor {
     @Input() system;

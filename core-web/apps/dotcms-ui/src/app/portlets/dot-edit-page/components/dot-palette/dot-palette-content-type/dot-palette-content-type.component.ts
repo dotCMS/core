@@ -8,7 +8,8 @@ import { DotPaletteInputFilterComponent } from '../dot-palette-input-filter/dot-
 @Component({
     selector: 'dot-palette-content-type',
     templateUrl: './dot-palette-content-type.component.html',
-    styleUrls: ['./dot-palette-content-type.component.scss']
+    styleUrls: ['./dot-palette-content-type.component.scss'],
+    standalone: false
 })
 export class DotPaletteContentTypeComponent {
     private dotContentletEditorService = inject(DotContentletEditorService);

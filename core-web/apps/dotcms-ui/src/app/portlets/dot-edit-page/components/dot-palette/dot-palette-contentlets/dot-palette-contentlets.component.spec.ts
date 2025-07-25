@@ -65,7 +65,8 @@ export const contentletProductDataMock = {
             [items]="items"
             [loading]="loading"
             [totalRecords]="totalRecords"></dot-palette-contentlets>
-    `
+    `,
+    standalone: false
 })
 class TestHostComponent {
     @Input() items: DotCMSContentlet[];
@@ -84,7 +85,8 @@ class MockDotContentletEditorService {
 
 @Component({
     selector: 'dot-contentlet-icon',
-    template: ''
+    template: '',
+    standalone: false
 })
 export class DotContentletIconMockComponent {
     @Input() icon: string;

@@ -15,7 +15,8 @@ import { CategoriesPropertyComponent } from './categories-property.component';
 
 @Component({
     selector: 'dot-searchable-dropdown',
-    template: ''
+    template: '',
+    standalone: false
 })
 class TestSearchableDropdownComponent {
     @Input()
@@ -41,7 +42,8 @@ class TestSearchableDropdownComponent {
 
 @Component({
     selector: 'dot-field-validation-message',
-    template: ''
+    template: '',
+    standalone: false
 })
 class TestFieldValidationMessageComponent {
     @Input()

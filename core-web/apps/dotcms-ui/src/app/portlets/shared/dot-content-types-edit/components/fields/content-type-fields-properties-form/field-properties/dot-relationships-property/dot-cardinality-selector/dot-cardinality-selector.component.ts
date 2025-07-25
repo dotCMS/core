@@ -17,7 +17,8 @@ import { DotRelationshipService } from '@portlets/shared/dot-content-types-edit/
     providers: [],
     selector: 'dot-cardinality-selector',
     templateUrl: './dot-cardinality-selector.component.html',
-    styleUrls: ['./dot-cardinality-selector.component.scss']
+    styleUrls: ['./dot-cardinality-selector.component.scss'],
+    standalone: false
 })
 export class DotCardinalitySelectorComponent implements OnInit {
     private dotRelationshipService = inject(DotRelationshipService);

@@ -6,7 +6,8 @@ import { DotRouterService } from '@dotcms/data-access';
 @Component({
     selector: 'dot-container-history',
     templateUrl: './dot-container-history.component.html',
-    styleUrls: ['./dot-container-history.component.scss']
+    styleUrls: ['./dot-container-history.component.scss'],
+    standalone: false
 })
 export class DotContainerHistoryComponent implements OnChanges {
     @Input() containerId: string;

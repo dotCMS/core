@@ -11,7 +11,8 @@ import { DotKeyValue } from '@shared/models/dot-key-value-ng/dot-key-value-ng.mo
 @Component({
     selector: 'dot-apps-configuration-detail',
     templateUrl: './dot-apps-configuration-detail.component.html',
-    styleUrls: ['./dot-apps-configuration-detail.component.scss']
+    styleUrls: ['./dot-apps-configuration-detail.component.scss'],
+    standalone: false
 })
 export class DotAppsConfigurationDetailComponent implements OnInit {
     private route = inject(ActivatedRoute);

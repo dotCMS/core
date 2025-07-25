@@ -25,7 +25,6 @@ import { SiteFieldComponent } from './components/site-field/site-field.component
  */
 @Component({
     selector: 'dot-search',
-    standalone: true,
     imports: [
         InputTextModule,
         ButtonModule,

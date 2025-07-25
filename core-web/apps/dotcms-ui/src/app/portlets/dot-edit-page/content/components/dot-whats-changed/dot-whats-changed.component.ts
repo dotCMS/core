@@ -14,7 +14,8 @@ export const SHOW_DIFF_STYLES =
 @Component({
     selector: 'dot-whats-changed',
     templateUrl: './dot-whats-changed.component.html',
-    styleUrls: ['./dot-whats-changed.component.scss']
+    styleUrls: ['./dot-whats-changed.component.scss'],
+    standalone: false
 })
 export class DotWhatsChangedComponent implements OnInit, OnChanges {
     private dotEditPageService = inject(DotEditPageService);

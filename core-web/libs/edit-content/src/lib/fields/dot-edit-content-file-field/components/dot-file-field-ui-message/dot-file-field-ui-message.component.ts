@@ -6,7 +6,6 @@ import { DotMessagePipe } from '@dotcms/ui';
 
 @Component({
     selector: 'dot-file-field-ui-message',
-    standalone: true,
     imports: [NgClass, DotMessagePipe],
     templateUrl: './dot-file-field-ui-message.component.html',
     styleUrls: ['./dot-file-field-ui-message.component.scss'],

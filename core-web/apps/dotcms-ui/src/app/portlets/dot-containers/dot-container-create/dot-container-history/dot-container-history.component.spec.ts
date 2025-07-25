@@ -18,7 +18,8 @@ import { DotContainerHistoryComponent } from './dot-container-history.component'
 
 @Component({
     selector: 'dot-iframe',
-    template: ''
+    template: '',
+    standalone: false
 })
 export class IframeMockComponent {
     @Input() src: string;
@@ -30,7 +31,8 @@ export class IframeMockComponent {
     selector: `dot-host-component`,
     template: `
         <dot-container-history [containerId]="containerId"></dot-container-history>
-    `
+    `,
+    standalone: false
 })
 class DotTestHostComponent {
     containerId = '';

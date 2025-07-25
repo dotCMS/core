@@ -39,7 +39,6 @@ import { DotSelectSeoToolComponent } from '../dot-select-seo-tool/dot-select-seo
 import { DotSeoImagePreviewComponent } from '../dot-seo-image-preview/dot-seo-image-preview.component';
 @Component({
     selector: 'dot-results-seo-tool',
-    standalone: true,
     imports: [
         NgClass,
         CardModule,

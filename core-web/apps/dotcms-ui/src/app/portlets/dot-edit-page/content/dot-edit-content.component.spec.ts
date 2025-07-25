@@ -114,19 +114,22 @@ const EXPERIMENT_MOCK = getExperimentMock(1);
 
 @Component({
     selector: 'dot-global-message',
-    template: ''
+    template: '',
+    standalone: false
 })
 class MockGlobalMessageComponent {}
 
 @Component({
     selector: 'dot-test',
-    template: '<dot-edit-content></dot-edit-content>'
+    template: '<dot-edit-content></dot-edit-content>',
+    standalone: false
 })
 class HostTestComponent {}
 
 @Component({
     selector: 'dot-icon',
-    template: ''
+    template: '',
+    standalone: false
 })
 class MockDotIconComponent {
     @Input() name: string;
@@ -134,7 +137,8 @@ class MockDotIconComponent {
 
 @Component({
     selector: 'dot-whats-changed',
-    template: ''
+    template: '',
+    standalone: false
 })
 class MockDotWhatsChangedComponent {
     @Input() pageId: string;
@@ -143,7 +147,8 @@ class MockDotWhatsChangedComponent {
 
 @Component({
     selector: 'dot-form-selector',
-    template: ''
+    template: '',
+    standalone: false
 })
 export class MockDotFormSelectorComponent {
     @Input() show = false;
@@ -153,7 +158,8 @@ export class MockDotFormSelectorComponent {
 
 @Component({
     selector: 'dot-edit-page-toolbar',
-    template: ''
+    template: '',
+    standalone: false
 })
 export class MockDotEditPageToolbarComponent {
     @Input() pageState = mockDotRenderedPageState;
@@ -167,7 +173,8 @@ export class MockDotEditPageToolbarComponent {
 
 @Component({
     selector: 'dot-edit-page-toolbar-seo',
-    template: ''
+    template: '',
+    standalone: false
 })
 export class MockDotEditPageToolbarSeoComponent {
     @Input() pageState = mockDotRenderedPageState;
@@ -181,7 +188,8 @@ export class MockDotEditPageToolbarSeoComponent {
 
 @Component({
     selector: 'dot-palette',
-    template: ''
+    template: '',
+    standalone: false
 })
 export class MockDotPaletteComponent {
     @Input() languageId = '1';

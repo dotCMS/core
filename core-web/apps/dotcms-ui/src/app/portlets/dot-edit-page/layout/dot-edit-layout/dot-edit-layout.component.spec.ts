@@ -26,7 +26,8 @@ import { DotEditLayoutComponent } from './dot-edit-layout.component';
 @Component({
     // eslint-disable-next-line @angular-eslint/component-selector
     selector: 'dotcms-template-builder-lib',
-    template: ''
+    template: '',
+    standalone: false
 })
 export class MockTemplateBuilderComponent {
     @Input()

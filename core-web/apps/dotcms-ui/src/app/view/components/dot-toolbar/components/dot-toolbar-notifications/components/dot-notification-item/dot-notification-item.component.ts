@@ -28,7 +28,6 @@ const notificationIcons: NotificationIcons = {
  */
 @Component({
     selector: 'dot-notification-item',
-    standalone: true,
     imports: [ButtonModule, DotCustomTimeModule, LowerCasePipe, DotMessagePipe],
     styleUrls: ['./dot-notification-item.component.scss'],
     templateUrl: 'dot-notification-item.component.html'

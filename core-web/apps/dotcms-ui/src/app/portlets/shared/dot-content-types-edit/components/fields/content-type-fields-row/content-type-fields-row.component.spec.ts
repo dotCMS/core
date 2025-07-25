@@ -46,7 +46,8 @@ mockFieldRow.columns[1].fields = [
 
 @Component({
     selector: 'dot-content-type-field-dragabble-item',
-    template: ''
+    template: '',
+    standalone: false
 })
 class TestContentTypeFieldDraggableItemComponent {
     @Input()
@@ -59,7 +60,8 @@ class TestContentTypeFieldDraggableItemComponent {
 
 @Component({
     selector: 'dot-test-host',
-    template: '<dot-content-type-fields-row [fieldRow]="data"></dot-content-type-fields-row>'
+    template: '<dot-content-type-fields-row [fieldRow]="data"></dot-content-type-fields-row>',
+    standalone: false
 })
 class DotTestHostComponent {
     data: DotCMSContentTypeLayoutRow;

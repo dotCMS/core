@@ -15,7 +15,8 @@ import { DotLoginInformation } from '@dotcms/dotcms-models';
     providers: [],
     selector: 'dot-reset-password-component',
     styleUrls: ['./reset-password.component.scss'],
-    templateUrl: 'reset-password.component.html'
+    templateUrl: 'reset-password.component.html',
+    standalone: false
 })
 export class ResetPasswordComponent implements OnInit, AfterViewChecked {
     private fb = inject(UntypedFormBuilder);

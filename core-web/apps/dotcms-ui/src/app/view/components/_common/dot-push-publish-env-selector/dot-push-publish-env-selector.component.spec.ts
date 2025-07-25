@@ -48,7 +48,8 @@ export class PushPublishServiceMock {
                 showList="true"
                 formControlName="environment"></dot-push-publish-env-selector>
         </form>
-    `
+    `,
+    standalone: false
 })
 class TestHostComponent {
     group: UntypedFormGroup;

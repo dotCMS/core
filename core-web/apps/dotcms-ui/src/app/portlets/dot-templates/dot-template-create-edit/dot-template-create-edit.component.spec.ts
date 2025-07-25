@@ -41,7 +41,8 @@ import {
 
 @Component({
     selector: 'dot-api-link',
-    template: ''
+    template: '',
+    standalone: false
 })
 export class DotApiLinkMockComponent {
     @Input() href;
@@ -49,7 +50,8 @@ export class DotApiLinkMockComponent {
 
 @Component({
     selector: 'dot-template-builder',
-    template: ''
+    template: '',
+    standalone: false
 })
 export class DotTemplateBuilderMockComponent {
     @Input() item;
@@ -61,7 +63,8 @@ export class DotTemplateBuilderMockComponent {
 
 @Component({
     selector: 'dot-portlet-base',
-    template: '<ng-content></ng-content>'
+    template: '<ng-content></ng-content>',
+    standalone: false
 })
 export class DotPortletBaseMockComponent {
     @Input() boxed;
@@ -69,8 +72,8 @@ export class DotPortletBaseMockComponent {
 
 @Component({
     selector: 'dot-portlet-toolbar',
-    template:
-        '<div><div class="left"><ng-content select="[left]"></ng-content></div><ng-content></ng-content></div>'
+    template: '<div><div class="left"><ng-content select="[left]"></ng-content></div><ng-content></ng-content></div>',
+    standalone: false
 })
 export class DotPortletToolbarMockComponent {
     @Input() title;

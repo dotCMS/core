@@ -26,7 +26,8 @@ import { DotWorkflowsActionsSelectorFieldService } from './services/dot-workflow
                 formControlName="action"></dot-workflows-actions-selector-field>
             {{ form.value | json }}
         </form>
-    `
+    `,
+    standalone: false
 })
 class FakeFormComponent implements OnInit {
     private fb = inject(UntypedFormBuilder);

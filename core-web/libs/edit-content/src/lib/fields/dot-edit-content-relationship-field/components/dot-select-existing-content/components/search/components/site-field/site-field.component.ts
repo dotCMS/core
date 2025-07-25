@@ -29,7 +29,6 @@ import { SiteFieldStore } from './site-field.store';
  */
 @Component({
     selector: 'dot-site-field',
-    standalone: true,
     imports: [
         CommonModule,
         ReactiveFormsModule,

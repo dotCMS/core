@@ -53,7 +53,8 @@ import { DotActionsMenuEventParams, DotPagesComponent } from './dot-pages.compon
 
 @Component({
     selector: 'dot-pages-favorite-panel',
-    template: ''
+    template: '',
+    standalone: false
 })
 class MockDotPagesFavoritePanelComponent {
     @Output() goToUrl = new EventEmitter<string>();
@@ -62,7 +63,8 @@ class MockDotPagesFavoritePanelComponent {
 
 @Component({
     selector: 'dot-pages-listing-panel',
-    template: ''
+    template: '',
+    standalone: false
 })
 class MockDotPagesListingPanelComponent {
     @Output() goToUrl = new EventEmitter<string>();
@@ -71,7 +73,8 @@ class MockDotPagesListingPanelComponent {
 
 @Component({
     selector: 'dot-add-to-bundle',
-    template: ''
+    template: '',
+    standalone: false
 })
 class MockDotAddToBundleComponent {
     @Input() assetIdentifier: string;

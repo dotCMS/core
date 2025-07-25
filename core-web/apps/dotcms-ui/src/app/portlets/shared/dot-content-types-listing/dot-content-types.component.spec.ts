@@ -57,7 +57,8 @@ class MockDotContentTypeService {
 
 @Component({
     selector: 'dot-dot-content-type-copy-dialog',
-    template: ''
+    template: '',
+    standalone: false
 })
 class MockDotContentTypeCloneDialogComponent {
     @Input()
@@ -72,7 +73,8 @@ class MockDotContentTypeCloneDialogComponent {
 
 @Component({
     selector: 'dot-base-type-selector',
-    template: ''
+    template: '',
+    standalone: false
 })
 class MockDotBaseTypeSelectorComponent {
     @Input() value: SelectItem;
@@ -101,7 +103,8 @@ class MockDotContentTypeStore {}
 
 @Component({
     selector: 'dot-add-to-bundle ',
-    template: ``
+    template: ``,
+    standalone: false
 })
 class MockDotAddToBundleComponent {
     @Input() assetIdentifier: string;

@@ -54,7 +54,6 @@ enum DotConfirmationType {
     selector: 'dot-edit-page-state-controller-seo',
     templateUrl: './dot-edit-page-state-controller-seo.component.html',
     styleUrls: ['./dot-edit-page-state-controller-seo.component.scss'],
-    standalone: true,
     imports: [
         FormsModule,
         InputSwitchModule,

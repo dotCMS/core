@@ -48,7 +48,8 @@ import { DotActionButtonComponent } from '../_common/dot-action-button/dot-actio
     selector: 'dot-empty-state',
     template: `
         <h1>Im empty</h1>
-    `
+    `,
+    standalone: false
 })
 class EmptyMockComponent {}
 
@@ -73,7 +74,8 @@ class EmptyMockComponent {}
             [paginatorExtraParams]="paginatorExtraParams">
             <dot-empty-state></dot-empty-state>
         </dot-listing-data-table>
-    `
+    `,
+    standalone: false
 })
 class TestHostComponent {
     @Input() columns: DataTableColumn[];

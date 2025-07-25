@@ -33,7 +33,8 @@ interface DotCommentAndAssignValue {
 @Component({
     selector: 'dot-comment-and-assign-form',
     templateUrl: './dot-comment-and-assign-form.component.html',
-    styleUrls: ['./dot-comment-and-assign-form.component.scss']
+    styleUrls: ['./dot-comment-and-assign-form.component.scss'],
+    standalone: false
 })
 export class DotCommentAndAssignFormComponent
     implements OnInit, DotFormModel<DotCommentAndAssignData, DotCommentAndAssignValue>

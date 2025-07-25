@@ -14,7 +14,6 @@ import { Sidebar } from 'primeng/sidebar';
  */
 @Component({
     selector: 'dot-sidebar-header',
-    standalone: true,
     imports: [CommonModule, ButtonModule],
     templateUrl: './dot-sidebar-header.component.html',
     styleUrls: ['./dot-sidebar-header.component.scss'],

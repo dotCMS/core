@@ -33,7 +33,6 @@ const NG_DEFAULT_VALIDATORS_ERRORS_MSG: Record<DefaultsNGValidatorsTypes, string
 @Component({
     selector: 'dot-field-validation-message',
     templateUrl: './dot-field-validation-message.component.html',
-    standalone: true,
     imports: [DotMessagePipe],
     changeDetection: ChangeDetectionStrategy.OnPush
 })

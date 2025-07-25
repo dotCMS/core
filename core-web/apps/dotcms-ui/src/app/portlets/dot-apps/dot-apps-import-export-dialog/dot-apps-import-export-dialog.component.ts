@@ -35,7 +35,8 @@ import {
 @Component({
     selector: 'dot-apps-import-export-dialog',
     templateUrl: './dot-apps-import-export-dialog.component.html',
-    styleUrls: ['./dot-apps-import-export-dialog.component.scss']
+    styleUrls: ['./dot-apps-import-export-dialog.component.scss'],
+    standalone: false
 })
 export class DotAppsImportExportDialogComponent implements OnChanges, OnDestroy {
     private dotAppsService = inject(DotAppsService);

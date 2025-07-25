@@ -26,7 +26,8 @@ import { IframeOverlayService } from '../service/iframe-overlay.service';
 @Component({
     selector: 'dot-iframe',
     styleUrls: ['./iframe.component.scss'],
-    templateUrl: 'iframe.component.html'
+    templateUrl: 'iframe.component.html',
+    standalone: false
 })
 export class IframeComponent implements OnInit, OnDestroy {
     private dotIframeService = inject(DotIframeService);

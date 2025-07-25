@@ -26,7 +26,6 @@ import { DotExperimentsOptionContentBaseComponent } from '../dot-experiment-opti
  */
 @Component({
     selector: 'dot-experiments-goal-configuration-reach-page',
-    standalone: true,
     imports: [
         CommonModule,
         DotAutofocusDirective,

@@ -23,7 +23,6 @@ import {
 import { DotIconModule, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 
 @Component({
-    standalone: true,
     selector: 'dot-experiments-header',
     templateUrl: './dot-experiments-ui-header.component.html',
     styleUrls: ['./dot-experiments-ui-header.component.scss'],
