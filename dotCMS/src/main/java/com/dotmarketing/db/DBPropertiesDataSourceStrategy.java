@@ -80,6 +80,7 @@ public class DBPropertiesDataSourceStrategy implements DotDataSourceStrategy {
     HikariConfig getHikariConfig() {
         final HikariConfig config = new HikariConfig(propertiesFile.getPath());
         config.setPoolName(Constants.DATABASE_DEFAULT_DATASOURCE);
+        config.setRegisterMbeans(com.dotmarketing.util.Config.getBooleanProperty("hikari.register.mbeans", true));
         return config;
     }
 }

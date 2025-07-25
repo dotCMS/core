@@ -186,15 +186,44 @@ public class CaffineCache extends CacheProvider {
             String duration = millis == Long.MAX_VALUE ? "" : " | ttl:" + nf.format(millis / 1000) + "s";
 
             com.github.benmanes.caffeine.cache.stats.CacheStats cstats = foundCache.stats();
+            
+            // Helper methods to safely format numeric values, handling NaN and infinity
+            java.util.function.Function<Double, String> safeFormat = (value) -> 
+                (Double.isNaN(value) || Double.isInfinite(value)) ? "0" : nf.format(value);
+            
+            java.util.function.Function<Double, String> safeFormatPercent = (value) -> 
+                (Double.isNaN(value) || Double.isInfinite(value)) ? "0%" : pf.format(value);
+            
+            // Calculate raw numeric values for metrics systems (without NaN/Infinity)
+            double avgLoadPenaltyMs = cstats.averageLoadPenalty() / 1000000.0;
+            String avgLoadTimeValue = (Double.isNaN(avgLoadPenaltyMs) || Double.isInfinite(avgLoadPenaltyMs)) 
+                ? "0" : nf.format(avgLoadPenaltyMs);
+            
+            double hitRate = Double.isNaN(cstats.hitRate()) || Double.isInfinite(cstats.hitRate()) ? 0.0 : cstats.hitRate();
+            double evictions = (double) cstats.evictionCount();
+            double cacheSize = (double) foundCache.estimatedSize();
+            double loads = (double) (cstats.missCount() + cstats.hitCount());
+            double hits = (double) cstats.hitCount();
+            double avgLoadTime = (Double.isNaN(avgLoadPenaltyMs) || Double.isInfinite(avgLoadPenaltyMs)) ? 0.0 : avgLoadPenaltyMs;
+            
             stats.addStat(CacheStats.REGION, group)
                 .addStat(CacheStats.REGION_DEFAULT, "false")
-                .addStat(CacheStats.REGION_CONFIGURED_SIZE, "size:" + nf.format(size)  + duration )
-                .addStat(CacheStats.REGION_SIZE, nf.format(foundCache.estimatedSize()))
-                .addStat(CacheStats.REGION_LOAD, nf.format(cstats.missCount() + cstats.hitCount()))
-                .addStat(CacheStats.REGION_HITS, nf.format(cstats.hitCount()))
-                .addStat(CacheStats.REGION_HIT_RATE, pf.format(cstats.hitRate()))
-                .addStat(CacheStats.REGION_AVG_LOAD_TIME, nf.format(cstats.averageLoadPenalty() / 1000000) + " ms")
-                .addStat(CacheStats.REGION_EVICTIONS, nf.format(cstats.evictionCount()));
+                // Formatted values for display (JSP page, etc.)
+                .addStat(CacheStats.REGION_CONFIGURED_SIZE, "size:" + nf.format(size) + duration)
+                .addStat(CacheStats.REGION_SIZE, safeFormat.apply(cacheSize))
+                .addStat(CacheStats.REGION_LOAD, safeFormat.apply(loads))
+                .addStat(CacheStats.REGION_HITS, safeFormat.apply(hits))
+                .addStat(CacheStats.REGION_HIT_RATE, safeFormatPercent.apply(hitRate))
+                .addStat(CacheStats.REGION_AVG_LOAD_TIME, avgLoadTimeValue + " ms")
+                .addStat(CacheStats.REGION_EVICTIONS, safeFormat.apply(evictions))
+                // Raw numeric values for metrics systems
+                .addStat(CacheStats.REGION_CONFIGURED_SIZE_RAW, String.valueOf(size))
+                .addStat(CacheStats.REGION_SIZE_RAW, String.valueOf(cacheSize))
+                .addStat(CacheStats.REGION_LOAD_RAW, String.valueOf(loads))
+                .addStat(CacheStats.REGION_HITS_RAW, String.valueOf(hits))
+                .addStat(CacheStats.REGION_HIT_RATE_RAW, String.valueOf(hitRate))
+                .addStat(CacheStats.REGION_AVG_LOAD_TIME_RAW, String.valueOf(avgLoadTime))
+                .addStat(CacheStats.REGION_EVICTIONS_RAW, String.valueOf(evictions));
             ret.addStatRecord(stats);
         }
 

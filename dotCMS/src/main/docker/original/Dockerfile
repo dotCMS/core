@@ -4,7 +4,7 @@
 # Need to specify the SDKMAN_JAVA_VERSION to a valid sdkman java version that is available in the dotcms/java-base image
 ARG SDKMAN_JAVA_VERSION="SDKMAN_JAVA_VERSION_ARG_NOT_SET"
 
-FROM dotcms/java-base:${SDKMAN_JAVA_VERSION} AS container-base
+FROM dotcms/java-base:local-jmx-java21 AS container-base
 WORKDIR /srv
 
 ENV DEBIAN_FRONTEND=noninteractive
@@ -94,6 +94,10 @@ CMD ["dotcms"]
 EXPOSE 4000
 # Java Debugging - must be configured via CMS_JAVA_OPTS
 EXPOSE 8000
+# JMX Remote Monitoring - must be configured via CMS_JAVA_OPTS
+EXPOSE 9999
+# JMX RMI Port - must be configured via CMS_JAVA_OPTS  
+EXPOSE 9998
 # Direct connect
 EXPOSE 8080
 # Connect from proxy, HTTP/80, non-secure

@@ -99,6 +99,9 @@ public class DockerSecretDataSourceStrategy implements DotDataSourceStrategy {
         config.setTransactionIsolation(
                     dockerSecretsMap.get(
                             DataSourceStrategyProvider.CONNECTION_DB_DEFAULT_TRANSACTION_ISOLATION));
+        
+        config.setRegisterMbeans(com.dotmarketing.util.Config.getBooleanProperty("hikari.register.mbeans", true));
+        
         return config;
     }
 }

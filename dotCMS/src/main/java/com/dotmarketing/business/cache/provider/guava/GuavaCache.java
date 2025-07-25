@@ -200,16 +200,44 @@ public class GuavaCache extends CacheProvider {
           NumberFormat nf = DecimalFormat.getInstance();
           DecimalFormat pf = new DecimalFormat("##.##%");
 
+          // Helper methods to safely format numeric values, handling NaN and infinity
+          java.util.function.Function<Double, String> safeFormat = (value) -> 
+              (Double.isNaN(value) || Double.isInfinite(value)) ? "0" : nf.format(value);
+          
+          java.util.function.Function<Double, String> safeFormatPercent = (value) -> 
+              (Double.isNaN(value) || Double.isInfinite(value)) ? "0%" : pf.format(value);
+
+          // Calculate raw numeric values for metrics systems (without NaN/Infinity)
+          double avgLoadPenaltyMs = guavaStats.averageLoadPenalty() / 1000000.0;
+          String avgLoadTimeValue = (Double.isNaN(avgLoadPenaltyMs) || Double.isInfinite(avgLoadPenaltyMs)) 
+              ? "0" : nf.format(avgLoadPenaltyMs);
+          
+          double hitRate = Double.isNaN(guavaStats.hitRate()) || Double.isInfinite(guavaStats.hitRate()) ? 0.0 : guavaStats.hitRate();
+          double evictions = (double) guavaStats.evictionCount();
+          double cacheSize = (double) foundCache.size();
+          double loads = (double) guavaStats.loadCount();
+          double hits = (double) guavaStats.hitCount();
+          double avgLoadTime = (Double.isNaN(avgLoadPenaltyMs) || Double.isInfinite(avgLoadPenaltyMs)) ? 0.0 : avgLoadPenaltyMs;
+
           stats.addStat(CacheStats.REGION, group);
           stats.addStat(CacheStats.REGION_DEFAULT, isDefault + "");
+          // Formatted values for display (JSP page, etc.)
           stats.addStat(CacheStats.REGION_CONFIGURED_SIZE, nf.format(configured));
-          stats.addStat(CacheStats.REGION_SIZE, nf.format(foundCache.size()));
-          stats.addStat(CacheStats.REGION_LOAD, nf.format(guavaStats.loadCount()));
-          stats.addStat(CacheStats.REGION_HITS, nf.format(guavaStats.hitCount()));
-          stats.addStat(CacheStats.REGION_HITS, nf.format(guavaStats.hitCount()));
-          stats.addStat(CacheStats.REGION_HIT_RATE, pf.format(guavaStats.hitRate()));
-          stats.addStat(CacheStats.REGION_AVG_LOAD_TIME, nf.format(guavaStats.averageLoadPenalty()/1000000) + " ms");
-          stats.addStat(CacheStats.REGION_EVICTIONS, nf.format(guavaStats.evictionCount()));
+          stats.addStat(CacheStats.REGION_SIZE, safeFormat.apply(cacheSize));
+          stats.addStat(CacheStats.REGION_LOAD, safeFormat.apply(loads));
+          stats.addStat(CacheStats.REGION_HITS, safeFormat.apply(hits));
+          stats.addStat(CacheStats.REGION_HITS, safeFormat.apply(hits));
+          stats.addStat(CacheStats.REGION_HIT_RATE, safeFormatPercent.apply(hitRate));
+          stats.addStat(CacheStats.REGION_AVG_LOAD_TIME, avgLoadTimeValue + " ms");
+          stats.addStat(CacheStats.REGION_EVICTIONS, safeFormat.apply(evictions))
+          // Raw numeric values for metrics systems
+          .addStat(CacheStats.REGION_CONFIGURED_SIZE_RAW, String.valueOf(configured))
+          .addStat(CacheStats.REGION_SIZE_RAW, String.valueOf(cacheSize))
+          .addStat(CacheStats.REGION_LOAD_RAW, String.valueOf(loads))
+          .addStat(CacheStats.REGION_HITS_RAW, String.valueOf(hits))
+          .addStat(CacheStats.REGION_HIT_RATE_RAW, String.valueOf(hitRate))
+          .addStat(CacheStats.REGION_AVG_LOAD_TIME_RAW, String.valueOf(avgLoadTime))
+          .addStat(CacheStats.REGION_EVICTIONS_RAW, String.valueOf(evictions));
           ret.addStatRecord(stats);
         }
 
