@@ -411,7 +411,8 @@ let fakeFields: DotCMSContentTypeLayoutRow[];
 
 @Component({
     selector: 'dot-test-host-component',
-    template: '<dot-content-type-fields-drop-zone [layout]="layout" [loading]="loading"></dot-content-type-fields-drop-zone>',
+    template:
+        '<dot-content-type-fields-drop-zone [layout]="layout" [loading]="loading"></dot-content-type-fields-drop-zone>',
     standalone: false
 })
 class TestHostComponent {

@@ -14,14 +14,20 @@ import { DotMenu, DotMenuItem } from '@dotcms/dotcms-models';
 @Component({
     animations: [
         trigger('expandAnimation', [
-            state('expanded', style({
-                height: '!',
-                overflow: 'hidden'
-            })),
-            state('collapsed', style({
-                height: '0px',
-                overflow: 'hidden'
-            })),
+            state(
+                'expanded',
+                style({
+                    height: '!',
+                    overflow: 'hidden'
+                })
+            ),
+            state(
+                'collapsed',
+                style({
+                    height: '0px',
+                    overflow: 'hidden'
+                })
+            ),
             transition('expanded <=> collapsed', animate('250ms ease-in-out'))
         ])
     ],

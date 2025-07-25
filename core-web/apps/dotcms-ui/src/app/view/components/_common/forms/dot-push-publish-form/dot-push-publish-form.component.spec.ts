@@ -57,7 +57,8 @@ const messageServiceMock = new MockDotMessageService({
 
 @Component({
     selector: 'dot-test-host-component',
-    template: '@if (data) {<dot-push-publish-form (valid)="valid = $event" (value)="value = $event" [data]="data"></dot-push-publish-form>}',
+    template:
+        '@if (data) {<dot-push-publish-form (valid)="valid = $event" (value)="value = $event" [data]="data"></dot-push-publish-form>}',
     standalone: false
 })
 class TestHostComponent {
