@@ -1452,8 +1452,8 @@
                                 <dotcms>
                                     <run>
                                         <ports combine.children="append">
-                                            <port>jmx.port:${jmx.port}</port>
-                                            <port>jmx.rmi.port:${jmx.rmi.port}</port>
+                                            <port>${jmx.port}:${jmx.port}</port>
+                                            <port>${jmx.rmi.port}:${jmx.rmi.port}</port>
                                         </ports>
                                     </run>
                                 </dotcms>
@@ -1487,8 +1487,8 @@
                                     <run>
                                         <ports combine.children="append">
                                             <port>debug.port:${debug.port}</port>
-                                            <port>jmx.port:${jmx.port}</port>
-                                            <port>jmx.rmi.port:${jmx.rmi.port}</port>
+                                            <port>${jmx.port}:${jmx.port}</port>
+                                            <port>${jmx.rmi.port}:${jmx.rmi.port}</port>
                                         </ports>
                                     </run>
                                 </dotcms>
