@@ -38,7 +38,7 @@ import org.junit.runners.Suite;
         Task230630CreateRunningIdsExperimentFieldIntegrationTest.class,
         TotalSizeOfFilesPerThemeMetricTypeTest.class,
         TimeMachineUtilTest.class,
-        Task250604UpdateFolderInodesTest.class
+        Task250604UpdateFolderInodesTest.class,
         AnalyticsValidatorUtilTest.class
 })
 public class MainSuite3a {
