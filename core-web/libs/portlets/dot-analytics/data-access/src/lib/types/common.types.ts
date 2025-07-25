@@ -5,23 +5,33 @@
 import { ComponentStatus } from '@dotcms/dotcms-models';
 
 /**
- * Time range options for analytics filtering.
- * Using const assertion for time range management.
+ * Options for predefined time ranges in analytics
+ * These correspond to common analytics reporting periods
  */
-const TimeRange = {
+export const TimeRangeOptions = {
+    TODAY: 'today',
+    YESTERDAY: 'yesterday',
     LAST_7_DAYS: 'from 7 days ago to now',
-    LAST_30_DAYS: 'from 30 days ago to now'
+    LAST_30_DAYS: 'from 30 days ago to now',
+    CUSTOM_TIME_RANGE: 'CUSTOM_TIME_RANGE'
 } as const;
 
 /**
- * Time range options for analytics filtering.
+ * Default time range for analytics queries (7 days)
  */
-export type TimeRange = (typeof TimeRange)[keyof typeof TimeRange];
+export const DEFAULT_TIME_RANGE: TimeRange = TimeRangeOptions.LAST_7_DAYS;
 
 /**
- * Default time range for analytics queries.
+ * Union type representing all possible time range values
+ * Includes predefined ranges and custom time expressions
  */
-export const DEFAULT_TIME_RANGE: TimeRange = 'from 7 days ago to now';
+export type TimeRange = (typeof TimeRangeOptions)[keyof typeof TimeRangeOptions];
+
+/** Date range for custom time period selection as ISO date strings */
+export type DateRange = [string, string];
+
+/** Union type for time range inputs - supports both predefined ranges and custom date arrays */
+export type TimeRangeInput = TimeRange | DateRange;
 
 /**
  * API Response type with generic entity

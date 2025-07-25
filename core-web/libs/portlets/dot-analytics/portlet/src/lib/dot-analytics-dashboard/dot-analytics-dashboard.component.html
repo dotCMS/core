@@ -5,8 +5,8 @@
             class="analytics-dashboard__filters-container flex justify-content-between align-items-center">
             <dot-analytics-dashboard-filters
                 class="analytics-dashboard__filters"
-                [selectedTimeRange]="$currentTimeRange()"
                 (timeRangeChanged)="onTimeRangeChange($event)"
+                (customDateRangeChanged)="onCustomDateRangeChange($event)"
                 data-testid="analytics-filters" />
 
             <p-button
@@ -23,7 +23,7 @@
 
     <!-- Dashboard Row - White Background -->
     <div class="analytics-dashboard__dashboard-row">
-        <div class="analytics-dashboard__dashboard-container flex flex-column gap-4">
+        <div class="analytics-dashboard__dashboard-container flex flex-column gap-3">
             <!-- Metrics Section -->
             <div class="analytics-dashboard__metrics flex gap-3 flex-wrap">
                 @for (metric of $metricsData(); track metric.name) {

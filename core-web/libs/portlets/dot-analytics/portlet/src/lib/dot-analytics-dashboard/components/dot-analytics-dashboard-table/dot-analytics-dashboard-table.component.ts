@@ -10,6 +10,7 @@ import { DotMessagePipe } from '@dotcms/ui';
 
 import { TABLE_CONFIG, TOP_PAGES_TABLE_COLUMNS } from '../../constants';
 import { TableColumn } from '../../types';
+import { DotAnalyticsStateMessageComponent } from '../dot-analytics-state-message/dot-analytics-state-message.component';
 
 /**
  * Top pages analytics table component.
@@ -18,7 +19,14 @@ import { TableColumn } from '../../types';
 @Component({
     selector: 'dot-analytics-dashboard-table',
     standalone: true,
-    imports: [CommonModule, CardModule, SkeletonModule, TableModule, DotMessagePipe],
+    imports: [
+        CommonModule,
+        CardModule,
+        SkeletonModule,
+        TableModule,
+        DotMessagePipe,
+        DotAnalyticsStateMessageComponent
+    ],
     templateUrl: './dot-analytics-dashboard-table.component.html',
     styleUrls: ['./dot-analytics-dashboard-table.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -37,16 +45,23 @@ export class DotAnalyticsDashboardTableComponent {
     protected readonly columns: TableColumn[] = [...TOP_PAGES_TABLE_COLUMNS];
 
     /** Table configuration constants */
-    protected readonly tableConfig = {
-        ...TABLE_CONFIG,
-        ROWS_PER_PAGE_OPTIONS: [...TABLE_CONFIG.ROWS_PER_PAGE_OPTIONS]
-    };
+    protected readonly tableConfig = TABLE_CONFIG;
 
     /** Check if component is in loading state */
     protected readonly $isLoading = computed(() => {
         const status = this.$status();
 
         return status === ComponentStatus.INIT || status === ComponentStatus.LOADING;
+    });
+
+    /** Check if component is in error state */
+    protected readonly $isError = computed(() => this.$status() === ComponentStatus.ERROR);
+
+    /** Check if table data is empty */
+    protected readonly $isEmpty = computed(() => {
+        const data = this.$data();
+
+        return !data || data.length === 0;
     });
 
     /** Skeleton rows for loading state */

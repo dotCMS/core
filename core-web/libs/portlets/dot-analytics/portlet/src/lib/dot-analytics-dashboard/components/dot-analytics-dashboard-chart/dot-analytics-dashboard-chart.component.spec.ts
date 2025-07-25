@@ -255,7 +255,7 @@ describe('DotAnalyticsDashboardChartComponent', () => {
 
             const errorElement = spectator.query('.chart-error');
             expect(errorElement).toExist();
-            expect(spectator.query('.error-message')).toExist();
+            expect(spectator.query('dot-analytics-state-message')).toExist();
             expect(spectator.query(UIChart)).not.toExist();
         });
 
@@ -331,6 +331,52 @@ describe('DotAnalyticsDashboardChartComponent', () => {
             });
             expect(spectator.component['$isError']()).toBe(false);
         });
+
+        it('should correctly identify empty state', () => {
+            // Test with empty datasets
+            const emptyData: ChartData = {
+                labels: [],
+                datasets: []
+            };
+            spectator = createComponent({
+                props: {
+                    type: 'line' as ChartType,
+                    data: emptyData,
+                    status: ComponentStatus.LOADED
+                } as unknown
+            });
+            expect(spectator.component['$isEmpty']()).toBe(true);
+
+            // Test with datasets but no data
+            const noDataChartData: ChartData = {
+                labels: ['January', 'February'],
+                datasets: [
+                    {
+                        label: 'Test',
+                        data: [],
+                        borderColor: 'red'
+                    }
+                ]
+            };
+            spectator = createComponent({
+                props: {
+                    type: 'line' as ChartType,
+                    data: noDataChartData,
+                    status: ComponentStatus.LOADED
+                } as unknown
+            });
+            expect(spectator.component['$isEmpty']()).toBe(true);
+
+            // Test with valid data
+            spectator = createComponent({
+                props: {
+                    type: 'line' as ChartType,
+                    data: mockChartData,
+                    status: ComponentStatus.LOADED
+                } as unknown
+            });
+            expect(spectator.component['$isEmpty']()).toBe(false);
+        });
     });
 
     describe('Chart Options Configuration', () => {
@@ -361,6 +407,59 @@ describe('DotAnalyticsDashboardChartComponent', () => {
 
             expect(spectator.component.$width()).toBe('600px');
             expect(spectator.component.$height()).toBe('400px');
+        });
+    });
+
+    describe('Empty State', () => {
+        it('should show empty state when data is empty', () => {
+            const emptyData: ChartData = {
+                labels: [],
+                datasets: []
+            };
+
+            spectator = createComponent({
+                props: {
+                    type: 'line' as ChartType,
+                    data: emptyData,
+                    status: ComponentStatus.LOADED
+                } as unknown
+            });
+
+            const emptyState = spectator.query('.chart-empty');
+            expect(emptyState).toExist();
+            expect(spectator.query(UIChart)).not.toExist();
+        });
+
+        it('should show empty state icon and messages', () => {
+            const emptyData: ChartData = {
+                labels: [],
+                datasets: []
+            };
+
+            spectator = createComponent({
+                props: {
+                    type: 'line' as ChartType,
+                    data: emptyData,
+                    status: ComponentStatus.LOADED
+                } as unknown
+            });
+
+            const stateMessage = spectator.query('dot-analytics-state-message');
+            expect(stateMessage).toExist();
+        });
+
+        it('should not show empty state when data is available', () => {
+            spectator = createComponent({
+                props: {
+                    type: 'line' as ChartType,
+                    data: mockChartData,
+                    status: ComponentStatus.LOADED
+                } as unknown
+            });
+
+            const emptyState = spectator.query('.chart-empty');
+            expect(emptyState).not.toExist();
+            expect(spectator.query(UIChart)).toExist();
         });
     });
 });

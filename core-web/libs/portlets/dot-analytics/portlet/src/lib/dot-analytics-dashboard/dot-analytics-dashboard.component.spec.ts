@@ -22,7 +22,7 @@ describe('DotAnalyticsDashboardComponent', () => {
         }),
         uniqueVisitors: jest.fn().mockReturnValue({
             status: ComponentStatus.LOADED,
-            data: { 'request.totalUser': '342' },
+            data: { 'request.totalUsers': '342' },
             error: null
         }),
         topPagePerformance: jest.fn().mockReturnValue({
@@ -193,7 +193,7 @@ describe('DotAnalyticsDashboardComponent', () => {
 
             expect(spectator.component['$uniqueVisitors']()).toEqual({
                 status: ComponentStatus.LOADED,
-                data: { 'request.totalUser': '342' },
+                data: { 'request.totalUsers': '342' },
                 error: null
             });
 

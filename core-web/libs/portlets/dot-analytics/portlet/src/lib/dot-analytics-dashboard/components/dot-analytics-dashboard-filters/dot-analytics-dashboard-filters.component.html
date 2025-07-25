@@ -5,10 +5,23 @@
         size="small"
         [options]="$translatedTimeOptions()"
         [(ngModel)]="$selectedTimeRange"
-        (ngModelChange)="onTimeRangeChange($event)"
         optionLabel="label"
         optionValue="value"
         placeholder="{{ 'analytics.filters.time-period.placeholder' | dm }}"
         [style]="{ minWidth: '150px' }"
         data-testid="period-dropdown"></p-dropdown>
+
+    <!-- Custom Date Range Calendar -->
+    @if ($showCustomTimeRange()) {
+        <p-calendar
+            [(ngModel)]="$customDateRange"
+            selectionMode="range"
+            [readonlyInput]="false"
+            [showIcon]="true"
+            placeholder="{{ 'analytics.filters.custom-date-range.placeholder' | dm }}"
+            dateFormat="mm/dd/yy"
+            [showButtonBar]="true"
+            [style]="{ minWidth: '250px' }"
+            data-testid="custom-date-range-calendar"></p-calendar>
+    }
 </div>
