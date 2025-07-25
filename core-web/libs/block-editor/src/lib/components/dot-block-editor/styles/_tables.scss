@@ -156,8 +156,8 @@ table {
 
     // Show menu on cell selection or focus
     .selectedCell,
-    td:focus,
-    th:focus {
+    td.focus,
+    th.focus {
         .dot-cell-arrow {
             display: block;
         }
