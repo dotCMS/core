@@ -94,6 +94,10 @@ CMD ["dotcms"]
 EXPOSE 4000
 # Java Debugging - must be configured via CMS_JAVA_OPTS
 EXPOSE 8000
+# JMX Remote Monitoring - must be configured via CMS_JAVA_OPTS
+EXPOSE 9999
+# JMX RMI Port - must be configured via CMS_JAVA_OPTS  
+EXPOSE 9998
 # Direct connect
 EXPOSE 8080
 # Connect from proxy, HTTP/80, non-secure
