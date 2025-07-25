@@ -187,16 +187,164 @@
     },
     {
       "id": 6,
-      "title": "HikariCP Connection Pools",
+      "title": "HikariCP Connection Pools (jdbc/dotCMSPool)",
       "type": "row",
       "collapsed": false,
       "gridPos": {"h": 1, "w": 24, "x": 0, "y": 7}
     },
     {
+      "id": 16,
+      "title": "Pool Total Connections",
+      "type": "stat",
+      "gridPos": {"h": 4, "w": 6, "x": 0, "y": 8},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "value"},
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "green", "value": null},
+              {"color": "yellow", "value": 15},
+              {"color": "red", "value": 18}
+            ]
+          },
+          "unit": "short"
+        }
+      },
+      "options": {
+        "orientation": "auto",
+        "reduceOptions": {"values": false, "calcs": ["lastNotNull"], "fields": ""},
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto"
+      },
+      "targets": [
+        {
+          "expr": "dotcms_database_hikari_connections{pool=\"jdbc/dotCMSPool\"}",
+          "legendFormat": "Total",
+          "refId": "A"
+        }
+      ],
+      "datasource": {"type": "prometheus", "uid": "prometheus"}
+    },
+    {
+      "id": 17,
+      "title": "Current Active",
+      "type": "stat", 
+      "gridPos": {"h": 4, "w": 6, "x": 6, "y": 8},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "value"},
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "green", "value": null},
+              {"color": "yellow", "value": 10},
+              {"color": "red", "value": 15}
+            ]
+          },
+          "unit": "short"
+        }
+      },
+      "options": {
+        "orientation": "auto",
+        "reduceOptions": {"values": false, "calcs": ["lastNotNull"], "fields": ""},
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto"
+      },
+      "targets": [
+        {
+          "expr": "dotcms_database_hikari_connections_active{pool=\"jdbc/dotCMSPool\"}",
+          "legendFormat": "Active",
+          "refId": "A"
+        }
+      ],
+      "datasource": {"type": "prometheus", "uid": "prometheus"}
+    },
+    {
+      "id": 18,
+      "title": "Current Idle",
+      "type": "stat",
+      "gridPos": {"h": 4, "w": 6, "x": 12, "y": 8},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "value"},
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "red", "value": null},
+              {"color": "yellow", "value": 3},
+              {"color": "green", "value": 5}
+            ]
+          },
+          "unit": "short"
+        }
+      },
+      "options": {
+        "orientation": "auto",
+        "reduceOptions": {"values": false, "calcs": ["lastNotNull"], "fields": ""},
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto"
+      },
+      "targets": [
+        {
+          "expr": "dotcms_database_hikari_connections_idle{pool=\"jdbc/dotCMSPool\"}",
+          "legendFormat": "Idle",
+          "refId": "A"
+        }
+      ],
+      "datasource": {"type": "prometheus", "uid": "prometheus"}
+    },
+    {
+      "id": 19,
+      "title": "Threads Waiting",
+      "type": "stat",
+      "gridPos": {"h": 4, "w": 6, "x": 18, "y": 8},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "value"},
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "green", "value": 0},
+              {"color": "yellow", "value": 1},
+              {"color": "red", "value": 5}
+            ]
+          },
+          "unit": "short"
+        }
+      },
+      "options": {
+        "orientation": "auto",
+        "reduceOptions": {"values": false, "calcs": ["lastNotNull"], "fields": ""},
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto"
+      },
+      "targets": [
+        {
+          "expr": "dotcms_database_hikari_threads_awaiting{pool=\"jdbc/dotCMSPool\"}",
+          "legendFormat": "Waiting",
+          "refId": "A"
+        }
+      ],
+      "datasource": {"type": "prometheus", "uid": "prometheus"}
+    },
+    {
       "id": 7,
       "title": "Active Connections",
       "type": "timeseries",
-      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 12},
       "fieldConfig": {
         "defaults": {
           "custom": {
@@ -237,8 +385,8 @@
       },
       "targets": [
         {
-          "expr": "vector(0)",
-          "legendFormat": "HikariCP usage metrics not available",
+          "expr": "dotcms_database_hikari_connections_active{pool=\"jdbc/dotCMSPool\"}",
+          "legendFormat": "Active Connections",
           "refId": "A"
         }
       ],
@@ -248,7 +396,7 @@
       "id": 8,
       "title": "Idle Connections",
       "type": "timeseries",
-      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 12},
       "fieldConfig": {
         "defaults": {
           "custom": {
@@ -289,8 +437,8 @@
       },
       "targets": [
         {
-          "expr": "vector(0)",
-          "legendFormat": "HikariCP usage metrics not available",
+          "expr": "dotcms_database_hikari_connections_idle{pool=\"jdbc/dotCMSPool\"}",
+          "legendFormat": "Idle Connections",
           "refId": "A"
         }
       ],
@@ -300,7 +448,7 @@
       "id": 9,
       "title": "Connection Pool Utilization",
       "type": "timeseries",
-      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 16},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 20},
       "fieldConfig": {
         "defaults": {
           "custom": {
@@ -344,8 +492,8 @@
       },
       "targets": [
         {
-          "expr": "vector(0)",
-          "legendFormat": "HikariCP usage metrics not available",
+          "expr": "(dotcms_database_hikari_connections_active{pool=\"jdbc/dotCMSPool\"} / dotcms_database_hikari_connections{pool=\"jdbc/dotCMSPool\"}) * 100",
+          "legendFormat": "Pool Utilization %",
           "refId": "A"
         }
       ],
@@ -355,7 +503,7 @@
       "id": 10,
       "title": "Waiting Threads",
       "type": "timeseries",
-      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 16},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 20},
       "fieldConfig": {
         "defaults": {
           "custom": {
@@ -397,8 +545,8 @@
       },
       "targets": [
         {
-          "expr": "vector(0)",
-          "legendFormat": "HikariCP usage metrics not available",
+          "expr": "dotcms_database_hikari_threads_awaiting{pool=\"jdbc/dotCMSPool\"}",
+          "legendFormat": "Threads Waiting",
           "refId": "A"
         }
       ],
@@ -408,7 +556,7 @@
       "id": 11,
       "title": "Connection Pool Configuration",
       "type": "table",
-      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 24},
+      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 28},
       "fieldConfig": {
         "defaults": {
           "custom": {
@@ -449,19 +597,19 @@
       ],
       "targets": [
         {
-          "expr": "dotcms_database_hikari_config_connection_timeout",
+          "expr": "dotcms_database_hikari_config_connection_timeout{pool=\"jdbc/dotCMSPool\"}",
           "format": "table",
           "legendFormat": "__auto",
           "refId": "A"
         },
         {
-          "expr": "dotcms_database_hikari_config_idle_timeout",
+          "expr": "dotcms_database_hikari_config_idle_timeout{pool=\"jdbc/dotCMSPool\"}",
           "format": "table",
           "legendFormat": "__auto",
           "refId": "B"
         },
         {
-          "expr": "dotcms_database_hikari_config_max_lifetime",
+          "expr": "dotcms_database_hikari_config_max_lifetime{pool=\"jdbc/dotCMSPool\"}",
           "format": "table",
           "legendFormat": "__auto",
           "refId": "C"

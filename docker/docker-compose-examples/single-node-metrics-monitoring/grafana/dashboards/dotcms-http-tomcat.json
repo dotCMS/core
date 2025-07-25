@@ -52,7 +52,7 @@
       },
       "targets": [
         {
-          "expr": "rate(dotcms_http_requests_total[5m])",
+          "expr": "dotcms_http_requests_rate_rps",
           "legendFormat": "Requests/sec",
           "refId": "A"
         }
@@ -93,7 +93,7 @@
       },
       "targets": [
         {
-          "expr": "dotcms_http_request_duration_seconds_sum / dotcms_http_request_duration_seconds_count * 1000",
+          "expr": "dotcms_http_requests_duration_avg_ms",
           "legendFormat": "Avg Response Time",
           "refId": "A"
         }
@@ -132,7 +132,7 @@
       },
       "targets": [
         {
-          "expr": "dotcms_http_requests_total",
+          "expr": "dotcms_http_requests",
           "legendFormat": "Total Requests",
           "refId": "A"
         }
@@ -173,7 +173,7 @@
       },
       "targets": [
         {
-          "expr": "(sum(rate(dotcms_http_requests_total{status=~\"4..|5..\"}[5m])) / sum(rate(dotcms_http_requests_total[5m]))) * 100",
+          "expr": "dotcms_http_requests_error_rate_tracked",
           "legendFormat": "Error Rate",
           "refId": "A"
         }
@@ -225,8 +225,8 @@
       },
       "targets": [
         {
-          "expr": "rate(dotcms_http_requests_total[5m])",
-          "legendFormat": "{{processor}} - {{method}}",
+          "expr": "dotcms_http_endpoints_admin_requests + dotcms_http_endpoints_api_requests + dotcms_http_endpoints_content_requests + dotcms_http_endpoints_management_requests",
+          "legendFormat": "Total Endpoint Requests",
           "refId": "A"
         }
       ],
@@ -250,9 +250,24 @@
       },
       "targets": [
         {
-          "expr": "sum by (status)(rate(dotcms_http_requests_total[5m]))",
-          "legendFormat": "{{status}}",
+          "expr": "dotcms_http_responses_2xx",
+          "legendFormat": "2xx Success",
           "refId": "A"
+        },
+        {
+          "expr": "dotcms_http_responses_3xx",
+          "legendFormat": "3xx Redirect",
+          "refId": "B"
+        },
+        {
+          "expr": "dotcms_http_responses_4xx",
+          "legendFormat": "4xx Client Error",
+          "refId": "C"
+        },
+        {
+          "expr": "dotcms_http_responses_5xx",
+          "legendFormat": "5xx Server Error",
+          "refId": "D"
         }
       ],
       "datasource": {"type": "prometheus", "uid": "prometheus"}
@@ -310,14 +325,19 @@
       },
       "targets": [
         {
-          "expr": "dotcms_tomcat_threads_busy",
-          "legendFormat": "Busy Threads - {{port}}",
+          "expr": "dotcms_tomcat_threads_active",
+          "legendFormat": "Active Threads",
           "refId": "A"
         },
         {
           "expr": "dotcms_tomcat_threads_current",
-          "legendFormat": "Current Threads - {{port}}",
+          "legendFormat": "Current Threads",
           "refId": "B"
+        },
+        {
+          "expr": "dotcms_tomcat_threads_max",
+          "legendFormat": "Max Threads",
+          "refId": "C"
         }
       ],
       "datasource": {"type": "prometheus", "uid": "prometheus"}
@@ -442,10 +462,28 @@
       ],
       "targets": [
         {
-          "expr": "topk(10, rate(dotcms_http_requests_total[5m]))",
+          "expr": "dotcms_http_endpoints_admin_requests",
           "format": "table",
-          "legendFormat": "__auto",
+          "legendFormat": "Admin Requests",
           "refId": "A"
+        },
+        {
+          "expr": "dotcms_http_endpoints_api_requests",
+          "format": "table", 
+          "legendFormat": "API Requests",
+          "refId": "B"
+        },
+        {
+          "expr": "dotcms_http_endpoints_content_requests",
+          "format": "table",
+          "legendFormat": "Content Requests",
+          "refId": "C"
+        },
+        {
+          "expr": "dotcms_http_endpoints_management_requests",
+          "format": "table",
+          "legendFormat": "Management Requests",
+          "refId": "D"
         }
       ],
       "datasource": {"type": "prometheus", "uid": "prometheus"}
@@ -495,13 +533,13 @@
       },
       "targets": [
         {
-          "expr": "rate(dotcms_tomcat_bytes_sent_total[5m])",
-          "legendFormat": "Bytes Sent/sec - {{port}}",
+          "expr": "dotcms_tomcat_requests_bytes_sent",
+          "legendFormat": "Bytes Sent",
           "refId": "A"
         },
         {
-          "expr": "rate(dotcms_tomcat_bytes_received_total[5m])",
-          "legendFormat": "Bytes Received/sec - {{port}}",
+          "expr": "dotcms_tomcat_requests_bytes_received",
+          "legendFormat": "Bytes Received",
           "refId": "B"
         }
       ],
