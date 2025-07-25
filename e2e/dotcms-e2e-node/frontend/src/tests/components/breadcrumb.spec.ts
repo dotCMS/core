@@ -67,7 +67,7 @@ test("should display correctly on the Content Types page", async ({ page }) => {
   await expect(title).toHaveText("Content Types");
 });
 
-test.describe("should display correctly on the Template page", () => {
+test.describe("Template page", () => {
   let template: Template | null = null;
 
   test.beforeEach(async ({ request }) => {
