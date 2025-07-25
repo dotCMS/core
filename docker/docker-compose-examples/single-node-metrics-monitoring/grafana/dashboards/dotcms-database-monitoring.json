@@ -53,7 +53,7 @@
       },
       "targets": [
         {
-          "expr": "dotcms_database_health",
+          "expr": "dotcms_database_connection_available",
           "legendFormat": "DB Status",
           "refId": "A"
         }
@@ -95,7 +95,7 @@
       },
       "targets": [
         {
-          "expr": "dotcms_database_factory_health",
+          "expr": "dotcms_database_factory_available",
           "legendFormat": "Factory Status",
           "refId": "A"
         }
@@ -137,7 +137,7 @@
       },
       "targets": [
         {
-          "expr": "dotcms_database_test_query_health",
+          "expr": "dotcms_database_health_query_test",
           "legendFormat": "Query Test",
           "refId": "A"
         }
@@ -178,7 +178,7 @@
       },
       "targets": [
         {
-          "expr": "(dotcms_database_health + dotcms_database_factory_health + dotcms_database_test_query_health) / 3",
+          "expr": "(dotcms_database_connection_available + dotcms_database_factory_available + dotcms_database_health_query_test + dotcms_database_health_system_query) / 4",
           "legendFormat": "Health Score",
           "refId": "A"
         }
@@ -237,8 +237,8 @@
       },
       "targets": [
         {
-          "expr": "hikaricp_connections_active",
-          "legendFormat": "Active - {{pool}}",
+          "expr": "vector(0)",
+          "legendFormat": "HikariCP usage metrics not available",
           "refId": "A"
         }
       ],
@@ -289,8 +289,8 @@
       },
       "targets": [
         {
-          "expr": "hikaricp_connections_idle",
-          "legendFormat": "Idle - {{pool}}",
+          "expr": "vector(0)",
+          "legendFormat": "HikariCP usage metrics not available",
           "refId": "A"
         }
       ],
@@ -344,8 +344,8 @@
       },
       "targets": [
         {
-          "expr": "(hikaricp_connections_active / hikaricp_connections_max) * 100",
-          "legendFormat": "Utilization % - {{pool}}",
+          "expr": "vector(0)",
+          "legendFormat": "HikariCP usage metrics not available",
           "refId": "A"
         }
       ],
@@ -397,8 +397,8 @@
       },
       "targets": [
         {
-          "expr": "hikaricp_connections_pending",
-          "legendFormat": "Waiting - {{pool}}",
+          "expr": "vector(0)",
+          "legendFormat": "HikariCP usage metrics not available",
           "refId": "A"
         }
       ],
@@ -449,10 +449,22 @@
       ],
       "targets": [
         {
-          "expr": "group by (pool)({__name__=~\"hikaricp_connections_(max|min|timeout)\"})",
+          "expr": "dotcms_database_hikari_config_connection_timeout",
           "format": "table",
           "legendFormat": "__auto",
           "refId": "A"
+        },
+        {
+          "expr": "dotcms_database_hikari_config_idle_timeout",
+          "format": "table",
+          "legendFormat": "__auto",
+          "refId": "B"
+        },
+        {
+          "expr": "dotcms_database_hikari_config_max_lifetime",
+          "format": "table",
+          "legendFormat": "__auto",
+          "refId": "C"
         }
       ],
       "datasource": {"type": "prometheus", "uid": "prometheus"}

@@ -102,9 +102,9 @@
     },
     {
       "id": 4,
-      "title": "JVM Threads",
+      "title": "JVM Live Threads",
       "type": "stat",
-      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 1},
+      "gridPos": {"h": 4, "w": 8, "x": 16, "y": 1},
       "options": {
         "reduceOptions": {
           "values": false,
@@ -112,9 +112,9 @@
           "fields": ""
         },
         "orientation": "auto",
-        "textMode": "auto",
+        "textMode": "value",
         "colorMode": "value",
-        "graphMode": "area",
+        "graphMode": "none",
         "justifyMode": "auto"
       },
       "fieldConfig": {
@@ -135,7 +135,46 @@
       "targets": [
         {
           "expr": "jvm_threads_live_threads",
-          "legendFormat": "Live Threads",
+          "legendFormat": "",
+          "refId": "A"
+        }
+      ],
+      "datasource": {"type": "prometheus", "uid": "prometheus"}
+    },
+    {
+      "id": 15,
+      "title": "JVM Peak Threads",
+      "type": "stat",
+      "gridPos": {"h": 4, "w": 8, "x": 16, "y": 5},
+      "options": {
+        "reduceOptions": {
+          "values": false,
+          "calcs": ["lastNotNull"],
+          "fields": ""
+        },
+        "orientation": "auto",
+        "textMode": "value",
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "blue", "value": null}
+            ]
+          },
+          "color": {"mode": "thresholds"},
+          "unit": "short"
+        }
+      },
+      "targets": [
+        {
+          "expr": "jvm_threads_peak_threads",
+          "legendFormat": "",
           "refId": "A"
         }
       ],
@@ -318,17 +357,17 @@
       "targets": [
         {
           "expr": "jvm_threads_live_threads",
-          "legendFormat": "Live Threads",
+          "legendFormat": "Live Threads (trend)",
           "refId": "A"
         },
         {
           "expr": "jvm_threads_daemon_threads", 
-          "legendFormat": "Daemon Threads",
+          "legendFormat": "Daemon Threads (trend)",
           "refId": "B"
         },
         {
           "expr": "jvm_threads_peak_threads",
-          "legendFormat": "Peak Threads",
+          "legendFormat": "Peak Threads (trend)",
           "refId": "C"
         }
       ],

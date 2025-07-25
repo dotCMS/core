@@ -15,6 +15,7 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.Set;
+import java.util.HashSet;
 
 /**
  * Comprehensive metric binder for dotCMS database and connection pool metrics.
@@ -83,41 +84,130 @@ public class DatabaseMetrics implements MeterBinder {
     }
     
     /**
-     * Register HikariCP connection pool metrics if available.
-     * HikariCP separates metrics into two MBean types:
-     * - Pool MBean: Runtime metrics (active/idle connections, threads awaiting)
-     * - PoolConfig MBean: Configuration parameters (max/min pool size, timeouts)
+     * Enhanced HikariCP metrics registration with multiple naming patterns.
      */
     private void registerHikariMetrics(MeterRegistry registry) {
         try {
-            Set<ObjectName> hikariPools = mBeanServer.queryNames(
-                new ObjectName("com.zaxxer.hikari:type=Pool*"), null);
-            if (hikariPools.isEmpty()) {
-                Logger.info(this, "Hikari MBean pools not found");
-                return;
-            }
+            Logger.info(this, "Starting HikariCP metrics registration...");
             
-            for (ObjectName poolMBean : hikariPools) {
-                String poolName = extractPoolName(poolMBean);
-                
-                // Register Pool MBean metrics (runtime metrics)
-                registerPoolMetrics(registry, poolMBean, poolName);
-                
-                // Find and register corresponding PoolConfig MBean metrics
-                ObjectName poolConfigMBean = findPoolConfigMBean(poolMBean);
-                if (poolConfigMBean != null) {
-                    registerPoolConfigMetrics(registry, poolConfigMBean, poolName);
-                } else {
-                    Logger.warn(this, "PoolConfig MBean not found for pool: " + poolName);
+            // Try multiple patterns to find Pool MBeans (usage metrics)
+            String[] poolPatterns = {
+                "com.zaxxer.hikari:type=Pool*",           // Standard pattern
+                "com.zaxxer.hikari:type=Pool (*)",        // Pattern with parentheses
+                "com.zaxxer.hikari:type=Pool,*",          // Pattern with comma separator
+                "*:type=Pool*",                           // Wildcard domain
+                "com.zaxxer.hikari:*Pool*"                // Flexible pool matching
+            };
+            
+            Set<ObjectName> poolMBeans = new HashSet<>();
+            for (String pattern : poolPatterns) {
+                try {
+                    Set<ObjectName> found = mBeanServer.queryNames(new ObjectName(pattern), null);
+                    poolMBeans.addAll(found);
+                    if (!found.isEmpty()) {
+                        Logger.info(this, "Found " + found.size() + " Pool MBeans with pattern: " + pattern);
+                        for (ObjectName mbean : found) {
+                            Logger.info(this, "  Pool MBean: " + mbean.toString());
+                        }
+                    }
+                } catch (Exception e) {
+                    Logger.debug(this, "Pattern " + pattern + " failed: " + e.getMessage());
                 }
             }
             
-            if (!hikariPools.isEmpty()) {
-                Logger.info(this, "HikariCP metrics registered for " + hikariPools.size() + " pool(s)");
+            // Try multiple patterns to find PoolConfig MBeans (configuration metrics)  
+            String[] configPatterns = {
+                "com.zaxxer.hikari:type=PoolConfig*",     // Standard pattern
+                "com.zaxxer.hikari:type=PoolConfig (*)",  // Pattern with parentheses
+                "com.zaxxer.hikari:type=PoolConfig,*",    // Pattern with comma separator
+                "*:type=PoolConfig*",                     // Wildcard domain
+                "com.zaxxer.hikari:*PoolConfig*"          // Flexible config matching
+            };
+            
+            Set<ObjectName> configMBeans = new HashSet<>();
+            for (String pattern : configPatterns) {
+                try {
+                    Set<ObjectName> found = mBeanServer.queryNames(new ObjectName(pattern), null);
+                    configMBeans.addAll(found);
+                    if (!found.isEmpty()) {
+                        Logger.info(this, "Found " + found.size() + " PoolConfig MBeans with pattern: " + pattern);
+                        for (ObjectName mbean : found) {
+                            Logger.info(this, "  PoolConfig MBean: " + mbean.toString());
+                        }
+                    }
+                } catch (Exception e) {
+                    Logger.debug(this, "Pattern " + pattern + " failed: " + e.getMessage());
+                }
+            }
+            
+            // List ALL HikariCP MBeans for debugging
+            try {
+                Set<ObjectName> allHikariMBeans = mBeanServer.queryNames(new ObjectName("com.zaxxer.hikari:*"), null);
+                Logger.info(this, "Total HikariCP MBeans found: " + allHikariMBeans.size());
+                for (ObjectName mbean : allHikariMBeans) {
+                    String type = mbean.getKeyProperty("type");
+                    String pool = mbean.getKeyProperty("Pool");
+                    Logger.info(this, "  MBean: " + mbean.toString() + " [type=" + type + ", pool=" + pool + "]");
+                }
+            } catch (Exception e) {
+                Logger.debug(this, "Error listing all HikariCP MBeans: " + e.getMessage());
+            }
+            
+            // Register Pool metrics if found
+            if (!poolMBeans.isEmpty()) {
+                Logger.info(this, "Registering usage metrics from " + poolMBeans.size() + " Pool MBeans...");
+                for (ObjectName poolMBean : poolMBeans) {
+                    String poolName = extractPoolName(poolMBean);
+                    Logger.info(this, "Registering usage metrics for pool: " + poolName);
+                    registerPoolMetrics(registry, poolMBean, poolName);
+                }
+            } else {
+                Logger.warn(this, "No Pool MBeans found - usage metrics (active/idle connections) will not be available");
+            }
+            
+            // Register PoolConfig metrics if found
+            if (!configMBeans.isEmpty()) {
+                Logger.info(this, "Registering configuration metrics from " + configMBeans.size() + " PoolConfig MBeans...");
+                for (ObjectName configMBean : configMBeans) {
+                    String poolName = extractPoolName(configMBean);
+                    Logger.info(this, "Registering config metrics for pool: " + poolName);
+                    registerPoolConfigMetrics(registry, configMBean, poolName);
+                }
+            } else {
+                Logger.warn(this, "No PoolConfig MBeans found - configuration metrics will not be available");
+            }
+            
+            int totalRegistered = poolMBeans.size() + configMBeans.size();
+            if (totalRegistered > 0) {
+                Logger.info(this, "HikariCP metrics registration completed successfully. " +
+                    "Pool MBeans: " + poolMBeans.size() + ", Config MBeans: " + configMBeans.size());
+            } else {
+                Logger.warn(this, "No HikariCP MBeans found. Ensure hikari.register.mbeans=true is set.");
             }
             
         } catch (Exception e) {
-            Logger.debug(this, "HikariCP metrics not available: " + e.getMessage());
+            Logger.error(this, "Failed to register HikariCP metrics: " + e.getMessage(), e);
+        }
+    }
+    
+    /**
+     * Register only HikariCP configuration metrics when Pool MBeans are not available.
+     */
+    private void registerHikariConfigOnlyMetrics(MeterRegistry registry) {
+        try {
+            Set<ObjectName> configMBeans = mBeanServer.queryNames(
+                new ObjectName("com.zaxxer.hikari:type=PoolConfig*"), null);
+            
+            for (ObjectName configMBean : configMBeans) {
+                String poolName = extractPoolName(configMBean);
+                registerPoolConfigMetrics(registry, configMBean, poolName);
+            }
+            
+            if (!configMBeans.isEmpty()) {
+                Logger.info(this, "Registered HikariCP configuration metrics for " + configMBeans.size() + " pool(s)");
+            }
+        } catch (Exception e) {
+            Logger.debug(this, "Failed to register HikariCP config metrics: " + e.getMessage());
         }
     }
     
