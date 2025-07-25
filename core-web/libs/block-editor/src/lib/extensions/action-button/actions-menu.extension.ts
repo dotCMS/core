@@ -254,15 +254,12 @@ export const ActionsMenu = (
 
     function onBeforeStart({ editor }): void {
         editor.commands.freezeScroll(true);
-        const isTableCell =
-            findParentNode(editor.view.state.selection.$from, [NodeTypes.TABLE_CELL])?.type.name ===
-            NodeTypes.TABLE_CELL;
 
         const isCodeBlock =
             findParentNode(editor.view.state.selection.$from, [NodeTypes.CODE_BLOCK])?.type.name ===
             NodeTypes.CODE_BLOCK;
 
-        shouldShow = !isTableCell && !isCodeBlock;
+        shouldShow = !isCodeBlock;
     }
 
     function setUpSuggestionComponent(editor: Editor, range: Range) {
@@ -397,6 +394,7 @@ export const ActionsMenu = (
 
     return Extension.create<FloatingMenuOptions>({
         name: 'actionsMenu',
+        priority: 1000, // If open, give priority on events
 
         addOptions() {
             return {
