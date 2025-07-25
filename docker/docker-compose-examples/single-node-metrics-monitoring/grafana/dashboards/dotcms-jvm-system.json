@@ -52,7 +52,7 @@
       },
       "targets": [
         {
-          "expr": "jvm_memory_used_bytes{area=\"heap\"} / jvm_memory_max_bytes{area=\"heap\"}",
+          "expr": "sum(jvm_memory_used_bytes{area=\"heap\"}) / sum(jvm_memory_max_bytes{area=\"heap\"})",
           "legendFormat": "Heap Used %",
           "refId": "A"
         }
@@ -93,7 +93,7 @@
       },
       "targets": [
         {
-          "expr": "jvm_memory_used_bytes{area=\"nonheap\"} / jvm_memory_max_bytes{area=\"nonheap\"}",
+          "expr": "sum(jvm_memory_used_bytes{area=\"nonheap\"}) / sum(jvm_memory_committed_bytes{area=\"nonheap\"})",
           "legendFormat": "Non-Heap Used %",
           "refId": "A"
         }
@@ -142,10 +142,78 @@
       "datasource": {"type": "prometheus", "uid": "prometheus"}
     },
     {
+      "id": 13,
+      "title": "Memory Pools Breakdown",
+      "type": "table",
+      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 9},
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {"type": "auto"},
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "green", "value": null},
+              {"color": "yellow", "value": 70},
+              {"color": "red", "value": 90}
+            ]
+          },
+          "color": {"mode": "thresholds"},
+          "unit": "bytes"
+        }
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": {"show": false, "reducer": ["sum"], "countRows": false, "fields": ""}
+      },
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {},
+            "indexByName": {},
+            "renameByName": {
+              "id": "Memory Pool",
+              "area": "Area",
+              "Value #A": "Used (bytes)",
+              "Value #B": "Max (bytes)",
+              "Value #C": "Usage %"
+            }
+          }
+        }
+      ],
+      "targets": [
+        {
+          "expr": "jvm_memory_used_bytes",
+          "format": "table",
+          "legendFormat": "__auto",
+          "refId": "A"
+        },
+        {
+          "expr": "jvm_memory_max_bytes",
+          "format": "table", 
+          "legendFormat": "__auto",
+          "refId": "B"
+        },
+        {
+          "expr": "(jvm_memory_used_bytes / jvm_memory_max_bytes) * 100",
+          "format": "table",
+          "legendFormat": "__auto", 
+          "refId": "C"
+        }
+      ],
+      "datasource": {"type": "prometheus", "uid": "prometheus"}
+    },
+    {
       "id": 5,
       "title": "Memory Usage Trends",
       "type": "timeseries",
-      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 9},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 25},
       "fieldConfig": {
         "defaults": {
           "custom": {
@@ -205,9 +273,9 @@
     },
     {
       "id": 6,
-      "title": "Thread Activity",
+      "title": "Thread Activity", 
       "type": "timeseries",
-      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 9},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 25},
       "fieldConfig": {
         "defaults": {
           "custom": {
@@ -271,13 +339,13 @@
       "title": "System Performance",
       "type": "row",
       "collapsed": false,
-      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 17}
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 25}
     },
     {
       "id": 8,
       "title": "CPU Usage",
       "type": "timeseries",
-      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 18},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 42},
       "fieldConfig": {
         "defaults": {
           "custom": {
@@ -337,7 +405,7 @@
       "id": 9,
       "title": "System Load & Cores",
       "type": "timeseries",
-      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 18},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 42},
       "fieldConfig": {
         "defaults": {
           "custom": {
@@ -395,7 +463,7 @@
       "id": 10,
       "title": "Garbage Collection",
       "type": "timeseries",
-      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 26},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 42},
       "fieldConfig": {
         "defaults": {
           "custom": {
@@ -439,6 +507,11 @@
           "expr": "rate(jvm_gc_pause_sum[5m]) * 1000",
           "legendFormat": "GC Time Rate (ms/s) - {{gc}}",
           "refId": "A"
+        },
+        {
+          "expr": "rate(jvm_gc_pause_count[5m])",
+          "legendFormat": "GC Count Rate (/s) - {{gc}}",
+          "refId": "B"
         }
       ],
       "datasource": {"type": "prometheus", "uid": "prometheus"}
@@ -447,7 +520,7 @@
       "id": 11,
       "title": "Buffer Pools",
       "type": "timeseries",
-      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 26},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 42},
       "fieldConfig": {
         "defaults": {
           "custom": {
@@ -504,7 +577,7 @@
       "id": 12,
       "title": "JVM Runtime Information",
       "type": "table",
-      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 34},
+      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 42},
       "fieldConfig": {
         "defaults": {
           "custom": {

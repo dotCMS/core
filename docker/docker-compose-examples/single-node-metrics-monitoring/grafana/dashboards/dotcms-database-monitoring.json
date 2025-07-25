@@ -178,7 +178,7 @@
       },
       "targets": [
         {
-          "expr": "avg(dotcms_database_health, dotcms_database_factory_health, dotcms_database_test_query_health)",
+          "expr": "(dotcms_database_health + dotcms_database_factory_health + dotcms_database_test_query_health) / 3",
           "legendFormat": "Health Score",
           "refId": "A"
         }
