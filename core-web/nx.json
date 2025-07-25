@@ -38,28 +38,6 @@
                 "linter": "eslint"
             }
         },
-        "@nrwl/angular:application": {
-            "style": "scss",
-            "linter": "eslint",
-            "unitTestRunner": "karma",
-            "e2eTestRunner": "playwright"
-        },
-        "@nrwl/angular:library": {
-            "linter": "eslint",
-            "unitTestRunner": "karma"
-        },
-        "@nrwl/angular:component": {
-            "style": "scss",
-            "changeDetection": "OnPush"
-        },
-        "@nrwl/react": {
-            "application": {
-                "babel": true
-            },
-            "library": {
-                "unitTestRunner": "jest"
-            }
-        },
         "@nx/react": {
             "library": {
                 "unitTestRunner": "jest"
