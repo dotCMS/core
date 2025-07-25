@@ -23,7 +23,7 @@ table {
         border-bottom: 1px solid $color-palette-gray-300;
         box-sizing: border-box;
         min-width: 120px;
-        padding: $spacing-2 $spacing-3;
+        padding: $spacing-2 $spacing-4;
         position: relative;
         vertical-align: top;
         background: $white;
@@ -125,16 +125,15 @@ table {
     .dot-cell-arrow {
         position: absolute;
         display: none;
-        top: 50%;
-        right: $spacing-1;
-        width: 16px;
-        height: 16px;
+        top: $spacing-2;
+        right: 0.2rem;
+        width: 1.25rem;
+        height: 1.25rem;
         background: $color-palette-gray-100;
-        border: 1px solid $color-palette-gray-300;
+        border: 1px solid $color-palette-gray-500;
         border-radius: 3px;
         cursor: pointer;
         z-index: 15;
-        transform: translateY(-50%);
         transition: all 0.15s ease;
 
         &::before {
@@ -143,7 +142,7 @@ table {
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            font-size: 12px;
+            font-size: 1.2rem;
             color: $color-palette-gray-600;
             line-height: 1;
         }
