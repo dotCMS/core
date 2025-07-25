@@ -64,6 +64,15 @@ const TIPPY_OPTIONS: Partial<Props> = {
     maxWidth: 'none',
     popperOptions: {
         modifiers: popperModifiers
+    },
+    onClickOutside: (instance: Instance<Props>, event: Event) => {
+        const target = event.target as HTMLElement;
+
+        if (target.classList.contains(CSS_CLASSES.CELL_ARROW)) {
+            return;
+        }
+
+        instance.hide();
     }
 };
 
