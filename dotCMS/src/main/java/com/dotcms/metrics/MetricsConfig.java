@@ -122,7 +122,34 @@ public final class MetricsConfig {
      */
     public static final String K8S_DEPLOYMENT_TAG = 
         Config.getStringProperty("k8s.tags.deployment", null);
-    
+
+    /**
+     * Kubernetes Pod name (e.g., dotcms-0).
+     * Automatically injected by K8s via environment variable: HOSTNAME
+     */
+    public static final String K8S_POD_NAME =
+            Config.getStringProperty("k8s.tags.pod", System.getenv().getOrDefault("HOSTNAME", "unknown"));
+
+    /**
+     * Kubernetes Namespace the pod is running in.
+     * Automatically injected using: fieldRef - metadata.namespace
+     */
+    public static final String K8S_NAMESPACE =
+            Config.getStringProperty("k8s.tags.namespace", System.getenv().getOrDefault("POD_NAMESPACE", "default"));
+
+    /**
+     * Kubernetes Pod UID.
+     * Optional for exact uniqueness (especially for tracking pod restarts).
+     */
+    public static final String K8S_POD_UID =
+            Config.getStringProperty("k8s.tags.uid", System.getenv().getOrDefault("POD_UID", "unknown"));
+
+    /**
+     * Kubernetes Node the pod is running on.
+     */
+    public static final String K8S_NODE_NAME =
+            Config.getStringProperty("k8s.tags.node", System.getenv().getOrDefault("NODE_NAME", "unknown"));
+
     /**
      * Whether to enable Kubernetes-specific tagging.
      * Default: true
