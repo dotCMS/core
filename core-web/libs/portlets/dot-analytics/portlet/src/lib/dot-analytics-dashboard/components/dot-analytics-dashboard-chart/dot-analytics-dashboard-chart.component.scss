@@ -11,6 +11,7 @@ $chart-grid-opacity: 0.6;
 :host {
     display: block;
     width: 100%;
+    height: 100%;
 }
 
 .chart-card {
@@ -18,8 +19,10 @@ $chart-grid-opacity: 0.6;
         padding: $spacing-3;
     }
 
-    // Full height only for empty state
-    &.chart-card--empty {
+    // Full height for loading, empty and error states
+    &.chart-card--loading,
+    &.chart-card--empty,
+    &.chart-card--error {
         height: 100%;
 
         ::ng-deep .p-card {

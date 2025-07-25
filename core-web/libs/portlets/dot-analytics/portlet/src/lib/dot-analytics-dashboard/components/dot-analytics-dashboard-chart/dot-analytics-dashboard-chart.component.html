@@ -8,8 +8,10 @@
 <p-card
     class="h-full chart-card"
     [ngClass]="{
+        'chart-card--loading': $isLoading(),
         'chart-card--empty': $isEmpty(),
-        'chart-card--error': $isError()
+        'chart-card--error': $isError(),
+        'flex w-full': type === 'pie' || type === 'doughnut'
     }"
     data-testid="analytics-chart">
     @if (title) {
@@ -20,9 +22,13 @@
 
     @if ($isError()) {
         <!-- Error state -->
-        <dot-analytics-state-message
-            message="analytics.charts.error.loading"
-            icon="pi-exclamation-triangle" />
+        <div
+            class="chart-error flex align-items-center justify-content-center"
+            [style.height]="height">
+            <dot-analytics-state-message
+                message="analytics.charts.error.loading"
+                icon="pi-exclamation-triangle" />
+        </div>
     } @else if (isLoading) {
         <!-- Loading state with skeletons -->
         <div
@@ -83,7 +89,9 @@
         </div>
     } @else if (isEmpty) {
         <!-- Empty state -->
-        <div class="chart-container chart-empty" [style.height]="height">
+        <div
+            class="chart-container chart-empty flex align-items-center justify-content-center"
+            [style.height]="height">
             <dot-analytics-state-message
                 message="analytics.charts.empty.description"
                 icon="pi-info-circle" />

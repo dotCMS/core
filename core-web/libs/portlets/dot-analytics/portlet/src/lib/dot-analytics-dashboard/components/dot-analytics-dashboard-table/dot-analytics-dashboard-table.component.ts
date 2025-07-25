@@ -45,10 +45,7 @@ export class DotAnalyticsDashboardTableComponent {
     protected readonly columns: TableColumn[] = [...TOP_PAGES_TABLE_COLUMNS];
 
     /** Table configuration constants */
-    protected readonly tableConfig = {
-        ...TABLE_CONFIG,
-        ROWS_PER_PAGE_OPTIONS: [...TABLE_CONFIG.ROWS_PER_PAGE_OPTIONS]
-    };
+    protected readonly tableConfig = TABLE_CONFIG;
 
     /** Check if component is in loading state */
     protected readonly $isLoading = computed(() => {
@@ -56,6 +53,9 @@ export class DotAnalyticsDashboardTableComponent {
 
         return status === ComponentStatus.INIT || status === ComponentStatus.LOADING;
     });
+
+    /** Check if component is in error state */
+    protected readonly $isError = computed(() => this.$status() === ComponentStatus.ERROR);
 
     /** Check if table data is empty */
     protected readonly $isEmpty = computed(() => {

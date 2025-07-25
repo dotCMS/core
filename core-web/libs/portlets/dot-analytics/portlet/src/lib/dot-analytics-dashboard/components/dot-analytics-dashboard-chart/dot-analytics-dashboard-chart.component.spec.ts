@@ -255,7 +255,7 @@ describe('DotAnalyticsDashboardChartComponent', () => {
 
             const errorElement = spectator.query('.chart-error');
             expect(errorElement).toExist();
-            expect(spectator.query('.error-message')).toExist();
+            expect(spectator.query('dot-analytics-state-message')).toExist();
             expect(spectator.query(UIChart)).not.toExist();
         });
 
@@ -425,7 +425,7 @@ describe('DotAnalyticsDashboardChartComponent', () => {
                 } as unknown
             });
 
-            const emptyState = spectator.query('[data-testid="empty-chart-state"]');
+            const emptyState = spectator.query('.chart-empty');
             expect(emptyState).toExist();
             expect(spectator.query(UIChart)).not.toExist();
         });
@@ -444,13 +444,8 @@ describe('DotAnalyticsDashboardChartComponent', () => {
                 } as unknown
             });
 
-            const emptyIcon = spectator.query('.pi-chart-line');
-            const emptyMessage = spectator.query('.empty-message');
-            const emptyDescription = spectator.query('.empty-description');
-
-            expect(emptyIcon).toExist();
-            expect(emptyMessage).toExist();
-            expect(emptyDescription).toExist();
+            const stateMessage = spectator.query('dot-analytics-state-message');
+            expect(stateMessage).toExist();
         });
 
         it('should not show empty state when data is available', () => {
@@ -462,7 +457,7 @@ describe('DotAnalyticsDashboardChartComponent', () => {
                 } as unknown
             });
 
-            const emptyState = spectator.query('[data-testid="empty-chart-state"]');
+            const emptyState = spectator.query('.chart-empty');
             expect(emptyState).not.toExist();
             expect(spectator.query(UIChart)).toExist();
         });

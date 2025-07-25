@@ -6,16 +6,14 @@
     }
 
     ::ng-deep .p-card-content {
-        min-height: 5.125rem; // 82px - reasonable height for consistency
+        min-height: 5.125rem;
     }
 
-    // Center content only for empty and error states
+    &.metric-card--loading,
     &.metric-card--empty,
     &.metric-card--error {
         ::ng-deep .p-card-content {
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            min-height: 5.125rem;
         }
     }
 }
@@ -40,4 +38,8 @@
     font-size: $font-size-sm;
     color: $color-palette-gray-600;
     margin: 0;
+}
+
+.metric-icon {
+    flex-shrink: 0;
 }

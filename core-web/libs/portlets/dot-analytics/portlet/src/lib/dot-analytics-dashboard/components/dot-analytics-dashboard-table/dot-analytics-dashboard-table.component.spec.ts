@@ -214,6 +214,37 @@ describe('DotAnalyticsDashboardTableComponent', () => {
             });
             expect(spectator.component['$isEmpty']()).toBe(false);
         });
+
+        it('should correctly identify error state', () => {
+            // Test ERROR state
+            spectator = createComponent({
+                props: {
+                    data: mockTableData,
+                    status: ComponentStatus.ERROR
+                } as unknown,
+                detectChanges: false
+            });
+            expect(spectator.component['$isError']()).toBe(true);
+
+            // Test non-error states
+            spectator = createComponent({
+                props: {
+                    data: mockTableData,
+                    status: ComponentStatus.LOADED
+                } as unknown,
+                detectChanges: false
+            });
+            expect(spectator.component['$isError']()).toBe(false);
+
+            spectator = createComponent({
+                props: {
+                    data: mockTableData,
+                    status: ComponentStatus.LOADING
+                } as unknown,
+                detectChanges: false
+            });
+            expect(spectator.component['$isError']()).toBe(false);
+        });
     });
 
     describe('Empty State', () => {
@@ -237,13 +268,8 @@ describe('DotAnalyticsDashboardTableComponent', () => {
                 } as unknown
             });
 
-            const emptyIcon = spectator.query('.pi-table');
-            const emptyMessage = spectator.query('.empty-message');
-            const emptyDescription = spectator.query('.empty-description');
-
-            expect(emptyIcon).toExist();
-            expect(emptyMessage).toExist();
-            expect(emptyDescription).toExist();
+            const stateMessage = spectator.query('dot-analytics-state-message');
+            expect(stateMessage).toExist();
         });
 
         it('should not show empty state when data is available', () => {
@@ -257,18 +283,43 @@ describe('DotAnalyticsDashboardTableComponent', () => {
             const emptyState = spectator.query('[data-testid="empty-table-state"]');
             expect(emptyState).not.toExist();
         });
+    });
 
-        it('should show table title in empty state', () => {
+    describe('Error State', () => {
+        it('should show error state when status is ERROR', () => {
             spectator = createComponent({
                 props: {
-                    data: [],
+                    data: mockTableData,
+                    status: ComponentStatus.ERROR
+                } as unknown
+            });
+
+            const errorState = spectator.query('.table-error-state');
+            expect(errorState).toExist();
+        });
+
+        it('should not show error state when status is not ERROR', () => {
+            spectator = createComponent({
+                props: {
+                    data: mockTableData,
                     status: ComponentStatus.LOADED
                 } as unknown
             });
 
-            const title = spectator.query('.table-title');
-            expect(title).toExist();
-            expect(title).toHaveText('Translated message');
+            const errorState = spectator.query('.table-error-state');
+            expect(errorState).not.toExist();
+        });
+
+        it('should show error state message component', () => {
+            spectator = createComponent({
+                props: {
+                    data: mockTableData,
+                    status: ComponentStatus.ERROR
+                } as unknown
+            });
+
+            const stateMessage = spectator.query('dot-analytics-state-message');
+            expect(stateMessage).toExist();
         });
     });
 });
