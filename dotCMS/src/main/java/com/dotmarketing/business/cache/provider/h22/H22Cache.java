@@ -389,7 +389,10 @@ public class H22Cache extends CacheProvider {
             CacheStats stats = new CacheStats();
             stats.addStat(CacheStats.REGION, group);
             stats.addStat(CacheStats.REGION_MEM_TOTAL_PRETTY, UtilMethods.prettyByteify(groupStats.totalSize ));
+            stats.addStat(CacheStats.REGION_MEM_TOTAL, UtilMethods.prettyByteify(groupStats.totalSize ));
+            stats.addStat(CacheStats.REGION_MEM_TOTAL_RAW, String.valueOf(groupStats.totalSize));
             stats.addStat(CacheStats.REGION_MEM_PER_OBJECT, UtilMethods.prettyByteify(perObject ));
+            stats.addStat(CacheStats.REGION_MEM_PER_OBJECT_RAW, String.valueOf(perObject));
             
             try {
               stats.addStat(CacheStats.REGION_SIZE,  _getGroupCount(group));

@@ -22,6 +22,17 @@ public class CacheStats {
   public final static String REGION_MEM_PER_OBJECT_PRETTY="cache.stats.region.mem.per.object";
   public final static String REGION_AVG_LOAD_TIME="cache.stats.region.load.time.avg";
   public final static String REGION_EVICTIONS="cache.stats.region.evictions";
+  
+  // Raw numeric versions for metrics systems (without formatting)
+  public final static String REGION_CONFIGURED_SIZE_RAW="cache.stats.region.configured.size.raw";
+  public final static String REGION_SIZE_RAW="cache.stats.region.size.raw";
+  public final static String REGION_LOAD_RAW="cache.stats.region.load.raw";
+  public final static String REGION_HITS_RAW="cache.stats.region.hits.raw";
+  public final static String REGION_HIT_RATE_RAW="cache.stats.region.hit.rate.raw";
+  public final static String REGION_AVG_LOAD_TIME_RAW="cache.stats.region.load.time.avg.raw";
+  public final static String REGION_EVICTIONS_RAW="cache.stats.region.evictions.raw";
+  public final static String REGION_MEM_TOTAL_RAW="cache.stats.region.mem.total.raw";
+  public final static String REGION_MEM_PER_OBJECT_RAW="cache.stats.region.mem.per.object.raw";
 
     Map<String, String> stats = new LinkedHashMap<>();
 

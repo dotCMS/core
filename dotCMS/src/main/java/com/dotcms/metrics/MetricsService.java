@@ -5,12 +5,15 @@ import com.dotcms.metrics.binders.DatabaseMetrics;
 import com.dotcms.metrics.binders.HttpRequestMetrics;
 import com.dotcms.metrics.binders.TomcatMetrics;
 import com.dotcms.metrics.binders.UserSessionMetrics;
+import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Metrics;
 import io.micrometer.core.instrument.binder.jvm.JvmGcMetrics;
 import io.micrometer.core.instrument.binder.jvm.JvmMemoryMetrics;
 import io.micrometer.core.instrument.binder.jvm.JvmThreadMetrics;
+import io.micrometer.core.instrument.binder.system.DiskSpaceMetrics;
+import io.micrometer.core.instrument.binder.system.FileDescriptorMetrics;
 import io.micrometer.core.instrument.binder.system.ProcessorMetrics;
 import io.micrometer.core.instrument.binder.system.UptimeMetrics;
 import io.micrometer.jmx.JmxMeterRegistry;
@@ -21,6 +24,7 @@ import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -150,7 +154,14 @@ public class MetricsService {
             try {
                 new ProcessorMetrics().bindTo(globalRegistry);
                 new UptimeMetrics().bindTo(globalRegistry);
-                Logger.debug(this, "System metrics registered");
+                
+                // Disk space metrics for the dotCMS dynamic content directory (main data directory)
+                new DiskSpaceMetrics(new File(ConfigUtils.getDynamicContentPath())).bindTo(globalRegistry);
+                
+                // File descriptor metrics
+                new FileDescriptorMetrics().bindTo(globalRegistry);
+                
+                Logger.debug(this, "System metrics registered (processor, uptime, disk space, file descriptors)");
             } catch (Exception e) {
                 Logger.error(this, "Failed to register system metrics: " + e.getMessage(), e);
             }

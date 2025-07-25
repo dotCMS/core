@@ -107,7 +107,7 @@ public class CacheMetrics implements MeterBinder {
     private void registerRegionMetrics(MeterRegistry registry, String providerName, String regionName, CacheStats regionStats) {
         // Cache region size (current number of objects)
         Gauge.builder(METRIC_PREFIX + ".region.size", regionStats, stats -> 
-                getStatDoubleValue(stats, CacheStats.REGION_SIZE))
+                getStatRawDoubleValue(stats, CacheStats.REGION_SIZE_RAW, CacheStats.REGION_SIZE))
             .description("Current number of objects in cache region")
             .tag("provider", providerName)
             .tag("region", regionName)
@@ -115,15 +115,15 @@ public class CacheMetrics implements MeterBinder {
         
         // Cache region hits
         Gauge.builder(METRIC_PREFIX + ".region.hits", regionStats, stats -> 
-                getStatDoubleValue(stats, CacheStats.REGION_HITS))
+                getStatRawDoubleValue(stats, CacheStats.REGION_HITS_RAW, CacheStats.REGION_HITS))
             .description("Number of cache hits for this region")
             .tag("provider", providerName)
             .tag("region", regionName)
             .register(registry);
         
-        // Cache region hit rate
+        // Cache region hit rate (as percentage 0-100)
         Gauge.builder(METRIC_PREFIX + ".region.hit_rate", regionStats, stats -> 
-                getStatDoubleValue(stats, CacheStats.REGION_HIT_RATE))
+                getStatRawDoubleValue(stats, CacheStats.REGION_HIT_RATE_RAW, CacheStats.REGION_HIT_RATE))
             .description("Cache hit rate percentage for this region")
             .tag("provider", providerName)
             .tag("region", regionName)
@@ -131,7 +131,7 @@ public class CacheMetrics implements MeterBinder {
         
         // Cache region configured size
         Gauge.builder(METRIC_PREFIX + ".region.configured_size", regionStats, stats -> 
-                getStatDoubleValue(stats, CacheStats.REGION_CONFIGURED_SIZE))
+                getStatRawDoubleValue(stats, CacheStats.REGION_CONFIGURED_SIZE_RAW, CacheStats.REGION_CONFIGURED_SIZE))
             .description("Maximum configured size for this cache region")
             .tag("provider", providerName)
             .tag("region", regionName)
@@ -139,7 +139,7 @@ public class CacheMetrics implements MeterBinder {
         
         // Cache region load count
         Gauge.builder(METRIC_PREFIX + ".region.loads", regionStats, stats -> 
-                getStatDoubleValue(stats, CacheStats.REGION_LOAD))
+                getStatRawDoubleValue(stats, CacheStats.REGION_LOAD_RAW, CacheStats.REGION_LOAD))
             .description("Number of cache loads for this region")
             .tag("provider", providerName)
             .tag("region", regionName)
@@ -147,7 +147,7 @@ public class CacheMetrics implements MeterBinder {
         
         // Cache region average load time
         Gauge.builder(METRIC_PREFIX + ".region.avg_load_time_ms", regionStats, stats -> 
-                getStatDoubleValue(stats, CacheStats.REGION_AVG_LOAD_TIME))
+                getStatRawDoubleValue(stats, CacheStats.REGION_AVG_LOAD_TIME_RAW, CacheStats.REGION_AVG_LOAD_TIME))
             .description("Average load time in milliseconds for this region")
             .tag("provider", providerName)
             .tag("region", regionName)
@@ -155,7 +155,7 @@ public class CacheMetrics implements MeterBinder {
         
         // Cache region evictions
         Gauge.builder(METRIC_PREFIX + ".region.evictions", regionStats, stats -> 
-                getStatDoubleValue(stats, CacheStats.REGION_EVICTIONS))
+                getStatRawDoubleValue(stats, CacheStats.REGION_EVICTIONS_RAW, CacheStats.REGION_EVICTIONS))
             .description("Number of evictions for this cache region")
             .tag("provider", providerName)
             .tag("region", regionName)
@@ -163,7 +163,7 @@ public class CacheMetrics implements MeterBinder {
         
         // Cache region memory usage
         Gauge.builder(METRIC_PREFIX + ".region.memory_bytes", regionStats, stats -> 
-                getStatDoubleValue(stats, CacheStats.REGION_MEM_TOTAL))
+                getStatRawDoubleValue(stats, CacheStats.REGION_MEM_TOTAL_RAW, CacheStats.REGION_MEM_TOTAL))
             .description("Total memory usage in bytes for this cache region")
             .tag("provider", providerName)
             .tag("region", regionName)
@@ -171,7 +171,7 @@ public class CacheMetrics implements MeterBinder {
         
         // Cache region memory per object
         Gauge.builder(METRIC_PREFIX + ".region.memory_per_object_bytes", regionStats, stats -> 
-                getStatDoubleValue(stats, CacheStats.REGION_MEM_PER_OBJECT))
+                getStatRawDoubleValue(stats, CacheStats.REGION_MEM_PER_OBJECT_RAW, CacheStats.REGION_MEM_PER_OBJECT))
             .description("Average memory per object in bytes for this cache region")
             .tag("provider", providerName)
             .tag("region", regionName)
@@ -287,6 +287,34 @@ public class CacheMetrics implements MeterBinder {
     }
     
     /**
+     * Get a raw numeric value from cache stats with fallback to formatted value parsing.
+     * Tries raw value first (for metrics), then falls back to formatted value parsing (for compatibility).
+     */
+    private double getStatRawDoubleValue(CacheStats stats, String rawKey, String formattedKey) {
+        try {
+            // First try to get the raw numeric value
+            String rawValue = stats.getStatValue(rawKey);
+            if (UtilMethods.isSet(rawValue) && !rawValue.trim().isEmpty()) {
+                try {
+                    double value = Double.parseDouble(rawValue.trim());
+                    // Return 0 for NaN or infinite values
+                    return Double.isNaN(value) || Double.isInfinite(value) ? 0.0 : value;
+                } catch (NumberFormatException e) {
+                    // If raw value parsing fails, fall back to formatted value
+                    Logger.debug(this, "Failed to parse raw value '" + rawValue + "' for key '" + rawKey + "', falling back to formatted");
+                }
+            }
+            
+            // Fallback to parsing the formatted value
+            return getStatDoubleValue(stats, formattedKey);
+            
+        } catch (Exception e) {
+            Logger.debug(this, "Failed to get raw stat value for keys '" + rawKey + "'/'" + formattedKey + "': " + e.getMessage());
+            return 0.0;
+        }
+    }
+
+    /**
      * Get a numeric value from cache stats as double with fallback to 0.
      */
     private double getStatDoubleValue(CacheStats stats, String key) {
@@ -302,6 +330,11 @@ public class CacheMetrics implements MeterBinder {
                 value = value.substring(0, value.length() - 1);
             }
             
+            // Handle time values (e.g., "15.5 ms")
+            if (value.endsWith(" ms")) {
+                value = value.substring(0, value.length() - 3);
+            }
+            
             // Handle size values with commas (e.g., "10,000")
             value = value.replace(",", "");
             
@@ -310,7 +343,10 @@ public class CacheMetrics implements MeterBinder {
                 return 0.0;
             }
             
-            return Double.parseDouble(value.trim());
+            double result = Double.parseDouble(value.trim());
+            // Return 0 for NaN or infinite values
+            return Double.isNaN(result) || Double.isInfinite(result) ? 0.0 : result;
+            
         } catch (NumberFormatException e) {
             Logger.debug(this, "Failed to parse numeric value for key '" + key + "': " + e.getMessage());
             return 0.0;

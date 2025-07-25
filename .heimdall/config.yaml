@@ -1,0 +1,15 @@
+database:
+  path: ./.heimdall/cognitive_memory.db
+logging:
+  level: warn
+monitoring:
+  enabled: true
+  ignore_patterns:
+  - .git
+  - node_modules
+  - __pycache__
+  - .pytest_cache
+  interval_seconds: 5.0
+  target_path: ./.heimdall/docs
+project_id: core2_de9bd0ae
+qdrant_url: http://localhost:6333
