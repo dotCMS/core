@@ -1,6 +1,6 @@
 {
   "id": 5,
-  "title": "dotCMS Users & Sessions",
+  "title": "dotCMS Users & Sessions (Fixed)",
   "tags": ["dotcms", "users", "sessions", "authentication"],
   "timezone": "browser",
   "refresh": "5s",
@@ -52,7 +52,7 @@
       },
       "targets": [
         {
-          "expr": "dotcms_users_active_total",
+          "expr": "dotcms_users_count_active",
           "legendFormat": "Active Users",
           "refId": "A"
         }
@@ -93,7 +93,7 @@
       },
       "targets": [
         {
-          "expr": "dotcms_users_admin_total",
+          "expr": "dotcms_users_count_admins",
           "legendFormat": "Admin Users",
           "refId": "A"
         }
@@ -134,7 +134,7 @@
       },
       "targets": [
         {
-          "expr": "dotcms_users_frontend_total",
+          "expr": "dotcms_users_count_frontend",
           "legendFormat": "Frontend Users",
           "refId": "A"
         }
@@ -227,17 +227,17 @@
       },
       "targets": [
         {
-          "expr": "dotcms_users_active_total",
+          "expr": "dotcms_users_count_active",
           "legendFormat": "Active Users",
           "refId": "A"
         },
         {
-          "expr": "dotcms_users_logged_in_total",
+          "expr": "dotcms_users_count_logged_in",
           "legendFormat": "Logged In Users",
           "refId": "B"
         },
         {
-          "expr": "dotcms_users_admin_total",
+          "expr": "dotcms_users_count_admins",
           "legendFormat": "Admin Users",
           "refId": "C"
         }
@@ -262,12 +262,12 @@
       },
       "targets": [
         {
-          "expr": "dotcms_users_admin_total",
+          "expr": "dotcms_users_count_admins",
           "legendFormat": "Admin",
           "refId": "A"
         },
         {
-          "expr": "dotcms_users_frontend_total",
+          "expr": "dotcms_users_count_frontend",
           "legendFormat": "Frontend",
           "refId": "B"
         }
@@ -315,7 +315,7 @@
       },
       "targets": [
         {
-          "expr": "dotcms_users_authentication_success_total / (dotcms_users_authentication_success_total + dotcms_users_authentication_failure_total)",
+          "expr": "dotcms_users_auth_success_rate",
           "legendFormat": "Success Rate",
           "refId": "A"
         }
@@ -356,7 +356,7 @@
       },
       "targets": [
         {
-          "expr": "increase(dotcms_users_authentication_failure_total[5m])",
+          "expr": "dotcms_users_auth_recent_failures",
           "legendFormat": "Failures (5m)",
           "refId": "A"
         }
@@ -397,7 +397,7 @@
       },
       "targets": [
         {
-          "expr": "dotcms_users_api_token_total",
+          "expr": "dotcms_users_auth_api_tokens_usage",
           "legendFormat": "API Tokens",
           "refId": "A"
         }
@@ -449,13 +449,13 @@
       },
       "targets": [
         {
-          "expr": "rate(dotcms_users_authentication_success_total[5m])",
-          "legendFormat": "Success Rate/sec",
+          "expr": "dotcms_users_auth_attempts_success",
+          "legendFormat": "Successful Attempts",
           "refId": "A"
         },
         {
-          "expr": "rate(dotcms_users_authentication_failure_total[5m])",
-          "legendFormat": "Failure Rate/sec",
+          "expr": "dotcms_users_auth_attempts_failed",
+          "legendFormat": "Failed Attempts",
           "refId": "B"
         }
       ],
@@ -507,12 +507,12 @@
       },
       "targets": [
         {
-          "expr": "dotcms_users_sessions_admin_active",
+          "expr": "dotcms_users_sessions_admin",
           "legendFormat": "Admin Sessions",
           "refId": "A"
         },
         {
-          "expr": "dotcms_users_sessions_frontend_active",
+          "expr": "dotcms_users_sessions_frontend",
           "legendFormat": "Frontend Sessions",
           "refId": "B"
         }
@@ -521,7 +521,89 @@
     }
   ],
   "templating": {
-    "list": []
+    "list": [
+      {
+        "current": {
+          "selected": false,
+          "text": "All",
+          "value": "$__all"
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "definition": "label_values(dotcms_users_count_active, host)",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Host",
+        "multi": false,
+        "name": "host",
+        "options": [],
+        "query": {
+          "query": "label_values(dotcms_users_count_active, host)",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "All",
+          "value": "$__all"
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "definition": "label_values(dotcms_users_count_active, deployment)",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Deployment",
+        "multi": false,
+        "name": "deployment",
+        "options": [],
+        "query": {
+          "query": "label_values(dotcms_users_count_active, deployment)",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "All",
+          "value": "$__all"
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "definition": "label_values(dotcms_users_count_active, env)",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Environment",
+        "multi": false,
+        "name": "env",
+        "options": [],
+        "query": {
+          "query": "label_values(dotcms_users_count_active, env)",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
+      }
+    ]
   },
   "annotations": {
     "list": [
