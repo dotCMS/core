@@ -134,7 +134,7 @@
       },
       "targets": [
         {
-          "expr": "jvm_threads_live",
+          "expr": "jvm_threads_live_threads",
           "legendFormat": "Live Threads",
           "refId": "A"
         }
@@ -213,7 +213,7 @@
       "id": 5,
       "title": "Memory Usage Trends",
       "type": "timeseries",
-      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 25},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 33},
       "fieldConfig": {
         "defaults": {
           "custom": {
@@ -275,7 +275,7 @@
       "id": 6,
       "title": "Thread Activity", 
       "type": "timeseries",
-      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 25},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 33},
       "fieldConfig": {
         "defaults": {
           "custom": {
@@ -317,19 +317,44 @@
       },
       "targets": [
         {
-          "expr": "jvm_threads_live",
+          "expr": "jvm_threads_live_threads",
           "legendFormat": "Live Threads",
           "refId": "A"
         },
         {
-          "expr": "jvm_threads_daemon",
+          "expr": "jvm_threads_daemon_threads", 
           "legendFormat": "Daemon Threads",
           "refId": "B"
         },
         {
-          "expr": "jvm_threads_peak",
+          "expr": "jvm_threads_peak_threads",
           "legendFormat": "Peak Threads",
           "refId": "C"
+        }
+      ],
+      "datasource": {"type": "prometheus", "uid": "prometheus"}
+    },
+    {
+      "id": 14,
+      "title": "Thread States Breakdown",
+      "type": "piechart",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 33},
+      "options": {
+        "reduceOptions": {
+          "values": false,
+          "calcs": ["lastNotNull"],
+          "fields": ""
+        },
+        "pieType": "pie",
+        "tooltip": {"mode": "single", "sort": "none"},
+        "legend": {"displayMode": "list", "placement": "right", "showLegend": true, "values": []},
+        "displayLabels": ["name", "value"]
+      },
+      "targets": [
+        {
+          "expr": "jvm_threads_states_threads",
+          "legendFormat": "{{state}}",
+          "refId": "A"
         }
       ],
       "datasource": {"type": "prometheus", "uid": "prometheus"}
@@ -339,13 +364,13 @@
       "title": "System Performance",
       "type": "row",
       "collapsed": false,
-      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 25}
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 33}
     },
     {
       "id": 8,
       "title": "CPU Usage",
       "type": "timeseries",
-      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 42},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 50},
       "fieldConfig": {
         "defaults": {
           "custom": {
@@ -405,7 +430,7 @@
       "id": 9,
       "title": "System Load & Cores",
       "type": "timeseries",
-      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 42},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 50},
       "fieldConfig": {
         "defaults": {
           "custom": {
@@ -463,7 +488,7 @@
       "id": 10,
       "title": "Garbage Collection",
       "type": "timeseries",
-      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 42},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 50},
       "fieldConfig": {
         "defaults": {
           "custom": {
@@ -504,12 +529,12 @@
       },
       "targets": [
         {
-          "expr": "rate(jvm_gc_pause_sum[5m]) * 1000",
+          "expr": "rate(jvm_gc_pause_seconds_sum[5m]) * 1000",
           "legendFormat": "GC Time Rate (ms/s) - {{gc}}",
           "refId": "A"
         },
         {
-          "expr": "rate(jvm_gc_pause_count[5m])",
+          "expr": "rate(jvm_gc_pause_seconds_count[5m])",
           "legendFormat": "GC Count Rate (/s) - {{gc}}",
           "refId": "B"
         }
@@ -520,7 +545,7 @@
       "id": 11,
       "title": "Buffer Pools",
       "type": "timeseries",
-      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 42},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 50},
       "fieldConfig": {
         "defaults": {
           "custom": {
@@ -577,7 +602,7 @@
       "id": 12,
       "title": "JVM Runtime Information",
       "type": "table",
-      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 42},
+      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 50},
       "fieldConfig": {
         "defaults": {
           "custom": {
