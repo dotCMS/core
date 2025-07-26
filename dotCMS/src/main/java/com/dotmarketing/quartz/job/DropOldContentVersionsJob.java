@@ -72,7 +72,7 @@ public class DropOldContentVersionsJob implements StatefulJob {
     private static final Lazy<Integer> GREATER_THAN =
             Lazy.of(() -> Config.getIntProperty(GREATER_THAN_PROP, 100));
     private static final Lazy<Integer> OLDER_THAN =
-            Lazy.of(() -> Config.getIntProperty(OLDER_THAN_DAYS_PROP, 365));
+            Lazy.of(() -> Config.getIntProperty(OLDER_THAN_DAYS_PROP, 90));
 
     private final DropOldContentVersionsJobHelper helper = new DropOldContentVersionsJobHelper();
 
