@@ -29,7 +29,7 @@
                 "project": "libs/sdk/client/package.json",
                 "entryFile": "libs/sdk/client/src/lib/deprecated/editor/sdk-editor-vtl.ts",
                 "external": ["react/jsx-runtime"],
-                "rollupConfig": "@nrwl/react/plugins/bundle-rollup",
+                "rollupConfig": "@nx/react/plugins/bundle-rollup",
                 "compiler": "tsc",
                 "extractCss": false,
                 "minify": true
@@ -55,7 +55,7 @@
             }
         },
         "test": {
-            "executor": "@nrwl/jest:jest",
+            "executor": "@nx/jest:jest",
             "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
             "options": {
                 "jestConfig": "libs/sdk/client/jest.config.ts",
