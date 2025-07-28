@@ -121,7 +121,7 @@
                     </execution>
 
                     <execution>
-                        <id>build-test</id>
+                        <id>build-affected</id>
                         <goals>
                             <goal>yarn</goal>
                         </goals>
@@ -129,6 +129,18 @@
                         <phase>compile</phase>
                         <configuration>
                             <arguments>nx affected -t build --exclude='tag:skip:build' --verbose ${nx.build.options}</arguments>
+                        </configuration>
+                    </execution>
+
+                    <execution>
+                        <id>build-required</id>
+                        <goals>
+                            <goal>yarn</goal>
+                        </goals>
+                        <!-- optional: the default phase is "generate-resources" -->
+                        <phase>compile</phase>
+                        <configuration>
+                            <arguments>nx run-many -t build --projects=dotcms-ui,dotcms-binary-field-builder,dotcms-block-editor,dotcms-webcomponents,edit-content-bridge --verbose ${nx.build.options}</arguments>
                         </configuration>
                     </execution>
 
