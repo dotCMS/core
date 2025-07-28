@@ -31,10 +31,9 @@ public class PaginatedArrayList<E> extends ArrayList<E> {
 	 * @param items The collection of items that will be added to this paginated array list.
 	 */
 	public PaginatedArrayList(final Collection<E> items) {
-		final PaginatedArrayList<Template> templates = new PaginatedArrayList<>();
 		if (items instanceof PaginatedArrayList) {
-			templates.setQuery(PaginatedArrayList.class.cast(items).getQuery());
-			templates.setTotalResults(PaginatedArrayList.class.cast(items).getTotalResults());
+			this.setQuery(PaginatedArrayList.class.cast(items).getQuery());
+			this.setTotalResults(PaginatedArrayList.class.cast(items).getTotalResults());
 		}
 		addAll(items);
 	}
