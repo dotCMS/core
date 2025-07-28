@@ -6,6 +6,7 @@ import static com.dotmarketing.util.importer.ImportLineValidationCodes.INVALID_B
 import static com.dotmarketing.util.importer.ImportLineValidationCodes.INVALID_CATEGORY_KEY;
 import static com.dotmarketing.util.importer.ImportLineValidationCodes.INVALID_DATE_FORMAT;
 import static com.dotmarketing.util.importer.ImportLineValidationCodes.INVALID_FILE_PATH;
+import static com.dotmarketing.util.importer.ImportLineValidationCodes.INVALID_JSON;
 import static com.dotmarketing.util.importer.ImportLineValidationCodes.INVALID_SITE_FOLDER_REF;
 import static com.dotmarketing.util.importer.ImportLineValidationCodes.INVALID_NUMBER_FORMAT;
 import static com.dotmarketing.util.importer.ImportLineValidationCodes.REQUIRED_FIELD_MISSING;
@@ -32,8 +33,13 @@ import com.dotcms.contenttype.model.field.ImageField;
 import com.dotcms.contenttype.model.field.ImmutableTextAreaField;
 import com.dotcms.contenttype.model.field.ImmutableTextField;
 import com.dotcms.contenttype.model.field.KeyValueField;
+import com.dotcms.contenttype.model.field.MultiSelectField;
 import com.dotcms.contenttype.model.field.RelationshipField;
+import com.dotcms.contenttype.model.field.SelectField;
+import com.dotcms.contenttype.model.field.StoryBlockField;
+import com.dotcms.contenttype.model.field.TextAreaField;
 import com.dotcms.contenttype.model.field.TextField;
+import com.dotcms.contenttype.model.field.WysiwygField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
@@ -4116,8 +4122,8 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
     }
   
   /**
-     * Functional interface for field-specific validation strategies
-     */
+    * Functional interface for field-specific validation strategies
+    */
     @FunctionalInterface
     public interface AssertionsStrategy {
         /**
@@ -4187,7 +4193,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                 {new FieldTestCase(
                         "RequiredTextField",
                         TextField.class,
-                        "requiredText",
+                        "requiredTextField",
                         DataTypes.TEXT,
                         "Valid text value",
                         "", // Empty required field
@@ -4195,7 +4201,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                         false,
                         false,
                         "required",
-                        REQUIRED_FIELD_ASSERTION
+                        REQUIRED_TEXT_FIELD_ASSERTION
                 )},
                 // DateTimeField - Invalid date format
                 {new FieldTestCase(
@@ -4311,19 +4317,89 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                         null,
                         INVALID_CATEGORY_ASSERTION
                 )},
-/*
+
                 // KeyValueField (JSON) - Invalid JSON
                 {new FieldTestCase(
                         "JSONField",
                         KeyValueField.class,
                         "jsonField",
                         DataTypes.LONG_TEXT,
-                        "{\"valid\":\"json\"}",
+                        "{\"\"valid\"\":\"\"json\"\"}",
                         "{'invalid':'json'}", // Single quotes make it invalid
                         "INVALID_JSON",
-                        false, false, null, null
-                )}
-*/
+                        false, false, null, JSON_FIELD_ASSERTION
+                )},
+                {new FieldTestCase(
+                        "RequiredTextAreaField",
+                        TextAreaField.class,
+                        "textAreaField",
+                        DataTypes.LONG_TEXT,
+                        "Valid long text content for text area",
+                        "", // Empty required field
+                        REQUIRED_FIELD_MISSING.name(),
+                        false,
+                        false,
+                        "required",
+                        REQUIRED_TEXT_AREA_ASSERTION
+                )},
+                // WysiwygField - Required field missing
+                {new FieldTestCase(
+                        "RequiredWysiwygField",
+                        WysiwygField.class,
+                        "wysiwygField",
+                        DataTypes.LONG_TEXT,
+                        "<p>Valid HTML content</p>",
+                        "", // Empty required field
+                        REQUIRED_FIELD_MISSING.name(),
+                        false,
+                        false,
+                        "required",
+                        REQUIRED_WYSIWYG_ASSERTION
+                )},
+                // StoryBlockField - Required field missing
+                {new FieldTestCase(
+                        "RequiredStoryBlockField",
+                        StoryBlockField.class,
+                        "storyBlockField",
+                        DataTypes.LONG_TEXT,
+                        "{\"blocks\":[{\"type\":\"paragraph\",\"data\":{\"text\":\"Valid block\"}}]}",
+                        "", // Empty required field
+                        REQUIRED_FIELD_MISSING.name(),
+                        false,
+                        false,
+                        "required",
+                        REQUIRED_STORY_BLOCK_ASSERTION
+                )},
+                // StoryBlock Format Error
+                {new FieldTestCase(
+                        "InvalidJsonStoryBlockField",
+                        StoryBlockField.class,
+                        "InvalidStoryBlockField",
+                        DataTypes.LONG_TEXT,
+                        "{\"\"blocks\"\":[{\"\"type\"\":\"\"paragraph\"\",\"\"data\"\":{\"\"text\"\":\"\"Valid block\"\"}}]}",
+                        "{\"blocks\":[[[[[}", //invalid json
+                        INVALID_JSON.name(),
+                        false,
+                        false,
+                        null,
+                        INVALID_JSON_STORY_BLOCK_ASSERTION
+                )},
+                /*
+                {new FieldTestCase(
+                        "MultiSelectField",
+                        MultiSelectField.class,
+                        "MultiSelectField",
+                        DataTypes.LONG_TEXT,
+                        "option1,option2,option3", // Will be set to valid option in test
+                        null,
+                        "INVALID_SELECT_OPTION", // You'll need to add this error code
+                        false,
+                        false,
+                        null, // Select options
+                        INVALID_SELECT_ASSERTION
+                )},
+                 */
+
         };
     }
 
@@ -4468,11 +4544,69 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         );
     }
 
-    public static final AssertionsStrategy REQUIRED_FIELD_ASSERTION = (result, testCase, contentType) -> {
+    public static final AssertionsStrategy REQUIRED_TEXT_FIELD_ASSERTION = (result, testCase, contentType) -> {
         final ValidationMessage error = result.error().get(0);
         assertTrue(error.field().isPresent());
-        assertEquals("Test expected required field label is present", "required: requiredText\n",error.field().get());
+        assertEquals("Test expected required field label is present", "required: requiredTextField\n",error.field().get());
 
+        assertRequiredField(testCase, error);
+
+        assertTrue(error.code().isPresent());
+        assertEquals("Expected Error Code does not match!", REQUIRED_FIELD_MISSING.name(), error.code().get());
+    };
+
+    public static final AssertionsStrategy REQUIRED_TEXT_AREA_ASSERTION = (result, testCase, contentType) -> {
+        final ValidationMessage error = result.error().get(0);
+        assertTrue(error.field().isPresent());
+        assertEquals("Test expected required field label is present", "required: textAreaField\n",error.field().get());
+
+        assertRequiredField(testCase, error);
+
+        assertTrue(error.code().isPresent());
+        assertEquals("Expected Error Code does not match!", REQUIRED_FIELD_MISSING.name(), error.code().get());
+    };
+
+    public static final AssertionsStrategy REQUIRED_WYSIWYG_ASSERTION = (result, testCase, contentType) -> {
+        final ValidationMessage error = result.error().get(0);
+        assertTrue(error.field().isPresent());
+        assertEquals("Test expected required field label is present", "required: wysiwygField\n",error.field().get());
+
+        assertRequiredField(testCase, error);
+
+        assertTrue(error.code().isPresent());
+        assertEquals("Expected Error Code does not match!", REQUIRED_FIELD_MISSING.name(), error.code().get());
+    };
+
+    public static final AssertionsStrategy REQUIRED_STORY_BLOCK_ASSERTION = (result, testCase, contentType) -> {
+        final ValidationMessage error = result.error().get(0);
+        assertTrue(error.field().isPresent());
+        assertEquals("Test expected required field label is present", "required: storyBlockField\n",error.field().get());
+
+        assertRequiredField(testCase, error);
+
+        assertTrue(error.code().isPresent());
+        assertEquals("Expected Error Code does not match!", REQUIRED_FIELD_MISSING.name(), error.code().get());
+    };
+
+    public static final AssertionsStrategy INVALID_JSON_STORY_BLOCK_ASSERTION = (result, testCase, contentType) -> {
+        final ValidationMessage error = result.error().get(0);
+        assertTrue(error.field().isPresent());
+        assertEquals("Test expected required field label is present", "InvalidStoryBlockField",error.field().get());
+
+        assertTrue(error.code().isPresent());
+        assertEquals("Expected Error Code does not match!", INVALID_JSON.name(), error.code().get());
+    };
+
+    public static final AssertionsStrategy INVALID_SELECT_ASSERTION = (result, testCase, contentType) -> {
+        final ValidationMessage error = result.error().get(0);
+        assertTrue(error.field().isPresent());
+        assertEquals("Test expected required field label is present", "InvalidStoryBlockField",error.field().get());
+
+        assertTrue(error.code().isPresent());
+        assertEquals("Expected Error Code does not match!", INVALID_JSON.name(), error.code().get());
+    };
+
+    private static void assertRequiredField(FieldTestCase testCase, ValidationMessage error) {
         assertThat(error.message().trim(), allOf(
                 startsWith("Contentlet with ID"),
                 containsString("has invalid/missing field(s)"),
@@ -4480,10 +4614,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                 containsString(testCase.fieldVariable),
                 containsString("(" + testCase.fieldVariable  + ")")
         ));
-
-        assertTrue(error.code().isPresent());
-        assertEquals("Expected Error Code does not match!", REQUIRED_FIELD_MISSING.name(), error.code().get());
-    };
+    }
 
     public static final AssertionsStrategy INVALID_DATE_ASSERTION = (result, testCase, contentType) -> {
         final ValidationMessage error = result.error().get(0);
@@ -4610,6 +4741,29 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         assertEquals("Expected Error Code does not match!", INVALID_CATEGORY_KEY.name(), error.code().get());
     };
 
+    public static final AssertionsStrategy JSON_FIELD_ASSERTION = (result, testCase, contentType) -> {
+        final ValidationMessage error = result.error().get(0);
+        assertTrue(error.field().isPresent());
+        assertTrue(error.invalidValue().isPresent());
+
+        assertEquals("Test expected required field label is present",testCase.fieldVariable,error.field().get());
+        assertEquals("Test expected required field label is present",testCase.invalidValue,error.invalidValue().get());
+
+        assertThat(error.message().trim(), allOf(
+                startsWith("Invalid JSON field provided. Key Value Field variable:"),
+                endsWith(testCase.fieldVariable)
+        ));
+
+        assertThat(error.context().get("parseError").toString().trim(), allOf(
+                startsWith("Unexpected character (''' (code 39)): was expecting double-quote to start field name"),
+                not(containsString("[Source: REDACTED (`StreamReadFeature.INCLUDE_SOURCE_IN_LOCATION` disabled);")),
+                containsString("line: 1, column: 2")
+        ));
+
+        assertTrue(error.code().isPresent());
+        assertEquals("Expected Error Code does not match!", INVALID_JSON.name(), error.code().get());
+    };
+
     /**
      * Validates results specific to each field type
      */
@@ -4618,7 +4772,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
 
         assertTrue("Should have always stopped on the introduced error", result.stoppedOnErrorAtLine().isPresent());
 
-        assertEquals("All Errors landed in row #3", result.stoppedOnErrorAtLine().get(), Integer.valueOf(3));
+        assertEquals("All Errors landed in row #3", Integer.valueOf(3), result.stoppedOnErrorAtLine().get());
 
         assertNotNull("Result should not be null for " + testCase.fieldTypeName, result);
 

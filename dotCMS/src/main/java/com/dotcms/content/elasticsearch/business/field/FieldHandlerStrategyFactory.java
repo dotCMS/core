@@ -17,7 +17,9 @@ import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
 
-import java.io.Serializable;
+import java.util.Arrays;
+import java.util.Set;
+import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.IOException;
@@ -43,6 +45,15 @@ public class FieldHandlerStrategyFactory {
         initStrategies();
     }
 
+    private static final Set<String> TEXT_STRATEGY_EXCLUSIONS_TYPES = Set.of(
+            LegacyFieldTypes.JSON_FIELD.legacyValue(),
+            LegacyFieldTypes.STORY_BLOCK_FIELD.legacyValue()
+    );
+
+    private boolean isExcludedTextField(Field field) {
+        return TEXT_STRATEGY_EXCLUSIONS_TYPES.contains(LegacyFieldTypes.getLegacyName(field.getClass()));
+    }
+
     private void initStrategies () {
 
         addFieldStrategy(LegacyFieldTypes.CATEGORY.legacyValue(), this::doNothingStrategy);
@@ -50,10 +61,12 @@ public class FieldHandlerStrategyFactory {
         addFieldStrategy(LegacyFieldTypes.KEY_VALUE.legacyValue(), this::keyValueStrategy);
         addFieldStrategy(LegacyFieldTypes.BINARY.legacyValue(), this::binaryStrategy);
         addFieldStrategy(LegacyFieldTypes.JSON_FIELD.legacyValue(), this::jsonStrategy);
+        //StoryBlock should probably have its own strategy since the json is very specific in form
+        addFieldStrategy(LegacyFieldTypes.STORY_BLOCK_FIELD.legacyValue(), this::jsonStrategy);
 
         addMatchingFieldStrategy(field ->
                 field.dbColumn().startsWith("text") &&
-                        !LegacyFieldTypes.JSON_FIELD.legacyValue().equals(LegacyFieldTypes.getLegacyName(field.getClass()))
+                        !isExcludedTextField(field)
                         , this::textStrategy);
 
         addMatchingFieldStrategy(field ->
@@ -149,6 +162,13 @@ public class FieldHandlerStrategyFactory {
                 "No strategy to set contentlet field value on field type" + field.getClass().getName() + " with value: " + value);
     }
 
+    /**
+     * If you're changing this strategy have a look at jsonStrategy
+     * @param contentlet
+     * @param field
+     * @param value
+     * @throws DotContentletStateException
+     */
     private void keyValueStrategy(final Contentlet contentlet, final Field field, final Object value) throws DotContentletStateException {
 
         if (value instanceof String) {
@@ -158,7 +178,7 @@ public class FieldHandlerStrategyFactory {
                 contentlet.setStringProperty(field.variable(), validationResult.node.toString());
             } else {
                 // Throw a backwards compatible but detailed exception
-                throw new DotJsonFieldException(
+                throw DotJsonFieldException.keyValueJsonException(
                         field.variable(),
                         (String) value,
                         validationResult.line,
@@ -175,6 +195,42 @@ public class FieldHandlerStrategyFactory {
 
             throw new DotContentletStateException(
                     "Invalid JSON field provided. Key Value Field variable: " +
+                            field.variable());
+        }
+    }
+
+    /**
+     * If you're changing this strategy have a look at keyValueStrategy
+     * @param contentlet
+     * @param field
+     * @param value
+     * @throws DotContentletStateException
+     */
+    private void jsonStrategy(final Contentlet contentlet, final Field field, final Object value) throws DotContentletStateException {
+        if (value instanceof String) {
+            JsonUtil.JSONValidationResult validationResult = JsonUtil.validateJSON((String) value);
+
+            if (validationResult.isValid()) {
+                contentlet.setStringProperty(field.variable(), validationResult.node.toString());
+            } else {
+                // Throw a backwards compatible but detailed exception
+                throw DotJsonFieldException.jsonFieldException(
+                        field.variable(),
+                        (String) value,
+                        validationResult.line,
+                        validationResult.column,
+                        validationResult.errorMessage
+                );
+            }
+
+        } else if (value instanceof Map) {
+            contentlet.setStringProperty(field.variable(),
+                    Try.of(() -> JsonUtil.getJsonAsString((Map<String, Object>) value))
+                            .getOrElse("{}"));
+        } else {
+
+            throw new DotContentletStateException(
+                    "Invalid JSON field provided. Field variable: " +
                             field.variable());
         }
     }
@@ -205,6 +261,23 @@ public class FieldHandlerStrategyFactory {
         } catch (IOException e) {
             throw new DotContentletStateException(
                     "Unable to set binary file Object: " + e.getMessage(), e);
+        }
+    }
+
+    private void multiSelectValueStrategy(final Contentlet contentlet, final Field field, final Object value) throws DotContentletStateException {
+        if (value instanceof String) {
+            String stringValue = value.toString().trim();
+
+            // Split strictly by comma and clean up each part
+            String processedValue = Arrays.stream(stringValue.split(","))
+                    .map(String::trim)
+                    .filter(s -> !s.isEmpty())
+                    .collect(Collectors.joining(","));
+
+
+            textStrategy(contentlet, field, processedValue);
+        } else {
+            Logger.error(FieldHandlerStrategyFactory.class,"MultiSelect is expecting a String value for field: " + field.variable());
         }
     }
 
@@ -342,19 +415,4 @@ public class FieldHandlerStrategyFactory {
         }
     }
 
-    private void jsonStrategy(final Contentlet contentlet, final Field field, final Object value) throws DotContentletStateException {
-        if ((value instanceof String) && (JsonUtil.isValidJSON((String) value))) {
-            contentlet.setStringProperty(field.variable(), Try.of(
-                            () -> JsonUtil.JSON_MAPPER.readTree((String) value).toString())
-                    .getOrElse("{}"));
-        } else if (value instanceof Map) {
-            contentlet.setStringProperty(field.variable(),
-                    Try.of(() -> JsonUtil.getJsonAsString((Map<String, Object>) value))
-                            .getOrElse("{}"));
-        } else {
-            throw new DotContentletStateException(
-                    "Invalid JSON field provided. Field variable: " +
-                            field.variable());
-        }
-    }
 }
