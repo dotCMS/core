@@ -260,11 +260,11 @@ describe('DotAnalyticsDashboardMetricsComponent', () => {
             spectator.setInput('status', ComponentStatus.LOADED);
             spectator.detectChanges();
 
-            const emptyState = spectator.query('[data-testid="metric-empty-state"]');
+            const emptyIcon = spectator.query('.pi.pi-info-circle');
             const title = spectator.query(byTestId('metric-title'));
             const value = spectator.query(byTestId('metric-value'));
 
-            expect(emptyState).not.toExist();
+            expect(emptyIcon).not.toExist();
             expect(title).toExist();
             expect(value).toExist();
             expect(value).toHaveText('0'); // 0 should be displayed as a valid value
@@ -289,8 +289,8 @@ describe('DotAnalyticsDashboardMetricsComponent', () => {
             spectator.setInput('status', ComponentStatus.LOADED);
             spectator.detectChanges();
 
-            const emptyState = spectator.query('[data-testid="metric-empty-state"]');
-            expect(emptyState).not.toExist();
+            const emptyIcon = spectator.query('.pi.pi-info-circle');
+            expect(emptyIcon).not.toExist();
         });
     });
 
