@@ -375,14 +375,15 @@ public class FieldHandlerStrategyFactory {
             contentlet.setFloatProperty(field.variable(),
                     ((Number) value).floatValue());
         } else if (value instanceof String) {
+            final String stringValue = value.toString();
             try {
                 contentlet.setFloatProperty(field.variable(),
-                        Float.valueOf((String)value));
+                        Float.parseFloat(stringValue));
             } catch (Exception e) {
-                if (value != null && value.toString().length() != 0) {
-                    contentlet.getMap().put(field.variable(), (String) value);
+                if (!stringValue.isEmpty()) {
+                    contentlet.getMap().put(field.variable(), stringValue);
                 }
-                throw new DotNumericFieldException(field.variable(), value);
+                throw DotNumericFieldException.newFloatFieldException(field.variable(), value);
             }
         }
     }
@@ -409,8 +410,8 @@ public class FieldHandlerStrategyFactory {
                 contentlet.setLongProperty(field.variable(),
                         Long.parseLong((String)value));
             } catch (Exception e) {
-                //If we throw this exception here.. the contentlet will never get to the validateContentlet Method
-                throw new DotNumericFieldException(field.variable(), value);
+                //If we throw this exception here... the contentlet will never get to the validateContentlet Method
+                throw DotNumericFieldException.newLongFieldException(field.variable(), value);
             }
         }
     }

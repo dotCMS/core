@@ -7,13 +7,13 @@ import java.util.Optional;
 public class DotNumericFieldException extends DotContentletStateException implements
         ImportLineErrorAware {
 
-    public static final String INVALID_NUMERIC_FIELD = "Unable to set string value as a Float for the field: ";
+    public static final String INVALID_NUMERIC_FIELD_MESSAGE = "Unable to set string value '%s' as a %s for the field: %s";
 
     private final String field;
     private final String value;
 
-    public DotNumericFieldException(String field, Object value) {
-        super(INVALID_NUMERIC_FIELD + field );
+    DotNumericFieldException(String message, String field, Object value) {
+        super(message);
         this.field = field;
         this.value = value == null ? "" : value.toString();
     }
@@ -31,5 +31,13 @@ public class DotNumericFieldException extends DotContentletStateException implem
     @Override
     public String getCode() {
         return ImportLineValidationCodes.INVALID_NUMBER_FORMAT.name();
+    }
+
+    public static DotNumericFieldException newLongFieldException(String field, Object value) {
+        return new DotNumericFieldException(String.format(String.format(INVALID_NUMERIC_FIELD_MESSAGE,value,"Long",field)), field, value);
+    }
+
+    public static DotNumericFieldException newFloatFieldException(String field, Object value) {
+        return new DotNumericFieldException(String.format(String.format(INVALID_NUMERIC_FIELD_MESSAGE,value,"Float",field)), field, value);
     }
 }
