@@ -128,8 +128,7 @@
                         <!-- optional: the default phase is "generate-resources" -->
                         <phase>compile</phase>
                         <configuration>
-                            <skip>${skip.validate}</skip>
-                            <arguments>nx affected -t build --exclude='tag:skip:build' --verbose</arguments>
+                            <arguments>nx affected -t build --exclude='tag:skip:build' --verbose ${nx.build.options}</arguments>
                         </configuration>
                     </execution>
 
