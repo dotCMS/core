@@ -93,7 +93,7 @@ public class StructureFactory {
 	public static Structure getStructureByType(String type)
 	{
 		type = SQLUtil.sanitizeParameter(type);
-		String condition = " name = '" + type + "'";
+		String condition = " structure.name = '" + type + "'";
 		try {
 			return new StructureTransformer(typeAPI.search(condition, "mod_date desc", 1, 0)).asStructure();
 		} catch (DotStateException | DotDataException e) {
