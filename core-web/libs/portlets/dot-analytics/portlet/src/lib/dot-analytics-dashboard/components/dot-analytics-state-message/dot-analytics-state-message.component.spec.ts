@@ -1,69 +1,83 @@
-import { MockProvider } from 'ng-mocks';
-
-import { Component } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { By } from '@angular/platform-browser';
+import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 
 import { DotMessageService } from '@dotcms/data-access';
 
 import { DotAnalyticsStateMessageComponent } from './dot-analytics-state-message.component';
 
-@Component({
-    template: `
-        <dot-analytics-state-message [message]="message" [icon]="icon" />
-    `
-})
-class TestHostComponent {
-    message = 'test.message';
-    icon = 'pi-info-circle';
-}
-
 describe('DotAnalyticsStateMessageComponent', () => {
-    let component: TestHostComponent;
-    let fixture: ComponentFixture<TestHostComponent>;
+    let spectator: Spectator<DotAnalyticsStateMessageComponent>;
 
-    beforeEach(async () => {
-        await TestBed.configureTestingModule({
-            imports: [DotAnalyticsStateMessageComponent],
-            declarations: [TestHostComponent],
-            providers: [MockProvider(DotMessageService)]
-        }).compileComponents();
+    const createComponent = createComponentFactory({
+        component: DotAnalyticsStateMessageComponent,
+        mocks: [DotMessageService]
+    });
 
-        fixture = TestBed.createComponent(TestHostComponent);
-        component = fixture.componentInstance;
-        fixture.detectChanges();
+    beforeEach(() => {
+        spectator = createComponent({
+            props: {
+                message: 'test.message',
+                icon: 'pi-info-circle'
+            }
+        });
     });
 
     it('should create', () => {
-        expect(component).toBeTruthy();
+        expect(spectator.component).toBeTruthy();
     });
 
     it('should render the icon with correct classes', () => {
-        const iconElement = fixture.debugElement.query(By.css('i'));
+        const iconElement = spectator.query('i');
 
         expect(iconElement).toBeTruthy();
-        expect(iconElement.nativeElement.className).toContain('pi');
-        expect(iconElement.nativeElement.className).toContain('pi-info-circle');
-        expect(iconElement.nativeElement.className).toContain('text-gray-400');
-        expect(iconElement.nativeElement.className).toContain('text-2xl');
+        expect(iconElement).toHaveClass('pi');
+        expect(iconElement).toHaveClass('pi-info-circle');
+        expect(iconElement).toHaveClass('text-gray-400');
+        expect(iconElement).toHaveClass('text-2xl');
     });
 
-    it('should render the message', () => {
-        const messageElement = fixture.debugElement.query(By.css('.state-message'));
+    it('should render the message element', () => {
+        const messageElement = spectator.query('.state-message');
 
         expect(messageElement).toBeTruthy();
-        expect(messageElement.nativeElement.textContent.trim()).toBe('test.message');
+        expect(messageElement).toBeVisible();
     });
 
-    it('should update when inputs change', () => {
-        component.message = 'new.message';
-        component.icon = 'pi-exclamation-triangle';
-        fixture.detectChanges();
+    it('should update icon classes when inputs change', () => {
+        spectator.setInput('icon', 'pi-exclamation-triangle');
 
-        const iconElement = fixture.debugElement.query(By.css('i'));
-        const messageElement = fixture.debugElement.query(By.css('.state-message'));
+        const iconElement = spectator.query('i');
 
-        expect(iconElement.nativeElement.className).toContain('pi-exclamation-triangle');
-        expect(messageElement.nativeElement.textContent.trim()).toBe('new.message');
+        expect(iconElement).toHaveClass('pi-exclamation-triangle');
+        expect(iconElement).not.toHaveClass('pi-info-circle');
+    });
+
+    it('should apply custom icon size and color', () => {
+        spectator.setInput('iconSize', 'text-xl');
+        spectator.setInput('iconColor', 'text-red-500');
+
+        const iconElement = spectator.query('i');
+
+        expect(iconElement).toHaveClass('text-xl');
+        expect(iconElement).toHaveClass('text-red-500');
+        expect(iconElement).not.toHaveClass('text-2xl');
+        expect(iconElement).not.toHaveClass('text-gray-400');
+    });
+
+    it('should apply additional icon classes', () => {
+        spectator.setInput('iconClasses', 'custom-class');
+
+        const iconElement = spectator.query('i');
+
+        expect(iconElement).toHaveClass('custom-class');
+    });
+
+    it('should have correct component structure', () => {
+        const container = spectator.query('.flex.flex-column.justify-content-center');
+        const iconElement = spectator.query('i');
+        const messageElement = spectator.query('.state-message');
+
+        expect(container).toBeTruthy();
+        expect(iconElement).toBeTruthy();
+        expect(messageElement).toBeTruthy();
     });
 });

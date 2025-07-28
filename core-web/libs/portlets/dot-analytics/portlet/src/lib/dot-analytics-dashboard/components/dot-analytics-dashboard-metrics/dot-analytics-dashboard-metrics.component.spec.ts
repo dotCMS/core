@@ -141,14 +141,14 @@ describe('DotAnalyticsDashboardMetricsComponent', () => {
             spectator.detectChanges();
 
             // Act & Assert
-            const errorIcon = spectator.query('.pi-exclamation-triangle');
-            const errorMessage = spectator.query('.metric-error');
+            const errorIcon = spectator.query('.pi.pi-exclamation-triangle');
+            const errorMessage = spectator.query('.state-message');
             const title = spectator.query(byTestId('metric-title'));
             const value = spectator.query(byTestId('metric-value'));
 
             expect(errorIcon).toBeTruthy();
             expect(errorMessage).toBeTruthy();
-            expect(title).toBeFalsy();
+            expect(title).toBeTruthy(); // Title is shown in error state
             expect(value).toBeFalsy();
         });
 
@@ -249,12 +249,12 @@ describe('DotAnalyticsDashboardMetricsComponent', () => {
             spectator.detectChanges();
 
             const iconClasses = spectator.component['$iconClasses']();
-            expect(iconClasses).toBe('pi pi-eye ');
+            expect(iconClasses).toBe('pi pi-eye');
         });
     });
 
     describe('Empty State', () => {
-        it('should show empty state when value is 0', () => {
+        it('should NOT show empty state when value is 0 (0 is a valid metric value)', () => {
             spectator.setInput('name', 'test.metric');
             spectator.setInput('value', 0);
             spectator.setInput('status', ComponentStatus.LOADED);
@@ -264,19 +264,20 @@ describe('DotAnalyticsDashboardMetricsComponent', () => {
             const title = spectator.query(byTestId('metric-title'));
             const value = spectator.query(byTestId('metric-value'));
 
-            expect(emptyState).toExist();
-            expect(title).not.toExist();
-            expect(value).not.toExist();
+            expect(emptyState).not.toExist();
+            expect(title).toExist();
+            expect(value).toExist();
+            expect(value).toHaveText('0'); // 0 should be displayed as a valid value
         });
 
-        it('should show empty state icon and message', () => {
+        it('should show empty state icon and message when value is null', () => {
             spectator.setInput('name', 'test.metric');
-            spectator.setInput('value', 0);
+            spectator.setInput('value', null);
             spectator.setInput('status', ComponentStatus.LOADED);
             spectator.detectChanges();
 
-            const emptyIcon = spectator.query('.pi-info-circle');
-            const emptyMessage = spectator.query('.metric-empty');
+            const emptyIcon = spectator.query('.pi.pi-info-circle');
+            const emptyMessage = spectator.query('.state-message');
 
             expect(emptyIcon).toExist();
             expect(emptyMessage).toExist();
@@ -300,11 +301,9 @@ describe('DotAnalyticsDashboardMetricsComponent', () => {
             spectator.setInput('status', ComponentStatus.ERROR);
             spectator.detectChanges();
 
-            const errorState = spectator.query('[data-testid="metric-error-state"]');
-            const errorIcon = spectator.query('.pi-exclamation-triangle');
-            const errorMessage = spectator.query('.metric-error');
+            const errorIcon = spectator.query('.pi.pi-exclamation-triangle');
+            const errorMessage = spectator.query('.state-message');
 
-            expect(errorState).toExist();
             expect(errorIcon).toExist();
             expect(errorIcon).toHaveClass('text-gray-400');
             expect(errorMessage).toExist();

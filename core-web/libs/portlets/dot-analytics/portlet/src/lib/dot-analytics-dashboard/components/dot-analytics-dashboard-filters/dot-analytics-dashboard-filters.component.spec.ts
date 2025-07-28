@@ -102,12 +102,14 @@ describe('DotAnalyticsDashboardFiltersComponent', () => {
     });
 
     describe('Event Emissions - Predefined Ranges', () => {
-        it('should emit timeRangeChanged when onTimeRangeChange is called with predefined range', () => {
+        it('should emit timeRangeChanged when onTimeRangeChange is called with predefined range', async () => {
             const timeRangeChangedSpy = jest.fn();
             spectator.output('$timeRangeChanged').subscribe(timeRangeChangedSpy);
 
             const newTimeRange: TimeRange = 'from 30 days ago to now';
             spectator.component.onTimeRangeChange(newTimeRange);
+            spectator.detectChanges();
+            await spectator.fixture.whenStable();
 
             expect(timeRangeChangedSpy).toHaveBeenCalledWith(newTimeRange);
         });
@@ -121,7 +123,7 @@ describe('DotAnalyticsDashboardFiltersComponent', () => {
             expect(timeRangeChangedSpy).not.toHaveBeenCalled();
         });
 
-        it('should emit timeRangeChanged with all valid predefined time range values', () => {
+        it('should emit timeRangeChanged with all valid predefined time range values', async () => {
             const timeRangeChangedSpy = jest.fn();
             spectator.output('$timeRangeChanged').subscribe(timeRangeChangedSpy);
 
@@ -133,10 +135,12 @@ describe('DotAnalyticsDashboardFiltersComponent', () => {
                 'from 30 days ago to now'
             ];
 
-            validPredefinedRanges.forEach((timeRange) => {
+            for (const timeRange of validPredefinedRanges) {
                 spectator.component.onTimeRangeChange(timeRange);
+                spectator.detectChanges();
+                await spectator.fixture.whenStable();
                 expect(timeRangeChangedSpy).toHaveBeenCalledWith(timeRange);
-            });
+            }
 
             expect(timeRangeChangedSpy).toHaveBeenCalledTimes(4);
         });

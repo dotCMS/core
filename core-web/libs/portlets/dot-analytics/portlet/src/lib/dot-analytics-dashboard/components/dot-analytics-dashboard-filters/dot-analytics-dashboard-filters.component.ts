@@ -18,7 +18,12 @@ import { DotMessageService } from '@dotcms/data-access';
 import { TimeRange } from '@dotcms/portlets/dot-analytics/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { CUSTOM_TIME_RANGE, DEFAULT_TIME_PERIOD, FilterOption, TIME_PERIOD_OPTIONS } from '../../constants';
+import {
+    CUSTOM_TIME_RANGE,
+    DEFAULT_TIME_PERIOD,
+    FilterOption,
+    TIME_PERIOD_OPTIONS
+} from '../../constants';
 import { DateRange } from '../../types';
 
 /**
@@ -53,12 +58,10 @@ export class DotAnalyticsDashboardFiltersComponent {
     readonly $customDateRangeChanged = output<DateRange>({ alias: 'customDateRangeChanged' });
 
     /** Check if custom time range is selected */
-    readonly $showCustomTimeRange = computed(
-        () => this.$selectedTimeRange() === CUSTOM_TIME_RANGE
-    );
+    readonly $showCustomTimeRange = computed(() => this.$selectedTimeRange() === CUSTOM_TIME_RANGE);
 
     constructor() {
-        // Effect 1: Clear custom date range when switching away from custom
+        // Clear custom date range when switching away from custom
         effect(
             () => {
                 const selectedTimeRange = this.$selectedTimeRange();
@@ -71,7 +74,7 @@ export class DotAnalyticsDashboardFiltersComponent {
             { allowSignalWrites: true }
         );
 
-        // Effect 2: Emit time range changes for predefined periods
+        // Emit time range changes for predefined periods (handles both manual and programmatic changes)
         effect(() => {
             const selectedTimeRange = this.$selectedTimeRange();
 
@@ -81,7 +84,7 @@ export class DotAnalyticsDashboardFiltersComponent {
             }
         });
 
-        // Effect 3: Handle custom date range changes and emit formatted dates
+        // Handle custom date range changes and emit formatted dates
         effect(() => {
             const dateRange = this.$customDateRange();
 
@@ -106,14 +109,12 @@ export class DotAnalyticsDashboardFiltersComponent {
 
     /**
      * Handles time period selection change from dropdown.
-     * Only emits for predefined time periods, not for CUSTOM_TIME_RANGE.
-     * Effects will handle the actual emission.
+     * The effect will handle emission automatically.
      *
      * @param value - Selected time period value
      */
     onTimeRangeChange(value: TimeRange): void {
-        // The effects will handle emission automatically
-        // This method is kept for explicit dropdown interaction if needed
+        // Update the signal - the effect will handle emission automatically
         this.$selectedTimeRange.set(value);
     }
 }

@@ -1,7 +1,18 @@
-import { Chart, ChartDataset } from 'chart.js';
+import { Chart, ChartDataset, ChartTypeRegistry, TooltipItem } from 'chart.js';
+import { Subscription } from 'rxjs';
 
+import { BreakpointObserver } from '@angular/cdk/layout';
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    computed,
+    inject,
+    input,
+    OnDestroy,
+    OnInit,
+    signal
+} from '@angular/core';
 
 import { CardModule } from 'primeng/card';
 import { ChartModule } from 'primeng/chart';
@@ -31,8 +42,13 @@ import { DotAnalyticsStateMessageComponent } from '../dot-analytics-state-messag
     templateUrl: './dot-analytics-dashboard-chart.component.html',
     styleUrl: './dot-analytics-dashboard-chart.component.scss'
 })
-export class DotAnalyticsDashboardChartComponent {
+export class DotAnalyticsDashboardChartComponent implements OnInit, OnDestroy {
     private readonly messageService = inject(DotMessageService);
+    private readonly breakpointObserver = inject(BreakpointObserver);
+    private breakpointSubscription?: Subscription;
+
+    /** Signal to track if we're on mobile/small screen */
+    protected readonly $isMobile = signal<boolean>(false);
 
     // Required inputs
     /** Chart type (line, pie, doughnut, bar, etc.) */
@@ -62,6 +78,11 @@ export class DotAnalyticsDashboardChartComponent {
     protected readonly $chartOptions = computed((): ChartOptions => {
         const chartType = this.$type();
         const customOptions = this.$options();
+        const isMobile = this.$isMobile();
+
+        // For mobile pie/doughnut charts, position legend to the right for better space usage
+        const shouldUseSideLegend = isMobile && (chartType === 'pie' || chartType === 'doughnut');
+        const legendPosition = shouldUseSideLegend ? 'right' : 'bottom';
 
         const defaultOptions: ChartOptions = {
             responsive: true,
@@ -69,23 +90,25 @@ export class DotAnalyticsDashboardChartComponent {
             plugins: {
                 legend: {
                     display: true,
-                    position: 'bottom',
+                    position: legendPosition,
                     labels: {
                         usePointStyle: true,
                         pointStyle: 'circle',
                         boxWidth: 10,
                         boxHeight: 10,
-                        padding: 20,
+                        padding: shouldUseSideLegend ? 15 : 20, // Slightly less padding for side legend
                         font: {
-                            size: 12
+                            size: shouldUseSideLegend ? 11 : 12 // Slightly smaller font for mobile
                         },
                         ...this.getChartTypeSpecificLegendOptions(chartType)
                     }
                 },
                 tooltip: {
                     callbacks: {
-                        label: (context: any) => this.getTooltipLabel(context),
-                        title: (context: any) => this.getTooltipTitle(context)
+                        label: (context: TooltipItem<keyof ChartTypeRegistry>) =>
+                            this.getTooltipLabel(context),
+                        title: (context: TooltipItem<keyof ChartTypeRegistry>[]) =>
+                            this.getTooltipTitle(context)
                     }
                 }
             }
@@ -174,7 +197,7 @@ export class DotAnalyticsDashboardChartComponent {
     /**
      * Get tooltip label based on chart type
      */
-    private getTooltipLabel(context: any): string {
+    private getTooltipLabel(context: TooltipItem<keyof ChartTypeRegistry>): string {
         const chartType = this.$type();
 
         if (chartType === 'pie' || chartType === 'doughnut') {
@@ -187,7 +210,7 @@ export class DotAnalyticsDashboardChartComponent {
     /**
      * Get tooltip title based on chart type
      */
-    private getTooltipTitle(context: any): string {
+    private getTooltipTitle(context: TooltipItem<keyof ChartTypeRegistry>[]): string {
         const chartType = this.$type();
 
         if (chartType === 'pie' || chartType === 'doughnut') {
@@ -204,13 +227,15 @@ export class DotAnalyticsDashboardChartComponent {
     /**
      * Get tooltip label for pie/doughnut charts
      */
-    private getPieTooltipLabel(context: any): string {
+    private getPieTooltipLabel(context: TooltipItem<keyof ChartTypeRegistry>): string {
         const dataset = context.dataset;
         const parsedValue = context.parsed;
         const value = parsedValue;
         const label = context.label ? this.messageService.get(context.label) : '';
-        const total = dataset.data.reduce((sum: number, val: number) => sum + val, 0);
-        const percentage = ((value / total) * 100).toFixed(1);
+        const total = dataset.data
+            .filter((val): val is number => typeof val === 'number')
+            .reduce((sum, val) => sum + val, 0);
+        const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : '0';
 
         return `${label}: ${value} (${percentage}%)`;
     }
@@ -218,12 +243,25 @@ export class DotAnalyticsDashboardChartComponent {
     /**
      * Get tooltip label for line/bar charts
      */
-    private getLineTooltipLabel(context: any): string {
+    private getLineTooltipLabel(context: TooltipItem<keyof ChartTypeRegistry>): string {
         const dataset = context.dataset;
         const parsedValue = context.parsed;
         const value = parsedValue.y ?? parsedValue;
         const datasetLabel = dataset.label ? this.messageService.get(dataset.label) : '';
 
         return `${datasetLabel}: ${value}`;
+    }
+
+    ngOnInit(): void {
+        // Watch for mobile breakpoint changes (991px and below to match SCSS)
+        this.breakpointSubscription = this.breakpointObserver
+            .observe('(max-width: 991px)')
+            .subscribe((result) => {
+                this.$isMobile.set(result.matches);
+            });
+    }
+
+    ngOnDestroy(): void {
+        this.breakpointSubscription?.unsubscribe();
     }
 }
