@@ -4893,7 +4893,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
     String[] unboundESQueries = {
         "Here%20is%20an%20example%20of%20an%20unbound%20es%20query%20with%20many%20clauses",
         "+catchall:*",
-        "+host:*",
+        "+host:* title:*",
         "+live:true",
         "+working:true",
     };
