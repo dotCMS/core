@@ -16,8 +16,6 @@ public class RuleAPITest {
     // Setting web app environment
     IntegrationTestInitService.getInstance().init();
 
-    //Setting web app environment
-    IntegrationTestInitService.getInstance().init();
 
   }
 
