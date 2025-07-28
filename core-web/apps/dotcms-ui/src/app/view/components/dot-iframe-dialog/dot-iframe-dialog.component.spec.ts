@@ -50,7 +50,8 @@ class TestHostComponent {
 
 @Component({
     selector: 'dot-test-host2-component',
-    template: '<dot-iframe-dialog [url]="url" [header]="header" (beforeClose)="onBeforeClose()"></dot-iframe-dialog>',
+    template:
+        '<dot-iframe-dialog [url]="url" [header]="header" (beforeClose)="onBeforeClose()"></dot-iframe-dialog>',
     standalone: false
 })
 class TestHost2Component {

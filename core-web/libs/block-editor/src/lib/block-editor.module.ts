@@ -92,9 +92,9 @@ const initTranslations = (dotMessageService: DotMessageService) => {
         DotContentTypeService,
         DotWorkflowActionsFireService,
         provideAppInitializer(() => {
-        const initializerFn = (initTranslations)(inject(DotMessageService));
-        return initializerFn();
-      })
+            const initializerFn = initTranslations(inject(DotMessageService));
+            return initializerFn();
+        })
     ],
     exports: [
         EditorDirective,

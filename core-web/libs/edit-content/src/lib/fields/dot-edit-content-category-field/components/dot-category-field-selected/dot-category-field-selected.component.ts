@@ -23,9 +23,12 @@ import { DotCategoryFieldKeyValueObj } from '../../models/dot-category-field.mod
     changeDetection: ChangeDetectionStrategy.OnPush,
     animations: [
         trigger('fadeAnimation', [
-            state('void', style({
-                opacity: 0
-            })),
+            state(
+                'void',
+                style({
+                    opacity: 0
+                })
+            ),
             transition(':enter, :leave', [animate('50ms ease-in-out')])
         ])
     ]

@@ -26,6 +26,7 @@
             "files": ["*.ts", "*.tsx"],
             "extends": ["plugin:@nx/typescript"],
             "rules": {
+                "@angular-eslint/no-input-rename": "off",
                 "@nx/dependency-checks": [
                     "error",
                     {

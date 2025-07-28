@@ -41,6 +41,7 @@ import { TINYMCE_CONFIG, DOT_EDITABLE_TEXT_FORMAT, DOT_EDITABLE_TEXT_MODE } from
             provide: TINYMCE_SCRIPT_SRC,
             useFactory: () => {
                 const { dotCMSHost } = getUVEState() || {};
+
                 return `${dotCMSHost || ''}${__TINYMCE_PATH_ON_DOTCMS__}`;
             }
         }
