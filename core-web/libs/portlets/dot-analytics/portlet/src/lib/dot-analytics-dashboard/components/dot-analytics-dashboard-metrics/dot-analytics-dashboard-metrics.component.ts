@@ -1,4 +1,4 @@
-import { NgClass } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
 import { CardModule } from 'primeng/card';
@@ -18,7 +18,7 @@ import { DotAnalyticsStateMessageComponent } from '../dot-analytics-state-messag
     selector: 'dot-analytics-dashboard-metrics',
     standalone: true,
     imports: [
-        NgClass,
+        CommonModule,
         CardModule,
         SkeletonModule,
         DotMessagePipe,
@@ -57,11 +57,11 @@ export class DotAnalyticsDashboardMetricsComponent {
         return val;
     });
 
-    /** Generates complete CSS classes for the metric icon */
+    /** Computed signal for complete icon classes */
     protected readonly $iconClasses = computed(() => {
         const iconName = this.$icon();
 
-        return `pi ${iconName} `;
+        return iconName ? `pi ${iconName}` : '';
     });
 
     /** Check if component is in loading state */
@@ -74,7 +74,7 @@ export class DotAnalyticsDashboardMetricsComponent {
     /** Check if component is in error state */
     protected readonly $isError = computed(() => this.$status() === ComponentStatus.ERROR);
 
-    /** Check if metric data is empty or insufficient */
+    /** Check if metric data is empty or insufficient - 0 is a VALID metric value */
     protected readonly $isEmpty = computed(() => {
         const value = this.$value();
         const status = this.$status();
@@ -88,7 +88,8 @@ export class DotAnalyticsDashboardMetricsComponent {
             return false;
         }
 
-        // Show empty state when we have no data or insufficient data
+        // Show empty state only when we have NO data (null/undefined)
+        // 0 is a valid metric value and should NOT be considered empty
         return value === null || value === undefined;
     });
 }

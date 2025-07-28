@@ -70,7 +70,6 @@ export class DotAnalyticsDashboardChartComponent {
                 legend: {
                     display: true,
                     position: 'bottom',
-                    // Use smaller filled circular point style for all chart types
                     labels: {
                         usePointStyle: true,
                         pointStyle: 'circle',
@@ -80,70 +79,13 @@ export class DotAnalyticsDashboardChartComponent {
                         font: {
                             size: 12
                         },
-                        // Custom legend generation for line charts to ensure solid points
-                        ...(chartType === 'line' && {
-                            generateLabels: (chart: Chart) => {
-                                const datasets = chart.data.datasets;
-
-                                return datasets.map((dataset: ChartDataset, i: number) => ({
-                                    text: dataset.label,
-                                    fillStyle: dataset.borderColor, // Use borderColor for solid legend
-                                    strokeStyle: dataset.borderColor,
-                                    lineWidth: 0,
-                                    pointStyle: 'circle',
-                                    hidden: false,
-                                    index: i,
-                                    datasetIndex: i
-                                }));
-                            }
-                        })
+                        ...this.getChartTypeSpecificLegendOptions(chartType)
                     }
                 },
                 tooltip: {
-                    // Custom tooltip callbacks to ensure translation
                     callbacks: {
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        label: (context: any) => {
-                            const chartType = this.$type();
-                            const dataset = context.dataset;
-                            const parsedValue = context.parsed;
-
-                            if (chartType === 'pie' || chartType === 'doughnut') {
-                                // For pie/doughnut charts, parsed value is a number directly
-                                const value = parsedValue;
-                                const label = context.label
-                                    ? this.messageService.get(context.label)
-                                    : '';
-                                const total = dataset.data.reduce(
-                                    (sum: number, val: number) => sum + val,
-                                    0
-                                );
-                                const percentage = ((value / total) * 100).toFixed(1);
-
-                                return `${label}: ${value} (${percentage}%)`;
-                            } else {
-                                // For line/bar charts, parsed value is an object with x, y properties
-                                const value = parsedValue.y ?? parsedValue;
-                                const datasetLabel = dataset.label
-                                    ? this.messageService.get(dataset.label)
-                                    : '';
-
-                                return `${datasetLabel}: ${value}`;
-                            }
-                        },
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        title: (context: any) => {
-                            const chartType = this.$type();
-                            if (chartType === 'pie' || chartType === 'doughnut') {
-                                // For pie charts, translate the title if it's a translation key
-                                const title = context[0]?.label;
-
-                                return title ? this.messageService.get(title) : title;
-                            }
-
-                            // For other charts, return the label as is (usually dates/times)
-                            return context[0]?.label || '';
-                        }
+                        label: (context: any) => this.getTooltipLabel(context),
+                        title: (context: any) => this.getTooltipTitle(context)
                     }
                 }
             }
@@ -202,4 +144,86 @@ export class DotAnalyticsDashboardChartComponent {
             )
         );
     });
+
+    /**
+     * Get chart type specific legend options
+     */
+    private getChartTypeSpecificLegendOptions(chartType: ChartType) {
+        if (chartType === 'line') {
+            return {
+                generateLabels: (chart: Chart) => {
+                    const datasets = chart.data.datasets;
+
+                    return datasets.map((dataset: ChartDataset, i: number) => ({
+                        text: dataset.label,
+                        fillStyle: dataset.borderColor, // Use borderColor for solid legend
+                        strokeStyle: dataset.borderColor,
+                        lineWidth: 0,
+                        pointStyle: 'circle',
+                        hidden: false,
+                        index: i,
+                        datasetIndex: i
+                    }));
+                }
+            };
+        }
+
+        return {};
+    }
+
+    /**
+     * Get tooltip label based on chart type
+     */
+    private getTooltipLabel(context: any): string {
+        const chartType = this.$type();
+
+        if (chartType === 'pie' || chartType === 'doughnut') {
+            return this.getPieTooltipLabel(context);
+        } else {
+            return this.getLineTooltipLabel(context);
+        }
+    }
+
+    /**
+     * Get tooltip title based on chart type
+     */
+    private getTooltipTitle(context: any): string {
+        const chartType = this.$type();
+
+        if (chartType === 'pie' || chartType === 'doughnut') {
+            // For pie charts, translate the title if it's a translation key
+            const title = context[0]?.label;
+
+            return title ? this.messageService.get(title) : title;
+        }
+
+        // For other charts, return the label as is (usually dates/times)
+        return context[0]?.label || '';
+    }
+
+    /**
+     * Get tooltip label for pie/doughnut charts
+     */
+    private getPieTooltipLabel(context: any): string {
+        const dataset = context.dataset;
+        const parsedValue = context.parsed;
+        const value = parsedValue;
+        const label = context.label ? this.messageService.get(context.label) : '';
+        const total = dataset.data.reduce((sum: number, val: number) => sum + val, 0);
+        const percentage = ((value / total) * 100).toFixed(1);
+
+        return `${label}: ${value} (${percentage}%)`;
+    }
+
+    /**
+     * Get tooltip label for line/bar charts
+     */
+    private getLineTooltipLabel(context: any): string {
+        const dataset = context.dataset;
+        const parsedValue = context.parsed;
+        const value = parsedValue.y ?? parsedValue;
+        const datasetLabel = dataset.label ? this.messageService.get(dataset.label) : '';
+
+        return `${datasetLabel}: ${value}`;
+    }
 }

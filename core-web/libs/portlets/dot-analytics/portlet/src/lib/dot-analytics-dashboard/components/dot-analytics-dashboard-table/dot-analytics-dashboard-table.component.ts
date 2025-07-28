@@ -13,6 +13,15 @@ import { TableColumn } from '../../types';
 import { DotAnalyticsStateMessageComponent } from '../dot-analytics-state-message/dot-analytics-state-message.component';
 
 /**
+ * Skeleton width mapping for different column types
+ */
+const SKELETON_WIDTH_MAP = {
+    number: '60%',
+    link: '70%',
+    text: '85%'
+} as const;
+
+/**
  * Top pages analytics table component.
  * Displays top performing pages with pageviews, sorting and pagination.
  */
@@ -38,8 +47,8 @@ export class DotAnalyticsDashboardTableComponent {
     /** Component status for loading/error states */
     readonly $status = input.required<ComponentStatus>({ alias: 'status' });
 
-    /** Fixed table title */
-    protected readonly title = 'analytics.table.title';
+    /** Table title - now configurable */
+    readonly $title = input<string>('analytics.table.title', { alias: 'title' });
 
     /** Static column configuration for top pages table */
     protected readonly columns: TableColumn[] = [...TOP_PAGES_TABLE_COLUMNS];
@@ -66,4 +75,23 @@ export class DotAnalyticsDashboardTableComponent {
 
     /** Skeleton rows for loading state */
     protected readonly skeletonRows = Array.from({ length: 3 }, (_, i) => i);
+
+    /** Pre-computed column configurations with CSS classes and skeleton widths */
+    protected readonly $columnConfigs = computed(() => {
+        return this.columns.map(column => ({
+            ...column,
+            cssClass: `text-${column.alignment || 'left'}`,
+            skeletonWidth: SKELETON_WIDTH_MAP[column.type as keyof typeof SKELETON_WIDTH_MAP] || SKELETON_WIDTH_MAP.text
+        }));
+    });
+
+    /**
+     * Track function for skeleton rows to improve performance
+     */
+    protected trackByIndex = (index: number): number => index;
+
+    /**
+     * Track function for table columns
+     */
+    protected trackByField = (index: number, column: TableColumn): string => column.field;
 }

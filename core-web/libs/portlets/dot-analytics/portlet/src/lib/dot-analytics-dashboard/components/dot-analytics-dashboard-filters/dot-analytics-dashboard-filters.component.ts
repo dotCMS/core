@@ -18,7 +18,7 @@ import { DotMessageService } from '@dotcms/data-access';
 import { TimeRange } from '@dotcms/portlets/dot-analytics/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { DEFAULT_TIME_PERIOD, FilterOption, TIME_PERIOD_OPTIONS } from '../../constants';
+import { CUSTOM_TIME_RANGE, DEFAULT_TIME_PERIOD, FilterOption, TIME_PERIOD_OPTIONS } from '../../constants';
 import { DateRange } from '../../types';
 
 /**
@@ -49,27 +49,39 @@ export class DotAnalyticsDashboardFiltersComponent {
     /** Emits when time range selection changes (predefined periods or custom date range) */
     readonly $timeRangeChanged = output<TimeRange | DateRange>({ alias: 'timeRangeChanged' });
 
+    /** Emits when custom date range is selected */
+    readonly $customDateRangeChanged = output<DateRange>({ alias: 'customDateRangeChanged' });
+
     /** Check if custom time range is selected */
     readonly $showCustomTimeRange = computed(
-        () => this.$selectedTimeRange() === 'CUSTOM_TIME_RANGE'
+        () => this.$selectedTimeRange() === CUSTOM_TIME_RANGE
     );
 
     constructor() {
-        // Effect to clear custom date range when switching away from custom
+        // Effect 1: Clear custom date range when switching away from custom
         effect(
             () => {
                 const selectedTimeRange = this.$selectedTimeRange();
 
                 // Clear custom date range when switching to non-custom options
-                if (selectedTimeRange !== 'CUSTOM_TIME_RANGE') {
+                if (selectedTimeRange !== CUSTOM_TIME_RANGE) {
                     this.$customDateRange.set(null);
-                    this.$timeRangeChanged.emit(selectedTimeRange);
                 }
             },
             { allowSignalWrites: true }
         );
 
-        // Effect to handle custom date range changes
+        // Effect 2: Emit time range changes for predefined periods
+        effect(() => {
+            const selectedTimeRange = this.$selectedTimeRange();
+
+            // Only emit for predefined time periods, not for custom range
+            if (selectedTimeRange !== CUSTOM_TIME_RANGE) {
+                this.$timeRangeChanged.emit(selectedTimeRange);
+            }
+        });
+
+        // Effect 3: Handle custom date range changes and emit formatted dates
         effect(() => {
             const dateRange = this.$customDateRange();
 
@@ -78,6 +90,7 @@ export class DotAnalyticsDashboardFiltersComponent {
                     dateRange[0].toISOString().split('T')[0],
                     dateRange[1].toISOString().split('T')[0]
                 ];
+                this.$customDateRangeChanged.emit(customRange);
                 this.$timeRangeChanged.emit(customRange);
             }
         });
@@ -94,15 +107,13 @@ export class DotAnalyticsDashboardFiltersComponent {
     /**
      * Handles time period selection change from dropdown.
      * Only emits for predefined time periods, not for CUSTOM_TIME_RANGE.
+     * Effects will handle the actual emission.
      *
      * @param value - Selected time period value
      */
     onTimeRangeChange(value: TimeRange): void {
-        // Only emit for predefined time periods, not for custom range
-        if (value !== 'CUSTOM_TIME_RANGE') {
-            this.$timeRangeChanged.emit(value);
-        }
-        // When CUSTOM_TIME_RANGE is selected, just show the calendar
-        // The actual range will be emitted via $customDateRangeChanged when dates are selected
+        // The effects will handle emission automatically
+        // This method is kept for explicit dropdown interaction if needed
+        this.$selectedTimeRange.set(value);
     }
 }

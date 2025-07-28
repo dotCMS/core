@@ -4,14 +4,15 @@
 @let isError = $isError();
 @let isLoading = $isLoading();
 @let isEmpty = $isEmpty();
+@let shouldUsePieLayout = (type === 'pie' || type === 'doughnut') && !isLoading && !isEmpty && !isError;
 
 <p-card
     class="h-full chart-card"
     [ngClass]="{
-        'chart-card--loading': $isLoading(),
-        'chart-card--empty': $isEmpty(),
-        'chart-card--error': $isError(),
-        'flex w-full': type === 'pie' || type === 'doughnut'
+        'chart-card--loading': isLoading,
+        'chart-card--empty': isEmpty,
+        'chart-card--error': isError,
+        'flex w-full': shouldUsePieLayout
     }"
     data-testid="analytics-chart">
     @if (title) {
