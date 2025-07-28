@@ -1,3 +1,5 @@
+import { Chart, ChartDataset } from 'chart.js';
+
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 
@@ -80,12 +82,10 @@ export class DotAnalyticsDashboardChartComponent {
                         },
                         // Custom legend generation for line charts to ensure solid points
                         ...(chartType === 'line' && {
-                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                            generateLabels: (chart: any) => {
+                            generateLabels: (chart: Chart) => {
                                 const datasets = chart.data.datasets;
 
-                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                return datasets.map((dataset: any, i: number) => ({
+                                return datasets.map((dataset: ChartDataset, i: number) => ({
                                     text: dataset.label,
                                     fillStyle: dataset.borderColor, // Use borderColor for solid legend
                                     strokeStyle: dataset.borderColor,
@@ -198,9 +198,7 @@ export class DotAnalyticsDashboardChartComponent {
                 (dataset) =>
                     !dataset.data ||
                     dataset.data.length === 0 ||
-                    dataset.data.every(
-                        (value) => value === null || value === undefined
-                    )
+                    dataset.data.every((value) => value === null || value === undefined)
             )
         );
     });

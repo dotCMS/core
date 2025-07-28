@@ -74,10 +74,6 @@ export default class DotAnalyticsDashboardComponent {
         this.store.setTimeRange(timeRange);
     }
 
-    onCustomDateRangeChange(dateRange: TimeRangeInput): void {
-        this.store.setTimeRange(dateRange);
-    }
-
     /**
      * Refresh dashboard data
      */

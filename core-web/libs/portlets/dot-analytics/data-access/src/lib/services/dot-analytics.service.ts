@@ -71,7 +71,7 @@ export class DotAnalyticsService {
             .dimensions(['path', 'pageTitle'])
             .measures(['totalRequest'])
             .pageviews()
-            .orderBy('createdAt', 'desc')
+            .orderBy('totalRequest', 'desc')
             .timeRange('createdAt', timeRange)
             .limit(1)
             .build();

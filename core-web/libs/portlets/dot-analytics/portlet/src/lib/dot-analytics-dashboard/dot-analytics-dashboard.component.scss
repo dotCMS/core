@@ -21,7 +21,8 @@
 
     // Element: dashboard-row (white background)
     &__dashboard-row {
-        flex: 1;
+        display: flex;
+        justify-content: center;
         width: 100%;
         background: $white;
         padding: $spacing-4;
@@ -30,7 +31,8 @@
 
     // Element: dashboard-container
     &__dashboard-container {
-        max-width: 100%;
+        max-width: 1400px;
+        width: 100%;
     }
 
     // Element: metric-card

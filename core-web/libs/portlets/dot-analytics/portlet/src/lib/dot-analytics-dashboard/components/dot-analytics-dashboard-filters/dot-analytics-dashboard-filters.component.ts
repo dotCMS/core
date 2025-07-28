@@ -46,11 +46,8 @@ export class DotAnalyticsDashboardFiltersComponent {
     /** Available time period options for dropdown */
     readonly $timeOptions = signal<FilterOption[]>(TIME_PERIOD_OPTIONS);
 
-    /** Emits when predefined time period selection changes */
-    readonly $timeRangeChanged = output<TimeRange>({ alias: 'timeRangeChanged' });
-
-    /** Emits when custom date range selection changes */
-    readonly $customDateRangeChanged = output<DateRange>({ alias: 'customDateRangeChanged' });
+    /** Emits when time range selection changes (predefined periods or custom date range) */
+    readonly $timeRangeChanged = output<TimeRange | DateRange>({ alias: 'timeRangeChanged' });
 
     /** Check if custom time range is selected */
     readonly $showCustomTimeRange = computed(
@@ -81,7 +78,7 @@ export class DotAnalyticsDashboardFiltersComponent {
                     dateRange[0].toISOString().split('T')[0],
                     dateRange[1].toISOString().split('T')[0]
                 ];
-                this.$customDateRangeChanged.emit(customRange);
+                this.$timeRangeChanged.emit(customRange);
             }
         });
     }
