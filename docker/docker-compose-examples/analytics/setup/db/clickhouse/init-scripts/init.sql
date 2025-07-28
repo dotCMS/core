@@ -124,3 +124,14 @@ ALTER TABLE clickhouse_test_db.events ADD COLUMN IF NOT EXISTS environment_versi
 ALTER TABLE clickhouse_test_db.events ADD COLUMN IF NOT EXISTS http_response_code UInt16;
 
 ALTER TABLE clickhouse_test_db.events ADD INDEX IF NOT EXISTS idx_request_event (request_id, event_type) TYPE minmax GRANULARITY 1;
+
+
+ALTER TABLE clickhouse_test_db.events ADD COLUMN IF NOT EXISTS context_site_id String;
+
+ALTER TABLE clickhouse_test_db.events ADD COLUMN IF NOT EXISTS context_session_id String;
+ALTER TABLE clickhouse_test_db.events ADD COLUMN IF NOT EXISTS context_site_key String;
+ALTER TABLE clickhouse_test_db.events ADD COLUMN IF NOT EXISTS context_user_id String;
+ALTER TABLE clickhouse_test_db.events ADD COLUMN IF NOT EXISTS doc_hash String;
+ALTER TABLE clickhouse_test_db.events ADD COLUMN IF NOT EXISTS doc_protocol String;
+ALTER TABLE clickhouse_test_db.events ADD COLUMN IF NOT EXISTS viewport_height String;
+ALTER TABLE clickhouse_test_db.events ADD COLUMN IF NOT EXISTS viewport_width String;

@@ -103,8 +103,8 @@ tags:
   name: Content Report
 - description: Publishing environment management and configuration
   name: Environment
-- description: A/B testing and experimentation
-  name: Experiment
+- description: A/B testing and experimentation management
+  name: Experiments
 - description: File asset management and download operations
   name: File Assets
 - description: Language management and localization
@@ -117,22 +117,42 @@ tags:
   name: Notifications
 - description: OSGi plugin management and dynamic deployment
   name: OSGi Plugins
+- description: Content persona management and targeting
+  name: Personas
 - description: Content personalization and persona management
   name: Personalization
 - description: Portlet management and administration
   name: Portlets
 - description: Content publishing and deployment operations
   name: Publishing
+- description: Remote content publishing and synchronization
+  name: Push Publishing
 - description: Business rules and conditional logic management
   name: Rules Engine
 - description: SAML SSO authentication and integration
   name: SAML Authentication
 - description: Content search and query operations
   name: Search
+- description: System-level operations and Redis management
+  name: System
 - description: Storage providers and data replication management
   name: System Storage
+- description: Server log file monitoring and real-time viewing
+  name: TailLog
 - description: Temporary file upload and management operations
   name: Temporary Files
+- description: Testing utilities and development endpoints
+  name: Testing
+- description: Theme design and management
+  name: Themes
+- description: Administrative tool group management
+  name: Tool Groups
+- description: Version control and content archiving
+  name: Versionables
+- description: Velocity Template Language execution and rendering
+  name: VTL
+- description: Web asset management and operations
+  name: Web Assets
 - description: Widget development and rendering
   name: Widgets
 paths:
@@ -2974,6 +2994,46 @@ paths:
         "500":
           description: Unexpected server error
       summary: Issues an API token
+      tags:
+      - API Token
+  /v1/apitoken/expiring:
+    get:
+      description: |-
+        Returns a list of API tokens that will expire within the configured number of days.
+
+        For admin users, returns all expiring tokens from all users.
+        For limited users, returns only their own expiring tokens.
+
+        The number of days to look ahead can be configured via the EXPIRING_TOKEN_LOOKAHEAD_DAYS property (default: 7).
+      operationId: getExpiringApiTokens
+      responses:
+        "200":
+          content:
+            application/json:
+              example:
+                entity:
+                  tokens:
+                  - expiresDate: 1844834400000
+                    id: apie3362144-8906-460d-b16e-e46a5bf69aef
+                    issueDate: 1750183464000
+                    userId: dotcms.org.1
+                  - expiresDate: 1844835400000
+                    id: apie46a5bf69aef-8906-460d-asde-e46a5bf69aef
+                    issueDate: 1750183464000
+                    userId: dotcms.org.1
+                errors: []
+                i18nMessagesMap: {}
+                messages: []
+                pagination: null
+                permissions: []
+          description: Expiring API tokens successfully retrieved
+        "401":
+          description: Invalid user
+        "403":
+          description: Forbidden
+        "500":
+          description: Unexpected server error
+      summary: Retrieves API tokens that are about to expire
       tags:
       - API Token
   /v1/apitoken/remote:

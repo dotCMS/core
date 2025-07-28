@@ -3,7 +3,7 @@
 
 import { of as observableOf, throwError as observableThrowError } from 'rxjs';
 
-import { waitForAsync } from '@angular/core/testing';
+import { TestBed, waitForAsync } from '@angular/core/testing';
 import { ActivatedRouteSnapshot } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 
@@ -38,7 +38,7 @@ describe('DotContentTypeEditResolver', () => {
     let dotHttpErrorManagerService: DotHttpErrorManagerService;
 
     beforeEach(waitForAsync(() => {
-        const testbed = DOTTestBed.configureTestingModule({
+        DOTTestBed.configureTestingModule({
             providers: [
                 DotContentTypeEditResolver,
                 DotContentTypesInfoService,
@@ -56,10 +56,10 @@ describe('DotContentTypeEditResolver', () => {
             ],
             imports: [RouterTestingModule]
         });
-        crudService = testbed.get(DotCrudService);
-        dotContentTypeEditResolver = testbed.get(DotContentTypeEditResolver);
-        dotRouterService = testbed.get(DotRouterService);
-        dotHttpErrorManagerService = testbed.get(DotHttpErrorManagerService);
+        crudService = TestBed.inject(DotCrudService);
+        dotContentTypeEditResolver = TestBed.inject(DotContentTypeEditResolver);
+        dotRouterService = TestBed.inject(DotRouterService);
+        dotHttpErrorManagerService = TestBed.inject(DotHttpErrorManagerService);
     }));
 
     it('should get and return a content type', () => {

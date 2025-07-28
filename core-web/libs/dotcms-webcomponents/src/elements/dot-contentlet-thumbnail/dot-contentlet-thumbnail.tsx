@@ -1,4 +1,5 @@
 import { Component, h, Host, Prop, State } from '@stencil/core';
+
 import { DotContentletItem } from '../../models/dot-contentlet-item.model';
 
 @Component({
@@ -48,6 +49,7 @@ export class DotContentletThumbnail {
             this.renderImage =
                 hasTitleImage === 'true' ||
                 mimeType === 'application/pdf' ||
+                this.contentlet['image'] ||
                 this.shouldShowVideoThumbnail();
         }
     }
@@ -98,6 +100,9 @@ export class DotContentletThumbnail {
             }/pdf_page/1/resize_w/250/quality_q/45`;
 
         if (this.isSVG) return `/contentAsset/image/${this.contentlet.inode}/asset`;
+
+        if (this.contentlet['image'])
+            return `/dA/${this.contentlet.inode}/${this.contentlet['image']}/resize_w/250/quality_q/45`;
 
         return `/dA/${this.contentlet.inode}/${this.fieldVariablePath()}500w/50q?r=${
             this.contentlet.modDateMilis || this.contentlet.modDate
