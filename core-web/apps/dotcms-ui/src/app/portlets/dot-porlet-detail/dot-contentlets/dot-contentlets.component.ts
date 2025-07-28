@@ -8,7 +8,8 @@ import { DotRouterService, DotIframeService } from '@dotcms/data-access';
 @Component({
     providers: [],
     selector: 'dot-contentlets',
-    template: '<dot-edit-contentlet (shutdown)="onCloseEditor()" (custom)="onCustomEvent($event)"></dot-edit-contentlet>',
+    template:
+        '<dot-edit-contentlet (shutdown)="onCloseEditor()" (custom)="onCustomEvent($event)"></dot-edit-contentlet>',
     standalone: false
 })
 export class DotContentletsComponent implements AfterViewInit {

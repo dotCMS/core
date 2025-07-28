@@ -8,7 +8,8 @@ import { DotMessageService, DotRouterService, DotIframeService } from '@dotcms/d
 @Component({
     providers: [],
     selector: 'dot-workflow-task',
-    template: '<dot-workflow-task-detail (shutdown)="onCloseWorkflowTaskEditor()" (custom)="onCustomEvent($event)"></dot-workflow-task-detail>',
+    template:
+        '<dot-workflow-task-detail (shutdown)="onCloseWorkflowTaskEditor()" (custom)="onCustomEvent($event)"></dot-workflow-task-detail>',
     standalone: false
 })
 export class DotWorkflowTaskComponent implements OnInit {
