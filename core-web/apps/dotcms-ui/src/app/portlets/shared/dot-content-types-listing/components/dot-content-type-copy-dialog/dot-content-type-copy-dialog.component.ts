@@ -30,7 +30,8 @@ import { DotCMSAssetDialogCopyFields } from '@portlets/shared/dot-content-types-
     selector: 'dot-content-type-copy-dialog',
     templateUrl: './dot-content-type-copy-dialog.component.html',
     styleUrls: ['./dot-content-type-copy-dialog.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    standalone: false
 })
 export class DotContentTypeCopyDialogComponent implements OnInit, AfterViewChecked {
     private readonly fb = inject(UntypedFormBuilder);

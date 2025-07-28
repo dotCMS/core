@@ -7,7 +7,6 @@ import { DotAssetSearchComponent } from '@dotcms/ui';
 
 @Component({
     selector: 'dot-asset-search-dialog',
-    standalone: true,
     imports: [DotAssetSearchComponent],
     templateUrl: './dot-asset-search-dialog.component.html',
     styleUrl: './dot-asset-search-dialog.component.scss',

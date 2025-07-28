@@ -24,7 +24,6 @@ import { DotMessagePipe, DotStringTemplateOutletDirective } from '@dotcms/ui';
  */
 @Component({
     selector: 'dot-experiments-details-table',
-    standalone: true,
     imports: [
         NgIf,
         NgTemplateOutlet,

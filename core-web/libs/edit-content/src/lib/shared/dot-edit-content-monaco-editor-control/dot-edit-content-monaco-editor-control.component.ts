@@ -55,7 +55,6 @@ interface WindowWithMonaco extends Window {
  */
 @Component({
     selector: 'dot-edit-content-monaco-editor-control',
-    standalone: true,
     imports: [MonacoEditorModule, PaginatorModule, ReactiveFormsModule],
     templateUrl: './dot-edit-content-monaco-editor-control.component.html',
     styleUrl: './dot-edit-content-monaco-editor-control.component.scss',

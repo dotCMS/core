@@ -95,7 +95,8 @@ const getPageRenderStateMock = () =>
         <dot-edit-page-state-controller-seo
             [pageState]="pageState"
             [variant]="variant"></dot-edit-page-state-controller-seo>
-    `
+    `,
+    standalone: false
 })
 class TestHostComponent {
     pageState: DotPageRenderState = getPageRenderStateMock();

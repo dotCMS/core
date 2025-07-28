@@ -39,7 +39,6 @@ import { DotIconModule, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
     selector: 'dot-edit-page-view-as-controller-seo',
     templateUrl: './dot-edit-page-view-as-controller-seo.component.html',
     styleUrls: ['./dot-edit-page-view-as-controller-seo.component.scss'],
-    standalone: true,
     imports: [
         CommonModule,
         DropdownModule,

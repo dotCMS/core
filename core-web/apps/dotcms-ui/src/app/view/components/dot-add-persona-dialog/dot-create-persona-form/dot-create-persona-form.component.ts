@@ -13,7 +13,8 @@ import { DotFileUpload } from '@models/dot-file-upload/dot-file-upload.model';
 @Component({
     selector: 'dot-create-persona-form',
     templateUrl: './dot-create-persona-form.component.html',
-    styleUrls: ['./dot-create-persona-form.component.scss']
+    styleUrls: ['./dot-create-persona-form.component.scss'],
+    standalone: false
 })
 export class DotCreatePersonaFormComponent implements OnInit, OnDestroy {
     private fb = inject(UntypedFormBuilder);

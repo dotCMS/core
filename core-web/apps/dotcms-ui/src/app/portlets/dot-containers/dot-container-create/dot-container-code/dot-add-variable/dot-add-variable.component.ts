@@ -15,7 +15,8 @@ import { DotFieldContent } from './dot-add-variable.models';
     selector: 'dot-add-variable',
     templateUrl: './dot-add-variable.component.html',
     styleUrls: ['./dot-add-variable.component.scss'],
-    providers: [DotAddVariableStore]
+    providers: [DotAddVariableStore],
+    standalone: false
 })
 export class DotAddVariableComponent implements OnInit {
     private readonly store = inject(DotAddVariableStore);

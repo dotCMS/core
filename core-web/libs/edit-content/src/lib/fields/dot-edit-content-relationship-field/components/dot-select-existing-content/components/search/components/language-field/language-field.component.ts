@@ -30,7 +30,6 @@ import { LanguageFieldStore } from './language-field.store';
  */
 @Component({
     selector: 'dot-language-field',
-    standalone: true,
     imports: [DropdownModule, ReactiveFormsModule, LanguagePipe, DotMessagePipe],
     providers: [
         LanguageFieldStore,

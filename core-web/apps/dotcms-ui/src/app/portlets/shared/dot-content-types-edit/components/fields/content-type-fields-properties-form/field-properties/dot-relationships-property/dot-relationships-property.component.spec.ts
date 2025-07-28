@@ -14,7 +14,8 @@ import { DotRelationshipsPropertyComponent } from './dot-relationships-property.
 
 @Component({
     selector: 'dot-field-validation-message',
-    template: ''
+    template: '',
+    standalone: false
 })
 class TestFieldValidationMessageComponent {
     @Input()
@@ -25,7 +26,8 @@ class TestFieldValidationMessageComponent {
 
 @Component({
     selector: 'dot-new-relationships',
-    template: ''
+    template: '',
+    standalone: false
 })
 class TestNewRelationshipsComponent {
     @Input()
@@ -43,7 +45,8 @@ class TestNewRelationshipsComponent {
 
 @Component({
     selector: 'dot-edit-relationships',
-    template: ''
+    template: '',
+    standalone: false
 })
 class TestEditRelationshipsComponent {
     @Output()

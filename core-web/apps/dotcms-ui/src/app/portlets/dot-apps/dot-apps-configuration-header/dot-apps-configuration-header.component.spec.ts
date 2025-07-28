@@ -18,7 +18,8 @@ import { DotAppsConfigurationHeaderComponent } from './dot-apps-configuration-he
 @Component({
     template: `
         <dot-apps-configuration-header [app]="app"></dot-apps-configuration-header>
-    `
+    `,
+    standalone: false
 })
 class TestHostComponent {
     app: DotApp;

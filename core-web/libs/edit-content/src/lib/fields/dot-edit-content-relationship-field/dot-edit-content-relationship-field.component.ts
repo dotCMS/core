@@ -39,7 +39,6 @@ import { EditContentDialogData } from '../../models/dot-edit-content-dialog.inte
 
 @Component({
     selector: 'dot-edit-content-relationship-field',
-    standalone: true,
     imports: [
         TableModule,
         ButtonModule,

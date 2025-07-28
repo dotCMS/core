@@ -31,7 +31,8 @@ import { DotFormModel } from '@models/dot-form/dot-form.model';
 @Component({
     selector: 'dot-push-publish-form',
     templateUrl: './dot-push-publish-form.component.html',
-    styleUrls: ['./dot-push-publish-form.component.scss']
+    styleUrls: ['./dot-push-publish-form.component.scss'],
+    standalone: false
 })
 export class DotPushPublishFormComponent
     implements OnInit, OnDestroy, DotFormModel<DotPushPublishDialogData, DotPushPublishData>

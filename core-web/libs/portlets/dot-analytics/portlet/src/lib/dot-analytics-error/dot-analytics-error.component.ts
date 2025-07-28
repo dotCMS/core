@@ -11,7 +11,6 @@ import { DotEmptyContainerComponent, PrincipalConfiguration } from '@dotcms/ui';
  */
 @Component({
     selector: 'dot-analytics-error',
-    standalone: true,
     imports: [DotEmptyContainerComponent],
     templateUrl: './dot-analytics-error.component.html',
     styleUrls: ['./dot-analytics-error.component.scss']

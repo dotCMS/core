@@ -6,7 +6,8 @@ import { DotActionBulkResult } from '@dotcms/dotcms-models';
 @Component({
     selector: 'dot-bulk-information',
     templateUrl: './dot-bulk-information.component.html',
-    styleUrls: ['./dot-bulk-information.component.scss']
+    styleUrls: ['./dot-bulk-information.component.scss'],
+    standalone: false
 })
 export class DotBulkInformationComponent implements OnInit {
     ref = inject(DynamicDialogRef);

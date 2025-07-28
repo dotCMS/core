@@ -48,7 +48,8 @@ export const appsResponse = [
 
 @Component({
     selector: 'dot-apps-card',
-    template: ''
+    template: '',
+    standalone: false
 })
 class MockDotAppsCardComponent {
     @Input() app: DotApp;
@@ -57,7 +58,8 @@ class MockDotAppsCardComponent {
 
 @Component({
     selector: 'dot-icon',
-    template: ''
+    template: '',
+    standalone: false
 })
 class MockDotIconComponent {
     @Input() name: string;
@@ -65,7 +67,8 @@ class MockDotIconComponent {
 
 @Component({
     selector: 'dot-apps-import-export-dialog',
-    template: ''
+    template: '',
+    standalone: false
 })
 class MockDotAppsImportExportDialogComponent {
     @Input() action: string;

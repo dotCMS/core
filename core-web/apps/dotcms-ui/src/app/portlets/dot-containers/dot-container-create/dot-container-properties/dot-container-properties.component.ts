@@ -23,7 +23,8 @@ import {
     selector: 'dot-container-properties',
     templateUrl: './dot-container-properties.component.html',
     styleUrls: ['./dot-container-properties.component.scss'],
-    providers: [DotContainerPropertiesStore]
+    providers: [DotContainerPropertiesStore],
+    standalone: false
 })
 export class DotContainerPropertiesComponent implements OnInit, AfterViewInit {
     private dotMessageService = inject(DotMessageService);

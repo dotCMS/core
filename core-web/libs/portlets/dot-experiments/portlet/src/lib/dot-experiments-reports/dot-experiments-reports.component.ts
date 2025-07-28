@@ -35,7 +35,6 @@ import { DotExperimentsUiHeaderComponent } from '../shared/ui/dot-experiments-he
 
 @Component({
     selector: 'dot-experiments-reports',
-    standalone: true,
     imports: [
         AsyncPipe,
         NgIf,

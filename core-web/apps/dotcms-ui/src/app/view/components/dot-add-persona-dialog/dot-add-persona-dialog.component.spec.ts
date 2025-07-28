@@ -32,7 +32,8 @@ import { DotAddPersonaDialogComponent } from './dot-add-persona-dialog.component
 
 @Component({
     selector: 'dot-field-validation-message',
-    template: ''
+    template: '',
+    standalone: false
 })
 class TestFieldValidationMessageComponent {
     @Input() field: NgControl;

@@ -26,7 +26,8 @@ import { FieldDragDropService } from '../fields/service';
 @Component({
     selector: 'dot-content-type-layout',
     styleUrls: ['./content-types-layout.component.scss'],
-    templateUrl: 'content-types-layout.component.html'
+    templateUrl: 'content-types-layout.component.html',
+    standalone: false
 })
 export class ContentTypesLayoutComponent implements OnChanges, OnInit {
     private dotMessageService = inject(DotMessageService);

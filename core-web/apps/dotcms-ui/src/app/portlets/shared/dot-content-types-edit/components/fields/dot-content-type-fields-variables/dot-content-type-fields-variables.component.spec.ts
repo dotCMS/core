@@ -24,7 +24,8 @@ import { DotFieldVariablesService } from './services/dot-field-variables.service
     selector: 'dot-test-host-component',
     template: `
         <dot-content-type-fields-variables [field]="value"></dot-content-type-fields-variables>
-    `
+    `,
+    standalone: false
 })
 class TestHostComponent {
     value: DotCMSContentTypeField = {

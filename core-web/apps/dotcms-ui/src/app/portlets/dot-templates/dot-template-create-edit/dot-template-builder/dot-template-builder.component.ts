@@ -23,7 +23,8 @@ export const AUTOSAVE_DEBOUNCE_TIME = 5000;
 @Component({
     selector: 'dot-template-builder',
     templateUrl: './dot-template-builder.component.html',
-    styleUrls: ['./dot-template-builder.component.scss']
+    styleUrls: ['./dot-template-builder.component.scss'],
+    standalone: false
 })
 export class DotTemplateBuilderComponent implements OnInit, OnDestroy {
     readonly #dotRouterService = inject(DotRouterService);

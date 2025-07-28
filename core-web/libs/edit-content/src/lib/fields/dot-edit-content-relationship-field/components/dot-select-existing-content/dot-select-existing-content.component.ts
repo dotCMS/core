@@ -42,7 +42,6 @@ const STATIC_COLUMNS = 6;
 
 @Component({
     selector: 'dot-select-existing-content',
-    standalone: true,
     imports: [
         TableModule,
         ButtonModule,

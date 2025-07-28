@@ -17,7 +17,8 @@ import { NamePropertyComponent } from './index';
 
 @Component({
     selector: 'dot-field-validation-message',
-    template: ''
+    template: '',
+    standalone: false
 })
 class TestFieldValidationMessageComponent {
     @Input()

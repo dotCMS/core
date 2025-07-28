@@ -66,7 +66,8 @@ export const EDIT_BLOCK_EDITOR_CUSTOM_EVENT = 'edit-block-editor';
 @Component({
     selector: 'dot-edit-content',
     templateUrl: './dot-edit-content.component.html',
-    styleUrls: ['./dot-edit-content.component.scss']
+    styleUrls: ['./dot-edit-content.component.scss'],
+    standalone: false
 })
 export class DotEditContentComponent implements OnInit, OnDestroy {
     private dialogService = inject(DialogService);

@@ -18,7 +18,8 @@ import { DotLoadingIndicatorService } from '@dotcms/utils';
 @Component({
     selector: 'dot-login-component',
     templateUrl: './dot-login.component.html',
-    styleUrls: ['./dot-login.component.scss']
+    styleUrls: ['./dot-login.component.scss'],
+    standalone: false
 })
 /**
  * The login component allows the user to fill all

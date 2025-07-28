@@ -51,13 +51,15 @@ import { DotContentletEditorModule } from '../dot-contentlet-editor/dot-contentl
 
 @Component({
     selector: 'dot-alert-confirm',
-    template: ''
+    template: '',
+    standalone: false
 })
 class MockDotDialogComponent {}
 
 @Component({
     selector: 'dot-toolbar',
-    template: ''
+    template: '',
+    standalone: false
 })
 class MockDotToolbarComponent {
     @Input() collapsed: boolean;
@@ -65,13 +67,15 @@ class MockDotToolbarComponent {
 
 @Component({
     selector: 'dot-generate-secure-password',
-    template: ''
+    template: '',
+    standalone: false
 })
 class MockDotGenerateSecurePasswordComponent {}
 
 @Component({
     selector: 'dot-main-nav',
-    template: ''
+    template: '',
+    standalone: false
 })
 class MockDotMainNavComponent {
     @Input() collapsed: boolean;
@@ -79,19 +83,22 @@ class MockDotMainNavComponent {
 
 @Component({
     selector: 'dot-message-display',
-    template: ''
+    template: '',
+    standalone: false
 })
 class MockDotMessageDisplayComponent {}
 
 @Component({
     selector: 'dot-large-message-display',
-    template: ''
+    template: '',
+    standalone: false
 })
 class MockDotLargeMessageDisplayComponent {}
 
 @Component({
     selector: 'dot-push-publish-dialog',
-    template: ''
+    template: '',
+    standalone: false
 })
 class MockDotPushPublishDialogComponent {}
 

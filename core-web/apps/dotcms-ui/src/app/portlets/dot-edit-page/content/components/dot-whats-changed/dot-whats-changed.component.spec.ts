@@ -13,7 +13,8 @@ import { DotWhatsChangedComponent, SHOW_DIFF_STYLES } from './dot-whats-changed.
 
 @Component({
     selector: 'dot-test',
-    template: '<dot-whats-changed [pageId]="pageId" [languageId]="languageId"></dot-whats-changed>'
+    template: '<dot-whats-changed [pageId]="pageId" [languageId]="languageId"></dot-whats-changed>',
+    standalone: false
 })
 class TestHostComponent {
     languageId: string;
@@ -22,7 +23,8 @@ class TestHostComponent {
 
 @Component({
     selector: 'dot-iframe',
-    template: '<iframe #iframeElement></iframe>'
+    template: '<iframe #iframeElement></iframe>',
+    standalone: false
 })
 class TestDotIframeComponent {
     @ViewChild('iframeElement') iframeElement: ElementRef;

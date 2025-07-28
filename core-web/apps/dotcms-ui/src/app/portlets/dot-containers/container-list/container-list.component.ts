@@ -34,7 +34,8 @@ import { DotContainerListStore } from '@portlets/dot-containers/container-list/s
     selector: 'dot-container-list',
     templateUrl: './container-list.component.html',
     styleUrls: ['./container-list.component.scss'],
-    providers: [DotContainerListStore]
+    providers: [DotContainerListStore],
+    standalone: false
 })
 export class ContainerListComponent implements OnDestroy {
     private dotMessageService = inject(DotMessageService);

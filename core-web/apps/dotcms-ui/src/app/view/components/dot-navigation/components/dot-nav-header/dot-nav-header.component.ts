@@ -6,7 +6,8 @@ import { DotNavLogoService } from '@dotcms/app/api/services/dot-nav-logo/dot-nav
 @Component({
     selector: 'dot-nav-header',
     styleUrls: ['./dot-nav-header.component.scss'],
-    templateUrl: 'dot-nav-header.component.html'
+    templateUrl: 'dot-nav-header.component.html',
+    standalone: false
 })
 export class DotNavHeaderComponent {
     /**

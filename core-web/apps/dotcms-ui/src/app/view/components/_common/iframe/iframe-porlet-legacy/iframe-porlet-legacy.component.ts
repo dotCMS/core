@@ -15,7 +15,8 @@ import { DotLoadingIndicatorService } from '@dotcms/utils';
 @Component({
     selector: 'dot-iframe-porlet',
     styleUrls: ['./iframe-porlet-legacy.component.scss'],
-    templateUrl: 'iframe-porlet-legacy.component.html'
+    templateUrl: 'iframe-porlet-legacy.component.html',
+    standalone: false
 })
 export class IframePortletLegacyComponent implements OnInit, OnDestroy {
     private contentletService = inject(DotContentTypeService);

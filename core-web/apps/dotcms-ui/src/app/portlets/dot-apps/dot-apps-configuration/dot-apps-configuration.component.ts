@@ -21,7 +21,8 @@ import { DotAppsImportExportDialogComponent } from '../dot-apps-import-export-di
 @Component({
     selector: 'dot-apps-configuration',
     templateUrl: './dot-apps-configuration.component.html',
-    styleUrls: ['./dot-apps-configuration.component.scss']
+    styleUrls: ['./dot-apps-configuration.component.scss'],
+    standalone: false
 })
 export class DotAppsConfigurationComponent implements OnInit, OnDestroy {
     private dotAlertConfirmService = inject(DotAlertConfirmService);

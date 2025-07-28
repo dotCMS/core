@@ -37,7 +37,6 @@ import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
 
 @Component({
     selector: 'dot-edit-content-field',
-    standalone: true,
     templateUrl: './dot-edit-content-field.component.html',
     styleUrls: ['./dot-edit-content-field.component.scss'],
     viewProviders: [

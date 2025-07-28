@@ -87,7 +87,8 @@ import { DotEditPageWorkflowsActionsModule } from '../dot-edit-page-workflows-ac
         <dot-edit-page-toolbar
             [pageState]="pageState"
             [runningExperiment]="runningExperiment"></dot-edit-page-toolbar>
-    `
+    `,
+    standalone: false
 })
 class TestHostComponent {
     @Input() pageState: DotPageRenderState = mockDotRenderedPageState;
@@ -96,7 +97,8 @@ class TestHostComponent {
 
 @Component({
     selector: 'dot-icon-button',
-    template: ''
+    template: '',
+    standalone: false
 })
 class MockDotIconButtonComponent {
     @Input() icon: string;
@@ -104,7 +106,8 @@ class MockDotIconButtonComponent {
 
 @Component({
     selector: 'dot-global-message',
-    template: ''
+    template: '',
+    standalone: false
 })
 class MockGlobalMessageComponent {}
 

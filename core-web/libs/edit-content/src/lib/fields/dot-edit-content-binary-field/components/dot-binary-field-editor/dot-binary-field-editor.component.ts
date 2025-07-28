@@ -45,7 +45,6 @@ import { DotBinaryFieldValidatorService } from '../../service/dot-binary-field-v
 const DEFAULT_FILE_TYPE = 'text';
 @Component({
     selector: 'dot-binary-field-editor',
-    standalone: true,
     imports: [
         CommonModule,
         MonacoEditorModule,

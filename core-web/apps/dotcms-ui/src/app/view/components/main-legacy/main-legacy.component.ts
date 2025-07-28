@@ -7,7 +7,8 @@ import { DotCustomEventHandlerService } from '@dotcms/app/api/services/dot-custo
     providers: [],
     selector: 'dot-main-component',
     styleUrls: ['./main-legacy.component.scss'],
-    templateUrl: './main-legacy.component.html'
+    templateUrl: './main-legacy.component.html',
+    standalone: false
 })
 export class MainComponentLegacyComponent implements OnInit {
     private dotCustomEventHandlerService = inject(DotCustomEventHandlerService);

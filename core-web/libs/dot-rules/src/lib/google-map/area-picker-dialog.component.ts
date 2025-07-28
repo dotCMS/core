@@ -39,7 +39,8 @@ let mapIdCounter = 1;
                 <div *ngIf="!hidden" class="g-map" id="{{ mapId }}"></div>
             </div>
         </cw-modal-dialog>
-    `
+    `,
+    standalone: false
 })
 export class AreaPickerDialogComponent implements OnChanges {
     mapsService = inject(GoogleMapService);

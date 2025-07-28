@@ -23,7 +23,6 @@ type DialogData = {
 
 @Component({
     selector: 'dot-select-existing-file',
-    standalone: true,
     imports: [DotSideBarComponent, DotDataViewComponent, ButtonModule, DotMessagePipe],
     templateUrl: './dot-select-existing-file.component.html',
     styleUrls: ['./dot-select-existing-file.component.scss'],

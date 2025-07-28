@@ -34,7 +34,8 @@ import { DataTableColumn } from '@models/data-table';
 @Component({
     selector: 'dot-template-list',
     templateUrl: './dot-template-list.component.html',
-    styleUrls: ['./dot-template-list.component.scss']
+    styleUrls: ['./dot-template-list.component.scss'],
+    standalone: false
 })
 export class DotTemplateListComponent implements OnInit, OnDestroy {
     private dotAlertConfirmService = inject(DotAlertConfirmService);

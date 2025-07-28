@@ -32,7 +32,8 @@ import { DotTheme } from '@dotcms/dotcms-models';
             provide: NG_VALUE_ACCESSOR,
             useExisting: forwardRef(() => DotThemeSelectorDropdownComponent)
         }
-    ]
+    ],
+    standalone: false
 })
 export class DotThemeSelectorDropdownComponent
     implements OnInit, OnDestroy, ControlValueAccessor, AfterViewInit

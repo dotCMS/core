@@ -14,7 +14,8 @@ import { DotFieldVariablesService } from './services/dot-field-variables.service
 @Component({
     selector: 'dot-content-type-fields-variables',
     styleUrls: ['./dot-content-type-fields-variables.component.scss'],
-    templateUrl: './dot-content-type-fields-variables.component.html'
+    templateUrl: './dot-content-type-fields-variables.component.html',
+    standalone: false
 })
 export class DotContentTypeFieldsVariablesComponent implements OnChanges, OnDestroy {
     private dotHttpErrorManagerService = inject(DotHttpErrorManagerService);

@@ -25,7 +25,8 @@ import { DotCMSContentType, DotDialogActions, DotMenu } from '@dotcms/dotcms-mod
 
 @Component({
     selector: 'dot-add-to-menu',
-    templateUrl: 'dot-add-to-menu.component.html'
+    templateUrl: 'dot-add-to-menu.component.html',
+    standalone: false
 })
 export class DotAddToMenuComponent implements OnInit, OnDestroy {
     fb = inject(UntypedFormBuilder);
