@@ -3,6 +3,7 @@ import { ChangeDetectionStrategy, Component, computed, input, ViewChild } from '
 
 import { AvatarModule } from 'primeng/avatar';
 import { ButtonModule } from 'primeng/button';
+import { ChipModule } from 'primeng/chip';
 import { MenuModule } from 'primeng/menu';
 import { OverlayPanel, OverlayPanelModule } from 'primeng/overlaypanel';
 import { SkeletonModule } from 'primeng/skeleton';
@@ -28,7 +29,8 @@ import { DotGravatarDirective, DotMessagePipe, DotRelativeDatePipe } from '@dotc
         SkeletonModule,
         DotGravatarDirective,
         DotMessagePipe,
-        DotRelativeDatePipe
+        DotRelativeDatePipe,
+        ChipModule
     ],
     templateUrl: './dot-edit-content-sidebar-history.component.html',
     styleUrls: ['./dot-edit-content-sidebar-history.component.scss'],
@@ -117,18 +119,6 @@ export class DotEditContentSidebarHistoryComponent {
         }
 
         return 'history__marker--draft';
-    }
-
-    /**
-     * Gets the relative time display for a version
-     */
-    getTimeDisplay(item: DotCMSContentlet, index: number): string {
-        if (index === 0) {
-            return 'Now';
-        }
-
-        // The dotRelativeDate pipe will be used in the template for other items
-        return '';
     }
 
     /**

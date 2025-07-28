@@ -46,22 +46,28 @@
                         <!-- Timeline item header -->
                         <div class="history__item-header">
                             <div class="history__time-section">
-                                @if (getTimeDisplay(item, index)) {
-                                    <span class="history__time-now" data-testid="time-display">
-                                        {{ getTimeDisplay(item, index) }}
-                                    </span>
-                                } @else {
-                                    <span class="history__time-relative" data-testid="time-display">
-                                        {{ item.modDate | dotRelativeDate }}
-                                    </span>
-                                }
-
-                                <span
-                                    class="history__status"
-                                    [class]="getStatusClass(item)"
-                                    data-testid="version-status">
-                                    {{ getStatusLabel(item) }}
+                                <span class="history__time-relative" data-testid="time-display">
+                                    {{ item.modDate | dotRelativeDate }}
                                 </span>
+
+                                @if (item.live || item.working) {
+                                    <div class="history__states">
+                                        @if (item.working) {
+                                            <p-chip
+                                                styleClass="history__state history__state--working p-chip-sm"
+                                                [label]="
+                                                    'edit.content.sidebar.history.working' | dm
+                                                "
+                                                data-testid="state-working" />
+                                        }
+                                        @if (item.live) {
+                                            <p-chip
+                                                styleClass="history__state history__state--live p-chip-sm"
+                                                [label]="'edit.content.sidebar.history.live' | dm"
+                                                data-testid="state-live" />
+                                        }
+                                    </div>
+                                }
                             </div>
 
                             <div class="history__actions">
@@ -125,25 +131,6 @@
                             {{ selectedItem.pageName || 'N/A' }}
                         </li>
                     </ul>
-
-                    @if (selectedItem.live || selectedItem.working) {
-                        <div class="history__overlay-states">
-                            @if (selectedItem.working) {
-                                <span
-                                    class="history__state history__state--working"
-                                    data-testid="overlay-state-working">
-                                    {{ 'edit.content.sidebar.history.working' | dm }}
-                                </span>
-                            }
-                            @if (selectedItem.live) {
-                                <span
-                                    class="history__state history__state--live"
-                                    data-testid="overlay-state-live">
-                                    {{ 'edit.content.sidebar.history.live' | dm }}
-                                </span>
-                            }
-                        </div>
-                    }
                 </div>
             }
         </p-overlayPanel>
