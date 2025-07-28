@@ -45,7 +45,8 @@ import { DotEditPageViewAsControllerSeoComponent } from './dot-edit-page-view-as
     template: `
         <dot-edit-page-view-as-controller-seo
             [pageState]="pageState"></dot-edit-page-view-as-controller-seo>
-    `
+    `,
+    standalone: false
 })
 class DotTestHostComponent {
     @Input()
@@ -54,7 +55,8 @@ class DotTestHostComponent {
 
 @Component({
     selector: 'dot-persona-selector',
-    template: ''
+    template: '',
+    standalone: false
 })
 class MockDotPersonaSelectorComponent {
     @Input()
@@ -71,7 +73,8 @@ class MockDotPersonaSelectorComponent {
 
 @Component({
     selector: 'dot-device-selector-seo',
-    template: ''
+    template: '',
+    standalone: false
 })
 class MockDotDeviceSelectorComponent {
     @Input()
@@ -82,7 +85,8 @@ class MockDotDeviceSelectorComponent {
 
 @Component({
     selector: 'dot-language-selector',
-    template: ''
+    template: '',
+    standalone: false
 })
 class MockDotLanguageSelectorComponent {
     @Input()

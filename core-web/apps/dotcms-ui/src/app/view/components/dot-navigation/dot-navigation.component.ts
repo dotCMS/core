@@ -9,7 +9,8 @@ import { DotNavigationService } from './services/dot-navigation.service';
 @Component({
     selector: 'dot-main-nav',
     styleUrls: ['./dot-navigation.component.scss'],
-    templateUrl: 'dot-navigation.component.html'
+    templateUrl: 'dot-navigation.component.html',
+    standalone: false
 })
 export class DotNavigationComponent {
     /**

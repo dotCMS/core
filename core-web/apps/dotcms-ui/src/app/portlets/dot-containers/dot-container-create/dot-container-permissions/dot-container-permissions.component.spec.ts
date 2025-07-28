@@ -8,7 +8,8 @@ import { DotContainerPermissionsComponent } from './dot-container-permissions.co
 
 @Component({
     selector: 'dot-iframe',
-    template: ''
+    template: '',
+    standalone: false
 })
 export class IframeMockComponent {
     @Input() src: string;
@@ -19,7 +20,8 @@ export class IframeMockComponent {
     selector: `dot-host-component`,
     template: `
         <dot-container-permissions [containerId]="containerId"></dot-container-permissions>
-    `
+    `,
+    standalone: false
 })
 class DotTestHostComponent {
     containerId = '';

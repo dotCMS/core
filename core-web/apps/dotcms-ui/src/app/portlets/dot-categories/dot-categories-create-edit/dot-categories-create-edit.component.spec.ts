@@ -9,7 +9,10 @@ import { DotCategoriesCreateEditComponent } from './dot-categories-create-edit.c
 
 import { DotCategoriesListingModule } from '../dot-categories-list/dot-categories-list.module';
 
-@Pipe({ name: 'dm' })
+@Pipe({
+    name: 'dm',
+    standalone: false
+})
 class MockPipe implements PipeTransform {
     transform(value: string): string {
         return value;

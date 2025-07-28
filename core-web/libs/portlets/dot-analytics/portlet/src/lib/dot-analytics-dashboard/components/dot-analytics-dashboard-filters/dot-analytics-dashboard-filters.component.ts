@@ -27,7 +27,6 @@ import { DEFAULT_TIME_PERIOD, FilterOption, TIME_PERIOD_OPTIONS } from '../../co
  */
 @Component({
     selector: 'dot-analytics-dashboard-filters',
-    standalone: true,
     imports: [CommonModule, DropdownModule, FormsModule, DotMessagePipe],
     templateUrl: './dot-analytics-dashboard-filters.component.html',
     styleUrls: ['./dot-analytics-dashboard-filters.component.scss'],

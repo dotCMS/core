@@ -19,7 +19,8 @@ import { DotToolbarBtnOverlayComponent } from '../dot-toolbar-overlay/dot-toolba
     selector: 'dot-toolbar-notifications',
     styleUrls: ['./dot-toolbar-notifications.component.scss'],
     templateUrl: 'dot-toolbar-notifications.component.html',
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    standalone: false
 })
 export class DotToolbarNotificationsComponent implements OnInit {
     readonly #notificationService = inject(NotificationsService);

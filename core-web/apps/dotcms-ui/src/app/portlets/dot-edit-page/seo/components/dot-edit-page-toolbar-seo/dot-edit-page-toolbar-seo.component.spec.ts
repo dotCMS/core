@@ -94,7 +94,8 @@ import { DotEditPageInfoSeoComponent } from '../dot-edit-page-info-seo/dot-edit-
         <dot-edit-page-toolbar-seo
             [pageState]="pageState"
             [runningExperiment]="runningExperiment"></dot-edit-page-toolbar-seo>
-    `
+    `,
+    standalone: false
 })
 class TestHostComponent {
     @Input() pageState: DotPageRenderState = mockDotRenderedPageState;
@@ -103,7 +104,8 @@ class TestHostComponent {
 
 @Component({
     selector: 'dot-global-message',
-    template: ''
+    template: '',
+    standalone: false
 })
 class MockGlobalMessageComponent {}
 

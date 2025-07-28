@@ -41,7 +41,8 @@ import { FieldDragDropService } from '../fields/service';
 
 @Component({
     selector: 'dot-content-types-fields-list',
-    template: ''
+    template: '',
+    standalone: false
 })
 class TestContentTypeFieldsListComponent {
     @Input() baseType: string;
@@ -49,13 +50,15 @@ class TestContentTypeFieldsListComponent {
 
 @Component({
     selector: 'dot-content-type-fields-row-list',
-    template: ''
+    template: '',
+    standalone: false
 })
 class TestContentTypeFieldsRowListComponent {}
 
 @Component({
     selector: 'dot-iframe',
-    template: ''
+    template: '',
+    standalone: false
 })
 class TestDotIframeComponent {
     @Input() src: string;
@@ -63,7 +66,8 @@ class TestDotIframeComponent {
 
 @Component({
     selector: 'dot-test-host-component',
-    template: '<dot-content-type-layout [contentType]="contentType"></dot-content-type-layout>'
+    template: '<dot-content-type-layout [contentType]="contentType"></dot-content-type-layout>',
+    standalone: false
 })
 class TestHostComponent {
     @Input() contentType: DotCMSContentType;
@@ -72,13 +76,15 @@ class TestHostComponent {
 
 @Component({
     selector: 'dot-content-types-relationship-listing',
-    template: ''
+    template: '',
+    standalone: false
 })
 class TestContentTypesRelationshipListingComponent {}
 
 @Component({
     selector: 'dot-add-to-menu',
-    template: ``
+    template: ``,
+    standalone: false
 })
 class MockDotAddToMenuComponent {
     @Input() contentType: DotCMSContentType;

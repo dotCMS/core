@@ -46,7 +46,8 @@ export class DotAppsServiceMock {
             [app]="app"
             [site]="site"
             [show]="true"></dot-apps-import-export-dialog>
-    `
+    `,
+    standalone: false
 })
 class HostTestComponent {
     @Input() action?: string;

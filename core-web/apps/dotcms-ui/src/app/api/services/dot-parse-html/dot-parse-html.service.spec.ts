@@ -5,7 +5,8 @@ import { DotParseHtmlService } from '@services/dot-parse-html/dot-parse-html.ser
 
 @Component({
     selector: 'dot-test-host-component',
-    template: ``
+    template: ``,
+    standalone: false
 })
 class TestHostComponent {}
 

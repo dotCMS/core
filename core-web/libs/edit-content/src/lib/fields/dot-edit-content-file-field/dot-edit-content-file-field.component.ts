@@ -47,7 +47,6 @@ import { getUiMessage } from './utils/messages';
 
 @Component({
     selector: 'dot-edit-content-file-field',
-    standalone: true,
     imports: [
         ButtonModule,
         DotMessagePipe,

@@ -17,7 +17,6 @@ import { ChartData, ChartOptions, ChartType } from '../../types';
  */
 @Component({
     selector: 'dot-analytics-dashboard-chart',
-    standalone: true,
     imports: [CommonModule, CardModule, ChartModule, SkeletonModule, DotMessagePipe],
     changeDetection: ChangeDetectionStrategy.OnPush,
     templateUrl: './dot-analytics-dashboard-chart.component.html',

@@ -18,7 +18,8 @@ import { DotSubNavComponent } from '../dot-sub-nav/dot-sub-nav.component';
 @Component({
     selector: 'dot-nav-item',
     templateUrl: './dot-nav-item.component.html',
-    styleUrls: ['./dot-nav-item.component.scss']
+    styleUrls: ['./dot-nav-item.component.scss'],
+    standalone: false
 })
 export class DotNavItemComponent {
     private hostElRef = inject(ElementRef);

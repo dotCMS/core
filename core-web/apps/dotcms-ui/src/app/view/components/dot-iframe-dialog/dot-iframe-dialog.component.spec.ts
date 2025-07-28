@@ -40,7 +40,8 @@ const getTestConfig = (hostComponent) => {
 
 @Component({
     selector: 'dot-test-host-component',
-    template: '<dot-iframe-dialog [url]="url" [header]="header"></dot-iframe-dialog>'
+    template: '<dot-iframe-dialog [url]="url" [header]="header"></dot-iframe-dialog>',
+    standalone: false
 })
 class TestHostComponent {
     url: string;
@@ -49,8 +50,8 @@ class TestHostComponent {
 
 @Component({
     selector: 'dot-test-host2-component',
-    template:
-        '<dot-iframe-dialog [url]="url" [header]="header" (beforeClose)="onBeforeClose()"></dot-iframe-dialog>'
+    template: '<dot-iframe-dialog [url]="url" [header]="header" (beforeClose)="onBeforeClose()"></dot-iframe-dialog>',
+    standalone: false
 })
 class TestHost2Component {
     url: string;

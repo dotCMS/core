@@ -22,7 +22,6 @@ import { SYSTEM_HOST_ID } from '../../store/select-existing-file.store';
 
 @Component({
     selector: 'dot-sidebar',
-    standalone: true,
     imports: [TreeModule, TruncatePathPipe, SkeletonModule],
     templateUrl: './dot-sidebar.component.html',
     styleUrls: ['./dot-sidebar.component.scss'],

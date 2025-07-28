@@ -16,21 +16,16 @@ import { DotPaletteState, DotPaletteStore } from './store/dot-palette.store';
     providers: [DotPaletteStore],
     animations: [
         trigger('inOut', [
-            state(
-                'contentlet:in',
-                style({
-                    transform: 'translateX(-100%)'
-                })
-            ),
-            state(
-                'contentlet:out',
-                style({
-                    transform: 'translateX(0%)'
-                })
-            ),
+            state('contentlet:in', style({
+                transform: 'translateX(-100%)'
+            })),
+            state('contentlet:out', style({
+                transform: 'translateX(0%)'
+            })),
             transition('* => *', animate('200ms ease-in'))
         ])
-    ]
+    ],
+    standalone: false
 })
 export class DotPaletteComponent {
     readonly #store = inject(DotPaletteStore);

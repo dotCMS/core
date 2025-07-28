@@ -23,7 +23,6 @@ import { DotLanguage } from '@dotcms/dotcms-models';
 
 @Component({
     selector: 'dot-edit-ema-language-selector',
-    standalone: true,
     imports: [OverlayPanelModule, ListboxModule, ButtonModule, AsyncPipe, NgClass],
     templateUrl: './edit-ema-language-selector.component.html',
     styleUrls: ['./edit-ema-language-selector.component.scss'],

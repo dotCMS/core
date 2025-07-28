@@ -15,7 +15,8 @@ import { DotLayoutPropertiesItemComponent } from '../dot-layout-properties-item/
             provide: NG_VALUE_ACCESSOR,
             useExisting: forwardRef(() => DotLayoutSidebarComponent)
         }
-    ]
+    ],
+    standalone: false
 })
 export class DotLayoutSidebarComponent implements ControlValueAccessor {
     @ViewChild('propertyItemLeft', { static: true })

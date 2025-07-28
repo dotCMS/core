@@ -26,7 +26,8 @@ import { DotContentTypeCopyDialogComponent } from './dot-content-type-copy-dialo
     selector: 'dot-test-host-component',
     template: `
         <dot-content-type-copy-dialog [isSaving$]="isSaving$"></dot-content-type-copy-dialog>
-    `
+    `,
+    standalone: false
 })
 class TestHostComponent {
     isSaving$ = of(false);

@@ -21,7 +21,8 @@ import { DotSubNavComponent } from '../dot-sub-nav/dot-sub-nav.component';
     selector: 'dot-test-host-component',
     template: `
         <dot-nav-item [data]="menu" [collapsed]="collapsed"></dot-nav-item>
-    `
+    `,
+    standalone: false
 })
 class TestHostComponent {
     menu: DotMenu = {

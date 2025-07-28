@@ -42,7 +42,6 @@ import { DotExperimentsConfigurationStore } from '../../store/dot-experiments-co
 
 @Component({
     selector: 'dot-experiments-configuration-goal-select',
-    standalone: true,
     imports: [
         CommonModule,
         ReactiveFormsModule,

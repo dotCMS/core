@@ -15,7 +15,8 @@ const PERSONA_CONTENT_TYPE = 'persona';
 @Component({
     selector: 'dot-add-persona-dialog',
     templateUrl: './dot-add-persona-dialog.component.html',
-    styleUrls: ['./dot-add-persona-dialog.component.scss']
+    styleUrls: ['./dot-add-persona-dialog.component.scss'],
+    standalone: false
 })
 export class DotAddPersonaDialogComponent implements OnInit {
     private dotMessageService = inject(DotMessageService);

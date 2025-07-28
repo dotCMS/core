@@ -22,7 +22,6 @@ import {
     selector: 'dot-edit-page-info-seo',
     templateUrl: './dot-edit-page-info-seo.component.html',
     styleUrls: ['./dot-edit-page-info-seo.component.scss'],
-    standalone: true,
     imports: [
         ButtonModule,
         DotCopyButtonComponent,

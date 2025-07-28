@@ -33,7 +33,8 @@ import { DotPushPublishFormComponent } from '../forms/dot-push-publish-form/dot-
 @Component({
     selector: 'dot-wizard',
     templateUrl: './dot-wizard.component.html',
-    styleUrls: ['./dot-wizard.component.scss']
+    styleUrls: ['./dot-wizard.component.scss'],
+    standalone: false
 })
 export class DotWizardComponent implements AfterViewInit {
     #wizardData: { [key: string]: string };

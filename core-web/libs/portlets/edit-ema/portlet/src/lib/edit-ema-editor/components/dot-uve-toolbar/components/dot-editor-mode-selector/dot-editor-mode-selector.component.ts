@@ -20,7 +20,6 @@ import { UVEStore } from '../../../../../store/dot-uve.store';
 
 @Component({
     selector: 'dot-editor-mode-selector',
-    standalone: true,
     imports: [TooltipModule, MenuModule, ButtonModule, DotMessagePipe, NgClass],
     templateUrl: './dot-editor-mode-selector.component.html',
     styleUrl: './dot-editor-mode-selector.component.scss',

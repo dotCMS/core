@@ -17,7 +17,6 @@ import { TableColumn } from '../../types';
  */
 @Component({
     selector: 'dot-analytics-dashboard-table',
-    standalone: true,
     imports: [CommonModule, CardModule, SkeletonModule, TableModule, DotMessagePipe],
     templateUrl: './dot-analytics-dashboard-table.component.html',
     styleUrls: ['./dot-analytics-dashboard-table.component.scss'],

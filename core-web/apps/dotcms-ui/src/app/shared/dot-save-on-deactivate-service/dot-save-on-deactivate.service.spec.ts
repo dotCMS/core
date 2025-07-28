@@ -13,7 +13,8 @@ import { OnSaveDeactivate } from './save-on-deactivate';
 
 @Component({
     selector: 'dot-test',
-    template: '<h1>Test</h1>'
+    template: '<h1>Test</h1>',
+    standalone: false
 })
 class MockComponent implements OnSaveDeactivate {
     shouldSaveBefore(): boolean {

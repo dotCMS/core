@@ -47,19 +47,22 @@ class MockDotNavigationService {
 
 @Component({
     selector: 'dot-toolbar-user',
-    template: ''
+    template: '',
+    standalone: false
 })
 class MockToolbarUsersComponent {}
 
 @Component({
     selector: 'dot-toolbar-notifications',
-    template: ''
+    template: '',
+    standalone: false
 })
 class MockToolbarNotificationsComponent {}
 
 @Component({
     selector: 'dot-toolbar-announcements',
-    template: ''
+    template: '',
+    standalone: false
 })
 class MockToolbarAnnouncementsComponent {}
 

@@ -8,7 +8,8 @@ import { DotCategoriesPermissionsComponent } from './dot-categories-permissions.
 
 @Component({
     selector: 'dot-iframe',
-    template: ''
+    template: '',
+    standalone: false
 })
 export class IframeMockComponent {
     @Input() src: string;

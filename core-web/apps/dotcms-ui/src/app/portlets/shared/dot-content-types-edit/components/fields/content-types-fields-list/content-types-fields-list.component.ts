@@ -16,7 +16,8 @@ import { FieldService } from '../service';
 @Component({
     selector: 'dot-content-types-fields-list',
     styleUrls: ['./content-types-fields-list.component.scss'],
-    templateUrl: './content-types-fields-list.component.html'
+    templateUrl: './content-types-fields-list.component.html',
+    standalone: false
 })
 export class ContentTypesFieldsListComponent implements OnInit {
     @Input() baseType: string;

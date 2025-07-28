@@ -20,8 +20,8 @@ import { DotCommentAndAssignFormComponent } from './dot-comment-and-assign-form.
 
 @Component({
     selector: 'dot-test-host-component',
-    template:
-        '@if (data) {<dot-comment-and-assign-form [data]="data"></dot-comment-and-assign-form>}'
+    template: '@if (data) {<dot-comment-and-assign-form [data]="data"></dot-comment-and-assign-form>}',
+    standalone: false
 })
 class TestHostComponent {
     @Input() data: any;

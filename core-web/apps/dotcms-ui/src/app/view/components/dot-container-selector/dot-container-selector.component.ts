@@ -13,7 +13,8 @@ import { DotContainer } from '@dotcms/dotcms-models';
     providers: [PaginatorService],
     selector: 'dot-container-selector',
     templateUrl: './dot-container-selector.component.html',
-    styleUrls: ['./dot-container-selector.component.scss']
+    styleUrls: ['./dot-container-selector.component.scss'],
+    standalone: false
 })
 export class DotContainerSelectorComponent implements OnInit {
     paginationService = inject(PaginatorService);

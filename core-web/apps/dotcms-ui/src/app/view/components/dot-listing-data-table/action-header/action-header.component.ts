@@ -14,7 +14,8 @@ import { ActionHeaderOptions, ButtonAction } from '@models/action-header';
     encapsulation: ViewEncapsulation.None,
     selector: 'dot-action-header',
     styleUrls: ['./action-header.component.scss'],
-    templateUrl: 'action-header.component.html'
+    templateUrl: 'action-header.component.html',
+    standalone: false
 })
 export class ActionHeaderComponent implements OnChanges {
     private dotMessageService = inject(DotMessageService);

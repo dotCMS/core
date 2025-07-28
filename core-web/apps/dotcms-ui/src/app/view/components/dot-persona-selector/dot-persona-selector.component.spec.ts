@@ -54,7 +54,8 @@ import { DotPersonaSelectorComponent } from './dot-persona-selector.component';
             (selected)="selectedPersonaHandler($event)"
             (delete)="deletePersonaHandler($event)"
             [disabled]="disabled"></dot-persona-selector>
-    `
+    `,
+    standalone: false
 })
 class HostTestComponent {
     @Input() disabled: boolean;

@@ -38,7 +38,8 @@ import { DotCategoriesListComponent } from './dot-categories-list.component';
     selector: 'dot-test-host-component',
     template: `
         <dot-categories-list></dot-categories-list>
-    `
+    `,
+    standalone: false
 })
 class TestHostComponent {}
 

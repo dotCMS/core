@@ -14,26 +14,21 @@ import { DotMenu, DotMenuItem } from '@dotcms/dotcms-models';
 @Component({
     animations: [
         trigger('expandAnimation', [
-            state(
-                'expanded',
-                style({
-                    height: '!',
-                    overflow: 'hidden'
-                })
-            ),
-            state(
-                'collapsed',
-                style({
-                    height: '0px',
-                    overflow: 'hidden'
-                })
-            ),
+            state('expanded', style({
+                height: '!',
+                overflow: 'hidden'
+            })),
+            state('collapsed', style({
+                height: '0px',
+                overflow: 'hidden'
+            })),
             transition('expanded <=> collapsed', animate('250ms ease-in-out'))
         ])
     ],
     selector: 'dot-sub-nav',
     templateUrl: './dot-sub-nav.component.html',
-    styleUrls: ['./dot-sub-nav.component.scss']
+    styleUrls: ['./dot-sub-nav.component.scss'],
+    standalone: false
 })
 export class DotSubNavComponent {
     @ViewChild('ul', { static: true }) ul: ElementRef;

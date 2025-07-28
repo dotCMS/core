@@ -30,7 +30,6 @@ type DialogProps = {
 
 @Component({
     selector: 'dot-form-file-editor',
-    standalone: true,
     imports: [
         DotMessagePipe,
         ReactiveFormsModule,

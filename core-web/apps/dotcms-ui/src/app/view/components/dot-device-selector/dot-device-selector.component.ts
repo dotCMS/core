@@ -21,7 +21,8 @@ import { DotDevice } from '@dotcms/dotcms-models';
     selector: 'dot-device-selector',
     templateUrl: './dot-device-selector.component.html',
     styleUrls: ['./dot-device-selector.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    standalone: false
 })
 export class DotDeviceSelectorComponent implements OnInit, OnChanges {
     private dotDevicesService = inject(DotDevicesService);

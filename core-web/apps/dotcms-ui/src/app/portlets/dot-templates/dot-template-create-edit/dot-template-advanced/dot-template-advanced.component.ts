@@ -40,7 +40,8 @@ interface MonacoEditor {
 @Component({
     selector: 'dot-template-advanced',
     templateUrl: './dot-template-advanced.component.html',
-    styleUrls: ['./dot-template-advanced.scss']
+    styleUrls: ['./dot-template-advanced.scss'],
+    standalone: false
 })
 export class DotTemplateAdvancedComponent implements OnInit, OnDestroy, OnChanges {
     private fb = inject(UntypedFormBuilder);

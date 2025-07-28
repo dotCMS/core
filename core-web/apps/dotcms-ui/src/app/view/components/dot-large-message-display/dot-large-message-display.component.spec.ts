@@ -13,7 +13,8 @@ import { DotLargeMessageDisplayComponent } from './dot-large-message-display.com
     selector: 'dot-test-host-component',
     template: `
         <dot-large-message-display></dot-large-message-display>
-    `
+    `,
+    standalone: false
 })
 class TestHostComponent {}
 

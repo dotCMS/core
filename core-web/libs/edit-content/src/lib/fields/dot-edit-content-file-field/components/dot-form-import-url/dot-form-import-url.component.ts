@@ -24,7 +24,6 @@ type DialogData = {
 
 @Component({
     selector: 'dot-form-import-url',
-    standalone: true,
     imports: [
         DotMessagePipe,
         ReactiveFormsModule,

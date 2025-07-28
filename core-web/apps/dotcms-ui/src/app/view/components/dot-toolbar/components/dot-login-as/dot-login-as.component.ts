@@ -38,7 +38,6 @@ import { DotMessagePipe } from '@dotcms/ui';
     styleUrls: ['./dot-login-as.component.scss'],
     templateUrl: 'dot-login-as.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    standalone: true,
     imports: [
         ReactiveFormsModule,
         DialogModule,

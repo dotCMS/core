@@ -46,7 +46,6 @@ import { DotEditPageStateControllerSeoComponent } from '../dot-edit-page-state-c
 import { DotEditPageViewAsControllerSeoComponent } from '../dot-edit-page-view-as-controller-seo/dot-edit-page-view-as-controller-seo.component';
 
 @Component({
-    standalone: true,
     selector: 'dot-edit-page-toolbar-seo',
     templateUrl: './dot-edit-page-toolbar-seo.component.html',
     styleUrls: ['./dot-edit-page-toolbar-seo.component.scss'],

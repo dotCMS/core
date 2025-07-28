@@ -33,7 +33,6 @@ import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
 const LAST_BUNDLE_USED = 'lastSelectedBundle';
 
 @Component({
-    standalone: true,
     selector: 'dot-add-to-bundle',
     templateUrl: 'dot-add-to-bundle.component.html',
     imports: [

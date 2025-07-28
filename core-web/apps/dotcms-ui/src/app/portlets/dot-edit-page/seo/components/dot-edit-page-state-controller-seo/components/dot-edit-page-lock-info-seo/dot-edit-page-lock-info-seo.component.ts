@@ -16,7 +16,6 @@ import { DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
     selector: 'dot-edit-page-lock-info-seo',
     templateUrl: './dot-edit-page-lock-info-seo.component.html',
     styleUrls: ['./dot-edit-page-lock-info-seo.component.scss'],
-    standalone: true,
     imports: [InputSwitchModule, DotSafeHtmlPipe, DotMessagePipe]
 })
 export class DotEditPageLockInfoSeoComponent {

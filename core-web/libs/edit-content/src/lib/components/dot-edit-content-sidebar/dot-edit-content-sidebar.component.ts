@@ -32,7 +32,6 @@ import { DotEditContentStore } from '../../store/edit-content.store';
  */
 @Component({
     selector: 'dot-edit-content-sidebar',
-    standalone: true,
     templateUrl: './dot-edit-content-sidebar.component.html',
     styleUrls: ['./dot-edit-content-sidebar.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,

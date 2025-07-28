@@ -14,7 +14,8 @@ import { DotAppsImportExportDialogComponent } from '../dot-apps-import-export-di
 @Component({
     selector: 'dot-apps-list',
     templateUrl: './dot-apps-list.component.html',
-    styleUrls: ['./dot-apps-list.component.scss']
+    styleUrls: ['./dot-apps-list.component.scss'],
+    standalone: false
 })
 export class DotAppsListComponent implements OnInit, OnDestroy {
     private route = inject(ActivatedRoute);

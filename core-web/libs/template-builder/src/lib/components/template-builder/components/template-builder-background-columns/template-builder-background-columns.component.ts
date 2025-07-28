@@ -9,7 +9,6 @@ import { GRID_STACK_MARGIN_HORIZONTAL, GRID_STACK_UNIT } from '../../utils/grids
     templateUrl: './template-builder-background-columns.component.html',
     styleUrls: ['./template-builder-background-columns.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    standalone: true,
     imports: [NgStyle]
 })
 export class TemplateBuilderBackgroundColumnsComponent {

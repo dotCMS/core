@@ -33,7 +33,8 @@ const cardinalities: DotRelationshipCardinality[] = [
         <dot-cardinality-selector
             [value]="cardinalityIndex"
             [disabled]="disabled"></dot-cardinality-selector>
-    `
+    `,
+    standalone: false
 })
 class HostTestComponent {
     @Input()

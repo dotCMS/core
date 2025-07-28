@@ -36,7 +36,6 @@ export interface DotLocaleCreateEditData {
  */
 @Component({
     selector: 'dot-locale-create-edit',
-    standalone: true,
     imports: [
         CommonModule,
         DropdownModule,

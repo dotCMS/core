@@ -34,7 +34,6 @@ import { DotAssetSearchStore } from './store/dot-asset-search.store';
     templateUrl: './dot-asset-search.component.html',
     styleUrls: ['./dot-asset-search.component.scss'],
     providers: [DotAssetSearchStore, DotContentSearchService, DotLanguagesService],
-    standalone: true,
     imports: [
         DotAssetCardComponent,
         DotAssetCardListComponent,

@@ -60,7 +60,8 @@ const contentTypeMock: DotCMSContentType = {
             [cardinality]="cardinalityIndex"
             [velocityVar]="velocityVar"
             [editing]="editing"></dot-new-relationships>
-    `
+    `,
+    standalone: false
 })
 class HostTestComponent {
     cardinalityIndex: number;
@@ -77,7 +78,8 @@ class HostTestComponent {
             provide: NG_VALUE_ACCESSOR,
             useExisting: forwardRef(() => MockSearchableDropdownComponent)
         }
-    ]
+    ],
+    standalone: false
 })
 class MockSearchableDropdownComponent implements ControlValueAccessor {
     @Input() data: string[];
@@ -110,7 +112,8 @@ class MockSearchableDropdownComponent implements ControlValueAccessor {
 
 @Component({
     selector: 'dot-cardinality-selector',
-    template: ''
+    template: '',
+    standalone: false
 })
 class MockCardinalitySelectorComponent {
     @Input() value: number;

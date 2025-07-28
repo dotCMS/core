@@ -31,7 +31,8 @@ export const DEBOUNCE_TIME = 5000;
 @Component({
     selector: 'dot-edit-layout',
     templateUrl: './dot-edit-layout.component.html',
-    styleUrls: ['./dot-edit-layout.component.scss']
+    styleUrls: ['./dot-edit-layout.component.scss'],
+    standalone: false
 })
 export class DotEditLayoutComponent implements OnInit, OnDestroy {
     private route = inject(ActivatedRoute);

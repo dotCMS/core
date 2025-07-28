@@ -8,7 +8,8 @@ import { DotLoginUserSystemInformation } from '@dotcms/dotcms-models';
 @Component({
     selector: 'dot-login-page-component',
     styleUrls: ['./dot-login-page.component.scss'],
-    templateUrl: 'dot-login-page.component.html'
+    templateUrl: 'dot-login-page.component.html',
+    standalone: false
 })
 /**
  * The login component allows set the background image and background color.

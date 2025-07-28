@@ -57,7 +57,8 @@ import { DOT_CONTENT_MAP, DotFieldsService } from './services/dot-fields.service
 @Component({
     selector: 'dot-form-dialog',
     template: '<ng-content></ng-content>',
-    styleUrls: []
+    styleUrls: [],
+    standalone: false
 })
 export class DotFormDialogMockComponent {
     @Output() save = new EventEmitter();

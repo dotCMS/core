@@ -6,7 +6,8 @@ import { DotPortletToolbarActions } from '@shared/models/dot-portlet-toolbar.mod
     selector: 'dot-portlet-toolbar',
     templateUrl: './dot-portlet-toolbar.component.html',
     styleUrls: ['./dot-portlet-toolbar.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    standalone: false
 })
 export class DotPortletToolbarComponent {
     @Input() title: string;

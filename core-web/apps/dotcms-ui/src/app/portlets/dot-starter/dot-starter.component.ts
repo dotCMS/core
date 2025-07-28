@@ -12,7 +12,8 @@ import { DotCurrentUser, DotPermissionsType, PermissionsType } from '@dotcms/dot
 @Component({
     selector: 'dot-starter',
     templateUrl: './dot-starter.component.html',
-    styleUrls: ['./dot-starter.component.scss']
+    styleUrls: ['./dot-starter.component.scss'],
+    standalone: false
 })
 export class DotStarterComponent implements OnInit {
     private route = inject(ActivatedRoute);
