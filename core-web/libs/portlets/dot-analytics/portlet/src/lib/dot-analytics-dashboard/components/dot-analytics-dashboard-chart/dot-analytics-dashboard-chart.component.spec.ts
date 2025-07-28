@@ -380,11 +380,27 @@ describe('DotAnalyticsDashboardChartComponent', () => {
     });
 
     describe('Chart Options Configuration', () => {
-        it('should have default chart options', () => {
+        it('should have default chart options with hidden legend for line charts', () => {
+            // This test uses 'line' chart type by default (set in beforeEach)
             const options = spectator.component['$chartOptions']();
 
             expect(options.responsive).toBe(true);
             expect(options.maintainAspectRatio).toBe(false);
+            // Line charts should have hidden legend
+            expect(options.plugins?.legend?.display).toBe(false);
+            expect(options.plugins?.legend?.position).toBe('bottom');
+        });
+
+        it('should show legend for non-line chart types', () => {
+            // Update component to use a different chart type
+            spectator.setInput('type', 'bar');
+            spectator.detectChanges();
+
+            const options = spectator.component['$chartOptions']();
+
+            expect(options.responsive).toBe(true);
+            expect(options.maintainAspectRatio).toBe(false);
+            // Non-line charts should show legend
             expect(options.plugins?.legend?.display).toBe(true);
             expect(options.plugins?.legend?.position).toBe('bottom');
         });

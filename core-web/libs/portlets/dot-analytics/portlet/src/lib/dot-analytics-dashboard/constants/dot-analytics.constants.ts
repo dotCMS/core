@@ -4,6 +4,26 @@ import { FilterOption } from '../types';
 
 export const CUSTOM_TIME_RANGE = 'CUSTOM_TIME_RANGE';
 
+/** Mapping between URL-friendly values and internal CubeJS values */
+export const TIME_RANGE_URL_MAPPING = {
+    // URL-friendly → Internal CubeJS value
+    today: 'today',
+    yesterday: 'yesterday',
+    last7days: 'from 7 days ago to now',
+    last30days: 'from 30 days ago to now',
+    custom: CUSTOM_TIME_RANGE
+} as const;
+
+/** Reverse mapping for Internal → URL-friendly */
+export const TIME_RANGE_INTERNAL_MAPPING = {
+    // Internal CubeJS value → URL-friendly
+    today: 'today',
+    yesterday: 'yesterday',
+    'from 7 days ago to now': 'last7days',
+    'from 30 days ago to now': 'last30days',
+    [CUSTOM_TIME_RANGE]: 'custom'
+} as const;
+
 /** Available time period options for analytics data filtering */
 export const TIME_PERIOD_OPTIONS: FilterOption[] = [
     { label: 'analytics.filters.time-period.today', value: 'today' },

@@ -89,7 +89,7 @@ export class DotAnalyticsDashboardChartComponent implements OnInit, OnDestroy {
             maintainAspectRatio: false,
             plugins: {
                 legend: {
-                    display: true,
+                    display: chartType !== 'line', // Hide legend for line charts
                     position: legendPosition,
                     labels: {
                         usePointStyle: true,
