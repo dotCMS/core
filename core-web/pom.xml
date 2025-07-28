@@ -129,7 +129,7 @@
                         <phase>compile</phase>
                         <configuration>
                             <skip>${skip.validate}</skip>
-                            <arguments>nx affected -t build --exclude='tag:skip:build'</arguments>
+                            <arguments>nx affected -t build --exclude='tag:skip:build' --verbose</arguments>
                         </configuration>
                     </execution>
 
