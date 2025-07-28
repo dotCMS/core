@@ -357,7 +357,7 @@ public class CacheResource {
      * Deletes the menu cache
      *  @param request   {@link HttpServletRequest}
      *  @param response  {@link HttpServletResponse}
-     * @return Response
+     * @return ResponseEntityStringView
      */
     @NoCache
     @DELETE

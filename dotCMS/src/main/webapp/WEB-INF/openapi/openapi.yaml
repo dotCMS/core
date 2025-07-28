@@ -3810,7 +3810,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityWorkflowHistoryCommentsView"
+                $ref: "#/components/schemas/ResponseEntityStringView"
           description: Action(s) returned successfully
         "500":
           description: General Error
