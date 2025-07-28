@@ -1561,7 +1561,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     }
 
-    String[] unboundStringReplacements = Config.getStringArrayProperty("ELASTICSEARCH_UNBOUND_STRING_REPLACEMENTS", new String[]{
+    static Lazy<String[]> unboundStringReplacements = Lazy.of(()->Config.getStringArrayProperty("ELASTICSEARCH_UNBOUND_STRING_REPLACEMENTS", new String[]{
         "live:",
         "working:",
         " + ",
@@ -1570,7 +1570,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         ":{}",
         " :?",
         ":*"
-    });
+    }));
 
     @VisibleForTesting
     boolean validateESQueryProperlyBound(@Nonnull String luceneQuery)  {
@@ -1579,7 +1579,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
 
         String testString = luceneQuery;
-        for(String unboundStringReplacement : unboundStringReplacements){
+        for(String unboundStringReplacement : unboundStringReplacements.get()){
             testString=testString.replace(unboundStringReplacement, "");
         }
         return (testString.contains(":") && testString.contains("+"));
