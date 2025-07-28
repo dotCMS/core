@@ -18,6 +18,7 @@ import com.dotcms.contenttype.transform.contenttype.DbContentTypeTransformer;
 import com.dotcms.contenttype.transform.contenttype.ImplClassContentTypeTransformer;
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.exception.ExceptionUtil;
+import com.dotmarketing.util.IdentifierValidator;
 import javax.validation.constraints.NotNull;
 import com.dotcms.util.DotPreconditions;
 import com.dotmarketing.business.APILocator;
@@ -63,6 +64,7 @@ import static com.liferay.util.StringPool.BLANK;
 import static com.liferay.util.StringPool.COMMA;
 import static com.liferay.util.StringPool.PERCENT;
 
+
 /**
  * This is the default implementation of the {@link ContentTypeFactory} interface.
  * <p>This class provides the API with SQL-level access to retrieve different pieces of information
@@ -74,6 +76,7 @@ import static com.liferay.util.StringPool.PERCENT;
 public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
     private static final String LOAD_CONTENTTYPE_DETAILS_FROM_CACHE = "LOAD_CONTENTTYPE_DETAILS_FROM_CACHE";
+    private static final String INODE_COLUMN = "inode";
     final ContentTypeSql contentTypeSql;
   final ContentTypeCache2 cache;
 
@@ -209,7 +212,11 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
   @Override
   public List<ContentType> findUrlMapped() throws DotDataException {
-      return dbSearch(" url_map_pattern is not null ", BaseContentType.ANY.getType(), "mod_date", -1, 0, null);
+      try {
+          return dbSearch(" url_map_pattern is not null ", BaseContentType.ANY.getType(), "mod_date", -1, 0, null);
+      } catch (DotSecurityException e) {
+          throw new DotDataException("Security validation failed: " + e.getMessage(), e);
+      }
   }
 
   @Override
@@ -236,26 +243,19 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     @Override
     public List<ContentType> search(String search, int baseType, String orderBy, int limit, int offset,final String siteId)
             throws DotDataException {
-        return UtilMethods.isSet(siteId)
-                ? dbSearch(search, baseType, orderBy, limit, offset, List.of(siteId))
-                : dbSearch(search, baseType,orderBy, limit, offset, null);
+        try {
+            return UtilMethods.isSet(siteId)
+                    ? dbSearch(search, baseType, orderBy, limit, offset, List.of(siteId))
+                    : dbSearch(search, baseType,orderBy, limit, offset, null);
+        } catch (DotSecurityException e) {
+            throw new DotDataException("Security validation failed: " + e.getMessage(), e);
+        }
     }
 
   @Override
-  public List<ContentType> search(String search, BaseContentType baseType, String orderBy, int limit, int offset)
-      throws DotDataException {
+  public List<ContentType> search(String search, BaseContentType baseType, String orderBy,
+      int limit, int offset) throws DotDataException {
     return search(search,baseType.getType(),orderBy,limit,offset);
-  }
-
-  @Override
-  public List<ContentType> search(String search, String orderBy, int limit, int offset) throws DotDataException {
-
-    return search(search, BaseContentType.ANY, orderBy, limit, offset);
-  }
-
-  @Override
-  public List<ContentType> search(String search, String orderBy) throws DotDataException {
-    return search(search, BaseContentType.ANY, orderBy, Config.getIntProperty("PER_PAGE", 50), 0);
   }
 
   @Override
@@ -274,9 +274,23 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
   }
 
   @Override
+  public List<ContentType> search(String search, String orderBy, int limit, int offset) throws DotDataException {
+    return search(search, BaseContentType.ANY, orderBy, limit, offset);
+  }
+
+  @Override
+  public List<ContentType> search(String search, String orderBy) throws DotDataException {
+    return search(search, BaseContentType.ANY, orderBy, Config.getIntProperty("PER_PAGE", 50), 0);
+  }
+
+  @Override
   public List<ContentType> search(final List<String> sites, final String search, final int type,
                                   final String orderBy, final int limit, final int offset) throws DotDataException {
-      return dbSearch(search, type, orderBy, limit, offset, sites);
+      try {
+          return dbSearch(search, type, orderBy, limit, offset, sites);
+      } catch (DotSecurityException e) {
+          throw new DotDataException("Security validation failed: " + e.getMessage(), e);
+      }
   }
 
   @Override
@@ -722,8 +736,9 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
  *
  * @throws DotDataException An error occurred when retrieving information from the database.
  */
+ @CloseDBIfOpened
  private List<ContentType> dbSearch(final String search, final int baseType, String orderBy,
-                                    int limit, final int offset, final List<String> siteIds) throws DotDataException {
+                                    int limit, final int offset, final List<String> siteIds) throws DotDataException, DotSecurityException {
     if (limit == 0) {
         throw new DotDataException("The 'limit' param must be greater than 0");
     }
@@ -736,35 +751,72 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     	orderBy = ContentTypeFactory.MOD_DATE_COLUMN;
     }
 
-    String siteIdsParam = this.formatSiteIdsToSqlQuery(siteIds);
-    siteIdsParam = UtilMethods.isSet(siteIdsParam) ? siteIdsParam : "'" + PERCENT + "'";
+    // SECURITY: Validate and prepare site parameters
+    List<String> validatedSites = validateSiteIds(siteIds);
+    
+    // SECURITY: Create DotConnect early for connection access
     final DotConnect dc = new DotConnect();
-
+    
+    // SECURITY: Build SQL with proper parameterization (no String.format injection)
+    StringBuilder sqlBuilder = new StringBuilder();
     if (LOAD_FROM_CACHE.get()) {
-        dc.setSQL(String.format(ContentTypeSql.SELECT_INODE_ONLY_QUERY_CONDITION,
-                SQLUtil.sanitizeCondition(searchCondition.condition),
-                SQLUtil.sanitizeCondition(siteIdsParam),
-                orderBy));
+        sqlBuilder.append(ContentTypeSql.SELECT_ONLY_INODE_FIELD);
     } else {
-        dc.setSQL(String.format(ContentTypeSql.SELECT_QUERY_CONDITION,
-                SQLUtil.sanitizeCondition(searchCondition.condition),
-                SQLUtil.sanitizeCondition(siteIdsParam),
-                orderBy));
+        sqlBuilder.append(ContentTypeSql.SELECT_ALL_STRUCTURE_FIELDS_EXCLUDE_MARKED_FOR_DELETE);
     }
+    
+    sqlBuilder.append(" and (inode.inode like ? or lower(name) like ? or velocity_var_name like ?) ");
+    
+    // Add search condition if present (already sanitized)
+    if (UtilMethods.isSet(searchCondition.condition)) {
+        sqlBuilder.append(SQLUtil.sanitizeCondition(searchCondition.condition));
+    }
+    
+    // SECURITY: Add sites filter using parameterized LIKE clauses for substring matching
+    if (!validatedSites.isEmpty()) {
+        // Build multiple OR conditions with proper parameterization and escaping
+        String likeConditions = validatedSites.stream()
+            .map(site -> "host LIKE ? ESCAPE '\\'")
+            .collect(Collectors.joining(" OR "));
+        sqlBuilder.append(" AND (").append(likeConditions).append(") ");
+    } else {
+        // No sites specified - match all non-NULL hosts (preserves original behavior)
+        sqlBuilder.append(" AND host IS NOT NULL ");
+    }
+    
+    sqlBuilder.append(" and structuretype >= ? and structuretype <= ? ");
+    
+    if (LOAD_FROM_CACHE.get()) {
+        sqlBuilder.append(ContentTypeSql.NON_MARKED_FOR_DELETION);
+    }
+    
+    sqlBuilder.append(" order by ").append(orderBy);
+    
+    // SECURITY: Execute with proper parameter binding
+    dc.setSQL(sqlBuilder.toString());
     dc.setMaxRows(limit);
     dc.setStartRow(offset);
-    // inode like
-    dc.addParam( searchCondition.search );
-    // lower(name) like
-    dc.addParam(searchCondition.search.toLowerCase());
-    // velocity_var_name like
-    dc.addParam( searchCondition.search );
-    // Look for types of the specified base Content Type
-    dc.addParam(baseType);
-    // If any base Content Type must be retrieved -- type 0 -- then include all base types
-    dc.addParam((baseType == 0) ? 100000 : baseType);
+    
+    // Add search parameters
+    dc.addParam(searchCondition.search);                      // inode like ?
+    dc.addParam(searchCondition.search.toLowerCase());        // lower(name) like ?
+    dc.addParam(searchCondition.search);                      // velocity_var_name like ?
+    
+    // Add site parameters for LIKE clauses (substring matching with escaping)
+    if (!validatedSites.isEmpty()) {
+        // Add escaped LIKE patterns with wildcards: %escaped_site%
+        for (String site : validatedSites) {
+            String escapedPattern = "%" + escapeLikePattern(site) + "%";
+            dc.addParam(escapedPattern);
+        }
+    }
+    // Note: No parameter needed for "host IS NOT NULL"
+    
+    // Add content type parameters
+    dc.addParam(baseType);                                     // structuretype >= ?
+    dc.addParam((baseType == 0) ? 100000 : baseType);        // structuretype <= ?
 
-    Logger.debug(this, () -> "QUERY: " + dc.getSQL());
+    Logger.debug(this, () -> "SECURE QUERY: " + dc.getSQL());
 
     if (LOAD_FROM_CACHE.get()) {
         return dc.loadObjectResults()
@@ -779,21 +831,65 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     } else {
         return new DbContentTypeTransformer(dc.loadObjectResults()).asList();
     }
-  }
+}
+
+    
+    /**
+     * SECURITY: Escapes LIKE pattern special characters to prevent LIKE injection attacks.
+     * This method escapes the wildcard characters %, _, and the escape character \ itself.
+     * 
+     * @param input The input string to escape for use in LIKE patterns
+     * @return The escaped string safe for use in LIKE patterns with ESCAPE '\'
+     */
+    private String escapeLikePattern(String input) {
+        if (input == null) {
+            return null;
+        }
+        // Escape backslash first to avoid double-escaping
+        return input.replace("\\", "\\\\")
+                   .replace("%", "\\%")
+                   .replace("_", "\\_");
+    }
 
     /**
-     * Appends the list of Site Identifiers to a SQL query that will allow to look for more than one
-     * Site.
-     *
-     * @param siteIds The list of Site Identifiers to search for.
-     *
-     * @return A SQL-ready string that can be used in a WHERE clause to lok for data in more than
-     * one Site.
+     * SECURITY: Simplified site validation that returns only valid site IDs.
+     * Used for exact matching queries (host = ?).
      */
-    private String formatSiteIdsToSqlQuery(final List<String> siteIds) {
-        return UtilMethods.isNotSet(siteIds) ? BLANK : siteIds.stream()
-                .map(site -> "'" + PERCENT + site + PERCENT +"'").collect(Collectors.joining(" OR host LIKE "));
+    private List<String> validateSiteIds(final List<String> siteIds) throws DotSecurityException {
+        if (UtilMethods.isNotSet(siteIds)) {
+            return Collections.emptyList(); // Will match all hosts
+        }
+        
+        List<String> validSites = new ArrayList<>();
+        boolean hasInvalidSites = false;
+        
+        // SECURITY: Validate site IDs for exact matching (no LIKE escaping needed)
+        for (String siteId : siteIds) {
+            if (siteId != null) {
+                // Use basic validation without LIKE escaping since we're doing exact matches
+                if (IdentifierValidator.isValid(siteId, IdentifierValidator.SITE_PROFILE)) {
+                    validSites.add(siteId); // Use original unescaped site ID for exact match
+                } else {
+                    hasInvalidSites = true;
+                    Logger.warn(this, "Invalid site ID rejected during validation: " + siteId);
+                }
+            } else {
+                hasInvalidSites = true;
+                Logger.warn(this, "Null site ID provided");
+            }
+        }
+        
+        // SECURITY: If ANY site IDs are invalid, this indicates a potentially malicious request.
+        // Per security requirements: reject the entire request rather than processing partial results.
+        if (hasInvalidSites) {
+            Logger.warn(this, "Request contained invalid site IDs - rejecting entire request for security");
+            throw new DotSecurityException("Invalid site identifiers provided in request");
+        }
+        
+        return validSites;
     }
+
+
 
   private int dbCount(String search, int baseType) throws DotDataException {
     int bottom = (baseType == 0) ? 0 : baseType;
