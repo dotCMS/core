@@ -4,7 +4,8 @@
 @let isError = $isError();
 @let isLoading = $isLoading();
 @let isEmpty = $isEmpty();
-@let shouldUsePieLayout = (type === 'pie' || type === 'doughnut') && !isLoading && !isEmpty && !isError;
+@let shouldUsePieLayout =
+    (type === 'pie' || type === 'doughnut') && !isLoading && !isEmpty && !isError;
 
 <p-card
     class="h-full chart-card"

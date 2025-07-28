@@ -78,10 +78,12 @@ export class DotAnalyticsDashboardTableComponent {
 
     /** Pre-computed column configurations with CSS classes and skeleton widths */
     protected readonly $columnConfigs = computed(() => {
-        return this.columns.map(column => ({
+        return this.columns.map((column) => ({
             ...column,
             cssClass: `text-${column.alignment || 'left'}`,
-            skeletonWidth: SKELETON_WIDTH_MAP[column.type as keyof typeof SKELETON_WIDTH_MAP] || SKELETON_WIDTH_MAP.text
+            skeletonWidth:
+                SKELETON_WIDTH_MAP[column.type as keyof typeof SKELETON_WIDTH_MAP] ||
+                SKELETON_WIDTH_MAP.text
         }));
     });
 
