@@ -27,8 +27,8 @@ public class RuleAPITest {
     List<Conditionlet<?>> conditionlets = APILocator.getRulesAPI().findConditionlets();
 
     Assert.assertTrue(conditionlets.size() > 5);
-    assert conditionlets.stream().anyMatch(
-        c -> c.getClass().getName().equals("com.dotmarketing.portlets.rules.conditionlet.ReferringURLConditionlet"));
+    Assert.assertTrue(conditionlets.stream().anyMatch(
+        c -> c.getClass().getName().equals("com.dotmarketing.portlets.rules.conditionlet.ReferringURLConditionlet")));
 
 
   }
@@ -40,8 +40,8 @@ public class RuleAPITest {
 
     Assert.assertTrue(actionlets.size() > 5);
 
-    assert actionlets.stream().anyMatch(
-        c -> c.getClass().getName().equals("com.dotmarketing.portlets.rules.actionlet.SendRedirectActionlet"));
+    Assert.assertTrue(actionlets.stream().anyMatch(
+        c -> c.getClass().getName().equals("com.dotmarketing.portlets.rules.actionlet.SendRedirectActionlet")));
 
 
   }
