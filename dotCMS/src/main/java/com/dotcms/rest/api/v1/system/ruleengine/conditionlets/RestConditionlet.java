@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.google.common.collect.ImmutableList;
 import com.dotcms.repackage.com.google.common.collect.ImmutableMap;
 import javax.validation.constraints.NotNull;
-import org.hibernate.validator.constraints.Length;
+import javax.validation.constraints.Size;
 import com.dotcms.rest.api.Validated;
 
 import com.dotmarketing.portlets.rules.parameter.ParameterDefinition;
@@ -21,7 +21,7 @@ public final class RestConditionlet extends Validated {
     public final String i18nKey;
 
     @NotNull
-    @Length(min = 0, max = 100)
+    @Size(min = 0, max = 100)
     public final Map<String, ParameterDefinition> parameterDefinitions;
 
     private RestConditionlet(Builder builder) {
