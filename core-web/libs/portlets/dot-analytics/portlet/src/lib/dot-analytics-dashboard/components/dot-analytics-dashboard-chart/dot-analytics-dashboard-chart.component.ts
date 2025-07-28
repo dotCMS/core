@@ -199,7 +199,7 @@ export class DotAnalyticsDashboardChartComponent {
                     !dataset.data ||
                     dataset.data.length === 0 ||
                     dataset.data.every(
-                        (value) => value === 0 || value === null || value === undefined
+                        (value) => value === null || value === undefined
                     )
             )
         );

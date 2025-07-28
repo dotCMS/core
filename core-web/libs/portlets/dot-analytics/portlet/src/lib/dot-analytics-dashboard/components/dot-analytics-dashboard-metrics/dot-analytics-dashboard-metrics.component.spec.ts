@@ -14,7 +14,14 @@ describe('DotAnalyticsDashboardMetricsComponent', () => {
     });
 
     beforeEach(() => {
-        spectator = createComponent();
+        spectator = createComponent({
+            props: {
+                name: 'test.metric',
+                value: 100,
+                status: ComponentStatus.LOADED
+            } as unknown,
+            detectChanges: false
+        });
 
         // Setup the mock return value
         const messageService = spectator.inject(DotMessageService);
@@ -200,12 +207,12 @@ describe('DotAnalyticsDashboardMetricsComponent', () => {
         });
 
         it('should detect empty state correctly', () => {
-            // Empty when value is 0
+            // Not empty when value is 0 (zero is a valid metric)
             spectator.setInput('name', 'test.metric');
             spectator.setInput('value', 0);
             spectator.setInput('status', ComponentStatus.LOADED);
             spectator.detectChanges();
-            expect(spectator.component['$isEmpty']()).toBe(true);
+            expect(spectator.component['$isEmpty']()).toBe(false);
 
             // Empty when value is null
             spectator.setInput('value', null);

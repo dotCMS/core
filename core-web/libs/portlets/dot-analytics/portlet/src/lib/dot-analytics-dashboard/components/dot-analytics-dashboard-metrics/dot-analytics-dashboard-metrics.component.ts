@@ -89,6 +89,6 @@ export class DotAnalyticsDashboardMetricsComponent {
         }
 
         // Show empty state when we have no data or insufficient data
-        return value === null || value === undefined || value === 0;
+        return value === null || value === undefined;
     });
 }
