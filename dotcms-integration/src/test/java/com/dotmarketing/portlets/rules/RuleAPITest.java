@@ -5,6 +5,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.rules.actionlet.RuleActionlet;
 import com.dotmarketing.portlets.rules.conditionlet.Conditionlet;
 import java.util.List;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -25,7 +26,7 @@ public class RuleAPITest {
 
     List<Conditionlet<?>> conditionlets = APILocator.getRulesAPI().findConditionlets();
 
-    assert conditionlets.size() > 5;
+    Assert.assertTrue(conditionlets.size() > 5);
     assert conditionlets.stream().anyMatch(
         c -> c.getClass().getName().equals("com.dotmarketing.portlets.rules.conditionlet.ReferringURLConditionlet"));
 
@@ -37,7 +38,7 @@ public class RuleAPITest {
 
     List<RuleActionlet> actionlets = APILocator.getRulesAPI().findActionlets();
 
-    assert actionlets.size() > 0;
+    Assert.assertTrue(actionlets.size() > 5);
 
     assert actionlets.stream().anyMatch(
         c -> c.getClass().getName().equals("com.dotmarketing.portlets.rules.actionlet.SendRedirectActionlet"));
