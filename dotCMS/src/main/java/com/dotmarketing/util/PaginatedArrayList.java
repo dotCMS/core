@@ -22,6 +22,7 @@ public class PaginatedArrayList<E> extends ArrayList<E> {
 
 	public PaginatedArrayList() {
 		super();
+		this.totalResults = 0;
 	}
 
 	/**
