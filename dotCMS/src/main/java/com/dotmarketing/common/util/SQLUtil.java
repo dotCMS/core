@@ -11,7 +11,9 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
+import com.dotmarketing.util.SecurityThreatLogger;
 import com.dotmarketing.util.UtilMethods;
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.liferay.util.StringPool;
 import com.liferay.util.StringUtil;
 import net.sourceforge.squirrel_sql.fw.preferences.BaseQueryTokenizerPreferenceBean;
@@ -27,10 +29,22 @@ import org.apache.commons.lang.StringUtils;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 import static com.liferay.util.StringPool.SPACE;
+
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.Array;
+import java.util.Arrays;
+import java.util.Collections;
 
 /**
  * Utility class for sanitizing, tokenizing, and providing several common-use methods to create,
@@ -64,6 +78,59 @@ public class SQLUtil {
                                                                         .addAll( EVIL_SQL_CONDITION_WORDS )
                                                                         .addAll( EVIL_SQL_PARAMETER_WORDS )
                                                                         .build();
+
+    // SECURITY: Pre-compiled patterns cache to prevent repeated Pattern.compile() calls
+    private static final Map<String, Pattern> EVIL_WORD_PATTERNS = new HashMap<>();
+    
+    static {
+        // Pre-compile patterns for all evil words to improve performance and prevent DoS
+        for (String evilWord : EVIL_SQL_CONDITION_WORDS) {
+            EVIL_WORD_PATTERNS.put(evilWord, createEvilWordPattern(evilWord));
+        }
+        for (String evilWord : EVIL_SQL_PARAMETER_WORDS) {
+            EVIL_WORD_PATTERNS.put(evilWord, createEvilWordPattern(evilWord));
+        }
+    }
+
+            /**
+         * Creates appropriate regex pattern for evil word detection that matches the original boundary logic.
+         * Must consider '-' and '_' as valid SQL characters (not boundaries) to maintain compatibility.
+         */
+        private static Pattern createEvilWordPattern(String evilWord) {
+            if (evilWord.equals("--")) {
+                // Special case for SQL comments - only match when not surrounded by valid SQL characters
+                // This matches the original boundary logic for "--" 
+                return Pattern.compile("(?i)(?<![a-zA-Z0-9_-])" + Pattern.quote(evilWord) + "(?![a-zA-Z0-9_-])");
+            } else if (evilWord.equals(";")) {
+                // Special case for semicolon - only match when not surrounded by valid SQL characters
+                return Pattern.compile("(?i)(?<![a-zA-Z0-9_-])" + Pattern.quote(evilWord) + "(?![a-zA-Z0-9_-])");
+            } else if (evilWord.endsWith(" ")) {
+                // Words with trailing spaces - check for non-SQL-character before and space after
+                String wordPart = evilWord.substring(0, evilWord.length() - 1);
+                return Pattern.compile("(?i)(?<![a-zA-Z0-9_-])" + Pattern.quote(wordPart) + "\\s");
+            } else {
+                // Regular words - use negative lookbehind/lookahead for valid SQL characters
+                // This matches the original isValidSQLCharacter logic (alphanumeric, -, _)
+                return Pattern.compile("(?i)(?<![a-zA-Z0-9_-])" + Pattern.quote(evilWord) + "(?![a-zA-Z0-9_-])");
+            }
+        }
+
+    // SECURITY: Rate limiting for security logging to prevent log flooding
+
+
+    /**
+     * SECURITY: Logs malicious SQL injection attempts securely for threat intelligence
+     * while preventing information disclosure and log injection attacks.
+     * 
+     * @param suspiciousInput The potentially malicious input to log
+     * @param detectedWord The specific evil word that was detected
+     * @param sourceContext Additional context about the source (API endpoint, etc.)
+     */
+    private static void logSecurityThreat(final String suspiciousInput, final String detectedWord, final String sourceContext) {
+        SecurityThreatLogger.logSQLInjectionAttempt(suspiciousInput, detectedWord, sourceContext);
+    }
+
+
 
 	private final static Set<String> ORDERBY_WHITELIST= ImmutableSet.of(
 			"title","upper(title)","filename", "moddate", "tagname","pageUrl",
@@ -328,6 +395,21 @@ public class SQLUtil {
 
         for(String evilWord : evilWords){
 
+            // SECURITY: Use case-insensitive pattern matching to prevent bypass
+            // Check for evil word patterns regardless of case variations
+            Pattern patternToFind = EVIL_WORD_PATTERNS.get(evilWord);
+            if (patternToFind != null && patternToFind.matcher(query).find()) {
+                // SECURITY: Log attack details for threat intelligence (securely)
+                logSecurityThreat(query, evilWord, "SQLUtil.sanitizeSQL:pattern-match");
+                
+                // SECURITY: Do not log user input to prevent information disclosure in standard logs
+                final String message = "Invalid or pernicious sql parameter detected";
+                Logger.error(SQLUtil.class, message, new DotStateException(message));
+                securityLoggerServiceAPI.logInfo(SQLUtil.class, message);
+                return StringPool.BLANK;
+            }
+
+            // Legacy boundary checking as backup (keep existing logic)
             final int index = parameterLowercase.indexOf(evilWord);
 
             //check if the order by requested have any other command
@@ -341,7 +423,11 @@ public class SQLUtil {
                                     )
                     )) {
 
-				final String message = "Invalid or pernicious sql parameter passed in : " + query;
+				// SECURITY: Log attack details for threat intelligence (securely)
+				logSecurityThreat(query, evilWord, "SQLUtil.sanitizeSQL:boundary-check");
+				
+				// SECURITY: Do not log user input to prevent information disclosure in standard logs
+				final String message = "Invalid or pernicious sql parameter detected";
 				Logger.error(SQLUtil.class, message, new DotStateException(message));
 				securityLoggerServiceAPI.logInfo(SQLUtil.class, message);
 
@@ -425,5 +511,92 @@ public class SQLUtil {
 		}
 		return orderByParam;
 	}
+
+    /**
+     * SECURITY: Create safe parameterized IN clause for ArrayList parameters.
+     * Handles both databases that support setArray() and those that don't (like MySQL).
+     * 
+     * @param connection Database connection
+     * @param parameterValues List of values for the IN clause
+     * @param sqlType SQL type (e.g., "VARCHAR", "BIGINT")
+     * @return SafeInClause containing the SQL fragment and how to set parameters
+     */
+    public static SafeInClause createSafeInClause(Connection connection, List<String> parameterValues, String sqlType) {
+        if (parameterValues == null || parameterValues.isEmpty()) {
+            throw new IllegalArgumentException("Parameter values cannot be null or empty for IN clause");
+        }
+
+        try {
+            // Try to use setArray() for databases that support it (PostgreSQL, H2, etc.)
+            Array array = connection.createArrayOf(sqlType, parameterValues.toArray());
+            return new SafeInClause(" = ANY(?)", Arrays.asList(array), true);
+        } catch (SQLException | AbstractMethodError e) {
+            // Fall back to multiple ? placeholders for MySQL and other databases
+            String placeholders = String.join(",", Collections.nCopies(parameterValues.size(), "?"));
+            return new SafeInClause(" IN (" + placeholders + ")", new ArrayList<>(parameterValues), false);
+        }
+    }
+
+    /**
+     * SECURITY: Create safe parameterized IN clause for Long/Integer ArrayList parameters.
+     */
+    public static SafeInClause createSafeInClauseForNumbers(Connection connection, List<? extends Number> parameterValues) {
+        if (parameterValues == null || parameterValues.isEmpty()) {
+            throw new IllegalArgumentException("Parameter values cannot be null or empty for IN clause");
+        }
+
+        try {
+            // Convert numbers to strings for array creation
+            String[] stringValues = parameterValues.stream()
+                .map(String::valueOf)
+                .toArray(String[]::new);
+            Array array = connection.createArrayOf("BIGINT", stringValues);
+            return new SafeInClause(" = ANY(?)", Arrays.asList(array), true);
+        } catch (SQLException | AbstractMethodError e) {
+            // Fall back to multiple ? placeholders
+            String placeholders = String.join(",", Collections.nCopies(parameterValues.size(), "?"));
+            return new SafeInClause(" IN (" + placeholders + ")", new ArrayList<>(parameterValues), false);
+        }
+    }
+
+    /**
+     * Helper class to encapsulate safe IN clause information
+     */
+    public static class SafeInClause {
+        public final String sqlFragment;
+        public final List<Object> parameters;
+        public final boolean usesArray;
+
+        public SafeInClause(String sqlFragment, List<Object> parameters, boolean usesArray) {
+            this.sqlFragment = sqlFragment;
+            this.parameters = parameters;
+            this.usesArray = usesArray;
+        }
+
+        /**
+         * Set parameters on a PreparedStatement starting at the given index
+         * @param stmt PreparedStatement to set parameters on
+         * @param startIndex Starting parameter index (1-based)
+         * @return Next available parameter index
+         */
+        public int setParameters(PreparedStatement stmt, int startIndex) throws SQLException {
+            if (usesArray) {
+                stmt.setArray(startIndex, (Array) parameters.get(0));
+                return startIndex + 1;
+            } else {
+                for (int i = 0; i < parameters.size(); i++) {
+                    Object param = parameters.get(i);
+                    if (param instanceof String) {
+                        stmt.setString(startIndex + i, (String) param);
+                    } else if (param instanceof Number) {
+                        stmt.setLong(startIndex + i, ((Number) param).longValue());
+                    } else {
+                        stmt.setObject(startIndex + i, param);
+                    }
+                }
+                return startIndex + parameters.size();
+            }
+        }
+    }
 
 }
