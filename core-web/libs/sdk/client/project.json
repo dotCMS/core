@@ -29,7 +29,6 @@
                 "project": "libs/sdk/client/package.json",
                 "entryFile": "libs/sdk/client/src/lib/deprecated/editor/sdk-editor-vtl.ts",
                 "external": ["react/jsx-runtime"],
-                "rollupConfig": "@nx/react/plugins/bundle-rollup",
                 "compiler": "tsc",
                 "extractCss": false,
                 "minify": true
