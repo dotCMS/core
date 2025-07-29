@@ -29,7 +29,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
         align-items: center;
         gap: 0.5rem;
     }
-    .nameTD .assetRef span + span{
+    .nameTD .assetName {
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
@@ -761,7 +761,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
                     '    <td class="nameTD" id="' + asset.inode + '-NameTD">\n' +
                     '    <a class="assetRef" id="' + asset.inode + '-DIV" href="javascript:;">\n' +
                     '        <span class="folderIcon" id="' + asset.inode + '-ContentIcon"></span>\n' +
-                    '        <span id="' + asset.inode + '-NameSPAN" title="' + asset.name + '">' + asset.name + '</span>\n' +
+                    '        <span class="assetName" id="' + asset.inode + '-NameSPAN" title="' + asset.name + '">' + asset.name + '</span>\n' +
                     '    </a>\n' +
                     '    </td>\n' +
                     '    <td class="menuTD" id="' + asset.inode + '-MenuTD">\n' +
@@ -851,7 +851,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
                         '   <td class="nameTD" id="' + asset.inode + '-NameTD">' +
                         '<a class="assetRef" id="' + asset.inode + '-DIV" href="javascript:;">\n' +
                         '<span class="uknIcon ' + assetIcon + '" id="' + asset.inode + '-ContentIcon"></span>\n' +
-                        '<span id="' + asset.inode + '-NameSPAN" title="' + assetFullName +'" >' + name + '</span>' +
+                        '<span class="assetName" id="' + asset.inode + '-NameSPAN" title="' + assetFullName +'" >' + name + '</span>' +
                         '</a>' +
                         '   </td>\n' +
                         '   <td class="menuTD" id="' + asset.inode + '-MenuTD">\n' +
@@ -861,7 +861,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
                         '   <td class="nameTD" id="' + asset.inode + '-NameTD">' +
                         '<a class="assetRef" id="' + asset.inode + '-DIV" href="javascript:;" data-url="' +  asset.pageURI +'">\n' +
                         '<span style="pointer-events: none" class="uknIcon ' + assetIcon + '" id="' + asset.inode + '-ContentIcon"></span>\n' +
-                        '<span style="pointer-events: none" id="' + asset.inode + '-NameSPAN" title="' + assetFullName +'" >' + name + '</span>' +
+                        '<span style="pointer-events: none" class="assetName" id="' + asset.inode + '-NameSPAN" title="' + assetFullName +'" >' + name + '</span>' +
                         '</a>' +
                         '   </td>\n' +
                         '   <td class="menuTD" id="' + asset.inode + '-MenuTD">\n' +
