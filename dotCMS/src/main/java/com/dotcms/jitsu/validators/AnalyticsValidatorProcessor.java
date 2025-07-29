@@ -1,12 +1,10 @@
 package com.dotcms.jitsu.validators;
 
 import com.dotcms.analytics.metrics.EventType;
-import com.dotcms.util.JsonUtil;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.json.JSONObject;
 import com.dotmarketing.util.Logger;
-import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -83,7 +81,7 @@ public class AnalyticsValidatorProcessor {
         new JsonObjectTypeValidator(),
         new JsonArrayTypeValidator(),
         new DateValidator(),
-        new SiteKeyValidator()
+        new SiteAuthValidator()
     );
 
     public Validators getGlobalValidators(){
