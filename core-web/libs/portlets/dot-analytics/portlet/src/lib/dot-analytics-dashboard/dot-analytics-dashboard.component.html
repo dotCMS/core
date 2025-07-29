@@ -1,3 +1,11 @@
+@let metricsData = $metricsData();
+@let timelineData = $pageviewsTimelineData();
+@let timelineStatus = $pageViewTimeLine().status;
+@let deviceBreakdownData = $deviceBreakdownData();
+@let deviceBreakdownStatus = $pageViewDeviceBrowsers().status;
+@let topPagesData = $topPagesTableData();
+@let topPagesStatus = $topPagesTable().status;
+
 <div class="analytics-dashboard flex flex-column" data-testid="analytics-dashboard">
     <!-- Filters Row - Gray Background -->
     <div class="analytics-dashboard__filters-row">
@@ -5,8 +13,6 @@
             class="analytics-dashboard__filters-container flex justify-content-between align-items-center">
             <dot-analytics-dashboard-filters
                 class="analytics-dashboard__filters"
-                [selectedTimeRange]="$currentTimeRange()"
-                (timeRangeChanged)="onTimeRangeChange($event)"
                 data-testid="analytics-filters" />
 
             <p-button
@@ -23,10 +29,10 @@
 
     <!-- Dashboard Row - White Background -->
     <div class="analytics-dashboard__dashboard-row">
-        <div class="analytics-dashboard__dashboard-container flex flex-column gap-4">
+        <div class="analytics-dashboard__dashboard-container flex flex-column gap-3">
             <!-- Metrics Section -->
             <div class="analytics-dashboard__metrics flex gap-3 flex-wrap">
-                @for (metric of $metricsData(); track metric.name) {
+                @for (metric of metricsData; track metric.name) {
                     <dot-analytics-dashboard-metrics
                         class="analytics-dashboard__metric-card"
                         [name]="metric.name"
@@ -45,8 +51,8 @@
                     <dot-analytics-dashboard-chart
                         [title]="'analytics.charts.pageviews-timeline.title' | dm"
                         type="line"
-                        [data]="$pageviewsTimelineData()"
-                        [status]="$pageViewTimeLine().status"
+                        [data]="timelineData"
+                        [status]="timelineStatus"
                         height="21.875rem"
                         data-testid="analytics-timeline-chart" />
                 </div>
@@ -59,8 +65,8 @@
                     <dot-analytics-dashboard-chart
                         [title]="'analytics.charts.device-breakdown.title' | dm"
                         type="pie"
-                        [data]="$deviceBreakdownData()"
-                        [status]="$pageViewDeviceBrowsers().status"
+                        [data]="deviceBreakdownData"
+                        [status]="deviceBreakdownStatus"
                         height="23.125rem"
                         data-testid="analytics-device-chart" />
                 </div>
@@ -68,8 +74,8 @@
                 <!-- Table -->
                 <div class="analytics-dashboard__table">
                     <dot-analytics-dashboard-table
-                        [data]="$topPagesTableData()"
-                        [status]="$topPagesTable().status"
+                        [data]="topPagesData"
+                        [status]="topPagesStatus"
                         data-testid="analytics-table" />
                 </div>
             </div>
