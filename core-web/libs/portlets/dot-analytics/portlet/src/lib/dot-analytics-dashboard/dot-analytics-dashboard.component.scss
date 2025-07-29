@@ -35,10 +35,24 @@
         width: 100%;
     }
 
+    // Element: metrics (responsive layout)
+    &__metrics {
+        // Mobile: Stack vertically
+        @media (max-width: 991px) {
+            flex-direction: column !important;
+        }
+    }
+
     // Element: metric-card
     &__metric-card {
         flex: 1;
         min-width: 280px;
+
+        // Mobile: Full width
+        @media (max-width: 991px) {
+            min-width: auto;
+            width: 100%;
+        }
 
         // Override PrimeNG card styles to add border
         ::ng-deep .p-card {
