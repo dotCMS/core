@@ -76,7 +76,12 @@ export class DragHandleDirective implements AfterViewInit, OnDestroy {
                 pluginKey: this.pluginKey(),
                 tippyOptions: this.tippyOptions(),
                 onNodeChange: (data) => {
-                    this.handleNodeChange(data);
+                    const onNodeChange = this.onNodeChange();
+                    if (onNodeChange) {
+                        onNodeChange(data);
+                    } else {
+                        this.handleNodeChange(data.node);
+                    }
                 }
             })
         );
@@ -89,8 +94,7 @@ export class DragHandleDirective implements AfterViewInit, OnDestroy {
         this.cleanupPlugin();
     }
 
-    private handleNodeChange(data: { node: Node | null; editor: Editor; pos: number }): void {
-        const { node } = data;
+    private handleNodeChange(node: Node | null): void {
         const element = this.elementRef.nativeElement;
         const isEmptyParagraph = this.isEmptyParagraph(node);
         element.style.display = isEmptyParagraph ? 'none' : '';
