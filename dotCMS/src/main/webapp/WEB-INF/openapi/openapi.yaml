@@ -2948,7 +2948,7 @@ paths:
     get:
       description: Generates and returns a Site Key that must be used by the client-side
         JS code to send custom Content Analytics Events
-      operationId: generateSiteKey
+      operationId: generateSiteAuth
       parameters:
       - in: path
         name: siteId
@@ -2968,7 +2968,7 @@ paths:
           description: Method Not Allowed
         "500":
           description: Internal Server Error
-      summary: Generate Site Key
+      summary: Generate Site Auth
       tags:
       - Content Analytics
   /v1/announcements:
