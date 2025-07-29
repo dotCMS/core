@@ -9,6 +9,7 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotApiLinkComponent } from './dot-api-link.component';
 
 @Component({
+    standalone: false,
     template: `
         <dot-api-link [href]="href"></dot-api-link>
     `

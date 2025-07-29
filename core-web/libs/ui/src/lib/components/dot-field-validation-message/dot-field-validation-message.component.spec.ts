@@ -17,7 +17,7 @@ const messageServiceMock = new MockDotMessageService({
     'contentType.form.variable.placeholder': 'Will be auto-generated if left empty'
 });
 
-@Component({ selector: 'dot-custom-host', template: '' })
+@Component({ selector: 'dot-custom-host', template: '', standalone: false })
 class CustomHostComponent {
     defaultMessage = 'Required';
     control = new UntypedFormControl('', [Validators.required, Validators.pattern(/^.+\..+$/)]);

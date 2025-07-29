@@ -33,8 +33,8 @@ const NG_DEFAULT_VALIDATORS_ERRORS_MSG: Record<DefaultsNGValidatorsTypes, string
 @Component({
     selector: 'dot-field-validation-message',
     templateUrl: './dot-field-validation-message.component.html',
-    imports: [DotMessagePipe],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    imports: [DotMessagePipe]
 })
 export class DotFieldValidationMessageComponent implements OnDestroy {
     private readonly cd = inject(ChangeDetectorRef);
