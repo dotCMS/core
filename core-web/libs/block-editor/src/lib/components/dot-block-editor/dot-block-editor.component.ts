@@ -498,6 +498,10 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
                         return this.#dotMessageService.get('block-editor.placeholder.quote');
                     }
 
+                    if (node.type.name === 'table') {
+                        return '';
+                    }
+
                     return this.#dotMessageService.get('block-editor.placeholder.paragraph');
                 }
             }),
