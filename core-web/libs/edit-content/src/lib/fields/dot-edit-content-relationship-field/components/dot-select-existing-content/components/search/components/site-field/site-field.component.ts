@@ -75,10 +75,8 @@ export class SiteFieldComponent implements ControlValueAccessor, OnInit {
     constructor() {
         effect(() => {
             const valueToSave = this.store.valueToSave();
-
-            if (valueToSave) {
-                this.onChange(valueToSave);
-            }
+            // Call onChange for both selection (valueToSave is truthy) and deselection (valueToSave is null)
+            this.onChange(valueToSave || '');
         });
 
         effect(() => {
@@ -122,6 +120,7 @@ export class SiteFieldComponent implements ControlValueAccessor, OnInit {
     writeValue(value: string): void {
         if (value === '') {
             this.siteControl.setValue('');
+            this.store.clearSelection();
         }
     }
 
