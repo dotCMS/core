@@ -4037,7 +4037,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             assertTrue("Parse error should mention single quote character code",
                     errorHint.contains("''' (code 39)"));
             assertTrue("Parse error should mention expecting double-quote",
-                    errorHint.contains("was expecting double-quote to start field name"));
+                    errorHint.contains("was expecting double-quote to start field name")); 
 
 
             Logger.info(this, "JSON Validation Error Details:");
