@@ -21,6 +21,7 @@ const dispatchKeydownEvent = (key: string, meta = false, alt = false) => {
 
 @Component({
     selector: 'dot-test-host-component',
+    standalone: false,
     template: `
         <dot-dialog
             [(visible)]="show"
@@ -54,6 +55,7 @@ class TestHostComponent {
 
 @Component({
     selector: 'dot-test-host-component',
+    standalone: false,
     template: `
         <dot-dialog (beforeClose)="beforeClose($event)" [(visible)]="show">
             <b>Dialog content</b>
