@@ -75,7 +75,9 @@ export class DragHandleDirective implements AfterViewInit, OnDestroy {
                 element: this.elementRef.nativeElement,
                 pluginKey: this.pluginKey(),
                 tippyOptions: this.tippyOptions(),
-                onNodeChange: this.handleNodeChange
+                onNodeChange: (data) => {
+                    this.handleNodeChange(data);
+                }
             })
         );
 
