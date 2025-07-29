@@ -149,8 +149,9 @@ describe('DotAnalyticsDashboardFiltersComponent', () => {
         describe('Predefined Time Ranges', () => {
             it('should update URL with URL-friendly values for predefined ranges', () => {
                 // Test the URL update method directly by calling the private method
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
                 const updateUrlParamsSpy = jest.spyOn(
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     spectator.component as any,
                     'updateUrlParams'
                 );
