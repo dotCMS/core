@@ -44,14 +44,16 @@ tiptap-editor ::ng-deep .ProseMirror {
     .add-button {
         all: unset;
         cursor: pointer;
-        border: solid 1px #eee;
-        width: 2 * $dot-editor-size;
-        height: 2 * $dot-editor-size;
+        border: solid 1px $color-palette-gray-500;
+        width: $spacing-4;
+        border-radius: $spacing-1;
+        height: $spacing-4;
         display: flex;
         align-items: center;
         justify-content: center;
-        color: #666;
-        background: #ffffff;
+        color: $color-palette-gray-500;
+        background: $white;
+        border-radius: $border-radius-sm;
     }
 
     .ai-loading {

@@ -75,13 +75,28 @@ export class DragHandleDirective implements AfterViewInit, OnDestroy {
                 element: this.elementRef.nativeElement,
                 pluginKey: this.pluginKey(),
                 tippyOptions: this.tippyOptions(),
-                onNodeChange: this.onNodeChange()
+                onNodeChange: this.handleNodeChange
             })
         );
 
         editor.registerPlugin(this.plugin());
     }
 
+
+    ngOnDestroy(): void {
+        this.cleanupPlugin();
+    }
+
+    private handleNodeChange(data: { node: Node | null; editor: Editor; pos: number }): void {
+        const { node } = data;
+        const element = this.elementRef.nativeElement;
+        const isEmptyParagraph = this.isEmptyParagraph(node);
+        element.style.display = isEmptyParagraph ? 'none' : '';
+    }
+
+    /**
+     * Cleanup the plugin when the directive is destroyed
+     */
     private cleanupPlugin(): void {
         const editor = this.editor();
         if (editor && !editor.isDestroyed && this.plugin()) {
@@ -90,7 +105,12 @@ export class DragHandleDirective implements AfterViewInit, OnDestroy {
         }
     }
 
-    ngOnDestroy(): void {
-        this.cleanupPlugin();
+    /**
+     * Check if the node is an empty paragraph
+     * @param node - The node to check
+     * @returns True if the node is an empty paragraph, false otherwise
+     */
+    private isEmptyParagraph(node: Node): boolean {
+        return node.type.name === 'paragraph' && node.textContent.trim() === '';
     }
 }
