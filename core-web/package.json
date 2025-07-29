@@ -171,7 +171,7 @@
         "@nx/vite": "20.5.1",
         "@nx/web": "20.5.1",
         "@nx/workspace": "20.5.1",
-        "@nxext/stencil": "19.0.0",
+        "@nxext/stencil": "20.1.0",
         "@playwright/test": "^1.36.0",
         "@rollup/plugin-url": "^8.0.2",
         "@schematics/angular": "19.2.9",

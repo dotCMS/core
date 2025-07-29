@@ -434,7 +434,7 @@ export class SearchableDropdownComponent
             : this.labelPropertyName;
     }
 
-    private getValueToPropagate(): string {
+    private getValueToPropagate() {
         return !this.valuePropertyName ? this.value : this.value[this.valuePropertyName];
     }
 }
