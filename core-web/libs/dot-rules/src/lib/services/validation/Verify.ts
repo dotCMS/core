@@ -61,7 +61,11 @@ export class LazyVerify {
      * but will not fail if a key is not present on the object.
      *
      */
-    static hasOnly(object: Record<string, unknown>, properties: string[] = [], allowMissing = false): boolean {
+    static hasOnly(
+        object: Record<string, unknown>,
+        properties: string[] = [],
+        allowMissing = false
+    ): boolean {
         const keys = Object.keys(object);
         const has: Record<string, boolean> = {};
         let count = 0;
