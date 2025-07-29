@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, DestroyRef, inject, OnInit } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { ButtonModule } from 'primeng/button';
@@ -71,6 +72,8 @@ export default class DotAnalyticsDashboardComponent implements OnInit {
     protected readonly $deviceBreakdownData = this.store.pageViewDeviceBrowsersData;
     protected readonly $deviceBreakdownStatus = this.store.pageViewDeviceBrowsers.status;
 
+    private readonly destroyRef = inject(DestroyRef);
+
     /**
      * Refresh dashboard data
      */
@@ -83,7 +86,7 @@ export default class DotAnalyticsDashboardComponent implements OnInit {
 
     ngOnInit(): void {
         // Listen to query param changes and sync with store
-        this.route.queryParams.subscribe((params) => {
+        this.route.queryParams.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
             const urlTimeRange = params['time_range'];
             const fromDate = params['from'];
             const toDate = params['to'];
