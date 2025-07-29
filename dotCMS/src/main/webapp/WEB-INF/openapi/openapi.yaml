@@ -2944,7 +2944,7 @@ paths:
       summary: Fire an user custom event.
       tags:
       - Content Analytics
-  /v1/analytics/content/sitekey/generate/{siteId}:
+  /v1/analytics/content/siteauth/generate/{siteId}:
     get:
       description: Generates and returns a Site Key that must be used by the client-side
         JS code to send custom Content Analytics Events

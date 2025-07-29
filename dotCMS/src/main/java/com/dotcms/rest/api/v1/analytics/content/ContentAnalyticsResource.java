@@ -346,8 +346,8 @@ public class ContentAnalyticsResource {
     }
 
     @Operation(
-            operationId = "generateSiteKey",
-            summary = "Generate Site Key",
+            operationId = "generateSiteAuth",
+            summary = "Generate Site Auth",
             description = "Generates and returns a Site Key that must be used by the client-side JS " +
                     "code to send custom Content Analytics Events",
             tags = {"Content Analytics"},
@@ -363,7 +363,7 @@ public class ContentAnalyticsResource {
             }
     )
     @GET
-    @Path("/sitekey/generate/{siteId}")
+    @Path("/siteauth/generate/{siteId}")
     @JSONP
     @NoCache
     @Produces({MediaType.TEXT_PLAIN, "text/plain"})

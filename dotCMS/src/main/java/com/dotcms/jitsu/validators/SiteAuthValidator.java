@@ -22,19 +22,19 @@ import static com.dotcms.jitsu.validators.ValidationErrorCode.INVALID_SITE_AUTH;
 import static com.liferay.util.StringPool.BLANK;
 
 /**
- * This custom validator verifies that the Site Key being passed down when submitting a Content
+ * This custom validator verifies that the Site auth being passed down when submitting a Content
  * Analytics Event correctly matches the one set in the {@code Content Analytics} App. If it
  * doesn't, then the Event cannot be trusted, and will be rejected.
  *
  * @author Jose Castro
  * @since Jul 4th, 2025
  */
-public class SiteKeyValidator implements AnalyticsValidator {
+public class SiteAuthValidator implements AnalyticsValidator {
 
     @Override
     public boolean test(final JSONObject jsonValidatorBody) {
         return jsonValidatorBody.has(CUSTOM_VALIDATOR_ATTRIBUTE) &&
-                SiteKeyValidator.class.getSimpleName().equalsIgnoreCase(jsonValidatorBody.get(CUSTOM_VALIDATOR_ATTRIBUTE).toString());
+                SiteAuthValidator.class.getSimpleName().equalsIgnoreCase(jsonValidatorBody.get(CUSTOM_VALIDATOR_ATTRIBUTE).toString());
     }
 
     @Override
@@ -63,7 +63,7 @@ public class SiteKeyValidator implements AnalyticsValidator {
         } catch (final DotDataException | DotSecurityException e) {
             final String errorMsg = String.format("Site Auth for Site '%s' could not be verified: %s",
                     null != currentSite ? currentSite.getHostname() : BLANK, ExceptionUtil.getErrorMessage(e));
-            Logger.warnAndDebug(SiteKeyValidator.class, errorMsg, e);
+            Logger.warnAndDebug(SiteAuthValidator.class, errorMsg, e);
             throw new AnalyticsValidationException(errorMsg, INVALID_SITE_AUTH);
         }
         if (!isKeyValid) {
