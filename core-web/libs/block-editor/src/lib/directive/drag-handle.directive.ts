@@ -95,6 +95,10 @@ export class DragHandleDirective implements AfterViewInit, OnDestroy {
     }
 
     private handleNodeChange(node: Node | null): void {
+        if (!node) {
+            return;
+        }
+
         const element = this.elementRef.nativeElement;
         const isEmptyParagraph = this.isEmptyParagraph(node);
         element.style.display = isEmptyParagraph ? 'none' : '';
