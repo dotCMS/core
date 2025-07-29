@@ -9,20 +9,16 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.URLUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONObject;
-import com.liferay.util.HttpHeaders;
 import io.vavr.control.Try;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.Map;
 import java.util.Optional;
 
-import static com.dotcms.jitsu.validators.ValidationErrorCode.INVALID_SITE_KEY;
-import static com.dotmarketing.util.Constants.DONT_RESPECT_FRONT_END_ROLES;
+import static com.dotcms.jitsu.validators.ValidationErrorCode.INVALID_SITE_AUTH;
 import static com.liferay.util.StringPool.BLANK;
 
 /**
@@ -44,7 +40,7 @@ public class SiteKeyValidator implements AnalyticsValidator {
     @Override
     public void validate(final Object fieldValue) throws AnalyticsValidationException {
         boolean isKeyValid = false;
-        final String siteKey = Try.of(fieldValue::toString).getOrElse(BLANK);
+        final String siteAuth = Try.of(fieldValue::toString).getOrElse(BLANK);
         final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
         Host currentSite = new Host();
         try {
@@ -55,8 +51,8 @@ public class SiteKeyValidator implements AnalyticsValidator {
                 if (secretsOpt.isPresent()) {
                     final Map<String, Secret> secretsMap = secretsOpt.get().getSecrets();
                     if (null != secretsMap.get("siteKey")) {
-                        final String siteKeyFromApp = secretsMap.get("siteKey").getString();
-                        if (UtilMethods.isSet(siteKeyFromApp) && siteKeyFromApp.equals(siteKey)) {
+                        final String siteAuthFromApp = secretsMap.get("siteKey").getString();
+                        if (UtilMethods.isSet(siteAuthFromApp) && siteAuthFromApp.equals(siteAuth)) {
                             isKeyValid = true;
                         }
                     }
@@ -65,13 +61,13 @@ public class SiteKeyValidator implements AnalyticsValidator {
                 Logger.warn(this, "HTTP Request object could not be retrieved");
             }
         } catch (final DotDataException | DotSecurityException e) {
-            final String errorMsg = String.format("Site Key for Site '%s' could not be verified: %s",
+            final String errorMsg = String.format("Site Auth for Site '%s' could not be verified: %s",
                     null != currentSite ? currentSite.getHostname() : BLANK, ExceptionUtil.getErrorMessage(e));
             Logger.warnAndDebug(SiteKeyValidator.class, errorMsg, e);
-            throw new AnalyticsValidationException(errorMsg, INVALID_SITE_KEY);
+            throw new AnalyticsValidationException(errorMsg, INVALID_SITE_AUTH);
         }
         if (!isKeyValid) {
-            throw new AnalyticsValidationException("Invalid Site Key", INVALID_SITE_KEY);
+            throw new AnalyticsValidationException("Invalid Site Auth", INVALID_SITE_AUTH);
         }
     }
 }

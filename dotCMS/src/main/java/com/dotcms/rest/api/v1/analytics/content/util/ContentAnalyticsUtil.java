@@ -32,7 +32,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.dotcms.jitsu.ValidAnalyticsEventPayloadAttributes.*;
-import static com.dotcms.jitsu.validators.ValidationErrorCode.INVALID_SITE_KEY;
+import static com.dotcms.jitsu.validators.ValidationErrorCode.INVALID_SITE_AUTH;
 import static com.dotmarketing.util.Constants.DONT_RESPECT_FRONT_END_ROLES;
 
 /**
@@ -227,7 +227,7 @@ public class ContentAnalyticsUtil {
         final Optional<String> siteFromRequestOpt = getSiteNameOrAlias(request);
         if (siteFromRequestOpt.isEmpty()) {
             throw new AnalyticsValidator.AnalyticsValidationException("Site could not be retrieved from Origin or Referer HTTP Headers",
-                    INVALID_SITE_KEY);
+                    INVALID_SITE_AUTH);
         }
         final HostAPI hostAPI = APILocator.getHostAPI();
         try {
@@ -236,7 +236,7 @@ public class ContentAnalyticsUtil {
                 currentSite = hostAPI.findByAlias(siteFromRequestOpt.get(), APILocator.systemUser(), DONT_RESPECT_FRONT_END_ROLES);
                 if (null == currentSite) {
                     throw new AnalyticsValidator.AnalyticsValidationException(String.format("Site with name/alias '%s' was not found",
-                            siteFromRequestOpt.get()), INVALID_SITE_KEY);
+                            siteFromRequestOpt.get()), INVALID_SITE_AUTH);
                 }
             }
             return currentSite;
@@ -244,7 +244,7 @@ public class ContentAnalyticsUtil {
             final String errorMsg = String.format("Failed to retrieve Site with name/alias '%s': %s",
                     siteFromRequestOpt.get(), ExceptionUtil.getErrorMessage(e));
             Logger.error(SiteKeyValidator.class, errorMsg, e);
-            throw new AnalyticsValidator.AnalyticsValidationException(errorMsg, INVALID_SITE_KEY);
+            throw new AnalyticsValidator.AnalyticsValidationException(errorMsg, INVALID_SITE_AUTH);
         }
     }
 
