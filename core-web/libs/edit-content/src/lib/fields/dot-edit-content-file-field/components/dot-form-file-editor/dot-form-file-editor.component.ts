@@ -100,18 +100,16 @@ export class DotFormFileEditorComponent implements OnInit {
             }
         });
 
-        effect(
-            () => {
-                const isDone = this.store.isDone();
-                const uploadedFile = this.store.uploadedFile();
+        effect(() => {
+            const isDone = this.store.isDone();
+            const uploadedFile = this.store.uploadedFile();
 
-                untracked(() => {
-                    if (isDone) {
-                        this.#dialogRef.close(uploadedFile);
-                    }
-                });
-            }
-        );
+            untracked(() => {
+                if (isDone) {
+                    this.#dialogRef.close(uploadedFile);
+                }
+            });
+        });
 
         this.nameField.valueChanges
             .pipe(

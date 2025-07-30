@@ -131,36 +131,32 @@ export class DotEditContentLayoutComponent {
 
     constructor() {
         // Initialize component based on input parameters
-        effect(
-            () => {
-                const contentTypeId = this.$contentTypeId();
-                const contentletInode = this.$contentletInode();
+        effect(() => {
+            const contentTypeId = this.$contentTypeId();
+            const contentletInode = this.$contentletInode();
 
-                if (contentTypeId || contentletInode) {
-                    // Dialog mode: Initialize with provided parameters
-                    this.$store.initializeDialogMode({
-                        contentTypeId,
-                        contentletInode
-                    });
-                } else {
-                    // Route mode: Initialize from route parameters
-                    this.$store.initializeAsPortlet();
-                }
+            if (contentTypeId || contentletInode) {
+                // Dialog mode: Initialize with provided parameters
+                this.$store.initializeDialogMode({
+                    contentTypeId,
+                    contentletInode
+                });
+            } else {
+                // Route mode: Initialize from route parameters
+                this.$store.initializeAsPortlet();
             }
-        );
+        });
 
         // Handle workflow action success in dialog mode
-        effect(
-            () => {
-                const isDialogMode = this.$store.isDialogMode();
-                const workflowActionSuccess = this.$store.workflowActionSuccess();
+        effect(() => {
+            const isDialogMode = this.$store.isDialogMode();
+            const workflowActionSuccess = this.$store.workflowActionSuccess();
 
-                if (isDialogMode && workflowActionSuccess) {
-                    this.contentSaved.emit(workflowActionSuccess);
-                    this.$store.clearWorkflowActionSuccess();
-                }
+            if (isDialogMode && workflowActionSuccess) {
+                this.contentSaved.emit(workflowActionSuccess);
+                this.$store.clearWorkflowActionSuccess();
             }
-        );
+        });
     }
 
     /**

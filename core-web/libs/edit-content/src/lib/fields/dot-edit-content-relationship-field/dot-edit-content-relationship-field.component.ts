@@ -149,26 +149,24 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
      * @memberof DotEditContentRelationshipFieldComponent
      */
     constructor() {
-        effect(
-            () => {
-                const field = this.$field();
-                const contentlet = this.$contentlet();
+        effect(() => {
+            const field = this.$field();
+            const contentlet = this.$contentlet();
 
-                const cardinality = field?.relationships?.cardinality ?? null;
-                const contentTypeId = getContentTypeIdFromRelationship(field);
+            const cardinality = field?.relationships?.cardinality ?? null;
+            const contentTypeId = getContentTypeIdFromRelationship(field);
 
-                if (cardinality === null || !field?.variable || !contentTypeId) {
-                    return;
-                }
-
-                this.store.initialize({
-                    cardinality,
-                    contentlet,
-                    variable: field?.variable,
-                    contentTypeId
-                });
+            if (cardinality === null || !field?.variable || !contentTypeId) {
+                return;
             }
-        );
+
+            this.store.initialize({
+                cardinality,
+                contentlet,
+                variable: field?.variable,
+                contentTypeId
+            });
+        });
 
         effect(() => {
             if (this.onChange && this.onTouched) {

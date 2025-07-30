@@ -68,16 +68,14 @@ export class DotAnalyticsDashboardFiltersComponent {
         this.initFromUrl();
 
         // Clear custom date range when switching away from custom
-        effect(
-            () => {
-                const selectedTimeRange = this.$selectedTimeRange();
+        effect(() => {
+            const selectedTimeRange = this.$selectedTimeRange();
 
-                // Clear custom date range when switching to non-custom options
-                if (selectedTimeRange !== CUSTOM_TIME_RANGE) {
-                    this.$customDateRange.set(null);
-                }
+            // Clear custom date range when switching to non-custom options
+            if (selectedTimeRange !== CUSTOM_TIME_RANGE) {
+                this.$customDateRange.set(null);
             }
-        );
+        });
 
         // Synchronize filter changes to URL (avoiding infinite loop)
         effect(() => {
