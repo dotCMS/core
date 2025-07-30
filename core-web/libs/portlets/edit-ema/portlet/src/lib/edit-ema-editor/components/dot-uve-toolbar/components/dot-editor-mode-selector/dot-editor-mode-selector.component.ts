@@ -70,9 +70,6 @@ export class DotEditorModeSelectorComponent {
             if (currentMode === UVE_MODE.EDIT && !canEditPage) {
                 this.onModeChange(UVE_MODE.PREVIEW);
             }
-        },
-        {
-            allowSignalWrites: true
         }
     );
 

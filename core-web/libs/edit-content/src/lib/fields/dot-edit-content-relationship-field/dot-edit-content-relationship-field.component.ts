@@ -167,9 +167,6 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
                     variable: field?.variable,
                     contentTypeId
                 });
-            },
-            {
-                allowSignalWrites: true
             }
         );
 

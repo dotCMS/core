@@ -110,9 +110,6 @@ export class DotFormFileEditorComponent implements OnInit {
                         this.#dialogRef.close(uploadedFile);
                     }
                 });
-            },
-            {
-                allowSignalWrites: true
             }
         );
 

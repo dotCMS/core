@@ -432,8 +432,7 @@ export const DotAnalyticsDashboardStore = signalStore(
                     const timeRange = store.timeRange();
 
                     store.loadAllDashboardData(timeRange);
-                },
-                { allowSignalWrites: true }
+                }
             );
         }
     })

@@ -192,8 +192,7 @@ export class DotEditContentFormComponent implements OnInit {
                 } else {
                     this.form.enable();
                 }
-            },
-            { allowSignalWrites: true }
+            }
         );
 
         /**
