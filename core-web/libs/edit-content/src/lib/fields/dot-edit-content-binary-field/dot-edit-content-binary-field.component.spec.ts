@@ -769,6 +769,7 @@ describe('DotEditContentBinaryFieldComponent', () => {
  * @class MockFormComponent
  */
 @Component({
+    standalone: false,
     selector: 'dot-custom-host',
     template: ''
 })

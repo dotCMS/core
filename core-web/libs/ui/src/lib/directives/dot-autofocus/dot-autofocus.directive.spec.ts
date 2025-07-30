@@ -13,7 +13,8 @@ import { DotAutofocusDirective } from '@dotcms/ui';
         } @else {
             <input type="text" dotAutofocus />
         }
-    `
+    `,
+    standalone: false
 })
 class TestHostComponent {
     disabled = false;
