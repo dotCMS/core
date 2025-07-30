@@ -8,7 +8,7 @@ import {
     signal
 } from '@angular/core';
 
-import { Editor } from '@tiptap/core';
+import { Editor, isNodeEmpty } from '@tiptap/core';
 import {
     DragHandlePlugin,
     dragHandlePluginDefaultKey,
@@ -89,7 +89,6 @@ export class DragHandleDirective implements AfterViewInit, OnDestroy {
         editor.registerPlugin(this.plugin());
     }
 
-
     ngOnDestroy(): void {
         this.cleanupPlugin();
     }
@@ -121,6 +120,8 @@ export class DragHandleDirective implements AfterViewInit, OnDestroy {
      * @returns True if the node is an empty paragraph, false otherwise
      */
     private isEmptyParagraph(node: Node): boolean {
-        return node.type.name === 'paragraph' && node.textContent.trim() === '';
+        const isEmpty = !node.isLeaf && isNodeEmpty(node) && !node.childCount;
+
+        return isEmpty;
     }
 }
