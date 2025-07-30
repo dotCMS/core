@@ -75,11 +75,11 @@ export class SiteService {
         if (siteIdentifier === this.selectedSite.identifier) {
             name === 'ARCHIVE_SITE'
                 ? this.switchToDefaultSite()
-                    .pipe(
-                        take(1),
-                        switchMap((site) => this.switchSite(site))
-                    )
-                    .subscribe()
+                      .pipe(
+                          take(1),
+                          switchMap((site) => this.switchSite(site))
+                      )
+                      .subscribe()
                 : this.loadCurrentSite();
         }
     }

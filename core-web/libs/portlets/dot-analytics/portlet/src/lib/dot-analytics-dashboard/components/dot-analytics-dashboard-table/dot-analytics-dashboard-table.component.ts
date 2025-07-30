@@ -6,7 +6,11 @@ import { SkeletonModule } from 'primeng/skeleton';
 import { TableModule } from 'primeng/table';
 
 import { ComponentStatus } from '@dotcms/dotcms-models';
-import { RequestState, TopPerformaceTableEntity, transformTopPagesTableData } from '@dotcms/portlets/dot-analytics/data-access';
+import {
+    RequestState,
+    TopPerformaceTableEntity,
+    transformTopPagesTableData
+} from '@dotcms/portlets/dot-analytics/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { TABLE_CONFIG, TOP_PAGES_TABLE_COLUMNS } from '../../constants';
@@ -43,7 +47,9 @@ const SKELETON_WIDTH_MAP = {
 })
 export class DotAnalyticsDashboardTableComponent {
     /** Complete table state from analytics store */
-    readonly $tableState = input.required<RequestState<TopPerformaceTableEntity[]>>({ alias: 'tableState' });
+    readonly $tableState = input.required<RequestState<TopPerformaceTableEntity[]>>({
+        alias: 'tableState'
+    });
 
     /** Transformed table data ready for display */
     protected readonly $data = computed(() => transformTopPagesTableData(this.$tableState().data));
@@ -62,7 +68,9 @@ export class DotAnalyticsDashboardTableComponent {
     });
 
     /** Check if component is in error state */
-    protected readonly $isError = computed(() => this.$tableState().status === ComponentStatus.ERROR);
+    protected readonly $isError = computed(
+        () => this.$tableState().status === ComponentStatus.ERROR
+    );
 
     /** Check if table data is empty */
     protected readonly $isEmpty = computed(() => {

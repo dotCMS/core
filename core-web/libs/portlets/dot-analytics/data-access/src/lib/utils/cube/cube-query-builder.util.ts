@@ -56,7 +56,9 @@ export class CubeQueryBuilder {
             values: ['pageview']
         };
 
-        this.query.filters = this.query.filters ? [...this.query.filters, pageviewFilter] : [pageviewFilter];
+        this.query.filters = this.query.filters
+            ? [...this.query.filters, pageviewFilter]
+            : [pageviewFilter];
 
         return this;
     }
@@ -72,7 +74,9 @@ export class CubeQueryBuilder {
             values
         };
 
-        this.query.filters = this.query.filters ? [...this.query.filters, siteIdFilter] : [siteIdFilter];
+        this.query.filters = this.query.filters
+            ? [...this.query.filters, siteIdFilter]
+            : [siteIdFilter];
 
         return this;
     }
@@ -88,7 +92,9 @@ export class CubeQueryBuilder {
             values
         };
 
-        this.query.filters = this.query.filters ? [...this.query.filters, customFilter] : [customFilter];
+        this.query.filters = this.query.filters
+            ? [...this.query.filters, customFilter]
+            : [customFilter];
 
         return this;
     }
@@ -97,12 +103,16 @@ export class CubeQueryBuilder {
      * Add multiple filters at once
      */
     filters(filters: CubeJSFilter[]): CubeQueryBuilder {
-        const prefixedFilters = filters.map(filter => ({
+        const prefixedFilters = filters.map((filter) => ({
             ...filter,
-            member: filter.member.startsWith('request.') ? filter.member : `request.${filter.member}`
+            member: filter.member.startsWith('request.')
+                ? filter.member
+                : `request.${filter.member}`
         }));
 
-        this.query.filters = this.query.filters ? [...this.query.filters, ...prefixedFilters] : prefixedFilters;
+        this.query.filters = this.query.filters
+            ? [...this.query.filters, ...prefixedFilters]
+            : prefixedFilters;
 
         return this;
     }

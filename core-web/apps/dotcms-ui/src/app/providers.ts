@@ -46,8 +46,6 @@ import { IframeOverlayService } from './view/components/_common/iframe/service/i
 
 export const LOCATION_TOKEN = new InjectionToken<Location>('Window location object');
 
-
-
 const PROVIDERS: Provider[] = [
     { provide: LOCATION_TOKEN, useValue: window.location },
     EmaAppConfigurationService,

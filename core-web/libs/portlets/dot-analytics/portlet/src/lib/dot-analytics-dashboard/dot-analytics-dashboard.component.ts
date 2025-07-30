@@ -29,8 +29,6 @@ import {
     isValidTimeRange
 } from './utils/dot-analytics.utils';
 
-
-
 /**
  * Main analytics dashboard component for DotCMS.
  * Displays comprehensive analytics including metrics, charts, and tables.
@@ -106,7 +104,6 @@ export default class DotAnalyticsDashboardComponent implements OnInit {
             error: this.$topPagePerformance().error
         }
     ]);
-
 
     /**
      * Refresh dashboard data

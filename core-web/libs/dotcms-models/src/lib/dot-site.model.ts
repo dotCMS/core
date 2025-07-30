@@ -76,5 +76,3 @@ export interface SiteEntity {
     versionId: string;
     working: boolean;
 }
-
-

@@ -18,7 +18,7 @@ import { DotMenu, DotMenuItem } from '@dotcms/dotcms-models';
 
 export const replaceSectionsMap = {
     'edit-page': 'site-browser',
-    'analytics': 'analytics-dashboard'
+    analytics: 'analytics-dashboard'
 };
 
 const replaceIdForNonMenuSection = (id) => {

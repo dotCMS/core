@@ -36,14 +36,14 @@ import { DotAnalyticsStateMessageComponent } from '../dot-analytics-state-messag
  */
 const CHART_TYPE_HEIGHTS = {
     line: '21.875rem',
-    pie: '23.125rem',
+    pie: '23.125rem'
 } as const;
 
 /**
  * Union type for chart raw data
  */
 type ChartRawData =
-    | RequestState<PageViewTimeLineEntity[]>  // For line charts
+    | RequestState<PageViewTimeLineEntity[]> // For line charts
     | RequestState<PageViewDeviceBrowsersEntity[]>; // For pie charts
 
 /**
@@ -110,7 +110,9 @@ export class DotAnalyticsDashboardChartComponent implements OnInit, OnDestroy {
     protected readonly $height = computed(() => {
         const type = this.$type();
 
-        return CHART_TYPE_HEIGHTS[type as keyof typeof CHART_TYPE_HEIGHTS] || CHART_TYPE_HEIGHTS.line;
+        return (
+            CHART_TYPE_HEIGHTS[type as keyof typeof CHART_TYPE_HEIGHTS] || CHART_TYPE_HEIGHTS.line
+        );
     });
 
     // Computed properties
@@ -186,7 +188,9 @@ export class DotAnalyticsDashboardChartComponent implements OnInit, OnDestroy {
     });
 
     /** Check if component is in error state */
-    protected readonly $isError = computed(() => this.$chartState().status === ComponentStatus.ERROR);
+    protected readonly $isError = computed(
+        () => this.$chartState().status === ComponentStatus.ERROR
+    );
 
     /** Check if chart data is empty */
     protected readonly $isEmpty = computed(() => {
