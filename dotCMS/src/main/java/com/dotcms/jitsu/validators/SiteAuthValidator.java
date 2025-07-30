@@ -50,8 +50,8 @@ public class SiteAuthValidator implements AnalyticsValidator {
                         APILocator.getAppsAPI().getSecrets(ContentAnalyticsUtil.CONTENT_ANALYTICS_APP_KEY, false, currentSite, APILocator.systemUser());
                 if (secretsOpt.isPresent()) {
                     final Map<String, Secret> secretsMap = secretsOpt.get().getSecrets();
-                    if (null != secretsMap.get("siteKey")) {
-                        final String siteAuthFromApp = secretsMap.get("siteKey").getString();
+                    if (null != secretsMap.get("siteAuth")) {
+                        final String siteAuthFromApp = secretsMap.get("siteAuth").getString();
                         if (UtilMethods.isSet(siteAuthFromApp) && siteAuthFromApp.equals(siteAuth)) {
                             isKeyValid = true;
                         }
