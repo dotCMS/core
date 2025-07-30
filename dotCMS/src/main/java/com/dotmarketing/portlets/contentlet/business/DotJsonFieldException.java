@@ -1,7 +1,7 @@
 package com.dotmarketing.portlets.contentlet.business;
 
 import com.dotmarketing.util.importer.ImportLineValidationCodes;
-import com.dotmarketing.util.importer.exception.ImportLineErrorAware;
+import com.dotmarketing.util.importer.exception.ImportLineError;
 import com.liferay.util.StringPool;
 import java.util.Map;
 import java.util.Objects;
@@ -10,7 +10,7 @@ import javax.validation.constraints.NotNull;
 import org.apache.commons.lang3.StringUtils;
 
 public class DotJsonFieldException extends DotContentletStateException implements
-        ImportLineErrorAware {
+        ImportLineError {
 
     public static final String INVALID_JSON_FIELD_FOR_KEY_VALUE = "Invalid JSON field provided. Key Value Field variable: ";
     public static final String INVALID_JSON_FIELD = "Invalid JSON field provided. Field variable: ";
