@@ -118,7 +118,7 @@ export class SiteFieldComponent implements ControlValueAccessor, OnInit {
      * Implements ControlValueAccessor method to update the control's value programmatically.
      */
     writeValue(value: string): void {
-        if (value === '') {
+        if (!value) {
             this.siteControl.setValue('');
             this.store.clearSelection();
         }
