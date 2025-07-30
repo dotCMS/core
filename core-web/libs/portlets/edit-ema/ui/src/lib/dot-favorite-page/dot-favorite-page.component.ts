@@ -1,7 +1,7 @@
 import { Observable, Subject } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, OnDestroy, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import { Component, OnInit, OnDestroy, CUSTOM_ELEMENTS_SCHEMA, inject } from '@angular/core';
 import { FormGroup, Validators, UntypedFormBuilder, ReactiveFormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
@@ -62,6 +62,11 @@ export interface DotFavoritePageFormData {
     providers: [DotFavoritePageStore, DotTempFileUploadService, DotWorkflowActionsFireService]
 })
 export class DotFavoritePageComponent implements OnInit, OnDestroy {
+    private ref = inject(DynamicDialogRef);
+    private config = inject(DynamicDialogConfig);
+    private fb = inject(UntypedFormBuilder);
+    private store = inject(DotFavoritePageStore);
+
     form: FormGroup;
     isFormValid$: Observable<boolean>;
     timeStamp: string;
@@ -70,12 +75,7 @@ export class DotFavoritePageComponent implements OnInit, OnDestroy {
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
-    constructor(
-        private ref: DynamicDialogRef,
-        private config: DynamicDialogConfig,
-        private fb: UntypedFormBuilder,
-        private store: DotFavoritePageStore
-    ) {
+    constructor() {
         this.store.setInitialStateData({
             favoritePageUrl: this.config.data.page.favoritePageUrl,
             favoritePage: this.config.data.page.favoritePage

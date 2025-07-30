@@ -11,7 +11,8 @@ import {
     Output,
     signal,
     SimpleChanges,
-    ViewChild
+    ViewChild,
+    inject
 } from '@angular/core';
 
 import { delay, retryWhen, take, takeUntil, tap } from 'rxjs/operators';
@@ -38,6 +39,10 @@ import { SearchableDropdownComponent } from '../searchable-dropdown/component';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotSiteSelectorComponent implements OnInit, OnChanges, OnDestroy {
+    private siteService = inject(SiteService);
+    paginationService = inject(PaginatorService);
+    private dotEventsService = inject(DotEventsService);
+
     @Input() archive: boolean;
     @Input() id: string;
     @Input() live: boolean;
@@ -58,12 +63,6 @@ export class DotSiteSelectorComponent implements OnInit, OnChanges, OnDestroy {
     $moreThanOneSite = signal<boolean>(false);
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
-
-    constructor(
-        private siteService: SiteService,
-        public paginationService: PaginatorService,
-        private dotEventsService: DotEventsService
-    ) {}
 
     ngOnInit(): void {
         this.paginationService.url = 'v1/site';

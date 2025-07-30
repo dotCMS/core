@@ -1,4 +1,4 @@
-import { Directive, ElementRef, Input, Renderer2 } from '@angular/core';
+import { Directive, ElementRef, Input, Renderer2, inject } from '@angular/core';
 import { FormGroupDirective, Validators } from '@angular/forms';
 
 /**
@@ -11,12 +11,12 @@ import { FormGroupDirective, Validators } from '@angular/forms';
     standalone: true
 })
 export class DotFieldRequiredDirective {
-    constructor(
-        private el: ElementRef,
-        private renderer: Renderer2,
-        private formGroupDirective: FormGroupDirective
-    ) {
-        renderer.addClass(this.el.nativeElement, 'p-label-input-required');
+    private el = inject(ElementRef);
+    private renderer = inject(Renderer2);
+    private formGroupDirective = inject(FormGroupDirective);
+
+    constructor() {
+        this.renderer.addClass(this.el.nativeElement, 'p-label-input-required');
     }
 
     /**

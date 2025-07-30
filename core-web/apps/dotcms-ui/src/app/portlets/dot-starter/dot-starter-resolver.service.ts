@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { Resolve } from '@angular/router';
 
 import { map, mergeMap } from 'rxjs/operators';
@@ -24,7 +24,7 @@ import {
 export class DotStarterResolver
     implements Resolve<Observable<{ user: DotCurrentUser; permissions: DotPermissionsType }>>
 {
-    constructor(private dotCurrentUserService: DotCurrentUserService) {}
+    private dotCurrentUserService = inject(DotCurrentUserService);
 
     resolve(): Observable<{ user: DotCurrentUser; permissions: DotPermissionsType }> {
         return this.dotCurrentUserService.getCurrentUser().pipe(

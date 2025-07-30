@@ -1,6 +1,6 @@
 import { Subject } from 'rxjs';
 
-import { ChangeDetectionStrategy, Component, OnDestroy, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, inject } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 
@@ -19,11 +19,11 @@ import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotNotLicenseComponent implements OnInit, OnDestroy {
+    private dotLicense = inject(DotLicenseService);
+
     unlicenseData: DotUnlicensedPortletData;
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
-
-    constructor(private dotLicense: DotLicenseService) {}
 
     ngOnInit() {
         this.dotLicense.unlicenseData

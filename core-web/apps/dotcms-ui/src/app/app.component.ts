@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 
 import { map, take } from 'rxjs/operators';
 
@@ -15,13 +15,11 @@ import { DotNavLogoService } from './api/services/dot-nav-logo/dot-nav-logo.serv
     styleUrls: ['./app.component.scss']
 })
 export class AppComponent implements OnInit {
-    constructor(
-        private dotCmsConfigService: DotcmsConfigService,
-        private dotUiColors: DotUiColorsService,
-        private dotMessageService: DotMessageService,
-        private dotNavLogoService: DotNavLogoService,
-        private dotLicense: DotLicenseService
-    ) {}
+    private dotCmsConfigService = inject(DotcmsConfigService);
+    private dotUiColors = inject(DotUiColorsService);
+    private dotMessageService = inject(DotMessageService);
+    private dotNavLogoService = inject(DotNavLogoService);
+    private dotLicense = inject(DotLicenseService);
 
     ngOnInit() {
         this.dotCmsConfigService

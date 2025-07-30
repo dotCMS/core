@@ -146,10 +146,13 @@ class AngularNodeView extends NodeView<
 
     selectNode() {
         this.renderer.updateProps({ selected: true });
+
+        this.renderer.elementRef.nativeElement.classList.add('ProseMirror-selectednode');
     }
 
     deselectNode() {
         this.renderer.updateProps({ selected: false });
+        this.renderer.elementRef.nativeElement.classList.remove('ProseMirror-selectednode');
     }
 
     destroy() {

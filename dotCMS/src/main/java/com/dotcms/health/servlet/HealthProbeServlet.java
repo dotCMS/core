@@ -18,38 +18,35 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.dotcms.management.servlet.AbstractManagementServlet;
+import com.dotcms.management.config.InfrastructureConstants;
+import com.dotcms.health.config.HealthEndpointConstants;
 import com.liferay.portal.model.User;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.List;
+import java.util.stream.Collectors;
 import javax.enterprise.inject.spi.CDI;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * Health probe servlet providing k8s-compatible health check endpoints.
+ * Health probe service that provides Kubernetes-compatible health check endpoints.
  * This servlet is designed to be lightweight and decoupled from other dotCMS APIs,
  * allowing it to start early and remain responsive even when other systems are initializing.
  * 
- * Kubernetes Health Check Strategy:
- * - LIVENESS: Minimal checks for unrecoverable failures only (avoid cascade failures)
- * - READINESS: Comprehensive checks including dependencies (safe to fail)
- * - PRINCIPLE: If not live → not ready, but not ready ≠ not live
+ * Management Health Endpoints (requires management port):
+ * - {MANAGEMENT_PATH_PREFIX}/livez - Kubernetes liveness probe (minimal text response)
+ * - {MANAGEMENT_PATH_PREFIX}/readyz - Kubernetes readiness probe (minimal text response)
+ * - {MANAGEMENT_PATH_PREFIX}/health - Complete health status (JSON response)
  * 
- * Infrastructure Endpoints (READ-ONLY for monitoring tools):
- * - /livez - Kubernetes liveness probe (minimal text: "alive" | "unhealthy") 
- * - /readyz - Kubernetes readiness probe (minimal text: "ready" | "not ready")
- * 
- * Application management endpoints are available via /api/v1/health/* REST API
- * 
- * Uses centralized HealthCheckConfig for consistent configuration management.
+ * This servlet extends AbstractManagementServlet to ensure it can only be accessed
+ * through the management path prefix, preventing accidental exposure on wrong ports.
  */
-public class HealthProbeServlet extends HttpServlet {
+public class HealthProbeServlet extends AbstractManagementServlet {
     
     private static final long serialVersionUID = 1L;
     private static final String CONTENT_TYPE_JSON = "application/json";
@@ -94,30 +91,37 @@ public class HealthProbeServlet extends HttpServlet {
     }
     
     @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response) 
+    protected void doManagementGet(HttpServletRequest request, HttpServletResponse response) 
             throws ServletException, IOException {
 
         // Extract the actual endpoint from the request
         String endpoint = request.getServletPath();
-        Logger.debug(this, "HealthProbeServlet.doGet called with endpoint: " + endpoint + ", URI: " + request.getRequestURI());
+        Logger.debug(this, "HealthProbeServlet.doManagementGet called with endpoint: " + endpoint + ", URI: " + request.getRequestURI());
         
-        // Route to appropriate handler based on endpoint
-        switch (endpoint) {
-            case "/livez":
-                // K8s liveness probe - minimal text response, public access
-                Logger.debug(this, "Handling /livez request");
-                handleLivenessProbe(request, response, true);
-                break;
-            case "/readyz":
-                // K8s readiness probe - minimal text response, public access  
-                Logger.debug(this, "Handling /readyz request");
-                handleReadinessProbe(request, response, true);
-                break;
-            default:
-                Logger.debug(this, "Handling default request as /livez for endpoint: " + endpoint);
-                handleLivenessProbe(request, response, true);
-                break;
+        // Handle management health probe endpoints
+        if (HealthEndpointConstants.Endpoints.LIVENESS.equals(endpoint)) {
+            handleLivenessProbe(request, response);
+            return;
         }
+        
+        if (HealthEndpointConstants.Endpoints.READINESS.equals(endpoint)) {
+            handleReadinessProbe(request, response);
+            return;
+        }
+        
+        if (HealthEndpointConstants.Endpoints.HEALTH.equals(endpoint)) {
+            handleFullHealth(request, response);
+            return;
+        }
+        
+        // For other paths, return 404 with helpful message
+        response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+        response.setContentType("text/plain");
+        response.setCharacterEncoding("UTF-8");
+        response.getWriter().write("Available health endpoints: " + 
+                                  HealthEndpointConstants.Endpoints.LIVENESS + ", " +
+                                  HealthEndpointConstants.Endpoints.READINESS + ", " +
+                                  HealthEndpointConstants.Endpoints.HEALTH);
     }
     
     /**
@@ -203,171 +207,6 @@ public class HealthProbeServlet extends HttpServlet {
         }
     }
     
-    /**
-     * Liveness probe - ONLY checks if the core application is alive and not stuck.
-     * This should NEVER check external dependencies to avoid cascade failures.
-     * Only fails for unrecoverable situations that require pod restart.
-     * 
-     * Safe failures for liveness:
-     * - JVM deadlock or hang
-     * - Servlet container failure
-     * - Core memory exhaustion
-     * 
-     * NEVER check for liveness:
-     * - Database connectivity
-     * - External service availability  
-     * - Cache connectivity
-     * - File system access (unless critical)
-     */
-    private void handleLivenessProbe(HttpServletRequest request, HttpServletResponse response, boolean minimalResponse) throws IOException {
-        HealthResponse health = healthStateManager.getLivenessHealth();
-        
-        // For liveness: Only fail on DOWN status - DEGRADED, UNKNOWN, and UP are considered "alive"
-        // This prevents unnecessary pod restarts for non-critical issues
-        boolean isAlive = health.checks().stream()
-            .noneMatch(check -> check.status() == HealthStatus.DOWN);
-        
-        // Check if there are any degraded conditions to report
-        boolean hasDegraded = health.checks().stream()
-            .anyMatch(check -> check.status() == HealthStatus.DEGRADED);
-        
-        // Intelligent logging - only log on state changes
-        livenessCheckCount++;
-        logLivenessStateChange(isAlive, hasDegraded);
-        
-        if (isAlive) {
-            response.setStatus(HttpServletResponse.SC_OK);
-        } else {
-            response.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
-        }
-        
-        // Check if this is a request for minimal response format
-        if (minimalResponse) {
-            writeMinimalResponse(response, isAlive ? "alive" : "unhealthy");
-        } else {
-            writeJsonResponse(response, health);
-        }
-    }
-    
-    /**
-     * Readiness probe - checks if the application is ready to serve traffic.
-     * Can include external dependencies since failure just removes from load balancer.
-     * More comprehensive than liveness but doesn't trigger restarts.
-     * 
-     * Safe to check for readiness:
-     * - Database connectivity
-     * - Cache availability  
-     * - External service health
-     * - Initialization completion
-     */
-    private void handleReadinessProbe(HttpServletRequest request, HttpServletResponse response, boolean minimalResponse) throws IOException {
-        HealthResponse health = healthStateManager.getReadinessHealth();
-        
-        // For readiness: Only fail on DOWN status - DEGRADED, UNKNOWN, and UP are considered "ready"
-        // This allows degraded services to continue receiving traffic while monitoring issues
-        boolean isReady = health.checks().stream()
-            .noneMatch(check -> check.status() == HealthStatus.DOWN);
-        
-        // Check if there are any degraded conditions to report
-        boolean hasDegraded = health.checks().stream()
-            .anyMatch(check -> check.status() == HealthStatus.DEGRADED);
-        
-        // Intelligent logging - only log on state changes
-        readinessCheckCount++;
-        logReadinessStateChange(isReady, hasDegraded);
-        
-        if (isReady) {
-            response.setStatus(HttpServletResponse.SC_OK);
-        } else {
-            response.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
-        }
-        
-        // Check if this is a request for minimal response format
-        if (minimalResponse) {
-            writeMinimalResponse(response, isReady ? "ready" : "not ready");
-        } else {
-            writeJsonResponse(response, health);
-        }
-    }
-    
-    /**
-     * Full health endpoint - returns detailed health information for monitoring.
-     * Should be network-restricted in production environments.
-     */
-    private void handleFullHealth(HttpServletRequest request, HttpServletResponse response, boolean minimalResponse) throws IOException {
-        HealthResponse health = healthStateManager.getCurrentHealth();
-        
-        // Return 503 if any checks are down, 200 otherwise
-        if (health.status() == HealthStatus.DOWN) {
-            response.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
-        } else {
-            response.setStatus(HttpServletResponse.SC_OK);
-        }
-        
-        // Check if this is a request for minimal response format
-        if (minimalResponse) {
-            writeMinimalResponse(response, 
-                health.status() == HealthStatus.UP ? "healthy" : "unhealthy");
-        } else {
-            writeJsonResponse(response, health);
-        }
-    }
-    
-    
-    /**
-     * Writes a minimal response for Kubernetes probes to avoid response size limitations.
-     * K8s primarily cares about HTTP status code, not large JSON payloads.
-     * 
-     * Benefits:
-     * - Reduces network bandwidth
-     * - Faster probe responses
-     * - Avoids K8s response size limits
-     * - Reduces load on JSON serialization
-     */
-    private void writeMinimalResponse(HttpServletResponse response, String status) throws IOException {
-        Logger.debug(this, "writeMinimalResponse called with status: " + status);
-        
-        response.setContentType("text/plain");
-        response.setCharacterEncoding(CHARSET_UTF8);
-        response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
-        response.setHeader("Pragma", "no-cache");
-        response.setDateHeader("Expires", 0);
-        
-        try (PrintWriter writer = response.getWriter()) {
-            writer.write(status);
-            writer.flush();
-            Logger.debug(this, "Successfully wrote minimal response with status: " + status);
-        } catch (Exception e) {
-            Logger.error(this, "Failed to write minimal response: " + e.getMessage(), e);
-            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            try (PrintWriter writer = response.getWriter()) {
-                writer.write("error");
-                writer.flush();
-            } catch (Exception fallbackError) {
-                Logger.error(this, "Failed to write fallback error response: " + fallbackError.getMessage(), fallbackError);
-            }
-        }
-    }
-    
-    /**
-     * Writes a JSON response
-     */
-    private void writeJsonResponse(HttpServletResponse response, HealthResponse health) 
-            throws IOException {
-        response.setContentType(CONTENT_TYPE_JSON);
-        response.setCharacterEncoding(CHARSET_UTF8);
-        
-        try (PrintWriter writer = response.getWriter()) {
-            objectMapper.writeValue(writer, health);
-        } catch (Exception e) {
-            // Fallback if JSON serialization fails
-            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            try (PrintWriter writer = response.getWriter()) {
-                writer.write("{\"status\":\"DOWN\",\"error\":\"Failed to serialize health response\"}");
-            }
-            Logger.error(this, "Failed to serialize health response", e);
-        }
-    }
     
     /**
      * Sets up CDI integration if available, without blocking if CDI is not ready
@@ -402,6 +241,139 @@ public class HealthProbeServlet extends HttpServlet {
             
             // The CDI initialization check will detect this and report appropriately
             // Health system can still function with core checks
+        }
+    }
+    
+    // ===== PUBLIC HEALTH SERVICE METHODS (called by ManagementServlet) =====
+    
+    /**
+     * Liveness probe - ONLY checks if the core application is alive and not stuck.
+     * This should NEVER check external dependencies to avoid cascade failures.
+     * Only fails for unrecoverable situations that require pod restart.
+     * 
+     * Called by ManagementServlet for /dotmgt/livez endpoint.
+     */
+    public void handleLivenessProbe(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        HealthResponse health = healthStateManager.getLivenessHealth();
+        
+        // For liveness: Only fail on DOWN status - DEGRADED, UNKNOWN, and UP are considered "alive"
+        // This prevents unnecessary pod restarts for non-critical issues
+        boolean isAlive = health.checks().stream()
+            .noneMatch(check -> check.status() == HealthStatus.DOWN);
+        
+        // Check if there are any degraded conditions to report
+        boolean hasDegraded = health.checks().stream()
+            .anyMatch(check -> check.status() == HealthStatus.DEGRADED);
+        
+        // Intelligent logging - only log on state changes
+        livenessCheckCount++;
+        logLivenessStateChange(isAlive, hasDegraded);
+        
+        if (isAlive) {
+            response.setStatus(HttpServletResponse.SC_OK);
+            writeMinimalResponse(response, "alive");
+        } else {
+            response.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
+            writeMinimalResponse(response, "unhealthy");
+        }
+    }
+    
+    /**
+     * Readiness probe - checks if the application is ready to serve traffic.
+     * Can include external dependencies since failure just removes from load balancer.
+     * More comprehensive than liveness but doesn't trigger restarts.
+     * 
+     * Called by ManagementServlet for /dotmgt/readyz endpoint.
+     */
+    public void handleReadinessProbe(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        HealthResponse health = healthStateManager.getReadinessHealth();
+        
+        // For readiness: Only fail on DOWN status - DEGRADED, UNKNOWN, and UP are considered "ready"
+        // This allows degraded services to continue receiving traffic while monitoring issues
+        boolean isReady = health.checks().stream()
+            .noneMatch(check -> check.status() == HealthStatus.DOWN);
+        
+        // Check if there are any degraded conditions to report
+        boolean hasDegraded = health.checks().stream()
+            .anyMatch(check -> check.status() == HealthStatus.DEGRADED);
+        
+        // Intelligent logging - only log on state changes
+        readinessCheckCount++;
+        logReadinessStateChange(isReady, hasDegraded);
+        
+        if (isReady) {
+            response.setStatus(HttpServletResponse.SC_OK);
+            writeMinimalResponse(response, "ready");
+        } else {
+            response.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
+            writeMinimalResponse(response, "not ready");
+        }
+    }
+    
+    /**
+     * Full health endpoint - returns detailed health information for monitoring.
+     * 
+     * Called by ManagementServlet for /dotmgt/health endpoint.
+     */
+    public void handleFullHealth(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        HealthResponse health = healthStateManager.getCurrentHealth();
+        
+        // Return 503 if any checks are down, 200 otherwise
+        if (health.status() == HealthStatus.DOWN) {
+            response.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
+        } else {
+            response.setStatus(HttpServletResponse.SC_OK);
+        }
+        
+        writeJsonResponse(response, health);
+    }
+    
+    // ===== PRIVATE HELPER METHODS =====
+    
+    /**
+     * Writes a minimal response for Kubernetes probes to avoid response size limitations.
+     */
+    private void writeMinimalResponse(HttpServletResponse response, String status) throws IOException {
+        Logger.debug(this, "writeMinimalResponse called with status: " + status);
+        
+        response.setContentType("text/plain");
+        response.setCharacterEncoding(CHARSET_UTF8);
+        response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+        response.setHeader("Pragma", "no-cache");
+        response.setDateHeader("Expires", 0);
+        
+        try (PrintWriter writer = response.getWriter()) {
+            writer.write(status);
+            writer.flush();
+            Logger.debug(this, "Successfully wrote minimal response with status: " + status);
+        } catch (Exception e) {
+            Logger.error(this, "Failed to write minimal response: " + e.getMessage(), e);
+            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            try (PrintWriter writer = response.getWriter()) {
+                writer.write("error");
+                writer.flush();
+            } catch (Exception fallbackError) {
+                Logger.error(this, "Failed to write fallback error response: " + fallbackError.getMessage(), fallbackError);
+            }
+        }
+    }
+    
+    /**
+     * Writes a JSON response
+     */
+    private void writeJsonResponse(HttpServletResponse response, HealthResponse health) throws IOException {
+        response.setContentType(CONTENT_TYPE_JSON);
+        response.setCharacterEncoding(CHARSET_UTF8);
+        
+        try (PrintWriter writer = response.getWriter()) {
+            objectMapper.writeValue(writer, health);
+        } catch (Exception e) {
+            // Fallback if JSON serialization fails
+            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            try (PrintWriter writer = response.getWriter()) {
+                writer.write("{\"status\":\"DOWN\",\"error\":\"Failed to serialize health response\"}");
+            }
+            Logger.error(this, "Failed to serialize health response", e);
         }
     }
     
@@ -522,7 +494,6 @@ public class HealthProbeServlet extends HttpServlet {
         HealthResponse health = healthStateManager.getReadinessHealth();
         boolean isStartupPhase = healthStateManager.isInStartupPhase();
         boolean hasEverSucceeded = healthStateManager.hasReadinessEverSucceeded();
-        boolean livenessHasSucceeded = healthStateManager.hasLivenessEverSucceeded();
         String startupAge = healthStateManager.getStartupAge();
         
         // Check if this is the first time we're checking readiness

@@ -8700,6 +8700,7 @@ public class ContentletAPITest extends ContentletBaseTest {
                 .contentTypeId(contentType.id())
                 .type(TextField.class)
                 .dataType(DataTypes.FLOAT)
+                .defaultValue("0")
                 .nextPersisted();
         ContentTypeDataGen.addField(field);
 

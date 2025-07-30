@@ -255,6 +255,7 @@ public class MapToContentletPopulator  {
                 }
             }
         }
+
     } // fillFields.
 
     private static void processPlainValueForBinaryField(final Map<String, Object> map,
