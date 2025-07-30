@@ -130,16 +130,14 @@ export const GlobalStore = signalStore(
                     switchMap(() =>
                         siteService.getCurrentSite().pipe(
                             tapResponse({
-                                next: (site) => {
-                                    // Cast to SiteEntity since the API returns the complete site entity
-                                    const siteDetails = site as unknown as SiteEntity;
+                                next: (siteDetails) => {
                                     patchState(store, {
                                         siteDetails
                                     });
                                 },
                                 error: (error) => {
-                                    console.error('Error loading current site:', error);
-                                    // You could add error state to GlobalState if needed
+                                    // TODO: Define a better error handling strategy for global store
+                                    console.warn('Error loading current site:', error);
                                 }
                             })
                         )

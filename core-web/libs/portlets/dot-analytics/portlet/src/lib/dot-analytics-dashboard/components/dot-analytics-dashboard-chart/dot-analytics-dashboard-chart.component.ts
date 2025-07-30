@@ -80,12 +80,8 @@ export class DotAnalyticsDashboardChartComponent implements OnInit, OnDestroy {
     /** Complete chart state from analytics store */
     readonly $chartState = input.required<ChartRawData>({ alias: 'chartState' });
 
-    // Optional inputs
     /** Chart title displayed in header */
-    readonly $title = input<string>('', { alias: 'title' });
-
-    /** Chart width as CSS value */
-    readonly $width = input<string>('100%', { alias: 'width' });
+    readonly $title = input.required<string>({ alias: 'title' });
 
     /** Custom chart options to merge with defaults */
     readonly $options = input<Partial<ChartOptions>>({}, { alias: 'options' });

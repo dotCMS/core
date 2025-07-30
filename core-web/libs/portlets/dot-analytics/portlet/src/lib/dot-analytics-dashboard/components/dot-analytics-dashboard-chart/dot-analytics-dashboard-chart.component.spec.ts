@@ -68,8 +68,7 @@ describe('DotAnalyticsDashboardChartComponent', () => {
             props: {
                 type: 'line' as ChartType,
                 chartState: createMockChartState(),
-                title: '',
-                width: '100%',
+                title: 'Test Chart',
                 options: {}
             } as unknown
         });
@@ -96,9 +95,8 @@ describe('DotAnalyticsDashboardChartComponent', () => {
     });
 
     describe('Default Values', () => {
-        it('should have default values for optional inputs', () => {
-            expect(spectator.component.$title()).toBe('');
-            expect(spectator.component.$width()).toBe('100%');
+        it('should initialize with provided title and default options', () => {
+            expect(spectator.component.$title()).toBe('Test Chart');
             expect(spectator.component.$options()).toEqual({});
         });
 
@@ -109,26 +107,26 @@ describe('DotAnalyticsDashboardChartComponent', () => {
     });
 
     describe('Chart Title Display', () => {
-        it('should not show header when title is empty', () => {
+        it('should show header with the provided title', () => {
             const header = spectator.query('.chart-title');
-            expect(header).toBeFalsy();
+            expect(header).toExist();
+            expect(header).toHaveText('Test Chart');
         });
 
-        it('should show header with title when title is provided', () => {
-            // Create new component with title
+        it('should update header when title changes', () => {
+            // Update the title
             spectator = createComponent({
                 props: {
                     type: 'line' as ChartType,
                     chartState: createMockChartState(),
-                    title: 'Test Chart Title',
-                    width: '100%',
+                    title: 'Updated Chart Title',
                     options: {}
                 } as unknown
             });
 
             const header = spectator.query('.chart-title');
             expect(header).toExist();
-            expect(header).toHaveText('Test Chart Title');
+            expect(header).toHaveText('Updated Chart Title');
         });
     });
 
@@ -138,8 +136,8 @@ describe('DotAnalyticsDashboardChartComponent', () => {
                 props: {
                     type: 'line' as ChartType,
                     chartState: createMockChartState(mockTimeLineData, ComponentStatus.LOADING),
-                    title: '',
-                    width: '100%',
+                    title: 'Test Chart',
+
                     options: {}
                 } as unknown
             });
@@ -154,8 +152,8 @@ describe('DotAnalyticsDashboardChartComponent', () => {
                 props: {
                     type: 'line' as ChartType,
                     chartState: createMockChartState(mockTimeLineData, ComponentStatus.INIT),
-                    title: '',
-                    width: '100%',
+                    title: 'Test Chart',
+
                     options: {}
                 } as unknown
             });
@@ -170,8 +168,8 @@ describe('DotAnalyticsDashboardChartComponent', () => {
                 props: {
                     type: 'line' as ChartType,
                     chartState: createMockChartState(mockTimeLineData, ComponentStatus.LOADING),
-                    title: '',
-                    width: '100%',
+                    title: 'Test Chart',
+
                     options: {}
                 } as unknown
             });
@@ -185,8 +183,8 @@ describe('DotAnalyticsDashboardChartComponent', () => {
                 props: {
                     type: 'pie' as ChartType,
                     chartState: createMockChartState(mockTimeLineData, ComponentStatus.LOADING),
-                    title: '',
-                    width: '100%',
+                    title: 'Test Chart',
+
                     options: {}
                 } as unknown
             });
@@ -200,8 +198,8 @@ describe('DotAnalyticsDashboardChartComponent', () => {
                 props: {
                     type: 'doughnut' as ChartType,
                     chartState: createMockChartState(mockTimeLineData, ComponentStatus.LOADING),
-                    title: '',
-                    width: '100%',
+                    title: 'Test Chart',
+
                     options: {}
                 } as unknown
             });
@@ -215,8 +213,8 @@ describe('DotAnalyticsDashboardChartComponent', () => {
                 props: {
                     type: 'bar' as ChartType,
                     chartState: createMockChartState(mockTimeLineData, ComponentStatus.LOADING),
-                    title: '',
-                    width: '100%',
+                    title: 'Test Chart',
+
                     options: {}
                 } as unknown
             });
@@ -230,8 +228,8 @@ describe('DotAnalyticsDashboardChartComponent', () => {
                 props: {
                     type: 'line' as ChartType,
                     chartState: createMockChartState(mockTimeLineData, ComponentStatus.LOADING),
-                    title: '',
-                    width: '100%',
+                    title: 'Test Chart',
+
                     options: {}
                 } as unknown
             });
@@ -246,8 +244,8 @@ describe('DotAnalyticsDashboardChartComponent', () => {
                 props: {
                     type: 'line' as ChartType,
                     chartState: createMockChartState(mockTimeLineData, ComponentStatus.ERROR),
-                    title: '',
-                    width: '100%',
+                    title: 'Test Chart',
+
                     options: {}
                 } as unknown
             });
@@ -263,8 +261,8 @@ describe('DotAnalyticsDashboardChartComponent', () => {
                 props: {
                     type: 'line' as ChartType,
                     chartState: createMockChartState(mockTimeLineData, ComponentStatus.ERROR),
-                    title: '',
-                    width: '100%',
+                    title: 'Test Chart',
+
                     options: {}
                 } as unknown
             });
@@ -280,7 +278,8 @@ describe('DotAnalyticsDashboardChartComponent', () => {
             spectator = createComponent({
                 props: {
                     type: 'line' as ChartType,
-                    chartState: createMockChartState(mockTimeLineData, ComponentStatus.INIT)
+                    chartState: createMockChartState(mockTimeLineData, ComponentStatus.INIT),
+                    title: 'Test Chart'
                 } as unknown
             });
             expect(spectator.component['$isLoading']()).toBe(true);
@@ -289,7 +288,8 @@ describe('DotAnalyticsDashboardChartComponent', () => {
             spectator = createComponent({
                 props: {
                     type: 'line' as ChartType,
-                    chartState: createMockChartState(mockTimeLineData, ComponentStatus.LOADING)
+                    chartState: createMockChartState(mockTimeLineData, ComponentStatus.LOADING),
+                    title: 'Test Chart'
                 } as unknown
             });
             expect(spectator.component['$isLoading']()).toBe(true);
@@ -298,7 +298,8 @@ describe('DotAnalyticsDashboardChartComponent', () => {
             spectator = createComponent({
                 props: {
                     type: 'line' as ChartType,
-                    chartState: createMockChartState(mockTimeLineData, ComponentStatus.LOADED)
+                    chartState: createMockChartState(mockTimeLineData, ComponentStatus.LOADED),
+                    title: 'Test Chart'
                 } as unknown
             });
             expect(spectator.component['$isLoading']()).toBe(false);
@@ -309,7 +310,8 @@ describe('DotAnalyticsDashboardChartComponent', () => {
             spectator = createComponent({
                 props: {
                     type: 'line' as ChartType,
-                    chartState: createMockChartState(mockTimeLineData, ComponentStatus.ERROR)
+                    chartState: createMockChartState(mockTimeLineData, ComponentStatus.ERROR),
+                    title: 'Test Chart'
                 } as unknown
             });
             expect(spectator.component['$isError']()).toBe(true);
@@ -318,7 +320,8 @@ describe('DotAnalyticsDashboardChartComponent', () => {
             spectator = createComponent({
                 props: {
                     type: 'line' as ChartType,
-                    chartState: createMockChartState(mockTimeLineData, ComponentStatus.LOADED)
+                    chartState: createMockChartState(mockTimeLineData, ComponentStatus.LOADED),
+                    title: 'Test Chart'
                 } as unknown
             });
             expect(spectator.component['$isError']()).toBe(false);
@@ -329,7 +332,8 @@ describe('DotAnalyticsDashboardChartComponent', () => {
             spectator = createComponent({
                 props: {
                     type: 'line' as ChartType,
-                    chartState: createMockChartState([], ComponentStatus.LOADED)
+                    chartState: createMockChartState([], ComponentStatus.LOADED),
+                    title: 'Test Chart'
                 } as unknown
             });
             expect(spectator.component['$isEmpty']()).toBe(true);
@@ -338,7 +342,8 @@ describe('DotAnalyticsDashboardChartComponent', () => {
             spectator = createComponent({
                 props: {
                     type: 'line' as ChartType,
-                    chartState: createMockChartState(null, ComponentStatus.LOADED)
+                    chartState: createMockChartState(null, ComponentStatus.LOADED),
+                    title: 'Test Chart'
                 } as unknown
             });
             expect(spectator.component['$isEmpty']()).toBe(true);
@@ -347,7 +352,8 @@ describe('DotAnalyticsDashboardChartComponent', () => {
             spectator = createComponent({
                 props: {
                     type: 'line' as ChartType,
-                    chartState: createMockChartState(mockTimeLineData, ComponentStatus.LOADED)
+                    chartState: createMockChartState(mockTimeLineData, ComponentStatus.LOADED),
+                    title: 'Test Chart'
                 } as unknown
             });
             expect(spectator.component['$isEmpty']()).toBe(false);
@@ -382,27 +388,13 @@ describe('DotAnalyticsDashboardChartComponent', () => {
     });
 
     describe('Custom Dimensions', () => {
-        it('should accept custom width', () => {
-            // Create new component with custom width
-            spectator = createComponent({
-                props: {
-                    type: 'line' as ChartType,
-                    chartState: createMockChartState(),
-                    title: '',
-                    width: '600px',
-                    options: {}
-                } as unknown
-            });
-
-            expect(spectator.component.$width()).toBe('600px');
-        });
-
         it('should calculate height automatically based on chart type', () => {
             // Test line chart height
             spectator = createComponent({
                 props: {
                     type: 'line' as ChartType,
-                    chartState: createMockChartState()
+                    chartState: createMockChartState(),
+                    title: 'Test Chart'
                 } as unknown
             });
 
@@ -413,7 +405,8 @@ describe('DotAnalyticsDashboardChartComponent', () => {
             spectator = createComponent({
                 props: {
                     type: 'pie' as ChartType,
-                    chartState: createMockChartState()
+                    chartState: createMockChartState(),
+                    title: 'Test Chart'
                 } as unknown
             });
 
@@ -427,7 +420,8 @@ describe('DotAnalyticsDashboardChartComponent', () => {
             spectator = createComponent({
                 props: {
                     type: 'line' as ChartType,
-                    chartState: createMockChartState([], ComponentStatus.LOADED)
+                    chartState: createMockChartState([], ComponentStatus.LOADED),
+                    title: 'Test Chart'
                 } as unknown
             });
 
@@ -440,7 +434,8 @@ describe('DotAnalyticsDashboardChartComponent', () => {
             spectator = createComponent({
                 props: {
                     type: 'line' as ChartType,
-                    chartState: createMockChartState([], ComponentStatus.LOADED)
+                    chartState: createMockChartState([], ComponentStatus.LOADED),
+                    title: 'Test Chart'
                 } as unknown
             });
 
@@ -452,7 +447,8 @@ describe('DotAnalyticsDashboardChartComponent', () => {
             spectator = createComponent({
                 props: {
                     type: 'line' as ChartType,
-                    chartState: createMockChartState(mockTimeLineData, ComponentStatus.LOADED)
+                    chartState: createMockChartState(mockTimeLineData, ComponentStatus.LOADED),
+                    title: 'Test Chart'
                 } as unknown
             });
 
