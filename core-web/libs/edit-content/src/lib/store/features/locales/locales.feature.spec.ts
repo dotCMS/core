@@ -43,7 +43,6 @@ const withTest = () =>
         }),
         withMethods((store) => ({
             updateContent: (content) => {
-                console.log('updateContent', content);
                 patchState(store, { contentlet: content });
             }
         }))
@@ -99,7 +98,7 @@ describe('LocalesFeature', () => {
 
         store.updateContent({ identifier: '123' } as DotCMSContentlet);
 
-        tick();
+        spectator.flushEffects();
 
         expect(dotContentletService.getLanguages).toHaveBeenCalledWith('123');
         expect(dotLanguagesService.getDefault).toHaveBeenCalledTimes(1);
@@ -130,9 +129,9 @@ describe('LocalesFeature', () => {
         });
 
         it('should switch to a translated locale', fakeAsync(() => {
-            tick();
+            spectator.flushEffects();
             store.switchLocale(MOCK_LANGUAGES[1]);
-            tick();
+            spectator.flushEffects();
 
             expect(dotEditContentService.getContentById).toHaveBeenCalledWith({
                 id: '123',
@@ -157,14 +156,16 @@ describe('LocalesFeature', () => {
 
             expect(dialogService.open).toHaveBeenCalledTimes(1);
 
-            expect(store.currentLocale()).toEqual(MOCK_LANGUAGES[2]);
-            expect(store.initialContentletState()).toEqual('copy');
-            expect(store.contentlet()).toEqual({
+            const expectedContentlet = {
                 identifier: '123',
                 languageId: 1,
                 locked: false,
                 lockedBy: undefined
-            });
+            } as DotCMSContentlet;
+
+            expect(store.currentLocale()).toEqual(MOCK_LANGUAGES[2]);
+            expect(store.initialContentletState()).toEqual('copy');
+            expect(store.contentlet()).toEqual(expectedContentlet);
             expect(store.formValues()).toEqual(null);
         }));
 
