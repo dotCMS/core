@@ -427,13 +427,11 @@ export const DotAnalyticsDashboardStore = signalStore(
     withHooks({
         onInit: (store) => {
             // Auto-load data when timeRange changes
-            effect(
-                () => {
-                    const timeRange = store.timeRange();
+            effect(() => {
+                const timeRange = store.timeRange();
 
-                    store.loadAllDashboardData(timeRange);
-                }
-            );
+                store.loadAllDashboardData(timeRange);
+            });
         }
     })
 );

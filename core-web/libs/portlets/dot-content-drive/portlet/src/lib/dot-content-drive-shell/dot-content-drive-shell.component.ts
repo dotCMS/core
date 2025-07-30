@@ -46,42 +46,40 @@ export class DotContentDriveShellComponent implements OnInit {
 
     readonly DOT_CONTENT_DRIVE_STATUS = DotContentDriveStatus;
 
-    readonly itemsEffect = effect(
-        () => {
-            const currentSite = untracked(() => this.#store.currentSite());
-            const query = this.#store.$query();
-            const { limit, offset } = this.#store.pagination();
-            const { field, order } = this.#store.sort();
+    readonly itemsEffect = effect(() => {
+        const currentSite = untracked(() => this.#store.currentSite());
+        const query = this.#store.$query();
+        const { limit, offset } = this.#store.pagination();
+        const { field, order } = this.#store.sort();
 
-            // If the current site is the system host, we don't need to search for content
-            // It initializes the store with the system host and the path
+        // If the current site is the system host, we don't need to search for content
+        // It initializes the store with the system host and the path
 
-            if (currentSite?.identifier === SYSTEM_HOST.identifier) {
-                return;
-            }
-
-            this.#store.setStatus(DotContentDriveStatus.LOADING);
-
-            this.#contentSearchService
-                .get<ESContent>({
-                    query,
-                    limit,
-                    offset,
-                    sort: `score,${field} ${order}`
-                })
-                .pipe(
-                    take(1),
-                    catchError(() => {
-                        this.#store.setStatus(DotContentDriveStatus.ERROR);
-
-                        return EMPTY;
-                    })
-                )
-                .subscribe((response) => {
-                    this.#store.setItems(response.jsonObjectView.contentlets, response.resultsSize);
-                });
+        if (currentSite?.identifier === SYSTEM_HOST.identifier) {
+            return;
         }
-    );
+
+        this.#store.setStatus(DotContentDriveStatus.LOADING);
+
+        this.#contentSearchService
+            .get<ESContent>({
+                query,
+                limit,
+                offset,
+                sort: `score,${field} ${order}`
+            })
+            .pipe(
+                take(1),
+                catchError(() => {
+                    this.#store.setStatus(DotContentDriveStatus.ERROR);
+
+                    return EMPTY;
+                })
+            )
+            .subscribe((response) => {
+                this.#store.setItems(response.jsonObjectView.contentlets, response.resultsSize);
+            });
+    });
 
     ngOnInit(): void {
         this.#siteService

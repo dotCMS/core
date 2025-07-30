@@ -34,7 +34,6 @@ const SYSTEM_LANGUAGES = [
     { id: 2, isoCode: 'it-it', defaultLanguage: true }
 ] as DotLanguage[];
 
-
 const withTest = () =>
     signalStoreFeature(
         withState({
@@ -48,7 +47,7 @@ const withTest = () =>
         }))
     );
 
-const Store = signalStore({ providedIn: 'root' }, withTest(), withLocales())
+const Store = signalStore({ providedIn: 'root' }, withTest(), withLocales());
 
 describe('LocalesFeature', () => {
     let spectator: SpectatorService<any>;
