@@ -119,7 +119,7 @@ public class NavResource {
 
             final String path = (!uri.startsWith("/")) ? "/" + uri : uri;
             //Force NavTool to behave as Live when rendering items
-            PageMode.setPageMode(request, PageMode.LIVE);
+            PageMode.setPageMode(request, PageMode.LIVE, false);
             final NavTool tool = new NavTool();
             tool.init(ctx);
             final NavResult nav = tool.getNav(path, langId);
@@ -142,7 +142,7 @@ public class NavResource {
     }
 
 
-    private Map<String, Object> navToMap(final NavResult nav, final int maxDepth, final int currentDepth) throws Exception {
+    public static Map<String, Object> navToMap(final NavResult nav, final int maxDepth, final int currentDepth) throws Exception {
 
         final Map<String, Object> navMap = new HashMap<>();
         navMap.put("title", nav.getTitle());

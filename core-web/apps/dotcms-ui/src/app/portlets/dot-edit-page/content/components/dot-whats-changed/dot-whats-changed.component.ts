@@ -1,4 +1,4 @@
-import { Component, Input, OnChanges, OnInit, ViewChild } from '@angular/core';
+import { Component, Input, OnChanges, OnInit, ViewChild, inject } from '@angular/core';
 
 import { catchError, take } from 'rxjs/operators';
 
@@ -17,6 +17,10 @@ export const SHOW_DIFF_STYLES =
     styleUrls: ['./dot-whats-changed.component.scss']
 })
 export class DotWhatsChangedComponent implements OnInit, OnChanges {
+    private dotEditPageService = inject(DotEditPageService);
+    private dotDOMHtmlUtilService = inject(DotDOMHtmlUtilService);
+    private httpErrorManagerService = inject(DotHttpErrorManagerService);
+
     @Input()
     languageId: string;
     @Input()
@@ -31,12 +35,6 @@ export class DotWhatsChangedComponent implements OnInit, OnChanges {
         renderLive: '',
         renderWorking: ''
     };
-
-    constructor(
-        private dotEditPageService: DotEditPageService,
-        private dotDOMHtmlUtilService: DotDOMHtmlUtilService,
-        private httpErrorManagerService: DotHttpErrorManagerService
-    ) {}
 
     ngOnInit(): void {
         this.styles = this.dotDOMHtmlUtilService.createStyleElement(SHOW_DIFF_STYLES);

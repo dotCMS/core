@@ -36,7 +36,7 @@ dotCMS is licensed under the terms of the BSL 1.1 license and all features are f
 
 ## Contributing
 
-GitHub pull requests are the preferred method to contribute code to dotCMS. Before any pull requests can be accepted, an automated tool will ask you to agree to the [dotCMS Contributor's Agreement](https://gist.github.com/wezell/85ef45298c48494b90d92755b583acb3). 
+[CONTRIBUTING](/CONTRIBUTING.md)
 
 ## Requirements
 

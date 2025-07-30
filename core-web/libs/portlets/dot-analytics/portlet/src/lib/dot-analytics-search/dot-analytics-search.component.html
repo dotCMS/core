@@ -1,0 +1,74 @@
+<p-splitter [panelSizes]="[35, 65]" styleClass="mb-5">
+    <ng-template pTemplate>
+        <section>
+            <div class="content-analytics__query-header">
+                <h4>{{ 'analytics.search.query' | dm }}</h4>
+                <button
+                    class="p-button-rounded p-button-link p-button-sm"
+                    pButton
+                    (click)="$showDialog.set(true)"
+                    data-testid="help-button"
+                    icon="pi pi-question-circle"></button>
+            </div>
+            <ngx-monaco-editor
+                [ngModel]="store.query().value"
+                [options]="ANALYTICS_MONACO_EDITOR_OPTIONS"
+                (ngModelChange)="store.setQuery($event)"
+                data-testId="query-editor"></ngx-monaco-editor>
+            <div class="content-analytics__actions">
+                <span
+                    tooltipPosition="top"
+                    [pTooltip]="
+                        store.query().isValidJson ? '' : ('analytics.search.valid.json' | dm)
+                    ">
+                    <button
+                        pButton
+                        (click)="store.getResults()"
+                        [disabled]="!store.query().isValidJson"
+                        [label]="'analytics.search.execute.query' | dm"
+                        data-testId="run-query"></button>
+                </span>
+            </div>
+        </section>
+    </ng-template>
+    <ng-template pTemplate>
+        @if (!store.results()) {
+            @let emptyResultsConfig = store.emptyResultsConfig();
+            @if (emptyResultsConfig) {
+                <dot-empty-container
+                    [configuration]="emptyResultsConfig"
+                    [hideContactUsLink]="true" />
+            }
+        } @else {
+            <section class="content-analytics__results">
+                <ngx-monaco-editor
+                    [ngModel]="store.results()"
+                    [options]="ANALYTICS__RESULTS_MONACO_EDITOR_OPTIONS"
+                    data-testId="results-editor" />
+            </section>
+        }
+    </ng-template>
+</p-splitter>
+
+@defer (when $showDialog()) {
+    <p-dialog
+        [(visible)]="$showDialog"
+        [header]="'analytics.search.help' | dm"
+        [modal]="true"
+        [style]="{ width: '45rem' }">
+        @for (example of store.queryExamples(); track $index) {
+            <div class="mb-4" data-testid="query-example-container">
+                <p class="mb-2">{{ example.title | dm }}</p>
+                <pre>
+                    <code>{{ example.query }}</code>
+                    <button pButton
+                            class="p-button-outlined  p-button-sm content-analytics__insert-btn"
+                            data-testid="query-example-button"
+                            [label]="(!!store.query().value ?  'analytics.search.replace' : 'analytics.search.insert' ) | dm "
+                            (click)="addExampleQuery(example.query); ">
+                    </button>
+                </pre>
+            </div>
+        }
+    </p-dialog>
+}

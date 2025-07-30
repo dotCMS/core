@@ -285,7 +285,7 @@
 					"raw": "{\n\t\"showLinks\":true,\n\t\"showDotAssets\":true,\n\t\"showPages\":true,\n\t\"showFiles\":true,\n\t\"showFolders\":true,\n\t\"showWorking\":true\n}",
 					"options": {
 						"raw": {
-							"language": "javascript"
+							"language": "json"
 						}
 					}
 				},
@@ -344,7 +344,7 @@
 					"raw": "{\n\t\"showLinks\":true,\n\t\"showDotAssets\":true,\n\t\"showPages\":true,\n\t\"showFiles\":true,\n\t\"showWorking\":true\n}",
 					"options": {
 						"raw": {
-							"language": "javascript"
+							"language": "json"
 						}
 					}
 				},

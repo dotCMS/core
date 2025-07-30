@@ -13,6 +13,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.annotations.VisibleForTesting;
@@ -100,25 +101,43 @@ public class AIModels implements EventSubscriber<SystemTableUpdatedKeyEvent> {
      */
     public void loadModels(final AppConfig appConfig, final List<AIModel> loading) {
         final String host = appConfig.getHost();
-        final List<Tuple2<AIModelType, AIModel>> added = internalModels.putIfAbsent(
+
+       final List<Tuple2<AIModelType, AIModel>> currentModels = internalModels.get(host);
+
+        if (UtilMethods.isSet(currentModels)) {
+            for (AIModel loadingAIModel : loading) {
+                final AIModelType type = loadingAIModel.getType();
+
+                for (Tuple2<AIModelType, AIModel> currentTupla : currentModels) {
+                    if(type == currentTupla._1()) {
+                        final AIModel currentAIModel = currentTupla._2;
+
+                        for (Model currentModel : currentAIModel.getModels()) {
+                            final Optional<Model> optionalModel = loadingAIModel.getModels().stream()
+                                    .filter(model -> model.getName().equals(currentModel.getName()))
+                                    .findFirst();
+
+                            if (optionalModel.isPresent() && optionalModel.get().getStatus() == null) {
+                                optionalModel.get().setStatus(currentModel.getStatus());
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+
+        final List<Tuple2<AIModelType, AIModel>> added = internalModels.put(
                 host,
                 loading.stream()
                         .map(model -> Tuple.of(model.getType(), model))
                         .collect(Collectors.toList()));
+
         loading.forEach(aiModel -> aiModel
                 .getModels()
                 .forEach(model -> {
                     final Tuple3<String, Model, AIModelType> key = Tuple.of(host, model, aiModel.getType());
-                    if (modelsByName.containsKey(key)) {
-                        appConfig.debugLogger(
-                                getClass(),
-                                () -> String.format(
-                                        "Model [%s] already exists for host [%s], ignoring it",
-                                        model,
-                                        host));
-                        return;
-                    }
-                    modelsByName.putIfAbsent(key, aiModel);
+                    modelsByName.put(key, aiModel);
                 }));
 
         if (added == null) {
@@ -236,7 +255,8 @@ public class AIModels implements EventSubscriber<SystemTableUpdatedKeyEvent> {
         }
 
         final CircuitBreakerUrl.Response<OpenAIModels> response = fetchOpenAIModels(appConfig);
-        if (Objects.nonNull(response.getResponse().getError())) {
+
+         if (Objects.nonNull(response.getResponse().getError())) {
             throw new DotRuntimeException("Found error in AI response: " + response.getResponse().getError().getMessage());
         }
 
@@ -302,7 +322,9 @@ public class AIModels implements EventSubscriber<SystemTableUpdatedKeyEvent> {
                 .build()
                 .doResponse(OpenAIModels.class);
 
-        if (!CircuitBreakerUrl.isSuccessResponse(response)) {
+        if (response.getStatusCode() == 401) {
+            throw new InvalidAIKeyException("AI key authentication failed. Please ensure the key is valid, active, and correctly configured.");
+        } else if (!CircuitBreakerUrl.isSuccessResponse(response)) {
             appConfig.debugLogger(
                     AIModels.class,
                     () -> String.format(

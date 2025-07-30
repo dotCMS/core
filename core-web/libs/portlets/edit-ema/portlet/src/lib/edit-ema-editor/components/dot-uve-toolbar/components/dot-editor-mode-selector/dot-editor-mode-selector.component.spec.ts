@@ -3,7 +3,7 @@ import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 import { signal } from '@angular/core';
 
 import { DotAnalyticsTrackerService, DotMessageService } from '@dotcms/data-access';
-import { UVE_MODE } from '@dotcms/uve/types';
+import { UVE_MODE } from '@dotcms/types';
 
 import { DotEditorModeSelectorComponent } from './dot-editor-mode-selector.component';
 
@@ -112,7 +112,7 @@ describe('DotEditorModeSelectorComponent', () => {
             });
         });
 
-        it('should include publishDate when switching to LIVE mode', () => {
+        it('should not include publishDate when switching to LIVE mode', () => {
             jest.useFakeTimers();
             const now = new Date();
             jest.setSystemTime(now);
@@ -120,7 +120,7 @@ describe('DotEditorModeSelectorComponent', () => {
             component.onModeChange(UVE_MODE.LIVE);
             expect(mockStore.loadPageAsset).toHaveBeenCalledWith({
                 mode: UVE_MODE.LIVE,
-                publishDate: now.toISOString()
+                publishDate: undefined
             });
 
             jest.useRealTimers();

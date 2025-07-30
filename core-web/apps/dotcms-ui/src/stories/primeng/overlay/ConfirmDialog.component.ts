@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 
 import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -24,7 +24,7 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
     `
 })
 export class ConfirmDialogComponent {
-    constructor(private confirmationService: ConfirmationService) {}
+    private confirmationService = inject(ConfirmationService);
 
     confirm(): void {
         this.confirmationService.confirm({

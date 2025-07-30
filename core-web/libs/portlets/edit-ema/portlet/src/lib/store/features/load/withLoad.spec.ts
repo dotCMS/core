@@ -1,4 +1,4 @@
-import { describe, expect } from '@jest/globals';
+import { describe, expect, it } from '@jest/globals';
 import {
     createServiceFactory,
     mockProvider,
@@ -34,15 +34,21 @@ import { DotPageApiParams, DotPageApiService } from '../../../services/dot-page-
 import { PERSONA_KEY } from '../../../shared/consts';
 import { UVE_STATUS } from '../../../shared/enums';
 import {
+    getNewVanityUrl,
     getVanityUrl,
     HEADLESS_BASE_QUERY_PARAMS,
     MOCK_RESPONSE_HEADLESS,
     MOCK_RESPONSE_VTL,
+    NEW_PERMANENT_REDIRECT_VANITY_URL,
+    NEW_PERMANENT_REDIRECT_VANITY_URL_WITH_ACTION,
+    NEW_PERMANENT_REDIRECT_VANITY_URL_WITH_RESPONSE,
+    NEW_TEMPORARY_REDIRECT_VANITY_URL,
     PERMANENT_REDIRECT_VANITY_URL,
     TEMPORARY_REDIRECT_VANITY_URL,
     VTL_BASE_QUERY_PARAMS
 } from '../../../shared/mocks';
 import { UVEState } from '../../models';
+import { withClient } from '../client/withClient';
 
 const buildPageAPIResponseFromMock =
     (mock) =>
@@ -76,13 +82,16 @@ const initialState: UVEState = {
     isClientReady: false
 };
 
-export const uveStoreMock = signalStore(withState<UVEState>(initialState), withLoad());
+export const uveStoreMock = signalStore(
+    withState<UVEState>(initialState),
+    withClient(),
+    withLoad()
+);
 
 describe('withLoad', () => {
     let spectator: SpectatorService<InstanceType<typeof uveStoreMock>>;
     let store: InstanceType<typeof uveStoreMock>;
     let dotPageApiService: SpyObject<DotPageApiService>;
-    let dotWorkflowsActionsService: SpyObject<DotWorkflowsActionsService>;
     let router: Router;
 
     const createService = createServiceFactory({
@@ -102,9 +111,7 @@ describe('withLoad', () => {
                     get() {
                         return of({});
                     },
-                    getClientPage: jest
-                        .fn()
-                        .mockImplementation(buildPageAPIResponseFromMock(MOCK_RESPONSE_HEADLESS)),
+                    getGraphQLPage: () => of({}),
                     save: jest.fn()
                 }
             },
@@ -152,7 +159,6 @@ describe('withLoad', () => {
 
         router = spectator.inject(Router);
         dotPageApiService = spectator.inject(DotPageApiService);
-        dotWorkflowsActionsService = spectator.inject(DotWorkflowsActionsService);
         jest.spyOn(dotPageApiService, 'get').mockImplementation(
             buildPageAPIResponseFromMock(MOCK_RESPONSE_HEADLESS)
         );
@@ -167,7 +173,6 @@ describe('withLoad', () => {
                 expect(store.currentUser()).toEqual(CurrentUserDataMock);
                 expect(store.experiment()).toBe(getDraftExperimentMock());
                 expect(store.languages()).toBe(mockLanguageArray);
-                expect(store.canEditPage()).toBe(true);
                 expect(store.pageIsLocked()).toBe(false);
                 expect(store.status()).toBe(UVE_STATUS.LOADED);
                 expect(store.isTraditionalPage()).toBe(false);
@@ -186,19 +191,10 @@ describe('withLoad', () => {
                 expect(store.currentUser()).toEqual(CurrentUserDataMock);
                 expect(store.experiment()).toBe(getDraftExperimentMock());
                 expect(store.languages()).toBe(mockLanguageArray);
-                expect(store.canEditPage()).toBe(true);
                 expect(store.pageIsLocked()).toBe(false);
                 expect(store.status()).toBe(UVE_STATUS.LOADED);
                 expect(store.isTraditionalPage()).toBe(true);
                 expect(store.isClientReady()).toBe(true);
-            });
-
-            it('should call workflow action service on loadPageAsset', () => {
-                const getWorkflowActionsSpy = jest.spyOn(dotWorkflowsActionsService, 'getByInode');
-                store.loadPageAsset(HEADLESS_BASE_QUERY_PARAMS);
-                expect(getWorkflowActionsSpy).toHaveBeenCalledWith(
-                    MOCK_RESPONSE_HEADLESS.page.inode
-                );
             });
 
             it('should update the pageParams with the vanity URL on permanent redirect', () => {
@@ -240,31 +236,112 @@ describe('withLoad', () => {
                     queryParamsHandling: 'merge'
                 });
             });
+
+            it('should update the pageParams with the vanity URL on new temporary redirect', () => {
+                const temporaryRedirect = getNewVanityUrl(
+                    VTL_BASE_QUERY_PARAMS.url,
+                    NEW_TEMPORARY_REDIRECT_VANITY_URL
+                );
+
+                const forwardTo = NEW_TEMPORARY_REDIRECT_VANITY_URL.forwardTo;
+
+                jest.spyOn(dotPageApiService, 'get').mockImplementation(() =>
+                    of(temporaryRedirect)
+                );
+
+                store.loadPageAsset(VTL_BASE_QUERY_PARAMS);
+
+                expect(router.navigate).toHaveBeenCalledWith([], {
+                    queryParams: { url: forwardTo },
+                    queryParamsHandling: 'merge'
+                });
+            });
+
+            it('should update the pageParams with the vanity URL on new permanent redirect', () => {
+                const permanentRedirect = getNewVanityUrl(
+                    VTL_BASE_QUERY_PARAMS.url,
+                    NEW_PERMANENT_REDIRECT_VANITY_URL
+                );
+
+                const forwardTo = NEW_PERMANENT_REDIRECT_VANITY_URL.forwardTo;
+
+                jest.spyOn(dotPageApiService, 'get').mockImplementation(() =>
+                    of(permanentRedirect)
+                );
+
+                store.loadPageAsset(VTL_BASE_QUERY_PARAMS);
+
+                expect(router.navigate).toHaveBeenCalledWith([], {
+                    queryParams: { url: forwardTo },
+                    queryParamsHandling: 'merge'
+                });
+            });
+
+            it('should not navigate if the vanity URL has a response 200', () => {
+                const permanentRedirect = getNewVanityUrl(
+                    VTL_BASE_QUERY_PARAMS.url,
+                    NEW_PERMANENT_REDIRECT_VANITY_URL_WITH_RESPONSE
+                );
+
+                jest.spyOn(dotPageApiService, 'get').mockImplementation(() =>
+                    of(permanentRedirect)
+                );
+
+                store.loadPageAsset(VTL_BASE_QUERY_PARAMS);
+
+                expect(router.navigate).not.toHaveBeenCalled();
+            });
+            it('should not navigate if the vanity URL has a action 200', () => {
+                const permanentRedirect = getNewVanityUrl(
+                    VTL_BASE_QUERY_PARAMS.url,
+                    NEW_PERMANENT_REDIRECT_VANITY_URL_WITH_ACTION
+                );
+
+                jest.spyOn(dotPageApiService, 'get').mockImplementation(() =>
+                    of(permanentRedirect)
+                );
+
+                store.loadPageAsset(VTL_BASE_QUERY_PARAMS);
+
+                expect(router.navigate).not.toHaveBeenCalled();
+            });
         });
 
         describe('reloadCurrentPage', () => {
-            it('should reload with the pageParams from the store', () => {
-                const getPageSpy = jest.spyOn(dotPageApiService, 'getClientPage');
+            it('should call page with same params', () => {
+                const spy = jest
+                    .spyOn(dotPageApiService, 'get')
+                    .mockImplementation(() => of(MOCK_RESPONSE_HEADLESS));
                 store.reloadCurrentPage();
 
-                expect(getPageSpy).toHaveBeenCalledWith(pageParams, { params: null, query: '' });
+                expect(spy).toHaveBeenCalledWith(pageParams);
             });
 
-            it('should reload the store with a specific property value', () => {
-                store.reloadCurrentPage({ isClientReady: false });
+            it('should call getGraphQLPage if graphql is present', () => {
+                jest.spyOn(dotPageApiService, 'getGraphQLPage').mockImplementation(() =>
+                    of({
+                        pageAsset: MOCK_RESPONSE_HEADLESS,
+                        content: {}
+                    })
+                );
 
-                expect(store.isClientReady()).toBe(false);
-            });
-
-            it('should call workflow action service on reloadCurrentPage', () => {
-                const getWorkflowActionsSpy = jest.spyOn(dotWorkflowsActionsService, 'getByInode');
+                store.setCustomGraphQL(
+                    {
+                        query: 'query',
+                        variables: {
+                            url: 'url',
+                            mode: 'mode',
+                            languageId: 'languageId'
+                        }
+                    },
+                    true
+                );
                 store.reloadCurrentPage();
-                expect(getWorkflowActionsSpy).toHaveBeenCalledWith(
-                    MOCK_RESPONSE_HEADLESS.page.inode
+                expect(dotPageApiService.getGraphQLPage).toHaveBeenCalledWith(
+                    store.$graphqlWithParams()
                 );
             });
         });
     });
-
     afterEach(() => jest.clearAllMocks());
 });

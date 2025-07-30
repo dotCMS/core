@@ -1,6 +1,6 @@
-import { DotCMSContentlet } from '../models';
+import { DotCMSPageAsset, DotCMSBasicContentlet } from '@dotcms/types';
 
-export const PageResponseMock = {
+export const PageResponseMock: DotCMSPageAsset = {
     canCreateTemplate: true,
     containers: {
         '//demo.dotcms.com/application/containers/default/': {
@@ -18,7 +18,7 @@ export const PageResponseMock = {
                 'uuid-1': [
                     {
                         hostName: 'demo.dotcms.com',
-                        modDate: 1599064929560,
+                        modDate: '1599064929560',
                         imageMetaData: {
                             modDate: 1716268464265,
                             sha256: '041e8f2a721bf85fc833db50666a892ca9c5fcf816091cb6b6123a08ca701085',
@@ -41,7 +41,7 @@ export const PageResponseMock = {
                         baseType: 'CONTENT',
                         inode: 'b77151f2-7206-4b03-862d-68217432d54d',
                         archived: false,
-                        ownerName: 'Admin User',
+                        ownerUserName: 'Admin User',
                         host: '48190c8c-42c4-46af-8d1a-0cd5db894797',
                         working: true,
                         locked: false,
@@ -69,429 +69,58 @@ export const PageResponseMock = {
                         hasTitleImage: true,
                         sortOrder: 0,
                         modUser: 'dotcms.org.1',
-                        onNumberOfPages: 3
-                    },
-                    {
-                        hostName: 'demo.dotcms.com',
-                        modDate: 1599064928581,
-                        imageMetaData: {
-                            modDate: 1716268464311,
-                            sha256: '4cfeea66800ea90921d311c342ce98223786fa5eb31dc04871bcfe8dc4515800',
-                            length: 21426,
-                            title: 'box-info-3-270x270.jpg',
-                            editableAsText: false,
-                            version: 20220201,
-                            isImage: true,
-                            fileSize: 21426,
-                            name: 'box-info-3-270x270.jpg',
-                            width: 270,
-                            contentType: 'image/jpeg',
-                            height: 270
-                        },
-                        publishDate: 1599064928624,
-                        description:
-                            'All winter locations have a variety of snowmobiles available for rent to all our registered guests.',
-                        title: 'Snowmobiling',
-                        body: '<p>Experience the rush of snowmobiling through spectacular terrain. With thousands of miles of groomed and ungroomed trails to choose from, you&rsquo;ll never run out of new places to ride. When you&rsquo;ve had your fill of thrills in the unmatched scenery, head back to town and warm up with hot cocoa&mdash;or a local brew&mdash;by a crackling fire.</p>\n<p>Discover the scenic backwoods with our experienced guides! Use one of our machines or bring you own!<br /><br />A full service vacation that includes all meals, lodging, amenities, and guide service to 1500+ miles of groomed, secondary, and mountain snowmobile trails from your cabin door. There is also ample opportunity for you to enjoy &ldquo;off trail &rdquo; play areas. Guests enjoy our hideaway location - with lots of places to snowmobile, awesome scenery, abundant wildlife, and no crowds. From our ranch you can access over 600 miles of groomed trails - with another1000 miles of secondary trails - and lots of off-trail play areas.<br /><br />You could easily spend a week here and ride different country every day. Annual snowfall ranges from 140&rdquo; at the ranch and up to 500&rdquo; in the surrounding mountains!</p>',
-                        baseType: 'CONTENT',
-                        inode: 'bec05965-653e-4148-a59c-ac9682d91e54',
-                        archived: false,
-                        ownerName: 'Admin User',
-                        host: '48190c8c-42c4-46af-8d1a-0cd5db894797',
-                        working: true,
-                        locked: false,
-                        stInode: '778f3246-9b11-4a2a-a101-e7fdf111bdad',
-                        contentType: 'Activity',
-                        live: true,
-                        altTag: 'Snowmobiling',
-                        owner: 'dotcms.org.1',
-                        imageVersion:
-                            '/dA/bec05965-653e-4148-a59c-ac9682d91e54/image/box-info-3-270x270.jpg',
-                        identifier: '6ac5921e-e062-49a6-9808-f41aff9343c5',
-                        image: '/dA/6ac5921e-e062-49a6-9808-f41aff9343c5/image/box-info-3-270x270.jpg',
-                        imageContentAsset: '6ac5921e-e062-49a6-9808-f41aff9343c5/image',
-                        urlTitle: 'snowmobiling',
-                        publishUserName: 'Admin User',
-                        publishUser: 'dotcms.org.1',
-                        languageId: 1,
-                        URL_MAP_FOR_CONTENT: '/activities/snowmobiling',
-                        creationDate: 1599064928581,
-                        url: '/content.3614c9b2-f329-4d94-9c8e-143d5b254870',
-                        tags: 'snowmobile,winterenthusiast',
-                        titleImage: 'image',
-                        modUserName: 'Admin User',
-                        urlMap: '/activities/snowmobiling',
-                        hasLiveVersion: true,
-                        folder: 'SYSTEM_FOLDER',
-                        hasTitleImage: true,
-                        sortOrder: 0,
-                        modUser: 'dotcms.org.1',
-                        onNumberOfPages: 2
-                    }
-                ],
-                'uuid-2': [
-                    {
-                        hostName: 'demo.dotcms.com',
-                        modDate: 1617890012618,
-                        imageMetaData: {
-                            modDate: 1716268463813,
-                            sha256: '01bed04a0807b45245d38188da3bece44e42fcdd0cf8e8bfe0585e8bd7a61913',
-                            length: 15613,
-                            title: 'box-info-2-270x270.jpg',
-                            editableAsText: false,
-                            version: 20220201,
-                            isImage: true,
-                            fileSize: 15613,
-                            name: 'box-info-2-270x270.jpg',
-                            width: 270,
-                            contentType: 'image/jpeg',
-                            height: 270
-                        },
-                        publishDate: 1617890012681,
-                        description:
-                            "Snowboarding, once a prime route for teen rebellion, today is definitely mainstream. Those teens — both guys and Shred Bettys, who took up snowboarding in the late '80s and '90s now are riding with their kids.",
-                        title: 'Snowboarding',
-                        body: "<p>As with skiing, there are different styles of riding. Free-riding is all-mountain snowboarding on the slopes, in the trees, down the steeps and through the moguls. Freestyle is snowboarding in a pipe or park filled with rails, fun boxes and other features.<br /><br />Snowboarding parks are designed for specific skill levels, from beginner parks with tiny rails hugging the ground to terrain parks with roller-coaster rails, fun boxes and tabletops for more experienced snowboarders.<br /><br />Whether you're a first-timer or already comfortable going lip-to-lip in a pipe, there are classes and special clinics for you at our ski and snowboard resorts. Our resorts offer multiday clinics, so if you're headed to ski this winter, consider wrapping your vacation dates around a snowboarding clinic.</p>",
-                        baseType: 'CONTENT',
-                        inode: 'd77576ce-6e3a-4cf3-b412-8e5209f56cae',
-                        archived: false,
-                        ownerName: 'Admin User',
-                        host: '48190c8c-42c4-46af-8d1a-0cd5db894797',
-                        working: true,
-                        locked: false,
-                        stInode: '778f3246-9b11-4a2a-a101-e7fdf111bdad',
-                        contentType: 'Activity',
-                        live: true,
-                        altTag: 'Snowboarding',
-                        owner: 'dotcms.org.1',
-                        imageVersion:
-                            '/dA/d77576ce-6e3a-4cf3-b412-8e5209f56cae/image/box-info-2-270x270.jpg',
-                        identifier: '574f0aec-185a-4160-9c17-6d037b298318',
-                        image: '/dA/574f0aec-185a-4160-9c17-6d037b298318/image/box-info-2-270x270.jpg',
-                        imageContentAsset: '574f0aec-185a-4160-9c17-6d037b298318/image',
-                        urlTitle: 'snowboarding',
-                        publishUserName: 'Admin User',
-                        publishUser: 'dotcms.org.1',
-                        languageId: 1,
-                        URL_MAP_FOR_CONTENT: '/activities/snowboarding',
-                        creationDate: 1599064927605,
-                        url: '/content.2f6fe5b8-a2cc-4ecb-a868-db632d695fca',
-                        tags: 'snowboarding,winterenthusiast',
-                        titleImage: 'image',
-                        modUserName: 'Admin User',
-                        urlMap: '/activities/snowboarding',
-                        hasLiveVersion: true,
-                        folder: 'SYSTEM_FOLDER',
-                        hasTitleImage: true,
-                        sortOrder: 0,
-                        modUser: 'dotcms.org.1',
-                        onNumberOfPages: 2
-                    },
-                    {
-                        hostName: 'demo.dotcms.com',
-                        modDate: 1599064928089,
-                        imageMetaData: {
-                            modDate: 1716268463631,
-                            sha256: '07b3d78da174c14744c865ac82e34cdada87f846f8e48cf55f9cc6731da0dc1b',
-                            length: 18643,
-                            title: 'surfing.jpg',
-                            editableAsText: false,
-                            version: 20220201,
-                            isImage: true,
-                            fileSize: 18643,
-                            name: 'surfing.jpg',
-                            width: 270,
-                            contentType: 'image/jpeg',
-                            height: 270
-                        },
-                        publishDate: 1599064928140,
-                        description:
-                            'The search for the perfect wave is never-ending, but the journey itself is incredibly fulfilling. Visit one of our surf resorts and get one step closer to finding nirvana.',
-                        title: 'Surfing',
-                        body: '<p>Is your surfboard always leaning against the wall next to the door, waiting to be grabbed on the run? Do you organize your whole week around those hours spent outdoors doing what you love most? Are you happy when there&rsquo;s an offshore wind and do you feel irritated when wind conditions are not quite right? Well, my friend, I&rsquo;m afraid that you may already be addicted to surfing.<br /><br />Regardless of your level, whether you&rsquo;re into big wave surfing or still a kook, there&rsquo;s no denying that surfing gives you quite the adrenaline rush. But it&rsquo;s not necessarily the danger that gets you hooked, there are a bunch of other factors that contribute to the natural high: the setting, the anticipation, the rewards, all result in a surge of feel-good chemicals &ndash; endorphins, dopamine, and serotonin.</p>',
-                        baseType: 'CONTENT',
-                        inode: '3bf914e1-1f42-4ee1-8264-9e7b807af712',
-                        archived: false,
-                        ownerName: 'Admin User',
-                        host: '48190c8c-42c4-46af-8d1a-0cd5db894797',
-                        working: true,
-                        locked: false,
-                        stInode: '778f3246-9b11-4a2a-a101-e7fdf111bdad',
-                        contentType: 'Activity',
-                        live: true,
-                        altTag: 'Surfing Vactions',
-                        owner: 'dotcms.org.1',
-                        imageVersion: '/dA/3bf914e1-1f42-4ee1-8264-9e7b807af712/image/surfing.jpg',
-                        identifier: '8ccfa397-4369-44bb-b450-33151387eb02',
-                        image: '/dA/8ccfa397-4369-44bb-b450-33151387eb02/image/surfing.jpg',
-                        imageContentAsset: '8ccfa397-4369-44bb-b450-33151387eb02/image',
-                        urlTitle: 'surfing',
-                        publishUserName: 'Admin User',
-                        publishUser: 'dotcms.org.1',
-                        languageId: 1,
-                        URL_MAP_FOR_CONTENT: '/activities/surfing',
-                        creationDate: 1599064928089,
-                        url: '/content.6def68a6-67f4-4f56-b8fc-118b3daab841',
-                        tags: 'surfing,waterenthusiast',
-                        titleImage: 'image',
-                        modUserName: 'Admin User',
-                        urlMap: '/activities/surfing',
-                        hasLiveVersion: true,
-                        folder: 'SYSTEM_FOLDER',
-                        hasTitleImage: true,
-                        sortOrder: 0,
-                        modUser: 'dotcms.org.1',
-                        onNumberOfPages: 2
-                    }
-                ],
-                'uuid-3': [
-                    {
-                        hostName: 'demo.dotcms.com',
-                        modDate: 1599064929068,
-                        imageMetaData: {
-                            modDate: 1716268464105,
-                            sha256: '028e5fa94f67eecdac5616925246dfd713c8ddbe710fc1a6349512f1c59f378d',
-                            length: 14358,
-                            title: 'box-info-1-270x270.jpg',
-                            editableAsText: false,
-                            version: 20220201,
-                            isImage: true,
-                            fileSize: 14358,
-                            name: 'box-info-1-270x270.jpg',
-                            width: 270,
-                            contentType: 'image/jpeg',
-                            height: 270
-                        },
-                        publishDate: 1599064929116,
-                        description:
-                            "Skiing is the best family sport because it's so much more than a sport: it's a medium of shared experiences in a living, breathing culture of connection.",
-                        title: 'Skiing',
-                        body: "<p>Admiring the dramatic mountain landscape from atop the ski lift, feeling the cold air nipping at your cheeks, experiencing the rush of adrenaline as you carve the snow &ndash; there's nothing quite like a day on the slopes. And while the mountain conditions are top priority, our ski vacation spots also boast charming towns and lively apr&egrave;s-ski scenes to explore. Factors like resort variety, scenic beauty, annual snowfall and overall atmosphere, we have the world's best places to ski. Wondering where to go? Take a peek at the destinations, and don't forget to vote for your favorites.</p>",
-                        baseType: 'CONTENT',
-                        inode: '278aa6dc-57cd-4cf6-ac18-df48c2430cb1',
-                        archived: false,
-                        ownerName: 'Admin User',
-                        host: '48190c8c-42c4-46af-8d1a-0cd5db894797',
-                        working: true,
-                        locked: false,
-                        stInode: '778f3246-9b11-4a2a-a101-e7fdf111bdad',
-                        contentType: 'Activity',
-                        live: true,
-                        altTag: 'Skiing',
-                        owner: 'dotcms.org.1',
-                        imageVersion:
-                            '/dA/278aa6dc-57cd-4cf6-ac18-df48c2430cb1/image/box-info-1-270x270.jpg',
-                        identifier: '6a8102b5-fdb0-4ad5-9a5d-e982bcdb54c8',
-                        image: '/dA/6a8102b5-fdb0-4ad5-9a5d-e982bcdb54c8/image/box-info-1-270x270.jpg',
-                        imageContentAsset: '6a8102b5-fdb0-4ad5-9a5d-e982bcdb54c8/image',
-                        urlTitle: 'skiing',
-                        publishUserName: 'Admin User',
-                        publishUser: 'dotcms.org.1',
-                        languageId: 1,
-                        URL_MAP_FOR_CONTENT: '/activities/skiing',
-                        creationDate: 1599064929068,
-                        url: '/content.97dded8a-f260-4730-aa99-56c9ea01c16d',
-                        tags: 'skiing,winterenthusiast',
-                        titleImage: 'image',
-                        modUserName: 'Admin User',
-                        urlMap: '/activities/skiing',
-                        hasLiveVersion: true,
-                        folder: 'SYSTEM_FOLDER',
-                        hasTitleImage: true,
-                        sortOrder: 0,
-                        modUser: 'dotcms.org.1',
-                        onNumberOfPages: 2
-                    },
-                    {
-                        hostName: 'demo.dotcms.com',
-                        modDate: 1599064927114,
-                        imageMetaData: {
-                            modDate: 1716268463430,
-                            sha256: 'd87e67d27c4f1b431d44ef5fdcadc2b1f816d55e60796bba0ae0dd9b90cfe02c',
-                            length: 22168,
-                            title: 'costa-rica-fishing.jpg',
-                            editableAsText: false,
-                            version: 20220201,
-                            isImage: true,
-                            fileSize: 22168,
-                            name: 'costa-rica-fishing.jpg',
-                            width: 270,
-                            contentType: 'image/jpeg',
-                            height: 270
-                        },
-                        publishDate: 1599064927161,
-                        description:
-                            'Do you know exactly which fish you are trying to catch? If not, you can learn about all the different types of fish you can catch in Costa Rica. Plus we let you know where the best places to catch them.',
-                        title: 'Sport Fishing',
-                        body: '<p>Encompassing an area as vast as the European continent, French Polynesia is a playground for amateur sport fishermen. French Polynesian fishermen head out armed only with a fishing pole and a harness to the great blue where they confront species known for their fighting qualities: tuna, swordfish and of course the Marlin (Haura,in Tahitian). The largest of the catch can weigh over 500 kilos!</p>\n<p>The fact that Polynesian waters harbor so many of these giants, draws in many sport fishermen. At the end of March, the 11th Tahitian Billfish Tournament will bring together over 60 fishing boats and expects to attract many foreign crews. During the four-day tournament, the boats will search out these huge fish along the coasts of Tahiti for a truly adrenalin charged experience.</p>',
-                        baseType: 'CONTENT',
-                        inode: 'aeb77b14-02ab-42ec-aea6-499c8e0bcba1',
-                        archived: false,
-                        ownerName: 'Admin User',
-                        host: '48190c8c-42c4-46af-8d1a-0cd5db894797',
-                        working: true,
-                        locked: false,
-                        stInode: '778f3246-9b11-4a2a-a101-e7fdf111bdad',
-                        contentType: 'Activity',
-                        live: true,
-                        altTag: 'Costa Rica boasts some of the best sportfishing',
-                        owner: 'dotcms.org.1',
-                        imageVersion:
-                            '/dA/aeb77b14-02ab-42ec-aea6-499c8e0bcba1/image/costa-rica-fishing.jpg',
-                        identifier: '50351143-3ba6-4c54-9e9b-0d8a90d2f9b0',
-                        image: '/dA/50351143-3ba6-4c54-9e9b-0d8a90d2f9b0/image/costa-rica-fishing.jpg',
-                        imageContentAsset: '50351143-3ba6-4c54-9e9b-0d8a90d2f9b0/image',
-                        urlTitle: 'sport-fishing',
-                        publishUserName: 'Admin User',
-                        publishUser: 'dotcms.org.1',
-                        languageId: 1,
-                        URL_MAP_FOR_CONTENT: '/activities/sport-fishing',
-                        creationDate: 1599064927114,
-                        url: '/content.b1dcbe8a-d81f-405e-a176-4aa4a6a0b0a3',
-                        tags: 'sport fishing,fishing',
-                        titleImage: 'image',
-                        modUserName: 'Admin User',
-                        urlMap: '/activities/sport-fishing',
-                        hasLiveVersion: true,
-                        folder: 'SYSTEM_FOLDER',
-                        hasTitleImage: true,
-                        sortOrder: 0,
-                        modUser: 'dotcms.org.1',
-                        onNumberOfPages: 2
-                    }
-                ],
-                'uuid-4': [
-                    {
-                        hostName: 'demo.dotcms.com',
-                        modDate: 1599064926137,
-                        imageMetaData: {
-                            modDate: 1716268463519,
-                            sha256: '729049464994cc3b93b27f9478e907107e7407a14544c619d6efa90dd19a16f3',
-                            length: 24219,
-                            title: 'white-water-raft-2.jpg',
-                            editableAsText: false,
-                            version: 20220201,
-                            isImage: true,
-                            fileSize: 24219,
-                            name: 'white-water-raft-2.jpg',
-                            width: 270,
-                            contentType: 'image/jpeg',
-                            height: 270
-                        },
-                        publishDate: 1599064926184,
-                        description:
-                            'For those looking for a thrill, we offer some of the worlds bets white water rafting. Class II - IV rivers.',
-                        title: 'White Water Rafting',
-                        body: '<p>Between the year-round warm water and the natural beauty the country has to offer, a trip to Costa Rica presents the opportunity for world-class rafting in a tropical paradise. Costa Rica has 14 major river systems that begin in the volcanic mountain ranges and flow out towards the Caribbean Sea, the Pacific Ocean, the San Juan River, or Lake Nicaragua &mdash; with plenty of waterfalls along the way. These rivers produce world-famous white-water rapids, as well as beautiful scenery along the banks.<br /><br /><strong>Choose Your White Water Rafting Adventure.</strong><br />We have a wide range of options when it comes to rafting adventures, with both single day tours and multi-day white water excursions available, and river difficulties varying from the calm stroll of Class I rivers to the extreme thrill of Class V rivers. So, whether you&rsquo;d like to take an easy float down the river to spot wildlife with the whole family, or you&rsquo;re interested in challenging yourself on adrenaline-packed rapids with nicknames such as &ldquo;La Boca del Diablo,&rdquo; there&rsquo;s a whitewater rafting trip for you.</p>',
-                        baseType: 'CONTENT',
-                        inode: '72736205-e217-4f69-a28c-4e3496512d73',
-                        archived: false,
-                        ownerName: 'Admin User',
-                        host: '48190c8c-42c4-46af-8d1a-0cd5db894797',
-                        working: true,
-                        locked: false,
-                        stInode: '778f3246-9b11-4a2a-a101-e7fdf111bdad',
-                        contentType: 'Activity',
-                        live: true,
-                        altTag: 'White Water Rafting in Tropical Rain Forests',
-                        owner: 'dotcms.org.1',
-                        imageVersion:
-                            '/dA/72736205-e217-4f69-a28c-4e3496512d73/image/white-water-raft-2.jpg',
-                        identifier: '0e9340f8-08d2-46e3-ae25-be0137c575d0',
-                        image: '/dA/0e9340f8-08d2-46e3-ae25-be0137c575d0/image/white-water-raft-2.jpg',
-                        imageContentAsset: '0e9340f8-08d2-46e3-ae25-be0137c575d0/image',
-                        urlTitle: 'white-water-rafting',
-                        publishUserName: 'Admin User',
-                        publishUser: 'dotcms.org.1',
-                        languageId: 1,
-                        URL_MAP_FOR_CONTENT: '/activities/white-water-rafting',
-                        creationDate: 1599064926137,
-                        url: '/content.a5f36908-8c57-46c0-9ee5-c37e065087d9',
-                        tags: 'white water rafting,ecoenthusiast',
-                        titleImage: 'image',
-                        modUserName: 'Admin User',
-                        urlMap: '/activities/white-water-rafting',
-                        hasLiveVersion: true,
-                        folder: 'SYSTEM_FOLDER',
-                        hasTitleImage: true,
-                        sortOrder: 0,
-                        modUser: 'dotcms.org.1',
-                        onNumberOfPages: 3
-                    },
-                    {
-                        hostName: 'demo.dotcms.com',
-                        modDate: 1599064930049,
-                        imageMetaData: {
-                            modDate: 1716268463545,
-                            sha256: '7e1cf9d3c8c144f592af72658456031c8283bfe4a5ecce3e188c71aa7b1e590e',
-                            length: 37207,
-                            title: 'zip-line.jpg',
-                            editableAsText: false,
-                            version: 20220201,
-                            isImage: true,
-                            fileSize: 37207,
-                            name: 'zip-line.jpg',
-                            width: 270,
-                            contentType: 'image/jpeg',
-                            height: 270
-                        },
-                        publishDate: 1599064930101,
-                        description:
-                            'Ever wondered what it is like to fly through the forest canopy? Zip-lining ais the best way to explore the forest canopy, where thick branches serve as platforms for the adventurous traveler, more than 100 feet above the forest floor.',
-                        title: 'Zip-Lining',
-                        body: '<p>Ever wondered what it is a monkey finds so fascinating about the forest canopy? Costa Rica is a pioneer in canopy exploration, where thick branches serve as platforms for the adventurous traveler, more than 100 feet above the jungle floor. If you&rsquo;re wondering why you&rsquo;d want to head to the top of a tree just to look around, remember that 90% of Costa Rica animals and 50% of plant species in rainforests live in the upper levels of the trees. When you explore that far off the ground, the view is something you&rsquo;ll never forget! A Costa Rica zip line tour, hanging bridges hike, or aerial tram tour are all fantastic ways to take advantage of Costa Rica&rsquo;s stunning forest canopy views.</p>\n<p>Almost anyone of any age and physical condition can enjoy a Costa Rica zip line adventure as it is not strenuous. Secured into a harness and attached to a sturdy cable, you will have the opportunity to fly through the rainforest canopy and experience a bird&rsquo;s eye view of the lively forest below. A Costa Rica zip line is about a five hour adventure that operates rain or shine all year and is led by bilingual guides. For the non-adrenaline junkie, the aerial tram can take you through the rainforest in comfort and safety. Prefer to linger? Hanging bridges offer panoramic views for acres, and an experienced guide will be happy to point out a variety of birds and animals.</p>',
-                        baseType: 'CONTENT',
-                        inode: '8df9a375-0386-401c-b5d6-da21c1c5c301',
-                        archived: false,
-                        ownerName: 'Admin User',
-                        host: '48190c8c-42c4-46af-8d1a-0cd5db894797',
-                        working: true,
-                        locked: false,
-                        stInode: '778f3246-9b11-4a2a-a101-e7fdf111bdad',
-                        contentType: 'Activity',
-                        live: true,
-                        altTag: 'Zip-line',
-                        owner: 'dotcms.org.1',
-                        imageVersion: '/dA/8df9a375-0386-401c-b5d6-da21c1c5c301/image/zip-line.jpg',
-                        identifier: '50757fb4-75df-4e2c-8335-35d36bdb944b',
-                        image: '/dA/50757fb4-75df-4e2c-8335-35d36bdb944b/image/zip-line.jpg',
-                        imageContentAsset: '50757fb4-75df-4e2c-8335-35d36bdb944b/image',
-                        urlTitle: 'zip-lining',
-                        publishUserName: 'Admin User',
-                        publishUser: 'dotcms.org.1',
-                        languageId: 1,
-                        URL_MAP_FOR_CONTENT: '/activities/zip-lining',
-                        creationDate: 1599064930050,
-                        url: '/content.c17f9c4c-ad14-4777-ae61-334ee6c9fcbf',
-                        tags: 'ecoenthusiast,zip-lining',
-                        titleImage: 'image',
-                        modUserName: 'Admin User',
-                        urlMap: '/activities/zip-lining',
-                        hasLiveVersion: true,
-                        folder: 'SYSTEM_FOLDER',
-                        hasTitleImage: true,
-                        sortOrder: 0,
-                        modUser: 'dotcms.org.1',
-                        onNumberOfPages: 2
-                    }
+                        onNumberOfPages: '3'
+                    } as unknown as DotCMSBasicContentlet
                 ]
             },
             container: {
-                archived: false,
-                categoryId: 'f6a7e729-56f5-4fc0-a045-9711960b7427',
-                deleted: false,
-                friendlyName: 'container',
-                hostId: '48190c8c-42c4-46af-8d1a-0cd5db894797',
-                hostName: 'demo.dotcms.com',
-                iDate: 1687784158222,
-                idate: 1687784158222,
                 identifier: '69b3d24d-7e80-4be6-b04a-d352d16493ee',
+                uuid: '69b3d24d-7e80-4be6-b04a-d352d16493ee',
+                iDate: 1687784158222,
+                type: 'containers',
+                owner: 'system',
                 inode: 'f6a7e729-56f5-4fc0-a045-9711960b7427',
+                source: 'FILE',
+                title: 'Default',
+                friendlyName: 'container',
+                modDate: 1687784158222,
+                modUser: 'system',
+                sortOrder: 0,
+                showOnMenu: false,
+                code: '',
+                maxContentlets: 25,
+                useDiv: false,
+                preLoop: '',
+                postLoop: '',
+                staticify: false,
+                notes: '',
                 languageId: 1,
+                path: '',
                 live: true,
                 locked: false,
-                maxContentlets: 25,
-                title: 'Default'
+                working: true,
+                deleted: false,
+                name: 'Default',
+                archived: false,
+                permissionId: '69b3d24d-7e80-4be6-b04a-d352d16493ee',
+                versionId: '69b3d24d-7e80-4be6-b04a-d352d16493ee',
+                versionType: 'containers',
+                permissionType: 'com.dotmarketing.portlets.containers.model.Container',
+                categoryId: 'f6a7e729-56f5-4fc0-a045-9711960b7427',
+                idate: 1687784158222,
+                new: false,
+                acceptTypes: '',
+                contentlets: [],
+                parentPermissionable: {
+                    Inode: '48190c8c-42c4-46af-8d1a-0cd5db894797',
+                    Identifier: '48190c8c-42c4-46af-8d1a-0cd5db894797',
+                    permissionByIdentifier: true,
+                    type: 'host',
+                    identifier: '48190c8c-42c4-46af-8d1a-0cd5db894797',
+                    permissionId: '48190c8c-42c4-46af-8d1a-0cd5db894797',
+                    permissionType: 'com.dotmarketing.portlets.contentlet.model.Contentlet',
+                    inode: '48190c8c-42c4-46af-8d1a-0cd5db894797'
+                }
             }
         },
         '//demo.dotcms.com/application/containers/banner/': {
@@ -509,7 +138,7 @@ export const PageResponseMock = {
                 'uuid-1': [
                     {
                         hostName: 'demo.dotcms.com',
-                        modDate: 1716324004216,
+                        modDate: '1716324004216',
                         imageMetaData: {
                             modDate: 1716268463471,
                             sha256: 'd9c3c87a691fe062ce370ddda2e9a71fa333739260711f93d5a82f56a08c1703',
@@ -531,7 +160,7 @@ export const PageResponseMock = {
                         baseType: 'CONTENT',
                         inode: '84534373-582a-4e62-8189-03abd0435778',
                         archived: false,
-                        ownerName: 'Admin User',
+                        ownerUserName: 'Admin User',
                         host: '48190c8c-42c4-46af-8d1a-0cd5db894797',
                         working: true,
                         locked: false,
@@ -560,8 +189,8 @@ export const PageResponseMock = {
                         hasTitleImage: true,
                         sortOrder: 0,
                         modUser: 'dotcms.org.1',
-                        onNumberOfPages: 1
-                    }
+                        onNumberOfPages: '1'
+                    } as unknown as DotCMSBasicContentlet
                 ]
             },
             container: {
@@ -569,8 +198,6 @@ export const PageResponseMock = {
                 categoryId: '1d9165ad-f8ea-4006-8017-b103eb0d9f9b',
                 deleted: false,
                 friendlyName: 'container',
-                hostId: '48190c8c-42c4-46af-8d1a-0cd5db894797',
-                hostName: 'demo.dotcms.com',
                 iDate: 1600437115745,
                 idate: 1600437115745,
                 identifier: '5e8c9a71-8cae-4d96-a2f7-d25b9cf69a83',
@@ -586,7 +213,32 @@ export const PageResponseMock = {
                 useDiv: false,
                 versionId: '5e8c9a71-8cae-4d96-a2f7-d25b9cf69a83',
                 versionType: 'containers',
-                working: true
+                working: true,
+                uuid: '5e8c9a71-8cae-4d96-a2f7-d25b9cf69a83',
+                modDate: 1600437115745,
+                modUser: 'system',
+                showOnMenu: false,
+                preLoop: '',
+                postLoop: '',
+                staticify: false,
+                notes: '',
+                path: '',
+                permissionId: '5e8c9a71-8cae-4d96-a2f7-d25b9cf69a83',
+                permissionType: 'com.dotmarketing.portlets.containers.model.Container',
+                parentPermissionable: {
+                    Inode: '48190c8c-42c4-46af-8d1a-0cd5db894797',
+                    Identifier: '48190c8c-42c4-46af-8d1a-0cd5db894797',
+                    permissionByIdentifier: true,
+                    type: 'host',
+                    identifier: '48190c8c-42c4-46af-8d1a-0cd5db894797',
+                    permissionId: '48190c8c-42c4-46af-8d1a-0cd5db894797',
+                    permissionType: 'com.dotmarketing.portlets.contentlet.model.Contentlet',
+                    inode: '48190c8c-42c4-46af-8d1a-0cd5db894797'
+                },
+                acceptTypes: '',
+                contentlets: [],
+                name: 'Banner',
+                new: false
             }
         },
         SYSTEM_CONTAINER: {
@@ -609,7 +261,38 @@ export const PageResponseMock = {
                 useDiv: false,
                 versionId: 'SYSTEM_CONTAINER',
                 versionType: 'containers',
-                working: false
+                working: false,
+                uuid: 'SYSTEM_CONTAINER',
+                type: 'containers',
+                source: 'FILE',
+                title: 'System Container',
+                modDate: 1716356412597,
+                modUser: 'system',
+                sortOrder: 0,
+                showOnMenu: false,
+                maxContentlets: 25,
+                preLoop: '',
+                postLoop: '',
+                staticify: false,
+                notes: '',
+                languageId: 1,
+                path: '',
+                permissionId: 'SYSTEM_CONTAINER',
+                permissionType: 'com.dotmarketing.portlets.containers.model.Container',
+                parentPermissionable: {
+                    Inode: '48190c8c-42c4-46af-8d1a-0cd5db894797',
+                    Identifier: '48190c8c-42c4-46af-8d1a-0cd5db894797',
+                    permissionByIdentifier: true,
+                    type: 'host',
+                    identifier: '48190c8c-42c4-46af-8d1a-0cd5db894797',
+                    permissionId: '48190c8c-42c4-46af-8d1a-0cd5db894797',
+                    permissionType: 'com.dotmarketing.portlets.contentlet.model.Contentlet',
+                    inode: '48190c8c-42c4-46af-8d1a-0cd5db894797'
+                },
+                acceptTypes: '',
+                contentlets: [],
+                name: 'System Container',
+                new: false
             }
         }
     },
@@ -618,15 +301,18 @@ export const PageResponseMock = {
         title: 'anonymouslayout1600437132653',
         header: true,
         footer: true,
-        body: {
+        pageWidth: '',
+        layout: JSON.stringify({
             rows: [
                 {
+                    identifier: 1,
                     columns: [
                         {
                             containers: [
                                 {
                                     identifier: '//demo.dotcms.com/application/containers/banner/',
-                                    uuid: '1'
+                                    uuid: '1',
+                                    historyUUIDs: []
                                 }
                             ],
                             widthPercent: 100,
@@ -640,201 +326,260 @@ export const PageResponseMock = {
                     styleClass: 'p-0 banner-tall'
                 },
                 {
+                    identifier: 2,
                     columns: [
                         {
                             containers: [
                                 {
                                     identifier: '//demo.dotcms.com/application/containers/default/',
-                                    uuid: '1'
+                                    uuid: '2',
+                                    historyUUIDs: []
                                 }
                             ],
-                            widthPercent: 25,
+                            widthPercent: 50,
                             leftOffset: 1,
-                            styleClass: '',
+                            styleClass: 'content-column',
                             preview: false,
-                            width: 3,
+                            width: 6,
                             left: 0
                         },
                         {
                             containers: [
                                 {
-                                    identifier: '//demo.dotcms.com/application/containers/default/',
-                                    uuid: '2'
+                                    identifier: 'SYSTEM_CONTAINER',
+                                    uuid: '3',
+                                    historyUUIDs: []
                                 }
                             ],
-                            widthPercent: 25,
-                            leftOffset: 4,
-                            styleClass: '',
-                            preview: false,
-                            width: 3,
-                            left: 3
-                        },
-                        {
-                            containers: [
-                                {
-                                    identifier: '//demo.dotcms.com/application/containers/default/',
-                                    uuid: '3'
-                                }
-                            ],
-                            widthPercent: 25,
+                            widthPercent: 50,
                             leftOffset: 7,
-                            styleClass: '',
+                            styleClass: 'content-column',
                             preview: false,
-                            width: 3,
+                            width: 6,
                             left: 6
-                        },
-                        {
-                            containers: [
-                                {
-                                    identifier: '//demo.dotcms.com/application/containers/default/',
-                                    uuid: '4'
-                                }
-                            ],
-                            widthPercent: 25,
-                            leftOffset: 10,
-                            styleClass: '',
-                            preview: false,
-                            width: 3,
-                            left: 9
                         }
                     ],
-                    styleClass: null
+                    styleClass: 'content-row'
                 },
                 {
+                    identifier: 3,
                     columns: [
                         {
                             containers: [
                                 {
-                                    identifier: 'SYSTEM_CONTAINER',
-                                    uuid: '1'
+                                    identifier: '//demo.dotcms.com/application/containers/default/',
+                                    uuid: '4',
+                                    historyUUIDs: []
                                 }
                             ],
                             widthPercent: 100,
                             leftOffset: 1,
-                            styleClass: '',
+                            styleClass: 'footer-column',
                             preview: false,
                             width: 12,
                             left: 0
                         }
                     ],
-                    styleClass: null
+                    styleClass: 'footer-row'
+                }
+            ]
+        }),
+        body: {
+            rows: [
+                {
+                    identifier: 1,
+                    columns: [
+                        {
+                            containers: [
+                                {
+                                    identifier: '//demo.dotcms.com/application/containers/banner/',
+                                    uuid: '1',
+                                    historyUUIDs: []
+                                }
+                            ],
+                            widthPercent: 100,
+                            leftOffset: 1,
+                            styleClass: 'banner-tall',
+                            preview: false,
+                            width: 12,
+                            left: 0
+                        }
+                    ],
+                    styleClass: 'p-0 banner-tall'
+                },
+                {
+                    identifier: 2,
+                    columns: [
+                        {
+                            containers: [
+                                {
+                                    identifier: '//demo.dotcms.com/application/containers/default/',
+                                    uuid: '2',
+                                    historyUUIDs: []
+                                }
+                            ],
+                            widthPercent: 50,
+                            leftOffset: 1,
+                            styleClass: 'content-column',
+                            preview: false,
+                            width: 6,
+                            left: 0
+                        },
+                        {
+                            containers: [
+                                {
+                                    identifier: 'SYSTEM_CONTAINER',
+                                    uuid: '3',
+                                    historyUUIDs: []
+                                }
+                            ],
+                            widthPercent: 50,
+                            leftOffset: 7,
+                            styleClass: 'content-column',
+                            preview: false,
+                            width: 6,
+                            left: 6
+                        }
+                    ],
+                    styleClass: 'content-row'
+                },
+                {
+                    identifier: 3,
+                    columns: [
+                        {
+                            containers: [
+                                {
+                                    identifier: '//demo.dotcms.com/application/containers/default/',
+                                    uuid: '4',
+                                    historyUUIDs: []
+                                }
+                            ],
+                            widthPercent: 100,
+                            leftOffset: 1,
+                            styleClass: 'footer-column',
+                            preview: false,
+                            width: 12,
+                            left: 0
+                        }
+                    ],
+                    styleClass: 'footer-row'
                 }
             ]
         },
-        sidebar: null
+        sidebar: {
+            preview: false,
+            containers: [],
+            location: '',
+            widthPercent: 0,
+            width: ''
+        }
     },
-    numberContents: 9,
     page: {
-        __icon__: 'pageIcon',
-        archived: false,
-        baseType: 'HTMLPAGE',
-        cachettl: '0',
-        canEdit: true,
-        canLock: true,
-        canRead: true,
-        canonicalUrl: '/',
         contentType: 'htmlpageasset',
-        creationDate: 1599065449560,
-        deleted: false,
-        description: 'TravelLux - Your Destination for Exclusive Experiences',
-        extension: 'page',
-        folder: 'SYSTEM_FOLDER',
-        friendlyName: 'TravelLux - Your Destination for Exclusive Experiences',
-        hasLiveVersion: true,
-        hasTitleImage: true,
-        host: '48190c8c-42c4-46af-8d1a-0cd5db894797',
-        hostName: 'demo.dotcms.com',
+        template: 'fdc739f6-fe53-4271-9c8c-a3e05d12fcac',
+        modDate: 1689887118429,
+        metadata: '',
+        cachettl: '0',
+        pageURI: '/index',
+        title: 'Home',
+        type: 'htmlpage',
+        showOnMenu: 'false',
         httpsRequired: false,
-        identifier: 'a9f30020-54ef-494e-92ed-645e757171c2',
         inode: 'f9ce2b8e-eb06-4218-b036-9f266e2113b9',
-        isContentlet: true,
-        languageId: 1,
-        live: true,
-        liveInode: 'f9ce2b8e-eb06-4218-b036-9f266e2113b9',
+        disabledWYSIWYG: [],
+        seokeywords: '',
+        host: '48190c8c-42c4-46af-8d1a-0cd5db894797',
+        lastReview: 0,
+        working: true,
         locked: true,
+        stInode: 'c541abb1-69b3-4bc5-8430-5e09e5239cc8',
+        friendlyName: 'TravelLux - Your Destination for Exclusive Experiences',
+        live: true,
+        owner: 'dotcms.org.1',
+        identifier: 'a9f30020-54ef-494e-92ed-645e757171c2',
+        nullProperties: [],
+        friendlyname: 'TravelLux - Your Destination for Exclusive Experiences',
+        pagemetadata: '',
+        languageId: 1,
+        url: '/index',
+        seodescription: '',
+        modUserName: 'Admin User',
+        folder: 'SYSTEM_FOLDER',
+        deleted: false,
+        sortOrder: 0,
+        modUser: 'dotcms.org.1',
+        pageUrl: 'index',
+        workingInode: 'f9ce2b8e-eb06-4218-b036-9f266e2113b9',
+        shortyWorking: 'f9ce2b8eeb',
+        canEdit: true,
+        canRead: true,
+        canLock: true,
+        lockedOn: 1690313868046,
         lockedBy: 'dotcms.org.1',
         lockedByName: 'Admin User',
-        lockedOn: 1690313868046,
-        metaDescription:
-            'dotCMS provides a user-friendly interface for creating, editing, and publishing content. This starter site is designed to demonstrate some the basic features of dotCMS.',
-        mimeType: 'application/dotpage',
-        modDate: 1689887118429,
-        modUser: 'dotcms.org.1',
-        modUserName: 'Admin User',
-        name: 'index',
-        ogDescription:
-            'dotCMS provides a user-friendly interface for creating, editing, and publishing content. This starter site is designed to demonstrate some the basic features of dotCMS.',
-        ogImage: 'eb372522595f11163666d29c786d5a9e',
-        ogTitle: 'dotCMS Hybrid Content Management System Demo Site',
-        ogType: 'website',
-        owner: 'dotcms.org.1',
-        ownerName: 'Admin User',
-        pageTitle: 'dotCMS Demo Site',
-        pageURI: '/index',
-        pageUrl: 'index',
-        path: '/index',
-        publishDate: 1689887118802,
-        publishUser: 'dotcms.org.1',
-        publishUserName: 'Admin User',
-        searchEngineIndex: 'index,follow,snippet',
-        shortyLive: 'f9ce2b8eeb',
-        shortyWorking: 'f9ce2b8eeb',
-        sitemapImportance: '1.0',
-        sortOrder: 0,
-        stInode: 'c541abb1-69b3-4bc5-8430-5e09e5239cc8',
-        statusIcons:
-            "<span class='greyDotIcon' style='opacity:.4'></span><span class='liveIcon'></span><span class='lockIcon'></span>",
-        template: 'fdc739f6-fe53-4271-9c8c-a3e05d12fcac',
-        title: 'Home',
-        titleImage: 'ogImage',
-        type: 'htmlpage',
-        url: '/index',
-        working: true,
-        workingInode: 'f9ce2b8e-eb06-4218-b036-9f266e2113b9'
+        liveInode: 'f9ce2b8e-eb06-4218-b036-9f266e2113b9',
+        shortyLive: 'f9ce2b8eeb'
     },
     site: {
         lowIndexPriority: false,
-        variantId: 'DEFAULT',
+        name: 'demo.dotcms.com',
         default: true,
         aliases: 'localhost\n127.0.0.1',
-        inode: '59bb8831-6706-4589-9ca0-ff74016e02b2',
-        hostname: 'demo.dotcms.com',
-        tagStorage: 'SYSTEM_HOST',
-        hostThumbnail: null,
-        systemHost: false,
         parent: true,
+        tagStorage: 'SYSTEM_HOST',
+        systemHost: false,
+        inode: '59bb8831-6706-4589-9ca0-ff74016e02b2',
+        versionType: 'contentlet',
         structureInode: '855a2d72-f2f3-4169-8b04-ac5157c4380c',
-        name: 'demo.dotcms.com',
+        hostname: 'demo.dotcms.com',
+        hostThumbnail: null,
         owner: 'dotcms.org.1',
-        permissionType: 'com.dotmarketing.portlets.contentlet.model.Contentlet',
         permissionId: '48190c8c-42c4-46af-8d1a-0cd5db894797',
+        permissionType: 'com.dotmarketing.portlets.contentlet.model.Contentlet',
+        type: 'contentlet',
         identifier: '48190c8c-42c4-46af-8d1a-0cd5db894797',
         modDate: 1634235141702,
-        type: 'contentlet',
-        live: true,
         host: 'SYSTEM_HOST',
-        new: false,
-        folder: 'SYSTEM_FOLDER',
-        languageId: 1,
-        modUser: 'dotcms.org.1',
-        title: 'demo.dotcms.com',
-        archived: false,
-        sortOrder: 0,
-        fileAsset: false,
-        working: true,
-        indexPolicyDependencies: 'DEFER',
+        live: true,
+        indexPolicy: 'WAIT_FOR',
         categoryId: '59bb8831-6706-4589-9ca0-ff74016e02b2',
-        versionId: '48190c8c-42c4-46af-8d1a-0cd5db894797',
-        contentTypeId: '855a2d72-f2f3-4169-8b04-ac5157c4380c',
-        titleImage: null,
+        actionId: null,
+        new: false,
+        archived: false,
+        locked: false,
+        disabledWysiwyg: [],
+        modUser: 'dotcms.org.1',
+        working: true,
+        titleImage: { present: false },
+        folder: 'SYSTEM_FOLDER',
         htmlpage: false,
-        dotAsset: false,
-        persona: false,
-        form: false,
+        fileAsset: false,
         vanityUrl: false,
         keyValue: false,
-        languageVariable: false,
-        locked: false
+        title: 'demo.dotcms.com',
+        languageId: 1,
+        indexPolicyDependencies: 'DEFER',
+        contentTypeId: '855a2d72-f2f3-4169-8b04-ac5157c4380c',
+        versionId: '48190c8c-42c4-46af-8d1a-0cd5db894797',
+        lastReview: 0,
+        nextReview: null,
+        reviewInterval: null,
+        sortOrder: 0,
+        contentType: {
+            owner: null,
+            parentPermissionable: {
+                Inode: '48190c8c-42c4-46af-8d1a-0cd5db894797',
+                Identifier: '48190c8c-42c4-46af-8d1a-0cd5db894797',
+                permissionByIdentifier: true,
+                type: 'host',
+                identifier: '48190c8c-42c4-46af-8d1a-0cd5db894797',
+                permissionId: '48190c8c-42c4-46af-8d1a-0cd5db894797',
+                permissionType: 'com.dotmarketing.portlets.contentlet.model.Contentlet',
+                inode: '48190c8c-42c4-46af-8d1a-0cd5db894797'
+            },
+            permissionId: '48190c8c-42c4-46af-8d1a-0cd5db894797',
+            permissionType: 'com.dotmarketing.portlets.contentlet.model.Contentlet'
+        }
     },
     template: {
         iDate: 1562013807321,
@@ -849,65 +594,41 @@ export const PageResponseMock = {
         modUser: 'system',
         sortOrder: 0,
         showOnMenu: false,
-        body: 'null',
         image: '',
         drawed: true,
         drawedBody:
-            '{"width":"","title":"anonymouslayout1600437132653","header":true,"footer":true,"body":{"rows":[{"columns":[{"containers":[{"identifier":"//demo.dotcms.com/application/containers/banner/","uuid":"1"}],"widthPercent":100,"leftOffset":1,"styleClass":"banner-tall","preview":false,"width":12,"left":0}],"styleClass":"p-0 banner-tall"},{"columns":[{"containers":[{"identifier":"//demo.dotcms.com/application/containers/default/","uuid":"1"}],"widthPercent":25,"leftOffset":1,"styleClass":"","preview":false,"width":3,"left":0},{"containers":[{"identifier":"//demo.dotcms.com/application/containers/default/","uuid":"2"}],"widthPercent":25,"leftOffset":4,"styleClass":"","preview":false,"width":3,"left":3},{"containers":[{"identifier":"//demo.dotcms.com/application/containers/default/","uuid":"3"}],"widthPercent":25,"leftOffset":7,"styleClass":"","preview":false,"width":3,"left":6},{"containers":[{"identifier":"//demo.dotcms.com/application/containers/default/","uuid":"4"}],"widthPercent":25,"leftOffset":10,"styleClass":"","preview":false,"width":3,"left":9}]},{"columns":[{"containers":[{"identifier":"SYSTEM_CONTAINER","uuid":"1"}],"widthPercent":100,"leftOffset":1,"styleClass":"","preview":false,"width":12,"left":0}]}]}}',
-        countAddContainer: 0,
-        countContainers: 0,
+            '{"width":"","title":"anonymouslayout1600437132653","header":true,"footer":true,"body":{"rows":[{"columns":[{"containers":[{"identifier":"//demo.dotcms.com/application/containers/banner/","uuid":"1"}],"widthPercent":100,"leftOffset":1,"styleClass":"banner-tall","preview":false,"width":12,"left":0}],"styleClass":"p-0 banner-tall"}]}}',
         theme: 'd7b0ebc2-37ca-4a5a-b769-e8a3ff187661',
-        header: 'null',
-        footer: 'null',
         anonymous: true,
         template: false,
+        name: 'anonymous_layout_1600437132653',
         live: false,
         archived: false,
-        working: true,
-        deleted: false,
-        versionType: 'template',
-        versionId: 'fdc739f6-fe53-4271-9c8c-a3e05d12fcac',
-        permissionId: 'fdc739f6-fe53-4271-9c8c-a3e05d12fcac',
-        name: 'anonymous_layout_1600437132653',
         locked: false,
+        working: true,
+        permissionId: 'fdc739f6-fe53-4271-9c8c-a3e05d12fcac',
+        versionId: 'fdc739f6-fe53-4271-9c8c-a3e05d12fcac',
+        versionType: 'template',
+        deleted: false,
         permissionType: 'com.dotmarketing.portlets.templates.model.Template',
-        new: false,
         categoryId: '446da365-352f-4ac9-8d0d-4083e68a787e',
         idate: 1562013807321,
+        new: false,
         canEdit: true
     },
     viewAs: {
-        visitor: {
-            tags: [],
-            device: 'COMPUTER',
-            isNew: true,
-            userAgent: {
-                operatingSystem: 'MAC_OS_X',
-                browser: 'CHROME12',
-                id: 50990865,
-                browserVersion: {
-                    version: '0.0.0.0',
-                    majorVersion: '125',
-                    minorVersion: '0'
-                }
-            },
-            referer: 'http://localhost:3000/',
-            personas: {}
-        },
         language: {
             id: 1,
             languageCode: 'en',
             countryCode: 'US',
             language: 'English',
-            country: 'United States',
-            isoCode: 'en-us'
+            country: 'United States'
         },
-        mode: 'EDIT_MODE',
-        variantId: 'DEFAULT'
+        mode: 'EDIT_MODE'
     }
 };
 
-export const PageResponseOneRowMock = {
+export const PageResponseOneRowMock: DotCMSPageAsset = {
     ...PageResponseMock,
     layout: {
         ...PageResponseMock.layout,
@@ -918,82 +639,7 @@ export const PageResponseOneRowMock = {
     }
 };
 
-export const NavMock = {
-    children: [
-        {
-            code: null,
-            folder: 'fa455fb5-b961-4d0c-9e63-e79a8ba8622a',
-            hash: 1851560015,
-            host: '48190c8c-42c4-46af-8d1a-0cd5db894797',
-            href: '/blog',
-            languageId: 1,
-            order: 0,
-            target: '_self',
-            title: 'Travel Blog',
-            type: 'folder'
-        },
-        {
-            code: null,
-            folder: '6c8a2ac4-36a7-4b01-b9c0-c2c1d91ddfdb',
-            hash: 888578018,
-            host: '48190c8c-42c4-46af-8d1a-0cd5db894797',
-            href: '/destinations',
-            languageId: 1,
-            order: 1,
-            target: '_self',
-            title: 'Destinations',
-            type: 'folder'
-        },
-        {
-            code: null,
-            folder: '8027c7b2-61cb-46f0-ac81-3771efdfbe4c',
-            hash: 1519987246,
-            host: '48190c8c-42c4-46af-8d1a-0cd5db894797',
-            href: '/store',
-            languageId: 1,
-            order: 2,
-            target: '_self',
-            title: 'Store',
-            type: 'folder'
-        },
-        {
-            code: null,
-            folder: 'd54e36f2-12da-4721-a7c5-45fd3fb652cd',
-            hash: 1642975162,
-            host: '48190c8c-42c4-46af-8d1a-0cd5db894797',
-            href: '/members',
-            languageId: 1,
-            order: 3,
-            target: '_self',
-            title: 'Members Only',
-            type: 'folder'
-        },
-        {
-            code: null,
-            folder: '9c5e78a9-62ce-48e0-99ce-6817b0f5c2f3',
-            hash: 1807344928,
-            host: '48190c8c-42c4-46af-8d1a-0cd5db894797',
-            href: '/contact-us',
-            languageId: 1,
-            order: 4,
-            target: '_self',
-            title: 'Contact Us',
-            type: 'folder'
-        }
-    ],
-    code: null,
-    folder: 'SYSTEM_FOLDER',
-    hash: 994054630,
-    host: '48190c8c-42c4-46af-8d1a-0cd5db894797',
-    href: '/System foldersystem folder',
-    languageId: 1,
-    order: 0,
-    target: '_self',
-    title: 'System folder',
-    type: 'folder'
-};
-
-export const dotcmsContentletMock: DotCMSContentlet = {
+export const dotcmsContentletMock: DotCMSBasicContentlet = {
     archived: false,
     baseType: '',
     contentType: '',

@@ -21,8 +21,16 @@ print_color() {
 # It performs operations such as formatting and linting on staged files.
 
 # Source husky script
+if [ ! -f "$(dirname "$0")/_/husky.sh" ]; then
+    print_color "$RED" "⚠️  Husky setup incomplete: _/husky.sh not found"
+    print_color "$YELLOW" "This usually happens on first setup or after pulling changes."
+    print_color "$BLUE" "Fix: Run 'just build' or './mvnw clean install' to complete setup"
+    print_color "$YELLOW" "Then try your commit again."
+    exit 1
+fi
+
 . "$(dirname "$0")/_/husky.sh" || {
-    print_color "$RED" "Failed to source husky.sh"
+    print_color "$RED" "❌ Failed to source husky.sh"
     exit 1
 }
 
@@ -33,64 +41,94 @@ root_dir="$(git rev-parse --show-toplevel)"
 setup_nvm() {
     # Check if nvm is already installed
     if [ -s "$NVM_DIR/nvm.sh" ]; then
-        print_color "$GREEN" "nvm is already installed."
+        print_color "$GREEN" "✅ nvm is already installed."
     else
-        print_color "$YELLOW" "Installing nvm..."
+        print_color "$YELLOW" "📦 Installing nvm..."
         # Use the project's Node.js to download and run the nvm install script
         curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
 
-        print_color "$GREEN" "nvm installed successfully."
+        print_color "$GREEN" "✅ nvm installed successfully."
     fi
 
     # Source nvm
     export NVM_DIR="$HOME/.nvm"
-    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+    [ -s "$NVM_DIR/nvm.sh" ]  && \. "$NVM_DIR/nvm.sh"
 
     # Ensure the correct Node.js version is used
     if [ -f "$root_dir/.nvmrc" ]; then
-        print_color "$BLUE" "Using Node.js version specified in .nvmrc"
+        print_color "$BLUE" "📋 Using Node.js version specified in .nvmrc"
+
         nvm install
     else
-        print_color "$YELLOW" "No .nvmrc found. Using default Node.js version."
+        print_color "$YELLOW" "⚠️ No .nvmrc found. Using default Node.js version."
         nvm use default
     fi
 }
 
 check_sdk_client_affected() {
-    local affected_projects=$(npx nx show projects --affected)
-    printf "Affected projects: %s\n" "$affected_projects"
+    # Check if initial build has been done (nx cache and build artifacts exist)
+    if [ ! -d "${root_dir}/core-web/.nx" ] || [ ! -d "${root_dir}/core-web/dist" ]; then
+        print_color "$YELLOW" "⚠️  Initial build not detected - nx cache or dist directory missing"
+        print_color "$BLUE" "💡 Run 'just build' or './mvnw clean install' to complete initial setup"
+        print_color "$YELLOW" "Skipping sdk-uve build check for now"
+        return 0
+    fi
+
+    # Check if sdk-uve related files have been modified (avoid nx affected due to ENOBUFS)
+    local sdk_uve_affected=false
+    
+    # Check staged files for sdk-uve related changes
+    if git diff --cached --name-only | grep -E "(sdk-uve|uve)" >/dev/null 2>&1; then
+        sdk_uve_affected=true
+        print_color "$BLUE" "📋 SDK-UVE related files detected in staged changes"
+    else
+        # Also check if libs/sdk-uve directory exists and has changes
+        if [ -d "${root_dir}/core-web/libs/sdk-uve" ]; then
+            # Check if any files in sdk-uve directory are modified
+            if git status --porcelain 2>/dev/null | grep -E "libs/sdk-uve" >/dev/null 2>&1; then
+                sdk_uve_affected=true
+                print_color "$BLUE" "📋 SDK-UVE directory changes detected"
+            fi
+        fi
+    fi
+    
+    if [ "$sdk_uve_affected" = false ]; then
+        print_color "$GREEN" "✅ No SDK-UVE related changes detected, skipping build"
+    fi
 
     # Build sdk-client if affected
-    if echo "$affected_projects" | grep -q "sdk-client"; then
-        printf "Building sdk-client\n"
-        if ! yarn nx run sdk-client:build:js; then
-            print_color "$RED" "Failed to build sdk-client"
-            has_errors=true
+    if [ "$sdk_uve_affected" = true ]; then
+        print_color "$BLUE" "🔨 Building sdk-client"
+        if ! yarn nx run sdk-uve:build:js 2>/dev/null; then
+            print_color "$YELLOW" "⚠️ SDK-UVE build failed or not available, continuing..."
+            # Don't set has_errors=true here as sdk-uve might not always be available
         fi
     fi
 
-    file_to_remove="${root_dir}/dotCMS/src/main/webapp/html/js/editor-js/package.json"
-    dir_to_remove="${root_dir}/dotCMS/src/main/webapp/html/js/editor-js/libs"
+    file_to_remove="${root_dir}/dotCMS/src/main/webapp/ext/uve/package.json"
 
     # Check if the file exists, then delete it
     if [ -f "$file_to_remove" ]; then
         rm "$file_to_remove"
-        printf "Removed %s\n" "$file_to_remove"
+        print_color "$GREEN" "🗑️ Removed ${file_to_remove}"
     else
-        printf "%s does not exist\n" "$file_to_remove"
+        print_color "$BLUE" "ℹ️ ${file_to_remove} does not exist"
     fi
 
-    # Check if the directory exists, then delete it
-    if [ -d "$dir_to_remove" ]; then
-        rm -r "$dir_to_remove"
-        printf "Removed directory %s\n" "$dir_to_remove"
+    # Only try to stage the file if it exists and we're in the right git context
+    uve_js_file="${root_dir}/dotCMS/src/main/webapp/ext/uve/dot-uve.js"
+    if [ -f "$uve_js_file" ]; then
+        # Change to root directory to ensure proper git context
+        cd "$root_dir" || exit 1
+        if ! git add "dotCMS/src/main/webapp/ext/uve/dot-uve.js"; then
+            print_color "$RED" "❌ Failed to stage computed dot-uve.js"
+            exit 1
+        fi
+        # Change back to core-web directory
+        cd "${root_dir}/core-web" || exit 1
+        print_color "$GREEN" "✅ Staged computed dot-uve.js"
     else
-        printf "%s does not exist\n" "$dir_to_remove"
-    fi
-
-    if ! git add "${root_dir}/dotCMS/src/main/webapp/html/js/editor-js/sdk-editor.js"; then
-        print_color "$RED" "Failed to stage computed sdk-client.js"
-        exit 1
+        print_color "$BLUE" "ℹ️ dot-uve.js does not exist, skipping staging"
     fi
 }
 
@@ -100,18 +138,18 @@ check_sdkman() {
     # Check if sdkman-init.sh exists and is readable
     if [ -s "$SDKMAN_INIT" ]; then
         source "$SDKMAN_INIT" # Source sdkman to make sdk command available
-        print_color "$GREEN" "SDKMAN! sourced from $SDKMAN_INIT"
+        print_color "$GREEN" "✅ SDKMAN! sourced from $SDKMAN_INIT"
 
         # Optionally check if sdk command is available
         if command -v sdk >/dev/null 2>&1; then
-            print_color "$GREEN" "SDKMAN! is installed and functional."
+            print_color "$GREEN" "✅ SDKMAN! is installed and functional."
         else
-            print_color "$RED" "SDKMAN! command is not available. Please check the installation."
+            print_color "$RED" "❌ SDKMAN! command is not available. Please check the installation."
             exit 1
         fi
     else
-        print_color "$RED" "SDKMAN! not found at $SDKMAN_INIT. Please install SDKMAN! first."
-        print_color "$RED" "You can install this and other required utilities from https://github.com/dotCMS/dotcms-utilities"
+        print_color "$RED" "❌ SDKMAN! not found at $SDKMAN_INIT. Please install SDKMAN! first."
+        print_color "$RED" "💡 You can install this and other required utilities from https://github.com/dotCMS/dotcms-utilities"
         exit 1
     fi
 }
@@ -126,21 +164,102 @@ perform_frontend_fixes() {
 
     # Check if yarn.lock is present
     if ! yarn install; then
-        print_color "$RED" "Failed to install dependencies with yarn install"
-        print_color "$YELLOW" "Please run 'yarn install' to update the lockfile and make sure you commit this with any package.json changes."
+        print_color "$RED" "❌ Failed to install dependencies with yarn install"
+        print_color "$YELLOW" "💡 Please run 'yarn install' to update the lockfile and make sure you commit this with any package.json changes."
         has_errors=true
         return 1
     else
-        printf "Completed yarn install adding yarn.lock if it was modified\n"
-        git add "${root_dir}/core-web/yarn.lock"
+        print_color "$GREEN" "✅ Completed yarn install adding yarn.lock if it was modified"
+        # Change to root directory to add yarn.lock with correct path
+        cd "$root_dir" || exit 1
+        git add "core-web/yarn.lock"
+        cd "${root_dir}/core-web" || exit 1
     fi
 
-    if ! yarn nx affected -t lint --exclude='tag:skip:lint' --fix=true; then
-        has_errors=true
+    # ENOBUFS auto-fix will handle cache issues when they occur
+    
+    # Function to attempt ENOBUFS auto-fix
+    attempt_enobufs_fix() {
+        print_color "$YELLOW" "🔧 Attempting automatic ENOBUFS fix..."
+        
+        # Reset nx cache
+        if yarn nx reset >/dev/null 2>&1; then
+            print_color "$GREEN" "✓ nx cache reset successful"
+        else
+            print_color "$RED" "✗ nx cache reset failed"
+            return 1
+        fi
+        
+        # Reinstall dependencies
+        if yarn install >/dev/null 2>&1; then
+            print_color "$GREEN" "✓ yarn install successful"
+        else
+            print_color "$RED" "✗ yarn install failed"
+            return 1
+        fi
+        
+        # Reset again after fresh install
+        if yarn nx reset >/dev/null 2>&1; then
+            print_color "$GREEN" "✓ final nx cache reset successful"
+        else
+            print_color "$RED" "✗ final nx cache reset failed"
+            return 1
+        fi
+        
+        print_color "$GREEN" "🎉 ENOBUFS auto-fix completed, retrying commands..."
+        return 0
+    }
+
+    # Run nx affected lint with ENOBUFS detection and auto-fix
+    print_color "$BLUE" "🔍 Running nx affected lint..."
+    lint_output=$(yarn nx affected -t lint --exclude='tag:skip:lint' --fix=true 2>&1)
+    lint_exit_code=$?
+    
+    if [ $lint_exit_code -ne 0 ]; then
+        if echo "$lint_output" | grep -q "ENOBUFS"; then
+            print_color "$RED" "❌ ENOBUFS error detected in nx lint"
+            if attempt_enobufs_fix; then
+                # Retry after fix
+                print_color "$BLUE" "🔄 Retrying nx affected lint after fix..."
+                if ! yarn nx affected -t lint --exclude='tag:skip:lint' --fix=true; then
+                    print_color "$YELLOW" "⚠️ nx lint still failing after auto-fix, continuing..."
+                    has_errors=true
+                fi
+            else
+                print_color "$RED" "❌ Auto-fix failed. Manual fix required:"
+                print_color "$BLUE" "💡 cd core-web && yarn nx reset && yarn install"
+                has_errors=true
+            fi
+        else
+            print_color "$YELLOW" "⚠️ nx affected lint failed (non-ENOBUFS), but continuing..."
+            has_errors=true
+        fi
     fi
 
-    if ! yarn nx format:write; then
-        has_errors=true
+    # Run nx format with ENOBUFS detection and auto-fix
+    print_color "$BLUE" "✨ Running nx format:write..."
+    format_output=$(yarn nx format:write 2>&1)
+    format_exit_code=$?
+    
+    if [ $format_exit_code -ne 0 ]; then
+        if echo "$format_output" | grep -q "ENOBUFS"; then
+            print_color "$RED" "❌ ENOBUFS error detected in nx format"
+            if attempt_enobufs_fix; then
+                # Retry after fix
+                print_color "$BLUE" "🔄 Retrying nx format:write after fix..."
+                if ! yarn nx format:write; then
+                    print_color "$YELLOW" "⚠️ nx format still failing after auto-fix, continuing..."
+                    has_errors=true
+                fi
+            else
+                print_color "$RED" "❌ Auto-fix failed. Manual fix required:"
+                print_color "$BLUE" "💡 cd core-web && yarn nx reset && yarn install"
+                has_errors=true
+            fi
+        else
+            print_color "$YELLOW" "⚠️ nx format:write failed (non-ENOBUFS), but continuing..."
+            has_errors=true
+        fi
     fi
 
     if [ "$add_to_index" = "true" ]; then
@@ -151,9 +270,12 @@ perform_frontend_fixes() {
 
         for file in $files; do
             if echo "$modified_files" | grep -Fxq "$file"; then
-                if ! git add -- "${root_dir}/${file}"; then
+                # Change to root directory to add files with correct relative paths
+                cd "$root_dir" || exit 1
+                if ! git add -- "${file}"; then
                     has_errors=true
                 fi
+                cd "${root_dir}/core-web" || exit 1
             else
                 unmatched_files+=("$file")
             fi
@@ -161,14 +283,17 @@ perform_frontend_fixes() {
 
         if [ ${#unmatched_files[@]} -ne 0 ]; then
             printf "===================================\n"
-            print_color "$YELLOW" "Warning: The following unrelated files in the affected modules should be linted and/or formatted"
+            print_color "$YELLOW" "⚠️ Warning: The following unrelated files in the affected modules should be linted and/or formatted"
             printf "\n"
             for file in "${unmatched_files[@]}"; do
                 printf "    %s\n" "${file}"
+                # Change to root directory to restore files with correct relative paths
+                cd "$root_dir" || exit 1
                 git restore "${file}"
+                cd "${root_dir}/core-web" || exit 1
             done
             printf "\n"
-            print_color "$YELLOW" "You can fix these files by running the following commands:"
+            print_color "$YELLOW" "💡 You can fix these files by running the following commands:"
             printf "nx affected -t lint --exclude='tag:skip:lint' --fix=true\n"
             printf "nx format:write;\n"
         fi
@@ -177,7 +302,7 @@ perform_frontend_fixes() {
 
 restore_untracked_files() {
     if [ "$backup_untracked" = true ] && [ -n "${untracked_files}" ] && [ "$(ls -A "${temp_dir}")" ]; then
-        printf "Restoring untracked files...\n"
+        print_color "$BLUE" "🔄 Restoring untracked files..."
         # Copy each file back from the temporary directory while maintaining the directory structure
         find "${temp_dir}" -type f -exec sh -c '
             for file do
@@ -215,20 +340,130 @@ cd "${root_dir}" || exit 1
 
 check_sdkman
 
-printf "Setting up Java\n"
+print_color "$BLUE" "☕ Setting up Java environment..."
 sdk env install
-printf "Initializing Maven, Node, and Yarn versions\n"
+print_color "$BLUE" "🔧 Initializing Maven, Node, and Yarn versions..."
 # Output maven and java versions
 ./mvnw --version
 
-# Run a base validate on maven to ensure that the correct version of node and yarn are installed
-if ! ./mvnw validate -pl :dotcms-core --am -q; then
-    print_color "$RED" "Failed to run './mvnw validate -pl :dotcms-core --am'"
-    print_color "$YELLOW" "Please run the following command to see the detailed output:"
-    printf "./mvnw validate -pl :dotcms-core --am\n"
-    exit 1
+# Function to check if Maven is needed at all
+needs_maven() {
+    local staged_files=$(git diff --cached --name-only)
+
+    # Check if there are any non-core-web files or core-web/pom.xml
+    if echo "$staged_files" | grep -v "^core-web/" > /dev/null 2>&1; then
+        return 0  # Non-core-web files changed, Maven needed
+    fi
+
+    # Check if core-web/pom.xml is changed
+    if echo "$staged_files" | grep -E "^core-web/pom\.xml$" > /dev/null 2>&1; then
+        return 0  # core-web/pom.xml changed, Maven needed
+    fi
+
+    return 1  # Only core-web files (excluding pom.xml) changed, no Maven needed
+}
+
+# Function to check if OpenAPI generation is needed
+needs_openapi_compile() {
+    local openapi_file="${root_dir}/dotCMS/src/main/webapp/WEB-INF/openapi/openapi.yaml"
+    local staged_files=$(git diff --cached --name-only)
+
+    # Check if any REST API related files are staged
+    local rest_files_changed=false
+
+    # Check for changes in OpenAPI configuration files
+    if echo "$staged_files" | grep -E "(DotRestApplication\.java)" > /dev/null 2>&1; then
+        rest_files_changed=true
+    fi
+
+    # Check for changes in any @Path annotated files
+    if echo "$staged_files" | grep -E "\.java$" > /dev/null 2>&1; then
+        # Check if any staged Java files contain REST annotations
+        # Use macOS-compatible approach to handle files with spaces and special characters
+        local java_files_list
+        java_files_list=$(echo "$staged_files" | grep "\.java$")
+        
+        # Use a more portable approach for iterating over filenames
+        local IFS=$'\n'
+        for file in $java_files_list; do
+            # Check if file exists (for modified files) or if it's a deleted file containing REST annotations
+            if [ -f "${root_dir}/${file}" ]; then
+                # File exists, check for REST annotations
+                if grep -E "@Path|@GET|@POST|@PUT|@DELETE|@OpenAPIDefinition|@Tag|@Operation" "${root_dir}/${file}" > /dev/null 2>&1; then
+                    rest_files_changed=true
+                    break
+                fi
+            else
+                # File was deleted, check git show for REST annotations in the deleted content
+                if git show "HEAD:${file}" 2>/dev/null | grep -E "@Path|@GET|@POST|@PUT|@DELETE|@OpenAPIDefinition|@Tag|@Operation" > /dev/null 2>&1; then
+                    rest_files_changed=true
+                    break
+                fi
+            fi
+        done
+        
+        # Restore IFS to default
+        unset IFS
+    fi
+
+    # If no REST files changed, no compile needed
+    if [ "$rest_files_changed" = false ]; then
+        return 1
+    fi
+
+    # If OpenAPI file doesn't exist, compile is needed
+    if [ ! -f "$openapi_file" ]; then
+        return 0
+    fi
+
+    # If REST files changed, compile is needed
+    return 0
+}
+
+print_color "$BLUE" "🔍 Analyzing staged files to determine required build steps..."
+
+# Check if Maven is needed at all
+if needs_maven; then
+    # Maven is needed, determine if we need compile or just validate
+    if needs_openapi_compile; then
+        print_color "$YELLOW" "🔄 REST API files detected - running compile to update OpenAPI specification"
+        if ! ./mvnw compile -pl :dotcms-core --am -q; then
+            print_color "$RED" "❌ Failed to run './mvnw compile -pl :dotcms-core --am'"
+            print_color "$YELLOW" "💡 Please run the following command to see the detailed output:"
+            printf "./mvnw compile -pl :dotcms-core --am\n"
+            exit 1
+        else
+            print_color "$GREEN" "✅ Completed Maven compile with OpenAPI generation"
+            # Stage the updated OpenAPI file if it was regenerated
+            if [ -f "${root_dir}/dotCMS/src/main/webapp/WEB-INF/openapi/openapi.yaml" ]; then
+                git add "${root_dir}/dotCMS/src/main/webapp/WEB-INF/openapi/openapi.yaml"
+                print_color "$GREEN" "📋 Updated OpenAPI specification staged for commit"
+            fi
+        fi
+    else
+        print_color "$GREEN" "⚡ No REST API changes detected - running validation only"
+        # Run lightweight validation to ensure Maven/Node/Yarn are available
+        if ! ./mvnw validate -pl :dotcms-core --am -q; then
+            print_color "$RED" "❌ Failed to run './mvnw validate -pl :dotcms-core --am'"
+            print_color "$YELLOW" "💡 Please run the following command to see the detailed output:"
+            printf "./mvnw validate -pl :dotcms-core --am\n"
+            exit 1
+        else
+            print_color "$GREEN" "✅ Completed Maven validation"
+        fi
+    fi
 else
-    printf "Completed Maven init\n"
+    print_color "$GREEN" "🚀 Only core-web files changed (excluding pom.xml) - skipping Maven entirely"
+    # Still need to setup basic paths for Node/Yarn, but skip Maven validation
+    # Create minimal node/yarn setup without Maven
+    if [ ! -d "${root_dir}/installs/node" ]; then
+        print_color "$YELLOW" "📦 Node.js not found in project directory. Running minimal Maven setup..."
+        # Run minimal Maven setup only to get Node/Yarn installed
+        if ! ./mvnw validate -pl :dotcms-core --am -q; then
+            print_color "$RED" "❌ Failed to run './mvnw validate -pl :dotcms-core --am'"
+            exit 1
+        fi
+    fi
 fi
 
 # Update PATH to include project-specific Node.js and Yarn
@@ -236,8 +471,8 @@ export PATH="${root_dir}/installs/node:${root_dir}/installs/node/yarn/dist/bin:$
 
 # Verify that node and yarn are accessible
 if ! command -v node > /dev/null 2>&1 || ! command -v yarn > /dev/null 2>&1; then
-    print_color "$RED" "Error: Node.js or Yarn not found in the project directory."
-    print_color "$YELLOW" "Please ensure they are installed in ${root_dir}/installs/node"
+    print_color "$RED" "❌ Error: Node.js or Yarn not found in the project directory."
+    print_color "$YELLOW" "💡 Please ensure they are installed in ${root_dir}/installs/node"
     exit 1
 fi
 
@@ -246,8 +481,8 @@ fi
 setup_nvm
 
 # Log the versions being used
-printf "Using Node version: %s\n" "$(node --version)"
-printf "Using Yarn version: %s\n" "$(yarn --version)"
+print_color "$BLUE" "📋 Using Node version: $(node --version)"
+print_color "$BLUE" "📋 Using Yarn version: $(yarn --version)"
 
 core_web_dir="${root_dir}/core-web"
 cd "${core_web_dir}" || exit 1
@@ -271,18 +506,20 @@ printf "%s\n" "${core_web_files_staged}"
 if [ "$backup_untracked" = true ] && [ -n "${untracked_files}" ]; then
     temp_dir=$(mktemp -d)
     if [ ! -d "${temp_dir}" ]; then
-        print_color "$RED" "Failed to create temporary directory."
+        print_color "$RED" "❌ Failed to create temporary directory."
         exit 1
     fi
-    printf "Created temporary directory %s\n" "${temp_dir}"
+    print_color "$BLUE" "📁 Created temporary directory ${temp_dir}"
 
     for file in $untracked_files; do
         if echo "${staged_files}" | grep -q "^${file}$"; then
             mkdir -p "${temp_dir}/$(dirname "${file}")"  # Ensure the directory structure exists in the temp directory
             cp "${root_dir}/${file}" "${temp_dir}/${file}"  # Copy the file to the temp directory, preserving the directory structure
-            printf "Backing up %s to %s\n" "${file}" "${temp_dir}/${file}"
+            print_color "$BLUE" "💾 Backing up ${file}"
             # Restore the original file state in the repo, removing unstaged changes
-            git restore "${root_dir}/${file}"  # Using relative path relative to current directory
+            cd "$root_dir" || exit 1
+            git restore "${file}"
+            cd "${root_dir}/core-web" || exit 1
         fi
     done
 
@@ -291,11 +528,13 @@ if [ "$backup_untracked" = true ] && [ -n "${untracked_files}" ]; then
 
     for file in $untracked_files; do
             if echo "${staged_files}" | grep -q "^${file}$"; then
-                git restore "${root_dir}/${file}"  # Using relative path relative to current directory
+                cd "$root_dir" || exit 1
+                git restore "${file}"
+                cd "${root_dir}/core-web" || exit 1
             fi
     done
 
-    printf "Backed up workspace to %s\n" "${temp_dir}"
+    print_color "$GREEN" "✅ Backed up workspace to ${temp_dir}"
 fi
 
 # Run fixes on staged files
@@ -321,9 +560,9 @@ cd "${original_pwd}" || exit 1  # Exit if the directory does not exist
 
 # Final check before exiting
 if [ "$has_errors" = true ]; then
-    print_color "$RED" "Checks failed. Force commit with --no-verify option if bypass required."
+    print_color "$RED" "❌ Checks failed. Force commit with --no-verify option if bypass required."
     exit 1  # Change the exit code to reflect that an error occurred
 else
-    print_color "$GREEN" "Commit checks completed successfully."
+    print_color "$GREEN" "🎉 Commit checks completed successfully."
     exit 0  # No errors, exit normally
 fi

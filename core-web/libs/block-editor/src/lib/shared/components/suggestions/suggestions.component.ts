@@ -16,8 +16,8 @@ import { map, take } from 'rxjs/operators';
 import { DotLanguagesService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSContentType, DotLanguage } from '@dotcms/dotcms-models';
 
-import { DEFAULT_LANG_ID } from '../../../extensions';
 import { SuggestionsService } from '../../services';
+import { DEFAULT_LANG_ID } from '../../utils';
 import { SuggestionListComponent } from '../suggestion-list/suggestion-list.component';
 
 export interface SuggestionsCommandProps {
@@ -50,6 +50,17 @@ export class SuggestionsComponent implements OnInit {
 
     @Input() onSelectContentlet: (props: SuggestionsCommandProps) => void;
     @Input() items: DotMenuItem[] = [];
+
+    get sortedItems() {
+        // Return the items sorted by AI items first, then non-AI items
+        return this.items.sort((a) => {
+            if (a?.label?.toLowerCase().startsWith('ai')) {
+                return -1;
+            }
+
+            return 1;
+        });
+    }
     @Input() title = 'Select a block';
     @Input() noResultsMessage = 'No Results';
     @Input() currentLanguage = DEFAULT_LANG_ID;

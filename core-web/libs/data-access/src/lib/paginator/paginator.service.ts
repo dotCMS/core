@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { take, map } from 'rxjs/operators';
 
@@ -34,6 +34,8 @@ interface PaginatiorServiceParams {
  */
 @Injectable()
 export class PaginatorService {
+    private readonly coreWebService = inject(CoreWebService);
+
     public static readonly LINK_HEADER_NAME = 'Link';
     public static readonly PAGINATION_PER_PAGE_HEADER_NAME = 'X-Pagination-Per-Page';
     public static readonly PAGINATION_CURRENT_PAGE_HEADER_NAME = 'X-Pagination-Current-Page';
@@ -53,8 +55,6 @@ export class PaginatorService {
     private _sortField: string;
     private _sortOrder: OrderDirection;
     private _extraParams: Map<string, string> = new Map();
-
-    constructor(private coreWebService: CoreWebService) {}
 
     get url(): string {
         return this._url;

@@ -1,9 +1,9 @@
 {
 	"info": {
-		"_postman_id": "45540605-95ba-4b50-adba-254915172f48",
+		"_postman_id": "140d143a-c58a-471c-9e22-2754cf252c22",
 		"name": "AI",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "11174695"
+		"_exporter_id": "5403727"
 	},
 	"item": [
 		{
@@ -717,7 +717,7 @@
 									"console.log('seoIndex', seoIndex);",
 									"console.log('currentSeo', JSON.stringify(currentSeo, null, 2));",
 									"",
-									"postman.setNextRequest('Add Field to Content Type');",
+									"pm.execution.setNextRequest('Add Field to Content Type');",
 									""
 								],
 								"type": "text/javascript",
@@ -819,7 +819,7 @@
 									"    pm.response.to.have.status(200);",
 									"});",
 									"",
-									"postman.setNextRequest('Create Contentlet');"
+									"pm.execution.setNextRequest('Create Contentlet');"
 								],
 								"type": "text/javascript",
 								"packages": {}
@@ -917,7 +917,7 @@
 									"    pm.collectionVariables.set('seoText', null);",
 									"    nextRequest = 'Create Embeddings without query';",
 									"}",
-									"postman.setNextRequest(nextRequest);",
+									"pm.execution.setNextRequest(nextRequest);",
 									""
 								],
 								"type": "text/javascript",
@@ -1109,7 +1109,7 @@
 									"    pm.collectionVariables.set('seoText', null);",
 									"    nextRequest = 'Count Embeddings without prompt';",
 									"}",
-									"postman.setNextRequest(nextRequest);",
+									"pm.execution.setNextRequest(nextRequest);",
 									""
 								],
 								"type": "text/javascript",
@@ -2440,7 +2440,7 @@
 									"console.log('seoIndex', seoIndex);",
 									"console.log('currentSeo', JSON.stringify(currentSeo, null, 2));",
 									"",
-									"postman.setNextRequest('Add Field to Content Type - Completions');",
+									"pm.execution.setNextRequest('Add Field to Content Type - Completions');",
 									""
 								],
 								"type": "text/javascript",
@@ -2542,7 +2542,7 @@
 									"    pm.response.to.have.status(200);",
 									"});",
 									"",
-									"postman.setNextRequest('Create Contentlet - Completions');"
+									"pm.execution.setNextRequest('Create Contentlet - Completions');"
 								],
 								"type": "text/javascript",
 								"packages": {}
@@ -2647,7 +2647,7 @@
 									"    pm.collectionVariables.set('seoText', null);",
 									"    nextRequest = 'Create Embeddings - Completions';",
 									"}",
-									"postman.setNextRequest(nextRequest);",
+									"pm.execution.setNextRequest(nextRequest);",
 									""
 								],
 								"type": "text/javascript",
@@ -2751,7 +2751,7 @@
 									"    pm.collectionVariables.set('seoText', null);",
 									"    nextRequest = 'Summarize from Content without prompt';",
 									"}",
-									"postman.setNextRequest(nextRequest);",
+									"pm.execution.setNextRequest(nextRequest);",
 									""
 								],
 								"type": "text/javascript",
@@ -2932,7 +2932,7 @@
 									"    pm.expect(result).to.have.property('baseType');",
 									"    pm.expect(result).to.have.property('inode');",
 									"    pm.expect(result).to.have.property('archived');",
-									"    pm.expect(result).to.have.property('ownerName');",
+									"    pm.expect(result).to.have.property('ownerUserName');",
 									"    pm.expect(result).to.have.property('host');",
 									"    pm.expect(result).to.have.property('working');",
 									"    pm.expect(result).to.have.property('seo');",
@@ -3426,32 +3426,6 @@
 					""
 				]
 			}
-		}
-	],
-	"variable": [
-		{
-			"key": "seoId",
-			"value": ""
-		},
-		{
-			"key": "seoText",
-			"value": ""
-		},
-		{
-			"key": "seoIndex",
-			"value": ""
-		},
-		{
-			"key": "seos",
-			"value": ""
-		},
-		{
-			"key": "seoContentTypeId",
-			"value": ""
-		},
-		{
-			"key": "seoContentTypeVar",
-			"value": ""
 		}
 	]
 }

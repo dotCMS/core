@@ -4,18 +4,16 @@ package com.dotcms.contenttype.business.uniquefields.extratable;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 
-import com.dotcms.contenttype.business.UniqueFieldValueDuplicatedException;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.exception.ExceptionUtil;
 import com.dotmarketing.common.db.DotConnect;
-import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
 import com.liferay.util.StringPool;
 
 import javax.enterprise.context.ApplicationScoped;
+import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
@@ -60,9 +58,6 @@ public class UniqueFieldDataBaseUtil {
             "SET supporting_values = jsonb_set(supporting_values, '{" + CONTENTLET_IDS_ATTR + "}', ?::jsonb) " +
             "WHERE unique_key_val = ?";
 
-    private static final String DELETE_UNIQUE_FIELD = "DELETE FROM unique_fields WHERE unique_key_val = ? " +
-            "AND supporting_values->>'" + FIELD_VARIABLE_NAME_ATTR + "' = ?";
-
     private final static String GET_UNIQUE_FIELDS_BY_CONTENTLET = "SELECT * FROM unique_fields " +
             "WHERE supporting_values->'" + CONTENTLET_IDS_ATTR + "' @> ?::jsonb " +
             "AND supporting_values->>'" + VARIANT_ATTR + "' = ? " +
@@ -90,6 +85,9 @@ public class UniqueFieldDataBaseUtil {
 
     private final String DELETE_UNIQUE_FIELDS = "DELETE FROM unique_fields WHERE unique_key_val = ?";
 
+    private final String GET_UNIQUE_FIELDS_BY_HASH = "SELECT * FROM unique_fields " +
+            "WHERE unique_key_val = encode(sha256(convert_to(?::text, 'UTF8')), 'hex')";
+
     private final static String DELETE_UNIQUE_FIELDS_BY_FIELD = "DELETE FROM unique_fields " +
             "WHERE supporting_values->>'" + FIELD_VARIABLE_NAME_ATTR + "' = ?";
 
@@ -105,7 +103,7 @@ public class UniqueFieldDataBaseUtil {
             "                                    content_type_id::text," +
             "                                    field_var_name::text," +
             "                                    language_id::text," +
-            "                                    field_value::text," +
+            "                                    LOWER(field_value)::text," +
             "                                    CASE WHEN uniquePerSite = 'true' THEN COALESCE(host_id::text, '') ELSE '' END" +
             "                            )," +
             "                            'UTF8'" +
@@ -116,7 +114,7 @@ public class UniqueFieldDataBaseUtil {
             "       json_build_object('" + CONTENT_TYPE_ID_ATTR + "', content_type_id, " +
                                     "'" + FIELD_VARIABLE_NAME_ATTR + "', field_var_name, " +
                                     "'" + LANGUAGE_ID_ATTR + "', language_id, " +
-                                    "'" + FIELD_VALUE_ATTR +"', field_value, " +
+                                    "'" + FIELD_VALUE_ATTR +"', LOWER(field_value), " +
                                     "'" + SITE_ID_ATTR + "', host_id, " +
                                     "'" + VARIANT_ATTR + "', variant_id, " +
                                     "'" + UNIQUE_PER_SITE_ATTR + "', " + "uniquePerSite, " +
@@ -126,7 +124,7 @@ public class UniqueFieldDataBaseUtil {
             "        SELECT structure.inode                                       AS content_type_id," +
             "               field.velocity_var_name                               AS field_var_name," +
             "               contentlet.language_id                                AS language_id," +
-            "               identifier.host_inode                                 AS host_id," +
+            "               (CASE WHEN field_variable.variable_value = 'true' THEN identifier.host_inode ELSE '' END) AS host_id," +
             "               jsonb_extract_path_text(contentlet_as_json -> 'fields', field.velocity_var_name)::jsonb ->>'value' AS field_value," +
             "               ARRAY_AGG(DISTINCT contentlet.identifier)                      AS contentlet_identifier," +
             "               (CASE WHEN COUNT(DISTINCT contentlet_version_info.variant_id) > 1 THEN 'DEFAULT' ELSE MAX(contentlet_version_info.variant_id) END) AS variant_id, " +
@@ -146,7 +144,7 @@ public class UniqueFieldDataBaseUtil {
             "        GROUP BY structure.inode," +
             "                 field.velocity_var_name," +
             "                 contentlet.language_id," +
-            "                 identifier.host_inode," +
+            "                 (CASE WHEN field_variable.variable_value = 'true' THEN identifier.host_inode ELSE '' END)," +
             "                 jsonb_extract_path_text(contentlet_as_json -> 'fields', field.velocity_var_name)::jsonb ->>'value') as data_to_populate";
 
 
@@ -229,19 +227,38 @@ public class UniqueFieldDataBaseUtil {
     }
 
     /**
-     * Deletes a unique field from the database.
+     * Return a register filtering by the unique_key_value field
      *
-     * @param hash          The hash of the unique field.
-     * @param fieldVariable The Velocity Var Name of the unique field being deleted.
-     *
-     * @throws DotDataException If an error occurs when interacting with the database.
+     * @param uniqueFieldCriteria to calculate the unique_key_value
+     * @return
+     * @throws DotDataException
      */
-    @WrapInTransaction
-    public void delete(final String hash, final String fieldVariable) throws DotDataException {
-        new DotConnect().setSQL(DELETE_UNIQUE_FIELD)
-                .addParam(hash)
-                .addParam(fieldVariable)
-                .loadObjectResults();
+    @CloseDBIfOpened
+    public Optional<UniqueFieldValue> get(final UniqueFieldCriteria uniqueFieldCriteria) throws DotDataException {
+
+        return new DotConnect().setSQL(GET_UNIQUE_FIELDS_BY_HASH)
+                .addParam(uniqueFieldCriteria.criteria())
+                .loadObjectResults()
+                .stream().findFirst()
+                .map(item ->
+                        new UniqueFieldValue(item.get("unique_key_val").toString(), getSupportingValues(item) ));
+
+    }
+
+    /**
+     * Return the supporting_values from a unique_field table register also turn the supporting_values from a
+     * {@link org.postgresql.util.PGobject} to a Map.
+     *
+     * @param uniqueFieldRegister
+     * @return
+     */
+    private static Map<String, Object> getSupportingValues(final Map<String, Object> uniqueFieldRegister) {
+        try {
+            return com.dotcms.util.JsonUtil.getJsonFromString(uniqueFieldRegister.get("supporting_values").toString());
+        } catch (IOException e) {
+            Logger.error(UniqueFieldDataBaseUtil.class.getName(), "Error getting supporting values", e);
+            throw new RuntimeException(e);
+        }
     }
 
     /**
@@ -441,7 +458,7 @@ public class UniqueFieldDataBaseUtil {
     }
 
     @WrapInTransaction
-    public void createTableAnsPopulate() throws DotDataException {
+    public void createTableAndPopulate() throws DotDataException {
             createUniqueFieldsValidationTable();
             populateUniqueFieldsTable();
     }
@@ -480,5 +497,27 @@ public class UniqueFieldDataBaseUtil {
     @WrapInTransaction
     public void populateUniqueFieldsTable() throws DotDataException {
         new DotConnect().setSQL(POPULATE_UNIQUE_FIELDS_VALUES_QUERY).loadObjectResults();
+    }
+
+    /**
+     * Represents a register in the unique_fields table
+     */
+    public static class UniqueFieldValue {
+        private final String uniqueKeyVal;
+        private final Map<String, Object> supportingValues;
+
+        public UniqueFieldValue(final String uniqueKeyVal, final Map<String, Object> supportingValues) {
+
+            this.uniqueKeyVal = uniqueKeyVal;
+            this.supportingValues = supportingValues;
+        }
+
+        public String getUniqueKeyVal() {
+            return uniqueKeyVal;
+        }
+
+        public Map<String, Object> getSupportingValues() {
+            return supportingValues;
+        }
     }
 }

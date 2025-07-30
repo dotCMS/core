@@ -1,6 +1,6 @@
 import { Subject } from 'rxjs';
 
-import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { Component, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
 import { MenuItem } from 'primeng/api';
@@ -37,6 +37,17 @@ import { DataTableColumn } from '@models/data-table';
     styleUrls: ['./dot-template-list.component.scss']
 })
 export class DotTemplateListComponent implements OnInit, OnDestroy {
+    private dotAlertConfirmService = inject(DotAlertConfirmService);
+    private dotMessageDisplayService = inject(DotMessageDisplayService);
+    private dotMessageService = inject(DotMessageService);
+    private dotPushPublishDialogService = inject(DotPushPublishDialogService);
+    private dotRouterService = inject(DotRouterService);
+    private dotSiteService = inject(SiteService);
+    private dotTemplatesService = inject(DotTemplatesService);
+    private route = inject(ActivatedRoute);
+    dialogService = inject(DialogService);
+    private dotSiteBrowserService = inject(DotSiteBrowserService);
+
     @ViewChild('listing', { static: false })
     listing: DotListingDataTableComponent;
     tableColumns: DataTableColumn[];
@@ -48,19 +59,6 @@ export class DotTemplateListComponent implements OnInit, OnDestroy {
     private isEnterPrise: boolean;
     private hasEnvironments: boolean;
     private destroy$: Subject<boolean> = new Subject<boolean>();
-
-    constructor(
-        private dotAlertConfirmService: DotAlertConfirmService,
-        private dotMessageDisplayService: DotMessageDisplayService,
-        private dotMessageService: DotMessageService,
-        private dotPushPublishDialogService: DotPushPublishDialogService,
-        private dotRouterService: DotRouterService,
-        private dotSiteService: SiteService,
-        private dotTemplatesService: DotTemplatesService,
-        private route: ActivatedRoute,
-        public dialogService: DialogService,
-        private dotSiteBrowserService: DotSiteBrowserService
-    ) {}
 
     ngOnInit(): void {
         this.route.data

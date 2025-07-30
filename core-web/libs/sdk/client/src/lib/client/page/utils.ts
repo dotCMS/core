@@ -1,3 +1,5 @@
+import { consola } from 'consola';
+
 import { ErrorMessages } from '../models';
 
 const DEFAULT_PAGE_CONTENTLETS_CONTENT = `
@@ -49,8 +51,8 @@ export const buildPageQuery = ({
     additionalQueries?: string;
 }) => {
     if (!page) {
-        console.warn(
-            'No page query provided. The query will be used by fetching all content with _map. This may mean poor performance in the query. We suggest you provide a detailed query on page attribute.'
+        consola.warn(
+            "[DotCMS Client]: No page query was found, so we're loading all content using _map. This might slow things down. For better performance, we recommend adding a specific query in the page attribute."
         );
     }
 
@@ -72,6 +74,7 @@ export const buildPageQuery = ({
     friendlyName
     workingInode
     url
+    pageURI
     hasLiveVersion
     deleted
     pageUrl
@@ -98,6 +101,22 @@ export const buildPageQuery = ({
     canEdit
     canLock
     canRead
+    runningExperimentId
+    urlContentMap {
+      _map
+    }
+    host {
+      identifier
+      hostName
+     	googleMap
+      archived
+      contentType
+    }
+    vanityUrl {
+      action
+      forwardTo
+      uri
+    }
     conLanguage {
       id
       language
@@ -105,6 +124,9 @@ export const buildPageQuery = ({
     }
     template {
       drawed
+      anonymous
+      theme
+      identifier
     }
     containers {
       path
@@ -130,6 +152,7 @@ export const buildPageQuery = ({
       footer
       body {
         rows {
+          styleClass
           columns {
             leftOffset
             styleClass
@@ -146,7 +169,24 @@ export const buildPageQuery = ({
     viewAs {
       visitor {
         persona {
+          modDate
+          inode
           name
+          identifier
+          keyTag
+          photo {
+            versionPath
+          }
+        }
+      }
+      persona {
+        modDate
+        inode
+        name
+        identifier
+        keyTag
+        photo {
+         versionPath
         }
       }
       language {
@@ -163,8 +203,8 @@ export const buildPageQuery = ({
 
   ${fragments ? fragments.join('\n\n') : ''}
 
-  query PageContent($url: String!, $languageId: String, $mode: String) {
-    page: page(url: $url, languageId: $languageId, pageMode: $mode) {
+  query PageContent($url: String!, $languageId: String, $mode: String, $personaId: String, $fireRules: Boolean, $publishDate: String, $siteId: String, $variantName: String) {
+    page: page(url: $url, languageId: $languageId, pageMode: $mode, persona: $personaId, fireRules: $fireRules, publishDate: $publishDate, site: $siteId, variantName: $variantName) {
       ...DotCMSPage
       ${page ? '...ClientPage' : ''}
     }

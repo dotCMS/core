@@ -159,7 +159,7 @@ public class MapToContentletPopulator  {
                 // fill fields
                 this.fillFields(contentlet, map, type, fieldMap);
 
-                contentlet.setVariantId(map.get(VARIANT_ID) != null ? map.get(VARIANT_ID).toString() : null);
+                contentlet.setVariantId(map.get(VARIANT_ID) != null ? map.get(VARIANT_ID).toString() : contentlet.getVariantId());
             }
 
             this.setIndexPolicy (contentlet, map);
@@ -255,6 +255,7 @@ public class MapToContentletPopulator  {
                 }
             }
         }
+
     } // fillFields.
 
     private static void processPlainValueForBinaryField(final Map<String, Object> map,

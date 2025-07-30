@@ -10,7 +10,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.javax.validation.constraints.NotNull;
+import javax.validation.constraints.NotNull;
 import com.dotcms.rest.api.v1.workflow.BulkActionView;
 import com.dotcms.rest.api.v1.workflow.BulkActionsResultView;
 import com.dotcms.rest.api.v1.workflow.CountWorkflowAction;
@@ -20,6 +20,7 @@ import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.InternalServerException;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.uuid.shorty.ShortyId;
+import com.dotcms.variant.VariantAPI;
 import com.dotcms.workflow.form.BulkActionForm;
 import com.dotcms.workflow.form.FireBulkActionsForm;
 import com.dotcms.workflow.form.IWorkflowStepForm;
@@ -66,6 +67,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.LuceneQueryUtils;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.StringUtils;
+import com.dotmarketing.util.UtilHTML;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.util.web.VelocityWebUtil;
@@ -2034,10 +2036,33 @@ public class WorkflowHelper {
      * @throws DotSecurityException
      * @throws DotDataException
      */
+    public Optional<Contentlet> getContentletByIdentifier(final String identifier,
+                                                          final PageMode mode,
+                                                          final User     user,
+                                                          final Supplier<Long> sessionLanguageSupplier) throws DotSecurityException, DotDataException {
+
+        return getContentletByIdentifier(identifier, mode, user, VariantAPI.DEFAULT_VARIANT.name(), sessionLanguageSupplier);
+    }
+
+    /**
+     * Figure out the contentlet by identifier (when not language) depending on the following rules:
+     * If there is a contentlet associated to the current session language tries the id+session lang combination
+     * If there is not a contentlet associated and the default language is diff to the session lang will tries this combination.
+     * Otherwise will try to get the content on some language
+     * @param identifier {@link String} shorty or long identifier
+     * @param mode {@link PageMode} page mode
+     * @param user {@link User} user
+     * @param variantName String
+     * @param sessionLanguageSupplier {@link Supplier} supplier to get the session language in case needed
+     * @return Optional contentlet
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
     @CloseDBIfOpened
     public Optional<Contentlet> getContentletByIdentifier(final String identifier,
                                                            final PageMode mode,
                                                            final User     user,
+                                                           final String variantName,
                                                            final Supplier<Long> sessionLanguageSupplier) throws DotSecurityException, DotDataException {
 
         Contentlet contentlet = null;
@@ -2048,7 +2073,7 @@ public class WorkflowHelper {
         if(sessionLanguage > 0) {
 
             contentlet = this.getContentletByIdentifier
-                    (longIdentifier, mode.showLive, sessionLanguage, user, mode.respectAnonPerms);
+                    (longIdentifier, mode.showLive, sessionLanguage, user, mode.respectAnonPerms, variantName);
         }
 
         if (null == contentlet) {
@@ -2058,7 +2083,7 @@ public class WorkflowHelper {
 
 
                 contentlet = this.getContentletByIdentifier
-                        (longIdentifier, mode.showLive, defaultLanguage, user, mode.respectAnonPerms);
+                        (longIdentifier, mode.showLive, defaultLanguage, user, mode.respectAnonPerms, variantName);
             }
         }
 
@@ -2068,11 +2093,12 @@ public class WorkflowHelper {
     }
 
     public Contentlet getContentletByIdentifier(final String longIdentifier, final boolean showLive,
-                                                final long languageId, final User user, final boolean respectAnonPerms) {
+                                                final long languageId, final User user, final boolean respectAnonPerms,
+                                                final String variantName) {
 
         try {
             return this.contentletAPI.findContentletByIdentifier
-                    (longIdentifier, showLive, languageId, user, respectAnonPerms);
+                    (longIdentifier, showLive, languageId, variantName, user, respectAnonPerms);
         } catch (DotContentletStateException | DotSecurityException | DotDataException e) {
 
             Logger.error(this, e.getMessage(), e);
@@ -2087,11 +2113,21 @@ public class WorkflowHelper {
      */
     public Map<String, Object> contentletToMap(final Contentlet contentlet) {
         //In case the contentlet is null because it was destroyed/deleted.
-        if(null == contentlet){
+        if(null == contentlet) {
+
            return Collections.emptyMap();
         }
+
+        final ContentType type = contentlet.getContentType();
+        final Map<String, Object> contentMap = new HashMap<>();
         final DotContentletTransformer transformer = new DotTransformerBuilder().defaultOptions().content(contentlet).build();
-        return transformer.toMaps().stream().findFirst().orElse(Collections.emptyMap());
+        contentMap.putAll(transformer.toMaps().stream().findFirst().orElse(Collections.emptyMap()));
+
+        contentMap.put("__icon__", Try.of(()->UtilHTML.getIconClass(contentlet)).getOrElse("uknIcon"));
+        contentMap.put("contentTypeIcon", type.icon());
+        contentMap.put("variant", contentlet.getVariantId());
+
+        return contentMap;
     }
 
     /**

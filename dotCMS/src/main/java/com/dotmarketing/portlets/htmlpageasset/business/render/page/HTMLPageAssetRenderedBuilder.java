@@ -8,7 +8,6 @@ import com.dotcms.rendering.velocity.services.PageRenderUtil;
 import com.dotcms.rendering.velocity.servlet.VelocityModeHandler;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
 import com.dotcms.util.TimeMachineUtil;
-import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
@@ -23,6 +22,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.hostvariable.model.HostVariable;
 import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRaw;
 import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRenderedBuilder;
+import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetNotFoundException;
 import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRenderedAPI;
 import com.dotmarketing.portlets.htmlpageasset.business.render.VanityURLView;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
@@ -36,16 +36,15 @@ import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
-import java.util.Date;
-import org.apache.velocity.context.Context;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import org.apache.velocity.context.Context;
 
 /**
  * This class will be in charge of building the Metadata object for an HTML Page.
@@ -163,8 +162,9 @@ public class HTMLPageAssetRenderedBuilder {
         final PageRenderUtil pageRenderUtil = new PageRenderUtil(
                 this.htmlPageAsset, user, mode, language.getId(), this.site);
 
-        final Optional<Contentlet> urlContentletOpt = this.findUrlContentlet (request);
-
+        // Here we get the URL contentlet, if it exists.
+        // If it exists, we check if the page is live or not.
+        final Optional<Contentlet> urlContentletOpt = findUrlMapContentlet(request, mode);
         if (!rendered) {
             final Collection<? extends ContainerRaw> containers =  pageRenderUtil.getContainersRaw();
             final PageView.Builder pageViewBuilder = new PageView.Builder().site(site).template(template).containers(containers)
@@ -205,7 +205,15 @@ public class HTMLPageAssetRenderedBuilder {
         }
     }
 
-    private Optional<Contentlet> findUrlContentlet(final HttpServletRequest request)
+    /**
+     * Returns the URL contentlet if it exists. This is used to get the contentlet that is associated with the URL of the page like a urlMapContent
+     * @param request
+     * @param mode
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    private Optional<Contentlet> findUrlMapContentlet(final HttpServletRequest request, final PageMode mode)
             throws DotDataException, DotSecurityException {
 
         Contentlet contentlet = null;
@@ -218,7 +226,16 @@ public class HTMLPageAssetRenderedBuilder {
             contentlet = this.contentletAPI.findContentletByIdentifierAnyLanguage(id);
         }
 
-        return Optional.ofNullable(getContentletForTimeMachine(contentlet));
+        final Optional<Date> timeMachineDate = TimeMachineUtil.getTimeMachineDateAsDate();
+        if(null != contentlet && timeMachineDate.isPresent()) {
+            final Contentlet contentletForTimeMachine = getContentletForTimeMachine(contentlet, timeMachineDate.get());
+            return Optional.of(contentletForTimeMachine);
+        } else {
+            if (null != contentlet && PageMode.LIVE == mode && !contentlet.isLive()) {
+                throw new HTMLPageAssetNotFoundException(pageUrlMapper);
+            }
+            return Optional.ofNullable(contentlet);
+        }
     }
 
     /**
@@ -227,28 +244,26 @@ public class HTMLPageAssetRenderedBuilder {
      * attempts to find a version of the contentlet that existed at the specified Time Machine date.
      *
      * @param contentlet The original contentlet to find a time machine version for. Can be null.
+     * @param timeMachineDate The date to find the contentlet version for. If null, the original contentlet is returned.
      * @return The time machine version of the contentlet if found, otherwise the original contentlet.
      *         Returns null if the input contentlet was null.
      * @throws DotDataException If there is an error in the underlying data layer
      * @throws DotSecurityException If the current user doesn't have permission to access the contentlet
      */
-    private Contentlet getContentletForTimeMachine(final Contentlet contentlet)
+    private Contentlet getContentletForTimeMachine(final Contentlet contentlet, final Date timeMachineDate)
             throws DotDataException, DotSecurityException {
 
-        // Get the Time Machine date if it has been configured
-        final Optional<Date> timeMachineDate = TimeMachineUtil.getTimeMachineDateAsDate();
-
         // Early return if the contentlet is null or no Time Machine date is configured
-        if (contentlet == null || timeMachineDate.isEmpty()) {
-            return contentlet;
+        if (contentlet == null ) {
+            throw new IllegalArgumentException("Contentlet cannot be null");
         }
 
         // Attempt to find the version of the contentlet at the Time Machine date
-        Contentlet future = contentletAPI.findContentletByIdentifier(
+        final Contentlet future = contentletAPI.findContentletByIdentifier(
                 contentlet.getIdentifier(),
                 contentlet.getLanguageId(),
                 WebAPILocator.getVariantWebAPI().currentVariantId(),
-                timeMachineDate.get(),
+                timeMachineDate,
                 user,
                 false
         );

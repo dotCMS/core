@@ -60,11 +60,13 @@ RUN apt update && \
 
 # Install PostgreSQL client and pg_dump
 RUN apt update && \
-    apt install -y --no-install-recommends postgresql-common && \
-    /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y && \
+    apt install -y --no-install-recommends wget gnupg2 lsb-release && \
+    echo "deb http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list && \
+    wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - && \
+    apt update && \
     apt install -y --no-install-recommends postgresql-client-16 && \
-    apt purge -y postgresql-common gnupg && \
     /usr/bin/pg_dump --version || exit 1 && \
+    apt purge -y wget gnupg2 lsb-release && \
     rm -rf /var/lib/apt/lists/*
 
 ARG USER_UID="65001"
@@ -92,6 +94,10 @@ CMD ["dotcms"]
 EXPOSE 4000
 # Java Debugging - must be configured via CMS_JAVA_OPTS
 EXPOSE 8000
+# JMX Remote Monitoring - must be configured via CMS_JAVA_OPTS
+EXPOSE 9999
+# JMX RMI Port - must be configured via CMS_JAVA_OPTS  
+EXPOSE 9998
 # Direct connect
 EXPOSE 8080
 # Connect from proxy, HTTP/80, non-secure

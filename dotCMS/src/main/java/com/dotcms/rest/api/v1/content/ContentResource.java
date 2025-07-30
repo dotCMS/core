@@ -23,6 +23,7 @@ import com.dotcms.rest.api.v1.content.search.LuceneQueryBuilder;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.uuid.shorty.ShortType;
 import com.dotcms.uuid.shorty.ShortyId;
+import com.dotcms.variant.VariantAPI;
 import com.dotcms.workflow.helper.WorkflowHelper;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -58,9 +59,12 @@ import com.google.common.collect.ImmutableList;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
 import org.glassfish.jersey.server.JSONP;
@@ -95,6 +99,7 @@ import java.util.stream.Collectors;
  * @author jsanca
  */
 @Path("/v1/content")
+@Tag(name = "Content", description = "Endpoints for managing content and contentlets - the core data objects in dotCMS")
 public class ContentResource {
 
     private final WebResource    webResource;
@@ -151,11 +156,31 @@ public class ContentResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Consumes({MediaType.APPLICATION_JSON})
+    @Operation(
+            operationId = "saveDraft",
+            summary = "Saves a content draft",
+            description = "Creates or updates a draft version of a contentlet without triggering workflow. " +
+                    "Drafts allow content editors to save work in progress without publishing.",
+            tags = {"Content"},
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Draft saved successfully",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ResponseEntityContentletView.class))),
+                    @ApiResponse(responseCode = "400", description = "Bad request - Invalid content data"),
+                    @ApiResponse(responseCode = "401", description = "Unauthorized - User not authenticated"),
+                    @ApiResponse(responseCode = "403", description = "Forbidden - User lacks write permissions"),
+                    @ApiResponse(responseCode = "404", description = "Content not found"),
+                    @ApiResponse(responseCode = "500", description = "Internal server error")
+            }
+    )
     public final ResponseEntityContentletView saveDraft(@Context final HttpServletRequest request,
-                                                     @QueryParam("inode")                        final String inode,
-                                                     @QueryParam("identifier")                   final String identifier,
-                                                     @QueryParam("indexPolicy")                  final String indexPolicy,
-                                                     @DefaultValue("-1") @QueryParam("language") final String language,
+                                                     @Parameter(description = "Content inode for existing content") @QueryParam("inode") final String inode,
+                                                     @Parameter(description = "Content identifier for existing content") @QueryParam("identifier") final String identifier,
+                                                     @Parameter(description = "Index policy (DEFER_UNTIL_PUBLISH, FORCE, WAIT_FOR)") @QueryParam("indexPolicy") final String indexPolicy,
+                                                     @Parameter(description = "Language ID for content localization") @DefaultValue("-1") @QueryParam("language") final String language,
+                                                     @RequestBody(description = "Content data and field values",
+                                                             required = true,
+                                                             content = @Content(schema = @Schema(implementation = ContentForm.class)))
                                                      final ContentForm contentForm) throws DotDataException, DotSecurityException {
         final InitDataObject initDataObject = new WebResource.InitBuilder().requestAndResponse(request,
                 new MockHttpResponse()).requiredAnonAccess(AnonymousAccess.WRITE).init();
@@ -292,11 +317,29 @@ public class ContentResource {
     @GET
     @Path("/{inodeOrIdentifier}")
     @Produces(MediaType.APPLICATION_JSON)
+    @Operation(
+            operationId = "getContent",
+            summary = "Retrieves a contentlet by identifier or inode",
+            description = "Returns a single contentlet based on its identifier or inode. " +
+                    "This is the primary endpoint for fetching content data with support for language, variants, and relationship depth.",
+            tags = {"Content"},
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Contentlet retrieved successfully",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ResponseEntityView.class))),
+                    @ApiResponse(responseCode = "400", description = "Bad request - Invalid identifier format"),
+                    @ApiResponse(responseCode = "401", description = "Unauthorized - User not authenticated"),
+                    @ApiResponse(responseCode = "403", description = "Forbidden - User lacks read permissions"),
+                    @ApiResponse(responseCode = "404", description = "Contentlet not found"),
+                    @ApiResponse(responseCode = "500", description = "Internal server error")
+            }
+    )
     public Response getContent(@Context HttpServletRequest request,
                                @Context final HttpServletResponse response,
-                               @PathParam("inodeOrIdentifier") final String inodeOrIdentifier,
-                               @DefaultValue("") @QueryParam("language") final String language,
-                               @DefaultValue("-1") @QueryParam("depth") final int depth
+                               @Parameter(description = "Contentlet identifier or inode") @PathParam("inodeOrIdentifier") final String inodeOrIdentifier,
+                               @Parameter(description = "Language ID for content localization") @DefaultValue("") @QueryParam("language") final String language,
+                               @Parameter(description = "Variant name for A/B testing") @DefaultValue("DEFAULT") @QueryParam("variantName") final String variantName,
+                               @Parameter(description = "Relationship depth to include (-1 for no relationships)") @DefaultValue("-1") @QueryParam("depth") final int depth
 
 
     ) {
@@ -314,13 +357,15 @@ public class ContentResource {
         final long testLangId = LanguageUtil.getLanguageId(language);
         final long languageId = testLangId <=0 ? sessionLanguageSupplier.getAsLong() : testLangId;
 
-        Contentlet contentlet = this.resolveContentletOrFallBack(inodeOrIdentifier, mode, languageId, user);
+        Contentlet contentlet = this.resolveContentletOrFallBack(inodeOrIdentifier, mode, languageId, user, variantName);
 
         if (-1 != depth) {
             ContentUtils.addRelationships(contentlet, user, mode,
                     languageId, depth, request, response);
         }
+        final String variant = contentlet.getVariantId();
         contentlet = new DotTransformerBuilder().contentResourceOptions(false).content(contentlet).build().hydrate().get(0);
+        contentlet.setVariantId(variant);
         return Response.ok(new ResponseEntityView<>(
                 WorkflowHelper.getInstance().contentletToMap(contentlet))).build();
     }
@@ -622,16 +667,30 @@ public class ContentResource {
      * @return the contentlet object
      */
     private Contentlet resolveContentletOrFallBack (final String inodeOrIdentifier, final PageMode mode, final long languageId, final User user) {
+        return resolveContentletOrFallBack (inodeOrIdentifier, mode, languageId, user, VariantAPI.DEFAULT_VARIANT.name());
+    }
+    /**
+     * Given an inode or identifier, this method will return the contentlet object for the given language
+     * If no contentlet is found, it will return the contentlet for the default language if FallBack is enabled
+     * @param inodeOrIdentifier the inode or identifier to test
+     * @param mode the page mode used to determine if we are
+     * @param languageId the language id
+     * @param user the user
+     * @param variantName  variant name
+     * @return the contentlet object
+     */
+    private Contentlet resolveContentletOrFallBack (final String inodeOrIdentifier, final PageMode mode, final long languageId, final User user,
+                                                    final String variantName) {
         // This property is used to determine if we should map the contentlet to the default language
         final boolean mapToDefault = isDefaultContentToDefaultLanguageEnabled.get();
         // default language supplier, we only get the language id if we need it
         LongSupplier defaultLang = () -> APILocator.getLanguageAPI().getDefaultLanguage().getId();
         //Attempt to resolve the contentlet for the given language
-        Optional<Contentlet> optional = resolveContentlet(inodeOrIdentifier, mode, languageId, user);
+        Optional<Contentlet> optional = resolveContentlet(inodeOrIdentifier, mode, languageId, user, variantName);
         //If the contentlet is not found, and we are allowed to map to the default language..
         if(optional.isEmpty() && mapToDefault && languageId != defaultLang.getAsLong()){
             //Attempt to resolve the contentlet for the default language
-             optional = resolveContentlet(inodeOrIdentifier, mode, defaultLang.getAsLong(), user);
+             optional = resolveContentlet(inodeOrIdentifier, mode, defaultLang.getAsLong(), user, variantName);
         }
         //If we found the contentlet, return it
         if (optional.isPresent()) {
@@ -649,9 +708,14 @@ public class ContentResource {
      * @param mode the page mode used to determine if we are
      * @param languageId the language id
      * @param user the user
+     * @param variantName variant name
      * @return the contentlet object
      */
-    private Optional<Contentlet> resolveContentlet (final String inodeOrIdentifier, PageMode mode, long languageId, User user) {
+    private Optional<Contentlet> resolveContentlet (final String inodeOrIdentifier,
+                                                    final PageMode mode,
+                                                    final long languageId,
+                                                    final User user,
+                                                    final String variantName) {
 
         final Optional<ShortyId> shortyId = APILocator.getShortyAPI().getShorty(inodeOrIdentifier);
 
@@ -663,7 +727,8 @@ public class ContentResource {
 
         final VersionableAPI versionableAPI = APILocator.getVersionableAPI();
         if(ShortType.IDENTIFIER == shortyId.get().type) {
-            Optional<ContentletVersionInfo> cvi = versionableAPI.getContentletVersionInfo(shortyId.get().longId, languageId);
+
+            final Optional<ContentletVersionInfo> cvi = versionableAPI.getContentletVersionInfo(shortyId.get().longId, languageId, variantName);
             if (cvi.isPresent()) {
                 testInode =  mode.showLive ? cvi.get().getLiveInode() : cvi.get().getWorkingInode();
             }

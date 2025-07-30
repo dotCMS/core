@@ -13,8 +13,8 @@ import { MenuModule } from 'primeng/menu';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotAnalyticsTrackerService } from '@dotcms/data-access';
+import { UVE_MODE } from '@dotcms/types';
 import { DotMessagePipe } from '@dotcms/ui';
-import { UVE_MODE } from '@dotcms/uve/types';
 
 import { UVEStore } from '../../../../../store/dot-uve.store';
 
@@ -89,9 +89,7 @@ export class DotEditorModeSelectorComponent {
             toMode: mode
         });
 
-        this.#store.loadPageAsset({
-            mode: mode,
-            publishDate: mode === UVE_MODE.LIVE ? new Date().toISOString() : undefined
-        });
+        /* More info here: https://github.com/dotCMS/core/issues/31719 */
+        this.#store.loadPageAsset({ mode: mode, publishDate: undefined });
     }
 }

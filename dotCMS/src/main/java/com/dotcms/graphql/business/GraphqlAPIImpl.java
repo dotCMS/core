@@ -51,14 +51,18 @@ public class GraphqlAPIImpl implements GraphqlAPI {
 
     @VisibleForTesting
     protected GraphqlAPIImpl(final GraphQLSchemaCache schemaCache) {
+        //Register types
         typesProviders.add(ContentAPIGraphQLTypesProvider.INSTANCE);
         typesProviders.add(PageAPIGraphQLTypesProvider.INSTANCE);
         typesProviders.add(QueryMetadataTypeProvider.INSTANCE);
         typesProviders.add(PaginationTypeProvider.INSTANCE);
+        typesProviders.add(NavigationTypeProvider.INSTANCE);
+        //Register Fields
         fieldsProviders.add(ContentAPIGraphQLFieldsProvider.INSTANCE);
         fieldsProviders.add(PageAPIGraphQLFieldsProvider.INSTANCE);
         fieldsProviders.add(QueryMetadataFieldProvider.INSTANCE);
         fieldsProviders.add(PaginationFieldProvider.INSTANCE);
+        fieldsProviders.add(NavigationFieldProvider.INSTANCE);
         this.schemaCache = schemaCache;
     }
 
@@ -258,5 +262,10 @@ public class GraphqlAPIImpl implements GraphqlAPI {
                     .build())
                 .type(list(InterfaceType.CONTENTLET.getType()))
                 .dataFetcher(new ContentletDataFetcher()));
+    }
+
+    @VisibleForTesting
+    Set<GraphQLTypesProvider> getRegisteredTypesProviders() {
+        return java.util.Collections.unmodifiableSet(typesProviders);
     }
 }

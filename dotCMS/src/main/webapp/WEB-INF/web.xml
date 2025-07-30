@@ -60,13 +60,17 @@
 		<filter-class>com.dotmarketing.filters.ThreadNameFilter</filter-class>
 		<async-supported>true</async-supported>
 	</filter>
-	
+	<filter>
+		<filter-name>InfrastructureManagementFilter</filter-name>
+		<filter-class>com.dotcms.management.filters.InfrastructureManagementFilter</filter-class>
+		<async-supported>true</async-supported>
+	</filter>
 	<filter>
 		<filter-name>CharsetEncodingFilter</filter-name>
 		<filter-class>com.dotmarketing.filters.CharsetEncodingFilter</filter-class>
 		<async-supported>true</async-supported>
 	</filter>
-	
+
 	<filter>
 	    <filter-name>TimeMachineFilter</filter-name>
 		<filter-class>com.dotmarketing.filters.TimeMachineFilter</filter-class>
@@ -123,34 +127,47 @@
  	<!-- END FILTER-MAPPINGS -->
  	
 	<!--DOTMARKETING FILTER-MAPPINGS-->
+	<!-- Essential security and HTTP compliance filters run first -->
 	<filter-mapping>
 		<filter-name>NormalizationFilter</filter-name>
 		<url-pattern>/*</url-pattern>
 	</filter-mapping>
-    <filter-mapping>
-        <filter-name>HttpHeaderSecurityFilter</filter-name>
-        <url-pattern>/*</url-pattern>
-    </filter-mapping>
+
 	<filter-mapping>
-		<filter-name>InterceptorFilter</filter-name>
+			<filter-name>HttpHeaderSecurityFilter</filter-name>
+			<url-pattern>/*</url-pattern>
+	</filter-mapping>
+
+	<filter-mapping>
+		<filter-name>CookiesFilter</filter-name>
 		<url-pattern>/*</url-pattern>
 	</filter-mapping>
-    
+
+	<!-- CRITICAL: InfrastructureManagementFilter runs after essential security filters but before expensive ones
+	     Pattern must match InfrastructureConstants.MANAGEMENT_PATH_PREFIX + "/*" = "/dotmgt/*"
+	     Filter is service-agnostic - handles ANY service under /dotmgt prefix -->
+	<filter-mapping>
+		<filter-name>InfrastructureManagementFilter</filter-name>
+		<url-pattern>/dotmgt/*</url-pattern>
+	</filter-mapping>
+
 	<filter-mapping>
 		<filter-name>CharsetEncodingFilter</filter-name>
 		<url-pattern>/*</url-pattern>
 	</filter-mapping>
 	
-	<filter-mapping>
-		<filter-name>CookiesFilter</filter-name>
-		<url-pattern>/*</url-pattern>
-	</filter-mapping>
+
 	
 	<filter-mapping>
 		<filter-name>ThreadNameFilter</filter-name>
 		<url-pattern>/*</url-pattern>
 	</filter-mapping>
-	
+
+	<filter-mapping>
+		<filter-name>InterceptorFilter</filter-name>
+		<url-pattern>/*</url-pattern>
+	</filter-mapping>
+
 	<filter-mapping>
 		<filter-name>TimeMachineFilter</filter-name>
 		<url-pattern>/*</url-pattern>
@@ -385,6 +402,13 @@
 		<servlet-name>DotGraphQLHttpServlet</servlet-name>
 		<servlet-class>com.dotcms.graphql.DotGraphQLHttpServlet</servlet-class>
 	</servlet>
+
+	<servlet>
+		<servlet-name>HealthProbeServlet</servlet-name>
+		<servlet-class>com.dotcms.health.servlet.HealthProbeServlet</servlet-class>
+		<load-on-startup>1</load-on-startup>
+	</servlet>
+
     
 	<!--END DOTMARKETING SERVLETS-->
 	
@@ -515,6 +539,29 @@
 		<servlet-name>DotGraphQLHttpServlet</servlet-name>
 		<url-pattern>/api/v1/graphql</url-pattern>
 	</servlet-mapping>
+
+	<!-- Health service endpoint mappings
+	     These paths must match HealthEndpointConstants.Endpoints values:
+	     - LIVENESS  = /dotmgt/livez  (Kubernetes liveness probe)
+	     - READINESS = /dotmgt/readyz (Kubernetes readiness probe) 
+	     - HEALTH    = /dotmgt/health (Detailed health status)
+	     
+	     See: com.dotcms.health.config.HealthEndpointConstants for validation -->
+	<servlet-mapping>
+		<servlet-name>HealthProbeServlet</servlet-name>
+		<url-pattern>/dotmgt/livez</url-pattern>
+	</servlet-mapping>
+
+	<servlet-mapping>
+		<servlet-name>HealthProbeServlet</servlet-name>
+		<url-pattern>/dotmgt/readyz</url-pattern>
+	</servlet-mapping>
+
+	<servlet-mapping>
+		<servlet-name>HealthProbeServlet</servlet-name>
+		<url-pattern>/dotmgt/health</url-pattern>
+	</servlet-mapping>
+
 
 	<!--END DOTMARKETING SERVLET-MAPPING-->
 	

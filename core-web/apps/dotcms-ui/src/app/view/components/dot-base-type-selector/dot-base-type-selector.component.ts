@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
 
 import { SelectItem } from 'primeng/api';
 
@@ -15,15 +15,13 @@ import { StructureTypeView } from '@dotcms/dotcms-models';
     styleUrls: ['./dot-base-type-selector.component.scss']
 })
 export class DotBaseTypeSelectorComponent implements OnInit {
+    private dotContentTypeService = inject(DotContentTypeService);
+    private dotMessageService = inject(DotMessageService);
+
     @Input() value: SelectItem;
     @Output() selected = new EventEmitter<string>();
 
     options: Observable<SelectItem[]>;
-
-    constructor(
-        private dotContentTypeService: DotContentTypeService,
-        private dotMessageService: DotMessageService
-    ) {}
 
     ngOnInit() {
         this.options = this.dotContentTypeService.getAllContentTypes().pipe(

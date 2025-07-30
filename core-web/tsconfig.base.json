@@ -24,6 +24,7 @@
             "@dotcms/app/*": ["apps/dotcms-ui/src/app/*"],
             "@dotcms/block-editor": ["libs/block-editor/src/public-api.ts"],
             "@dotcms/client": ["libs/sdk/client/src/index.ts"],
+            "@dotcms/client/internal": ["libs/sdk/client/src/internal.ts"],
             "@dotcms/contenttype-fields": ["libs/contenttype-fields/src/index.ts"],
             "@dotcms/data-access": ["libs/data-access/src/index.ts"],
             "@dotcms/dot-layout-grid": ["libs/dot-layout-grid/src/public_api.ts"],
@@ -38,9 +39,21 @@
             "@dotcms/edit-content": ["libs/edit-content/src/index.ts"],
             "@dotcms/edit-content-bridge": ["libs/edit-content-bridge/src/index.ts"],
             "@dotcms/edit-content/*": ["libs/edit-content/src/lib/*"],
+            "@dotcms/edit-content/custom-languages/*": [
+                "./libs/edit-content/src/lib/custom-languages/*"
+            ],
             "@dotcms/experiments": ["libs/sdk/experiments/src/index.ts"],
-            "@dotcms/portlets/dot-analytics-search/portlet": [
-                "libs/portlets/dot-analytics-search/portlet/src/index.ts"
+            "@dotcms/portlets/content-drive/portlet": [
+                "libs/portlets/dot-content-drive/portlet/src/index.ts"
+            ],
+            "@dotcms/portlets/content-drive/ui": [
+                "libs/portlets/dot-content-drive/ui/src/index.ts"
+            ],
+            "@dotcms/portlets/dot-analytics/data-access": [
+                "libs/portlets/dot-analytics/data-access/src/index.ts"
+            ],
+            "@dotcms/portlets/dot-analytics/portlet": [
+                "libs/portlets/dot-analytics/portlet/src/index.ts"
             ],
             "@dotcms/portlets/dot-ema": ["libs/portlets/edit-ema/portlet/src/index.ts"],
             "@dotcms/portlets/dot-ema/ui": ["libs/portlets/edit-ema/ui/src/index.ts"],
@@ -56,9 +69,14 @@
             "@dotcms/portlets/dot-locales/portlet/data-access": [
                 "libs/portlets/dot-locales/data-access/src/index.ts"
             ],
+            "@dotcms/query-builder": [
+                "libs/sdk/client/src/lib/client/content/builders/query/query.ts"
+            ],
             "@dotcms/react": ["libs/sdk/react/src/index.ts"],
-            "@dotcms/react/mocks": ["libs/sdk/react/src/lib/mocks/index.ts"],
+            "@dotcms/store": ["libs/global-store/src/index.ts"],
             "@dotcms/template-builder": ["libs/template-builder/src/index.ts"],
+            "@dotcms/types": ["libs/sdk/types/src/index.ts"],
+            "@dotcms/types/internal": ["libs/sdk/types/src/internal.ts"],
             "@dotcms/ui": ["libs/ui/src/index.ts"],
             "@dotcms/utils": ["libs/utils/src"],
             "@dotcms/utils-testing": ["libs/utils-testing/src/index.ts"],

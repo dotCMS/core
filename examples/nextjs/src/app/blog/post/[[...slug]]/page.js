@@ -1,68 +1,39 @@
-import { ErrorPage } from "@/components/error";
+import NotFound from "@/app/not-found";
+import { DetailPage } from "@/views/DetailPage";
+import { getDotCMSPage } from "@/utils/getDotCMSPage";
 
-import { handleVanityUrlRedirect } from "@/utils/vanityUrlHandler";
-import { client } from "@/utils/dotcmsClient";
-import { getPageRequestParams } from "@dotcms/client";
-import { fetchNavData, fetchPageData } from "@/utils/page.utils";
-import { MyBlogPage } from "@/components/my-blog-page";
-
-/**
- * Generate metadata
- *
- * @export
- * @param {*} { params, searchParams }
- * @return {*}
- */
-export async function generateMetadata({ params, searchParams }) {
-    const path = params?.slug?.join("/");
-    const pageRequestParams = getPageRequestParams({
-        path: `blog/post/${path}`,
-        params: searchParams,
-    });
-
+export async function generateMetadata(props) {
+    const params = await props.params;
     try {
-        const data = await client.page.get(pageRequestParams);
-        const page = data.page;
-        const title = page?.friendlyName || page?.title;
-
+        const path = params.slug[0];
+        const { pageAsset } = await getDotCMSPage(`/blog/post/${path}`);
+        const urlContentMap = pageAsset?.urlContentMap;
+        const title = urlContentMap?.title || 'Page not found';
         return {
-            title,
+            title: `${title} - Blog`
         };
     } catch (e) {
         return {
-            title: "not found",
+            title: 'not found'
         };
     }
 }
 
-export default async function Home({ searchParams, params }) {
-    const getPageData = async () => {
-        const path = params?.slug?.join("/");
-        console.log(path)
-        const pageParams = getPageRequestParams({
-            path: `blog/post/${path}`,
-            params: searchParams,
-        });
+export default async function Home(props) {
+    const params = await props.params;
+    const path = params.slug[0];
+    const pageContent = await getDotCMSPage(`/blog/post/${path}`);
 
-        const { pageAsset, error: pageError } = await fetchPageData(pageParams);
-        const { nav, error: navError } = await fetchNavData(pageParams.language_id);
+    const vanityUrl = pageContent?.pageAsset?.vanityUrl;
+    const action = vanityUrl?.action ?? 0;
 
-        return {
-            nav,
-            pageAsset,
-            error: pageError || navError,
-        };
-    };
-    const { pageAsset, nav, error } = await getPageData();
-
-    // Move this to MyPage
-    if (error) {
-        return <ErrorPage error={error} />;
+    if (action > 200) {
+        return redirect(pageContent.pageAsset.vanityUrl.forwardTo);
     }
 
-    if (pageAsset?.vanityUrl) {
-        handleVanityUrlRedirect(pageAsset?.vanityUrl);
+    if (!pageContent) {
+        return <NotFound />;
     }
 
-    return <MyBlogPage nav={nav?.entity.children} pageAsset={pageAsset} />;
+    return <DetailPage pageContent={pageContent} />;
 }

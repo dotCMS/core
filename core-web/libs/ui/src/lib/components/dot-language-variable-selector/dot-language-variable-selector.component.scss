@@ -1,0 +1,90 @@
+@use "variables" as *;
+
+:host {
+    display: block;
+    max-width: 256px;
+
+    .dot-language-variable-selector {
+        position: relative;
+        min-width: 13rem;
+    }
+    .dot-language-variable-selector__search-icon {
+        position: absolute;
+        right: $spacing-1;
+        top: 50%;
+        transform: translateY(-50%);
+        pointer-events: none;
+        color: $color-palette-primary-500;
+    }
+}
+
+// Override PrimeNG styles
+::ng-deep {
+    .p-autocomplete {
+        width: 100%;
+    }
+
+    .p-autocomplete-panel {
+        .p-autocomplete-items {
+            padding: 0;
+
+            .p-autocomplete-item {
+                padding: $spacing-2;
+
+                // Our custom item styles
+                .dot-language-variable-selector__item {
+                    display: flex;
+                    flex-direction: column;
+                }
+
+                .dot-language-variable-selector__item-value {
+                    color: $color-palette-gray-900;
+                    font-weight: $font-weight-semi-bold;
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                }
+
+                .dot-language-variable-selector__item-key {
+                    font-size: $font-size-sm;
+                    color: $color-palette-gray-500;
+                    min-width: 0;
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+
+                    .highlight {
+                        color: $color-palette-gray-700;
+                        font-weight: $font-weight-semi-bold;
+                    }
+                }
+
+                &:hover {
+                    .dot-language-variable-selector__item-value {
+                        color: $color-palette-primary-500;
+                    }
+                    .dot-language-variable-selector__item-key {
+                        color: $color-palette-gray-500;
+
+                        .highlight {
+                            color: $color-palette-gray-900;
+                        }
+                    }
+                }
+
+                &.p-highlight {
+                    .dot-language-variable-selector__item-value {
+                        color: $color-palette-primary-500;
+                    }
+                    .dot-language-variable-selector__item-key {
+                        color: $color-palette-gray-500;
+
+                        .highlight {
+                            color: $color-palette-gray-900;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

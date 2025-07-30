@@ -1,5 +1,7 @@
 package com.dotcms.rest.api.v1.system.monitor;
 
+import com.dotcms.http.CircuitBreakerUrlBuilder;
+
 import java.util.Map;
 
 /**
@@ -15,17 +17,24 @@ public class MonitorStats {
     final boolean dBHealthy;
     final boolean esHealthy;
     final boolean localFSHealthy;
+    final String contentAnalytics;
+    final boolean telemetry;
 
     public MonitorStats(boolean assetFSHealthy,
             boolean cacheHealthy,
             boolean dBHealthy,
             boolean esHealthy,
-            boolean localFSHealthy) {
+            boolean localFSHealthy,
+            String contentAnalytics,
+            boolean telemetry) {
+
         this.assetFSHealthy = assetFSHealthy;
         this.cacheHealthy = cacheHealthy;
         this.dBHealthy = dBHealthy;
         this.esHealthy = esHealthy;
         this.localFSHealthy = localFSHealthy;
+        this.contentAnalytics = contentAnalytics;
+        this.telemetry = telemetry;
     }
 
     /**
@@ -50,6 +59,14 @@ public class MonitorStats {
     }
 
     /**
+     * Return the content analytics status: see {@link com.dotcms.experiments.business.ExperimentsAPI.Health}
+     * @return String
+     */
+    public String getContentAnalytics() {
+        return contentAnalytics;
+    }
+
+    /**
      * This method checks if the frontend is healthy. It does this by checking if the database,
      * elasticsearch, cache, local file system, and asset file system are healthy.
      *
@@ -71,7 +88,9 @@ public class MonitorStats {
                 "esHealthy", this.esHealthy,
                 "cacheHealthy", this.cacheHealthy,
                 "localFSHealthy", this.localFSHealthy,
-                "assetFSHealthy", this.assetFSHealthy);
+                "assetFSHealthy", this.assetFSHealthy,
+                "contentAnalytics", this.contentAnalytics,
+                "telemetry", this.telemetry);
 
         return Map.of(
                 "dotCMSHealthy", this.isDotCMSHealthy(),
@@ -90,6 +109,8 @@ public class MonitorStats {
         private boolean dBHealthy;
         private boolean esHealthy;
         private boolean localFSHealthy;
+        private String contentAnalytics;
+        private boolean telemetry;
 
         public Builder assetFSHealthy(boolean assetFSHealthy) {
             this.assetFSHealthy = assetFSHealthy;
@@ -116,14 +137,27 @@ public class MonitorStats {
             return this;
         }
 
+        public Builder contentAnalytics(String contentAnalytics) {
+            this.contentAnalytics = contentAnalytics;
+            return this;
+        }
+
+        public Builder telemetry(boolean telemetry) {
+            this.telemetry = telemetry;
+            return this;
+        }
+
         public MonitorStats build() {
             return new MonitorStats(
                     assetFSHealthy,
                     cacheHealthy,
                     dBHealthy,
                     esHealthy,
-                    localFSHealthy);
+                    localFSHealthy,
+                    contentAnalytics,
+                    telemetry);
         }
+
 
     }
 

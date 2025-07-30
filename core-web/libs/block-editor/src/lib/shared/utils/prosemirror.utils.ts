@@ -4,7 +4,8 @@ import { EditorView } from 'prosemirror-view';
 
 import { Editor } from '@tiptap/core';
 
-import { CustomNodeTypes, NodeTypes } from '../../extensions';
+import { CustomNodeTypes, NodeTypes } from './constants.utils';
+
 import { toJSONFn } from '../../NodeViewRenderer';
 
 const aTagRex = new RegExp(/<a(|\s+[^>]*)>(\s|\n|<img[^>]*src="[^"]*"[^>]*>)*?<\/a>/gm);

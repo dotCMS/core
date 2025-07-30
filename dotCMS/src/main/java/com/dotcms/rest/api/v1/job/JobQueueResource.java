@@ -11,6 +11,13 @@ import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import graphql.VisibleForTesting;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.Map;
 import java.util.Set;
 import javax.inject.Inject;
@@ -32,6 +39,7 @@ import org.glassfish.jersey.media.sse.EventOutput;
 import org.glassfish.jersey.media.sse.SseFeature;
 
 @Path("/v1/jobs")
+@Tag(name = "Job Queue", description = "Endpoints for managing background jobs and job queues")
 public class JobQueueResource {
 
     private final WebResource webResource;
@@ -55,10 +63,26 @@ public class JobQueueResource {
     @Path("/{queueName}")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.APPLICATION_JSON)
+    @Operation(
+            operationId = "createJobWithFormData",
+            summary = "Creates a new job with form data",
+            description = "Creates and queues a new background job with multipart form data parameters. " +
+                    "Returns the job ID and initial status information.",
+            tags = {"Job Queue"},
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Job created successfully",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ResponseEntityJobStatusView.class))),
+                    @ApiResponse(responseCode = "400", description = "Bad request - Invalid job parameters or queue name"),
+                    @ApiResponse(responseCode = "401", description = "Unauthorized - User not authenticated"),
+                    @ApiResponse(responseCode = "403", description = "Forbidden - User lacks required permissions"),
+                    @ApiResponse(responseCode = "500", description = "Internal server error")
+            }
+    )
     public Response createJob(
             @Context final HttpServletRequest request, @Context final HttpServletResponse response,
-            @PathParam("queueName") String queueName,
-            @BeanParam JobParams form) throws JsonProcessingException, DotDataException {
+            @Parameter(description = "Name of the job queue to submit to") @PathParam("queueName") String queueName,
+            @Parameter(description = "Job parameters as multipart form data") @BeanParam JobParams form) throws JsonProcessingException, DotDataException {
 
         final var initDataObject = new InitBuilder(webResource)
                 .requiredBackendUser(true)
@@ -70,7 +94,7 @@ public class JobQueueResource {
         try {
             final String jobId = helper.createJob(
                     queueName, form, initDataObject.getUser(), request);
-            final var jobStatusResponse = JobResponseUtil.buildJobStatusResponse(jobId, request);
+            final var jobStatusResponse = helper.buildJobStatusResponse(jobId, request);
             return Response.ok(new ResponseEntityJobStatusView(jobStatusResponse)).build();
         } catch (JobValidationException e) {
             return ExceptionMapperUtil.createResponse(null, e.getMessage());
@@ -81,9 +105,28 @@ public class JobQueueResource {
     @Path("/{queueName}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
+    @Operation(
+            operationId = "createJobWithJson",
+            summary = "Creates a new job with JSON parameters",
+            description = "Creates and queues a new background job with JSON parameters. " +
+                    "Returns the job ID and initial status information.",
+            tags = {"Job Queue"},
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Job created successfully",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ResponseEntityJobStatusView.class))),
+                    @ApiResponse(responseCode = "400", description = "Bad request - Invalid job parameters or queue name"),
+                    @ApiResponse(responseCode = "401", description = "Unauthorized - User not authenticated"),
+                    @ApiResponse(responseCode = "403", description = "Forbidden - User lacks required permissions"),
+                    @ApiResponse(responseCode = "500", description = "Internal server error")
+            }
+    )
     public Response createJob(
             @Context final HttpServletRequest request, @Context final HttpServletResponse response,
-            @PathParam("queueName") String queueName,
+            @Parameter(description = "Name of the job queue to submit to") @PathParam("queueName") String queueName,
+            @RequestBody(description = "Job parameters as JSON key-value pairs",
+                    required = true,
+                    content = @Content(schema = @Schema(type = "object", additionalProperties = Schema.AdditionalPropertiesValue.TRUE)))
             Map<String, Object> parameters) throws DotDataException {
 
         final var initDataObject = new InitBuilder(webResource)
@@ -96,7 +139,7 @@ public class JobQueueResource {
         try {
             final String jobId = helper.createJob(
                     queueName, parameters, initDataObject.getUser(), request);
-            final var jobStatusResponse = JobResponseUtil.buildJobStatusResponse(jobId, request);
+            final var jobStatusResponse = helper.buildJobStatusResponse(jobId, request);
             return Response.ok(new ResponseEntityJobStatusView(jobStatusResponse)).build();
         } catch (JobValidationException e) {
             return ExceptionMapperUtil.createResponse(null, e.getMessage());
@@ -106,6 +149,20 @@ public class JobQueueResource {
     @GET
     @Path("/queues")
     @Produces(MediaType.APPLICATION_JSON)
+    @Operation(
+            operationId = "getQueues",
+            summary = "Retrieves available job queues",
+            description = "Returns a list of all available job queue names that can be used for submitting jobs.",
+            tags = {"Job Queue"},
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Queues retrieved successfully",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ResponseEntityView.class))),
+                    @ApiResponse(responseCode = "401", description = "Unauthorized - User not authenticated"),
+                    @ApiResponse(responseCode = "403", description = "Forbidden - User lacks required permissions"),
+                    @ApiResponse(responseCode = "500", description = "Internal server error")
+            }
+    )
     public ResponseEntityView<Set<String>> getQueues(
             @Context final HttpServletRequest request, @Context final HttpServletResponse response) {
         new InitBuilder(webResource)
@@ -120,9 +177,25 @@ public class JobQueueResource {
     @GET
     @Path("/{jobId}/status")
     @Produces(MediaType.APPLICATION_JSON)
+    @Operation(
+            operationId = "getJobStatus",
+            summary = "Retrieves job status information",
+            description = "Returns detailed status information for a specific job including progress, state, and results.",
+            tags = {"Job Queue"},
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Job status retrieved successfully",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ResponseEntityView.class))),
+                    @ApiResponse(responseCode = "400", description = "Bad request - Invalid job ID"),
+                    @ApiResponse(responseCode = "401", description = "Unauthorized - User not authenticated"),
+                    @ApiResponse(responseCode = "403", description = "Forbidden - User lacks required permissions"),
+                    @ApiResponse(responseCode = "404", description = "Job not found"),
+                    @ApiResponse(responseCode = "500", description = "Internal server error")
+            }
+    )
     public ResponseEntityView<Job> getJobStatus(
             @Context final HttpServletRequest request, @Context final HttpServletResponse response,
-            @PathParam("jobId") String jobId) throws DotDataException {
+            @Parameter(description = "Unique identifier of the job") @PathParam("jobId") String jobId) throws DotDataException {
 
         new InitBuilder(webResource)
                 .requiredBackendUser(true)

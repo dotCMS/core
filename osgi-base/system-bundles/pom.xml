@@ -36,7 +36,7 @@
         <dependency>
             <groupId>com.dotcms.samlbundle</groupId>
             <artifactId>com.dotcms.samlbundle</artifactId>
-            <version>24.02.29</version>
+            <version>25.06.3</version>
             <scope>provided</scope>
             <exclusions>
                 <exclusion>
@@ -51,19 +51,6 @@
             <artifactId>org.osgi.compendium</artifactId>
             <version>5.0.0</version>
             <scope>provided</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>*</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>com.dotcms.core.plugins</groupId>
-            <artifactId>com.dotcms.telemetry</artifactId>
-            <version>24.08.08</version>
-            <scope>provided</scope>
-
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>

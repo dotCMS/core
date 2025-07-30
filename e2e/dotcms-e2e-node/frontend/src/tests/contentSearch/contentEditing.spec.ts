@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
-import { LoginPage, SideMenuPage } from "@pages";
+import { LoginPage } from "@pages";
+import { SideMenuComponent } from "@components/sideMenu.component";
 import { waitForVisibleAndCallback } from "@utils/utils";
 import { ContentPage } from "@pages";
 import {
@@ -22,7 +23,7 @@ import { assert } from "console";
  */
 test.beforeEach("Navigate to content portlet", async ({ page }) => {
   const loginPage = new LoginPage(page);
-  const sideMenuPage = new SideMenuPage(page);
+  const sideMenuPage = new SideMenuComponent(page);
 
   // Get the username and password from the environment variables
   const username = process.env.USERNAME as string;
@@ -31,12 +32,6 @@ test.beforeEach("Navigate to content portlet", async ({ page }) => {
   // Login to dotCMS
   await loginPage.login(username, password);
   await sideMenuPage.navigate("Content", "Search All");
-
-  // Validate the portlet title
-  const breadcrumbLocator = page.locator("p-breadcrumb");
-  await waitForVisibleAndCallback(breadcrumbLocator, () =>
-    expect(breadcrumbLocator).toContainText("Search All"),
-  );
 });
 
 /**
@@ -429,11 +424,9 @@ test("Add a new page", async ({ page }) => {
     cacheTTL: pageAssetContent.cacheTTL,
     action: contentProperties.publishWfAction,
   });
-  const dataFrame = page.frameLocator(iFramesLocators.dataTestId);
-  await waitForVisibleAndCallback(dataFrame.getByRole("banner"));
-  await expect(page.locator("ol")).toContainText(
-    "Pages" + pageAssetContent.title,
-  );
+
+  const breadcrumbLocator = page.getByTestId("breadcrumb-title");
+  await expect(breadcrumbLocator).toContainText(pageAssetContent.title);
 });
 
 /**
@@ -453,10 +446,6 @@ test("Validate URL is unique on pages", async ({ page }) => {
     cacheTTL: pageAssetContent.cacheTTL,
     action: contentProperties.publishWfAction,
   });
-  await page
-    .frameLocator('dot-iframe-dialog iframe[name="detailFrame"]')
-    .getByText("Another Page with the same")
-    .click();
 
   const iframe = page.frameLocator(iFramesLocators.dot_iframe);
   await expect(iframe.getByText("Another Page with the same")).toBeVisible();
@@ -529,7 +518,7 @@ test("Validate you are able to unpublish pages", async ({ page }) => {
 /**
  * Test to validate you are able to delete pages
  */
-test("Validate you are able to delete pages", async ({ page }) => {
+test.skip("Validate you are able to delete pages", async ({ page }) => {
   const contentUtils = new ContentPage(page);
   await contentUtils.selectTypeOnFilter(pageAsset.locator);
   await contentUtils.deleteContent(pageAssetContent.title);

@@ -24,13 +24,12 @@ import { DotPageRenderOptions, DotPageRenderState } from '@dotcms/dotcms-models'
  */
 @Injectable()
 export class DotEditPageResolver implements Resolve<DotPageRenderState | null> {
+    private dotPageStateService = inject(DotPageStateService);
+    private dotRouterService = inject(DotRouterService);
+    private dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
+    private siteService = inject(SiteService);
+
     private dotSessionStorageService: DotSessionStorageService = inject(DotSessionStorageService);
-    constructor(
-        private dotPageStateService: DotPageStateService,
-        private dotRouterService: DotRouterService,
-        private dotHttpErrorManagerService: DotHttpErrorManagerService,
-        private siteService: SiteService
-    ) {}
 
     resolve(route: ActivatedRouteSnapshot): Observable<DotPageRenderState | null> {
         const data = this.dotPageStateService.getInternalNavigationState();

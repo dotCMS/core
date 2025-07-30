@@ -1,40 +1,10 @@
+import { consola } from 'consola';
+
+import { DotCMSClientConfig, RequestOptions } from '@dotcms/types';
+
 import { Content } from './content/content-api';
 import { NavigationClient } from './navigation/navigation-api';
 import { PageClient } from './page/page-api';
-
-/**
- * Options for configuring fetch requests, excluding body and method properties.
- */
-export type RequestOptions = Omit<RequestInit, 'body' | 'method'>;
-
-/**
- * Configuration options for the DotCMS client.
- */
-export interface DotCMSClientConfig {
-    /**
-     * The URL of the dotCMS instance.
-     * Ensure to include the protocol (http or https).
-     * @example `https://demo.dotcms.com`
-     */
-    dotcmsUrl: string;
-
-    /**
-     * The authentication token for requests.
-     * Obtainable from the dotCMS UI.
-     */
-    authToken: string;
-
-    /**
-     * The id of the site you want to interact with. Defaults to the default site if not provided.
-     */
-    siteId?: string;
-
-    /**
-     * Additional options for the fetch request.
-     * @example `{ headers: { 'Content-Type': 'application/json' } }`
-     */
-    requestOptions?: RequestOptions;
-}
 
 /**
  * Parses a string into a URL object.
@@ -46,7 +16,7 @@ function parseURL(url: string): URL | undefined {
     try {
         return new URL(url);
     } catch {
-        console.error('Invalid URL:', url);
+        consola.error('[DotCMS Client]: Invalid URL:', url);
 
         return undefined;
     }

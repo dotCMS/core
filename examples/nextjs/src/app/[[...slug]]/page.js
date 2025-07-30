@@ -1,67 +1,40 @@
-import { MyPage } from "@/components/my-page";
-import { ErrorPage } from "@/components/error";
+import NotFound from "@/app/not-found";
+import { Page } from "@/views/Page";
+import { getDotCMSPage } from "@/utils/getDotCMSPage";
 
-import { handleVanityUrlRedirect } from "@/utils/vanityUrlHandler";
-import { client } from "@/utils/dotcmsClient";
-import { getPageRequestParams } from "@dotcms/client";
-import { fetchNavData, fetchPageData } from "@/utils/page.utils";
-
-/**
- * Generate metadata
- *
- * @export
- * @param {*} { params, searchParams }
- * @return {*}
- */
-export async function generateMetadata({ params, searchParams }) {
-    const path = params?.slug?.join("/") || "/";
-    const pageRequestParams = getPageRequestParams({
-        path,
-        params: searchParams,
-    });
-
+export async function generateMetadata(props) {
+    const params = await props.params;
     try {
-        const data = await client.page.get(pageRequestParams);
-        const page = data.page;
+        const path = params?.slug?.join('/') || '/';
+        const { pageAsset } = await getDotCMSPage(path);
+        const page = pageAsset.page;
         const title = page?.friendlyName || page?.title;
 
         return {
-            title,
+            title
         };
     } catch (e) {
         return {
-            title: "not found",
+            title: 'not found'
         };
     }
 }
 
-export default async function Home({ searchParams, params }) {
-    const getPageData = async () => {
-        const path = params?.slug?.join("/") || "/";
-        const pageParams = getPageRequestParams({
-            path,
-            params: searchParams,
-        });
+export default async function Home(props) {
+    const params = await props.params;
+    const path = params?.slug?.join('/') || '/';
+    const pageContent = await getDotCMSPage(path);
 
-        const { pageAsset, error: pageError } = await fetchPageData(pageParams);
-        const { nav, error: navError } = await fetchNavData(pageParams.language_id);
+    const vanityUrl = pageContent?.pageAsset?.vanityUrl;
+    const action = vanityUrl?.action ?? 0;
 
-        return {
-            nav,
-            pageAsset,
-            error: pageError || navError,
-        };
-    };
-    const { pageAsset, nav, error } = await getPageData();
-
-    // Move this to MyPage
-    if (error) {
-        return <ErrorPage error={error} />;
+    if (action > 200) {
+        return redirect(pageContent.pageAsset.vanityUrl.forwardTo);
     }
 
-    if (pageAsset?.vanityUrl) {
-        handleVanityUrlRedirect(pageAsset?.vanityUrl);
+    if (!pageContent) {
+        return <NotFound />;
     }
 
-    return <MyPage nav={nav?.entity.children} pageAsset={pageAsset} />;
+    return <Page pageContent={pageContent} />;
 }

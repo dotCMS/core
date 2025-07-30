@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { describe, expect, it, jest } from '@jest/globals';
 
 import {
@@ -27,273 +29,468 @@ import { DotEditContentFieldSingleSelectableDataType } from '../models/dot-edit-
 import { NON_FORM_CONTROL_FIELD_TYPES } from '../models/dot-edit-content-form.enum';
 
 describe('Utils Functions', () => {
+    const originalWarn = console.warn;
+
+    beforeAll(() => {
+        console.warn = jest.fn();
+    });
+
+    afterAll(() => {
+        console.warn = originalWarn;
+    });
+
     const { castSingleSelectableValue, getSingleSelectableFieldOptions, getFinalCastedValue } =
         functionsUtil;
 
     describe('castSingleSelectableValue', () => {
-        it('should return null if value is empty', () => {
-            expect(castSingleSelectableValue('', '')).toBeNull();
-        });
+        describe('null/undefined/empty handling', () => {
+            it('should return null for null value', () => {
+                expect(castSingleSelectableValue(null, '')).toBeNull();
+            });
 
-        it('should return value if type is not Bool or Number', () => {
-            expect(castSingleSelectableValue('Some value', 'Some other type')).toBe('Some value');
+            it('should return null for undefined value', () => {
+                expect(castSingleSelectableValue(undefined, '')).toBeNull();
+            });
+
+            it('should return null for empty string', () => {
+                expect(castSingleSelectableValue('', '')).toBeNull();
+            });
         });
 
         describe('Boolean', () => {
-            it('should return true if value is true', () => {
-                expect(
-                    castSingleSelectableValue(
-                        'true',
-                        DotEditContentFieldSingleSelectableDataType.BOOL
-                    )
-                ).toBe(true);
+            const type = DotEditContentFieldSingleSelectableDataType.BOOL;
+
+            it('should handle boolean true directly', () => {
+                expect(castSingleSelectableValue(true, type)).toBe(true);
             });
 
-            it('should return true if value is TRUE', () => {
-                expect(
-                    castSingleSelectableValue(
-                        'TRUE',
-                        DotEditContentFieldSingleSelectableDataType.BOOL
-                    )
-                ).toBe(true);
+            it('should handle boolean false directly', () => {
+                expect(castSingleSelectableValue(false, type)).toBe(false);
             });
 
-            it('should return true if value is True', () => {
-                expect(
-                    castSingleSelectableValue(
-                        'True',
-                        DotEditContentFieldSingleSelectableDataType.BOOL
-                    )
-                ).toBe(true);
+            it('should handle string "true"', () => {
+                expect(castSingleSelectableValue('true', type)).toBe(true);
             });
 
-            it('should return true if value is TrUE', () => {
-                expect(
-                    castSingleSelectableValue(
-                        'TrUE',
-                        DotEditContentFieldSingleSelectableDataType.BOOL
-                    )
-                ).toBe(true);
+            it('should handle string "false"', () => {
+                expect(castSingleSelectableValue('false', type)).toBe(false);
             });
 
-            it('should return true if value has spaces on the sides', () => {
-                expect(
-                    castSingleSelectableValue(
-                        '        true      ',
-                        DotEditContentFieldSingleSelectableDataType.BOOL
-                    )
-                ).toBe(true);
+            it('should handle uppercase "TRUE"', () => {
+                expect(castSingleSelectableValue('TRUE', type)).toBe(true);
             });
 
-            it('should return false if value is false', () => {
-                expect(
-                    castSingleSelectableValue(
-                        'false',
-                        DotEditContentFieldSingleSelectableDataType.BOOL
-                    )
-                ).toBe(false);
+            it('should handle mixed case "tRuE"', () => {
+                expect(castSingleSelectableValue('tRuE', type)).toBe(true);
             });
 
-            it('should return false for any random string that is not "true"', () => {
-                expect(
-                    castSingleSelectableValue(
-                        (Math.random() * 10).toString(36), // This return some random stuff like 6.kuh34iuh12
-                        DotEditContentFieldSingleSelectableDataType.BOOL
-                    )
-                ).toBe(false);
+            it('should handle string with spaces', () => {
+                expect(castSingleSelectableValue('  true  ', type)).toBe(true);
             });
 
-            it('should return false for any random number that is not "true"', () => {
-                expect(
-                    castSingleSelectableValue(
-                        (Math.random() * 10).toString(), // Random number from 0 to 10
-                        DotEditContentFieldSingleSelectableDataType.BOOL
-                    )
-                ).toBe(false);
+            it('should return false for non-boolean strings', () => {
+                expect(castSingleSelectableValue('hello', type)).toBe(false);
+            });
+
+            it('should handle number 1 as false', () => {
+                expect(castSingleSelectableValue(1, type)).toBe(false);
+            });
+
+            it('should handle number 0 as false', () => {
+                expect(castSingleSelectableValue(0, type)).toBe(false);
             });
         });
 
-        describe.each([
-            {
-                dataType: DotEditContentFieldSingleSelectableDataType.INTEGER
-            },
-            {
-                dataType: DotEditContentFieldSingleSelectableDataType.FLOAT
-            }
-        ])('Numeric DataTypes', ({ dataType }) => {
-            describe(dataType, () => {
-                let number = 0;
+        describe('Numeric', () => {
+            describe('INTEGER type', () => {
+                const type = DotEditContentFieldSingleSelectableDataType.INTEGER;
 
-                beforeEach(() => {
-                    number =
-                        dataType == DotEditContentFieldSingleSelectableDataType.INTEGER
-                            ? Math.random() * 10
-                            : Math.random(); // To generate a float or integer number
+                it('should handle number directly', () => {
+                    expect(castSingleSelectableValue(42, type)).toBe(42);
                 });
 
-                it('should return number if value is number', () => {
-                    expect(castSingleSelectableValue(number.toString(), dataType)).toBe(number);
+                it('should handle numeric string', () => {
+                    expect(castSingleSelectableValue('42', type)).toBe(42);
                 });
 
-                it('should return number if value is number and has spaces on the sides', () => {
-                    expect(
-                        castSingleSelectableValue(`      ${number.toString()}   `, dataType)
-                    ).toBe(number);
+                it('should handle string with spaces', () => {
+                    expect(castSingleSelectableValue('  42  ', type)).toBe(42);
                 });
 
-                it('should return NaN if value is not a number', () => {
-                    const randomString = number.toString(36);
-
-                    expect(castSingleSelectableValue(randomString, dataType)).toBe(NaN);
+                it('should return null for invalid number', () => {
+                    expect(castSingleSelectableValue('not a number', type)).toBeNull();
                 });
+
+                it('should handle zero', () => {
+                    expect(castSingleSelectableValue(0, type)).toBe(0);
+                });
+
+                it('should handle negative numbers', () => {
+                    expect(castSingleSelectableValue(-42, type)).toBe(-42);
+                });
+            });
+
+            describe('FLOAT type', () => {
+                const type = DotEditContentFieldSingleSelectableDataType.FLOAT;
+
+                it('should handle float directly', () => {
+                    expect(castSingleSelectableValue(3.14, type)).toBe(3.14);
+                });
+
+                it('should handle float string', () => {
+                    expect(castSingleSelectableValue('3.14', type)).toBe(3.14);
+                });
+
+                it('should handle string with spaces', () => {
+                    expect(castSingleSelectableValue('  3.14  ', type)).toBe(3.14);
+                });
+
+                it('should return null for invalid float', () => {
+                    expect(castSingleSelectableValue('not a float', type)).toBeNull();
+                });
+
+                it('should handle negative floats', () => {
+                    expect(castSingleSelectableValue(-3.14, type)).toBe(-3.14);
+                });
+
+                it('should handle zero', () => {
+                    expect(castSingleSelectableValue(0.0, type)).toBe(0);
+                });
+            });
+        });
+
+        describe('Default string handling', () => {
+            it('should convert number to string for unknown type', () => {
+                expect(castSingleSelectableValue(42, 'unknown')).toBe('42');
+            });
+
+            it('should convert boolean to string for unknown type', () => {
+                expect(castSingleSelectableValue(true, 'unknown')).toBe('true');
+            });
+
+            it('should handle object by converting to string', () => {
+                const obj = { test: 'value' };
+                expect(castSingleSelectableValue(obj, 'unknown')).toBe(String(obj));
+            });
+
+            it('should return string as is for unknown type', () => {
+                expect(castSingleSelectableValue('test', 'unknown')).toBe('test');
             });
         });
     });
 
     describe('getSingleSelectableFieldOptions', () => {
-        it('should return an array of objects with label and value', () => {
-            expect(getSingleSelectableFieldOptions('some label|some value', 'Some type')).toEqual([
-                {
-                    label: 'some label',
-                    value: 'some value'
-                }
-            ]);
+        describe('Empty and null values', () => {
+            it('should return an empty array if options is empty', () => {
+                expect(getSingleSelectableFieldOptions('', 'Some type')).toEqual([]);
+            });
+
+            it('should return an empty array if options is null', () => {
+                expect(getSingleSelectableFieldOptions(null as any, 'Some type')).toEqual([]);
+            });
+
+            it('should return an empty array if options is undefined', () => {
+                expect(getSingleSelectableFieldOptions(undefined as any, 'Some type')).toEqual([]);
+            });
+
+            it('should return an empty array if options is only whitespace', () => {
+                expect(getSingleSelectableFieldOptions('   ', 'Some type')).toEqual([]);
+            });
         });
 
-        it('should return an array of objects with label and value even if value is not provided', () => {
-            expect(getSingleSelectableFieldOptions('some label', 'Some type')).toEqual([
-                {
-                    label: 'some label',
-                    value: 'some label'
-                }
-            ]);
+        describe('Multi-line pipe format (dotCMS standard)', () => {
+            it('should handle standard dotCMS format from documentation', () => {
+                const options = 'foo|1\r\nbar|2\r\nthird item|c\r\nThis one is a ghost.|boo';
+                expect(getSingleSelectableFieldOptions(options, 'text')).toEqual([
+                    { label: 'foo', value: '1' },
+                    { label: 'bar', value: '2' },
+                    { label: 'third item', value: 'c' },
+                    { label: 'This one is a ghost.', value: 'boo' }
+                ]);
+            });
+
+            it('should handle radio field format from documentation', () => {
+                const options = 'FirstLabel|1\r\nSecondLabel|2\r\nThirdLabel|foo';
+                expect(getSingleSelectableFieldOptions(options, 'text')).toEqual([
+                    { label: 'FirstLabel', value: '1' },
+                    { label: 'SecondLabel', value: '2' },
+                    { label: 'ThirdLabel', value: 'foo' }
+                ]);
+            });
+
+            it('should support different line break formats', () => {
+                expect(
+                    getSingleSelectableFieldOptions('label1|value1\nlabel2|value2', 'text')
+                ).toEqual([
+                    { label: 'label1', value: 'value1' },
+                    { label: 'label2', value: 'value2' }
+                ]);
+
+                expect(
+                    getSingleSelectableFieldOptions('label1|value1\rlabel2|value2', 'text')
+                ).toEqual([
+                    { label: 'label1', value: 'value1' },
+                    { label: 'label2', value: 'value2' }
+                ]);
+            });
+
+            it('should handle options without explicit values (label as value)', () => {
+                expect(
+                    getSingleSelectableFieldOptions(
+                        'some label\r\nsome label 2\r\nsome label 3|i have value',
+                        'text'
+                    )
+                ).toEqual([
+                    { label: 'some label', value: 'some label' },
+                    { label: 'some label 2', value: 'some label 2' },
+                    { label: 'some label 3', value: 'i have value' }
+                ]);
+            });
+
+            it('should handle options without explicit values (label as value) for boolean type', () => {
+                expect(getSingleSelectableFieldOptions('True\r\nFalse', 'text')).toEqual([
+                    { label: 'True', value: 'True' },
+                    { label: 'False', value: 'False' }
+                ]);
+            });
+
+            it('should trim labels and values', () => {
+                expect(
+                    getSingleSelectableFieldOptions(
+                        ' some label \r\n     some label 2 \r\n    some label 3     | i have value ',
+                        'text'
+                    )
+                ).toEqual([
+                    { label: 'some label', value: 'some label' },
+                    { label: 'some label 2', value: 'some label 2' },
+                    { label: 'some label 3', value: 'i have value' }
+                ]);
+            });
         });
 
-        it('should return an empty array if options is empty', () => {
-            expect(getSingleSelectableFieldOptions('', 'Some type')).toEqual([]);
+        describe('Special case: checkbox without label', () => {
+            it('should handle "|true" case for checkbox without label', () => {
+                expect(
+                    getSingleSelectableFieldOptions(
+                        '|true',
+                        DotEditContentFieldSingleSelectableDataType.BOOL
+                    )
+                ).toEqual([{ label: '', value: true }]);
+            });
+
+            it('should handle "|false" case for checkbox without label', () => {
+                expect(
+                    getSingleSelectableFieldOptions(
+                        '|false',
+                        DotEditContentFieldSingleSelectableDataType.BOOL
+                    )
+                ).toEqual([{ label: '', value: false }]);
+            });
+
+            it('should handle "|value" case with string type', () => {
+                expect(getSingleSelectableFieldOptions('|somevalue', 'text')).toEqual([
+                    { label: '', value: 'somevalue' }
+                ]);
+            });
+
+            it('should handle "|1" case with integer type', () => {
+                expect(
+                    getSingleSelectableFieldOptions(
+                        '|1',
+                        DotEditContentFieldSingleSelectableDataType.INTEGER
+                    )
+                ).toEqual([{ label: '', value: 1 }]);
+            });
         });
 
-        it('should support multiline options', () => {
-            expect(
-                getSingleSelectableFieldOptions(
-                    'some label\r\nsome label 2\r\nsome label 3|i have value',
-                    'Some type'
-                )
-            ).toEqual([
-                {
-                    label: 'some label',
-                    value: 'some label'
-                },
-                {
-                    label: 'some label 2',
-                    value: 'some label 2'
-                },
-                {
-                    label: 'some label 3',
-                    value: 'i have value'
-                }
-            ]);
+        describe('Simple comma format (when no pipes present)', () => {
+            it('should handle simple comma-separated values', () => {
+                expect(getSingleSelectableFieldOptions('1,2,3', 'text')).toEqual([
+                    { label: '1', value: '1' },
+                    { label: '2', value: '2' },
+                    { label: '3', value: '3' }
+                ]);
+            });
+
+            it('should handle comma-separated values with spaces', () => {
+                expect(getSingleSelectableFieldOptions('value1, value2, value3', 'text')).toEqual([
+                    { label: 'value1', value: 'value1' },
+                    { label: 'value2', value: 'value2' },
+                    { label: 'value3', value: 'value3' }
+                ]);
+            });
+
+            it('should handle single value without commas', () => {
+                expect(getSingleSelectableFieldOptions('single value', 'text')).toEqual([
+                    { label: 'single value', value: 'single value' }
+                ]);
+            });
+
+            it('should filter out empty values in comma format', () => {
+                expect(getSingleSelectableFieldOptions('value1,,value3,', 'text')).toEqual([
+                    { label: 'value1', value: 'value1' },
+                    { label: 'value3', value: 'value3' }
+                ]);
+            });
         });
 
-        it('should trim the values', () => {
-            expect(
-                getSingleSelectableFieldOptions(
-                    ' some label \r\n     some label 2 \r\n    some label 3     | i have value ',
-                    'Some type'
-                )
-            ).toEqual([
+        describe('Data type casting', () => {
+            describe.each([
                 {
-                    label: 'some label',
-                    value: 'some label'
+                    description: 'INTEGER type casting',
+                    optionsString: 'some label\r\n3\r\nsome label 3|i have value\r\nfour|4',
+                    dataType: DotEditContentFieldSingleSelectableDataType.INTEGER,
+                    expected: [
+                        { label: '3', value: 3 },
+                        { label: 'four', value: 4 }
+                    ]
                 },
                 {
-                    label: 'some label 2',
-                    value: 'some label 2'
+                    description: 'FLOAT type casting',
+                    optionsString:
+                        'some label\r\n3.14\r\nsome label 3|i have value\r\nfour dot five|4.5',
+                    dataType: DotEditContentFieldSingleSelectableDataType.FLOAT,
+                    expected: [
+                        { label: '3.14', value: 3.14 },
+                        { label: 'four dot five', value: 4.5 }
+                    ]
                 },
                 {
-                    label: 'some label 3',
-                    value: 'i have value'
+                    description: 'BOOL type casting',
+                    optionsString: 'some label\r\nfalse\r\nsome label 3|true\r\ntrue|true',
+                    dataType: DotEditContentFieldSingleSelectableDataType.BOOL,
+                    expected: [
+                        { label: 'some label', value: false },
+                        { label: 'false', value: false },
+                        { label: 'some label 3', value: true },
+                        { label: 'true', value: true }
+                    ]
                 }
-            ]);
-        });
-        describe.each([
-            {
-                optionsString: 'some label\r\n3\r\nsome label 3|i have value\r\nfour|4',
-                dataType: DotEditContentFieldSingleSelectableDataType.INTEGER,
-                expected: [
-                    {
-                        label: 'some label',
-                        value: NaN
-                    },
-                    {
-                        label: '3',
-                        value: 3
-                    },
-                    {
-                        label: 'some label 3',
-                        value: NaN
-                    },
-                    {
-                        label: 'four',
-                        value: 4
-                    }
-                ]
-            },
-            {
-                optionsString:
-                    'some label\r\n3.14\r\nsome label 3|i have value\r\nfour dot five|4.5',
-                dataType: DotEditContentFieldSingleSelectableDataType.FLOAT,
-                expected: [
-                    {
-                        label: 'some label',
-                        value: NaN
-                    },
-                    {
-                        label: '3.14',
-                        value: 3.14
-                    },
-                    {
-                        label: 'some label 3',
-                        value: NaN
-                    },
-                    {
-                        label: 'four dot five',
-                        value: 4.5
-                    }
-                ]
-            },
-            {
-                optionsString: 'some label\r\nfalse\r\nsome label 3|true\r\ntrue|true',
-                dataType: DotEditContentFieldSingleSelectableDataType.BOOL,
-                expected: [
-                    {
-                        label: 'some label',
-                        value: false
-                    },
-                    {
-                        label: 'false',
-                        value: false
-                    },
-                    {
-                        label: 'some label 3',
-                        value: true
-                    },
-                    {
-                        label: 'true',
-                        value: true
-                    }
-                ]
-            }
-        ])(
-            'should cast the values when a type is passed',
-            ({ optionsString, dataType, expected }) => {
-                it(`should cast for ${dataType} `, () => {
+            ])('$description', ({ optionsString, dataType, expected }) => {
+                it(`should cast values correctly for ${dataType}`, () => {
                     expect(getSingleSelectableFieldOptions(optionsString, dataType)).toEqual(
                         expected
                     );
                 });
-            }
-        );
+            });
+
+            it('should handle comma format with integer casting', () => {
+                expect(
+                    getSingleSelectableFieldOptions(
+                        '1,2,3',
+                        DotEditContentFieldSingleSelectableDataType.INTEGER
+                    )
+                ).toEqual([
+                    { label: '1', value: 1 },
+                    { label: '2', value: 2 },
+                    { label: '3', value: 3 }
+                ]);
+            });
+
+            it('should handle comma format with boolean casting', () => {
+                expect(
+                    getSingleSelectableFieldOptions(
+                        'true,false',
+                        DotEditContentFieldSingleSelectableDataType.BOOL
+                    )
+                ).toEqual([
+                    { label: 'true', value: true },
+                    { label: 'false', value: false }
+                ]);
+            });
+        });
+
+        describe('Edge cases and error handling', () => {
+            it('should filter out invalid values that cannot be cast', () => {
+                expect(
+                    getSingleSelectableFieldOptions(
+                        'valid|1\r\ninvalid|notanumber\r\nvalid2|2',
+                        DotEditContentFieldSingleSelectableDataType.INTEGER
+                    )
+                ).toEqual([
+                    { label: 'valid', value: 1 },
+                    { label: 'valid2', value: 2 }
+                ]);
+            });
+
+            it('should handle empty lines in multi-line format', () => {
+                expect(
+                    getSingleSelectableFieldOptions('label1|value1\r\n\r\nlabel2|value2', 'text')
+                ).toEqual([
+                    { label: 'label1', value: 'value1' },
+                    { label: 'label2', value: 'value2' }
+                ]);
+            });
+
+            it('should handle mixed formats (pipes take precedence)', () => {
+                // When pipes are present, comma splitting should not occur
+                expect(
+                    getSingleSelectableFieldOptions('label1|value1,label2|value2', 'text')
+                ).toEqual([
+                    { label: 'label1|value1', value: 'label1|value1' },
+                    { label: 'label2|value2', value: 'label2|value2' }
+                ]);
+            });
+
+            it('should handle labels with special characters', () => {
+                expect(
+                    getSingleSelectableFieldOptions(
+                        'Special & Label!|value1\r\n@#$%|value2',
+                        'text'
+                    )
+                ).toEqual([
+                    { label: 'Special & Label!', value: 'value1' },
+                    { label: '@#$%', value: 'value2' }
+                ]);
+            });
+
+            it('should handle values with spaces', () => {
+                expect(
+                    getSingleSelectableFieldOptions(
+                        'Label 1|Value with spaces\r\nLabel 2|Another value',
+                        'text'
+                    )
+                ).toEqual([
+                    { label: 'Label 1', value: 'Value with spaces' },
+                    { label: 'Label 2', value: 'Another value' }
+                ]);
+            });
+        });
+
+        describe('Real-world dotCMS scenarios', () => {
+            it('should handle checkbox default values scenario from documentation', () => {
+                // Setup options as per documentation
+                const options = 'foo|1\r\nbar|2\r\nthird item|c\r\nThis one is a ghost.|boo';
+                const result = getSingleSelectableFieldOptions(options, 'text');
+
+                // Verify we can find the default values: 1,c,boo
+                const values = result.map((option) => option.value);
+                expect(values).toContain('1');
+                expect(values).toContain('c');
+                expect(values).toContain('boo');
+            });
+
+            it('should handle select field with empty first option', () => {
+                expect(
+                    getSingleSelectableFieldOptions('|\r\nOption 1|1\r\nOption 2|2', 'text')
+                ).toEqual([
+                    { label: 'Option 1', value: '1' },
+                    { label: 'Option 2', value: '2' }
+                ]);
+            });
+
+            it('should handle multi-select field format', () => {
+                expect(
+                    getSingleSelectableFieldOptions(
+                        '|\r\nFirst Option|first\r\nSecond Option|second',
+                        'text'
+                    )
+                ).toEqual([
+                    { label: 'First Option', value: 'first' },
+                    { label: 'Second Option', value: 'second' }
+                ]);
+            });
+        });
     });
 
     describe('getFinalCastedValue', () => {
@@ -629,7 +826,8 @@ describe('Utils Functions', () => {
                 expect(state).toEqual({
                     activeTab: 0,
                     isSidebarOpen: true,
-                    activeSidebarTab: 0
+                    activeSidebarTab: 0,
+                    isBetaMessageVisible: true
                 });
             });
 
@@ -637,7 +835,8 @@ describe('Utils Functions', () => {
                 const mockState = {
                     activeTab: 2,
                     isSidebarOpen: false,
-                    activeSidebarTab: 1
+                    activeSidebarTab: 1,
+                    isBetaMessageVisible: true
                 };
                 sessionStorage.setItem(UI_STORAGE_KEY, JSON.stringify(mockState));
 
@@ -652,7 +851,8 @@ describe('Utils Functions', () => {
                 expect(state).toEqual({
                     activeTab: 0,
                     isSidebarOpen: true,
-                    activeSidebarTab: 0
+                    activeSidebarTab: 0,
+                    isBetaMessageVisible: true
                 });
                 expect(console.warn).toHaveBeenCalledWith(
                     'Error reading UI state from sessionStorage:',
@@ -675,7 +875,8 @@ describe('Utils Functions', () => {
                 expect(state).toEqual({
                     activeTab: 0,
                     isSidebarOpen: true,
-                    activeSidebarTab: 0
+                    activeSidebarTab: 0,
+                    isBetaMessageVisible: true
                 });
                 expect(console.warn).toHaveBeenCalledWith(
                     'Error reading UI state from sessionStorage:',

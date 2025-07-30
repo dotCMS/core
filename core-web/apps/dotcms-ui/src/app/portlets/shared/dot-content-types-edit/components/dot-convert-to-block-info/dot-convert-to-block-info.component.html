@@ -2,17 +2,16 @@
     [innerHTML]="'contenttypes.field.properties.wysiwyg.info.content' | dm"
     data-testId="infoContent"></span>
 
-<button
-    *ngIf="currentField?.id; else learnMore"
-    (click)="action.emit($event)"
-    [label]="'contenttypes.field.properties.wysiwyg.info.button' | dm"
-    class="p-button-outlined p-button-sm"
-    pButton
-    data-testId="button"></button>
-
-<ng-template #learnMore>
+@if (currentField?.id) {
+    <button
+        (click)="action.emit($event)"
+        [label]="'contenttypes.field.properties.wysiwyg.info.button' | dm"
+        class="p-button-outlined p-button-sm"
+        pButton
+        data-testId="button"></button>
+} @else {
     <a
-        [ngStyle]="{ 'text-decoration': 'none' }"
+        [style.text-decoration]="'none'"
         class="p-element p-button-outlined p-button-sm p-button p-component"
         href="https://www.dotcms.com/docs/latest/block-editor"
         rel="noopener"
@@ -20,4 +19,4 @@
         data-testId="learnMore">
         {{ 'learn-more' | dm }}
     </a>
-</ng-template>
+}

@@ -47,10 +47,10 @@ describe('AppComponent', () => {
         fixture = TestBed.createComponent(AppComponent);
         de = fixture.debugElement;
 
-        dotCmsConfigService = de.injector.get(DotcmsConfigService);
-        dotUiColorsService = de.injector.get(DotUiColorsService);
-        dotMessageService = de.injector.get(DotMessageService);
-        dotLicenseService = de.injector.get(DotLicenseService);
+        dotCmsConfigService = TestBed.inject(DotcmsConfigService);
+        dotUiColorsService = TestBed.inject(DotUiColorsService);
+        dotMessageService = TestBed.inject(DotMessageService);
+        dotLicenseService = TestBed.inject(DotLicenseService);
 
         spyOn<any>(dotCmsConfigService, 'getConfig').and.returnValue(
             of({

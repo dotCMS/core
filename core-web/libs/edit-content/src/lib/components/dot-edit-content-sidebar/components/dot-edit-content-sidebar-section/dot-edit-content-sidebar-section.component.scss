@@ -1,11 +1,16 @@
 @use "variables" as *;
+:host {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
 
 .dot-section {
     display: flex;
     background-color: $color-palette-gray-100;
     flex-direction: column;
     padding: 0 $spacing-3 $spacing-3 $spacing-3;
-    border-bottom: 1px solid $color-palette-gray-400;
+    border-bottom: 1px solid $color-palette-gray-300;
 }
 
 .dot-section__header {
@@ -14,7 +19,7 @@
     align-items: center;
     padding: $spacing-1 0;
     position: sticky;
-    top: 53px;
+    top: 0;
     z-index: 1;
     background-color: $color-palette-gray-100;
     min-height: 48px;

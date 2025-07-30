@@ -14,10 +14,10 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
     FormBuilder,
     FormGroup,
+    FormsModule,
     ReactiveFormsModule,
     ValidatorFn,
-    Validators,
-    FormsModule
+    Validators
 } from '@angular/forms';
 import { Router } from '@angular/router';
 
@@ -41,7 +41,7 @@ import {
 } from '@dotcms/dotcms-models';
 import { DotMessagePipe, DotWorkflowActionsComponent } from '@dotcms/ui';
 
-import { resolutionValue } from './utils';
+import { resolutionValue } from './dot-edit-content-form-resolutions';
 
 import { TabViewInsertDirective } from '../../directives/tab-view-insert/tab-view-insert.directive';
 import {
@@ -167,18 +167,11 @@ export class DotEditContentFormComponent implements OnInit {
     $hasSingleTab = computed(() => this.$store.tabs().length === 1);
 
     /**
-     * Computed property that retrieves the first tab from the store.
+     * Computed property that retrieves the tabs from the store.
      *
      * @memberof DotEditContentFormComponent
      */
-    $firstTab = computed(() => this.$store.tabs()[0] || null);
-
-    /**
-     * Computed property that retrieves the rest of tabs from the store.
-     *
-     * @memberof DotEditContentFormComponent
-     */
-    $restOfTabs = computed(() => this.$store.tabs().slice(1));
+    $tabs = this.$store.tabs;
 
     ngOnInit(): void {
         if (this.$store.tabs().length) {

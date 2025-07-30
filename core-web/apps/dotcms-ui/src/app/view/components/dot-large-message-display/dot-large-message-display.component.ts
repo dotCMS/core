@@ -6,7 +6,8 @@ import {
     OnDestroy,
     OnInit,
     QueryList,
-    ViewChildren
+    ViewChildren,
+    inject
 } from '@angular/core';
 
 import { filter, takeUntil } from 'rxjs/operators';
@@ -33,16 +34,14 @@ interface DotLargeMessageDisplayParams {
     styleUrls: ['./dot-large-message-display.component.scss']
 })
 export class DotLargeMessageDisplayComponent implements OnInit, OnDestroy, AfterViewInit {
+    private dotcmsEventsService = inject(DotcmsEventsService);
+    private dotParseHtmlService = inject(DotParseHtmlService);
+
     @ViewChildren(DotDialogComponent) dialogs: QueryList<DotDialogComponent>;
 
     messages: DotLargeMessageDisplayParams[] = [];
     private destroy$: Subject<boolean> = new Subject<boolean>();
     private recentlyDialogAdded: boolean;
-
-    constructor(
-        private dotcmsEventsService: DotcmsEventsService,
-        private dotParseHtmlService: DotParseHtmlService
-    ) {}
 
     ngAfterViewInit() {
         this.dialogs.changes

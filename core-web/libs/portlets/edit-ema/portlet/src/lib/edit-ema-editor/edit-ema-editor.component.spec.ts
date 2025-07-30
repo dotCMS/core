@@ -18,7 +18,8 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogService } from 'primeng/dynamicdialog';
 
-import { CLIENT_ACTIONS } from '@dotcms/client';
+import { map } from 'rxjs/operators';
+
 import {
     DotAlertConfirmService,
     DotAnalyticsTrackerService,
@@ -58,6 +59,7 @@ import {
 } from '@dotcms/dotcms-js';
 import { DotCMSContentlet, DEFAULT_VARIANT_ID, DotCMSTempFile } from '@dotcms/dotcms-models';
 import { DotResultsSeoToolComponent } from '@dotcms/portlets/dot-ema/ui';
+import { DotCMSUVEAction, UVE_MODE } from '@dotcms/types';
 import { DotCopyContentModalService, ModelCopyContentResponse, SafeUrlPipe } from '@dotcms/ui';
 import { WINDOW } from '@dotcms/utils';
 import {
@@ -92,7 +94,7 @@ import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dial
 import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
 import { DotPageApiService } from '../services/dot-page-api.service';
 import { DEFAULT_PERSONA, HOST, PERSONA_KEY } from '../shared/consts';
-import { EDITOR_STATE, NG_CUSTOM_EVENTS, UVE_STATUS } from '../shared/enums';
+import { EDITOR_STATE, NG_CUSTOM_EVENTS, PALETTE_CLASSES, UVE_STATUS } from '../shared/enums';
 import {
     QUERY_PARAMS_MOCK,
     URL_CONTENT_MAP_MOCK,
@@ -124,7 +126,10 @@ const messagesMock = {
     'editpage.content.add.already.message': 'This content is already added to this container',
     'editpage.not.lincese.error':
         'Inline editing is available only with an enterprise license. Please contact support to upgrade your license.',
-    'dot.common.license.enterprise.only.error': 'Enterprise Only'
+    'dot.common.license.enterprise.only.error': 'Enterprise Only',
+    'message.content.saved': 'Content saved',
+    'message.content.note.already.published':
+        'Note: If you edit auto-published content, changes apply immediately.'
 };
 
 const createRouting = () =>
@@ -281,13 +286,21 @@ const createRouting = () =>
             {
                 provide: DotPageApiService,
                 useValue: {
-                    get({ language_id }) {
-                        // We use the language_id to determine the response, use this to test different behaviors
-                        return UVE_PAGE_RESPONSE_MAP[language_id];
+                    get(data) {
+                        const { language_id = 1 } = data;
+
+                        return UVE_PAGE_RESPONSE_MAP[language_id].pipe(
+                            map((page = {}) => ({
+                                // Update page to "fake" a new page and avoid reference issues
+                                ...(page as object)
+                            }))
+                        );
                     },
-                    getClientPage({ language_id }, _clientConfig) {
-                        // We use the language_id to determine the response, use this to test different behaviors
-                        return UVE_PAGE_RESPONSE_MAP[language_id];
+                    getGraphQLPage({ language_id = 1 }) {
+                        return of({
+                            page: UVE_PAGE_RESPONSE_MAP[language_id],
+                            content: {}
+                        });
                     },
                     save() {
                         return of({});
@@ -405,6 +418,7 @@ describe('EditEmaEditorComponent', () => {
                 clientHost: 'http://localhost:3000',
                 url: 'index',
                 language_id: '1',
+                mode: UVE_MODE.EDIT,
                 [PERSONA_KEY]: DEFAULT_PERSONA.identifier
             });
 
@@ -432,6 +446,33 @@ describe('EditEmaEditorComponent', () => {
                 componentsToHide.forEach((testId) => {
                     expect(spectator.query(byTestId(testId))).toBeNull();
                 });
+            });
+
+            it('should hide palette when state changes', () => {
+                // First, make sure palette is visible by default
+                expect(spectator.query(byTestId('palette')).classList).toContain(
+                    PALETTE_CLASSES.OPEN
+                );
+
+                // Simulate Click the toggle button
+                store.setPaletteOpen(false);
+
+                spectator.detectChanges();
+
+                // Palette should now be hidden
+                expect(spectator.query(byTestId('palette')).classList).toContain(
+                    PALETTE_CLASSES.CLOSED
+                );
+            });
+
+            it('should have a placeholder for the palette toggle button', () => {
+                store.setPaletteOpen(true);
+
+                spectator.detectChanges();
+
+                const placeholder = spectator.query(byTestId('toggle-palette-placeholder'));
+
+                expect(placeholder).not.toBeNull();
             });
 
             it('should have a toolbar', () => {
@@ -570,6 +611,9 @@ describe('EditEmaEditorComponent', () => {
             });
 
             describe('edit', () => {
+                beforeEach(() => {
+                    store.setIsClientReady(true);
+                });
                 const baseContentletPayload = {
                     x: 100,
                     y: 100,
@@ -579,8 +623,8 @@ describe('EditEmaEditorComponent', () => {
                 };
 
                 it('should edit urlContentMap page', () => {
+                    spectator.detectChanges();
                     const dialog = spectator.query(DotEmaDialogComponent);
-
                     jest.spyOn(dialog, 'editUrlContentMapContentlet');
 
                     spectator.triggerEventHandler(DotUveToolbarComponent, 'editUrlContentMap', {
@@ -645,7 +689,7 @@ describe('EditEmaEditorComponent', () => {
                         new MessageEvent('message', {
                             origin: HOST,
                             data: {
-                                action: CLIENT_ACTIONS.EDIT_CONTENTLET,
+                                action: DotCMSUVEAction.EDIT_CONTENTLET,
                                 payload: CONTENTLETS_MOCK[0]
                             }
                         })
@@ -690,7 +734,7 @@ describe('EditEmaEditorComponent', () => {
                         new MessageEvent('message', {
                             origin: HOST,
                             data: {
-                                action: CLIENT_ACTIONS.INIT_INLINE_EDITING,
+                                action: DotCMSUVEAction.INIT_INLINE_EDITING,
                                 payload: {
                                     type: 'BLOCK_EDITOR',
                                     data: {}
@@ -724,7 +768,7 @@ describe('EditEmaEditorComponent', () => {
                         new MessageEvent('message', {
                             origin: HOST,
                             data: {
-                                action: CLIENT_ACTIONS.INIT_INLINE_EDITING,
+                                action: DotCMSUVEAction.INIT_INLINE_EDITING,
                                 payload: {}
                             }
                         })
@@ -745,7 +789,7 @@ describe('EditEmaEditorComponent', () => {
                             new MessageEvent('message', {
                                 origin: HOST,
                                 data: {
-                                    action: CLIENT_ACTIONS.REORDER_MENU,
+                                    action: DotCMSUVEAction.REORDER_MENU,
                                     payload: {
                                         startLevel: 1,
                                         depth: 2
@@ -821,7 +865,7 @@ describe('EditEmaEditorComponent', () => {
                             new MessageEvent('message', {
                                 origin: HOST,
                                 data: {
-                                    action: CLIENT_ACTIONS.REORDER_MENU,
+                                    action: DotCMSUVEAction.REORDER_MENU,
                                     payload: {
                                         startLevel: 1,
                                         depth: 2
@@ -1097,7 +1141,7 @@ describe('EditEmaEditorComponent', () => {
                             new MessageEvent('message', {
                                 origin: HOST,
                                 data: {
-                                    action: CLIENT_ACTIONS.COPY_CONTENTLET_INLINE_EDITING,
+                                    action: DotCMSUVEAction.COPY_CONTENTLET_INLINE_EDITING,
                                     payload: {
                                         inode: '123'
                                     }
@@ -2597,7 +2641,7 @@ describe('EditEmaEditorComponent', () => {
                     const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
 
                     expect(iframe.nativeElement.src).toBe(
-                        'http://localhost:3000/index?language_id=1'
+                        'http://localhost:3000/index?language_id=1&mode=EDIT_MODE&dotCMSHost=http://localhost'
                     );
                 });
 
@@ -2871,7 +2915,7 @@ describe('EditEmaEditorComponent', () => {
                         new MessageEvent('message', {
                             origin: HOST,
                             data: {
-                                action: CLIENT_ACTIONS.UPDATE_CONTENTLET_INLINE_EDITING,
+                                action: DotCMSUVEAction.UPDATE_CONTENTLET_INLINE_EDITING,
                                 payload: {
                                     dataset: {
                                         inode: '123',
@@ -2907,7 +2951,7 @@ describe('EditEmaEditorComponent', () => {
                         new MessageEvent('message', {
                             origin: HOST,
                             data: {
-                                action: CLIENT_ACTIONS.UPDATE_CONTENTLET_INLINE_EDITING,
+                                action: DotCMSUVEAction.UPDATE_CONTENTLET_INLINE_EDITING,
                                 payload: null
                             }
                         })
@@ -2916,61 +2960,82 @@ describe('EditEmaEditorComponent', () => {
                     expect(saveContentletSpy).not.toHaveBeenCalled();
                     expect(setEditorState).toHaveBeenCalledWith(EDITOR_STATE.IDLE);
                 });
+
+                it('should show a helper message when save content when inline editing', () => {
+                    const messageSpy = jest.spyOn(messageService, 'add');
+
+                    window.dispatchEvent(
+                        new MessageEvent('message', {
+                            origin: HOST,
+                            data: {
+                                action: DotCMSUVEAction.UPDATE_CONTENTLET_INLINE_EDITING,
+                                payload: {
+                                    dataset: {
+                                        inode: '123',
+                                        fieldName: 'title',
+                                        mode: 'full',
+                                        language: '1'
+                                    },
+                                    content: 'Hello World II',
+                                    element: {},
+                                    eventType: '',
+                                    isNotDirty: false
+                                }
+                            }
+                        })
+                    );
+
+                    expect(messageSpy).toHaveBeenCalledWith({
+                        severity: 'success',
+                        summary: 'Content saved',
+                        detail: 'Note: If you edit auto-published content, changes apply immediately.',
+                        life: 2000
+                    });
+                });
             });
 
             describe('CUSTOMER ACTIONS', () => {
                 describe('CLIENT_READY', () => {
                     it('should set client GraphQL configuration and call the reload', () => {
-                        const setClientConfigurationSpy = jest.spyOn(
-                            store,
-                            'setClientConfiguration'
-                        );
+                        const setClientConfigurationSpy = jest.spyOn(store, 'setCustomGraphQL');
                         const reloadSpy = jest.spyOn(store, 'reloadCurrentPage');
 
                         const config = {
-                            params: {},
-                            query: '{ query: { hello } }'
+                            query: '{ query: { hello } }',
+                            variables: undefined
                         };
 
                         window.dispatchEvent(
                             new MessageEvent('message', {
                                 origin: HOST,
                                 data: {
-                                    action: CLIENT_ACTIONS.CLIENT_READY,
+                                    action: DotCMSUVEAction.CLIENT_READY,
                                     payload: config
                                 }
                             })
                         );
 
-                        expect(setClientConfigurationSpy).toHaveBeenCalledWith(config);
+                        expect(setClientConfigurationSpy).toHaveBeenCalledWith(config, true);
                         expect(reloadSpy).toHaveBeenCalled();
                     });
 
-                    it('should set client PAGEAPI configuration and call the reload', () => {
-                        const setClientConfigurationSpy = jest.spyOn(
-                            store,
-                            'setClientConfiguration'
-                        );
+                    it('should set call reloadCurrentPage when client is ready', () => {
+                        const setCustomGraphQLSpy = jest.spyOn(store, 'setCustomGraphQL');
                         const reloadSpy = jest.spyOn(store, 'reloadCurrentPage');
 
-                        const config = {
-                            params: {
-                                depth: '1'
-                            },
-                            query: ''
-                        };
+                        const config = { params: { depth: '1' } };
 
                         window.dispatchEvent(
                             new MessageEvent('message', {
                                 origin: HOST,
                                 data: {
-                                    action: CLIENT_ACTIONS.CLIENT_READY,
+                                    action: DotCMSUVEAction.CLIENT_READY,
                                     payload: config
                                 }
                             })
                         );
 
-                        expect(setClientConfigurationSpy).toHaveBeenCalledWith(config);
+                        expect(setCustomGraphQLSpy).not.toHaveBeenCalled();
                         expect(reloadSpy).toHaveBeenCalled();
                     });
                 });
@@ -2986,6 +3051,8 @@ describe('EditEmaEditorComponent', () => {
                     });
 
                     const loadPageAssetSpy = jest.spyOn(store, 'loadPageAsset');
+
+                    spectator.detectChanges();
                     const dialog = spectator.debugElement.query(
                         By.css('[data-testId="ema-dialog"]')
                     );
@@ -3027,12 +3094,11 @@ describe('EditEmaEditorComponent', () => {
                     });
 
                     const loadPageAssetSpy = jest.spyOn(store, 'loadPageAsset');
+                    spectator.detectChanges();
+
                     const dialog = spectator.debugElement.query(
                         By.css('[data-testId="ema-dialog"]')
                     );
-
-                    spectator.detectComponentChanges();
-
                     triggerCustomEvent(dialog, 'action', {
                         event: new CustomEvent('ng-event', {
                             detail: {

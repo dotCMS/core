@@ -17,6 +17,7 @@ import {
     DotFolder,
     TreeNodeItem
 } from '../models/dot-edit-content-host-folder-field.interface';
+import { Activity } from '../models/dot-edit-content.model';
 import { createPaths } from '../utils/functions.util';
 
 @Injectable()
@@ -274,5 +275,28 @@ export class DotEditContentService {
         };
 
         return this.#siteService.getContentByFolder(params);
+    }
+
+    /**
+     * Get activities (comments) for a content
+     * @param identifier Content identifier
+     * @returns Observable of activities
+     */
+    getActivities(identifier: string): Observable<Activity[]> {
+        return this.#http
+            .get<{ entity: Activity[] }>(`/api/v1/workflow/tasks/history/comments/${identifier}`)
+            .pipe(pluck('entity'));
+    }
+
+    /**
+     * Create a new activity (comment) for a content
+     * @param identifier Content identifier
+     * @param comment Comment text
+     * @returns Observable of the created activity
+     */
+    createActivity(identifier: string, comment: string): Observable<Activity> {
+        return this.#http
+            .post<Activity>(`/api/v1/workflow/${identifier}/comments`, { comment })
+            .pipe(pluck('entity'));
     }
 }

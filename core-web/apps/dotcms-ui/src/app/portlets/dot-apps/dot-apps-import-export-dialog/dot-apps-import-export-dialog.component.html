@@ -1,53 +1,58 @@
-<dot-dialog
-    *ngIf="show"
-    (hide)="closeExportDialog()"
-    [header]="dialogHeaderKey | dm"
-    [visible]="show"
-    [actions]="dialogActions"
-    [appendToBody]="true"
-    class="p-fluid"
-    width="26rem">
-    <form [formGroup]="form" [ngSwitch]="action" novalidate>
-        <ng-container *ngSwitchCase="'Export'">
-            <div class="field">
-                <label dotFieldRequired for="export-password">{{ 'Password' | dm }}</label>
-                <input
-                    [placeholder]="'apps.confirmation.export.password.label' | dm"
-                    class="dot-apps-export-dialog__password"
-                    id="export-password"
-                    dotAutofocus
-                    pPassword
-                    autocomplete="new-password"
-                    formControlName="password"
-                    name="export-password"
-                    type="password" />
-            </div>
-        </ng-container>
-        <ng-container *ngSwitchCase="'Import'">
-            <div class="field">
-                <label dotFieldRequired for="import-file">{{ 'Upload-File' | dm }}</label>
-                <input
-                    (change)="onFileChange($event.target.files)"
-                    id="import-file"
-                    #importFile
-                    type="file"
-                    dotAutofocus />
-            </div>
-            <div class="field">
-                <label dotFieldRequired for="import-password">{{ 'Password' | dm }}</label>
-                <input
-                    [placeholder]="'apps.confirmation.import.password.label' | dm"
-                    class="dot-apps-import-dialog__password"
-                    id="import-password"
-                    autocomplete="new-password"
-                    formControlName="password"
-                    name="import-password"
-                    pInputText
-                    type="password" />
-            </div>
-            <input type="hidden" name="fileHidden" formControlName="importFile" />
-            <!-- Validation Field -->
-        </ng-container>
-        <span>{{ errorMessage }}</span>
-    </form>
-</dot-dialog>
+@if (show) {
+    <dot-dialog
+        (hide)="closeExportDialog()"
+        [header]="dialogHeaderKey | dm"
+        [visible]="show"
+        [actions]="dialogActions"
+        [appendToBody]="true"
+        class="p-fluid"
+        width="26rem">
+        <form [formGroup]="form" novalidate>
+            @switch (action) {
+                @case ('Export') {
+                    <div class="field">
+                        <label dotFieldRequired for="export-password">{{ 'Password' | dm }}</label>
+                        <input
+                            [placeholder]="'apps.confirmation.export.password.label' | dm"
+                            class="dot-apps-export-dialog__password"
+                            id="export-password"
+                            dotAutofocus
+                            pPassword
+                            autocomplete="new-password"
+                            formControlName="password"
+                            name="export-password"
+                            type="password" />
+                    </div>
+                }
+                @case ('Import') {
+                    <div class="field">
+                        <label dotFieldRequired for="import-file">{{ 'Upload-File' | dm }}</label>
+                        <input
+                            (change)="onFileChange($event.target.files)"
+                            id="import-file"
+                            #importFile
+                            type="file"
+                            dotAutofocus />
+                    </div>
+                    <div class="field">
+                        <label dotFieldRequired for="import-password">{{ 'Password' | dm }}</label>
+                        <input
+                            [placeholder]="'apps.confirmation.import.password.label' | dm"
+                            class="dot-apps-import-dialog__password"
+                            id="import-password"
+                            autocomplete="new-password"
+                            formControlName="password"
+                            name="import-password"
+                            pInputText
+                            type="password" />
+                    </div>
+                    <input type="hidden" name="fileHidden" formControlName="importFile" />
+                    <!-- Validation Field -->
+                }
+            }
+
+            <!-- Error Message Display -->
+            <span>{{ errorMessage }}</span>
+        </form>
+    </dot-dialog>
+}

@@ -25,8 +25,7 @@ export default {
             }
         ]
     },
-    // https://github.com/nrwl/nx/issues/7844#issuecomment-1016624608
-    transformIgnorePatterns: ['<rootDir>/node_modules/(?!.*\\.mjs$)'],
+    transformIgnorePatterns: ['node_modules/(?!.*\\.mjs$|gridstack)'],
     snapshotSerializers: [
         'jest-preset-angular/build/serializers/no-ng-attributes',
         'jest-preset-angular/build/serializers/ng-snapshot',

@@ -1,5 +1,4 @@
 import { describe, expect } from '@jest/globals';
-import { SpyObject } from '@ngneat/spectator';
 import { createServiceFactory, mockProvider, SpectatorService } from '@ngneat/spectator/jest';
 import { patchState, signalStore, withState } from '@ngrx/signals';
 import { of } from 'rxjs';
@@ -7,14 +6,15 @@ import { of } from 'rxjs';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { DEFAULT_VARIANT_ID, DotDeviceListItem } from '@dotcms/dotcms-models';
+import { UVE_MODE } from '@dotcms/types';
+import { WINDOW } from '@dotcms/utils';
 import { mockDotDevices, seoOGTagsMock } from '@dotcms/utils-testing';
-import { UVE_MODE } from '@dotcms/uve/types';
 
 import { withEditor } from './withEditor';
 
 import { DotPageApiParams, DotPageApiService } from '../../../services/dot-page-api.service';
 import { BASE_IFRAME_MEASURE_UNIT, PERSONA_KEY } from '../../../shared/consts';
-import { EDITOR_STATE, UVE_STATUS } from '../../../shared/enums';
+import { EDITOR_STATE, UVE_STATUS, PALETTE_CLASSES } from '../../../shared/enums';
 import {
     ACTION_MOCK,
     ACTION_PAYLOAD_MOCK,
@@ -42,7 +42,8 @@ const initialState: UVEState = {
         language_id: '1',
         [PERSONA_KEY]: 'dot:persona',
         variantName: 'DEFAULT',
-        clientHost: 'http://localhost:3000'
+        clientHost: 'http://localhost:3000',
+        mode: UVE_MODE.EDIT
     },
     status: UVE_STATUS.LOADED,
     isTraditionalPage: false,
@@ -64,7 +65,6 @@ export const uveStoreMock = signalStore(
 
 describe('withEditor', () => {
     let spectator: SpectatorService<InstanceType<typeof uveStoreMock>>;
-    let dotPageApiService: SpyObject<DotPageApiService>;
     let store: InstanceType<typeof uveStoreMock>;
 
     const createService = createServiceFactory({
@@ -85,6 +85,10 @@ describe('withEditor', () => {
                     },
                     save: jest.fn()
                 }
+            },
+            {
+                provide: WINDOW,
+                useValue: window
             }
         ]
     });
@@ -92,7 +96,6 @@ describe('withEditor', () => {
     beforeEach(() => {
         spectator = createService();
         store = spectator.service;
-        dotPageApiService = spectator.inject(DotPageApiService);
         patchState(store, initialState);
     });
 
@@ -102,7 +105,7 @@ describe('withEditor', () => {
                 it('should return the base info', () => {
                     expect(store.$uveToolbar()).toEqual({
                         editor: {
-                            apiUrl: '/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=dot%3Apersona&variantName=DEFAULT',
+                            apiUrl: '/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=dot%3Apersona&variantName=DEFAULT&mode=EDIT_MODE',
                             bookmarksUrl: '/test-url?host_id=123-xyz-567-xxl&language_id=1',
                             copyUrl:
                                 'http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=dot%3Apersona&variantName=DEFAULT&host_id=123-xyz-567-xxl'
@@ -113,42 +116,6 @@ describe('withEditor', () => {
                         runningExperiment: null,
                         unlockButton: null
                     });
-                });
-            });
-        });
-    });
-
-    describe('withSave', () => {
-        describe('withMethods', () => {
-            describe('savePage', () => {
-                it('should perform a save and patch the state', () => {
-                    const saveSpy = jest
-                        .spyOn(dotPageApiService, 'save')
-                        .mockImplementation(() => of({}));
-
-                    // It's impossible to get a VTL when we are in Headless
-                    // but I just want to check the state is being patched
-                    const getClientPageSpy = jest
-                        .spyOn(dotPageApiService, 'getClientPage')
-                        .mockImplementation(() => of(MOCK_RESPONSE_VTL));
-
-                    const payload = {
-                        pageContainers: ACTION_PAYLOAD_MOCK.pageContainers,
-                        pageId: MOCK_RESPONSE_HEADLESS.page.identifier,
-                        params: store.pageParams()
-                    };
-
-                    store.savePage(ACTION_PAYLOAD_MOCK.pageContainers);
-
-                    expect(saveSpy).toHaveBeenCalledWith(payload);
-
-                    expect(getClientPageSpy).toHaveBeenCalledWith(
-                        store.pageParams(),
-                        store.clientRequestProps()
-                    );
-
-                    expect(store.status()).toBe(UVE_STATUS.LOADED);
-                    expect(store.pageAPIResponse()).toEqual(MOCK_RESPONSE_VTL);
                 });
             });
         });
@@ -179,21 +146,18 @@ describe('withEditor', () => {
                 expect(store.$reloadEditorContent()).toEqual({
                     code: MOCK_RESPONSE_HEADLESS.page.rendered,
                     isTraditionalPage: false,
-                    enableInlineEdit: true,
-                    isClientReady: false
+                    enableInlineEdit: true
                 });
             });
             it('should return the expected data for VTL', () => {
                 patchState(store, {
                     pageAPIResponse: MOCK_RESPONSE_VTL,
-                    isTraditionalPage: true,
-                    isClientReady: true
+                    isTraditionalPage: true
                 });
                 expect(store.$reloadEditorContent()).toEqual({
                     code: MOCK_RESPONSE_VTL.page.rendered,
                     isTraditionalPage: true,
-                    enableInlineEdit: true,
-                    isClientReady: true
+                    enableInlineEdit: true
                 });
             });
         });
@@ -214,8 +178,30 @@ describe('withEditor', () => {
         describe('$iframeURL', () => {
             it("should return the iframe's URL", () => {
                 expect(store.$iframeURL()).toBe(
-                    'http://localhost:3000/test-url?language_id=1&variantName=DEFAULT&personaId=dot%3Apersona'
+                    'http://localhost:3000/test-url?language_id=1&variantName=DEFAULT&mode=EDIT_MODE&personaId=dot%3Apersona&dotCMSHost=http://localhost'
                 );
+            });
+
+            // There is an issue with Signal Store when you try to spy on a signal called from a computed property
+            // Unskip this when this discussion is resolved: https://github.com/ngrx/platform/discussions/4627
+            describe.skip('pageAPIResponse dependency', () => {
+                it('should call pageAPIResponse when it is a headless page', () => {
+                    const spy = jest.spyOn(store, 'pageAPIResponse');
+                    patchState(store, { isTraditionalPage: false });
+                    store.$iframeURL();
+
+                    expect(spy).toHaveBeenCalled();
+                });
+
+                it('should call pageAPIResponse when it is a traditional page', () => {
+                    const spy = jest.spyOn(store, 'pageAPIResponse');
+
+                    patchState(store, { isTraditionalPage: true });
+
+                    store.$iframeURL();
+
+                    expect(spy).toHaveBeenCalled();
+                });
             });
 
             it('should be an instance of String in src when the page is traditional', () => {
@@ -254,7 +240,41 @@ describe('withEditor', () => {
                 });
 
                 expect(store.$iframeURL()).toBe(
-                    'http://localhost/first?language_id=1&variantName=DEFAULT&personaId=dot%3Apersona'
+                    'http://localhost/first?language_id=1&variantName=DEFAULT&personaId=dot%3Apersona&dotCMSHost=http://localhost'
+                );
+            });
+
+            it('should set the right iframe url when the clientHost is present', () => {
+                patchState(store, {
+                    pageAPIResponse: {
+                        ...MOCK_RESPONSE_HEADLESS
+                    },
+                    pageParams: {
+                        ...emptyParams,
+                        url: 'test-url',
+                        clientHost: 'http://localhost:3000'
+                    }
+                });
+
+                expect(store.$iframeURL()).toBe(
+                    'http://localhost:3000/test-url&dotCMSHost=http://localhost'
+                );
+            });
+
+            it('should set the right iframe url when the clientHost is present with a aditional path', () => {
+                patchState(store, {
+                    pageAPIResponse: {
+                        ...MOCK_RESPONSE_HEADLESS
+                    },
+                    pageParams: {
+                        ...emptyParams,
+                        url: 'test-url',
+                        clientHost: 'http://localhost:3000/test'
+                    }
+                });
+
+                expect(store.$iframeURL()).toBe(
+                    'http://localhost:3000/test/test-url&dotCMSHost=http://localhost'
                 );
             });
         });
@@ -278,7 +298,8 @@ describe('withEditor', () => {
                     palette: {
                         variantId: DEFAULT_VARIANT_ID,
                         languageId: MOCK_RESPONSE_HEADLESS.viewAs.language.id,
-                        containers: MOCK_RESPONSE_HEADLESS.containers
+                        containers: MOCK_RESPONSE_HEADLESS.containers,
+                        paletteClass: PALETTE_CLASSES.OPEN
                     },
                     seoResults: null
                 });
@@ -603,6 +624,32 @@ describe('withEditor', () => {
                 store.updateEditorScrollState();
 
                 expect(store.contentletArea()).toBe(null);
+            });
+        });
+
+        describe('setPaletteOpen', () => {
+            it('should toggle the palette', () => {
+                store.setPaletteOpen(true);
+
+                expect(store.paletteOpen()).toBe(true);
+            });
+
+            it('should toggle the palette', () => {
+                store.setPaletteOpen(false);
+
+                expect(store.paletteOpen()).toBe(false);
+            });
+
+            it('should update the editorProps when the palette is open', () => {
+                store.setPaletteOpen(true);
+
+                expect(store.$editorProps().palette.paletteClass).toBe(PALETTE_CLASSES.OPEN);
+            });
+
+            it('should update the editorProps when the palette is closed', () => {
+                store.setPaletteOpen(false);
+
+                expect(store.$editorProps().palette.paletteClass).toBe(PALETTE_CLASSES.CLOSED);
             });
         });
 

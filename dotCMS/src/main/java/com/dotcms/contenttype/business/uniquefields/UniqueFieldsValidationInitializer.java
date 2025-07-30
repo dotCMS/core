@@ -8,20 +8,24 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
 
-import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.Dependent;
 import javax.inject.Inject;
 import java.sql.SQLException;
 
 /**
- * Initializer in charge of check when dotCMS start up if the Unique Fields Data Base validation was enabled
- * to create and populate the unique_fields table.
+ * When dotCMS starts up, this Initializer is in charge of checking if the Unique Fields Data Base
+ * validation was enabled to create and populate the unique_fields table. It checks if the table
+ * already exists, and:
+ * <ul>
+ *     <li>If it exists and the Database validation is disabled, then drop the table.</li>
+ *     <li>If it does not exist and the Database validation is enabled, then it creates it and
+ *     populates it.</li>
+ *     <li>If it exists and the Database validation is enabled, do nothing.</li>
+ *     <li>If it does not exist  and the Database validation is disabled, do nothing.</li>
+ * </ul>
  *
- * It check if the table already exists and:
- * - If it exists and the Database validation is disabled then drop the table.
- * - If it does not exist and the Database validation is enabled then it created and populate it.
- * - If it exists and the Database validation is enabled do nothing.
- * - If it does not exist  and the Database validation is disabled do nothing.
+ * @author Freddy Rodriguez
+ * @since Dec 6th, 2024
  */
 @Dependent
 public class UniqueFieldsValidationInitializer  implements DotInitializer {
@@ -38,15 +42,17 @@ public class UniqueFieldsValidationInitializer  implements DotInitializer {
     @Override
     public void init() {
         final boolean featureFlagDbUniqueFieldValidation = ESContentletAPIImpl.getFeatureFlagDbUniqueFieldValidation();
-        boolean uniqueFieldsTableExists = uniqueFieldsTableExists();
+        final boolean uniqueFieldsTableExists = uniqueFieldsTableExists();
 
         try {
             if (featureFlagDbUniqueFieldValidation && !uniqueFieldsTableExists) {
-                this.uniqueFieldDataBaseUtil.createTableAnsPopulate();
+                Logger.info(this, "Creating and populating the Unique Fields table");
+                this.uniqueFieldDataBaseUtil.createTableAndPopulate();
             } else if (!featureFlagDbUniqueFieldValidation && uniqueFieldsTableExists) {
+                Logger.info(this, "Dropping the Unique Fields table as the validation via database has been disabled");
                 this.uniqueFieldDataBaseUtil.dropUniqueFieldsValidationTable();
             }
-        } catch (DotDataException e) {
+        } catch (final DotDataException e) {
             Logger.error(UniqueFieldsValidationInitializer.class, e);
         }
     }
@@ -58,4 +64,5 @@ public class UniqueFieldsValidationInitializer  implements DotInitializer {
             return false;
         }
     }
+
 }

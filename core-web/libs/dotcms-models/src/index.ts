@@ -79,3 +79,4 @@ export * from './lib/shared-models';
 export * from './lib/structure-type-view.model';
 export * from './lib/structure-type.model';
 export * from './lib/dot-analytics-tracker.model';
+export * from './lib/dot-content-drive.model';

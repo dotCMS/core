@@ -1,7 +1,7 @@
 import { Subject } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { Component, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { MenuItem } from 'primeng/api';
@@ -42,6 +42,17 @@ import { ContentTypesFormComponent } from './components/form';
     styleUrls: ['./dot-content-types-edit.component.scss']
 })
 export class DotContentTypesEditComponent implements OnInit, OnDestroy {
+    private contentTypesInfoService = inject(DotContentTypesInfoService);
+    private crudService = inject(DotCrudService);
+    private dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
+    private dotEventsService = inject(DotEventsService);
+    private dotRouterService = inject(DotRouterService);
+    private fieldService = inject(FieldService);
+    private route = inject(ActivatedRoute);
+    private dotMessageService = inject(DotMessageService);
+    router = inject(Router);
+    private dotEditContentTypeCacheService = inject(DotEditContentTypeCacheService);
+
     @ViewChild('form')
     contentTypesForm: ContentTypesFormComponent;
 
@@ -63,19 +74,6 @@ export class DotContentTypesEditComponent implements OnInit, OnDestroy {
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
-    constructor(
-        private contentTypesInfoService: DotContentTypesInfoService,
-        private crudService: DotCrudService,
-        private dotHttpErrorManagerService: DotHttpErrorManagerService,
-        private dotEventsService: DotEventsService,
-        private dotRouterService: DotRouterService,
-        private fieldService: FieldService,
-        private route: ActivatedRoute,
-        private dotMessageService: DotMessageService,
-        public router: Router,
-        private dotEditContentTypeCacheService: DotEditContentTypeCacheService
-    ) {}
-
     ngOnInit(): void {
         this.route.data
             .pipe(pluck('contentType'), takeUntil(this.destroy$))
@@ -83,6 +81,7 @@ export class DotContentTypesEditComponent implements OnInit, OnDestroy {
                 this.data = contentType;
                 this.dotEditContentTypeCacheService.set(contentType);
                 this.layout = contentType.layout;
+                this.checkAndOpenFormDialog();
             });
 
         this.contentTypeActions = [
@@ -96,12 +95,7 @@ export class DotContentTypesEditComponent implements OnInit, OnDestroy {
             }
         ];
 
-        if (!this.isEditMode()) {
-            this.startFormDialog();
-        }
-
         this.dialogCloseable = this.isEditMode();
-
         this.setTemplateInfo();
     }
 
@@ -118,6 +112,12 @@ export class DotContentTypesEditComponent implements OnInit, OnDestroy {
     onDialogHide(): void {
         if (!this.isEditMode()) {
             this.dotRouterService.gotoPortlet(`/${this.dotRouterService.currentPortlet.id}`);
+        } else {
+            this.router.navigate([], {
+                relativeTo: this.route,
+                queryParams: { 'open-config': null },
+                queryParamsHandling: 'merge'
+            });
         }
     }
 
@@ -370,5 +370,24 @@ export class DotContentTypesEditComponent implements OnInit, OnDestroy {
 
     private getWorkflowsIds(workflows: DotCMSWorkflow[]): string[] {
         return workflows.map((workflow: DotCMSWorkflow) => workflow.id);
+    }
+
+    /**
+     * Checks conditions to open the form dialog
+     * @private
+     * @memberof DotContentTypesEditComponent
+     */
+    private checkAndOpenFormDialog(): void {
+        // Subscribe to query params only if we're in edit mode
+        if (this.isEditMode()) {
+            this.route.queryParams.pipe(take(1)).subscribe((params) => {
+                if (params['open-config'] === 'true') {
+                    this.startFormDialog();
+                }
+            });
+        } else {
+            // Always open form dialog in create mode
+            this.startFormDialog();
+        }
     }
 }

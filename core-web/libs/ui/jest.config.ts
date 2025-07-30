@@ -20,5 +20,9 @@ export default {
         'jest-preset-angular/build/serializers/html-comment'
     ],
     testEnvironment: '@happy-dom/jest-environment',
+    testEnvironmentOptions: {
+        errorOnUnknownElements: true,
+        errorOnUnknownProperties: true
+    },
     coverageDirectory: '../../coverage/libs/ui'
 };

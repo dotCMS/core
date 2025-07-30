@@ -1,10 +1,11 @@
 import { useContext, useRef, useMemo } from 'react';
 
+import { DotCMSBasicContentlet } from '@dotcms/types';
+import { CUSTOM_NO_COMPONENT, getDotContentletAttributes } from '@dotcms/uve/internal';
+
 import { DotCMSPageContext } from '../../contexts/DotCMSPageContext';
 import { useCheckVisibleContent } from '../../hooks/useCheckVisibleContent';
 import { useIsDevMode } from '../../hooks/useIsDevMode';
-import { DotCMSContentlet } from '../../types';
-import { getDotContentletAttributes } from '../../utils';
 import { FallbackComponent } from '../FallbackComponent/FallbackComponent';
 
 /**
@@ -16,7 +17,7 @@ import { FallbackComponent } from '../FallbackComponent/FallbackComponent';
  * @property {string} container - The container identifier where the contentlet is placed
  */
 interface DotCMSContentletRendererProps {
-    contentlet: DotCMSContentlet;
+    contentlet: DotCMSBasicContentlet;
     container: string;
 }
 
@@ -26,7 +27,7 @@ interface DotCMSContentletRendererProps {
  * @property {DotCMSContentlet} contentlet - The contentlet data to be rendered
  */
 interface CustomComponentProps {
-    contentlet: DotCMSContentlet;
+    contentlet: DotCMSBasicContentlet;
 }
 
 /**
@@ -85,7 +86,7 @@ function CustomComponent({ contentlet }: CustomComponentProps) {
         return <UserComponent {...contentlet} />;
     }
 
-    const UserNoComponent = userComponents['CustomNoComponent'];
+    const UserNoComponent = userComponents[CUSTOM_NO_COMPONENT];
 
     return <FallbackComponent UserNoComponent={UserNoComponent} contentlet={contentlet} />;
 }

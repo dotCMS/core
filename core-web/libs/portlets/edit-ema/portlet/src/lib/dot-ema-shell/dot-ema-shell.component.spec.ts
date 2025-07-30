@@ -12,7 +12,6 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogService } from 'primeng/dynamicdialog';
 import { ToastModule } from 'primeng/toast';
 
-import { CLIENT_ACTIONS } from '@dotcms/client';
 import {
     DotAnalyticsTrackerService,
     DotContentletLockerService,
@@ -32,6 +31,7 @@ import {
     SiteService
 } from '@dotcms/dotcms-js';
 import { DotPageToolsSeoComponent } from '@dotcms/portlets/dot-ema/ui';
+import { DotCMSUVEAction, UVE_MODE } from '@dotcms/types';
 import { DotNotLicenseComponent } from '@dotcms/ui';
 import { WINDOW } from '@dotcms/utils';
 import {
@@ -41,7 +41,6 @@ import {
     DotcmsEventsServiceMock,
     SiteServiceMock
 } from '@dotcms/utils-testing';
-import { UVE_MODE } from '@dotcms/uve/types';
 
 import { EditEmaNavigationBarComponent } from './components/edit-ema-navigation-bar/edit-ema-navigation-bar.component';
 import { DotEmaShellComponent } from './dot-ema-shell.component';
@@ -68,7 +67,7 @@ const DIALOG_ACTION_EVENT = (detail) => {
             status: FormStatus.SAVED,
             isTranslation: false
         },
-        clientAction: CLIENT_ACTIONS.NOOP
+        clientAction: DotCMSUVEAction.NOOP
     };
 };
 
@@ -259,11 +258,11 @@ describe('DotEmaShellComponent', () => {
             {
                 provide: DotPageApiService,
                 useValue: {
-                    get({ language_id }) {
+                    get({ language_id = 1 }) {
                         return PAGE_RESPONSE_BY_LANGUAGE_ID[language_id] || of({});
                     },
-                    getClientPage({ language_id }, _clientConfig) {
-                        return PAGE_RESPONSE_BY_LANGUAGE_ID[language_id] || of({});
+                    getGraphQLPage() {
+                        return of({});
                     },
                     save() {
                         return of({});
@@ -866,28 +865,6 @@ describe('DotEmaShellComponent', () => {
                     mode: UVE_MODE.EDIT
                 });
             });
-
-            it('should add the current date if preview param is true and publishDate is not present', () => {
-                const spyStoreLoadPage = jest.spyOn(store, 'loadPageAsset');
-                const params = {
-                    ...INITIAL_PAGE_PARAMS,
-                    mode: UVE_MODE.LIVE
-                };
-
-                // override the new Date() to return a fixed date
-                const fixedDate = new Date('2024-01-01');
-                jest.spyOn(global, 'Date').mockImplementation(() => fixedDate);
-
-                const data = UVE_CONFIG_MOCK(BASIC_OPTIONS);
-
-                overrideRouteSnashot(activatedRoute, SNAPSHOT_MOCK({ queryParams: params, data }));
-
-                spectator.detectChanges();
-                expect(spyStoreLoadPage).toHaveBeenCalledWith({
-                    ...params,
-                    publishDate: fixedDate.toISOString()
-                });
-            });
         });
 
         describe('Site Changes', () => {
@@ -944,9 +921,9 @@ describe('DotEmaShellComponent', () => {
             });
 
             it('should trigger a store reload if the url is the same', () => {
+                spectator.detectChanges();
                 const spyReload = jest.spyOn(store, 'reloadCurrentPage');
                 const spyLocation = jest.spyOn(location, 'go');
-                spectator.detectChanges();
 
                 spectator.triggerEventHandler(
                     DotEmaDialogComponent,

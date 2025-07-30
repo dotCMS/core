@@ -8,24 +8,27 @@ The Redis server runs on port 6379 with password `MY_SECRET_P4SS`.
 
 #### Environment setup
 
-1) A local path to license pack must be set here:
+1. A local path to license pack must be set here:
+
 ```
 - {license_local_path}/license.zip:/data/shared/assets/license.zip
 ```
+
 The license pack must contain at least two licenses (one for each node in the cluster).
 
-2) A local path to access data in the instance can be set uncommenting this line:
+2. A local path to access data in the instance can be set uncommenting this line:
+
 ```
 #- {local_data_path}:/data/shared
 ```
 
-3) A custom starter can be set through this line (uncomment and change the starter URL accordingly):
+3. A custom starter can be set through this line (uncomment and change the starter URL accordingly):
+
 ```
-#"CUSTOM_STARTER_URL": 'https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20230712/starter-20230712.zip'
+#"CUSTOM_STARTER_URL": 'https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20250722/starter-20250722.zip'
 ```
 
-4) The most important configuration parameters have already been set in both `docker-compose.yml` files. Please refer to the plugin's official repository above for additional ones.
-
+4. The most important configuration parameters have already been set in both `docker-compose.yml` files. Please refer to the plugin's official repository above for additional ones.
 
 #### Deploying nodes:
 
@@ -34,6 +37,7 @@ docker-compose -f docker-compose-node-1.yml up
 ```
 
 Once the node 1 is running, deploy node 2:
+
 ```bash
 docker-compose -f docker-compose-node-2.yml up
 ```
@@ -43,19 +47,26 @@ docker-compose -f docker-compose-node-2.yml up
 You can easily check that the dotCMS Sessions are being persisted in Redis by following these simple steps:
 
 1. SSH into the Redis container:
+
 ```bash
-docker exec -it with-redis-session-redis-1 /bin/bash 
+docker exec -it with-redis-session-redis-1 /bin/bash
 ```
+
 2. Run the following command to access the Redis CLI:
+
 ```bash
 redis-cli -a MY_SECRET_P4SS
 ```
+
 3. Log into the dotCMS back-end in both nodes.
 4. Run this command to print all the keys stored in Redis:
+
 ```bash
 KEYS *
 ```
+
 4. You should see a list of keys similar to this one:
+
 ```
 1) "dotcms-redis-cluster4E5ACD893B6250FACEB24CAE6F02581E"
 2) "dotcms-redis-cluster31AE4BC07CF37EDA49323954DFDC5B25"
@@ -64,6 +75,7 @@ KEYS *
 The key is composed of (1) the current Cluster ID -- which is optional -- and the actual JSESSION ID.
 
 Additionally, at the beggining of the dotCMS log, you will see the folowing information related to the Redis Session Manager, and the most important configuration values that are being used to instantiate the service:
+
 ```
 with-redis-session-dotcms-node-1-1  | 18-Jul-2023 18:30:02.276 INFO [main] com.dotcms.tomcat.redissessions.RedisSessionManager.startInternal ====================================
 with-redis-session-dotcms-node-1-1  | 18-Jul-2023 18:30:02.277 INFO [main] com.dotcms.tomcat.redissessions.RedisSessionManager.startInternal Redis-managed Tomcat Session plugin
@@ -87,17 +99,16 @@ with-redis-session-dotcms-node-1-1  | 18-Jul-2023 18:30:02.289 INFO [main] com.d
 with-redis-session-dotcms-node-1-1  | 18-Jul-2023 18:30:02.289 INFO [main] com.dotcms.tomcat.redissessions.RedisSessionManager.initializeConfigParams -- TOMCAT_REDIS_ENABLED_FOR_ANON_TRAFFIC: false
 with-redis-session-dotcms-node-1-1  | 18-Jul-2023 18:30:02.289 INFO [main] com.dotcms.tomcat.redissessions.RedisSessionManager.startInternal - Initializing Redis connection
 with-redis-session-dotcms-node-1-1  | SLF4J: No SLF4J providers were found.
-with-redis-session-dotcms-node-1-1  | 
-with-redis-session-dotcms-node-1-1  | 
+with-redis-session-dotcms-node-1-1  |
+with-redis-session-dotcms-node-1-1  |
 with-redis-session-dotcms-node-1-1  | SLF4J: Defaulting to no-operation (NOP) logger implementation
-with-redis-session-dotcms-node-1-1  | 
-with-redis-session-dotcms-node-1-1  | 
+with-redis-session-dotcms-node-1-1  |
+with-redis-session-dotcms-node-1-1  |
 with-redis-session-dotcms-node-1-1  | SLF4J: See https://www.slf4j.org/codes.html#noProviders for further details.
-with-redis-session-dotcms-node-1-1  | 
-with-redis-session-dotcms-node-1-1  | 
+with-redis-session-dotcms-node-1-1  |
+with-redis-session-dotcms-node-1-1  |
 with-redis-session-dotcms-node-1-1  | 18-Jul-2023 18:30:02.378 INFO [main] com.dotcms.tomcat.redissessions.RedisSessionManager.startInternal - Successful! Redis-managed Tomcat Sessions will expire after 1800 seconds.
 ```
-
 
 #### Un-deploying nodes:
 
@@ -107,5 +118,3 @@ docker-compose -f docker-compose-node-1.yml down
 ```
 
 **Important note:** `ctrl+c` does not destroy instances
-
-

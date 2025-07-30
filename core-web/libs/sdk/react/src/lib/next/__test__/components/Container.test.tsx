@@ -1,8 +1,9 @@
 import { render, screen } from '@testing-library/react';
 
+import * as utils from '@dotcms/uve/internal';
+
 import { Container } from '../../components/Container/Container';
 import { DotCMSPageContext, DotCMSPageContextProps } from '../../contexts/DotCMSPageContext';
-import * as utils from '../../utils';
 import { EMPTY_PAGE_ASSET, MOCK_CONTAINER, MOCK_PAGE_ASSET, MOCK_CONTAINER_DATA } from '../mock';
 
 jest.mock('../../components/Contentlet/Contentlet', () => ({
@@ -11,10 +12,21 @@ jest.mock('../../components/Contentlet/Contentlet', () => ({
     )
 }));
 
-jest.mock('../../utils', () => ({
+jest.mock('@dotcms/uve/internal', () => ({
     getContainersData: jest.fn(),
     getDotContainerAttributes: jest.fn(),
-    getContentletsInContainer: jest.fn()
+    getContentletsInContainer: jest.fn(),
+    EMPTY_CONTAINER_STYLE_REACT: {
+        width: '100%',
+        backgroundColor: '#ECF0FD',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        color: '#030E32',
+        height: '10rem'
+    },
+    DEVELOPMENT_MODE: 'development',
+    PRODUCTION_MODE: 'production'
 }));
 
 const DEFAULT_CONTEXT_VALUE: DotCMSPageContextProps = {
@@ -44,8 +56,7 @@ describe('Container', () => {
             'data-dot-identifier': 'test-container-id',
             'data-dot-accept-types': 'test-accept-types',
             'data-max-contentlets': '10',
-            'data-dot-uuid': 'test-uuid',
-            'data-testid': 'dot-container'
+            'data-dot-uuid': 'test-uuid'
         });
         getContainersDataMock.mockReturnValue(MOCK_CONTAINER_DATA);
     });
@@ -117,6 +128,20 @@ describe('Container', () => {
             );
 
             expect(emptyContainerMessage).toBeNull();
+        });
+
+        test('should have data-dot-object="empty-content"', () => {
+            const { container } = renderWithContext(<Container container={MOCK_CONTAINER} />, {
+                ...DEFAULT_CONTEXT_VALUE,
+                pageAsset: EMPTY_PAGE_ASSET,
+                mode: 'development'
+            });
+
+            const emptyContainerMessage = container.querySelector(
+                '[data-testid="empty-container-message"]'
+            );
+
+            expect(emptyContainerMessage?.getAttribute('data-dot-object')).toBe('empty-content');
         });
     });
 

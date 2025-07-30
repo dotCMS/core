@@ -1,12 +1,18 @@
+import { DotCMSBasicContentlet, DotCMSPageAsset, DotCMSPageRendererMode } from '@dotcms/types';
+
 import { ErrorMessage } from './components/ErrorMessage';
 
-import { DotCMSPageContext, DotCMSPageRendererMode } from '../../contexts/DotCMSPageContext';
-import { DotCMSContentlet, DotCMSPageAsset } from '../../types';
+import { DotCMSPageContext } from '../../contexts/DotCMSPageContext';
 import { Row } from '../Row/Row';
 
-interface DotCMSLayoutBodyProps {
+export interface DotCMSLayoutBodyProps<
+    TContentlet extends DotCMSBasicContentlet = DotCMSBasicContentlet
+> {
     page: DotCMSPageAsset;
-    components: Record<string, React.ComponentType<DotCMSContentlet>>;
+    components: {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        [key: string]: React.ComponentType<TContentlet> | React.ComponentType<any>;
+    };
     mode?: DotCMSPageRendererMode;
 }
 
@@ -33,10 +39,6 @@ export const DotCMSLayoutBody = ({
 }: DotCMSLayoutBodyProps) => {
     const dotCMSPageBody = page?.layout?.body;
 
-    if (!dotCMSPageBody) {
-        return <ErrorMessage mode={mode} />;
-    }
-
     const contextValue = {
         pageAsset: page,
         userComponents: components,
@@ -45,9 +47,11 @@ export const DotCMSLayoutBody = ({
 
     return (
         <DotCMSPageContext.Provider value={contextValue}>
-            {dotCMSPageBody.rows.map((row, index) => (
-                <Row key={index} row={row} />
-            ))}
+            {dotCMSPageBody ? (
+                dotCMSPageBody.rows.map((row, index) => <Row key={index} row={row} />)
+            ) : (
+                <ErrorMessage />
+            )}
         </DotCMSPageContext.Provider>
     );
 };

@@ -92,6 +92,7 @@ import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.workflows.actionlet.MoveContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.ResetPermissionsActionlet;
 import com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest;
+import com.dotmarketing.portlets.workflows.business.SystemWorkflowConstants;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction;
 import com.dotmarketing.portlets.workflows.model.*;
@@ -133,6 +134,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
 import com.liferay.portal.util.PortalUtil;
+import com.liferay.portal.util.WebKeys;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.input.ReaderInputStream;
 import org.apache.commons.lang.RandomStringUtils;
@@ -2222,7 +2224,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
             final Response response1 = workflowResource
                     .fireActionDefaultSinglePart(request1, new EmptyHttpResponse(), null, null,
                             "FORCE",
-                            String.valueOf(languageAPI.getDefaultLanguage().getId()),
+                            String.valueOf(languageAPI.getDefaultLanguage().getId()), "DEFAULT",
                             SystemAction.PUBLISH, fireActionForm1);
             final int statusCode1 = response1.getStatus();
             assertEquals(Status.OK.getStatusCode(), statusCode1);
@@ -2246,7 +2248,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
             final Response response2 = workflowResource
                     .fireActionDefaultSinglePart(request2, new EmptyHttpResponse(), null, null,
                             "FORCE",
-                            String.valueOf(languageAPI.getDefaultLanguage().getId()),
+                            String.valueOf(languageAPI.getDefaultLanguage().getId()), "DEFAULT",
                             SystemAction.PUBLISH, fireActionForm2);
             final int statusCode2 = response2.getStatus();
             assertEquals(Status.OK.getStatusCode(), statusCode2);
@@ -2384,7 +2386,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
             final Response response1 = workflowResource
                     .fireActionDefaultSinglePart(request1, new EmptyHttpResponse(), null, null,
                             "FORCE",
-                            String.valueOf(languageAPI.getDefaultLanguage().getId()),
+                            String.valueOf(languageAPI.getDefaultLanguage().getId()), "DEFAULT",
                             SystemAction.PUBLISH, fireActionForm1);
             final int statusCode1 = response1.getStatus();
             assertEquals(Status.OK.getStatusCode(), statusCode1);
@@ -2409,7 +2411,86 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
     }
 
 
+    /**
+     * Method to test: {@link WorkflowResource#fireActionByNameSinglePart(HttpServletRequest, String, String, String, String, FireActionByNameForm)}
+     * Given Scenario: Fires a save with a limited user
+     * ExpectedResult: The action should be ran ok
+     *
+     */
+    @Test
+    public void testFireActionByName_by_limited_user() throws Exception {
 
+        // Create limited user
+        final Role beRole = APILocator.getRoleAPI().loadBackEndUserRole();
+        final User limitedUser = new UserDataGen().roles(beRole).nextPersisted();
+        //Create Content
+        final String titlePropertyKey = "title";
+        final String titlePropertyValue = "Test1";
+        final String richTextContentTypeVarName = "simpleWebPageContent";
+        final FireActionByNameForm.Builder builder1 = new FireActionByNameForm.Builder();
+        final Map<String, Object> contentletFormData = new HashMap<>();
+        final Host defaultHost = APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false);
+        contentletFormData.put(titlePropertyKey, titlePropertyValue);
+        contentletFormData.put("contentType", richTextContentTypeVarName);
+        builder1.contentlet(contentletFormData);
+        builder1.actionName("Save");
+        ContentType richTextContentType = null;
+
+        try {
+            // creates a new content type
+            final Field field = new FieldDataGen()
+                    .velocityVarName(titlePropertyKey)
+                    .type(TextField.class)
+                    .next();
+
+            richTextContentType = new ContentTypeDataGen().name("Rich Text 2").workflowId(SystemWorkflowConstants.SYSTEM_WORKFLOW_ID)
+                    .velocityVarName(richTextContentTypeVarName).field(field).nextPersisted();
+
+            final int permissionType = PermissionAPI.PERMISSION_USE | PermissionAPI.PERMISSION_EDIT |
+                    PermissionAPI.PERMISSION_PUBLISH | PermissionAPI.PERMISSION_EDIT_PERMISSIONS;
+
+            final List<Permission> newSetOfPermissions = new ArrayList<>();
+            // this is the individual permission
+            newSetOfPermissions.add(new Permission(richTextContentType.getPermissionId(), beRole.getId(), permissionType, true));
+            newSetOfPermissions.add(new Permission(Contentlet.class.getCanonicalName(), richTextContentType.getPermissionId(), beRole.getId(), permissionType, true));
+            final Role limiteUserRole = APILocator.getRoleAPI().getUserRole(limitedUser);
+            newSetOfPermissions.add(new Permission(richTextContentType.getPermissionId(), limiteUserRole.getId(), permissionType, true));
+            newSetOfPermissions.add(new Permission(Contentlet.class.getCanonicalName(), richTextContentType.getPermissionId(), limiteUserRole.getId(), permissionType, true));
+
+            APILocator.getPermissionAPI().assignPermissions(newSetOfPermissions, richTextContentType, APILocator.systemUser(), false);
+
+            newSetOfPermissions.clear();
+            final WorkflowAction saveAction = APILocator.getWorkflowAPI().findAction(SystemWorkflowConstants.WORKFLOW_SAVE_ACTION_ID, APILocator.systemUser());
+            newSetOfPermissions.add(new Permission(saveAction.getPermissionId(), limiteUserRole.getId(), permissionType, true));
+            APILocator.getPermissionAPI().assignPermissions(newSetOfPermissions, saveAction, APILocator.systemUser(), false);
+
+            // this is the inheritance permission
+
+
+            final FireActionByNameForm fireActionForm1 = new FireActionByNameForm(builder1);
+            final HttpServletRequest request1 = getHttpRequest();
+            request1.setAttribute(WebKeys.USER, limitedUser);
+            final Response response1 = workflowResource
+                    .fireActionByNameSinglePart(request1, null, null,
+                            "FORCE",
+                            String.valueOf(languageAPI.getDefaultLanguage().getId()),
+                            fireActionForm1);
+            final int statusCode1 = response1.getStatus();
+            assertEquals(Status.OK.getStatusCode(), statusCode1);
+            final ResponseEntityView fireEntityView1 = ResponseEntityView.class
+                    .cast(response1.getEntity());
+            final Contentlet contentlet = new Contentlet(
+                    Map.class.cast(fireEntityView1.getEntity()));
+            assertNotNull(contentlet);
+            assertEquals(titlePropertyValue,
+                    contentlet.getMap().get(titlePropertyKey));
+        } finally {
+
+            if (null != richTextContentType) {
+                ContentTypeDataGen.remove(richTextContentType);
+            }
+        }
+    }
 
     private ContentType createCategoryFieldContentType(final String parentCategoryInode)
             throws Exception {

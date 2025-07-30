@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { catchError, map, pluck, take } from 'rxjs/operators';
 
@@ -18,11 +18,9 @@ export const TEMPLATE_API_URL = '/api/v1/templates/';
  */
 @Injectable()
 export class DotTemplatesService {
-    constructor(
-        private coreWebService: CoreWebService,
-        private httpErrorManagerService: DotHttpErrorManagerService,
-        private http: HttpClient
-    ) {}
+    private coreWebService = inject(CoreWebService);
+    private httpErrorManagerService = inject(DotHttpErrorManagerService);
+    private http = inject(HttpClient);
 
     /**
      * Return a list of templates.

@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.contentlet.business;
 
 import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.variant.model.Variant;
@@ -1975,6 +1976,15 @@ public interface ContentletAPI {
 	 * @throws DotContentletStateException if the object isn't the proper type or cannot be converted to the proper type
 	 */
 	public void setContentletProperty(Contentlet contentlet, Field field, Object value) throws DotContentletStateException;
+
+	/**
+	 * Use to set contentlet properties.  The value should be String, the proper type of the property
+	 * @param contentlet
+	 * @param field
+	 * @param value
+	 * @throws DotContentletStateException if the object isn't the proper type or cannot be converted to the proper type
+	 */
+	public void setContentletProperty(Contentlet contentlet, com.dotcms.contenttype.model.field.Field field, Object value) throws DotContentletStateException;
 	
 	/**
 	 * Use to validate your contentlet.
@@ -1993,11 +2003,40 @@ public interface ContentletAPI {
 	 * @throws DotContentletValidationException will be thrown if the contentlet is not valid.  
 	 * Use the notValidFields property of the exception to get which fields where not valid
 	 */
+	@WrapInTransaction
 	public void validateContentlet(Contentlet contentlet,Map<Relationship, List<Contentlet>> contentRelationships,List<Category> cats) throws DotContentletValidationException;
 
 	@CloseDBIfOpened
+	@WrapInTransaction
 	void validateContentletNoRels(Contentlet contentlet,
 			List<Category> cats) throws DotContentletValidationException;
+
+	/**
+	 * Validate contentlet
+	 *
+	 * @param contentlet to be validated
+	 * @param contentRelationships Contentlet's relationships
+	 * @param cats Contentlet's catgories
+	 * @param preview if it true it means that it is running in preview mode
+	 * @throws DotContentletValidationException
+	 */
+	@WrapInTransaction
+	void validateContentlet(Contentlet contentlet,
+									 ContentletRelationships contentRelationships,List<Category> cats, boolean preview )
+			throws DotContentletValidationException;
+
+	/**
+	 * Validate contentlet
+	 *
+	 * @param contentlet to be validated
+	 * @param cats Contentlet's catgories
+	 * @param preview if it true it means that it is running in preview mode
+	 * @throws DotContentletValidationException
+	 */
+	@CloseDBIfOpened
+	@WrapInTransaction
+	void validateContentletNoRels(Contentlet contentlet,
+								  List<Category> cats, boolean preview) throws DotContentletValidationException;
 
 	/**
 	 * Use to validate your contentlet.
@@ -2008,7 +2047,9 @@ public interface ContentletAPI {
 	 * Use the notValidFields property of the exception to get which fields where not valid
 	 */
 	public void validateContentlet(Contentlet contentlet, ContentletRelationships contentRelationships, List<Category> cats) throws DotContentletValidationException;
-	
+
+
+
 	/**
 	 * Use to determine if if the field value is a String value withing the contentlet object
 	 * @param field
@@ -2461,6 +2502,21 @@ public interface ContentletAPI {
 	 */
     Optional<Contentlet> findContentletByIdentifierOrFallback(String identifier, boolean live, long incomingLangId, User user,
             boolean respectFrontendRoles);
+
+	/**
+	 * This will find the live/working version of a piece of content for the language passed in.  If the content is not found in the language passed in
+	 * then the method will try to "fallback" and return the content in the default language based on the properties set in the dotmarketing-config.properties
+	 * @param identifier
+	 * @param live
+	 * @param incomingLangId
+	 * @param user
+	 * @param respectFrontendRoles
+	 * @param variantName
+	 * @return
+	 * @throws DotSecurityException
+	 */
+	Optional<Contentlet> findContentletByIdentifierOrFallback(String identifier, boolean live, long incomingLangId, User user,
+															  boolean respectFrontendRoles, String variantName);
 
 	/**
 	 * This will find the live/working version of a piece of content for the language passed in.  If

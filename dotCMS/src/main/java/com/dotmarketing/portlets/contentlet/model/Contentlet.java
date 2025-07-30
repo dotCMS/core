@@ -118,7 +118,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	public static final String MOD_USER_KEY = "modUser";
 	public static final String MOD_USER_NAME_KEY = "modUserName";
 	public static final String OWNER_KEY = "owner";
-	public static final String OWNER_NAME_KEY = "ownerName";
+	public static final String OWNER_USER_NAME_KEY = "ownerUserName";
 	public static final String PUBLISH_DATE_KEY = "publishDate";
 	public static final String PUBLISH_USER_KEY = "publishUser";
 	public static final String PUBLISH_USER_NAME_KEY = "publishUserName";
@@ -132,6 +132,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
   private static final long serialVersionUID = 1L;
   public static final String HAS_TITLE_IMAGE_KEY = "hasTitleImage";
   public static final String VARIANT_ID = "variantId";
+  public static final String VARIANT = "variant";
   public static final String STRUCTURE_INODE_KEY = "stInode";
   public static final String STRUCTURE_NAME_KEY = "stName";
   public static final String CONTENT_TYPE_KEY = "contentType";
@@ -188,6 +189,8 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
   public static final String HAS_LIVE_VERSION = "hasLiveVersion";
 
   public static final String SKIP_RELATIONSHIPS_VALIDATION = "__skipRelationshipValidation__";
+
+  public static final String EVENT_VAR_NAME = "calendarEvent";
 
   private transient ContentType contentType;
   protected Map<String, Object> map;
@@ -1444,7 +1447,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 */
     @JsonIgnore
 	public boolean isCalendarEvent() {
-		return getStructure().getStructureType() == BaseContentType.CONTENT.getType() &&  "Event".equals(getStructure().getName()) ;
+		return getStructure().getStructureType() == BaseContentType.CONTENT.getType() &&  EVENT_VAR_NAME.equalsIgnoreCase(getStructure().getVelocityVarName()) ;
 	}
 
 	/**

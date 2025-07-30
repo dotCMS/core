@@ -54,6 +54,7 @@ import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import org.glassfish.jersey.media.multipart.FormDataParam;
 import org.glassfish.jersey.media.multipart.file.FileDataBodyPart;
 import org.quartz.SchedulerException;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 /**
  * This REST end-point provides all the required mechanisms for the execution of
@@ -81,6 +82,7 @@ import org.quartz.SchedulerException;
  *
  */
 @Path("/integrity")
+@Tag(name = "Data Integrity", description = "Data integrity checking and conflict resolution")
 public class IntegrityResource {
 
     private final WebResource webResource = new WebResource();
@@ -1054,7 +1056,7 @@ public class IntegrityResource {
      * @param integrityDataRequestID
      */
     private void addThreadToSession ( HttpSession session, Thread thread, String endpointId, String integrityDataRequestID ) {
-        session.setAttribute( "integrityThread_" + endpointId, thread );
+        session.setAttribute( "integrityThread_" + endpointId, ProcessStatus.PROCESSING );
         session.setAttribute( "integrityDataRequest_" + endpointId, integrityDataRequestID );
     }
 

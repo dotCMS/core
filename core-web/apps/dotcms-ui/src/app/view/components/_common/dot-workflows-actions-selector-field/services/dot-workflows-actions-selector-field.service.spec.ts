@@ -43,9 +43,9 @@ describe('DotWorkflowsActionsSelectorFieldService', () => {
     );
 
     beforeEach(() => {
-        dotHttpErrorManagerService = TestBed.get(DotHttpErrorManagerService);
-        dotWorkflowsActionsService = TestBed.get(DotWorkflowsActionsService);
-        service = TestBed.get(DotWorkflowsActionsSelectorFieldService);
+        dotHttpErrorManagerService = TestBed.inject(DotHttpErrorManagerService);
+        dotWorkflowsActionsService = TestBed.inject(DotWorkflowsActionsService);
+        service = TestBed.inject(DotWorkflowsActionsSelectorFieldService);
         spy = spyOn(dotWorkflowsActionsService, 'getByWorkflows').and.callThrough();
 
         service.get().subscribe((actions: SelectItemGroup[]) => {

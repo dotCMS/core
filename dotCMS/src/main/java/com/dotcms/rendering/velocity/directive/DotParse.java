@@ -201,10 +201,16 @@ public class DotParse extends DotDirective {
      *
      * @param render    Template content after render
      * @param arguments
+     * @param context
      */
-    void afterRender(final String render, String[] arguments) {
+    void afterRender(final String render, String[] arguments, Context context) {
         if (arguments.length > 1) {
-            CacheLocator.getBlockDirectiveCache().add(getTTLCacheKey(arguments), Map.of(RENDER, render), Integer.parseInt(arguments[1]));
+            try {
+                int ttl = Integer.parseInt(arguments[1]);
+                CacheLocator.getBlockDirectiveCache().add(getTTLCacheKey(arguments), Map.of(RENDER, render), ttl);
+            } catch (NumberFormatException e) {
+                Logger.debug(this.getClass(), "Invalid TTL value in dotParse: " + arguments[1]);
+            }
         }
     }
 

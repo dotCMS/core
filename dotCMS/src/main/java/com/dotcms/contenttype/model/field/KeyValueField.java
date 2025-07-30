@@ -95,9 +95,11 @@ public abstract class KeyValueField extends Field {
 	}
 
 	@JsonIgnore
-    static public LinkedHashMap<String,?> asMap(final List<Entry<?>> asList){
-		return asList.stream()
-				.collect(Collectors.toMap(entry -> entry.key, entry -> entry.value,(k, k2) -> k, LinkedHashMap::new));
+	public static Map<String,?> asMap(final List<Entry<?>> asList){
+		//This impl allows me to deal with null value
+		final Map<String, Object> result = new LinkedHashMap<>();
+		asList.forEach(entry -> result.put(entry.key, entry.value));
+		return result;
 	}
 
 }

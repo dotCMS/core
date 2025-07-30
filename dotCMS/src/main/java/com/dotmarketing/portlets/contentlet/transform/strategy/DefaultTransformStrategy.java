@@ -50,7 +50,7 @@ import static com.dotmarketing.portlets.contentlet.model.Contentlet.LOCKED_KEY;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.MOD_USER_KEY;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.MOD_USER_NAME_KEY;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.OWNER_KEY;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.OWNER_NAME_KEY;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.OWNER_USER_NAME_KEY;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.PUBLISH_DATE_KEY;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.PUBLISH_USER_KEY;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.PUBLISH_USER_NAME_KEY;
@@ -182,7 +182,7 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
             contentletProperties.put(MOD_USER_NAME_KEY, null != modUser ? modUser.getFullName() : NOT_APPLICABLE);
         }
         if (contentletProperties.containsKey(OWNER_KEY)) {
-            contentletProperties.put(OWNER_NAME_KEY, null != owner ? owner.getFullName() : NOT_APPLICABLE);
+            contentletProperties.put(OWNER_USER_NAME_KEY, null != owner ? owner.getFullName() : NOT_APPLICABLE);
         }
         final Identifier identifier = toolBox.identifierAPI.find(contentlet.getIdentifier());
         if (null != identifier && UtilMethods.isSet(identifier.getId()) && !IdentifierAPI.IDENT404.equals(identifier.getAssetType())) {

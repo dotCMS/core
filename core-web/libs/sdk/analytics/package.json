@@ -1,6 +1,6 @@
 {
     "name": "@dotcms/analytics",
-    "version": "0.0.1-alpha.54",
+    "version": "0.0.1-beta.2",
     "description": "Official JavaScript library for Content Analytics with DotCMS.",
     "repository": {
         "type": "git",
@@ -23,12 +23,13 @@
         "analytics": "^0.8.14"
     },
     "peerDependencies": {
-        "react": "^18.2.0"
+        "react": "^18",
+        "@dotcms/uve": "latest"
     },
     "devDependencies": {
-        "vite": "~5.0.0",
         "@testing-library/jest-dom": "^6.1.6",
-        "@testing-library/react": "^14.0.0"
+        "@testing-library/react": "^14.0.0",
+        "vite": "~5.0.0"
     },
     "main": "./index.cjs.js",
     "module": "./index.esm.js",

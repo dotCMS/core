@@ -28,6 +28,7 @@ import {
     DotContentCompareEvent
 } from '@dotcms/dotcms-models';
 import { DotContentCompareModule } from '@dotcms/portlets/dot-ema/ui';
+import { DotCMSPage } from '@dotcms/types';
 import { DotSpinnerModule, SafeUrlPipe } from '@dotcms/ui';
 
 import { DotEmaDialogStore } from './store/dot-ema-dialog.store';
@@ -39,7 +40,6 @@ import {
     CreateContentletAction,
     CreateFromPaletteAction,
     DialogAction,
-    DotPage,
     EditContentletPayload,
     VTLFile
 } from '../../shared/models';
@@ -89,6 +89,10 @@ export class DotEmaDialogComponent {
      */
     resetDialog() {
         this.store.resetDialog();
+    }
+
+    resetActionPayload() {
+        this.store.resetActionPayload();
     }
 
     /**
@@ -160,7 +164,7 @@ export class DotEmaDialogComponent {
      * @param {({ page: DotPage; newLanguage: number | string })} { page, newLanguage }
      * @memberof DotEmaDialogComponent
      */
-    translatePage({ page, newLanguage }: { page: DotPage; newLanguage: number | string }) {
+    translatePage({ page, newLanguage }: { page: DotCMSPage; newLanguage: number | string }) {
         this.store.translatePage({ page, newLanguage });
     }
 

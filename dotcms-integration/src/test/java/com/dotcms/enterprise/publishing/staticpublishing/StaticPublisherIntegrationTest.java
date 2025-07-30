@@ -1,6 +1,8 @@
 package com.dotcms.enterprise.publishing.staticpublishing;
 
 import com.dotcms.datagen.BundleDataGen;
+import com.dotcms.datagen.FileAssetDataGen;
+import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper.FileExpected;
 import com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper.TestCase;
 import com.dotcms.publisher.bundle.bean.Bundle;
@@ -9,6 +11,7 @@ import com.dotcms.publisher.business.PublishAuditAPI;
 import com.dotcms.publisher.business.PublishAuditHistory;
 import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
+import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publishing.BundlerUtil;
 import com.dotcms.publishing.DotPublishingException;
 import com.dotcms.publishing.PublishStatus;
@@ -23,6 +26,8 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.WebAssetException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.FileUtil;
@@ -65,8 +70,7 @@ import static com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherI
 import static com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper.getWorkingFileAsset;
 import static com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper.getWorkingPage;
 import static com.dotcms.util.CollectionsUtils.list;
-import static junit.framework.TestCase.assertEquals;
-import static junit.framework.TestCase.assertTrue;
+import static junit.framework.TestCase.*;
 
 @RunWith(DataProviderRunner.class)
 public class StaticPublisherIntegrationTest {
@@ -365,6 +369,121 @@ public class StaticPublisherIntegrationTest {
                 arguments);
         return FileTestUtil.removeContent(fileContentExpected, toRemove);
     }
+
+    /**
+     * Method to Test: {@link PublisherAPIImpl#publish(PublisherConfig)}
+     * Given Scenario: A folder without any files is static push published
+     * Expected Result: A bundle should be generated with the folder info
+    * */
+    @Test
+    public void createStaticBundleWithoutFiles()
+            throws DotPublishingException, DotPublisherException {
+        String name = "testFolder" + String.valueOf(System.currentTimeMillis());
+
+        final Folder folder = new FolderDataGen().name(name).nextPersisted();
+        try {
+
+            final Class<? extends Publisher> publisher = StaticPublisher.class;
+
+            final PublisherAPIImpl publisherAPI = new PublisherAPIImpl();
+
+            final PushPublisherConfig config = new PushPublisherConfig();
+            config.setPublishers(list(publisher));
+            config.setOperation(PublisherConfig.Operation.PUBLISH);
+            config.setLuceneQueries(list());
+            config.setId("StaticPublisher" + System.currentTimeMillis());
+            config.setStatic(true);
+
+
+
+            config.setLanguages(Set.of("1", "2"));
+
+            final Bundle bundle = new BundleDataGen()
+                    .pushPublisherConfig(config)
+                    .addAssets(list(folder))
+                    .nextPersisted();
+
+            final PublishAuditStatus status = new PublishAuditStatus(bundle.getId());
+
+            final PublishAuditHistory historyPojo = new PublishAuditHistory();
+            historyPojo.setAssets(Map.of(folder.getIdentifier(), PusheableAsset.FOLDER.getType()));
+            status.setStatusPojo(historyPojo);
+            PublishAuditAPI.getInstance().insertPublishAuditStatus(status);
+
+            final PublishStatus publish = publisherAPI.publish(config);
+
+            final File bundleRoot = BundlerUtil.getBundleRoot(config);
+            final boolean isFolderCreated = FileUtil.listFilesRecursively(bundleRoot)
+                    .stream()
+                    .anyMatch(file -> file.getPath().contains(name));
+
+            assertTrue(isFolderCreated);
+        } finally {
+            FolderDataGen.remove(folder);
+        }
+    }
+
+    /**
+     * Method to Test: {@link PublisherAPIImpl#publish(PublisherConfig)}
+     * Given Scenario: An asset that is not a page or css is static push published
+     * Expected Result: A bundle should be generated with the folder info and the asset should not be included
+     * */
+    @Test
+    public void createStaticBundleWithoutFilesAndPublishAsset()
+            throws DotPublishingException, DotPublisherException, IOException, DotDataException, DotSecurityException {
+        String name = "testFolder" + String.valueOf(System.currentTimeMillis());
+
+        final Folder folder = new FolderDataGen().name(name).nextPersisted();
+        final File file = File.createTempFile("testing-file", ".pdf");
+        FileUtil.write(file, "");
+        // Create File Asset with that file
+        final Contentlet fileAssetShown = new FileAssetDataGen(folder, file).nextPersisted();
+        try {
+
+            final Class<? extends Publisher> publisher = StaticPublisher.class;
+
+            final PublisherAPIImpl publisherAPI = new PublisherAPIImpl();
+
+            final PushPublisherConfig config = new PushPublisherConfig();
+            config.setPublishers(list(publisher));
+            config.setOperation(PublisherConfig.Operation.PUBLISH);
+            config.setLuceneQueries(list());
+            config.setId("StaticPublisher" + System.currentTimeMillis());
+            config.setStatic(true);
+
+
+
+            config.setLanguages(Set.of("1", "2"));
+
+            final Bundle bundle = new BundleDataGen()
+                    .pushPublisherConfig(config)
+                    .addAssets(list(fileAssetShown))
+                    .nextPersisted();
+
+            final PublishAuditStatus status = new PublishAuditStatus(bundle.getId());
+
+            final PublishAuditHistory historyPojo = new PublishAuditHistory();
+            historyPojo.setAssets(Map.of(fileAssetShown.getIdentifier(), PusheableAsset.FOLDER.getType()));
+            status.setStatusPojo(historyPojo);
+            PublishAuditAPI.getInstance().insertPublishAuditStatus(status);
+
+            final PublishStatus publish = publisherAPI.publish(config);
+
+            final File bundleRoot = BundlerUtil.getBundleRoot(config);
+            final boolean isFolderCreated = FileUtil.listFilesRecursively(bundleRoot)
+                    .stream()
+                    .anyMatch(f -> f.getPath().contains(name));
+            final boolean isAssetPresent = FileUtil.listFilesRecursively(bundleRoot)
+                    .stream()
+                    .anyMatch(f -> f.getPath().contains(file.getName()));
+
+            assertTrue(isFolderCreated);
+            assertFalse(isAssetPresent); // The file asset should not be present in the bundle as it is not a page or css asset
+        } finally {
+            FolderDataGen.remove(folder);
+        }
+    }
+
 
     private static List<String> getXMLFileToRemove() {
         return list(

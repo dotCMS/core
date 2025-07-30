@@ -84,7 +84,7 @@ public class StaticDependencyBundler implements IBundler {
         List<String> includes = (config.getIncludePatterns() == null) ? new ArrayList<>() : config.getIncludePatterns();
         Set<Host> hosts = (config.getHosts() == null) ? new HashSet<>() : new HashSet<>(config.getHosts());
         Set<String> languages = config.getLanguages();
-
+        Set<String> folders = config.getFolders();
         if (languages == null || languages.isEmpty()) {
             for (Language l : languageAPI.getLanguages()) {
                 languages.add(l.getId() + "");
@@ -108,6 +108,7 @@ public class StaticDependencyBundler implements IBundler {
                 hosts.add(h);
 
                 includes.add(folder.getPath() + "*");
+                folders.add(folder.getIdentifier());
                 //If Asset is CONTENTLET
             } else{
                 // everything care about is going to have an id
@@ -127,6 +128,11 @@ public class StaticDependencyBundler implements IBundler {
                 if (asset.getType().equals(PusheableAsset.CONTENTLET.getType())) {
                 	List<Contentlet> cons = contentletAPI.search("+identifier:"+asset.getAsset(), 0, 0, null, systemUser, false);
 
+                    Folder folder = folderAPI.find(cons.get(0).getFolder(), systemUser, false);
+                    if (folder != null) {
+                        folders.add(folder.getIdentifier());
+                    }
+
                 	if (!cons.isEmpty() && cons.get(0).isFileAsset() || cons.get(0).isHTMLPage()) {
                         includes.add(id.getPath());
                     } else if (!cons.isEmpty() && UtilMethods.isSet(cons.get(0).getStructure().getUrlMapPattern())) {
@@ -142,6 +148,7 @@ public class StaticDependencyBundler implements IBundler {
         config.setHosts(Lists.newArrayList(hosts));
         config.setIncludePatterns(includes);
         config.setLanguages(languages);
+        config.setFolders(folders);
     }
 
     @Override

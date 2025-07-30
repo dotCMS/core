@@ -4,13 +4,16 @@ import {
     SpectatorService,
     SpyObject
 } from '@ngneat/spectator/jest';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
+
+import { HttpErrorResponse } from '@angular/common/http';
 
 import {
     DotContentSearchService,
     DotFieldService,
     DotHttpErrorManagerService,
-    DotLanguagesService
+    DotLanguagesService,
+    DotContentSearchParams
 } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { createFakeContentlet, mockLocales } from '@dotcms/utils-testing';
@@ -21,6 +24,7 @@ describe('RelationshipFieldService', () => {
     let spectator: SpectatorService<RelationshipFieldService>;
     let dotFieldService: SpyObject<DotFieldService>;
     let dotContentSearchService: SpyObject<DotContentSearchService>;
+    let dotHttpErrorManagerService: SpyObject<DotHttpErrorManagerService>;
 
     const createService = createServiceFactory({
         service: RelationshipFieldService,
@@ -38,10 +42,11 @@ describe('RelationshipFieldService', () => {
         spectator = createService();
         dotFieldService = spectator.inject(DotFieldService);
         dotContentSearchService = spectator.inject(DotContentSearchService);
+        dotHttpErrorManagerService = spectator.inject(DotHttpErrorManagerService);
     });
 
     describe('getColumns', () => {
-        it('should map fields to columns', (done) => {
+        it('should map fields to columns excluding title, language and modDate', () => {
             const mockFields = [
                 {
                     variable: 'field1',
@@ -50,6 +55,18 @@ describe('RelationshipFieldService', () => {
                 {
                     variable: 'description',
                     name: 'Description'
+                },
+                {
+                    variable: 'titleField',
+                    name: 'Title'
+                },
+                {
+                    variable: 'languageField',
+                    name: 'Language'
+                },
+                {
+                    variable: 'modDateField',
+                    name: 'ModDate'
                 }
             ] as DotCMSContentTypeField[];
 
@@ -57,10 +74,11 @@ describe('RelationshipFieldService', () => {
 
             const contentTypeId = '123';
 
-            const expectedColumns = mockFields.map((field) => ({
-                field: field.variable,
-                header: field.name
-            }));
+            // Only fields not in EXCLUDED_COLUMNS should be included
+            const expectedColumns = [
+                { field: 'field1', header: 'Field 1' },
+                { field: 'description', header: 'Description' }
+            ];
 
             spectator.service.getColumns(contentTypeId).subscribe((columns) => {
                 expect(dotFieldService.getFields).toHaveBeenCalledWith(
@@ -68,7 +86,42 @@ describe('RelationshipFieldService', () => {
                     'SHOW_IN_LIST'
                 );
                 expect(columns).toEqual(expectedColumns);
-                done();
+            });
+        });
+
+        it('should handle case-insensitive exclusion of reserved columns', () => {
+            const mockFields = [
+                {
+                    variable: 'field1',
+                    name: 'Field 1'
+                },
+                {
+                    variable: 'titleField',
+                    name: 'TITLE' // uppercase
+                },
+                {
+                    variable: 'languageField',
+                    name: 'Language' // mixed case
+                },
+                {
+                    variable: 'modDateField',
+                    name: 'moddate' // lowercase
+                }
+            ] as DotCMSContentTypeField[];
+
+            dotFieldService.getFields.mockReturnValue(of(mockFields));
+
+            const contentTypeId = '123';
+
+            // Only non-excluded fields should be included, regardless of case
+            const expectedColumns = [{ field: 'field1', header: 'Field 1' }];
+
+            spectator.service.getColumns(contentTypeId).subscribe((columns) => {
+                expect(dotFieldService.getFields).toHaveBeenCalledWith(
+                    contentTypeId,
+                    'SHOW_IN_LIST'
+                );
+                expect(columns).toEqual(expectedColumns);
             });
         });
 
@@ -87,14 +140,25 @@ describe('RelationshipFieldService', () => {
             });
         });
 
-        it('should handle fields with missing properties', (done) => {
+        it('should filter out fields with missing variable or name', (done) => {
             const mockFields = [
                 {
                     variable: 'field1',
                     name: 'Field 1'
                 },
                 {
-                    variable: 'description' // missing name
+                    variable: 'field2' // missing name
+                },
+                {
+                    name: 'Field 3' // missing variable
+                },
+                {
+                    variable: null,
+                    name: 'Field 4'
+                },
+                {
+                    variable: 'field5',
+                    name: null
                 }
             ] as DotCMSContentTypeField[];
 
@@ -115,62 +179,266 @@ describe('RelationshipFieldService', () => {
         });
     });
 
-    describe('getContent', () => {
-        it('should get content with correct query parameters', (done) => {
-            const contentTypeId = 'test123';
-            const expectedQuery = `+contentType:${contentTypeId} +deleted:false +working:true`;
+    describe('search', () => {
+        const contentTypeId = 'test123';
+        const searchTerm = 'query';
+        const page = 1;
+        const perPage = 10;
+        const searchableFieldsByContentType = { [contentTypeId]: {} };
 
-            const mockContentlets = [
-                { identifier: '123', title: 'Test Content 1' },
-                { identifier: '456', title: 'Test Content 2' }
-            ] as DotCMSContentlet[];
+        const mockFakeContentlets = [
+            createFakeContentlet({
+                identifier: '123',
+                title: 'Test Content 1',
+                languageId: 1
+            }),
+            createFakeContentlet({
+                identifier: '456',
+                title: 'Test Content 2',
+                languageId: 2
+            })
+        ];
 
-            dotContentSearchService.get.mockReturnValue(
-                of({
-                    jsonObjectView: {
-                        contentlets: mockContentlets
-                    }
+        const mockResponse = {
+            jsonObjectView: {
+                contentlets: mockFakeContentlets
+            },
+            resultsSize: mockFakeContentlets.length
+        };
+
+        it('should search contentlets with correct parameters', (done) => {
+            const expectedParams: DotContentSearchParams = {
+                globalSearch: searchTerm,
+                searchableFieldsByContentType,
+                page,
+                perPage
+            };
+
+            dotContentSearchService.search.mockReturnValue(of(mockResponse));
+
+            spectator.service
+                .search({
+                    contentTypeId,
+                    globalSearch: searchTerm,
+                    page,
+                    perPage
                 })
-            );
+                .subscribe((results) => {
+                    expect(dotContentSearchService.search).toHaveBeenCalledWith(expectedParams);
+                    expect(results.contentlets.length).toBe(2);
+                    expect(results.totalResults).toBe(2);
 
-            spectator.service.getContent(contentTypeId).subscribe((result) => {
-                expect(dotContentSearchService.get).toHaveBeenCalledWith({
-                    query: expectedQuery,
-                    limit: 100
+                    // Verify languages were applied to contentlets
+                    expect(results.contentlets[0].language).toEqual(mockLocales[0]);
+                    expect(results.contentlets[1].language).toEqual(mockLocales[1]);
+
+                    done();
                 });
-                expect(result).toEqual(mockContentlets);
-                done();
-            });
+        });
+
+        it('should handle contentlets without title by using identifier', (done) => {
+            const contentletsWithoutTitle = [
+                createFakeContentlet({
+                    identifier: '789',
+                    title: null,
+                    languageId: 1
+                })
+            ];
+
+            const responseWithoutTitle = {
+                jsonObjectView: {
+                    contentlets: contentletsWithoutTitle
+                },
+                resultsSize: contentletsWithoutTitle.length
+            };
+
+            dotContentSearchService.search.mockReturnValue(of(responseWithoutTitle));
+
+            spectator.service
+                .search({
+                    contentTypeId,
+                    globalSearch: searchTerm,
+                    page,
+                    perPage
+                })
+                .subscribe((results) => {
+                    expect(results.contentlets[0].title).toBe('789'); // Should use identifier when title is null
+                    expect(results.contentlets[0].language).toEqual(mockLocales[0]);
+                    done();
+                });
         });
 
         it('should return empty array when no contentlets are found', (done) => {
-            const contentTypeId = 'test123';
             const emptyResponse = {
                 jsonObjectView: {
                     contentlets: []
-                }
+                },
+                resultsSize: 0
             };
 
-            dotContentSearchService.get.mockReturnValue(of(emptyResponse));
+            dotContentSearchService.search.mockReturnValue(of(emptyResponse));
 
-            spectator.service.getContent(contentTypeId).subscribe((result) => {
-                expect(result).toEqual([]);
-                done();
-            });
+            spectator.service
+                .search({
+                    contentTypeId,
+                    globalSearch: searchTerm,
+                    page,
+                    perPage
+                })
+                .subscribe((results) => {
+                    expect(dotContentSearchService.search).toHaveBeenCalled();
+                    expect(results.contentlets).toEqual([]);
+                    expect(results.totalResults).toBe(0);
+                    done();
+                });
         });
 
-        it('should handle error case gracefully', (done) => {
-            const contentTypeId = 'test123';
-            const errorResponse = {
-                jsonObjectView: null
+        it('should handle optional parameters correctly', () => {
+            const expectedParams: DotContentSearchParams = {
+                globalSearch: '',
+                searchableFieldsByContentType,
+                page,
+                perPage
             };
 
-            dotContentSearchService.get.mockReturnValue(of(errorResponse));
+            dotContentSearchService.search.mockReturnValue(of(mockResponse));
 
-            spectator.service.getContent(contentTypeId).subscribe((result) => {
-                expect(result).toBeUndefined();
-                done();
+            spectator.service
+                .search({
+                    contentTypeId,
+                    globalSearch: '',
+                    page,
+                    perPage
+                })
+                .subscribe(() => {
+                    expect(dotContentSearchService.search).toHaveBeenCalledWith(expectedParams);
+                });
+        });
+
+        it('should handle error case gracefully', () => {
+            const errorResponse = new HttpErrorResponse({
+                status: 500,
+                statusText: 'Server Error'
             });
+            dotContentSearchService.search.mockReturnValue(throwError(() => errorResponse));
+
+            spectator.service
+                .search({
+                    contentTypeId,
+                    globalSearch: searchTerm,
+                    page,
+                    perPage
+                })
+                .subscribe((results) => {
+                    expect(dotContentSearchService.search).toHaveBeenCalled();
+                    expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(errorResponse);
+                    expect(results.contentlets).toEqual([]);
+                    expect(results.totalResults).toBe(0);
+                });
+        });
+
+        it('should apply proper title and language to contentlets', (done) => {
+            const customContentlets = [
+                createFakeContentlet({
+                    identifier: 'abc123',
+                    title: 'Custom Title',
+                    languageId: 1
+                }),
+                createFakeContentlet({
+                    identifier: 'def456',
+                    title: '', // Empty title
+                    languageId: 2
+                })
+            ];
+
+            const customResponse = {
+                jsonObjectView: {
+                    contentlets: customContentlets
+                },
+                resultsSize: customContentlets.length
+            };
+
+            dotContentSearchService.search.mockReturnValue(of(customResponse));
+
+            spectator.service
+                .search({
+                    contentTypeId,
+                    globalSearch: searchTerm,
+                    page,
+                    perPage
+                })
+                .subscribe((results) => {
+                    expect(results.contentlets[0].title).toBe('Custom Title');
+                    expect(results.contentlets[1].title).toBe('def456'); // Should use identifier for empty title
+
+                    expect(results.contentlets[0].language).toEqual(mockLocales[0]);
+                    expect(results.contentlets[1].language).toEqual(mockLocales[1]);
+
+                    done();
+                });
+        });
+
+        it('should handle additional system searchable fields', (done) => {
+            const additionalFields = {
+                someField: 'someValue',
+                anotherField: 123
+            };
+
+            const expectedParams: DotContentSearchParams = {
+                globalSearch: searchTerm,
+                systemSearchableFields: { ...additionalFields },
+                searchableFieldsByContentType,
+                page,
+                perPage
+            };
+
+            dotContentSearchService.search.mockReturnValue(of(mockResponse));
+
+            spectator.service
+                .search({
+                    contentTypeId,
+                    globalSearch: searchTerm,
+                    page,
+                    perPage,
+                    systemSearchableFields: additionalFields
+                })
+                .subscribe((results) => {
+                    expect(dotContentSearchService.search).toHaveBeenCalledWith(expectedParams);
+                    expect(results.contentlets.length).toBe(2);
+                    done();
+                });
+        });
+
+        it('should handle content with undefined title', (done) => {
+            const contentletsWithUndefinedTitle = [
+                createFakeContentlet({
+                    identifier: 'undefined-title',
+                    title: undefined,
+                    languageId: 1
+                })
+            ];
+
+            const undefinedTitleResponse = {
+                jsonObjectView: {
+                    contentlets: contentletsWithUndefinedTitle
+                },
+                resultsSize: contentletsWithUndefinedTitle.length
+            };
+
+            dotContentSearchService.search.mockReturnValue(of(undefinedTitleResponse));
+
+            spectator.service
+                .search({
+                    contentTypeId,
+                    globalSearch: searchTerm,
+                    page,
+                    perPage
+                })
+                .subscribe((results) => {
+                    expect(results.contentlets[0].title).toBe('undefined-title'); // Should use identifier when title is undefined
+                    expect(results.contentlets[0].language).toEqual(mockLocales[0]);
+                    done();
+                });
         });
     });
 
@@ -206,41 +474,42 @@ describe('RelationshipFieldService', () => {
             }
         ] as unknown as DotCMSContentlet[];
 
+        const mockSearchResponse = {
+            jsonObjectView: {
+                contentlets: mockContentlets
+            },
+            resultsSize: mockContentlets.length
+        };
+
         beforeEach(() => {
             dotFieldService.getFields.mockReturnValue(of(mockFields));
 
-            dotContentSearchService.get.mockReturnValue(
-                of({
-                    jsonObjectView: {
-                        contentlets: mockContentlets
-                    }
-                })
-            );
+            dotContentSearchService.search.mockReturnValue(of(mockSearchResponse));
         });
 
         it('should combine columns and content correctly', (done) => {
             spectator.service
                 .getColumnsAndContent(mockContentTypeId)
-                .subscribe(([columns, items]) => {
+                .subscribe(([columns, response]) => {
                     // Verify columns
                     expect(columns.length).toBeGreaterThan(0);
                     expect(columns).toEqual(expectedColumns);
 
                     // Verify relationship items
-                    expect(items.length).toBe(2);
+                    expect(response.contentlets.length).toBe(2);
                     const item0 = {
-                        identifier: items[0].identifier,
-                        title: items[0].title,
-                        field: items[0].field,
-                        description: items[0].description,
-                        language: items[0].language
+                        identifier: response.contentlets[0].identifier,
+                        title: response.contentlets[0].title,
+                        field: response.contentlets[0].field,
+                        description: response.contentlets[0].description,
+                        language: response.contentlets[0].language
                     };
                     const item1 = {
-                        identifier: items[1].identifier,
-                        title: items[1].title,
-                        field: items[1].field,
-                        description: items[1].description,
-                        language: items[1].language
+                        identifier: response.contentlets[1].identifier,
+                        title: response.contentlets[1].title,
+                        field: response.contentlets[1].field,
+                        description: response.contentlets[1].description,
+                        language: response.contentlets[1].language
                     };
                     expect(item0).toEqual({
                         identifier: '123',
@@ -257,63 +526,58 @@ describe('RelationshipFieldService', () => {
                         language: mockLocales[1]
                     });
 
-                    // Verify service calls
-                    expect(dotFieldService.getFields).toHaveBeenCalledWith(
-                        mockContentTypeId,
-                        'SHOW_IN_LIST'
-                    );
-                    expect(dotContentSearchService.get).toHaveBeenCalledWith({
-                        query: `+contentType:${mockContentTypeId} +deleted:false +working:true`,
-                        limit: 100
-                    });
-
                     done();
                 });
         });
 
         it('should handle empty content correctly', (done) => {
-            dotContentSearchService.get.mockReturnValue(
-                of({
-                    jsonObjectView: {
-                        contentlets: []
-                    }
-                })
-            );
+            const emptyResponse = {
+                jsonObjectView: {
+                    contentlets: []
+                },
+                resultsSize: 0
+            };
+
+            dotContentSearchService.search.mockReturnValue(of(emptyResponse));
 
             spectator.service
                 .getColumnsAndContent(mockContentTypeId)
-                .subscribe(([columns, items]) => {
+                .subscribe(([columns, response]) => {
                     expect(columns.length).toBeGreaterThan(0);
-                    expect(items).toEqual([]);
+                    expect(response.contentlets).toEqual([]);
+                    expect(response.totalResults).toBe(0);
                     done();
                 });
         });
 
         it('should handle content without title', () => {
-            const contentWithoutTitle = createFakeContentlet({
-                identifier: '789',
-                title: null,
-                description: 'Description 3',
-                field: 'Field 3',
-                languageId: mockLocales[0].id,
-                modDate: '2024-01-03T00:00:00Z'
-            });
-
-            dotContentSearchService.get.mockReturnValue(
-                of({
-                    jsonObjectView: {
-                        contentlets: contentWithoutTitle
-                    }
+            const contentWithoutTitle = [
+                createFakeContentlet({
+                    identifier: '789',
+                    title: null,
+                    description: 'Description 3',
+                    field: 'Field 3',
+                    languageId: mockLocales[0].id,
+                    modDate: '2024-01-03T00:00:00Z'
                 })
-            );
+            ];
 
-            spectator.service.getColumnsAndContent(mockContentTypeId).subscribe(([_, items]) => {
+            const responseWithoutTitle = {
+                jsonObjectView: {
+                    contentlets: contentWithoutTitle
+                },
+                resultsSize: contentWithoutTitle.length
+            };
+
+            dotContentSearchService.search.mockReturnValue(of(responseWithoutTitle));
+
+            spectator.service.getColumnsAndContent(mockContentTypeId).subscribe(([_, response]) => {
                 const item = {
-                    identifier: items[0].identifier,
-                    title: items[0].title,
-                    field: items[0].field,
-                    description: items[0].description,
-                    language: items[0].language
+                    identifier: response.contentlets[0].identifier,
+                    title: response.contentlets[0].title,
+                    field: response.contentlets[0].field,
+                    description: response.contentlets[0].description,
+                    language: response.contentlets[0].language
                 };
                 expect(item).toEqual({
                     identifier: '789',
@@ -322,6 +586,20 @@ describe('RelationshipFieldService', () => {
                     description: 'Description 3',
                     language: mockLocales[0]
                 });
+            });
+        });
+
+        it('should handle error case gracefully', () => {
+            const errorResponse = new HttpErrorResponse({
+                status: 500,
+                statusText: 'Server Error'
+            });
+
+            dotContentSearchService.search.mockReturnValue(throwError(() => errorResponse));
+
+            spectator.service.getColumnsAndContent(mockContentTypeId).subscribe((result) => {
+                expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(errorResponse);
+                expect(result).toBeNull();
             });
         });
     });

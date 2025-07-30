@@ -1,7 +1,9 @@
 package com.dotmarketing.portlets.workflows.actionlet;
 
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.exception.ExceptionUtil;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -14,6 +16,7 @@ import com.dotmarketing.portlets.workflows.model.WorkflowActionFailureException;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionletParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
+import com.dotmarketing.util.ContentPublishDateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
@@ -21,6 +24,7 @@ import com.liferay.portal.model.User;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Do the save for a content (checkin)
@@ -84,6 +88,13 @@ public class SaveContentActionlet extends WorkFlowActionlet {
 					this.contentletAPI.checkin(checkoutContentlet, contentletDependencies):
 					this.contentletAPI.checkin(checkoutContentlet, processor.getUser(), respectFrontendPermission);
 
+			final Identifier identifier = APILocator.getIdentifierAPI().find( contentletNew );
+			if ( identifier.getAssetType().equals( "contentlet" ) ) {
+				//Get the structure for this contentlet
+				final ContentType contentType = contentlet.getContentType();
+				ContentPublishDateUtil.notifyIfFuturePublishDate(contentType, identifier, contentletNew.getModUser());
+			}
+
 			this.setIndexPolicy(contentlet, contentletNew);
 			this.setSpecialVariables(contentlet, contentletNew);
 
@@ -112,6 +123,9 @@ public class SaveContentActionlet extends WorkFlowActionlet {
 			this.contentletAPI.copyProperties(checkoutContentlet, contentlet.getMap());
 			this.setIndexPolicy(contentlet, checkoutContentlet);
 			checkoutContentlet.setInode(inode);
+			if (Objects.nonNull(contentlet.getVariantId())) {
+				checkoutContentlet.setVariantId(contentlet.getVariantId());
+			}
 			this.setSpecialVariables (contentlet, checkoutContentlet);
 		}
 

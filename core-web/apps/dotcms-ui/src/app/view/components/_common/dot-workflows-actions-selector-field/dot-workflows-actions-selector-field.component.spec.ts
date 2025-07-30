@@ -1,6 +1,6 @@
 import { BehaviorSubject } from 'rxjs';
 
-import { Component, DebugElement, OnInit } from '@angular/core';
+import { Component, DebugElement, OnInit, inject } from '@angular/core';
 import { ComponentFixture, waitForAsync } from '@angular/core/testing';
 import { UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
 import { By } from '@angular/platform-browser';
@@ -29,10 +29,10 @@ import { DotWorkflowsActionsSelectorFieldService } from './services/dot-workflow
     `
 })
 class FakeFormComponent implements OnInit {
+    private fb = inject(UntypedFormBuilder);
+
     form: UntypedFormGroup;
     workfows: DotCMSWorkflow[] = [];
-
-    constructor(private fb: UntypedFormBuilder) {}
 
     ngOnInit() {
         this.form = this.fb.group({

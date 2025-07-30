@@ -15,10 +15,8 @@ import com.dotcms.saml.SamlName;
 import com.dotcms.util.security.EncryptorFactory;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.DuplicateUserException;
 import com.dotmarketing.business.NoSuchUserException;
-import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.web.HostWebAPI;
@@ -26,10 +24,7 @@ import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.util.ActivityLogger;
-import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.Config;
-import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.SecurityLogger;
@@ -56,9 +51,14 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static com.dotmarketing.util.UtilMethods.isSet;
 
@@ -80,6 +80,11 @@ public class SAMLHelper {
     private static SamlConfigurationService  thirdPartySamlConfigurationService;
 
     private static EmailGenStrategy emailGenStrategy = SAMLHelper::prefixRandomEmail;
+
+    protected static final RoleGroupMappingStrategy DEFAULT_ROLE_GROUP_MAPPING_STRATEGY = (roleGroupKey, identityProviderConfiguration) -> List.of(roleGroupKey);
+    public static final String SAML_ROLES_GROUP_MAPPING_STRATEGY_BYCONTENTTYPE = "saml.roles.group.mapping.strategy.bycontenttype";
+    private static Map<String, RoleGroupMappingStrategy> roleGroupMappingStrategiesMap =
+            new ConcurrentHashMap<>(Map.of(SAML_ROLES_GROUP_MAPPING_STRATEGY_BYCONTENTTYPE, new ContentTypeRoleGroupMappingStrategyImpl()));
 
     private static String prefixRandomEmail(final String email) {
 
@@ -364,6 +369,28 @@ public class SAMLHelper {
             user.setFirstName(attributesBean.getFirstName());
             user.setLastName(attributesBean.getLastName());
 
+            // setting the last login date
+            user.setLastLoginDate(new Date());
+
+            if (Objects.nonNull(attributesBean.getAdditionalAttributes()) &&
+                    attributesBean.getAdditionalAttributes().size() > 0) {
+
+                final Map<String, Object> additionalInfo = user.getAdditionalInfo();
+                final Map<String, Object> additionalAttr = attributesBean.getAdditionalAttributes();
+                final Map<String, Object> finalAdditionalInfo = new HashMap<>();
+                finalAdditionalInfo.putAll(additionalAttr); // assumes override the idp info
+                if (samlConfigurationService // by default it overrides
+                        .getConfigAsBoolean(identityProviderConfiguration, SamlName.DOTCMS_MERGE_ADDITIONAL_ATTRIBUTES, ()->false)) {
+                    Logger.debug(this, ()-> "Merging additional attributes for user with email '" + attributesBean.getEmail() + "'");
+                    // merge
+                    finalAdditionalInfo.putAll(additionalInfo);
+                    Logger.debug(this, ()-> "Merged additional attributes for user with email '"
+                            + attributesBean.getEmail() + "', attributes: " + finalAdditionalInfo);
+                }
+
+                user.setAdditionalInfo(finalAdditionalInfo);
+            }
+
             this.userAPI.save(user, systemUser, false);
             Logger.debug(this, ()-> "User with email '" + attributesBean.getEmail() + "' has been updated");
         } catch (Exception e) {
@@ -520,23 +547,8 @@ public class SAMLHelper {
                 Logger.debug(this, () -> "Role Patterns: " + this.toString(rolePatterns) + ", remove role prefix: " + removeRolePrefix);
 
                 // add roles
-                for (final String role : roleList) {
-
-                    if (null != rolePatterns && rolePatterns.length > 0) {
-                        if (!this.isValidRole(role, rolePatterns)) {
-                            // when there are role filters and the current roles is not a valid role, we have to filter it.
-
-                            Logger.debug(this, () -> "Skipping role: " + role);
-                            continue;
-                        } else {
-
-                            Logger.debug(this, () -> "Role Patterns: " + this.toString(rolePatterns) + ", remove role prefix: "
-                                    + removeRolePrefix + ": true");
-                        }
-                    }
-
-                    this.addRole(user, removeRolePrefix, this.processReplacement(role, roleKeySubstitutionOpt) );
-                }
+                addIDPRoles(user, roleList, rolePatterns, removeRolePrefix,
+                        roleKeySubstitutionOpt, identityProviderConfiguration);
             }
 
             return;
@@ -544,6 +556,81 @@ public class SAMLHelper {
 
         Logger.info(this, "Roles have been ignore by the build roles strategy: " + buildRolesStrategy
                 + ", or roles have been not set from the IdP");
+    }
+
+    /**
+     * This method add the roles form the IDP to the user
+     * In addition apply any filter on rolePatterns if they are present
+     * Also, remove any prefix from the roles if it is present and use the roleKeySubstitutionOpt to do replacements over the role keys if it is present
+     * Finally, if the roleGroupMappingStrategy is present, it will use it to get the roles for the roleGroup
+     * @param user
+     * @param roleList
+     * @param rolePatterns
+     * @param removeRolePrefix
+     * @param roleKeySubstitutionOpt
+     * @param identityProviderConfiguration
+     * @throws DotDataException
+     */
+    private void addIDPRoles(final User user,
+                             final List<String> roleList,
+                             final String[] rolePatterns,
+                             final String removeRolePrefix,
+                             final Optional<Tuple2<String, String>> roleKeySubstitutionOpt,
+                             final IdentityProviderConfiguration identityProviderConfiguration) throws DotDataException {
+
+        final RoleGroupMappingStrategy roleGroupMappingStrategy = getRoleGroupMappingStrategy(identityProviderConfiguration);
+
+        Logger.debug(this, ()-> "Using roleGroupMappingStrategy: " + roleGroupMappingStrategy);
+        for (final String roleGroup : roleList) {
+
+            final Collection<String> rolesMapped = Objects.nonNull(roleGroupMappingStrategy)?
+                    roleGroupMappingStrategy.getRolesForGroup(roleGroup, identityProviderConfiguration): List.of(roleGroup);
+
+            Logger.debug(this, ()-> "Roles Mapped: " + rolesMapped);
+
+            for (final String role : rolesMapped) {
+                if (null != rolePatterns && rolePatterns.length > 0) {
+                    if (!this.isValidRole(role, rolePatterns)) {
+                        // when there are role filters and the current roles is not a valid role, we have to filter it.
+
+                        Logger.debug(this, () -> "Skipping role: " + role);
+                        continue;
+                    } else {
+
+                        Logger.debug(this, () -> "Role Patterns: " + this.toString(rolePatterns) + ", remove role prefix: "
+                                + removeRolePrefix + ": true");
+                    }
+                }
+
+                this.addRole(user, removeRolePrefix, this.processReplacement(role, roleKeySubstitutionOpt));
+            }
+        }
+    }
+
+    /**
+     * Allows to add a new strategy via osgi by strategyName
+     * @param strategyNameId String unique name for the strategy
+     * @param roleGroupMappingStrategy
+     */
+    public static void addRoleGroupMappingStrategy(final String strategyNameId, final RoleGroupMappingStrategy roleGroupMappingStrategy) {
+        Logger.debug(SAMLHelper.class, ()-> "Adding the role group mapping strategy: " + strategyNameId);
+        roleGroupMappingStrategiesMap.put(strategyNameId, roleGroupMappingStrategy);
+    }
+
+    public static void removeRoleGroupMappingStrategy(final String strategyNameId) {
+        if (roleGroupMappingStrategiesMap.containsKey(strategyNameId)) {
+            Logger.debug(SAMLHelper.class, ()-> "Removing the role group mapping strategy: " + strategyNameId);
+            roleGroupMappingStrategiesMap.remove(strategyNameId);
+        }
+    }
+
+    private RoleGroupMappingStrategy getRoleGroupMappingStrategy(final IdentityProviderConfiguration identityProviderConfiguration) {
+
+        Logger.debug(this, ()-> "Getting the role group mapping strategy");
+        return identityProviderConfiguration.containsOptionalProperty(SamlName.DOTCMS_SAML_ROLE_GROUP_MAPPING_STRATEGY.getPropertyName())?
+                roleGroupMappingStrategiesMap.get(
+                    identityProviderConfiguration.getOptionalProperty(SamlName.DOTCMS_SAML_ROLE_GROUP_MAPPING_STRATEGY.getPropertyName()).toString()):
+                DEFAULT_ROLE_GROUP_MAPPING_STRATEGY;
     }
 
     protected String processReplacement(final String role, final Optional<Tuple2<String, String>> roleKeySubstitutionOpt) {
@@ -633,6 +720,12 @@ public class SAMLHelper {
             user.setCreateDate(new Date());
             user.setPassword(PublicEncryptionFactory.digestString(UUIDGenerator.generateUuid() + "/" + UUIDGenerator.generateUuid()));
             user.setPasswordEncrypted(true);
+
+            if (Objects.nonNull(attributesBean.getAdditionalAttributes()) &&
+                    attributesBean.getAdditionalAttributes().size() > 0) {
+
+                user.setAdditionalInfo(attributesBean.getAdditionalAttributes());
+            }
 
             this.userAPI.save(user, systemUser, false);
             Logger.debug(this, ()-> "User with NameID '" + nameID + "' and email '" +

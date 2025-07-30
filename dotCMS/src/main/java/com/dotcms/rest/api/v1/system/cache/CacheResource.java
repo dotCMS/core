@@ -1,9 +1,11 @@
 package com.dotcms.rest.api.v1.system.cache;
 
 import com.dotcms.enterprise.cache.provider.CacheProviderAPIImpl;
+import com.dotcms.rest.ResponseEntityStringView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.api.v1.workflow.ResponseEntityWorkflowHistoryCommentsView;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.cache.provider.CacheProvider;
@@ -11,6 +13,11 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.MaintenanceUtil;
 import com.dotmarketing.util.PortletID;
 import com.google.common.annotations.VisibleForTesting;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -34,6 +41,7 @@ import java.util.TreeMap;
  * @author jsanca
  */
 @Path("/v1/caches")
+@Tag(name = "Cache Management", description = "Cache provider management and operations")
 public class CacheResource {
 
     private final WebResource          webResource;
@@ -342,5 +350,44 @@ public class CacheResource {
 
         MaintenanceUtil.flushCache();
         return Response.ok(new ResponseEntityView("flushed all")).build();
+    }
+
+
+    /**
+     * Deletes the menu cache
+     *  @param request   {@link HttpServletRequest}
+     *  @param response  {@link HttpServletResponse}
+     * @return ResponseEntityStringView
+     */
+    @NoCache
+    @DELETE
+    @Path("/menucache")
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Operation(operationId = "deleteMenuCache", summary = "Deletes the menu cache",
+            description = "Just deletes the menu cache by request",
+            tags = {"Maintenance"},
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Action(s) returned successfully",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ResponseEntityStringView.class)
+                            )
+                    ),
+                    @ApiResponse(responseCode = "500", description = "General Error")
+            }
+    )
+    public ResponseEntityStringView deleteMenuCache(@Context final HttpServletRequest request,
+                                                    @Context final HttpServletResponse response) {
+
+        new WebResource.InitBuilder(webResource)
+                .requestAndResponse(request, response)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requiredPortlet(PortletID.MAINTENANCE.toString().toLowerCase())
+                .rejectWhenNoUser(true).init();
+
+        Logger.debug(this, ()-> "Deleting menu cache");
+
+        MaintenanceUtil.deleteMenuCache();
+        return new ResponseEntityStringView("flushed menucache");
     }
 }

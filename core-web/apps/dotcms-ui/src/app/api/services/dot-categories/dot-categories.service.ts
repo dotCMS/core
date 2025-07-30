@@ -5,7 +5,6 @@ import { Injectable } from '@angular/core';
 import { LazyLoadEvent } from 'primeng/api';
 
 import { OrderDirection, PaginatorService } from '@dotcms/data-access';
-import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotCategory } from '@dotcms/dotcms-models';
 
 export const CATEGORY_API_URL = 'v1/categories';
@@ -14,8 +13,8 @@ export const CATEGORY_CHILDREN_API_URL = 'v1/categories/children';
 
 @Injectable()
 export class DotCategoriesService extends PaginatorService {
-    constructor(coreWebService: CoreWebService) {
-        super(coreWebService);
+    constructor() {
+        super();
         this.url = CATEGORY_API_URL;
     }
 

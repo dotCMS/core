@@ -1,6 +1,7 @@
 import { Observable } from 'rxjs';
 
-import { Component, OnInit } from '@angular/core';
+import { Component, DestroyRef, inject, OnInit } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 
 import { map, pluck, take } from 'rxjs/operators';
@@ -14,6 +15,9 @@ import { DotCurrentUser, DotPermissionsType, PermissionsType } from '@dotcms/dot
     styleUrls: ['./dot-starter.component.scss']
 })
 export class DotStarterComponent implements OnInit {
+    private route = inject(ActivatedRoute);
+    private dotAccountService = inject(DotAccountService);
+
     userData$: Observable<{
         username: string;
         showCreateContentLink: boolean;
@@ -27,10 +31,7 @@ export class DotStarterComponent implements OnInit {
     showCreatePageLink: boolean;
     showCreateTemplateLink: boolean;
 
-    constructor(
-        private route: ActivatedRoute,
-        private dotAccountService: DotAccountService
-    ) {}
+    readonly #destroyRef = inject(DestroyRef);
 
     ngOnInit() {
         this.userData$ = this.route.data.pipe(
@@ -62,8 +63,10 @@ export class DotStarterComponent implements OnInit {
      * @memberof DotStarterComponent
      */
     handleVisibility(hide: boolean): void {
-        hide
-            ? this.dotAccountService.removeStarterPage().subscribe()
-            : this.dotAccountService.addStarterPage().subscribe();
+        const subscription = hide
+            ? this.dotAccountService.removeStarterPage()
+            : this.dotAccountService.addStarterPage();
+
+        subscription.pipe(takeUntilDestroyed(this.#destroyRef)).subscribe();
     }
 }

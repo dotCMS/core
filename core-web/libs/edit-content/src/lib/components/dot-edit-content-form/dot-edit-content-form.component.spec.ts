@@ -9,6 +9,7 @@ import {
 import { of } from 'rxjs';
 
 import { signal } from '@angular/core';
+import { fakeAsync, flush, tick } from '@angular/core/testing';
 import { Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -17,7 +18,6 @@ import { DialogService } from 'primeng/dynamicdialog';
 import { InputSwitch, InputSwitchChangeEvent } from 'primeng/inputswitch';
 import { TabPanel, TabView } from 'primeng/tabview';
 
-import { DotCMSContentlet } from '@dotcms/angular';
 import {
     DotContentletService,
     DotContentTypeService,
@@ -32,6 +32,7 @@ import {
     DotWorkflowService
 } from '@dotcms/data-access';
 import {
+    DotCMSContentlet,
     DotCMSWorkflowAction,
     DotContentletCanLock,
     DotContentletDepths
@@ -45,7 +46,6 @@ import {
 
 import { DotEditContentFormComponent } from './dot-edit-content-form.component';
 
-import { CONTENT_SEARCH_ROUTE } from '../../models/dot-edit-content-field.constant';
 import { DotEditContentService } from '../../services/dot-edit-content.service';
 import { DotEditContentStore } from '../../store/edit-content.store';
 import {
@@ -68,7 +68,6 @@ describe('DotFormComponent', () => {
     let dotEditContentService: SpyObject<DotEditContentService>;
     let dotWorkflowService: SpyObject<DotWorkflowService>;
     let dotContentletService: SpyObject<DotContentletService>;
-    let router: SpyObject<Router>;
 
     const createComponent = createComponentFactory({
         component: DotEditContentFormComponent,
@@ -127,7 +126,6 @@ describe('DotFormComponent', () => {
         workflowActionsFireService = spectator.inject(DotWorkflowActionsFireService);
         dotWorkflowService = spectator.inject(DotWorkflowService);
         dotContentletService = spectator.inject(DotContentletService);
-        router = spectator.inject(Router);
     });
 
     afterEach(() => {
@@ -214,11 +212,29 @@ describe('DotFormComponent', () => {
             expect(component.form.get('text3').hasValidator(Validators.required)).toBe(false);
         });
 
-        it('should render the correct number of rows, columns and fields', () => {
-            expect(spectator.queryAll(byTestId('row')).length).toBe(1);
-            expect(spectator.queryAll(byTestId('column')).length).toBe(2);
-            expect(spectator.queryAll(byTestId('field')).length).toBe(3);
-        });
+        it('should render the correct number of rows, columns and fields', fakeAsync(() => {
+            // First, ensure the component is fully initialized
+            spectator.detectChanges();
+
+            // Give time for Angular to process any pending tasks
+            tick();
+
+            // Find the first tab content
+            const form = spectator.query(byTestId('edit-content-form'));
+            expect(form).toBeTruthy();
+
+            // If we can directly query the elements even though they are in a tab
+            const rows = spectator.queryAll(byTestId('row'));
+            const columns = spectator.queryAll(byTestId('column'));
+            const fields = spectator.queryAll(byTestId('field'));
+
+            expect(rows.length).toBe(1);
+            expect(columns.length).toBe(2);
+            expect(fields.length).toBe(3);
+
+            // Clean up any pending async operations
+            flush();
+        }));
     });
 
     describe('With multiple tabs and existing content', () => {
@@ -255,17 +271,9 @@ describe('DotFormComponent', () => {
                 expect(tabPanels[1]._header).toBe('New Tab');
             });
 
-            it('should have append and prepend areas', () => {
-                const prependArea = spectator.query(byTestId('tabview-prepend-content'));
+            it('should have append area', () => {
                 const appendArea = spectator.query(byTestId('tabview-append-content'));
-                expect(prependArea).toBeTruthy();
                 expect(appendArea).toBeTruthy();
-            });
-
-            it('should render back button in prepend area', () => {
-                const backButton = spectator.query(byTestId('back-button'));
-                expect(backButton).toBeTruthy();
-                expect(backButton.getAttribute('icon')).toBe('pi pi-chevron-left');
             });
 
             it('should render workflow actions and sidebar toggle in append area', () => {
@@ -285,26 +293,6 @@ describe('DotFormComponent', () => {
                 spectator.click(sidebarButton);
 
                 expect(toggleSidebarSpy).toHaveBeenCalled();
-            });
-
-            it('should call toggleSidebar when sidebar toggle button is clicked', () => {
-                const toggleSidebarSpy = jest.spyOn(store, 'toggleSidebar');
-
-                const sidebarToggleButton = spectator.query(byTestId('sidebar-toggle-button'));
-                expect(sidebarToggleButton).toBeTruthy();
-
-                spectator.click(sidebarToggleButton);
-
-                expect(toggleSidebarSpy).toHaveBeenCalled();
-
-                const backButton = spectator.query(byTestId('back-button'));
-                expect(backButton).toBeTruthy();
-
-                spectator.click(backButton);
-
-                expect(router.navigate).toHaveBeenCalledWith([CONTENT_SEARCH_ROUTE], {
-                    queryParams: { filter: MOCK_CONTENTTYPE_2_TABS.variable }
-                });
             });
 
             describe('TabView Styling', () => {

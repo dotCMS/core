@@ -1,0 +1,181 @@
+@use "variables" as *;
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+// Block
+.activities {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    position: relative;
+
+    &__item {
+        animation: fadeIn $basic-speed ease-out;
+    }
+}
+
+// Elements
+.activities__content {
+    flex: 1;
+    overflow-y: auto;
+    padding: $spacing-3 $spacing-4;
+
+    ::ng-deep .p-dataview {
+        background: none;
+        border: none;
+
+        .p-dataview-content {
+            padding: 0;
+            border: none;
+            display: flex;
+            flex-direction: column;
+            background: none;
+            gap: $spacing-4;
+        }
+
+        .p-dataview-emptymessage {
+            background: transparent;
+            padding: 0;
+        }
+    }
+}
+
+.activities__item-wrapper {
+    position: relative;
+    &:not(:last-child)::after {
+        content: "";
+        position: absolute;
+        bottom: calc(($spacing-4 / 2) * -1);
+        left: 0;
+        width: 100%;
+        height: 1px;
+        background-color: $color-palette-gray-300;
+    }
+}
+
+.activities__item {
+    background: $color-palette-gray-100;
+    padding: $spacing-1;
+}
+
+.activities__control {
+    position: relative;
+    // TODO: Implement this in dot-field-validation-message
+    ::ng-deep dot-field-validation-message {
+        position: absolute;
+        bottom: calc($spacing-3 * -1);
+        left: 0;
+        small {
+            animation: fadeIn $basic-speed ease-out;
+        }
+    }
+}
+
+.activities__header {
+    display: flex;
+    align-items: center;
+    margin-bottom: $spacing-1;
+    gap: $spacing-1;
+}
+
+.activities__avatar {
+    width: $spacing-4;
+    height: $spacing-4;
+    margin-right: $spacing-2;
+}
+
+.activities__user {
+    font-size: $font-size-md;
+    font-weight: $font-weight-semi-bold;
+    color: $black;
+    margin-right: $spacing-2;
+}
+
+.activities__date {
+    font-size: $font-size-sm;
+    color: $black;
+    margin-left: auto;
+}
+
+.activities__description {
+    display: block;
+    color: $color-palette-gray-800;
+    font-size: $font-size-md;
+    line-height: 1.4;
+    word-wrap: break-word;
+    white-space: pre-line;
+}
+
+.activities__empty {
+    display: block;
+    color: $color-palette-gray-800;
+    font-size: $font-size-md;
+    background-color: $color-palette-gray-100;
+}
+
+.activities__footer {
+    position: sticky;
+    bottom: 0;
+    z-index: 1;
+    width: 100%;
+    background-color: $color-palette-gray-100;
+    padding: $spacing-3;
+    border-top: 1px solid $color-palette-gray-200;
+}
+
+.activities__form {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-3;
+}
+
+.activities__input {
+    height: auto;
+    width: 100%;
+    resize: none;
+    font-size: $font-size-md;
+    line-height: 1.4;
+}
+
+.activities__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: $spacing-2;
+}
+
+.activities__char-counter {
+    margin-top: $spacing-1;
+    font-size: $font-size-sm;
+    color: $color-palette-gray-600;
+    text-align: left;
+    transition: color $basic-speed;
+
+    &--limit {
+        color: $color-palette-red;
+    }
+}
+
+// PrimeNG Component Overrides
+::ng-deep {
+    .p-avatar.activities__avatar {
+        width: 21px;
+        height: 21px;
+        font-size: $font-size-xs;
+        line-height: 21px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        .p-avatar-text {
+            font-size: $font-size-xs;
+            line-height: 1;
+        }
+    }
+}

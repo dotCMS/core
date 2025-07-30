@@ -37,8 +37,8 @@ import {
     DotDeviceListItem,
     DotCMSContentlet
 } from '@dotcms/dotcms-models';
+import { DotCMSPage, UVE_MODE } from '@dotcms/types';
 import { DotMessagePipe } from '@dotcms/ui';
-import { UVE_MODE } from '@dotcms/uve/types';
 
 import { DotEditorModeSelectorComponent } from './components/dot-editor-mode-selector/dot-editor-mode-selector.component';
 import { DotEmaBookmarksComponent } from './components/dot-ema-bookmarks/dot-ema-bookmarks.component';
@@ -50,8 +50,8 @@ import { EditEmaLanguageSelectorComponent } from './components/edit-ema-language
 import { EditEmaPersonaSelectorComponent } from './components/edit-ema-persona-selector/edit-ema-persona-selector.component';
 
 import { DEFAULT_DEVICES, DEFAULT_PERSONA, PERSONA_KEY } from '../../../shared/consts';
-import { DotPage } from '../../../shared/models';
 import { UVEStore } from '../../../store/dot-uve.store';
+import { convertLocalTimeToUTC } from '../../../utils';
 
 @Component({
     selector: 'dot-uve-toolbar',
@@ -87,7 +87,7 @@ export class DotUveToolbarComponent {
     $personaSelector = viewChild<EditEmaPersonaSelectorComponent>('personaSelector');
     $languageSelector = viewChild<EditEmaLanguageSelectorComponent>('languageSelector');
 
-    @Output() translatePage = new EventEmitter<{ page: DotPage; newLanguage: number }>();
+    @Output() translatePage = new EventEmitter<{ page: DotCMSPage; newLanguage: number }>();
     @Output() editUrlContentMap = new EventEmitter<DotCMSContentlet>();
 
     readonly #store = inject(UVEStore);
@@ -118,9 +118,11 @@ export class DotUveToolbarComponent {
 
     protected readonly $pageParams = this.#store.pageParams;
     protected readonly $previewDate = computed<Date>(() => {
-        return this.$pageParams().publishDate
-            ? new Date(this.$pageParams().publishDate)
-            : new Date();
+        const publishDate = this.$pageParams().publishDate;
+
+        const previewDate = publishDate ? new Date(publishDate) : new Date();
+
+        return previewDate;
     });
 
     readonly $pageInode = computed(() => {
@@ -139,11 +141,13 @@ export class DotUveToolbarComponent {
      * @memberof DotUveToolbarComponent
      */
     protected fetchPageOnDate(publishDate: Date = new Date()) {
-        this.#store.trackUVECalendarChange({ selectedDate: publishDate.toISOString() });
+        const publishDateUTC = convertLocalTimeToUTC(publishDate);
+
+        this.#store.trackUVECalendarChange({ selectedDate: publishDateUTC });
 
         this.#store.loadPageAsset({
             mode: UVE_MODE.LIVE,
-            publishDate: publishDate?.toISOString()
+            publishDate: publishDateUTC
         });
     }
 
@@ -276,7 +280,7 @@ export class DotUveToolbarComponent {
      *
      * @return {void}
      */
-    private createNewTranslation(language: DotLanguage, page: DotPage): void {
+    private createNewTranslation(language: DotLanguage, page: DotCMSPage): void {
         this.#confirmationService.confirm({
             header: this.#dotMessageService.get(
                 'editpage.language-change-missing-lang-populate.confirm.header'

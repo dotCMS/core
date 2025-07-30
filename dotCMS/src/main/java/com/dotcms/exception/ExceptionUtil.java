@@ -2,6 +2,7 @@ package com.dotcms.exception;
 
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
+import com.dotcms.rest.config.DotServiceLocatorImpl.QuietServiceShutdownException;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ValidationException;
 import com.dotcms.util.exceptions.DuplicateFileException;
@@ -18,6 +19,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.InvalidLicenseException;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
+import com.dotmarketing.portlets.contentlet.business.DotJsonFieldException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetValidationException;
 import com.dotmarketing.portlets.folders.business.AddContentToFolderPermissionException;
@@ -49,6 +51,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
+import org.jvnet.mimepull.MIMEParsingException;
 
 import static com.dotmarketing.portlets.contentlet.business.DotContentletValidationException.VALIDATION_FAILED_BADTYPE;
 import static com.dotmarketing.portlets.contentlet.business.DotContentletValidationException.VALIDATION_FAILED_BAD_CARDINALITY;
@@ -95,6 +98,11 @@ public class ExceptionUtil {
                     DoesNotExistException.class
             );
 
+    public static final Set<Class<? extends Throwable>> MALFORMED_MULTIPART_EXCEPTIONS = ImmutableSet
+            .of(
+                    MIMEParsingException.class
+            );
+
     public static final Set<Class<? extends Throwable>> BAD_REQUEST_EXCEPTIONS = ImmutableSet
             .of(
                     AlreadyExistException.class,
@@ -103,6 +111,7 @@ public class ExceptionUtil {
                     DotStateException.class,
                     DotContentletStateException.class,
                     DotDataValidationException.class,
+                    DotJsonFieldException.class,
                     ValidationException.class,
                     BadRequestException.class,
                     JsonProcessingException.class,
@@ -110,6 +119,11 @@ public class ExceptionUtil {
                     InvalidFolderNameException.class
             );
 
+
+    //These are exceptions we want to log but not bubble up to the user
+    public static final Set<Class<? extends Throwable>> LOUD_MOUTH_EXCEPTIONS = Set.of(
+            QuietServiceShutdownException.class
+    );
 
     private ExceptionUtil () {}
 

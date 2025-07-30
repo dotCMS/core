@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import { catchError, map, pluck, take } from 'rxjs/operators';
 
@@ -24,10 +24,8 @@ const appsUrl = `v1/apps`;
  */
 @Injectable()
 export class DotAppsService {
-    constructor(
-        private coreWebService: CoreWebService,
-        private httpErrorManagerService: DotHttpErrorManagerService
-    ) {}
+    private coreWebService = inject(CoreWebService);
+    private httpErrorManagerService = inject(DotHttpErrorManagerService);
 
     /**
      * Return a list of apps.
@@ -149,6 +147,11 @@ export class DotAppsService {
             body: JSON.stringify(conf)
         })
             .then((res: Response) => {
+                const message = res.headers.get('error-message');
+                if (message) {
+                    throw new Error(message);
+                }
+
                 const key = 'filename=';
                 const contentDisposition = res.headers.get('content-disposition');
                 fileName = contentDisposition.slice(contentDisposition.indexOf(key) + key.length);

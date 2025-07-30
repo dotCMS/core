@@ -1,6 +1,6 @@
-import { CollectionBuilder } from './builders/collection/collection';
+import { RequestOptions } from '@dotcms/types';
 
-import { ClientOptions } from '../../deprecated/sdk-js-client';
+import { CollectionBuilder } from './builders/collection/collection';
 
 /**
  * Creates a builder to filter and fetch a collection of content items.
@@ -17,7 +17,6 @@ import { ClientOptions } from '../../deprecated/sdk-js-client';
  *     .sortBy([{ field: 'title', order: 'asc' }])
  *     .query(q => q.field('author').equals('John Doe'))
  *     .depth(1)
- *     .fetch();
  *
  * console.log(response.contentlets);
  * ```
@@ -31,7 +30,6 @@ import { ClientOptions } from '../../deprecated/sdk-js-client';
  *     .sortBy([{ field: 'title', order: 'asc' }])
  *     .query(q => q.field('author').equals('John Doe'))
  *     .depth(1)
- *     .fetch()
  *     .then(response => console.log(response.contentlets))
  *     .catch(error => console.error(error));
  * ```
@@ -47,7 +45,6 @@ import { ClientOptions } from '../../deprecated/sdk-js-client';
  * const posts = await client.content
  *     .getCollection<BlogPost>('Blog')
  *     .limit(10)
- *     .fetch();
  *
  * posts.contentlets.forEach(post => {
  *     console.log(post.title, post.author, post.summary);
@@ -55,15 +52,15 @@ import { ClientOptions } from '../../deprecated/sdk-js-client';
  * ```
  */
 export class Content {
-    #requestOptions: ClientOptions;
+    #requestOptions: RequestOptions;
     #serverUrl: string;
 
     /**
      * Creates an instance of Content.
-     * @param {ClientOptions} requestOptions - The options for the client request.
+     * @param {RequestOptions} requestOptions - The options for the client request.
      * @param {string} serverUrl - The server URL.
      */
-    constructor(requestOptions: ClientOptions, serverUrl: string) {
+    constructor(requestOptions: RequestOptions, serverUrl: string) {
         this.#requestOptions = requestOptions;
         this.#serverUrl = serverUrl;
     }

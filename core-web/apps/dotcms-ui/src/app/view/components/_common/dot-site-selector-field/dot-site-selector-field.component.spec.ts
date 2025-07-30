@@ -1,4 +1,4 @@
-import { Component, DebugElement, Input } from '@angular/core';
+import { Component, DebugElement, Input, inject } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
 import { By } from '@angular/platform-browser';
@@ -19,9 +19,11 @@ import { DotSiteSelectorFieldComponent } from './dot-site-selector-field.compone
     `
 })
 class FakeFormComponent {
+    private fb = inject(UntypedFormBuilder);
+
     form: UntypedFormGroup;
 
-    constructor(private fb: UntypedFormBuilder) {
+    constructor() {
         /*
             This should go in the ngOnInit but I don't want to detectChanges everytime for
             this fake test component

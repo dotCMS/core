@@ -3,7 +3,7 @@ import { mockProvider } from '@ngneat/spectator';
 import { throwError } from 'rxjs';
 
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
-import { fakeAsync, getTestBed, TestBed, tick } from '@angular/core/testing';
+import { fakeAsync, TestBed, tick } from '@angular/core/testing';
 
 import { ConfirmationService } from 'primeng/api';
 
@@ -51,7 +51,6 @@ const mockDotApps = [
 ];
 
 describe('DotAppsService', () => {
-    let injector: TestBed;
     let dotAppsService: DotAppsService;
     let dotHttpErrorManagerService: DotHttpErrorManagerService;
     let coreWebService: CoreWebService;
@@ -79,11 +78,10 @@ describe('DotAppsService', () => {
                 mockProvider(DotMessageService)
             ]
         });
-        injector = getTestBed();
-        dotAppsService = injector.get(DotAppsService);
-        dotHttpErrorManagerService = injector.get(DotHttpErrorManagerService);
-        coreWebService = injector.get(CoreWebService);
-        httpMock = injector.get(HttpTestingController);
+        dotAppsService = TestBed.inject(DotAppsService);
+        dotHttpErrorManagerService = TestBed.inject(DotHttpErrorManagerService);
+        coreWebService = TestBed.inject(CoreWebService);
+        httpMock = TestBed.inject(HttpTestingController);
     });
 
     it('should get apps', () => {
@@ -181,7 +179,15 @@ describe('DotAppsService', () => {
         const mockResponse = {
             headers: {
                 get: (_header: string) => {
-                    return `attachment; filename=${fileName}`;
+                    if (_header === 'content-disposition') {
+                        return `attachment; filename=${fileName}`;
+                    }
+
+                    if (_header === 'error-message') {
+                        return null;
+                    }
+
+                    return null;
                 }
             },
             blob: () => {
