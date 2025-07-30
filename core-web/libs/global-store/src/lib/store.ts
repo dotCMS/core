@@ -1,12 +1,18 @@
 import { tapResponse } from '@ngrx/operators';
-import { patchState, signalStore, withComputed, withHooks, withMethods, withState } from '@ngrx/signals';
+import {
+    patchState,
+    signalStore,
+    withComputed,
+    withHooks,
+    withMethods,
+    withState
+} from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { pipe } from 'rxjs';
 
 import { computed, inject } from '@angular/core';
 
 import { switchMap } from 'rxjs/operators';
-
 
 import { DotSiteService } from '@dotcms/data-access';
 import { SiteEntity } from '@dotcms/dotcms-models';
@@ -43,7 +49,7 @@ export interface GlobalState {
  */
 const initialState: GlobalState = {
     user: null,
-    siteDetails: null,
+    siteDetails: null
 };
 
 /**
@@ -83,7 +89,6 @@ export const GlobalStore = signalStore(
     { providedIn: 'root' },
     withState(initialState),
     withMethods((store, siteService = inject(DotSiteService)) => {
-
         return {
             /**
              * Authenticates a user and updates the global state.
@@ -142,6 +147,16 @@ export const GlobalStore = signalStore(
                 )
             ),
 
+            /**
+             * Sets the current site in the global store.
+             *
+             * This method updates the siteDetails property in the global state
+             * with the provided SiteEntity.
+             *
+             * @param site - The SiteEntity to set as the current site
+             *
+             * @example
+             */
             setCurrentSite: (site: SiteEntity) => {
                 patchState(store, {
                     siteDetails: site
@@ -193,7 +208,7 @@ export const GlobalStore = signalStore(
          * injecting the store in any component.
          */
         onInit(store) {
-            console.log(' GlobalState onInit');
+            // Load current site on store initialization
             store.loadCurrentSite();
         }
     })
