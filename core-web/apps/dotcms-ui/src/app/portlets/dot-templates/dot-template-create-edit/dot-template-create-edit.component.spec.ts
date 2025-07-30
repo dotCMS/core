@@ -130,7 +130,6 @@ describe('DotTemplateCreateEditComponent', () => {
         await TestBed.configureTestingModule({
             declarations: [
                 DotApiLinkMockComponent,
-
                 DotPortletBaseMockComponent,
                 DotPortletToolbarMockComponent,
                 DotTemplateBuilderMockComponent,
@@ -215,7 +214,7 @@ describe('DotTemplateCreateEditComponent', () => {
                         url: '',
                         paginationPerPage: '',
                         totalRecords: mockDotThemes.length,
-
+                        get: jasmine.createSpy().and.returnValue(of([...mockDotThemes])),
                         setExtraParams() {
                             //
                         },
