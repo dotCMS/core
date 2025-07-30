@@ -185,7 +185,7 @@ export class DotBubbleMenuComponent implements OnInit {
         onClickOutside: this.onClickOutside.bind(this),
         appendTo: (element) => {
             // Append it to the block editor host, so it is outside of the editor container
-            const blockEditorHost = element.parentElement.parentElement;
+            const blockEditorHost = element?.parentElement?.parentElement ?? document.body;
 
             return blockEditorHost;
         },
