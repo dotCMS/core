@@ -97,9 +97,6 @@ export class DotSelectExistingContentComponent implements OnInit {
                 if (selectionItems) {
                     this.store.setSelectionItems(selectionItems);
                 }
-            },
-            {
-                allowSignalWrites: true
             }
         );
 
@@ -108,9 +105,6 @@ export class DotSelectExistingContentComponent implements OnInit {
                 // Sync the selection items with the store
                 const selectionItems = this.store.selectionItems();
                 this.$selectionItems.set(selectionItems);
-            },
-            {
-                allowSignalWrites: true
             }
         );
     }

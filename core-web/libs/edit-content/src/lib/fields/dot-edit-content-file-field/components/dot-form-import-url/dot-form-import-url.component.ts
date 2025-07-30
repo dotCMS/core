@@ -62,9 +62,6 @@ export class DotFormImportUrlComponent implements OnInit {
                         this.#dialogRef.close(file);
                     }
                 });
-            },
-            {
-                allowSignalWrites: true
             }
         );
 

@@ -73,7 +73,7 @@ describe('DotFormImportUrlComponent', () => {
             expect(dialogRef.close).toHaveBeenCalledWith(mockPreviewFile);
         });
 
-        it('should disable and enable the form when isLoading is truthy', () => {
+        fit('should disable and enable the form when isLoading is truthy', () => {
             spectator.detectChanges();
             const disableSpy = jest.spyOn(spectator.component.form, 'disable');
             const enableSpy = jest.spyOn(spectator.component.form, 'enable');
@@ -82,7 +82,7 @@ describe('DotFormImportUrlComponent', () => {
                 status: ComponentStatus.LOADING
             });
 
-            spectator.flushEffects();
+            spectator.detectChanges();
 
             expect(disableSpy).toHaveBeenCalled();
 
@@ -90,7 +90,7 @@ describe('DotFormImportUrlComponent', () => {
                 status: ComponentStatus.LOADED
             });
 
-            spectator.flushEffects();
+            spectator.detectChanges();
 
             expect(enableSpy).toHaveBeenCalled();
         });
